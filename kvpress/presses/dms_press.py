@@ -18,7 +18,7 @@ class DMSPress(BasePress):
     Based on Dynamic Memory Sparsification (DMS, https://arxiv.org/abs/2506.05345) inference.
     Wraps a ScorerPress and evicts keys/values with scores below a given threshold.
     This press implements a dense-prefill version of DMS, not the sparse-prefill version.
-
+    TODO:　稀疏预填充和密集预填充指什么?
     Unlike most presses that use a fixed compression_ratio, DMSPress uses a score threshold
     to determine which KV pairs to evict. This allows for adaptive compression where the actual
     compression ratio depends on the input content.
@@ -64,11 +64,26 @@ class DMSPress(BasePress):
         raise AttributeError(f"compression ratio cannot be set for {type(self).__name__}")
 
     def forward_hook(self, module: nn.Module, input: list[torch.Tensor], kwargs: dict, output: list):
-        hidden_states = kwargs["hidden_states"]
-        cache = kwargs["past_key_values"]
-        q_len = hidden_states.shape[1]
-        cache_len = kwargs["cache_position"][-1] + 1
-        prefilling = cache_len == q_len
+        """
+        步骤:
+
+        """
+        hidden_states = kwargs["hidden_states"]  # 获取隐藏层状态
+        cache = kwargs["past_key_values"]  # 获取当前的 KV Cache
+        q_len = hidden_states.shape[1]  # 当前输入的查询长度,通常对应于当前生成的 Token 数量
+        # 获取当前KV Cache的长度
+        # cache_len = kwargs["cache_position"][-1] + 1
+        if "cache_position" in kwargs and kwargs["cache_position"] is not None:
+            # 标准HF实现(如 Llama)
+            cache_len = int(kwargs["cache_position"][-1]) + 1
+        elif "position_ids" in kwargs and kwargs["position_ids"] is not None:
+            # 兼容 Qwen 等不传 cache_position 但传 position_ids 的模型
+            cache_len = int(kwargs["position_ids"][0, -1]) + 1
+        else:
+            # 终极兜底方案:直接从 KV Cache 本身读取长度
+            temp_keys, _ = extract_keys_and_values(cache, layer_idx)
+            cache_len = temp_keys.shape[2]
+        prefilling = cache_len == q_len  # 判断是否处于预填充阶段
 
         # Extract layer index as int for type safety
         layer_idx: int = module.layer_idx  # type: ignore[assignment]
@@ -83,13 +98,15 @@ class DMSPress(BasePress):
             return output
 
         # Compute importance scores for the new tokens using the underlying scorer press
-        keys, values = extract_keys_and_values(cache, layer_idx)
+        keys, values = extract_keys_and_values(cache, layer_idx)  # 提取当前层的 Cache
         scores = self.press.score(module, hidden_states, keys[:, :, -q_len:], values[:, :, -q_len:], None, kwargs)
 
         # Accumulate scores in the buffer: reset during prefill, append during decoding
         if prefilling:
+            # 如果是预填充阶段, 直接将当前分数存入 buffer
             self.scores_buffer[layer_idx] = scores
         else:
+            # 如果是解码阶段, 将当前分数追加到 buffer 的末尾
             self.scores_buffer[layer_idx] = torch.cat([self.scores_buffer[layer_idx], scores], dim=-1)
 
         # Once the buffer exceeds the sliding window, evict tokens with low scores
@@ -105,10 +122,14 @@ class DMSPress(BasePress):
             if len(new_masked_key_indices[0]) > 0:
                 # Convert buffer-relative indices to cache-absolute indices
                 # During prefill shift=0; during decoding we offset by the number of previously processed tokens
+                # torch.where 找出的序号,是相对于那块被切下来的 scores_to_evict 小片段的索引(比如 0, 1, 2).
+                # 但是,我们最终要在庞大总长的 KV Cache 里精准屏蔽它,
+                # 所以需要计算一个偏移量(shift),把相对坐标转换成全局绝对坐标.
                 shift = cache_len - scores_to_evict.shape[2] - self.sliding_window_size
                 new_masked_key_indices[-1] += shift
 
                 # Merge new masked indices with existing ones
+                # 将新找到的需要屏蔽的索引与之前已经屏蔽的索引合并.
                 if module.masked_key_indices is None:
                     module.masked_key_indices = new_masked_key_indices  # type: ignore[assignment]
                 else:
@@ -117,6 +138,7 @@ class DMSPress(BasePress):
                     )
 
         # Track compression ratio as the fraction of masked tokens
+        # 重新计算压缩率
         if module.masked_key_indices is not None:
             bsz, num_key_value_heads, cache_len, _ = keys.shape
             n_masked = len(module.masked_key_indices[0])  # type: ignore[index]

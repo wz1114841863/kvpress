@@ -190,6 +190,7 @@ class BasePress:
         try:
             language_model = model.model.language_model if hasattr(model.model, "language_model") else model.model
             for layer in language_model.layers:
+                # 挂载钩子到每一层的自注意力模块上,以便在前向传播时自动调用压缩逻辑.
                 if isinstance(model, Gemma3ForConditionalGeneration) and layer.self_attn.is_sliding:
                     # Skip layers with sliding window attention, only for Gemma3
                     continue

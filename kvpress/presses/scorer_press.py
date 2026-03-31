@@ -82,6 +82,7 @@ class ScorerPress(BasePress):
         attentions: torch.Tensor,
         kwargs: dict,
     ) -> tuple[torch.Tensor, torch.Tensor]:
+        """基于压缩率和计算出的分数,选择性地保留 KV 对应的 Token,丢弃分数最低的那些 Token 对应的 KV 对."""
 
         if self.compression_ratio == 0:
             return keys, values
@@ -91,8 +92,11 @@ class ScorerPress(BasePress):
 
         # Get indices of KV pairs with the lowest scores
         k_len = keys.shape[2]
+        # 计算出当前需要保留的 Token 数量
         n_kept = int(k_len * (1 - self.compression_ratio))
+        # 获取每个头部上分数最高的 n_kept 个索引,这些索引对应于最重要的 KV 对应的 Token 位置
         indices = scores.topk(n_kept, dim=-1).indices
+        # 确保索引的形状与 KV Cache 的形状完美匹配
         indices = indices.unsqueeze(-1).expand(-1, -1, -1, module.head_dim)
 
         # Prune keys and values
