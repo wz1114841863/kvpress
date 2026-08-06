@@ -14,7 +14,15 @@ from kvpress.presses.scorer_press import ScorerPress
 class KVzapConfig(PretrainedConfig):
     model_type = "kvzap"
 
-    def __init__(self, *, input_dim: int, output_dim: int, n_modules: int, hidden_dim: Optional[int] = None, **kwargs):
+    def __init__(
+        self,
+        *,
+        input_dim: Optional[int] = None,
+        output_dim: Optional[int] = None,
+        n_modules: Optional[int] = None,
+        hidden_dim: Optional[int] = None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -28,20 +36,24 @@ class KVzapModel(PreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.all_tied_weights_keys = {}
+        input_dim = config.input_dim
+        output_dim = config.output_dim
+        n_modules = config.n_modules
+        if input_dim is None or output_dim is None or n_modules is None:
+            raise ValueError("KVzapConfig requires input_dim, output_dim, and n_modules to build a KVzapModel")
+
         if config.hidden_dim is None:
             # Linear model
-            self.layers = nn.ModuleList(
-                [nn.Linear(config.input_dim, config.output_dim) for _ in range(config.n_modules)]
-            )
+            self.layers = nn.ModuleList([nn.Linear(input_dim, output_dim) for _ in range(n_modules)])
         else:
             # 2-layer MLP model
             self.layers = nn.ModuleList(
                 nn.Sequential(
-                    nn.Linear(config.input_dim, config.hidden_dim),
+                    nn.Linear(input_dim, config.hidden_dim),
                     nn.GELU(),
-                    nn.Linear(config.hidden_dim, config.output_dim),
+                    nn.Linear(config.hidden_dim, output_dim),
                 )
-                for _ in range(config.n_modules)
+                for _ in range(n_modules)
             )
 
     def forward(self, x):
