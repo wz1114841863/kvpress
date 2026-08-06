@@ -1,0 +1,32 @@
+schema_version: baseline-1.0
+experiment_id: kvzap-baseline-20260806T043908Z
+config_hash: b1d3a4704b3cba56a1d31d47054c3e886bfff11bdfb8c0ca2ae89315433da1e6
+git_commit: efbaefeb315ee8c50a44923f9dbc7eb314d62f27
+created_at: '2026-08-06T04:39:08.925496+00:00'
+model: Qwen/Qwen3-8B
+predictor: nvidia/KVzap-mlp-Qwen3-8B
+predictor_revision: bd5c5917846617da4311539859c137a262a6348b
+predictor_type: mlp
+threshold: -4.0
+sliding_window: 128
+variants:
+- full_kv
+- kvzap_prefill
+- kvzap_prefill_decoding
+seed: 42
+thinking: false
+decoding: greedy
+requests:
+- request_id: builtin_retrieval_code
+  subset: retrieval
+  max_new_tokens: 32
+- request_id: builtin_article_summary
+  subset: summarization
+  max_new_tokens: 96
+- request_id: builtin_long_hardware_answer
+  subset: long_generation
+  max_new_tokens: 256
+torch_version: 2.10.0+cu128
+transformers_version: 5.0.0
+cuda_available: true
+gpu: NVIDIA A100-SXM-64GB
