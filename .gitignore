@@ -169,3 +169,7 @@ cython_debug/
 
 # IDE
 .vscode/
+
+# Generated KVzap traces (keep large score/mask artifacts out of git)
+traces/*
+!traces/.gitkeep

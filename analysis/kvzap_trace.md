@@ -1,0 +1,83 @@
+# KVzap single-request trace
+
+## What is captured
+
+`tools/run_kvzap_trace.py` captures the following intermediate results for one
+Qwen3-8B request:
+
+- raw MLP predictor scores in explicit `[layer, KV head, token]` layout;
+- `predicted_drop_mask`, obtained directly from `score < threshold` before
+  sliding-window protection;
+- `final_drop_mask`, containing only positions that have left the protected
+  window and were actually added to `masked_key_indices`;
+- per-step/per-layer/per-head decode admission and drop counts;
+- request-level and layer/head-level logical-retention summaries.
+
+It does not save attention matrices, K/V tensors, prompt text, or physical page
+layouts. The results describe logical masking, not physical memory reduction or
+wall-clock acceleration.
+
+## Safety and equivalence check
+
+The callback on `DMSPress` defaults to `None`. With tracing disabled, no score
+tensor is copied. The exporter runs the same deterministic request twice using
+the same loaded model and predictor:
+
+1. tracing disabled;
+2. tracing enabled.
+
+It writes files only after verifying exact equality of the decoded answer,
+per-layer compression ratios, and every final masked index. It also reconstructs
+the final mask from trace events, compares that mask with `masked_key_indices`,
+and verifies that the newest 128 tokens are not dropped.
+
+Trace mode copies score and mask tensors to CPU and therefore must not be used
+for performance measurement.
+
+## Lightweight checks
+
+These commands do not download or load Qwen3-8B:
+
+```bash
+python tools/run_kvzap_trace.py --help
+pytest -q tests/test_kvzap_trace.py tests/presses/test_dms_trace.py tests/presses/test_kvzap_press.py
+```
+
+## Remote trace run
+
+Use the same environment that passed the baseline experiment:
+
+```bash
+python tools/run_kvzap_trace.py \
+  --max-new-tokens 384 \
+  --output-dir traces/qwen3_8b_single_384
+```
+
+The destination must not already exist. Generated trace directories are ignored
+by git because the compressed score tensor can still be several MiB or larger.
+Transfer the selected trace directory separately, or force-add only a deliberately
+small artifact after reviewing its size.
+
+The output directory contains:
+
+```text
+manifest.json
+score_mask.npz
+request_summary.csv
+layer_head_summary.csv
+decoding_events.csv
+answer.json
+```
+
+`score_mask.npz` contains `scores`, `score_valid_mask`,
+`predicted_drop_mask`, `final_drop_mask`, and `shape`. The pilot stores boolean
+masks unpacked for simple inspection; `manifest.json` records this explicitly.
+Later large benchmark traces should use sharding and bit packing as specified in
+`TRACE_SCHEMA.md`.
+
+## What to send back
+
+First send the terminal output plus `manifest.json`, `request_summary.csv`, and
+`layer_head_summary.csv`. For run-length, block occupancy, and head-similarity
+analysis, also transfer `score_mask.npz`. The answer file is useful only when an
+equivalence or quality issue needs inspection.

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Callable, Optional
 
 import torch
 import torch.nn as nn
@@ -43,12 +43,16 @@ class DMSPress(BasePress):
     decoding : bool, default=False
         If True, compression is also applied during the decoding phase (token generation).
         If False, compression only occurs during prefill.
+    trace_callback : callable, optional
+        Debug/instrumentation callback invoked after each scored layer call. It is disabled
+        by default. Tensor copies and serialization are the callback's responsibility.
     """
 
     press: ScorerPress
     threshold: Optional[float] = None
     sliding_window_size: int = 128
     decoding: bool = False
+    trace_callback: Optional[Callable[..., None]] = field(default=None, repr=False, compare=False)
     scores_buffer: dict[int, torch.Tensor] = field(default_factory=dict, init=False, repr=False)
     compression_ratios: dict[int, float] = field(default_factory=dict, init=False, repr=False)
 
@@ -95,21 +99,27 @@ class DMSPress(BasePress):
         else:
             self.scores_buffer[layer_idx] = torch.cat([self.scores_buffer[layer_idx], scores], dim=-1)
 
+        matured_scores = None
+        matured_drop_mask = None
+        matured_start = None
+
         # Once the buffer exceeds the sliding window, evict tokens with low scores
         if self.scores_buffer[layer_idx].shape[-1] > self.sliding_window_size:
             # Determine how many tokens have left the sliding window and can be evicted
             n_to_evict = self.scores_buffer[layer_idx].shape[-1] - self.sliding_window_size
             scores_to_evict = self.scores_buffer[layer_idx][..., :n_to_evict]
             self.scores_buffer[layer_idx] = self.scores_buffer[layer_idx][..., n_to_evict:]
+            matured_scores = scores_to_evict
+            matured_drop_mask = scores_to_evict < self.threshold
+            matured_start = cache_len - scores_to_evict.shape[2] - self.sliding_window_size
 
             # Find tokens below threshold: returns (batch_idx, head_idx, token_idx) tuples
-            new_masked_key_indices = list(torch.where(scores_to_evict < self.threshold))
+            new_masked_key_indices = list(torch.where(matured_drop_mask))
 
             if len(new_masked_key_indices[0]) > 0:
                 # Convert buffer-relative indices to cache-absolute indices
                 # During prefill shift=0; during decoding we offset by the number of previously processed tokens
-                shift = cache_len - scores_to_evict.shape[2] - self.sliding_window_size
-                new_masked_key_indices[-1] += shift
+                new_masked_key_indices[-1] += matured_start
 
                 # Merge new masked indices with existing ones
                 if module.masked_key_indices is None:
@@ -126,5 +136,30 @@ class DMSPress(BasePress):
             self.compression_ratios[layer_idx] = n_masked / (bsz * num_key_value_heads * cache_len)
         else:
             self.compression_ratios[layer_idx] = 0
+
+        if self.trace_callback is not None:
+            cache_len_int = int(cache_len.item() if isinstance(cache_len, torch.Tensor) else cache_len)
+            matured_start_int = (
+                None
+                if matured_start is None
+                else int(matured_start.item() if isinstance(matured_start, torch.Tensor) else matured_start)
+            )
+            n_masked = 0 if module.masked_key_indices is None else len(module.masked_key_indices[0])
+            self.trace_callback(
+                layer_idx=layer_idx,
+                prefilling=prefilling,
+                cache_len=cache_len_int,
+                q_len=q_len,
+                score_start=cache_len_int - q_len,
+                scores=scores,
+                predicted_drop_mask=scores < self.threshold,
+                threshold=float(self.threshold),
+                matured_start=matured_start_int,
+                matured_scores=matured_scores,
+                matured_drop_mask=matured_drop_mask,
+                score_buffer_length=self.scores_buffer[layer_idx].shape[-1],
+                cumulative_masked_tokens=n_masked,
+                compression_ratio=self.compression_ratios[layer_idx],
+            )
 
         return output
