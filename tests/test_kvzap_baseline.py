@@ -4,9 +4,11 @@
 import json
 
 import pytest
+import yaml
 
 from tools.run_kvzap_baseline import (
     build_builtin_requests,
+    get_runtime_metadata,
     load_requests,
     removed_fraction_to_factor,
     score_required_substrings,
@@ -51,3 +53,10 @@ def test_builtin_requests_and_hash_are_stable():
     assert len({request["request_id"] for request in requests}) == len(requests)
     assert "ORCHID-7429" in requests[0]["context"]
     assert stable_hash({"b": 2, "a": 1}) == stable_hash({"a": 1, "b": 2})
+
+
+def test_runtime_metadata_is_yaml_serializable():
+    metadata = get_runtime_metadata()
+    assert type(metadata["torch_version"]) is str
+    assert type(metadata["transformers_version"]) is str
+    yaml.safe_dump(metadata)

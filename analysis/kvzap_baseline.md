@@ -130,3 +130,11 @@ length. A future trace hook should capture exact generated token IDs.
 
 After this baseline is reviewed, the next code change should be the minimal
 score/mask trace hook with a trace-on/off equivalence test.
+
+## PyTorch 2.10 compatibility note
+
+PyTorch 2.10 exposes `torch.__version__` as a `TorchVersion` object rather than
+an exact built-in `str`. PyYAML's safe dumper cannot serialize that object. The
+baseline script explicitly converts runtime version metadata to built-in
+strings, and `tests/test_kvzap_baseline.py` checks that the resulting metadata
+can be serialized. This metadata fix does not affect model execution.

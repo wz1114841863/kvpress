@@ -212,6 +212,18 @@ def stable_hash(value: dict[str, Any]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def get_runtime_metadata() -> dict[str, Any]:
+    cuda_available = bool(torch.cuda.is_available())
+    return {
+        # PyTorch 2.10 exposes TorchVersion, a str subclass that PyYAML's
+        # SafeDumper cannot represent. Convert version values to exact builtins.
+        "torch_version": str(torch.__version__),
+        "transformers_version": str(transformers.__version__),
+        "cuda_available": cuda_available,
+        "gpu": str(torch.cuda.get_device_name(0)) if cuda_available else None,
+    }
+
+
 def prepare_output_paths(output_dir: Path, overwrite: bool) -> dict[str, Path]:
     output_dir.mkdir(parents=True, exist_ok=True)
     paths = {
@@ -340,10 +352,7 @@ def main() -> None:
         "git_commit": get_git_commit(),
         "created_at": datetime.now(timezone.utc).isoformat(),
         **config_for_hash,
-        "torch_version": torch.__version__,
-        "transformers_version": transformers.__version__,
-        "cuda_available": torch.cuda.is_available(),
-        "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+        **get_runtime_metadata(),
     }
     paths["config"].write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
 
