@@ -58,6 +58,58 @@ by git because the compressed score tensor can still be several MiB or larger.
 Transfer the selected trace directory separately, or force-add only a deliberately
 small artifact after reviewing its size.
 
+### Built-in request types
+
+The default remains the original hardware-themed long-generation request. Use
+`--preset` to capture genuinely different inputs:
+
+```bash
+python tools/run_kvzap_trace.py \
+  --preset retrieval \
+  --max-new-tokens 384 \
+  --output-dir traces/retrieval_01
+
+python tools/run_kvzap_trace.py \
+  --preset summarization \
+  --max-new-tokens 384 \
+  --output-dir traces/summarization_01
+
+python tools/run_kvzap_trace.py \
+  --preset reasoning \
+  --max-new-tokens 384 \
+  --output-dir traces/reasoning_01
+```
+
+The retrieval answer may terminate well before 384 tokens; that is expected.
+The three output directories must be generated successfully before they are
+passed to the multi-request analyzer.
+
+### Custom request JSONL
+
+Each JSONL row requires `request_id`, `context`, and `question`. `dataset` and
+`subset` are optional and default to `custom`:
+
+```json
+{"request_id":"sample_01","context":"Long context...","question":"Question..."}
+```
+
+For a one-row file:
+
+```bash
+python tools/run_kvzap_trace.py \
+  --input-jsonl requests.jsonl \
+  --output-dir traces/sample_01
+```
+
+If the file has multiple rows, select exactly one request per trace directory:
+
+```bash
+python tools/run_kvzap_trace.py \
+  --input-jsonl requests.jsonl \
+  --request-id sample_01 \
+  --output-dir traces/sample_01
+```
+
 The output directory contains:
 
 ```text
@@ -92,7 +144,8 @@ python tools/analyze_kvzap_trace.py \
   --output-dir analysis/experiments/qwen3_8b_single_384_analysis
 ```
 
-Multiple traces can be compared in one output set:
+Multiple traces can be compared after the listed source directories have been
+generated and each contains a complete trace:
 
 ```bash
 python tools/analyze_kvzap_trace.py \
