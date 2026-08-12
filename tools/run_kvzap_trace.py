@@ -246,6 +246,19 @@ def assert_same_indices(
                 raise AssertionError(f"Layer {layer_idx} masked indices differ with tracing enabled")
 
 
+def describe_answer_difference(expected: str, actual: str) -> str:
+    common = 0
+    for left, right in zip(expected, actual):
+        if left != right:
+            break
+        common += 1
+    return (
+        f"first differing character={common}, trace-off length={len(expected)}, "
+        f"trace-on length={len(actual)}, trace-off suffix={expected[common:common + 80]!r}, "
+        f"trace-on suffix={actual[common:common + 80]!r}"
+    )
+
+
 def assert_trace_matches_indices(
     final_drop_mask: np.ndarray,
     masked_indices: list[tuple[torch.Tensor, torch.Tensor, torch.Tensor] | None],
@@ -373,7 +386,10 @@ def main() -> None:
     traced_indices = snapshot_masked_indices(pipe.model)
 
     if untraced_output["answer"] != traced_output["answer"]:
-        raise AssertionError("Generated answer changed with tracing enabled; no trace was written")
+        raise AssertionError(
+            "Generated answer changed with tracing enabled; no trace was written. "
+            + describe_answer_difference(untraced_output["answer"], traced_output["answer"])
+        )
     if untraced_ratios != traced_ratios:
         raise AssertionError("Per-layer compression ratios changed with tracing enabled; no trace was written")
     assert_same_indices(untraced_indices, traced_indices)

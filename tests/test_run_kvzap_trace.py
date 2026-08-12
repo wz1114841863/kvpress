@@ -6,7 +6,13 @@ import json
 import pytest
 
 from kvpress import KVzapPress
-from tools.run_kvzap_trace import PRESETS, build_builtin_request, load_jsonl_request, make_dms_press
+from tools.run_kvzap_trace import (
+    PRESETS,
+    build_builtin_request,
+    describe_answer_difference,
+    load_jsonl_request,
+    make_dms_press,
+)
 
 
 @pytest.mark.parametrize("preset", PRESETS)
@@ -62,3 +68,9 @@ def test_trace_passes_use_independent_dms_state():
 
     assert first.press is second.press
     assert first.scores_buffer is not second.scores_buffer
+
+
+def test_describe_answer_difference():
+    description = describe_answer_difference("ORCHID-7429", "ORCHARD-7429")
+    assert "first differing character=4" in description
+    assert "trace-off length=11" in description

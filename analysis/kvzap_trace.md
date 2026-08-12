@@ -31,8 +31,10 @@ per-layer compression ratios, and every final masked index. It also reconstructs
 the final mask from trace events, compares that mask with `masked_key_indices`,
 and verifies that the newest 128 tokens are not dropped.
 
-Trace mode copies score and mask tensors to CPU and therefore must not be used
-for performance measurement.
+During generation, trace mode makes immutable tensor clones on the current
+device. It performs the GPU-to-CPU synchronization and NumPy aggregation only
+after generation finishes. The extra allocations still make trace mode
+unsuitable for performance measurement.
 
 ## Lightweight checks
 
