@@ -84,6 +84,11 @@ The retrieval answer may terminate well before 384 tokens; that is expected.
 The three output directories must be generated successfully before they are
 passed to the multi-request analyzer.
 
+Each trace-off/trace-on pass uses an independent `DMSPress` runtime state while
+sharing the already loaded predictor. This prevents a short-answer request from
+leaking or losing the score buffer between equivalence passes. The DMS hook also
+checks the actual dense KV length when identifying a newly created cache.
+
 ### Custom request JSONL
 
 Each JSONL row requires `request_id`, `context`, and `question`. `dataset` and

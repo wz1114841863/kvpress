@@ -80,6 +80,17 @@ class DMSPress(BasePress):
         # Extract layer index as int for type safety
         layer_idx: int = module.layer_idx  # type: ignore[assignment]
 
+        # Some cache/model combinations use absolute cache positions even for a
+        # newly created dense cache. In that case cache_position alone does not
+        # identify prefill, but the actual KV length still equals q_len.
+        keys = None
+        values = None
+        if not prefilling and layer_idx not in self.scores_buffer:
+            keys, values = extract_keys_and_values(cache, layer_idx)
+            if keys.shape[2] == q_len:
+                prefilling = True
+                cache_len = keys.shape[2]
+
         # Reset the scores buffer and compression ratios if we are in prefilling
         if prefilling and (layer_idx == 0):
             self.scores_buffer.clear()
@@ -89,8 +100,15 @@ class DMSPress(BasePress):
         if not prefilling and not self.decoding:
             return output
 
+        if not prefilling and layer_idx not in self.scores_buffer:
+            raise RuntimeError(
+                f"DMS score buffer for layer {layer_idx} is missing before decoding "
+                f"(q_len={q_len}, cache_len={int(cache_len)}). Run context prefill with the same DMSPress state."
+            )
+
         # Compute importance scores for the new tokens using the underlying scorer press
-        keys, values = extract_keys_and_values(cache, layer_idx)
+        if keys is None or values is None:
+            keys, values = extract_keys_and_values(cache, layer_idx)
         scores = self.press.score(module, hidden_states, keys[:, :, -q_len:], values[:, :, -q_len:], None, kwargs)
 
         # Accumulate scores in the buffer: reset during prefill, append during decoding

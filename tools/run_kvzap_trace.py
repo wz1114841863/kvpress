@@ -274,6 +274,22 @@ def run_request(
     )
 
 
+def make_dms_press(
+    scorer: KVzapPress,
+    *,
+    threshold: float,
+    window_size: int,
+    trace_callback: KVzapTraceRecorder | None = None,
+) -> DMSPress:
+    return DMSPress(
+        press=scorer,
+        threshold=threshold,
+        sliding_window_size=window_size,
+        decoding=True,
+        trace_callback=trace_callback,
+    )
+
+
 def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
@@ -319,23 +335,28 @@ def main() -> None:
     if context_tokens + question_tokens <= args.window_size:
         raise ValueError("Prompt does not exceed the protected window; increase --context-repetitions")
 
-    press = DMSPress(
-        press=KVzapPress(model_type="mlp"),
+    scorer = KVzapPress(model_type="mlp")
+    untraced_press = make_dms_press(
+        scorer,
         threshold=args.threshold,
-        sliding_window_size=args.window_size,
-        decoding=True,
+        window_size=args.window_size,
     )
     print(f"Request: {request_id} ({dataset}/{subset})")
     print("Pass 1/2: tracing disabled...")
-    untraced_output = run_request(pipe, press, context, question, args.seed, args.max_new_tokens)
-    untraced_ratios = dict(press.compression_ratios)
+    untraced_output = run_request(pipe, untraced_press, context, question, args.seed, args.max_new_tokens)
+    untraced_ratios = dict(untraced_press.compression_ratios)
     untraced_indices = snapshot_masked_indices(pipe.model)
 
     recorder = KVzapTraceRecorder(request_id, args.near_threshold_epsilon)
-    press.trace_callback = recorder
+    traced_press = make_dms_press(
+        scorer,
+        threshold=args.threshold,
+        window_size=args.window_size,
+        trace_callback=recorder,
+    )
     print("Pass 2/2: tracing enabled (diagnostic CPU copies are expected)...")
-    traced_output = run_request(pipe, press, context, question, args.seed, args.max_new_tokens)
-    traced_ratios = dict(press.compression_ratios)
+    traced_output = run_request(pipe, traced_press, context, question, args.seed, args.max_new_tokens)
+    traced_ratios = dict(traced_press.compression_ratios)
     traced_indices = snapshot_masked_indices(pipe.model)
 
     if untraced_output["answer"] != traced_output["answer"]:
@@ -422,7 +443,7 @@ def main() -> None:
     )
 
     print("Trace equivalence verified: answer, per-layer ratios, and masked indices are identical.")
-    print(f"Logical removed fraction: {press.compression_ratio:.2%}")
+    print(f"Logical removed fraction: {traced_press.compression_ratio:.2%}")
     for name, path in {**paths, "answer": answers_path}.items():
         print(f"  {name}: {path} ({path.stat().st_size / 1024**2:.2f} MiB)")
     print("These files describe logical masks only; they do not demonstrate physical KV-memory reduction or speedup.")
