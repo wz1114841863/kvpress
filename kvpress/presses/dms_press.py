@@ -87,9 +87,9 @@ class DMSPress(BasePress):
         values = None
         if not prefilling and layer_idx not in self.scores_buffer:
             keys, values = extract_keys_and_values(cache, layer_idx)
+            cache_len = keys.shape[2]
             if keys.shape[2] == q_len:
                 prefilling = True
-                cache_len = keys.shape[2]
 
         # Reset the scores buffer and compression ratios if we are in prefilling
         if prefilling and (layer_idx == 0):
@@ -109,6 +109,10 @@ class DMSPress(BasePress):
         # Compute importance scores for the new tokens using the underlying scorer press
         if keys is None or values is None:
             keys, values = extract_keys_and_values(cache, layer_idx)
+        # masked_key_indices index the dense KV tensor, not absolute model
+        # positions. The two lengths can differ for caches with a position
+        # offset, so all mask shifts must use the physical tensor length.
+        cache_len = keys.shape[2]
         scores = self.press.score(module, hidden_states, keys[:, :, -q_len:], values[:, :, -q_len:], None, kwargs)
 
         # Accumulate scores in the buffer: reset during prefill, append during decoding
@@ -130,6 +134,12 @@ class DMSPress(BasePress):
             matured_scores = scores_to_evict
             matured_drop_mask = scores_to_evict < self.threshold
             matured_start = cache_len - scores_to_evict.shape[2] - self.sliding_window_size
+            if matured_start < 0:
+                raise RuntimeError(
+                    f"DMS buffer/cache mismatch at layer {layer_idx}: "
+                    f"matured_start={matured_start}, cache_len={cache_len}, "
+                    f"matured_tokens={scores_to_evict.shape[2]}, window={self.sliding_window_size}"
+                )
 
             # Find tokens below threshold: returns (batch_idx, head_idx, token_idx) tuples
             new_masked_key_indices = list(torch.where(matured_drop_mask))

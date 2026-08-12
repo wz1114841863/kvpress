@@ -101,3 +101,46 @@ def test_dms_reports_missing_prefill_state_before_decode(monkeypatch):
         assert "missing before decoding" in str(error)
     else:
         raise AssertionError("Decoding without prefill state should fail explicitly")
+
+
+def test_dms_mask_indices_use_dense_kv_length_not_absolute_positions(monkeypatch):
+    tensors = {
+        "keys": torch.zeros(1, 2, 3, 4),
+        "values": torch.zeros(1, 2, 3, 4),
+    }
+    monkeypatch.setattr(
+        "kvpress.presses.dms_press.extract_keys_and_values",
+        lambda cache, layer_idx: (tensors["keys"], tensors["values"]),
+    )
+    scorer = FixedScorer()
+    scorer.fixed_scores = torch.tensor([[[-1.0, 1.0, 1.0], [1.0, -1.0, 1.0]]])
+    press = DMSPress(press=scorer, threshold=0.0, sliding_window_size=0, decoding=True)
+    module = SimpleNamespace(layer_idx=0, masked_key_indices=None)
+
+    press.forward_hook(
+        module,
+        [],
+        {
+            "hidden_states": torch.zeros(1, 3, 4),
+            "past_key_values": object(),
+            "cache_position": torch.arange(100, 103),
+        },
+        [torch.tensor([123.0])],
+    )
+
+    tensors["keys"] = torch.zeros(1, 2, 4, 4)
+    tensors["values"] = torch.zeros(1, 2, 4, 4)
+    scorer.fixed_scores = torch.tensor([[[-1.0], [-1.0]]])
+    press.forward_hook(
+        module,
+        [],
+        {
+            "hidden_states": torch.zeros(1, 1, 4),
+            "past_key_values": object(),
+            "cache_position": torch.tensor([103]),
+        },
+        [torch.tensor([123.0])],
+    )
+
+    assert module.masked_key_indices[-1].max().item() == 3
+    assert module.masked_key_indices[-1].min().item() >= 0
