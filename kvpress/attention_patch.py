@@ -5,6 +5,33 @@ import torch
 from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS
 
 
+def validate_masked_key_indices(module, key: torch.Tensor) -> None:
+    """Fail before CUDA advanced indexing when optional diagnostics detect stale indices."""
+    indices = getattr(module, "masked_key_indices", None)
+    if indices is None or not getattr(module, "_kvpress_validate_mask_indices", False):
+        return
+    names = ("batch", "kv_head", "token")
+    limits = key.shape[:3]
+    details = []
+    invalid = False
+    for name, index, limit in zip(names, indices, limits):
+        if index.numel() == 0:
+            minimum = maximum = None
+        else:
+            minimum = int(index.min().item())
+            maximum = int(index.max().item())
+            invalid = invalid or minimum < 0 or maximum >= limit
+        details.append(f"{name}=[{minimum},{maximum}] limit={limit}")
+    if invalid:
+        context = getattr(module, "_kvpress_diagnostic_context", "unknown")
+        layer = getattr(module, "layer_idx", "unknown")
+        raise IndexError(
+            f"KVPress masked_key_indices out of bounds before CUDA indexing: "
+            f"context={context}, layer={layer}, key_shape={tuple(key.shape)}, "
+            + ", ".join(details)
+        )
+
+
 def search_hyperplane(X, max_iter: int = 1000):
     """
     Given a tensor X of shape (bsz, seq_len, head_dim), search for a hyperplane Y (bsz, head_dim)
@@ -76,6 +103,7 @@ def attention_patch(func):
 
             # At indices, update the keys to the fake keys
             batch_indices, head_indices, seq_indices = module.masked_key_indices
+            validate_masked_key_indices(module, key)
             key[batch_indices, head_indices, seq_indices] = k[batch_indices, head_indices]
 
         # see https://github.com/NVIDIA/kvpress/pull/115#issuecomment-3183785597

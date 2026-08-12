@@ -221,6 +221,15 @@ def snapshot_masked_indices(model) -> list[tuple[torch.Tensor, torch.Tensor, tor
     return snapshots
 
 
+def prepare_model_for_trace_pass(model, pass_name: str) -> None:
+    """Clear request-local mask state and enable concise bounds diagnostics."""
+    for layer in language_model_layers(model):
+        attention = layer.self_attn
+        attention.masked_key_indices = None
+        attention._kvpress_validate_mask_indices = True
+        attention._kvpress_diagnostic_context = pass_name
+
+
 def assert_same_indices(
     expected: list[tuple[torch.Tensor, torch.Tensor, torch.Tensor] | None],
     actual: list[tuple[torch.Tensor, torch.Tensor, torch.Tensor] | None],
@@ -343,6 +352,7 @@ def main() -> None:
     )
     print(f"Request: {request_id} ({dataset}/{subset})")
     print("Pass 1/2: tracing disabled...")
+    prepare_model_for_trace_pass(pipe.model, "trace-off")
     untraced_output = run_request(pipe, untraced_press, context, question, args.seed, args.max_new_tokens)
     untraced_ratios = dict(untraced_press.compression_ratios)
     untraced_indices = snapshot_masked_indices(pipe.model)
@@ -355,6 +365,7 @@ def main() -> None:
         trace_callback=recorder,
     )
     print("Pass 2/2: tracing enabled (diagnostic CPU copies are expected)...")
+    prepare_model_for_trace_pass(pipe.model, "trace-on")
     traced_output = run_request(pipe, traced_press, context, question, args.seed, args.max_new_tokens)
     traced_ratios = dict(traced_press.compression_ratios)
     traced_indices = snapshot_masked_indices(pipe.model)
