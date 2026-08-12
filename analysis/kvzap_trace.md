@@ -142,6 +142,12 @@ masks unpacked for simple inspection; `manifest.json` records this explicitly.
 Later large benchmark traces should use sharding and bit packing as specified in
 `TRACE_SCHEMA.md`.
 
+The canonical cumulative boolean mask is recorded directly at each event. The
+incremental maturity counters remain useful for decoding statistics, but if
+they diverge from the applied mask the recorder resynchronizes them and records
+`incremental_resynchronization_events` in the manifest instead of aborting the
+trace. A nonzero value must be reported when interpreting decoding-event rows.
+
 ## What to send back
 
 First send the terminal output plus `manifest.json`, `request_summary.csv`, and

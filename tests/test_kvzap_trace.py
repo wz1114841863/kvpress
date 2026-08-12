@@ -28,6 +28,7 @@ def test_kvzap_trace_recorder_roundtrip(tmp_path):
         matured_start=0,
         matured_scores=prefill_scores[..., :3],
         matured_drop_mask=prefill_matured,
+        cumulative_drop_mask=torch.nn.functional.pad(prefill_matured, (0, 2)),
         score_buffer_length=2,
         cumulative_masked_tokens=int(prefill_matured.sum()),
         compression_ratio=float(prefill_matured.sum() / 10),
@@ -47,6 +48,9 @@ def test_kvzap_trace_recorder_roundtrip(tmp_path):
         matured_start=3,
         matured_scores=prefill_scores[..., 3:4],
         matured_drop_mask=decode_matured,
+        cumulative_drop_mask=torch.cat(
+            [prefill_matured, decode_matured, torch.zeros(1, 2, 2, dtype=torch.bool)], dim=-1
+        ),
         score_buffer_length=2,
         cumulative_masked_tokens=int(prefill_matured.sum() + decode_matured.sum()),
         compression_ratio=float((prefill_matured.sum() + decode_matured.sum()) / 12),
@@ -101,6 +105,7 @@ def test_kvzap_trace_rejects_batch_greater_than_one():
             matured_start=None,
             matured_scores=None,
             matured_drop_mask=None,
+            cumulative_drop_mask=torch.zeros(2, 1, 3, dtype=torch.bool),
             score_buffer_length=3,
             cumulative_masked_tokens=0,
             compression_ratio=0.0,

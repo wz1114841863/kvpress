@@ -48,6 +48,7 @@ class KVzapTraceRecorder:
         matured_start: int | None,
         matured_scores: torch.Tensor | None,
         matured_drop_mask: torch.Tensor | None,
+        cumulative_drop_mask: torch.Tensor,
         score_buffer_length: int,
         cumulative_masked_tokens: int,
         compression_ratio: float,
@@ -72,18 +73,37 @@ class KVzapTraceRecorder:
                 raise ValueError("matured_scores and matured_drop_mask must have matching [1,H,T] shapes")
             matured_drop = matured_drop_mask.detach().to(device="cpu").numpy()[0].astype(np.bool_, copy=False)
 
+        if cumulative_drop_mask.ndim != 3 or cumulative_drop_mask.shape[0] != 1:
+            raise ValueError(
+                f"cumulative_drop_mask must be shaped [1,H,T], got {tuple(cumulative_drop_mask.shape)}"
+            )
+        if cumulative_drop_mask.shape[1] != scores_cpu.shape[0] or cumulative_drop_mask.shape[2] != cache_len:
+            raise ValueError(
+                f"cumulative_drop_mask shape {tuple(cumulative_drop_mask.shape)} is incompatible with "
+                f"scores heads={scores_cpu.shape[0]} and cache_len={cache_len}"
+            )
+        cumulative_drop = (
+            cumulative_drop_mask.detach().to(device="cpu").numpy()[0].astype(np.bool_, copy=True)
+        )
+
         step = self._layer_call_counts.get(layer_idx, 0)
         self._layer_call_counts[layer_idx] = step + 1
-        per_head_cumulative = []
+        inferred_per_head_cumulative = []
         for head_idx in range(scores_cpu.shape[0]):
             key = (layer_idx, head_idx)
             self._cumulative_drops[key] = self._cumulative_drops.get(key, 0) + int(matured_drop[head_idx].sum())
-            per_head_cumulative.append(self._cumulative_drops[key])
-        if sum(per_head_cumulative) != cumulative_masked_tokens:
+            inferred_per_head_cumulative.append(self._cumulative_drops[key])
+        per_head_cumulative = cumulative_drop.sum(axis=-1).astype(np.int64).tolist()
+        inferred_total = sum(inferred_per_head_cumulative)
+        exact_total = sum(per_head_cumulative)
+        if exact_total != cumulative_masked_tokens:
             raise AssertionError(
-                f"Layer {layer_idx} trace counted {sum(per_head_cumulative)} drops, "
-                f"but DMS reports {cumulative_masked_tokens}"
+                f"Canonical DMS mask counted {exact_total} drops, but DMS reports {cumulative_masked_tokens}"
             )
+        resynchronized = inferred_total != exact_total
+        if resynchronized:
+            for head_idx, count in enumerate(per_head_cumulative):
+                self._cumulative_drops[(layer_idx, head_idx)] = count
 
         self.events.append(
             {
@@ -99,6 +119,8 @@ class KVzapTraceRecorder:
                 "threshold": threshold,
                 "matured_start": matured_start,
                 "matured_drop": matured_drop,
+                "cumulative_drop": cumulative_drop,
+                "incremental_resynchronized": resynchronized,
                 "score_buffer_length": score_buffer_length,
                 "per_head_cumulative_drops": per_head_cumulative,
                 "compression_ratio": compression_ratio,
@@ -116,7 +138,6 @@ class KVzapTraceRecorder:
         score_valid_mask = np.zeros(shape, dtype=np.bool_)
         predicted_drop_mask = np.zeros(shape, dtype=np.bool_)
         final_drop_mask = np.zeros(shape, dtype=np.bool_)
-        matured_positions = np.zeros(shape, dtype=np.bool_)
 
         for event in self.events:
             layer = event["layer"]
@@ -132,18 +153,8 @@ class KVzapTraceRecorder:
             score_valid_mask[layer, :, start:end] = True
             predicted_drop_mask[layer, :, start:end] = event["predicted_drop"]
 
-            matured_start = event["matured_start"]
-            if matured_start is not None:
-                matured_end = matured_start + event["matured_drop"].shape[-1]
-                if matured_start < 0 or matured_end > tokens:
-                    raise ValueError(f"Invalid matured interval [{matured_start}, {matured_end}) for T={tokens}")
-                if matured_positions[layer, :, matured_start:matured_end].any():
-                    raise ValueError("Overlapping final-drop intervals are not supported")
-                predicted_matured = predicted_drop_mask[layer, :, matured_start:matured_end]
-                if not np.array_equal(predicted_matured, event["matured_drop"]):
-                    raise AssertionError("Matured drop decision differs from the previously recorded prediction")
-                matured_positions[layer, :, matured_start:matured_end] = True
-                final_drop_mask[layer, :, matured_start:matured_end] = event["matured_drop"]
+            cumulative_end = event["cumulative_drop"].shape[-1]
+            final_drop_mask[layer, :, :cumulative_end] = event["cumulative_drop"]
 
         return {
             "scores": scores,
@@ -194,6 +205,7 @@ class KVzapTraceRecorder:
                         "newly_dropped_tokens": newly_dropped,
                         "logical_kept_tokens": event["cache_len"] - cumulative_drops,
                         "cumulative_dropped_tokens": cumulative_drops,
+                        "incremental_resynchronized": event["incremental_resynchronized"],
                     }
                 )
         return rows
@@ -225,6 +237,9 @@ class KVzapTraceRecorder:
             "mask_encoding": "unpacked pilot trace",
             "near_threshold_epsilon": self.near_threshold_epsilon,
             "contains_attention_matrix": False,
+            "incremental_resynchronization_events": sum(
+                event["incremental_resynchronized"] for event in self.events
+            ),
             "summary_format": "csv",
             **manifest,
         }

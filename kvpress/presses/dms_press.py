@@ -183,6 +183,7 @@ class DMSPress(BasePress):
                 matured_start=matured_start_int,
                 matured_scores=matured_scores,
                 matured_drop_mask=matured_drop_mask,
+                cumulative_drop_mask=masked_key_mask,
                 score_buffer_length=self.scores_buffer[layer_idx].shape[-1],
                 cumulative_masked_tokens=n_masked,
                 compression_ratio=self.compression_ratios[layer_idx],
