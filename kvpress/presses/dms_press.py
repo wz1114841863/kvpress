@@ -7,7 +7,7 @@ from typing import Callable, Optional
 import torch
 import torch.nn as nn
 
-from kvpress.presses.base_press import BasePress
+from kvpress.presses.base_press import BasePress, is_prefilling
 from kvpress.presses.scorer_press import ScorerPress
 from kvpress.utils import extract_keys_and_values
 
@@ -74,16 +74,11 @@ class DMSPress(BasePress):
         hidden_states = kwargs["hidden_states"]
         cache = kwargs["past_key_values"]
         q_len = hidden_states.shape[1]
+        cache_len = kwargs["cache_position"][-1] + 1
+        prefilling = is_prefilling(kwargs["cache_position"], q_len)
 
         # Extract layer index as int for type safety
         layer_idx: int = module.layer_idx  # type: ignore[assignment]
-
-        # DMS must use the actual per-layer dense KV length to identify a new
-        # cache. cache_position can be absolute, offset, or inconsistent across
-        # layers in some pipeline/Transformers paths.
-        keys, values = extract_keys_and_values(cache, layer_idx)
-        cache_len = keys.shape[2]
-        prefilling = cache_len == q_len
 
         # Reset the scores buffer and compression ratios if we are in prefilling
         if prefilling and (layer_idx == 0):
@@ -94,39 +89,9 @@ class DMSPress(BasePress):
         if not prefilling and not self.decoding:
             return output
 
-        if not prefilling and layer_idx not in self.scores_buffer:
-            raise RuntimeError(
-                f"DMS score buffer for layer {layer_idx} is missing before decoding "
-                f"(q_len={q_len}, cache_len={int(cache_len)}). Run context prefill with the same DMSPress state."
-            )
-
         # Compute importance scores for the new tokens using the underlying scorer press
+        keys, values = extract_keys_and_values(cache, layer_idx)
         scores = self.press.score(module, hidden_states, keys[:, :, -q_len:], values[:, :, -q_len:], None, kwargs)
-
-        # Keep a boolean mask as the canonical DMS state. Integer indices are
-        # rebuilt from it before attention instead of being retained across
-        # forwards, because long-lived CUDA index tensors can become stale.
-        bsz, num_key_value_heads = keys.shape[:2]
-        masked_key_mask = getattr(module, "_dms_masked_key_mask", None)
-        if prefilling or masked_key_mask is None:
-            masked_key_mask = torch.zeros(
-                (bsz, num_key_value_heads, cache_len),
-                dtype=torch.bool,
-                device=keys.device,
-            )
-        elif masked_key_mask.shape[2] < cache_len:
-            padding = torch.zeros(
-                (bsz, num_key_value_heads, cache_len - masked_key_mask.shape[2]),
-                dtype=torch.bool,
-                device=keys.device,
-            )
-            masked_key_mask = torch.cat([masked_key_mask, padding], dim=-1)
-        elif masked_key_mask.shape != (bsz, num_key_value_heads, cache_len):
-            raise RuntimeError(
-                f"DMS mask/cache shape mismatch at layer {layer_idx}: "
-                f"mask_shape={tuple(masked_key_mask.shape)}, "
-                f"expected={(bsz, num_key_value_heads, cache_len)}"
-            )
 
         # Accumulate scores in the buffer: reset during prefill, append during decoding
         if prefilling:
@@ -147,22 +112,30 @@ class DMSPress(BasePress):
             matured_scores = scores_to_evict
             matured_drop_mask = scores_to_evict < self.threshold
             matured_start = cache_len - scores_to_evict.shape[2] - self.sliding_window_size
-            if matured_start < 0:
-                raise RuntimeError(
-                    f"DMS buffer/cache mismatch at layer {layer_idx}: "
-                    f"matured_start={matured_start}, cache_len={cache_len}, "
-                    f"matured_tokens={scores_to_evict.shape[2]}, window={self.sliding_window_size}"
-                )
 
-            matured_end = matured_start + matured_drop_mask.shape[2]
-            masked_key_mask[..., matured_start:matured_end] |= matured_drop_mask
+            # Find tokens below threshold: returns (batch_idx, head_idx, token_idx) tuples
+            new_masked_key_indices = list(torch.where(matured_drop_mask))
 
-        module._dms_masked_key_mask = masked_key_mask
-        module.masked_key_indices = tuple(torch.where(masked_key_mask))
+            if len(new_masked_key_indices[0]) > 0:
+                # Convert buffer-relative indices to cache-absolute indices
+                # During prefill shift=0; during decoding we offset by the number of previously processed tokens
+                new_masked_key_indices[-1] += matured_start
+
+                # Merge new masked indices with existing ones
+                if module.masked_key_indices is None:
+                    module.masked_key_indices = new_masked_key_indices  # type: ignore[assignment]
+                else:
+                    module.masked_key_indices = list(  # type: ignore[assignment]
+                        torch.cat([i, new_i]) for i, new_i in zip(module.masked_key_indices, new_masked_key_indices)
+                    )
 
         # Track compression ratio as the fraction of masked tokens
-        n_masked = len(module.masked_key_indices[0])
-        self.compression_ratios[layer_idx] = n_masked / (bsz * num_key_value_heads * cache_len)
+        if module.masked_key_indices is not None:
+            bsz, num_key_value_heads, cache_len, _ = keys.shape
+            n_masked = len(module.masked_key_indices[0])  # type: ignore[index]
+            self.compression_ratios[layer_idx] = n_masked / (bsz * num_key_value_heads * cache_len)
+        else:
+            self.compression_ratios[layer_idx] = 0
 
         if self.trace_callback is not None:
             cache_len_int = int(cache_len.item() if isinstance(cache_len, torch.Tensor) else cache_len)
@@ -171,6 +144,7 @@ class DMSPress(BasePress):
                 if matured_start is None
                 else int(matured_start.item() if isinstance(matured_start, torch.Tensor) else matured_start)
             )
+            n_masked = 0 if module.masked_key_indices is None else len(module.masked_key_indices[0])
             self.trace_callback(
                 layer_idx=layer_idx,
                 prefilling=prefilling,
@@ -183,7 +157,6 @@ class DMSPress(BasePress):
                 matured_start=matured_start_int,
                 matured_scores=matured_scores,
                 matured_drop_mask=matured_drop_mask,
-                cumulative_drop_mask=masked_key_mask,
                 score_buffer_length=self.scores_buffer[layer_idx].shape[-1],
                 cumulative_masked_tokens=n_masked,
                 compression_ratio=self.compression_ratios[layer_idx],

@@ -5,14 +5,7 @@ import json
 
 import pytest
 
-from kvpress import KVzapPress
-from tools.run_kvzap_trace import (
-    PRESETS,
-    build_builtin_request,
-    describe_answer_difference,
-    load_jsonl_request,
-    make_dms_press,
-)
+from tools.run_kvzap_trace import PRESETS, build_builtin_request, load_jsonl_request
 
 
 @pytest.mark.parametrize("preset", PRESETS)
@@ -59,18 +52,3 @@ def test_load_jsonl_request_adds_metadata_defaults(tmp_path):
     selected = load_jsonl_request(path, request_id=None)
 
     assert selected == {**request, "dataset": "custom", "subset": "custom"}
-
-
-def test_trace_passes_use_independent_dms_state():
-    scorer = KVzapPress(model_type="mlp")
-    first = make_dms_press(scorer, threshold=-4.0, window_size=128)
-    second = make_dms_press(scorer, threshold=-4.0, window_size=128)
-
-    assert first.press is second.press
-    assert first.scores_buffer is not second.scores_buffer
-
-
-def test_describe_answer_difference():
-    description = describe_answer_difference("ORCHID-7429", "ORCHARD-7429")
-    assert "first differing character=4" in description
-    assert "trace-off length=11" in description

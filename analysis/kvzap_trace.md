@@ -31,10 +31,8 @@ per-layer compression ratios, and every final masked index. It also reconstructs
 the final mask from trace events, compares that mask with `masked_key_indices`,
 and verifies that the newest 128 tokens are not dropped.
 
-During generation, trace mode makes immutable tensor clones on the current
-device. It performs the GPU-to-CPU synchronization and NumPy aggregation only
-after generation finishes. The extra allocations still make trace mode
-unsuitable for performance measurement.
+Trace mode copies score and mask tensors to CPU and therefore must not be used
+for performance measurement.
 
 ## Lightweight checks
 
@@ -86,21 +84,6 @@ The retrieval answer may terminate well before 384 tokens; that is expected.
 The three output directories must be generated successfully before they are
 passed to the multi-request analyzer.
 
-Each trace-off/trace-on pass uses an independent `DMSPress` runtime state while
-sharing the already loaded predictor. This prevents a short-answer request from
-leaking or losing the score buffer between equivalence passes. The DMS hook also
-uses the actual per-layer dense KV length, rather than `cache_position`, to
-identify a newly created cache. This keeps phase detection consistent across
-layers when Transformers supplies absolute or layer-dependent cache positions.
-The trace exporter clears request-local attention masks before each pass and
-enables a diagnostic bounds check. If a mask is invalid, it reports the pass,
-layer, key shape, and index limits before launching CUDA advanced indexing.
-For trace collection it applies the DMS mask directly as a per-head additive
-attention mask. This represents the intended zero-attention semantics and avoids
-the optional fake-key hyperplane search, which is not guaranteed to find a
-solution for every set of grouped queries. The manifest records this backend as
-`per_head_additive_attention_mask`; normal KVPress runs keep their default path.
-
 ### Custom request JSONL
 
 Each JSONL row requires `request_id`, `context`, and `question`. `dataset` and
@@ -143,12 +126,6 @@ answer.json
 masks unpacked for simple inspection; `manifest.json` records this explicitly.
 Later large benchmark traces should use sharding and bit packing as specified in
 `TRACE_SCHEMA.md`.
-
-The canonical cumulative boolean mask is recorded directly at each event. The
-incremental maturity counters remain useful for decoding statistics, but if
-they diverge from the applied mask the recorder resynchronizes them and records
-`incremental_resynchronization_events` in the manifest instead of aborting the
-trace. A nonzero value must be reported when interpreting decoding-event rows.
 
 ## What to send back
 

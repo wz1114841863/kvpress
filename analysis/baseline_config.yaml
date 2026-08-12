@@ -1,8 +1,8 @@
 schema_version: baseline-1.0
-experiment_id: kvzap-baseline-20260812T033812Z
+experiment_id: kvzap-baseline-20260806T043908Z
 config_hash: b1d3a4704b3cba56a1d31d47054c3e886bfff11bdfb8c0ca2ae89315433da1e6
-git_commit: e83298d4a83ab5a8e94c93d60ae2b92ea81e62b7
-created_at: '2026-08-12T03:38:12.032716+00:00'
+git_commit: efbaefeb315ee8c50a44923f9dbc7eb314d62f27
+created_at: '2026-08-06T04:39:08.925496+00:00'
 model: Qwen/Qwen3-8B
 predictor: nvidia/KVzap-mlp-Qwen3-8B
 predictor_revision: bd5c5917846617da4311539859c137a262a6348b
@@ -26,7 +26,7 @@ requests:
 - request_id: builtin_long_hardware_answer
   subset: long_generation
   max_new_tokens: 256
-torch_version: 2.11.0+cu130
-transformers_version: 4.57.3
+torch_version: 2.10.0+cu128
+transformers_version: 5.0.0
 cuda_available: true
-gpu: NVIDIA GeForce RTX 3060 Laptop GPU
+gpu: NVIDIA A100-SXM-64GB

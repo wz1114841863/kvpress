@@ -21,8 +21,8 @@ TENSOR_LAYOUT = "L,H,T"
 class KVzapTraceRecorder:
     """Collect DMS/KVzap score and mask events for one batch-size-one request.
 
-    The hook only clones tensors on their current device. CPU conversion and
-    NumPy aggregation are deferred until generation has completed.
+    The recorder deliberately performs device-to-CPU copies. It is intended for
+    trace collection, not latency measurement.
     """
 
     def __init__(self, request_id: str, near_threshold_epsilon: float = 0.25):
@@ -32,7 +32,7 @@ class KVzapTraceRecorder:
         self.near_threshold_epsilon = near_threshold_epsilon
         self.events: list[dict[str, Any]] = []
         self._layer_call_counts: dict[int, int] = {}
-        self._materialized = False
+        self._cumulative_drops: dict[tuple[int, int], int] = {}
 
     def __call__(
         self,
@@ -48,7 +48,6 @@ class KVzapTraceRecorder:
         matured_start: int | None,
         matured_scores: torch.Tensor | None,
         matured_drop_mask: torch.Tensor | None,
-        cumulative_drop_mask: torch.Tensor,
         score_buffer_length: int,
         cumulative_masked_tokens: int,
         compression_ratio: float,
@@ -60,31 +59,31 @@ class KVzapTraceRecorder:
         if predicted_drop_mask.shape != scores.shape:
             raise ValueError("predicted_drop_mask and scores must have matching [1,H,T] shapes")
 
+        scores_cpu = scores.detach().to(dtype=torch.float32, device="cpu").numpy()[0]
+        predicted_drop = predicted_drop_mask.detach().to(device="cpu").numpy()[0].astype(np.bool_, copy=False)
         if matured_drop_mask is None:
             if matured_scores is not None or matured_start is not None:
                 raise ValueError("Matured trace fields must either all be set or all be None")
-            matured_drop = torch.zeros(
-                (1, scores.shape[1], 0), dtype=torch.bool, device=scores.device
-            )
+            matured_drop = np.zeros((scores_cpu.shape[0], 0), dtype=np.bool_)
         else:
             if matured_scores is None or matured_start is None:
                 raise ValueError("Matured trace fields must either all be set or all be None")
             if matured_drop_mask.shape != matured_scores.shape or matured_drop_mask.shape[0] != 1:
                 raise ValueError("matured_scores and matured_drop_mask must have matching [1,H,T] shapes")
-            matured_drop = matured_drop_mask.detach().clone()
-
-        if cumulative_drop_mask.ndim != 3 or cumulative_drop_mask.shape[0] != 1:
-            raise ValueError(
-                f"cumulative_drop_mask must be shaped [1,H,T], got {tuple(cumulative_drop_mask.shape)}"
-            )
-        if cumulative_drop_mask.shape[1] != scores.shape[1] or cumulative_drop_mask.shape[2] != cache_len:
-            raise ValueError(
-                f"cumulative_drop_mask shape {tuple(cumulative_drop_mask.shape)} is incompatible with "
-                f"scores heads={scores.shape[1]} and cache_len={cache_len}"
-            )
+            matured_drop = matured_drop_mask.detach().to(device="cpu").numpy()[0].astype(np.bool_, copy=False)
 
         step = self._layer_call_counts.get(layer_idx, 0)
         self._layer_call_counts[layer_idx] = step + 1
+        per_head_cumulative = []
+        for head_idx in range(scores_cpu.shape[0]):
+            key = (layer_idx, head_idx)
+            self._cumulative_drops[key] = self._cumulative_drops.get(key, 0) + int(matured_drop[head_idx].sum())
+            per_head_cumulative.append(self._cumulative_drops[key])
+        if sum(per_head_cumulative) != cumulative_masked_tokens:
+            raise AssertionError(
+                f"Layer {layer_idx} trace counted {sum(per_head_cumulative)} drops, "
+                f"but DMS reports {cumulative_masked_tokens}"
+            )
 
         self.events.append(
             {
@@ -94,50 +93,19 @@ class KVzapTraceRecorder:
                 "cache_len": cache_len,
                 "q_len": q_len,
                 "score_start": score_start,
-                "scores": scores.detach().clone(),
+                "scores": scores_cpu,
                 "original_score_dtype": str(scores.dtype),
-                "predicted_drop": predicted_drop_mask.detach().clone(),
+                "predicted_drop": predicted_drop,
                 "threshold": threshold,
                 "matured_start": matured_start,
                 "matured_drop": matured_drop,
-                "cumulative_drop": cumulative_drop_mask.detach().clone(),
                 "score_buffer_length": score_buffer_length,
-                "reported_cumulative_masked_tokens": cumulative_masked_tokens,
+                "per_head_cumulative_drops": per_head_cumulative,
                 "compression_ratio": compression_ratio,
             }
         )
 
-    def materialize(self) -> None:
-        """Synchronize recorded tensors once, after model generation has ended."""
-        if self._materialized:
-            return
-        inferred: dict[tuple[int, int], int] = {}
-        for event in self.events:
-            event["scores"] = event["scores"].to(dtype=torch.float32, device="cpu").numpy()[0]
-            event["predicted_drop"] = event["predicted_drop"].to(device="cpu").numpy()[0].astype(np.bool_)
-            event["matured_drop"] = event["matured_drop"].to(device="cpu").numpy()[0].astype(np.bool_)
-            event["cumulative_drop"] = event["cumulative_drop"].to(device="cpu").numpy()[0].astype(np.bool_)
-            inferred_counts = []
-            for head_idx in range(event["scores"].shape[0]):
-                key = (event["layer"], head_idx)
-                inferred[key] = inferred.get(key, 0) + int(event["matured_drop"][head_idx].sum())
-                inferred_counts.append(inferred[key])
-            exact_counts = event["cumulative_drop"].sum(axis=-1).astype(np.int64).tolist()
-            exact_total = sum(exact_counts)
-            if exact_total != event["reported_cumulative_masked_tokens"]:
-                raise AssertionError(
-                    f"Canonical DMS mask counted {exact_total} drops, but DMS reports "
-                    f"{event['reported_cumulative_masked_tokens']}"
-                )
-            event["incremental_resynchronized"] = inferred_counts != exact_counts
-            event["per_head_cumulative_drops"] = exact_counts
-            if event["incremental_resynchronized"]:
-                for head_idx, count in enumerate(exact_counts):
-                    inferred[(event["layer"], head_idx)] = count
-        self._materialized = True
-
     def to_arrays(self) -> dict[str, np.ndarray]:
-        self.materialize()
         if not self.events:
             raise RuntimeError("No trace events were recorded")
         layers = max(event["layer"] for event in self.events) + 1
@@ -148,6 +116,7 @@ class KVzapTraceRecorder:
         score_valid_mask = np.zeros(shape, dtype=np.bool_)
         predicted_drop_mask = np.zeros(shape, dtype=np.bool_)
         final_drop_mask = np.zeros(shape, dtype=np.bool_)
+        matured_positions = np.zeros(shape, dtype=np.bool_)
 
         for event in self.events:
             layer = event["layer"]
@@ -163,8 +132,18 @@ class KVzapTraceRecorder:
             score_valid_mask[layer, :, start:end] = True
             predicted_drop_mask[layer, :, start:end] = event["predicted_drop"]
 
-            cumulative_end = event["cumulative_drop"].shape[-1]
-            final_drop_mask[layer, :, :cumulative_end] = event["cumulative_drop"]
+            matured_start = event["matured_start"]
+            if matured_start is not None:
+                matured_end = matured_start + event["matured_drop"].shape[-1]
+                if matured_start < 0 or matured_end > tokens:
+                    raise ValueError(f"Invalid matured interval [{matured_start}, {matured_end}) for T={tokens}")
+                if matured_positions[layer, :, matured_start:matured_end].any():
+                    raise ValueError("Overlapping final-drop intervals are not supported")
+                predicted_matured = predicted_drop_mask[layer, :, matured_start:matured_end]
+                if not np.array_equal(predicted_matured, event["matured_drop"]):
+                    raise AssertionError("Matured drop decision differs from the previously recorded prediction")
+                matured_positions[layer, :, matured_start:matured_end] = True
+                final_drop_mask[layer, :, matured_start:matured_end] = event["matured_drop"]
 
         return {
             "scores": scores,
@@ -195,7 +174,6 @@ class KVzapTraceRecorder:
         return arrays
 
     def _decoding_rows(self) -> list[dict[str, Any]]:
-        self.materialize()
         rows = []
         for event in self.events:
             matured_tokens = event["matured_drop"].shape[-1]
@@ -216,7 +194,6 @@ class KVzapTraceRecorder:
                         "newly_dropped_tokens": newly_dropped,
                         "logical_kept_tokens": event["cache_len"] - cumulative_drops,
                         "cumulative_dropped_tokens": cumulative_drops,
-                        "incremental_resynchronized": event["incremental_resynchronized"],
                     }
                 )
         return rows
@@ -248,9 +225,6 @@ class KVzapTraceRecorder:
             "mask_encoding": "unpacked pilot trace",
             "near_threshold_epsilon": self.near_threshold_epsilon,
             "contains_attention_matrix": False,
-            "incremental_resynchronization_events": sum(
-                event["incremental_resynchronized"] for event in self.events
-            ),
             "summary_format": "csv",
             **manifest,
         }

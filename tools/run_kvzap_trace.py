@@ -221,17 +221,6 @@ def snapshot_masked_indices(model) -> list[tuple[torch.Tensor, torch.Tensor, tor
     return snapshots
 
 
-def prepare_model_for_trace_pass(model, pass_name: str) -> None:
-    """Clear request-local mask state and enable concise bounds diagnostics."""
-    for layer in language_model_layers(model):
-        attention = layer.self_attn
-        attention.masked_key_indices = None
-        attention._dms_masked_key_mask = None
-        attention._kvpress_validate_mask_indices = True
-        attention._kvpress_use_headwise_attention_mask = True
-        attention._kvpress_diagnostic_context = pass_name
-
-
 def assert_same_indices(
     expected: list[tuple[torch.Tensor, torch.Tensor, torch.Tensor] | None],
     actual: list[tuple[torch.Tensor, torch.Tensor, torch.Tensor] | None],
@@ -244,19 +233,6 @@ def assert_same_indices(
         if left is not None and right is not None:
             if any(not torch.equal(left_item, right_item) for left_item, right_item in zip(left, right)):
                 raise AssertionError(f"Layer {layer_idx} masked indices differ with tracing enabled")
-
-
-def describe_answer_difference(expected: str, actual: str) -> str:
-    common = 0
-    for left, right in zip(expected, actual):
-        if left != right:
-            break
-        common += 1
-    return (
-        f"first differing character={common}, trace-off length={len(expected)}, "
-        f"trace-on length={len(actual)}, trace-off suffix={expected[common:common + 80]!r}, "
-        f"trace-on suffix={actual[common:common + 80]!r}"
-    )
 
 
 def assert_trace_matches_indices(
@@ -295,22 +271,6 @@ def run_request(
         press=press,
         max_new_tokens=max_new_tokens,
         enable_thinking=False,
-    )
-
-
-def make_dms_press(
-    scorer: KVzapPress,
-    *,
-    threshold: float,
-    window_size: int,
-    trace_callback: KVzapTraceRecorder | None = None,
-) -> DMSPress:
-    return DMSPress(
-        press=scorer,
-        threshold=threshold,
-        sliding_window_size=window_size,
-        decoding=True,
-        trace_callback=trace_callback,
     )
 
 
@@ -359,37 +319,27 @@ def main() -> None:
     if context_tokens + question_tokens <= args.window_size:
         raise ValueError("Prompt does not exceed the protected window; increase --context-repetitions")
 
-    scorer = KVzapPress(model_type="mlp")
-    untraced_press = make_dms_press(
-        scorer,
+    press = DMSPress(
+        press=KVzapPress(model_type="mlp"),
         threshold=args.threshold,
-        window_size=args.window_size,
+        sliding_window_size=args.window_size,
+        decoding=True,
     )
     print(f"Request: {request_id} ({dataset}/{subset})")
     print("Pass 1/2: tracing disabled...")
-    prepare_model_for_trace_pass(pipe.model, "trace-off")
-    untraced_output = run_request(pipe, untraced_press, context, question, args.seed, args.max_new_tokens)
-    untraced_ratios = dict(untraced_press.compression_ratios)
+    untraced_output = run_request(pipe, press, context, question, args.seed, args.max_new_tokens)
+    untraced_ratios = dict(press.compression_ratios)
     untraced_indices = snapshot_masked_indices(pipe.model)
 
     recorder = KVzapTraceRecorder(request_id, args.near_threshold_epsilon)
-    traced_press = make_dms_press(
-        scorer,
-        threshold=args.threshold,
-        window_size=args.window_size,
-        trace_callback=recorder,
-    )
+    press.trace_callback = recorder
     print("Pass 2/2: tracing enabled (diagnostic CPU copies are expected)...")
-    prepare_model_for_trace_pass(pipe.model, "trace-on")
-    traced_output = run_request(pipe, traced_press, context, question, args.seed, args.max_new_tokens)
-    traced_ratios = dict(traced_press.compression_ratios)
+    traced_output = run_request(pipe, press, context, question, args.seed, args.max_new_tokens)
+    traced_ratios = dict(press.compression_ratios)
     traced_indices = snapshot_masked_indices(pipe.model)
 
     if untraced_output["answer"] != traced_output["answer"]:
-        raise AssertionError(
-            "Generated answer changed with tracing enabled; no trace was written. "
-            + describe_answer_difference(untraced_output["answer"], traced_output["answer"])
-        )
+        raise AssertionError("Generated answer changed with tracing enabled; no trace was written")
     if untraced_ratios != traced_ratios:
         raise AssertionError("Per-layer compression ratios changed with tracing enabled; no trace was written")
     assert_same_indices(untraced_indices, traced_indices)
@@ -432,7 +382,6 @@ def main() -> None:
         "dtype": str(next(pipe.model.parameters()).dtype),
         "seed": args.seed,
         "pruning_timing": "after_attention",
-        "mask_application": "per_head_additive_attention_mask",
         "decoding_enabled": True,
         "trace_equivalence_verified": True,
         "physical_compression_measured": False,
@@ -473,7 +422,7 @@ def main() -> None:
     )
 
     print("Trace equivalence verified: answer, per-layer ratios, and masked indices are identical.")
-    print(f"Logical removed fraction: {traced_press.compression_ratio:.2%}")
+    print(f"Logical removed fraction: {press.compression_ratio:.2%}")
     for name, path in {**paths, "answer": answers_path}.items():
         print(f"  {name}: {path} ({path.stat().st_size / 1024**2:.2f} MiB)")
     print("These files describe logical masks only; they do not demonstrate physical KV-memory reduction or speedup.")

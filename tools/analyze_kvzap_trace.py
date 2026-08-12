@@ -238,9 +238,6 @@ def analyze_trace(
         "predicted_removed_fraction": predicted_removed / logical_total,
         "protected_recent_predicted_drops": recent_predicted,
         "protected_recent_final_drops": int(final[..., cold_tokens:].sum()),
-        "incremental_resynchronization_events": int(
-            manifest.get("incremental_resynchronization_events", 0)
-        ),
     }
 
     layer_head_rows = []
