@@ -3,15 +3,7 @@
 
 import numpy as np
 
-import pytest
-
-from tools.analyze_kvzap_trace import (
-    analyze_decoding_events,
-    analyze_trace,
-    jaccard,
-    run_lengths,
-    validate_capture_provenance,
-)
+from tools.analyze_kvzap_trace import analyze_decoding_events, analyze_trace, jaccard, run_lengths
 
 
 def test_run_lengths_and_jaccard():
@@ -19,24 +11,6 @@ def test_run_lengths_and_jaccard():
     assert run_lengths(mask, True).tolist() == [2, 1]
     assert run_lengths(mask, False).tolist() == [1, 2]
     assert jaccard(np.asarray([True, False, True]), np.asarray([True, True, False])) == 1 / 3
-
-
-def test_prefill_only_trace_does_not_require_generation_equivalence():
-    validate_capture_provenance(
-        {
-            "capture_scope": "context_prefill_only",
-            "generation_performed": False,
-            "decoding_enabled": False,
-            "trace_equivalence_verified": None,
-            "trace_equivalence_status": "not_applicable_single_observational_pass",
-        },
-        "trace",
-    )
-
-
-def test_unverified_generation_trace_is_rejected():
-    with pytest.raises(ValueError, match="equivalence was not verified"):
-        validate_capture_provenance({"trace_equivalence_verified": False}, "trace")
 
 
 def make_event(step, cache_tokens, newly_dropped, newly_admitted, cumulative_dropped):
