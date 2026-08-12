@@ -58,6 +58,34 @@ def rebuild_dms_masked_key_indices(module, key: torch.Tensor) -> None:
     module.masked_key_indices = tuple(torch.where(mask))
 
 
+def apply_headwise_attention_mask(
+    module,
+    query: torch.Tensor,
+    key: torch.Tensor,
+    attention_mask: torch.Tensor | None,
+) -> torch.Tensor:
+    """Apply the canonical DMS mask directly to grouped-query attention heads."""
+    mask = module._dms_masked_key_mask
+    bsz, num_heads, query_tokens, _ = query.shape
+    num_key_value_heads = key.shape[1]
+    if num_heads % num_key_value_heads:
+        raise RuntimeError(f"Query heads {num_heads} are not divisible by KV heads {num_key_value_heads}")
+    num_groups = num_heads // num_key_value_heads
+    head_mask = mask.repeat_interleave(num_groups, dim=1).unsqueeze(2)
+    head_mask = head_mask.expand(bsz, num_heads, query_tokens, key.shape[2])
+    if attention_mask is None:
+        attention_mask = torch.zeros(
+            (bsz, num_heads, query_tokens, key.shape[2]),
+            dtype=query.dtype,
+            device=query.device,
+        )
+    elif attention_mask.dtype == torch.bool:
+        return attention_mask.expand(bsz, num_heads, query_tokens, key.shape[2]) & ~head_mask
+    else:
+        attention_mask = attention_mask.expand(bsz, num_heads, query_tokens, key.shape[2]).clone()
+    return attention_mask.masked_fill(head_mask, torch.finfo(attention_mask.dtype).min)
+
+
 def search_hyperplane(X, max_iter: int = 1000):
     """
     Given a tensor X of shape (bsz, seq_len, head_dim), search for a hyperplane Y (bsz, head_dim)
@@ -118,21 +146,24 @@ def attention_patch(func):
             module._dms_masked_key_mask = None
         elif getattr(module, "masked_key_indices", None) is not None:
             rebuild_dms_masked_key_indices(module, key)
-            # Decoding: build fake keys k s.t. exp(<q, k>) = 0
-            bsz, num_heads, seq_len, head_dim = query.shape
-            num_key_value_heads = key.shape[1]
-            num_groups = num_heads // num_key_value_heads
-
-            # Build a fake key k per key group such that for every query q, exp(<q, k>) = 0
-            q = query.view(bsz, num_key_value_heads, num_groups, seq_len, head_dim)
-            q = q.reshape(bsz * num_key_value_heads, num_groups * seq_len, head_dim)
-            k = search_hyperplane(q)
-            k = k.view(bsz, num_key_value_heads, head_dim)
-
-            # At indices, update the keys to the fake keys
-            batch_indices, head_indices, seq_indices = module.masked_key_indices
             validate_masked_key_indices(module, key)
-            key[batch_indices, head_indices, seq_indices] = k[batch_indices, head_indices]
+            if getattr(module, "_kvpress_use_headwise_attention_mask", False):
+                attention_mask = apply_headwise_attention_mask(module, query, key, attention_mask)
+            else:
+                # Decoding: build fake keys k s.t. exp(<q, k>) = 0
+                bsz, num_heads, seq_len, head_dim = query.shape
+                num_key_value_heads = key.shape[1]
+                num_groups = num_heads // num_key_value_heads
+
+                # Build a fake key k per key group such that for every query q, exp(<q, k>) = 0
+                q = query.view(bsz, num_key_value_heads, num_groups, seq_len, head_dim)
+                q = q.reshape(bsz * num_key_value_heads, num_groups * seq_len, head_dim)
+                k = search_hyperplane(q)
+                k = k.view(bsz, num_key_value_heads, head_dim)
+
+                # At indices, update the keys to the fake keys
+                batch_indices, head_indices, seq_indices = module.masked_key_indices
+                key[batch_indices, head_indices, seq_indices] = k[batch_indices, head_indices]
 
         # see https://github.com/NVIDIA/kvpress/pull/115#issuecomment-3183785597
         # cu_seq_lens_k are only in kwargs if model.generate is used.

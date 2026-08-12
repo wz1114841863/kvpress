@@ -6,7 +6,11 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from kvpress.attention_patch import rebuild_dms_masked_key_indices, validate_masked_key_indices
+from kvpress.attention_patch import (
+    apply_headwise_attention_mask,
+    rebuild_dms_masked_key_indices,
+    validate_masked_key_indices,
+)
 
 
 def test_mask_validation_is_disabled_by_default():
@@ -60,3 +64,22 @@ def test_dms_indices_are_rebuilt_from_boolean_mask():
     assert head.tolist() == [1]
     assert token.tolist() == [2]
     assert module._dms_masked_key_mask.shape == (1, 2, 4)
+
+
+def test_headwise_attention_mask_expands_kv_heads_to_query_groups():
+    mask = torch.zeros(1, 2, 5, dtype=torch.bool)
+    mask[0, 0, 1] = True
+    mask[0, 1, 3] = True
+    module = SimpleNamespace(_dms_masked_key_mask=mask)
+    query = torch.zeros(1, 4, 2, 8)
+    key = torch.zeros(1, 2, 5, 8)
+    causal_mask = torch.zeros(1, 1, 2, 5)
+
+    result = apply_headwise_attention_mask(module, query, key, causal_mask)
+
+    minimum = torch.finfo(result.dtype).min
+    assert result.shape == (1, 4, 2, 5)
+    assert torch.all(result[0, :2, :, 1] == minimum)
+    assert torch.all(result[0, 2:, :, 3] == minimum)
+    assert torch.all(result[0, :2, :, 3] == 0)
+    assert torch.all(result[0, 2:, :, 1] == 0)

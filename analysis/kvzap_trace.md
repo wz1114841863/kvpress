@@ -91,6 +91,11 @@ checks the actual dense KV length when identifying a newly created cache.
 The trace exporter clears request-local attention masks before each pass and
 enables a diagnostic bounds check. If a mask is invalid, it reports the pass,
 layer, key shape, and index limits before launching CUDA advanced indexing.
+For trace collection it applies the DMS mask directly as a per-head additive
+attention mask. This represents the intended zero-attention semantics and avoids
+the optional fake-key hyperplane search, which is not guaranteed to find a
+solution for every set of grouped queries. The manifest records this backend as
+`per_head_additive_attention_mask`; normal KVPress runs keep their default path.
 
 ### Custom request JSONL
 

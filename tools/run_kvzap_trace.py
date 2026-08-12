@@ -228,6 +228,7 @@ def prepare_model_for_trace_pass(model, pass_name: str) -> None:
         attention.masked_key_indices = None
         attention._dms_masked_key_mask = None
         attention._kvpress_validate_mask_indices = True
+        attention._kvpress_use_headwise_attention_mask = True
         attention._kvpress_diagnostic_context = pass_name
 
 
@@ -415,6 +416,7 @@ def main() -> None:
         "dtype": str(next(pipe.model.parameters()).dtype),
         "seed": args.seed,
         "pruning_timing": "after_attention",
+        "mask_application": "per_head_additive_attention_mask",
         "decoding_enabled": True,
         "trace_equivalence_verified": True,
         "physical_compression_measured": False,
