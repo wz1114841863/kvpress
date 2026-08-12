@@ -144,3 +144,50 @@ def test_dms_mask_indices_use_dense_kv_length_not_absolute_positions(monkeypatch
 
     assert module.masked_key_indices[-1].max().item() == 3
     assert module.masked_key_indices[-1].min().item() >= 0
+
+
+def test_dms_phase_does_not_depend_on_cross_layer_cache_positions(monkeypatch):
+    tensors = {
+        0: torch.zeros(1, 2, 3, 4),
+        1: torch.zeros(1, 2, 3, 4),
+    }
+    monkeypatch.setattr(
+        "kvpress.presses.dms_press.extract_keys_and_values",
+        lambda cache, layer_idx: (tensors[layer_idx], tensors[layer_idx]),
+    )
+    scorer = FixedScorer()
+    scorer.fixed_scores = torch.zeros(1, 2, 3)
+    press = DMSPress(press=scorer, threshold=-1.0, sliding_window_size=2, decoding=True)
+    modules = [SimpleNamespace(layer_idx=layer, masked_key_indices=None) for layer in range(2)]
+
+    for module in modules:
+        press.forward_hook(
+            module,
+            [],
+            {
+                "hidden_states": torch.zeros(1, 3, 4),
+                "past_key_values": object(),
+                "cache_position": torch.arange(100, 103),
+            },
+            [torch.tensor([123.0])],
+        )
+
+    tensors[0] = torch.zeros(1, 2, 4, 4)
+    tensors[1] = torch.zeros(1, 2, 4, 4)
+    scorer.fixed_scores = torch.zeros(1, 2, 1)
+    # Simulate inconsistent cache_position values across layers. The physical
+    # KV length is authoritative, so neither layer may be mistaken for prefill.
+    for module, cache_position in zip(modules, (torch.tensor([0]), torch.tensor([3]))):
+        press.forward_hook(
+            module,
+            [],
+            {
+                "hidden_states": torch.zeros(1, 1, 4),
+                "past_key_values": object(),
+                "cache_position": cache_position,
+            },
+            [torch.tensor([123.0])],
+        )
+
+    assert set(press.scores_buffer) == {0, 1}
+    assert all(buffer.shape[-1] == 2 for buffer in press.scores_buffer.values())

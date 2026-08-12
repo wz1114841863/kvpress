@@ -87,7 +87,9 @@ passed to the multi-request analyzer.
 Each trace-off/trace-on pass uses an independent `DMSPress` runtime state while
 sharing the already loaded predictor. This prevents a short-answer request from
 leaking or losing the score buffer between equivalence passes. The DMS hook also
-checks the actual dense KV length when identifying a newly created cache.
+uses the actual per-layer dense KV length, rather than `cache_position`, to
+identify a newly created cache. This keeps phase detection consistent across
+layers when Transformers supplies absolute or layer-dependent cache positions.
 The trace exporter clears request-local attention masks before each pass and
 enables a diagnostic bounds check. If a mask is invalid, it reports the pass,
 layer, key shape, and index limits before launching CUDA advanced indexing.

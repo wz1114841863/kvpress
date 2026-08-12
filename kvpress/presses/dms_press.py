@@ -7,7 +7,7 @@ from typing import Callable, Optional
 import torch
 import torch.nn as nn
 
-from kvpress.presses.base_press import BasePress, is_prefilling
+from kvpress.presses.base_press import BasePress
 from kvpress.presses.scorer_press import ScorerPress
 from kvpress.utils import extract_keys_and_values
 
@@ -74,22 +74,16 @@ class DMSPress(BasePress):
         hidden_states = kwargs["hidden_states"]
         cache = kwargs["past_key_values"]
         q_len = hidden_states.shape[1]
-        cache_len = kwargs["cache_position"][-1] + 1
-        prefilling = is_prefilling(kwargs["cache_position"], q_len)
 
         # Extract layer index as int for type safety
         layer_idx: int = module.layer_idx  # type: ignore[assignment]
 
-        # Some cache/model combinations use absolute cache positions even for a
-        # newly created dense cache. In that case cache_position alone does not
-        # identify prefill, but the actual KV length still equals q_len.
-        keys = None
-        values = None
-        if not prefilling and layer_idx not in self.scores_buffer:
-            keys, values = extract_keys_and_values(cache, layer_idx)
-            cache_len = keys.shape[2]
-            if keys.shape[2] == q_len:
-                prefilling = True
+        # DMS must use the actual per-layer dense KV length to identify a new
+        # cache. cache_position can be absolute, offset, or inconsistent across
+        # layers in some pipeline/Transformers paths.
+        keys, values = extract_keys_and_values(cache, layer_idx)
+        cache_len = keys.shape[2]
+        prefilling = cache_len == q_len
 
         # Reset the scores buffer and compression ratios if we are in prefilling
         if prefilling and (layer_idx == 0):
@@ -107,12 +101,6 @@ class DMSPress(BasePress):
             )
 
         # Compute importance scores for the new tokens using the underlying scorer press
-        if keys is None or values is None:
-            keys, values = extract_keys_and_values(cache, layer_idx)
-        # masked_key_indices index the dense KV tensor, not absolute model
-        # positions. The two lengths can differ for caches with a position
-        # offset, so all mask shifts must use the physical tensor length.
-        cache_len = keys.shape[2]
         scores = self.press.score(module, hidden_states, keys[:, :, -q_len:], values[:, :, -q_len:], None, kwargs)
 
         # Keep a boolean mask as the canonical DMS state. Integer indices are
