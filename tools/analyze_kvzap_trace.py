@@ -113,6 +113,18 @@ def jaccard(left: np.ndarray, right: np.ndarray) -> float:
     return float(np.logical_and(left, right).sum() / union) if union else 1.0
 
 
+def validate_capture_provenance(manifest: dict[str, Any], trace_dir: Path | str) -> None:
+    """Accept either an equivalent generation trace or a single-pass prefill trace."""
+    if manifest.get("capture_scope") == "context_prefill_only":
+        if manifest.get("generation_performed") is not False or manifest.get("decoding_enabled") is not False:
+            raise ValueError(f"Invalid prefill-only capture metadata in {trace_dir}")
+        if manifest.get("trace_equivalence_status") != "not_applicable_single_observational_pass":
+            raise ValueError(f"Prefill-only trace provenance is incomplete in {trace_dir}")
+        return
+    if not manifest.get("trace_equivalence_verified", False):
+        raise ValueError(f"Trace equivalence was not verified in {trace_dir}")
+
+
 def validate_trace(trace_dir: Path) -> dict[str, Any]:
     required = {
         "manifest.json",
@@ -132,8 +144,7 @@ def validate_trace(trace_dir: Path) -> dict[str, Any]:
         )
     if manifest.get("tensor_layout") != "L,H,T":
         raise ValueError(f"Unsupported tensor layout in {trace_dir}: {manifest.get('tensor_layout')!r}")
-    if not manifest.get("trace_equivalence_verified", False):
-        raise ValueError(f"Trace equivalence was not verified in {trace_dir}")
+    validate_capture_provenance(manifest, trace_dir)
 
     with np.load(trace_dir / "score_mask.npz") as archive:
         required_arrays = {"scores", "score_valid_mask", "predicted_drop_mask", "final_drop_mask", "shape"}
@@ -222,6 +233,7 @@ def analyze_trace(
         "model": manifest["model"],
         "dataset": manifest["dataset"],
         "subset": manifest["subset"],
+        "capture_scope": manifest.get("capture_scope", "prefill_and_decoding"),
         "predictor_checkpoint": manifest["predictor_checkpoint"],
         "threshold": threshold,
         "sliding_window": window,
@@ -592,7 +604,12 @@ def write_figures(output_dir: Path, traces: list[dict[str, Any]], results: list[
         for row in decoding:
             if row["event_kind"] == "prompt_chunk":
                 axis.axvline(row["cache_tokens"], color="tab:orange", linestyle="--", alpha=0.7)
-        axis.set(xlabel="Cache tokens", ylabel="Logical kept KV across layer-heads", title="Decoding KV growth")
+        growth_title = (
+            "Prefill logical KV snapshot"
+            if trace["manifest"].get("capture_scope") == "context_prefill_only"
+            else "Decoding KV growth"
+        )
+        axis.set(xlabel="Cache tokens", ylabel="Logical kept KV across layer-heads", title=growth_title)
         axis.grid(alpha=0.25)
         fig.suptitle(metadata, fontsize=7, y=0.01)
         fig.tight_layout(rect=(0, 0.04, 1, 1))
@@ -665,6 +682,9 @@ def main() -> None:
 
     analysis_config = {
         "source_experiment_ids": [trace["manifest"]["experiment_id"] for trace in traces],
+        "source_capture_scopes": [
+            trace["manifest"].get("capture_scope", "prefill_and_decoding") for trace in traces
+        ],
         "block_sizes": args.block_sizes,
         "threshold_deltas": args.threshold_deltas,
         "plots_generated": not args.no_plots,
@@ -682,6 +702,7 @@ def main() -> None:
             "All compression metrics are logical or offline physical-layout estimates.",
             "Physical block estimates use keep-any allocation and report exact-span and padded variants.",
             "Prompt chunks with tokens_added > 1 are separated from one-token generation events.",
+            "Prefill-only sources contain one context snapshot and provide no generation-quality evidence.",
             "No accuracy, HBM traffic, runtime speedup, or measured physical allocation is inferred.",
         ],
     }

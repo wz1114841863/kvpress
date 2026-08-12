@@ -1,5 +1,38 @@
 # KVzap single-request trace
 
+## Recommended first step: prefill-only trace
+
+Use `tools/run_kvzap_prefill_trace.py` before attempting the two-pass generation
+trace. It runs one context-prefill forward pass, records the predictor scores and
+post-window masks, and exits without calling `generate`. Consequently it does not
+enter the decoding fake-key path in `kvpress/attention_patch.py`.
+
+```bash
+python tools/run_kvzap_prefill_trace.py \
+  --preset retrieval \
+  --output-dir traces/retrieval_prefill_01
+
+python tools/run_kvzap_prefill_trace.py \
+  --preset summarization \
+  --output-dir traces/summarization_prefill_01
+
+python tools/run_kvzap_prefill_trace.py \
+  --preset reasoning \
+  --output-dir traces/reasoning_prefill_01
+```
+
+Each invocation loads a fresh model in a fresh process and executes exactly one
+forward pass. The question is tokenized and counted but is not sent through the
+model because the official pipeline prefills only the context. In addition to
+the usual trace files, this command writes `token_ids.npz` and
+`run_metadata.json`. It deliberately writes no answer: this phase analyzes mask
+structure, not generation quality or trace-on/off equivalence.
+
+The prefill-only trace can support score-margin, run-length, block-occupancy,
+head-similarity, and layer/head-retention analysis. It cannot support answer
+accuracy or decode-time KV-growth conclusions. Those require a later,
+process-isolated generation experiment.
+
 ## What is captured
 
 `tools/run_kvzap_trace.py` captures the following intermediate results for one
