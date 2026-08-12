@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections import Counter
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -85,16 +86,73 @@ def language_model_layer_count(model) -> int:
     return len(language_model.layers)
 
 
+def language_model_layers(model):
+    language_model = model.model.language_model if hasattr(model.model, "language_model") else model.model
+    return language_model.layers
+
+
+def initial_cache_position(context_tokens: int, device: torch.device | str) -> torch.Tensor:
+    """Build the explicit absolute positions required by DMS prefill detection."""
+    if context_tokens <= 0:
+        raise ValueError("context_tokens must be positive")
+    return torch.arange(context_tokens, device=device, dtype=torch.long)
+
+
+@contextmanager
+def observe_attention_calls(model):
+    """Collect shape/position metadata without copying model tensors or changing outputs."""
+    observations: list[dict[str, Any]] = []
+    hooks = []
+
+    def hook(module, _inputs, kwargs, _output):
+        cache_position = kwargs.get("cache_position")
+        hidden_states = kwargs.get("hidden_states")
+        observations.append(
+            {
+                "layer": int(module.layer_idx),
+                "q_len": None if hidden_states is None else int(hidden_states.shape[1]),
+                "cache_position_start": (
+                    None if cache_position is None or cache_position.numel() == 0 else int(cache_position[0].item())
+                ),
+                "cache_position_end": (
+                    None if cache_position is None or cache_position.numel() == 0 else int(cache_position[-1].item())
+                ),
+                "cache_position_count": None if cache_position is None else int(cache_position.numel()),
+            }
+        )
+
+    try:
+        for layer in language_model_layers(model):
+            hooks.append(layer.self_attn.register_forward_hook(hook, with_kwargs=True))
+        yield observations
+    finally:
+        for registered_hook in hooks:
+            registered_hook.remove()
+
+
+def explain_missing_trace(observations: list[dict[str, Any]]) -> str:
+    if not observations:
+        return "no attention-layer forward hooks fired"
+    sample = observations[0]
+    return (
+        f"observed {len(observations)} attention calls; first layer={sample['layer']}, "
+        f"q_len={sample['q_len']}, cache_position=[{sample['cache_position_start']},"
+        f"{sample['cache_position_end']}], count={sample['cache_position_count']}"
+    )
+
+
 def validate_prefill_recorder(
     recorder: KVzapTraceRecorder,
     *,
     expected_layers: int,
     context_tokens: int,
     sliding_window: int,
+    attention_observations: list[dict[str, Any]] | None = None,
 ) -> dict[str, np.ndarray]:
     """Require one and only one prefill event for every language-model layer."""
     if not recorder.events:
-        raise AssertionError("The prefill forward pass produced no trace events")
+        detail = explain_missing_trace(attention_observations or [])
+        raise AssertionError(f"The prefill forward pass produced no trace events ({detail})")
     non_prefill = [event for event in recorder.events if event["phase"] != "prefill"]
     if non_prefill:
         raise AssertionError("Prefill-only trace unexpectedly contains decode events")
@@ -169,11 +227,14 @@ def main() -> None:
     seed_everything(args.seed)
     print(f"Request: {request_id} ({dataset}/{subset})")
     print(f"Running one prefill-only forward pass with {context_tokens} context tokens...")
-    with torch.inference_mode(), press(pipe.model):
+    model_device = pipe.model.device
+    cache_position = initial_cache_position(context_tokens, model_device)
+    with torch.inference_mode(), press(pipe.model), observe_attention_calls(pipe.model) as attention_observations:
         pipe.model.model(
-            input_ids=context_ids.to(pipe.model.device),
+            input_ids=context_ids.to(model_device),
             past_key_values=cache,
             use_cache=True,
+            cache_position=cache_position,
         )
 
     expected_layers = language_model_layer_count(pipe.model)
@@ -182,6 +243,7 @@ def main() -> None:
         expected_layers=expected_layers,
         context_tokens=context_tokens,
         sliding_window=args.window_size,
+        attention_observations=attention_observations,
     )
     masked_indices = snapshot_masked_indices(pipe.model)
     assert_trace_matches_indices(arrays["final_drop_mask"], masked_indices)

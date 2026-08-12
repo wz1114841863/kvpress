@@ -6,7 +6,7 @@ import pytest
 import torch
 
 from kvpress.trace import KVzapTraceRecorder
-from tools.run_kvzap_prefill_trace import validate_prefill_recorder
+from tools.run_kvzap_prefill_trace import explain_missing_trace, initial_cache_position, validate_prefill_recorder
 
 
 def make_prefill_recorder() -> KVzapTraceRecorder:
@@ -31,6 +31,28 @@ def make_prefill_recorder() -> KVzapTraceRecorder:
         compression_ratio=float(matured_drop.sum() / 8),
     )
     return recorder
+
+
+def test_initial_cache_position_is_explicit_and_contiguous():
+    positions = initial_cache_position(4, "cpu")
+    assert positions.dtype == torch.long
+    assert positions.tolist() == [0, 1, 2, 3]
+
+
+def test_missing_trace_diagnostic_reports_attention_metadata():
+    detail = explain_missing_trace(
+        [
+            {
+                "layer": 0,
+                "q_len": 4,
+                "cache_position_start": 0,
+                "cache_position_end": 3,
+                "cache_position_count": 4,
+            }
+        ]
+    )
+    assert "q_len=4" in detail
+    assert "cache_position=[0,3]" in detail
 
 
 def test_validate_prefill_recorder_accepts_one_event_per_layer():
