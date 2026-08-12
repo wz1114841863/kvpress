@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 import torch
 
-from kvpress.attention_patch import validate_masked_key_indices
+from kvpress.attention_patch import rebuild_dms_masked_key_indices, validate_masked_key_indices
 
 
 def test_mask_validation_is_disabled_by_default():
@@ -42,3 +42,21 @@ def test_mask_validation_accepts_in_bounds_indices():
         _kvpress_diagnostic_context="trace-off",
     )
     validate_masked_key_indices(module, torch.zeros(1, 2, 4, 8))
+
+
+def test_dms_indices_are_rebuilt_from_boolean_mask():
+    mask = torch.zeros(1, 2, 3, dtype=torch.bool)
+    mask[0, 1, 2] = True
+    module = SimpleNamespace(
+        layer_idx=3,
+        _dms_masked_key_mask=mask,
+        masked_key_indices=(torch.tensor([0]), torch.tensor([999]), torch.tensor([2])),
+    )
+
+    rebuild_dms_masked_key_indices(module, torch.zeros(1, 2, 4, 8))
+
+    batch, head, token = module.masked_key_indices
+    assert batch.tolist() == [0]
+    assert head.tolist() == [1]
+    assert token.tolist() == [2]
+    assert module._dms_masked_key_mask.shape == (1, 2, 4)

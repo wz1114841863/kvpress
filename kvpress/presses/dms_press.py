@@ -115,6 +115,31 @@ class DMSPress(BasePress):
         cache_len = keys.shape[2]
         scores = self.press.score(module, hidden_states, keys[:, :, -q_len:], values[:, :, -q_len:], None, kwargs)
 
+        # Keep a boolean mask as the canonical DMS state. Integer indices are
+        # rebuilt from it before attention instead of being retained across
+        # forwards, because long-lived CUDA index tensors can become stale.
+        bsz, num_key_value_heads = keys.shape[:2]
+        masked_key_mask = getattr(module, "_dms_masked_key_mask", None)
+        if prefilling or masked_key_mask is None:
+            masked_key_mask = torch.zeros(
+                (bsz, num_key_value_heads, cache_len),
+                dtype=torch.bool,
+                device=keys.device,
+            )
+        elif masked_key_mask.shape[2] < cache_len:
+            padding = torch.zeros(
+                (bsz, num_key_value_heads, cache_len - masked_key_mask.shape[2]),
+                dtype=torch.bool,
+                device=keys.device,
+            )
+            masked_key_mask = torch.cat([masked_key_mask, padding], dim=-1)
+        elif masked_key_mask.shape != (bsz, num_key_value_heads, cache_len):
+            raise RuntimeError(
+                f"DMS mask/cache shape mismatch at layer {layer_idx}: "
+                f"mask_shape={tuple(masked_key_mask.shape)}, "
+                f"expected={(bsz, num_key_value_heads, cache_len)}"
+            )
+
         # Accumulate scores in the buffer: reset during prefill, append during decoding
         if prefilling:
             self.scores_buffer[layer_idx] = scores
@@ -141,29 +166,15 @@ class DMSPress(BasePress):
                     f"matured_tokens={scores_to_evict.shape[2]}, window={self.sliding_window_size}"
                 )
 
-            # Find tokens below threshold: returns (batch_idx, head_idx, token_idx) tuples
-            new_masked_key_indices = list(torch.where(matured_drop_mask))
+            matured_end = matured_start + matured_drop_mask.shape[2]
+            masked_key_mask[..., matured_start:matured_end] |= matured_drop_mask
 
-            if len(new_masked_key_indices[0]) > 0:
-                # Convert buffer-relative indices to cache-absolute indices
-                # During prefill shift=0; during decoding we offset by the number of previously processed tokens
-                new_masked_key_indices[-1] += matured_start
-
-                # Merge new masked indices with existing ones
-                if module.masked_key_indices is None:
-                    module.masked_key_indices = new_masked_key_indices  # type: ignore[assignment]
-                else:
-                    module.masked_key_indices = list(  # type: ignore[assignment]
-                        torch.cat([i, new_i]) for i, new_i in zip(module.masked_key_indices, new_masked_key_indices)
-                    )
+        module._dms_masked_key_mask = masked_key_mask
+        module.masked_key_indices = tuple(torch.where(masked_key_mask))
 
         # Track compression ratio as the fraction of masked tokens
-        if module.masked_key_indices is not None:
-            bsz, num_key_value_heads, cache_len, _ = keys.shape
-            n_masked = len(module.masked_key_indices[0])  # type: ignore[index]
-            self.compression_ratios[layer_idx] = n_masked / (bsz * num_key_value_heads * cache_len)
-        else:
-            self.compression_ratios[layer_idx] = 0
+        n_masked = len(module.masked_key_indices[0])
+        self.compression_ratios[layer_idx] = n_masked / (bsz * num_key_value_heads * cache_len)
 
         if self.trace_callback is not None:
             cache_len_int = int(cache_len.item() if isinstance(cache_len, torch.Tensor) else cache_len)
@@ -172,7 +183,6 @@ class DMSPress(BasePress):
                 if matured_start is None
                 else int(matured_start.item() if isinstance(matured_start, torch.Tensor) else matured_start)
             )
-            n_masked = 0 if module.masked_key_indices is None else len(module.masked_key_indices[0])
             self.trace_callback(
                 layer_idx=layer_idx,
                 prefilling=prefilling,

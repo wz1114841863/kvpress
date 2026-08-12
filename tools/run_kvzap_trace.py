@@ -226,6 +226,7 @@ def prepare_model_for_trace_pass(model, pass_name: str) -> None:
     for layer in language_model_layers(model):
         attention = layer.self_attn
         attention.masked_key_indices = None
+        attention._dms_masked_key_mask = None
         attention._kvpress_validate_mask_indices = True
         attention._kvpress_diagnostic_context = pass_name
 

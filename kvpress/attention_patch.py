@@ -32,6 +32,32 @@ def validate_masked_key_indices(module, key: torch.Tensor) -> None:
         )
 
 
+def rebuild_dms_masked_key_indices(module, key: torch.Tensor) -> None:
+    """Rebuild DMS integer indices from its canonical boolean mask."""
+    mask = getattr(module, "_dms_masked_key_mask", None)
+    if mask is None:
+        return
+    if mask.ndim != 3 or mask.shape[:2] != key.shape[:2]:
+        raise RuntimeError(
+            f"Invalid DMS mask shape at layer {getattr(module, 'layer_idx', 'unknown')}: "
+            f"mask_shape={tuple(mask.shape)}, key_shape={tuple(key.shape)}"
+        )
+    if mask.shape[2] > key.shape[2]:
+        raise RuntimeError(
+            f"DMS mask is longer than the KV tensor at layer {getattr(module, 'layer_idx', 'unknown')}: "
+            f"mask_tokens={mask.shape[2]}, key_tokens={key.shape[2]}"
+        )
+    if mask.shape[2] < key.shape[2]:
+        padding = torch.zeros(
+            (*mask.shape[:2], key.shape[2] - mask.shape[2]),
+            dtype=torch.bool,
+            device=mask.device,
+        )
+        mask = torch.cat([mask, padding], dim=-1)
+        module._dms_masked_key_mask = mask
+    module.masked_key_indices = tuple(torch.where(mask))
+
+
 def search_hyperplane(X, max_iter: int = 1000):
     """
     Given a tensor X of shape (bsz, seq_len, head_dim), search for a hyperplane Y (bsz, head_dim)
@@ -89,7 +115,9 @@ def attention_patch(func):
         if query.shape[2] == key.shape[2]:
             # Prefilling
             module.masked_key_indices = None
+            module._dms_masked_key_mask = None
         elif getattr(module, "masked_key_indices", None) is not None:
+            rebuild_dms_masked_key_indices(module, key)
             # Decoding: build fake keys k s.t. exp(<q, k>) = 0
             bsz, num_heads, seq_len, head_dim = query.shape
             num_key_value_heads = key.shape[1]
