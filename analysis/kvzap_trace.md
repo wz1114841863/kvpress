@@ -81,3 +81,53 @@ First send the terminal output plus `manifest.json`, `request_summary.csv`, and
 `layer_head_summary.csv`. For run-length, block occupancy, and head-similarity
 analysis, also transfer `score_mask.npz`. The answer file is useful only when an
 equivalence or quality issue needs inspection.
+
+## Offline structural analysis
+
+Analyze a trace without loading Qwen3:
+
+```bash
+python tools/analyze_kvzap_trace.py \
+  traces/qwen3_8b_single_384 \
+  --output-dir analysis/experiments/qwen3_8b_single_384_analysis
+```
+
+Multiple traces can be compared in one output set:
+
+```bash
+python tools/analyze_kvzap_trace.py \
+  traces/retrieval_01 \
+  traces/summarization_01 \
+  traces/reasoning_01 \
+  --output-dir analysis/experiments/qwen3_8b_multi_request_analysis
+```
+
+Use `--no-plots` if only CSV/JSON artifacts are wanted. Plotting requires
+`matplotlib`; all other analysis uses the project's NumPy dependency.
+
+The analyzer validates the trace schema, tensor shapes, finite scores, sliding
+window, and request-level KV counts before writing:
+
+```text
+analysis_manifest.json
+request_summary.csv
+layer_head_retention.csv
+run_length_summary.csv
+run_length_distribution.csv
+block_occupancy.csv
+head_similarity.csv
+score_threshold_sensitivity.csv
+decoding_growth.csv
+figures/
+```
+
+Block estimates report both an exact-span value and a conservative padded value
+for the final partial block. These are offline keep-any allocation estimates,
+not measured GPU memory. `decoding_growth.csv` labels multi-token prompt chunks
+separately from one-token generation so they are not mistaken for decode bursts.
+
+Lightweight test:
+
+```bash
+pytest -q tests/test_analyze_kvzap_trace.py
+```
