@@ -374,7 +374,8 @@ results/
 按顺序执行：
 
 1. **已完成并冻结**：仓库勘察、代码路径定位和 Phase 0 baseline；
-2. **当前任务**：实现与 DMS/attention 状态解耦的 predictor-only observational exporter；
+2. **当前任务**：远程验证与 DMS/attention 状态解耦的
+   `tools/export_kvzap_predictor_trace.py`；本地实现完成不等于 gate A 已通过；
 3. 用相同 987-token hardware 输入对照
    `results/qwen3_8b_single_384/score_mask.npz`，通过 `analysis/kvzap_trace.md`
    的 acceptance gate A；

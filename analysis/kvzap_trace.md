@@ -60,8 +60,8 @@ documented smoke-test scope.
 
 ## Next action: predictor-only observational trace
 
-The next implementation must be a new tool, provisionally
-`tools/export_kvzap_predictor_trace.py`, with this data flow:
+The first gate-A implementation is `tools/export_kvzap_predictor_trace.py`, with
+this data flow:
 
 ```text
 one normal context prefill
@@ -77,6 +77,22 @@ It must not use `DMSPress.forward_hook`, mutate `scores_buffer` or
 or run the same model object twice. It must record that the final mask is an
 offline reconstruction of the documented prefill rule, not an observed decode
 mask.
+
+The first version deliberately accepts only the matched hardware request. Run
+it on the remote Qwen3 environment after transferring the frozen reference
+directory:
+
+```bash
+python tools/export_kvzap_predictor_trace.py \
+  --reference-trace results/qwen3_8b_single_384 \
+  --output-dir traces/hardware_predictor_gate_a_01 \
+  2>&1 | tee hardware_predictor_gate_a_01.log
+```
+
+It writes diagnostic artifacts even when the reference comparison fails, marks
+the manifest `invalid_reference_mismatch`, prints the failed checks, and exits
+with status 2. Do not add retrieval/summarization/reasoning support until this
+command reports `Reference gate A passed: True`.
 
 ### Acceptance gate A: matched hardware reference
 
