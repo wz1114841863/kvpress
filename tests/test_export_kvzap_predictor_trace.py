@@ -9,10 +9,15 @@ import pytest
 import torch
 
 from tools.export_kvzap_predictor_trace import (
+    GATE_A_CONFIG_HASH,
+    GATE_A_EXPERIMENT_ID,
+    GATE_A_GIT_COMMIT,
+    GATE_A_PREDICTOR_REVISION,
     PredictorScoreObserver,
     compare_with_reference,
     reconstruct_masks,
     stack_layer_scores,
+    validate_gate_a_evidence,
 )
 
 
@@ -69,6 +74,7 @@ def write_reference(path, scores, threshold=-4.0, window=2):
         "trace_equivalence_verified": True,
         "model": "Qwen/Qwen3-8B",
         "predictor_checkpoint": "nvidia/KVzap-mlp-Qwen3-8B",
+        "predictor_revision": GATE_A_PREDICTOR_REVISION,
         "threshold": threshold,
         "sliding_window": window,
         "config": {"request_id": "builtin_hardware_trace"},
@@ -142,3 +148,85 @@ def test_reference_comparison_rejects_score_or_mask_mismatch(tmp_path, monkeypat
     assert report["passed"] is False
     assert report["checks"]["scores_within_atol"] is False
     assert report["checks"]["predicted_mask_matches"] is False
+
+
+def write_gate_a_evidence(path):
+    path.mkdir()
+    scores = np.full((36, 8, 987), -5.0, dtype=np.float32)
+    predicted, final = reconstruct_masks(scores, threshold=-4.0, window_size=128)
+    manifest = {
+        "schema_version": "kvzap-predictor-trace-1.0",
+        "experiment_id": GATE_A_EXPERIMENT_ID,
+        "git_commit": GATE_A_GIT_COMMIT,
+        "config_hash": GATE_A_CONFIG_HASH,
+        "capture_status": "valid",
+        "valid_for_structural_analysis": True,
+        "model": "Qwen/Qwen3-8B",
+        "predictor_checkpoint": "nvidia/KVzap-mlp-Qwen3-8B",
+        "predictor_revision": GATE_A_PREDICTOR_REVISION,
+        "threshold": -4.0,
+        "sliding_window": 128,
+        "generation_performed": False,
+        "dms_press_used": False,
+        "masked_key_indices_created": False,
+        "fake_key_attention_used": False,
+    }
+    (path / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    (path / "reference_comparison.json").write_text(
+        json.dumps({"passed": True, "max_abs_score_difference": 0.0}), encoding="utf-8"
+    )
+    np.savez_compressed(
+        path / "score_mask.npz",
+        scores=scores,
+        score_valid_mask=np.ones_like(scores, dtype=np.bool_),
+        predicted_drop_mask=predicted,
+        reconstructed_final_drop_mask=final,
+        shape=np.asarray(scores.shape),
+    )
+    return final
+
+
+def test_gate_a_evidence_checks_structure_and_semantics(tmp_path, monkeypatch):
+    evidence_dir = tmp_path / "gate_a"
+    final = write_gate_a_evidence(evidence_dir)
+    monkeypatch.setattr(
+        "tools.export_kvzap_predictor_trace.REFERENCE_PREFILL_REMOVED_FRACTION",
+        float(final.mean()),
+    )
+
+    report = validate_gate_a_evidence(
+        evidence_dir,
+        model_name="Qwen/Qwen3-8B",
+        predictor_name="nvidia/KVzap-mlp-Qwen3-8B",
+        threshold=-4.0,
+        window_size=128,
+        verify_frozen_hashes=False,
+    )
+
+    assert report["passed"] is True
+    assert report["score_shape"] == [36, 8, 987]
+
+
+def test_gate_a_evidence_rejects_mask_inconsistency(tmp_path, monkeypatch):
+    evidence_dir = tmp_path / "gate_a"
+    final = write_gate_a_evidence(evidence_dir)
+    with np.load(evidence_dir / "score_mask.npz") as archive:
+        arrays = {name: archive[name].copy() for name in archive.files}
+    arrays["predicted_drop_mask"][0, 0, 0] = False
+    np.savez_compressed(evidence_dir / "score_mask.npz", **arrays)
+    monkeypatch.setattr(
+        "tools.export_kvzap_predictor_trace.REFERENCE_PREFILL_REMOVED_FRACTION",
+        float(final.mean()),
+    )
+
+    report = validate_gate_a_evidence(
+        evidence_dir,
+        model_name="Qwen/Qwen3-8B",
+        predictor_name="nvidia/KVzap-mlp-Qwen3-8B",
+        threshold=-4.0,
+        window_size=128,
+        verify_frozen_hashes=False,
+    )
+
+    assert report["passed"] is False
+    assert report["checks"]["predicted_mask_consistent"] is False

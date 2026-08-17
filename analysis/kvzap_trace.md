@@ -1,17 +1,23 @@
 # KVzap single-request trace
 
-## Current status: paused after rollback
+## Current status: predictor-only gate A passed
 
-Phase 1 is not frozen and the current Trace path is not approved for new
-multi-request evidence. The repository has been rolled back after stateful
-instrumentation repeatedly changed or incompletely observed the DMS/attention
-execution path. Do not run the retrieval/summarization/reasoning commands below
-as a new experiment until the predictor-only gate described here is implemented
-and passes its matched-reference check.
+Phase 1 is not frozen, but predictor-only acceptance gate A passed on 2026-08-17.
+The matched hardware run may now authorize a small Gate B collection for
+retrieval, summarization, and reasoning. Stateful DMS/attention tracing remains
+paused and is not revived by this decision.
+
+The frozen machine-readable record is
+`analysis/predictor_trace_gate_a.json`. Its experiment ID is
+`kvzap-predictor-trace-20260817T080939Z`, the implementation commit is
+`f97ccd8b60a388ae791607da6da28ff8d8616059`, and the config hash is
+`6a645914544d8f7a03319c1d836eeb2d7f4d5f178dcf0196b371e9af7e13a1a4`.
+The frozen predictor revision is
+`bd5c5917846617da4311539859c137a262a6348b`.
 
 One artifact remains useful as a bounded reference:
 
-- `results/qwen3_8b_single_384/` completed one hardware-themed request with the
+- `traces/qwen3_8b_single_384/` completed one hardware-themed request with the
   original two-pass exporter and recorded trace-on/off equivalence. It may be
   used only as the matched hardware reference for the next exporter.
 
@@ -24,7 +30,7 @@ Local reference checksums are:
 - `request_summary.csv`:
   `687e5a3c9108796698cc89d31447251695bfa3e3c3c843269934bd60c30ef9e4`.
 
-Because `results/` is ignored by Git, these hashes must be checked after the
+Because `traces/` is ignored by Git, these hashes must be checked after the
 reference directory is transferred to another machine.
 
 The following artifacts/runs are invalid for scientific conclusions:
@@ -58,7 +64,7 @@ They show that the attempted observer was entangled with `cache_position`,
 two-pass model state. The frozen Phase 0 baseline remains valid within its
 documented smoke-test scope.
 
-## Next action: predictor-only observational trace
+## Predictor-only observational trace
 
 The first gate-A implementation is `tools/export_kvzap_predictor_trace.py`, with
 this data flow:
@@ -78,26 +84,24 @@ or run the same model object twice. It must record that the final mask is an
 offline reconstruction of the documented prefill rule, not an observed decode
 mask.
 
-The first version deliberately accepts only the matched hardware request. Run
-it on the remote Qwen3 environment after transferring the frozen reference
-directory:
+The matched hardware Gate A command was:
 
 ```bash
 python tools/export_kvzap_predictor_trace.py \
-  --reference-trace results/qwen3_8b_single_384 \
+  --reference-trace traces/qwen3_8b_single_384 \
   --output-dir traces/hardware_predictor_gate_a_01 \
   2>&1 | tee hardware_predictor_gate_a_01.log
 ```
 
-It writes diagnostic artifacts even when the reference comparison fails, marks
-the manifest `invalid_reference_mismatch`, prints the failed checks, and exits
-with status 2. Do not add retrieval/summarization/reasoning support until this
-command reports `Reference gate A passed: True`.
+It reported exact score equality, shape `[36, 8, 987]`, and reconstructed
+prefill logical removal `74.34003152088259%`. Independent inspection confirmed
+all scores finite, all score-valid flags true, exact `score < -4` masks, exact
+128-token window protection, and 288 complete layer/head summary rows.
 
 ### Acceptance gate A: matched hardware reference
 
 Before collecting any new task type, compare against
-`results/qwen3_8b_single_384/score_mask.npz` using the identical 987-token
+`traces/qwen3_8b_single_384/score_mask.npz` using the identical 987-token
 hardware context:
 
 1. exactly 36 layers and 8 KV heads are present;
@@ -117,6 +121,25 @@ checkpoint revision, threshold, window, seed, input hash, token count, tensor
 shape, dtype, and source git commit. These traces may support score distribution,
 margin, run-length, block occupancy, head similarity, and load-imbalance
 analysis only.
+
+Gate B is implemented by the same exporter using schema
+`kvzap-predictor-trace-1.1`. Before model loading, every Gate B run verifies the
+exact Gate A artifact hashes and metadata. It accepts one built-in preset or one
+selected JSONL request per process, and records the resolved model and predictor
+revisions. Start with retrieval only:
+
+```bash
+python tools/export_kvzap_predictor_trace.py \
+  --preset retrieval \
+  --gate-a-evidence traces/hardware_predictor_gate_a_01 \
+  --output-dir traces/retrieval_predictor_gate_b_01 \
+  2>&1 | tee retrieval_predictor_gate_b_01.log
+```
+
+Do not launch the other presets until this first Gate B directory has been
+returned and checked. A custom JSONL row requires `request_id`, `context`, and
+`question`; `dataset` and `subset` are optional. A multi-row file additionally
+requires `--request-id` so that each process still handles exactly one request.
 
 ### Deferred work
 
@@ -184,10 +207,10 @@ by git because the compressed score tensor can still be several MiB or larger.
 Transfer the selected trace directory separately, or force-add only a deliberately
 small artifact after reviewing its size.
 
-### Built-in request types (paused)
+### Historical stateful built-in request types (do not use)
 
 These commands document the previous interface. Do not run them as new evidence
-until predictor-only acceptance gate A passes:
+because they exercise the rolled-back stateful DMS/attention trace path:
 
 ```bash
 python tools/run_kvzap_trace.py \

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 1993-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-"""Export a read-only KVzap predictor trace and validate it against the frozen hardware reference."""
+"""Export one read-only KVzap predictor trace after validating frozen gate-A evidence."""
 
 from __future__ import annotations
 
@@ -24,25 +24,48 @@ from huggingface_hub import snapshot_download
 from transformers import DynamicCache, pipeline
 
 from kvpress import KVzapPress
-from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, build_builtin_request
+from tools.run_kvzap_trace import (
+    DEFAULT_MODEL,
+    DEFAULT_PREDICTOR,
+    PRESETS,
+    build_builtin_request,
+    load_jsonl_request,
+)
 
 
-SCHEMA_VERSION = "kvzap-predictor-trace-1.0"
+SCHEMA_VERSION = "kvzap-predictor-trace-1.1"
+GATE_A_SCHEMA_VERSION = "kvzap-predictor-trace-1.0"
 REFERENCE_CONTEXT_TOKENS = 987
 REFERENCE_REQUEST_ID = "builtin_hardware_trace"
 REFERENCE_PREFILL_REMOVED_FRACTION = 0.7434003152088259
 REFERENCE_MANIFEST_SHA256 = "b528402ab9be70ea51be41e27dc452e41d68895290c4e9bc42d255d6562667f2"
 REFERENCE_SCORE_MASK_SHA256 = "5b84c600f3eacdaf073405ea73c61c94080f8fa4aaa11f750cbcd1a8565ad1c3"
+GATE_A_EXPERIMENT_ID = "kvzap-predictor-trace-20260817T080939Z"
+GATE_A_GIT_COMMIT = "f97ccd8b60a388ae791607da6da28ff8d8616059"
+GATE_A_CONFIG_HASH = "6a645914544d8f7a03319c1d836eeb2d7f4d5f178dcf0196b371e9af7e13a1a4"
+GATE_A_PREDICTOR_REVISION = "bd5c5917846617da4311539859c137a262a6348b"
+GATE_A_MANIFEST_SHA256 = "dae42264d5b71435e363f7514f776fb15ccb4291a421131a6cc17e027daee382"
+GATE_A_SCORE_MASK_SHA256 = "a656a0d55c22517610546e724dbb65c6d276dbe0e551f5643e555526b74c9127"
+GATE_A_COMPARISON_SHA256 = "2e0783342ef28e9636ce99ee85817c43deaab1155369d4a8b918c1abd48eb2fc"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Run one normal context prefill, observe each attention-layer input, and apply the official "
-            "KVzap MLP without DMS, masked indices, fake keys, decoding, or generation. The first version "
-            "only permits the matched hardware gate-A request."
+            "KVzap MLP without DMS, masked indices, fake keys, decoding, or generation. Gate B accepts "
+            "one built-in task or one selected JSONL request after verifying the frozen gate-A artifacts."
         )
     )
+    request_group = parser.add_mutually_exclusive_group()
+    request_group.add_argument(
+        "--preset",
+        choices=PRESETS,
+        default="retrieval",
+        help="Built-in single-request task (default: retrieval).",
+    )
+    request_group.add_argument("--input-jsonl", type=Path, help="JSONL containing request_id/context/question.")
+    parser.add_argument("--request-id", help="Select exactly one request from --input-jsonl.")
     parser.add_argument("--model-name", default=DEFAULT_MODEL, help="Base model Hugging Face ID.")
     parser.add_argument("--predictor-name", default=DEFAULT_PREDICTOR, help="Official KVzap predictor ID.")
     parser.add_argument("--threshold", type=float, default=-4.0, help="Offline drop threshold.")
@@ -52,13 +75,19 @@ def parse_args() -> argparse.Namespace:
         "--context-repetitions",
         type=int,
         default=12,
-        help="Hardware paragraph repetitions; gate A expects the default 12 and 987 context tokens.",
+        help="Paragraph repetitions for a built-in request.",
+    )
+    parser.add_argument(
+        "--gate-a-evidence",
+        type=Path,
+        default=Path("traces/hardware_predictor_gate_a_01"),
+        help="Frozen successful gate-A output; its exact hashes and metadata are verified before inference.",
     )
     parser.add_argument(
         "--reference-trace",
         type=Path,
-        default=Path("results/qwen3_8b_single_384"),
-        help="Frozen single-request trace directory used for gate-A comparison.",
+        default=None,
+        help="Optional original hardware trace. Valid only with --preset hardware for re-running gate A.",
     )
     parser.add_argument(
         "--score-atol",
@@ -69,7 +98,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("traces/hardware_predictor_gate_a_01"),
+        default=Path("traces/retrieval_predictor_gate_b_01"),
         help="New diagnostic output directory; existing directories are never overwritten.",
     )
     return parser.parse_args()
@@ -204,6 +233,95 @@ def load_reference(reference_dir: Path) -> tuple[dict[str, Any], dict[str, np.nd
     return manifest, arrays
 
 
+def validate_gate_a_evidence(
+    evidence_dir: Path,
+    *,
+    model_name: str,
+    predictor_name: str,
+    threshold: float,
+    window_size: int,
+    verify_frozen_hashes: bool = True,
+) -> dict[str, Any]:
+    """Validate the frozen matched-reference run that authorizes gate-B collection."""
+
+    required_paths = {
+        "manifest": evidence_dir / "manifest.json",
+        "score_mask": evidence_dir / "score_mask.npz",
+        "reference_comparison": evidence_dir / "reference_comparison.json",
+    }
+    missing = [name for name, path in required_paths.items() if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(f"Gate-A evidence {evidence_dir} is missing: {missing}")
+
+    manifest = json.loads(required_paths["manifest"].read_text(encoding="utf-8"))
+    comparison = json.loads(required_paths["reference_comparison"].read_text(encoding="utf-8"))
+    with np.load(required_paths["score_mask"]) as archive:
+        required_arrays = {
+            "scores",
+            "score_valid_mask",
+            "predicted_drop_mask",
+            "reconstructed_final_drop_mask",
+            "shape",
+        }
+        missing_arrays = sorted(required_arrays - set(archive.files))
+        if missing_arrays:
+            raise ValueError(f"Gate-A score_mask.npz is missing arrays: {missing_arrays}")
+        scores = archive["scores"]
+        valid = archive["score_valid_mask"]
+        predicted = archive["predicted_drop_mask"]
+        final = archive["reconstructed_final_drop_mask"]
+        stored_shape = tuple(int(value) for value in archive["shape"].tolist())
+
+    checks: dict[str, bool] = {}
+    if verify_frozen_hashes:
+        checks["manifest_sha256_matches"] = file_sha256(required_paths["manifest"]) == GATE_A_MANIFEST_SHA256
+        checks["score_mask_sha256_matches"] = file_sha256(required_paths["score_mask"]) == GATE_A_SCORE_MASK_SHA256
+        checks["comparison_sha256_matches"] = (
+            file_sha256(required_paths["reference_comparison"]) == GATE_A_COMPARISON_SHA256
+        )
+    checks["schema_matches"] = manifest.get("schema_version") == GATE_A_SCHEMA_VERSION
+    checks["experiment_matches"] = manifest.get("experiment_id") == GATE_A_EXPERIMENT_ID
+    checks["implementation_commit_matches"] = manifest.get("git_commit") == GATE_A_GIT_COMMIT
+    checks["config_hash_matches"] = manifest.get("config_hash") == GATE_A_CONFIG_HASH
+    checks["capture_valid"] = manifest.get("capture_status") == "valid"
+    checks["structural_analysis_authorized"] = manifest.get("valid_for_structural_analysis") is True
+    checks["model_matches"] = manifest.get("model") == model_name
+    checks["predictor_matches"] = manifest.get("predictor_checkpoint") == predictor_name
+    checks["predictor_revision_matches"] = manifest.get("predictor_revision") == GATE_A_PREDICTOR_REVISION
+    checks["threshold_matches"] = float(manifest.get("threshold")) == threshold
+    checks["window_matches"] = int(manifest.get("sliding_window")) == window_size
+    checks["no_generation_or_dms"] = manifest.get("generation_performed") is False and (
+        manifest.get("dms_press_used") is False
+    )
+    checks["no_runtime_masking"] = manifest.get("masked_key_indices_created") is False and (
+        manifest.get("fake_key_attention_used") is False
+    )
+    checks["reference_gate_passed"] = comparison.get("passed") is True
+    checks["reference_scores_exact"] = comparison.get("max_abs_score_difference") == 0.0
+    checks["shape_matches"] = scores.shape == (36, 8, REFERENCE_CONTEXT_TOKENS) and stored_shape == scores.shape
+    checks["all_scores_valid"] = bool(np.asarray(valid, dtype=np.bool_).all()) and bool(np.isfinite(scores).all())
+    checks["predicted_mask_consistent"] = bool(np.array_equal(predicted, scores < threshold))
+    _, reconstructed = reconstruct_masks(scores, threshold, window_size)
+    checks["final_mask_consistent"] = bool(np.array_equal(final, reconstructed))
+    removed_fraction = float(np.asarray(final, dtype=np.bool_).mean())
+    checks["removed_fraction_matches"] = bool(
+        np.isclose(removed_fraction, REFERENCE_PREFILL_REMOVED_FRACTION, atol=1e-12, rtol=0.0)
+    )
+
+    return {
+        "passed": all(checks.values()),
+        "evidence_dir": str(evidence_dir),
+        "experiment_id": manifest.get("experiment_id"),
+        "implementation_git_commit": manifest.get("git_commit"),
+        "config_hash": manifest.get("config_hash"),
+        "predictor_revision": manifest.get("predictor_revision"),
+        "score_shape": list(scores.shape),
+        "removed_fraction": removed_fraction,
+        "artifact_sha256": {name: file_sha256(path) for name, path in required_paths.items()},
+        "checks": checks,
+    }
+
+
 def compare_with_reference(
     scores: np.ndarray,
     predicted: np.ndarray,
@@ -302,7 +420,8 @@ def write_outputs(
     context_ids: torch.Tensor,
     request: dict[str, Any],
     question_tokens: int,
-    comparison: dict[str, Any],
+    gate_a_evidence: dict[str, Any],
+    comparison: dict[str, Any] | None,
     threshold: float,
     window_size: int,
 ) -> dict[str, Path]:
@@ -312,8 +431,10 @@ def write_outputs(
         "score_mask": output_dir / "score_mask.npz",
         "request_summary": output_dir / "request_summary.csv",
         "layer_head_summary": output_dir / "layer_head_summary.csv",
-        "reference_comparison": output_dir / "reference_comparison.json",
+        "gate_a_evidence": output_dir / "gate_a_evidence.json",
     }
+    if comparison is not None:
+        paths["reference_comparison"] = output_dir / "reference_comparison.json"
     paths["manifest"].write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     np.savez_compressed(
         paths["score_mask"],
@@ -342,7 +463,8 @@ def write_outputs(
                 "logical_total_kv": logical_total,
                 "removed_fraction": logical_removed / logical_total,
                 "compression_factor": logical_total / logical_kept if logical_kept else float("inf"),
-                "reference_gate_passed": comparison["passed"],
+                "gate_a_evidence_verified": gate_a_evidence["passed"],
+                "matched_reference_verified": comparison["passed"] if comparison is not None else "",
             }
         ],
     )
@@ -367,9 +489,13 @@ def write_outputs(
                 }
             )
     write_csv(paths["layer_head_summary"], layer_head_rows)
-    paths["reference_comparison"].write_text(
-        json.dumps(comparison, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    paths["gate_a_evidence"].write_text(
+        json.dumps(gate_a_evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+    if comparison is not None:
+        paths["reference_comparison"].write_text(
+            json.dumps(comparison, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
     return paths
 
 
@@ -377,19 +503,49 @@ def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
         raise FileExistsError(f"Output directory already exists: {args.output_dir}")
-    if args.context_repetitions != 12:
-        raise ValueError("Gate A requires --context-repetitions 12")
     if args.window_size < 0 or args.score_atol < 0:
         raise ValueError("--window-size and --score-atol must be non-negative")
+    if args.request_id is not None and args.input_jsonl is None:
+        raise ValueError("--request-id requires --input-jsonl")
+    if args.reference_trace is not None and (args.input_jsonl is not None or args.preset != "hardware"):
+        raise ValueError("--reference-trace is valid only with --preset hardware")
     expected_predictor = f"nvidia/KVzap-mlp-{args.model_name.split('/')[-1]}"
     if args.model_name != DEFAULT_MODEL or args.predictor_name != expected_predictor:
-        raise ValueError("Gate A currently supports only Qwen/Qwen3-8B with its official MLP predictor")
+        raise ValueError("The verified gate-A boundary supports only Qwen/Qwen3-8B with its official MLP predictor")
 
-    request = build_builtin_request("hardware", args.context_repetitions)
+    gate_a_evidence = validate_gate_a_evidence(
+        args.gate_a_evidence,
+        model_name=args.model_name,
+        predictor_name=args.predictor_name,
+        threshold=args.threshold,
+        window_size=args.window_size,
+    )
+    if not gate_a_evidence["passed"]:
+        failed = [name for name, passed in gate_a_evidence["checks"].items() if not passed]
+        raise ValueError(f"Frozen gate-A evidence failed validation: {failed}")
+    print(
+        f"Gate-A evidence verified: {gate_a_evidence['experiment_id']} "
+        f"({gate_a_evidence['implementation_git_commit']})"
+    )
+
+    if args.input_jsonl is not None:
+        request = load_jsonl_request(args.input_jsonl, args.request_id)
+        request_source = str(args.input_jsonl)
+        preset = None
+    else:
+        request = build_builtin_request(args.preset, args.context_repetitions)
+        request_source = f"builtin/{args.preset}"
+        preset = args.preset
     predictor_snapshot = Path(snapshot_download(repo_id=args.predictor_name))
     predictor_revision = predictor_snapshot.name
+    if predictor_revision != gate_a_evidence["predictor_revision"]:
+        raise ValueError(
+            "Predictor revision differs from frozen gate A: "
+            f"expected {gate_a_evidence['predictor_revision']}, got {predictor_revision}"
+        )
     print(f"Loading base model: {args.model_name}")
     pipe = pipeline("kv-press-text-generation", model=args.model_name, device_map="auto", dtype="auto")
+    model_revision = getattr(pipe.model.config, "_commit_hash", None)
     tokenized = pipe.preprocess(
         request["context"],
         [request["question"]],
@@ -400,9 +556,13 @@ def main() -> None:
     context_ids = tokenized["context_ids"]
     context_tokens = int(context_ids.shape[1])
     question_tokens = int(tokenized["questions_ids"][0].shape[1])
-    if context_tokens != REFERENCE_CONTEXT_TOKENS:
+    if context_tokens <= args.window_size:
+        raise ValueError(
+            f"Context has {context_tokens} tokens, which does not exceed the protected window {args.window_size}"
+        )
+    if args.reference_trace is not None and context_tokens != REFERENCE_CONTEXT_TOKENS:
         raise AssertionError(
-            f"Gate-A hardware context changed: expected {REFERENCE_CONTEXT_TOKENS} tokens, got {context_tokens}"
+            f"Hardware reference context changed: expected {REFERENCE_CONTEXT_TOKENS} tokens, got {context_tokens}"
         )
 
     predictor = KVzapPress(model_type="mlp")
@@ -419,27 +579,35 @@ def main() -> None:
         raise AssertionError("Predictor trace contains NaN or infinity")
     original_score_dtype = next(iter(observer.original_score_dtypes))
     predicted, final = reconstruct_masks(scores, args.threshold, args.window_size)
-    comparison = compare_with_reference(
-        scores,
-        predicted,
-        final,
-        reference_dir=args.reference_trace,
-        threshold=args.threshold,
-        window_size=args.window_size,
-        score_atol=args.score_atol,
-    )
+    comparison = None
+    if args.reference_trace is not None:
+        comparison = compare_with_reference(
+            scores,
+            predicted,
+            final,
+            reference_dir=args.reference_trace,
+            threshold=args.threshold,
+            window_size=args.window_size,
+            score_atol=args.score_atol,
+        )
+    capture_valid = gate_a_evidence["passed"] and (comparison is None or comparison["passed"])
 
     config = {
         "model": args.model_name,
+        "model_revision": model_revision,
         "predictor": args.predictor_name,
         "predictor_revision": predictor_revision,
         "threshold": args.threshold,
         "sliding_window": args.window_size,
         "seed": args.seed,
-        "context_repetitions": args.context_repetitions,
+        "preset": preset,
+        "request_source": request_source,
+        "context_repetitions": args.context_repetitions if args.input_jsonl is None else None,
         "request_id": request["request_id"],
         "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}),
-        "score_atol": args.score_atol,
+        "context_tokens": context_tokens,
+        "question_tokens": question_tokens,
+        "score_atol": args.score_atol if args.reference_trace is not None else None,
     }
     manifest = {
         "schema_version": SCHEMA_VERSION,
@@ -448,9 +616,10 @@ def main() -> None:
         "git_commit": get_git_commit(),
         "config_hash": stable_hash(config),
         "capture_scope": "context_prefill_predictor_only",
-        "capture_status": "valid" if comparison["passed"] else "invalid_reference_mismatch",
-        "valid_for_structural_analysis": comparison["passed"],
+        "capture_status": "valid" if capture_valid else "invalid_reference_mismatch",
+        "valid_for_structural_analysis": capture_valid,
         "model": args.model_name,
+        "model_revision": model_revision,
         "predictor_checkpoint": args.predictor_name,
         "predictor_revision": predictor_revision,
         "threshold": args.threshold,
@@ -465,6 +634,7 @@ def main() -> None:
         "fake_key_attention_used": False,
         "physical_compression_measured": False,
         "contains_attention_matrix": False,
+        "gate_a_evidence": gate_a_evidence,
         "reference_validation": comparison,
         "torch_version": str(torch.__version__),
         "transformers_version": str(transformers.__version__),
@@ -481,19 +651,21 @@ def main() -> None:
         context_ids=context_ids,
         request=request,
         question_tokens=question_tokens,
+        gate_a_evidence=gate_a_evidence,
         comparison=comparison,
         threshold=args.threshold,
         window_size=args.window_size,
     )
     print(f"Observed score shape: {scores.shape}")
     print(f"Reconstructed prefill removed fraction: {final.mean():.2%}")
-    print(f"Reference max absolute score difference: {comparison['max_abs_score_difference']}")
-    print(f"Reference gate A passed: {comparison['passed']}")
+    if comparison is not None:
+        print(f"Reference max absolute score difference: {comparison['max_abs_score_difference']}")
+        print(f"Matched-reference check passed: {comparison['passed']}")
     for name, path in paths.items():
         print(f"  {name}: {path}")
-    if not comparison["passed"]:
+    if comparison is not None and not comparison["passed"]:
         failed = [name for name, passed in comparison["checks"].items() if not passed]
-        print(f"Gate A failed checks: {failed}")
+        print(f"Matched-reference failed checks: {failed}")
         raise SystemExit(2)
 
 

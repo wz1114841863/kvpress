@@ -43,7 +43,7 @@ RULER/LongBench 精度、任意请求上的 faithful generation、物理显存�
 2. 新 baseline 必须写入 `analysis/experiments/<new_id>/`，不得复用冻结 experiment ID；
 3. Trace、结构化 mask 或后端修改失败，不得反向否定已经冻结的 Phase 0 事实；
 4. 任何高于“内置功能检查”的准确率结论都必须单独运行正式 benchmark；
-5. `results/qwen3_8b_single_384/` 是单个 hardware 请求的补充 Trace 参考，不属于
+5. `traces/qwen3_8b_single_384/` 是单个 hardware 请求的补充 Trace 参考，不属于
    Phase 0 baseline，也不能替代多请求 Trace 验证。
 
 ## 2. 研究边界
@@ -374,12 +374,12 @@ results/
 按顺序执行：
 
 1. **已完成并冻结**：仓库勘察、代码路径定位和 Phase 0 baseline；
-2. **当前任务**：远程验证与 DMS/attention 状态解耦的
-   `tools/export_kvzap_predictor_trace.py`；本地实现完成不等于 gate A 已通过；
-3. 用相同 987-token hardware 输入对照
-   `results/qwen3_8b_single_384/score_mask.npz`，通过 `analysis/kvzap_trace.md`
-   的 acceptance gate A；
-4. gate A 通过后，才导出少量 retrieval、summarization、reasoning
+2. **已完成**：用相同 987-token hardware 输入对照
+   `traces/qwen3_8b_single_384/score_mask.npz`；predictor-only acceptance gate A
+   于 2026-08-17 通过，冻结证据见 `analysis/predictor_trace_gate_a.json`；
+3. **当前任务**：使用 `tools/export_kvzap_predictor_trace.py` 先导出并验证一个
+   retrieval Gate B trace；每次运行必须先通过 Gate A 文件哈希与元数据校验；
+4. retrieval 验证后，再分别以新进程导出少量 summarization、reasoning
    predictor traces；
 5. 完成 run-length、block occupancy、head similarity 和 score-margin 分析；
 6. 只有 predictor-only 结果稳定后，才单独设计 actual DMS mask 与 decode 生命周期验证；

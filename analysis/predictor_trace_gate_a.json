@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "verified_at": "2026-08-17",
+  "experiment_id": "kvzap-predictor-trace-20260817T080939Z",
+  "implementation_git_commit": "f97ccd8b60a388ae791607da6da28ff8d8616059",
+  "config_hash": "6a645914544d8f7a03319c1d836eeb2d7f4d5f178dcf0196b371e9af7e13a1a4",
+  "model": "Qwen/Qwen3-8B",
+  "predictor": "nvidia/KVzap-mlp-Qwen3-8B",
+  "predictor_revision": "bd5c5917846617da4311539859c137a262a6348b",
+  "threshold": -4.0,
+  "sliding_window": 128,
+  "score_shape": [36, 8, 987],
+  "removed_fraction": 0.7434003152088259,
+  "max_absolute_score_difference": 0.0,
+  "artifact_sha256": {
+    "manifest.json": "dae42264d5b71435e363f7514f776fb15ccb4291a421131a6cc17e027daee382",
+    "score_mask.npz": "a656a0d55c22517610546e724dbb65c6d276dbe0e551f5643e555526b74c9127",
+    "reference_comparison.json": "2e0783342ef28e9636ce99ee85817c43deaab1155369d4a8b918c1abd48eb2fc",
+    "request_summary.csv": "9db8ac606d2230fafc89dad449732abb25e1fa0d7ded88bed4551c96231b5101",
+    "layer_head_summary.csv": "202208e71e311cd62ee0df10a739fe661aa59c3a8c4de1b433e8fc973091421f"
+  },
+  "scope": "Predictor-only matched hardware prefill; authorizes Gate B structural trace collection only.",
+  "does_not_establish": [
+    "generation accuracy",
+    "actual DMS mask equivalence",
+    "physical KV compression",
+    "memory reduction",
+    "wall-clock speedup"
+  ]
+}
