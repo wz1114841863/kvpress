@@ -1,5 +1,17 @@
 # KVzap baseline reproduction notes
 
+## Freeze record
+
+- Status: **frozen** on 2026-08-17.
+- Authoritative manifest: `analysis/baseline_freeze.json`.
+- `analysis/baseline_config.yaml` SHA-256:
+  `f6d8aaf2eed5f0ed2a7dc0c9433906c989c004063948b960398f3c2e7cf37e63`.
+- `analysis/baseline_results.csv` SHA-256:
+  `7f7798e9cf5b766465fd34e67e10575c631eb2adec5cf36eba869f2e516a1a07`.
+- Do not overwrite these two artifacts. Put reruns under
+  `analysis/experiments/<new_id>/`.
+- Trace failures are tracked separately and do not alter this Phase 0 record.
+
 - Experiment ID: `kvzap-baseline-20260806T043908Z`
 - Config hash: `b1d3a4704b3cba56a1d31d47054c3e886bfff11bdfb8c0ca2ae89315433da1e6`
 - Git commit: `efbaefeb315ee8c50a44923f9dbc7eb314d62f27`

@@ -1,6 +1,115 @@
 # KVzap single-request trace
 
-## What is captured
+## Current status: paused after rollback
+
+Phase 1 is not frozen and the current Trace path is not approved for new
+multi-request evidence. The repository has been rolled back after stateful
+instrumentation repeatedly changed or incompletely observed the DMS/attention
+execution path. Do not run the retrieval/summarization/reasoning commands below
+as a new experiment until the predictor-only gate described here is implemented
+and passes its matched-reference check.
+
+One artifact remains useful as a bounded reference:
+
+- `results/qwen3_8b_single_384/` completed one hardware-themed request with the
+  original two-pass exporter and recorded trace-on/off equivalence. It may be
+  used only as the matched hardware reference for the next exporter.
+
+Local reference checksums are:
+
+- `manifest.json`:
+  `b528402ab9be70ea51be41e27dc452e41d68895290c4e9bc42d255d6562667f2`;
+- `score_mask.npz`:
+  `5b84c600f3eacdaf073405ea73c61c94080f8fa4aaa11f750cbcd1a8565ad1c3`;
+- `request_summary.csv`:
+  `687e5a3c9108796698cc89d31447251695bfa3e3c3c843269934bd60c30ef9e4`.
+
+Because `results/` is ignored by Git, these hashes must be checked after the
+reference directory is transferred to another machine.
+
+The following artifacts/runs are invalid for scientific conclusions:
+
+- `retrieval_prefill_01` and `retrieval_prefill_02` from the rolled-back
+  prefill callback exporter;
+- the reported `3.28%` retrieval removal result from that exporter;
+- failed hardware prefill runs that produced zero events or only layers 30--35;
+- any directory missing the complete schema or a passed provenance/equivalence
+  gate.
+
+## Failure audit
+
+The failed attempts coupled tracing to mutable runtime state in `DMSPress` and
+the attention patch. Observed failures included:
+
+1. missing or stale `scores_buffer` state between prefill and decoding;
+2. invalid/corrupted `masked_key_indices` and CUDA out-of-bounds indexing;
+3. the existing KVPress `search_hyperplane` fake-key method failing for some
+   query geometries;
+4. recorder drop counts disagreeing with DMS cumulative counts;
+5. trace-on and trace-off generation producing different token sequences;
+6. a nominally prefill-only exporter recording no layer events, then on another
+   input recording only layers 30--35;
+7. an anomalous retrieval score distribution/removal rate that cannot be
+   trusted because the same exporter failed the matched hardware control.
+
+These failures do not show that the official KVzap predictor is ineffective.
+They show that the attempted observer was entangled with `cache_position`,
+`scores_buffer`, `masked_key_indices`, in-place fake-key masking, hook order, and
+two-pass model state. The frozen Phase 0 baseline remains valid within its
+documented smoke-test scope.
+
+## Next action: predictor-only observational trace
+
+The next implementation must be a new tool, provisionally
+`tools/export_kvzap_predictor_trace.py`, with this data flow:
+
+```text
+one normal context prefill
+  -> observe each attention layer input hidden state
+  -> invoke the official per-layer KVzap MLP immediately
+  -> copy only score [1, KV-head, token] to CPU
+  -> reconstruct predicted_drop = score < threshold offline
+  -> reconstruct the prefill final mask by protecting the newest 128 tokens
+```
+
+It must not use `DMSPress.forward_hook`, mutate `scores_buffer` or
+`masked_key_indices`, call the fake-key attention path, generate answer tokens,
+or run the same model object twice. It must record that the final mask is an
+offline reconstruction of the documented prefill rule, not an observed decode
+mask.
+
+### Acceptance gate A: matched hardware reference
+
+Before collecting any new task type, compare against
+`results/qwen3_8b_single_384/score_mask.npz` using the identical 987-token
+hardware context:
+
+1. exactly 36 layers and 8 KV heads are present;
+2. score layout is exactly `[36, 8, 987]`;
+3. per-element scores match the reference within a documented BF16 tolerance;
+4. `score < -4` produces the same predicted mask;
+5. offline window protection produces approximately `74.34003152088259%`
+   prefill logical removal, matching the recorded prefill event;
+6. mismatches must preserve diagnostics and fail the gate rather than silently
+   writing a valid manifest.
+
+### Acceptance gate B: new task traces
+
+Only after gate A passes may retrieval, summarization, and reasoning inputs be
+collected. Each request runs in a fresh process and must record model,
+checkpoint revision, threshold, window, seed, input hash, token count, tensor
+shape, dtype, and source git commit. These traces may support score distribution,
+margin, run-length, block occupancy, head similarity, and load-imbalance
+analysis only.
+
+### Deferred work
+
+Generation accuracy remains a separate baseline/benchmark path. Actual DMS
+prefill-mask equivalence, decoding maturity/admission events, physical KV
+compaction, and speed measurement are deferred until predictor-only traces are
+stable. None may be inferred from the observational score trace.
+
+## Historical exporter: what is captured
 
 `tools/run_kvzap_trace.py` captures the following intermediate results for one
 Qwen3-8B request:
@@ -17,7 +126,7 @@ It does not save attention matrices, K/V tensors, prompt text, or physical page
 layouts. The results describe logical masking, not physical memory reduction or
 wall-clock acceleration.
 
-## Safety and equivalence check
+## Historical exporter: safety and equivalence check
 
 The callback on `DMSPress` defaults to `None`. With tracing disabled, no score
 tensor is copied. The exporter runs the same deterministic request twice using
@@ -43,9 +152,10 @@ python tools/run_kvzap_trace.py --help
 pytest -q tests/test_kvzap_trace.py tests/presses/test_dms_trace.py tests/presses/test_kvzap_press.py
 ```
 
-## Remote trace run
+## Historical two-pass trace command (reference only)
 
-Use the same environment that passed the baseline experiment:
+The following command produced the bounded hardware reference. It is retained
+for provenance, not recommended for collecting new requests:
 
 ```bash
 python tools/run_kvzap_trace.py \
@@ -58,10 +168,10 @@ by git because the compressed score tensor can still be several MiB or larger.
 Transfer the selected trace directory separately, or force-add only a deliberately
 small artifact after reviewing its size.
 
-### Built-in request types
+### Built-in request types (paused)
 
-The default remains the original hardware-themed long-generation request. Use
-`--preset` to capture genuinely different inputs:
+These commands document the previous interface. Do not run them as new evidence
+until predictor-only acceptance gate A passes:
 
 ```bash
 python tools/run_kvzap_trace.py \

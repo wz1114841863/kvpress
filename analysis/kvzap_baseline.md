@@ -1,5 +1,18 @@
 # Qwen3-8B Full-KV versus KVzap baseline
 
+## Frozen status
+
+Phase 0 is frozen as of 2026-08-17. The authoritative run is
+`kvzap-baseline-20260806T043908Z`, with configuration hash
+`b1d3a4704b3cba56a1d31d47054c3e886bfff11bdfb8c0ca2ae89315433da1e6`.
+Artifact hashes and exact summary values are recorded in
+`analysis/baseline_freeze.json`.
+
+Do not use `--overwrite` on `analysis/`. Reproduction or extension runs must use
+a new directory under `analysis/experiments/`. Freezing means the recorded
+configuration and results are the Phase 0 reference; it does not promote the
+three built-in substring checks to an official accuracy benchmark.
+
 ## Goal
 
 `tools/run_kvzap_baseline.py` runs the same small request set with:
@@ -24,13 +37,16 @@ RULER/LongBench accuracy.
 ## Environment
 
 Use the remote environment described in `analysis/kvzap_smoke_test.md`. The
-recommended Transformers version is 4.57.3. Confirm the lightweight tests
-before loading Qwen3-8B:
+frozen run used Transformers `5.0.0`; an exact reproduction must preserve that
+version. The older `4.57.3` recommendation is suitable only for a separate
+compatibility experiment, not a byte-for-byte reproduction. Confirm the
+lightweight tests before loading Qwen3-8B:
 
 ```bash
 .venv/bin/pytest -q \
   tests/presses/test_kvzap_press.py \
-  tests/test_kvzap_baseline.py
+  tests/test_kvzap_baseline.py \
+  tests/test_baseline_freeze.py
 ```
 
 ## First baseline run
@@ -56,7 +72,8 @@ for another experiment:
   --output-dir analysis/experiments/qwen3_8b_baseline_02
 ```
 
-Use `--overwrite` only when replacing the three files is intentional.
+Do not use `--overwrite` on the frozen `analysis/` artifacts. It remains
+available for disposable experiment directories only.
 
 ## Custom request JSONL
 
@@ -128,8 +145,9 @@ length. A future trace hook should capture exact generated token IDs.
 5. Outputs contain no NaN/error and are nonempty.
 6. Config, results, and notes share the same experiment ID/config hash.
 
-After this baseline is reviewed, the next code change should be the minimal
-score/mask trace hook with a trace-on/off equivalence test.
+This baseline has been reviewed and frozen. Trace work must now follow the
+separate gates in `analysis/kvzap_trace.md`; a failed Trace implementation does
+not invalidate the frozen baseline.
 
 ## PyTorch 2.10 compatibility note
 

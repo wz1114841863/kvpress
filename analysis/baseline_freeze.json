@@ -1,0 +1,63 @@
+{
+  "schema_version": "baseline-freeze-1.0",
+  "status": "frozen",
+  "frozen_at": "2026-08-17",
+  "experiment_id": "kvzap-baseline-20260806T043908Z",
+  "config_hash": "b1d3a4704b3cba56a1d31d47054c3e886bfff11bdfb8c0ca2ae89315433da1e6",
+  "source_git_commit": "efbaefeb315ee8c50a44923f9dbc7eb314d62f27",
+  "scope": "Three built-in smoke-level functional requests; not an official accuracy or performance benchmark.",
+  "artifacts": {
+    "analysis/baseline_config.yaml": {
+      "sha256": "f6d8aaf2eed5f0ed2a7dc0c9433906c989c004063948b960398f3c2e7cf37e63",
+      "bytes": 897
+    },
+    "analysis/baseline_results.csv": {
+      "sha256": "7f7798e9cf5b766465fd34e67e10575c631eb2adec5cf36eba869f2e516a1a07",
+      "bytes": 14728,
+      "rows": 9
+    }
+  },
+  "configuration": {
+    "model": "Qwen/Qwen3-8B",
+    "predictor": "nvidia/KVzap-mlp-Qwen3-8B",
+    "predictor_revision": "bd5c5917846617da4311539859c137a262a6348b",
+    "threshold": -4.0,
+    "sliding_window": 128,
+    "seed": 42,
+    "thinking": false,
+    "decoding": "greedy",
+    "gpu": "NVIDIA A100-SXM-64GB",
+    "torch_version": "2.10.0+cu128",
+    "transformers_version": "5.0.0"
+  },
+  "summary": {
+    "full_kv": {
+      "requests": 3,
+      "functional_checks_passed": 3,
+      "logical_removed_fraction_mean": 0.0,
+      "logical_removed_fraction_range": [0.0, 0.0],
+      "logical_compression_factor_range": [1.0, 1.0]
+    },
+    "kvzap_prefill": {
+      "requests": 3,
+      "functional_checks_passed": 3,
+      "logical_removed_fraction_mean": 0.7151101115929035,
+      "logical_removed_fraction_range": [0.6953540558510638, 0.7434003152088259],
+      "logical_compression_factor_range": [3.28249897694721, 3.897120921305183]
+    },
+    "kvzap_prefill_decoding": {
+      "requests": 3,
+      "functional_checks_passed": 3,
+      "logical_removed_fraction_mean": 0.7264114895834125,
+      "logical_removed_fraction_range": [0.7035645780051151, 0.7491265860768176],
+      "logical_compression_factor_range": [3.373416015098409, 3.9860740297742376]
+    }
+  },
+  "claims_not_supported": [
+    "official RULER or LongBench accuracy",
+    "general faithful generation",
+    "physical KV-memory reduction",
+    "wall-clock speedup"
+  ],
+  "rerun_policy": "Write reruns to analysis/experiments/<new_id>; never overwrite the frozen artifacts."
+}

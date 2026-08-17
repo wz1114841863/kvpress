@@ -14,6 +14,38 @@
    - 路线 B：在不重新训练 predictor 的前提下，把原始稀疏转化为硬件友好的 block/page/head-group 结构；
 5. 只有在上述分析完成后，才开始实现硬件模型、调度器或 RTL。
 
+### 1.1 当前冻结状态（2026-08-17）
+
+Phase 0 baseline 已冻结。后续工作必须以以下记录为权威边界：
+
+- 冻结实验：`kvzap-baseline-20260806T043908Z`；
+- 配置哈希：`b1d3a4704b3cba56a1d31d47054c3e886bfff11bdfb8c0ca2ae89315433da1e6`；
+- 运行环境：Qwen3-8B、官方 MLP predictor revision
+  `bd5c5917846617da4311539859c137a262a6348b`、threshold `-4`、window `128`、seed `42`、
+  greedy decoding、thinking disabled、A100-SXM-64GB、PyTorch `2.10.0+cu128`、Transformers `5.0.0`；
+- 核心制品：`analysis/baseline_config.yaml`、`analysis/baseline_results.csv`；
+- 冻结清单与 SHA-256：`analysis/baseline_freeze.json`；
+- 9 个运行组合全部完成，三个内置功能检查在 Full KV、KVzap prefill、KVzap
+  prefill+decoding 下均通过；
+- KVzap prefill logical removed fraction 为 `69.54%..74.34%`
+  （`3.28x..3.90x` logical compression）；
+- KVzap prefill+decoding logical removed fraction 为 `70.36%..74.91%`
+  （`3.37x..3.99x` logical compression）。
+
+冻结结论只证明：在这三个内置请求、指定模型/checkpoint/环境下，官方 predictor 与
+KVPress 路径能够运行，功能检查通过，并产生上述逻辑裁剪率。它不证明官方
+RULER/LongBench 精度、任意请求上的 faithful generation、物理显存节省或 wall-clock
+加速。`elapsed_ms_diagnostic` 不得用于性能结论。
+
+冻结规则：
+
+1. 不覆盖或手工编辑 `analysis/baseline_config.yaml` 和 `analysis/baseline_results.csv`；
+2. 新 baseline 必须写入 `analysis/experiments/<new_id>/`，不得复用冻结 experiment ID；
+3. Trace、结构化 mask 或后端修改失败，不得反向否定已经冻结的 Phase 0 事实；
+4. 任何高于“内置功能检查”的准确率结论都必须单独运行正式 benchmark；
+5. `results/qwen3_8b_single_384/` 是单个 hardware 请求的补充 Trace 参考，不属于
+   Phase 0 baseline，也不能替代多请求 Trace 验证。
+
 ## 2. 研究边界
 
 ### 当前应做
@@ -133,7 +165,7 @@
 
 ## 7. 实验阶段与门槛
 
-### Phase 0：Baseline 冻结
+### Phase 0：Baseline 冻结（已完成）
 
 输出：
 
@@ -147,6 +179,9 @@
 - 记录模型、checkpoint、threshold、window、数据集、解码参数、seed；
 - 记录 per-sample accuracy、compression、generation length；
 - 区分 removed fraction 与 compression factor。
+
+冻结记录见 `analysis/baseline_freeze.json`。除非发现冻结制品校验和不匹配或原始结果
+解析错误，否则当前工作从 Phase 1 继续，不重复覆盖 Phase 0。
 
 ### Phase 1：Trace 采集
 
@@ -334,15 +369,18 @@ results/
 
 不要强制重构现有仓库；若已有目录约定，优先复用。
 
-## 15. 第一批建议任务
+## 15. 当前执行顺序
 
 按顺序执行：
 
-1. 完成 `analysis/repo_inventory.md`；
-2. 定位并记录 score、mask、indices 和 sliding-window 代码路径；
-3. 增加最小 trace hook，仅导出一个小样本；
-4. 验证 trace 开关不会改变输出；
-5. 定义并实现 request summary 与 layer-head retention；
-6. 导出少量 RULER/LongBench/reasoning 样本；
-7. 完成 run-length、block occupancy、head similarity 分析；
-8. 基于结果决定是否推进 block/page/head-group 结构化策略。
+1. **已完成并冻结**：仓库勘察、代码路径定位和 Phase 0 baseline；
+2. **当前任务**：实现与 DMS/attention 状态解耦的 predictor-only observational exporter；
+3. 用相同 987-token hardware 输入对照
+   `results/qwen3_8b_single_384/score_mask.npz`，通过 `analysis/kvzap_trace.md`
+   的 acceptance gate A；
+4. gate A 通过后，才导出少量 retrieval、summarization、reasoning
+   predictor traces；
+5. 完成 run-length、block occupancy、head similarity 和 score-margin 分析；
+6. 只有 predictor-only 结果稳定后，才单独设计 actual DMS mask 与 decode 生命周期验证；
+7. 基于可信 trace 决定是否推进 block/page/head-group 结构化策略；
+8. 任何结构化策略都必须回到独立精度评测，不能由 trace 直接推断准确率。
