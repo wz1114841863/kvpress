@@ -18,9 +18,35 @@ from typing import Any, Iterable
 import numpy as np
 
 
-SUPPORTED_SCHEMA = "1.0"
+SUPPORTED_SCHEMAS = ("1.0", "kvzap-predictor-trace-1.1")
+PREDICTOR_ONLY_SCHEMA = "kvzap-predictor-trace-1.1"
 DEFAULT_BLOCK_SIZES = (4, 8, 16, 32)
 DEFAULT_THRESHOLD_DELTAS = (-0.5, -0.25, 0.0, 0.25, 0.5)
+DECODING_COLUMNS = (
+    "trace_id",
+    "experiment_id",
+    "request_id",
+    "phase",
+    "step",
+    "event_kind",
+    "cache_tokens",
+    "tokens_added",
+    "newly_dropped_kv",
+    "newly_admitted_kv",
+    "drop_fraction_of_matured",
+    "logical_kept_kv",
+    "cumulative_dropped_kv",
+)
+REQUEST_PAIR_COLUMNS = (
+    "left_trace_id",
+    "right_trace_id",
+    "left_request_id",
+    "right_request_id",
+    "layer_retention_pearson",
+    "layer_head_retention_pearson",
+    "logical_removed_fraction_delta",
+    "cold_removed_fraction_delta",
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -30,7 +56,12 @@ def parse_args() -> argparse.Namespace:
             "and decoding growth from one or more trace directories."
         )
     )
-    parser.add_argument("trace_dirs", nargs="+", type=Path, help="Directories produced by run_kvzap_trace.py.")
+    parser.add_argument(
+        "trace_dirs",
+        nargs="+",
+        type=Path,
+        help="Directories produced by run_kvzap_trace.py or export_kvzap_predictor_trace.py.",
+    )
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -82,13 +113,36 @@ def coefficient_of_variation(values: Iterable[float]) -> float:
     return float(array.std() / mean) if mean else math.nan
 
 
+def pearson(left: np.ndarray, right: np.ndarray) -> float:
+    left = np.asarray(left, dtype=np.float64)
+    right = np.asarray(right, dtype=np.float64)
+    if left.shape != right.shape:
+        raise ValueError(f"Pearson inputs must have the same shape, got {left.shape} and {right.shape}")
+    if left.size < 2 or left.std() == 0 or right.std() == 0:
+        return math.nan
+    return float(np.corrcoef(left, right)[0, 1])
+
+
 def safe_divide(numerator: float, denominator: float) -> float:
     return numerator / denominator if denominator else math.nan
 
 
 def get_git_commit() -> str:
     result = subprocess.run(["git", "rev-parse", "HEAD"], check=False, capture_output=True, text=True)
-    return result.stdout.strip() if result.returncode == 0 else "unknown"
+    if result.returncode != 0:
+        return "unknown"
+    status = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=no"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    dirty = status.returncode == 0 and bool(status.stdout.strip())
+    return f"{result.stdout.strip()}+dirty" if dirty else result.stdout.strip()
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def stable_hash(value: dict[str, Any]) -> str:
@@ -119,24 +173,37 @@ def validate_trace(trace_dir: Path) -> dict[str, Any]:
         "score_mask.npz",
         "request_summary.csv",
         "layer_head_summary.csv",
-        "decoding_events.csv",
     }
     missing = sorted(name for name in required if not (trace_dir / name).is_file())
     if missing:
         raise FileNotFoundError(f"{trace_dir} is missing trace files: {missing}")
-
     manifest = json.loads((trace_dir / "manifest.json").read_text(encoding="utf-8"))
-    if manifest.get("schema_version") != SUPPORTED_SCHEMA:
+    schema = manifest.get("schema_version")
+    if schema not in SUPPORTED_SCHEMAS:
         raise ValueError(
-            f"Unsupported schema {manifest.get('schema_version')!r} in {trace_dir}; expected {SUPPORTED_SCHEMA!r}"
+            f"Unsupported schema {schema!r} in {trace_dir}; expected one of {SUPPORTED_SCHEMAS!r}"
         )
+    predictor_only = schema == PREDICTOR_ONLY_SCHEMA
+    required.add("gate_a_evidence.json" if predictor_only else "decoding_events.csv")
+    missing = sorted(name for name in required if not (trace_dir / name).is_file())
+    if missing:
+        raise FileNotFoundError(f"{trace_dir} is missing trace files: {missing}")
     if manifest.get("tensor_layout") != "L,H,T":
         raise ValueError(f"Unsupported tensor layout in {trace_dir}: {manifest.get('tensor_layout')!r}")
-    if not manifest.get("trace_equivalence_verified", False):
+    if predictor_only:
+        if manifest.get("capture_status") != "valid" or manifest.get("valid_for_structural_analysis") is not True:
+            raise ValueError(f"Predictor-only trace was not authorized for structural analysis in {trace_dir}")
+        gate_a_evidence = json.loads((trace_dir / "gate_a_evidence.json").read_text(encoding="utf-8"))
+        if gate_a_evidence != manifest.get("gate_a_evidence"):
+            raise ValueError(f"Gate-A evidence file and manifest differ in {trace_dir}")
+        if gate_a_evidence.get("passed") is not True or not all(gate_a_evidence.get("checks", {}).values()):
+            raise ValueError(f"Gate-A evidence did not pass in {trace_dir}")
+    elif not manifest.get("trace_equivalence_verified", False):
         raise ValueError(f"Trace equivalence was not verified in {trace_dir}")
 
     with np.load(trace_dir / "score_mask.npz") as archive:
-        required_arrays = {"scores", "score_valid_mask", "predicted_drop_mask", "final_drop_mask", "shape"}
+        final_name = "reconstructed_final_drop_mask" if predictor_only else "final_drop_mask"
+        required_arrays = {"scores", "score_valid_mask", "predicted_drop_mask", final_name, "shape"}
         if missing_arrays := sorted(required_arrays - set(archive.files)):
             raise ValueError(f"{trace_dir}/score_mask.npz is missing arrays: {missing_arrays}")
         arrays = {name: archive[name].copy() for name in required_arrays}
@@ -148,13 +215,15 @@ def validate_trace(trace_dir: Path) -> dict[str, Any]:
     scores = arrays["scores"]
     valid = arrays["score_valid_mask"].astype(np.bool_, copy=False)
     predicted = arrays["predicted_drop_mask"].astype(np.bool_, copy=False)
-    final = arrays["final_drop_mask"].astype(np.bool_, copy=False)
+    final = arrays[final_name].astype(np.bool_, copy=False)
     if not np.isfinite(scores[valid]).all():
         raise ValueError(f"{trace_dir}: valid scores contain NaN or infinity")
     if np.any(final & ~valid):
         raise ValueError(f"{trace_dir}: final mask drops a position without a valid score")
     if not valid.all():
         raise ValueError(f"{trace_dir}: pilot analyzer requires a dense valid [L,H,T] score trace")
+    if predictor_only and not np.array_equal(predicted, scores < float(manifest["threshold"])):
+        raise ValueError(f"{trace_dir}: predicted mask differs from score < threshold")
 
     window = int(manifest["sliding_window"])
     tokens = expected_shape[-1]
@@ -176,18 +245,30 @@ def validate_trace(trace_dir: Path) -> dict[str, Any]:
         raise ValueError(f"{trace_dir}: request summary logical_total_kv does not match NPZ")
     if logical_total - logical_removed != int(request["logical_kept_kv"]):
         raise ValueError(f"{trace_dir}: request summary logical_kept_kv does not match NPZ")
+    if not np.isclose(float(request["removed_fraction"]), logical_removed / logical_total):
+        raise ValueError(f"{trace_dir}: request summary removed_fraction does not match NPZ")
+
+    normalized_manifest = dict(manifest)
+    normalized_manifest.setdefault("dataset", request["dataset"])
+    normalized_manifest.setdefault("subset", request["subset"])
+    normalized_request = dict(request)
+    if predictor_only:
+        normalized_request["prompt_tokens"] = request["context_tokens_scored"]
+        normalized_request["generated_tokens_retokenized"] = "0"
+        normalized_request.setdefault("question_tokens_not_scored", "0")
 
     trace_id = f"{manifest['experiment_id']}::{request['request_id']}"
     return {
         "trace_dir": trace_dir,
         "trace_id": trace_id,
-        "manifest": manifest,
-        "request": request,
+        "manifest": normalized_manifest,
+        "request": normalized_request,
         "scores": scores,
         "valid": valid,
         "predicted": predicted,
         "final": final,
-        "events": read_csv(trace_dir / "decoding_events.csv"),
+        "events": [] if predictor_only else read_csv(trace_dir / "decoding_events.csv"),
+        "predictor_only": predictor_only,
     }
 
 
@@ -229,6 +310,8 @@ def analyze_trace(
         "kv_heads": heads,
         "sequence_tokens": tokens,
         "prompt_tokens": int(request["prompt_tokens"]),
+        "context_tokens_scored": int(request.get("context_tokens_scored", request["prompt_tokens"])),
+        "question_tokens_not_scored": int(request.get("question_tokens_not_scored", 0)),
         "generated_tokens_retokenized": int(request["generated_tokens_retokenized"]),
         "logical_total_kv": logical_total,
         "logical_removed_kv": logical_removed,
@@ -238,7 +321,19 @@ def analyze_trace(
         "predicted_removed_fraction": predicted_removed / logical_total,
         "protected_recent_predicted_drops": recent_predicted,
         "protected_recent_final_drops": int(final[..., cold_tokens:].sum()),
+        "predictor_only": trace.get("predictor_only", False),
     }
+    valid_scores = scores[valid]
+    score_margins = np.abs(valid_scores - threshold)
+    summary.update(
+        {
+            "score_margin_abs_p50": percentile(score_margins, 50),
+            "score_margin_abs_p90": percentile(score_margins, 90),
+            "near_threshold_0_125_fraction": float((score_margins < 0.125).mean()),
+            "near_threshold_0_25_fraction": float((score_margins < 0.25).mean()),
+            "near_threshold_0_50_fraction": float((score_margins < 0.50).mean()),
+        }
+    )
 
     layer_head_rows = []
     for layer in range(layers):
@@ -374,7 +469,6 @@ def analyze_trace(
     )
 
     score_sensitivity_rows = []
-    valid_scores = scores[valid]
     for delta in threshold_deltas:
         score_sensitivity_rows.append(
             {
@@ -385,9 +479,27 @@ def analyze_trace(
             }
         )
 
-    decoding_rows, decoding_summary = analyze_decoding_events(trace, layers * heads)
-    if decoding_rows[-1]["cumulative_dropped_kv"] != logical_removed:
-        raise ValueError(f"{trace['trace_dir']}: final decoding event does not match final_drop_mask")
+    if trace["events"]:
+        decoding_rows, decoding_summary = analyze_decoding_events(trace, layers * heads)
+        if decoding_rows[-1]["cumulative_dropped_kv"] != logical_removed:
+            raise ValueError(f"{trace['trace_dir']}: final decoding event does not match final_drop_mask")
+        decoding_summary["decoding_trace_available"] = True
+    else:
+        decoding_rows = []
+        decoding_summary = {
+            "decoding_trace_available": False,
+            "context_prefill_tokens": tokens,
+            "prompt_chunk_count": 0,
+            "prompt_chunk_tokens": 0,
+            "generation_steps": 0,
+            "final_cache_tokens": math.nan,
+            "generation_newly_dropped_mean": math.nan,
+            "generation_newly_dropped_p90": math.nan,
+            "generation_newly_dropped_max": math.nan,
+            "generation_newly_admitted_mean": math.nan,
+            "generation_newly_admitted_p90": math.nan,
+            "generation_newly_admitted_max": math.nan,
+        }
     summary.update(decoding_summary)
     return {
         "summary": summary,
@@ -469,14 +581,60 @@ def analyze_decoding_events(
     return output_rows, summary
 
 
+def analyze_request_pairs(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Compare per-layer/head retention profiles without aligning request tokens."""
+
+    rows = []
+    for left_index, left in enumerate(results):
+        left_summary = left["summary"]
+        left_retention = np.asarray([row["retention_ratio"] for row in left["layer_head"]], dtype=np.float64)
+        left_layers = np.asarray(
+            [
+                np.mean([row["retention_ratio"] for row in left["layer_head"] if row["layer"] == layer])
+                for layer in sorted({row["layer"] for row in left["layer_head"]})
+            ],
+            dtype=np.float64,
+        )
+        for right in results[left_index + 1 :]:
+            right_summary = right["summary"]
+            right_retention = np.asarray(
+                [row["retention_ratio"] for row in right["layer_head"]], dtype=np.float64
+            )
+            right_layers = np.asarray(
+                [
+                    np.mean([row["retention_ratio"] for row in right["layer_head"] if row["layer"] == layer])
+                    for layer in sorted({row["layer"] for row in right["layer_head"]})
+                ],
+                dtype=np.float64,
+            )
+            rows.append(
+                {
+                    "left_trace_id": left_summary["trace_id"],
+                    "right_trace_id": right_summary["trace_id"],
+                    "left_request_id": left_summary["request_id"],
+                    "right_request_id": right_summary["request_id"],
+                    "layer_retention_pearson": pearson(left_layers, right_layers),
+                    "layer_head_retention_pearson": pearson(left_retention, right_retention),
+                    "logical_removed_fraction_delta": (
+                        right_summary["logical_removed_fraction"] - left_summary["logical_removed_fraction"]
+                    ),
+                    "cold_removed_fraction_delta": (
+                        right_summary["cold_removed_fraction"] - left_summary["cold_removed_fraction"]
+                    ),
+                }
+            )
+    return rows
+
+
 def figure_metadata(trace: dict[str, Any]) -> str:
     manifest = trace["manifest"]
     request = trace["request"]
     return (
         f"model={manifest['model']} | dataset={manifest['dataset']}/{manifest['subset']} | "
         f"threshold={manifest['threshold']} | predictor={manifest['predictor_checkpoint']} | "
-        f"window={manifest['sliding_window']} | prompt/output={request['prompt_tokens']}/"
-        f"{request['generated_tokens_retokenized']} | N=1 | experiment={manifest['experiment_id']} | "
+        f"window={manifest['sliding_window']}\ncontext/question/output={request['prompt_tokens']}/"
+        f"{request.get('question_tokens_not_scored', 0)}/{request['generated_tokens_retokenized']} | "
+        f"N=1 | experiment={manifest['experiment_id']} | "
         f"git={manifest['git_commit'][:12]}"
     )
 
@@ -506,8 +664,8 @@ def write_figures(output_dir: Path, traces: list[dict[str, Any]], results: list[
         image = axis.imshow(retention, aspect="auto", interpolation="nearest", vmin=0, vmax=1, cmap="viridis")
         axis.set(title="Layer–KV-head retention", xlabel="KV head", ylabel="Layer")
         fig.colorbar(image, ax=axis, label="Retention ratio")
-        fig.suptitle(metadata, fontsize=7, y=0.01)
-        fig.tight_layout(rect=(0, 0.04, 1, 1))
+        fig.suptitle(metadata, fontsize=7, y=0.055)
+        fig.tight_layout(rect=(0, 0.11, 1, 1))
         fig.savefig(figures_dir / f"layer_head_retention_{suffix}.png", dpi=180)
         plt.close(fig)
 
@@ -521,8 +679,8 @@ def write_figures(output_dir: Path, traces: list[dict[str, Any]], results: list[
         axis.set(xscale="log", xlabel="Run length (tokens, log scale)", ylabel="CDF", title="Cold-cache run lengths")
         axis.grid(alpha=0.25)
         axis.legend()
-        fig.suptitle(metadata, fontsize=7, y=0.01)
-        fig.tight_layout(rect=(0, 0.04, 1, 1))
+        fig.suptitle(metadata, fontsize=7, y=0.055)
+        fig.tight_layout(rect=(0, 0.11, 1, 1))
         fig.savefig(figures_dir / f"run_length_cdf_{suffix}.png", dpi=180)
         plt.close(fig)
 
@@ -540,8 +698,8 @@ def write_figures(output_dir: Path, traces: list[dict[str, Any]], results: list[
         axis.set(xlabel="Block size", ylabel="Fraction", title="Block occupancy and physical retention", xticks=sizes)
         axis.grid(alpha=0.25)
         axis.legend()
-        fig.suptitle(metadata, fontsize=7, y=0.01)
-        fig.tight_layout(rect=(0, 0.04, 1, 1))
+        fig.suptitle(metadata, fontsize=7, y=0.055)
+        fig.tight_layout(rect=(0, 0.11, 1, 1))
         fig.savefig(figures_dir / f"block_occupancy_{suffix}.png", dpi=180)
         plt.close(fig)
 
@@ -569,8 +727,8 @@ def write_figures(output_dir: Path, traces: list[dict[str, Any]], results: list[
             image = axis.imshow(matrix, vmin=0, vmax=1, cmap="magma")
             axis.set(title=title, xlabel="KV head", ylabel="KV head")
             fig.colorbar(image, ax=axis, fraction=0.046)
-        fig.suptitle(metadata, fontsize=7, y=0.01)
-        fig.tight_layout(rect=(0, 0.04, 1, 1))
+        fig.suptitle(metadata, fontsize=7, y=0.055)
+        fig.tight_layout(rect=(0, 0.11, 1, 1))
         fig.savefig(figures_dir / f"head_similarity_{suffix}.png", dpi=180)
         plt.close(fig)
 
@@ -581,23 +739,28 @@ def write_figures(output_dir: Path, traces: list[dict[str, Any]], results: list[
         axis.set(xlabel="Absolute score margin", ylabel="CDF", title="Score margin from pruning threshold")
         axis.set_xlim(left=0)
         axis.grid(alpha=0.25)
-        fig.suptitle(metadata, fontsize=7, y=0.01)
-        fig.tight_layout(rect=(0, 0.04, 1, 1))
+        fig.suptitle(metadata, fontsize=7, y=0.055)
+        fig.tight_layout(rect=(0, 0.11, 1, 1))
         fig.savefig(figures_dir / f"score_margin_cdf_{suffix}.png", dpi=180)
         plt.close(fig)
 
         decoding = result["decoding"]
-        fig, axis = plt.subplots(figsize=(9, 5))
-        axis.plot([row["cache_tokens"] for row in decoding], [row["logical_kept_kv"] for row in decoding])
-        for row in decoding:
-            if row["event_kind"] == "prompt_chunk":
-                axis.axvline(row["cache_tokens"], color="tab:orange", linestyle="--", alpha=0.7)
-        axis.set(xlabel="Cache tokens", ylabel="Logical kept KV across layer-heads", title="Decoding KV growth")
-        axis.grid(alpha=0.25)
-        fig.suptitle(metadata, fontsize=7, y=0.01)
-        fig.tight_layout(rect=(0, 0.04, 1, 1))
-        fig.savefig(figures_dir / f"decoding_growth_{suffix}.png", dpi=180)
-        plt.close(fig)
+        if decoding:
+            fig, axis = plt.subplots(figsize=(9, 5))
+            axis.plot([row["cache_tokens"] for row in decoding], [row["logical_kept_kv"] for row in decoding])
+            for row in decoding:
+                if row["event_kind"] == "prompt_chunk":
+                    axis.axvline(row["cache_tokens"], color="tab:orange", linestyle="--", alpha=0.7)
+            axis.set(
+                xlabel="Cache tokens",
+                ylabel="Logical kept KV across layer-heads",
+                title="Decoding KV growth",
+            )
+            axis.grid(alpha=0.25)
+            fig.suptitle(metadata, fontsize=7, y=0.055)
+            fig.tight_layout(rect=(0, 0.11, 1, 1))
+            fig.savefig(figures_dir / f"decoding_growth_{suffix}.png", dpi=180)
+            plt.close(fig)
 
     removed_fractions = sorted(result["summary"]["logical_removed_fraction"] for result in results)
     first_manifest = traces[0]["manifest"]
@@ -606,8 +769,8 @@ def write_figures(output_dir: Path, traces: list[dict[str, Any]], results: list[
     common_metadata = (
         f"model={first_manifest['model']} | datasets=multiple | threshold={first_manifest['threshold']} | "
         f"predictor={first_manifest['predictor_checkpoint']} | window={first_manifest['sliding_window']} | "
-        f"prompt range={min(prompt_lengths)}..{max(prompt_lengths)} | "
-        f"output range={min(output_lengths)}..{max(output_lengths)} | N={len(traces)} | "
+        f"N={len(traces)}\nprompt range={min(prompt_lengths)}..{max(prompt_lengths)} | "
+        f"output range={min(output_lengths)}..{max(output_lengths)} | "
         f"analysis git={get_git_commit()[:12]}"
     )
     fig, axis = plt.subplots(figsize=(8, 5))
@@ -619,8 +782,8 @@ def write_figures(output_dir: Path, traces: list[dict[str, Any]], results: list[
     axis.set(xlabel="Logical removed fraction", ylabel="Request CDF", title="Per-request KVzap compression")
     axis.set_xlim(0, 1)
     axis.grid(alpha=0.25)
-    fig.suptitle(common_metadata, fontsize=7, y=0.01)
-    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    fig.suptitle(common_metadata, fontsize=7, y=0.055)
+    fig.tight_layout(rect=(0, 0.11, 1, 1))
     fig.savefig(figures_dir / "request_compression_cdf.png", dpi=180)
     plt.close(fig)
 
@@ -639,13 +802,23 @@ def main() -> None:
                 "Plotting requires matplotlib; install project dev dependencies or use --no-plots"
             ) from error
     traces = [validate_trace(path) for path in args.trace_dirs]
-    compatibility_fields = ("model", "predictor_checkpoint", "threshold", "sliding_window")
-    reference = tuple(traces[0]["manifest"][field] for field in compatibility_fields)
+    if any(trace["predictor_only"] != traces[0]["predictor_only"] for trace in traces[1:]):
+        raise ValueError("Predictor-only and stateful decoding traces cannot be mixed in one analysis")
+    compatibility_fields = (
+        "model",
+        "model_revision",
+        "predictor_checkpoint",
+        "predictor_revision",
+        "threshold",
+        "sliding_window",
+    )
+    reference = tuple(traces[0]["manifest"].get(field) for field in compatibility_fields)
     for trace in traces[1:]:
-        current = tuple(trace["manifest"][field] for field in compatibility_fields)
+        current = tuple(trace["manifest"].get(field) for field in compatibility_fields)
         if current != reference:
             raise ValueError(
-                "All traces in one analysis must use the same model, predictor, threshold, and sliding window"
+                "All traces in one analysis must use the same model/revision, predictor/revision, "
+                "threshold, and sliding window"
             )
     results = [analyze_trace(trace, args.block_sizes, args.threshold_deltas) for trace in traces]
     args.output_dir.mkdir(parents=True)
@@ -659,29 +832,45 @@ def main() -> None:
         "head_similarity.csv": [row for result in results for row in result["head_similarity"]],
         "score_threshold_sensitivity.csv": [row for result in results for row in result["score_sensitivity"]],
         "decoding_growth.csv": [row for result in results for row in result["decoding"]],
+        "request_pair_similarity.csv": analyze_request_pairs(results),
     }
     for filename, rows in outputs.items():
-        write_csv(args.output_dir / filename, rows)
+        if filename == "decoding_growth.csv":
+            write_csv(args.output_dir / filename, rows, DECODING_COLUMNS)
+        elif filename == "request_pair_similarity.csv":
+            write_csv(args.output_dir / filename, rows, REQUEST_PAIR_COLUMNS)
+        else:
+            write_csv(args.output_dir / filename, rows)
 
     analysis_config = {
         "source_experiment_ids": [trace["manifest"]["experiment_id"] for trace in traces],
+        "source_config_hashes": [trace["manifest"].get("config_hash") for trace in traces],
         "block_sizes": args.block_sizes,
         "threshold_deltas": args.threshold_deltas,
         "plots_generated": not args.no_plots,
     }
     analysis_manifest = {
-        "analysis_schema_version": "1.0",
+        "analysis_schema_version": "1.1",
         "analysis_git_commit": get_git_commit(),
         "analysis_config_hash": stable_hash(analysis_config),
-        "source_trace_schema": SUPPORTED_SCHEMA,
+        "source_trace_schemas": sorted({trace["manifest"]["schema_version"] for trace in traces}),
         "trace_count": len(traces),
         "source_traces": [str(trace["trace_dir"]) for trace in traces],
         "source_git_commits": [trace["manifest"]["git_commit"] for trace in traces],
+        "source_artifact_sha256": [
+            {
+                "manifest.json": file_sha256(trace["trace_dir"] / "manifest.json"),
+                "score_mask.npz": file_sha256(trace["trace_dir"] / "score_mask.npz"),
+            }
+            for trace in traces
+        ],
         **analysis_config,
         "notes": [
             "All compression metrics are logical or offline physical-layout estimates.",
             "Physical block estimates use keep-any allocation and report exact-span and padded variants.",
             "Prompt chunks with tokens_added > 1 are separated from one-token generation events.",
+            "Predictor-only traces have no decoding events; decoding_growth.csv is header-only for such inputs.",
+            "Cross-request similarity compares layer/head retention ratios and does not align token masks.",
             "No accuracy, HBM traffic, runtime speedup, or measured physical allocation is inferred.",
         ],
     }

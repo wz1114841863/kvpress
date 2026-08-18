@@ -43,6 +43,7 @@ REFERENCE_SCORE_MASK_SHA256 = "5b84c600f3eacdaf073405ea73c61c94080f8fa4aaa11f750
 GATE_A_EXPERIMENT_ID = "kvzap-predictor-trace-20260817T080939Z"
 GATE_A_GIT_COMMIT = "f97ccd8b60a388ae791607da6da28ff8d8616059"
 GATE_A_CONFIG_HASH = "6a645914544d8f7a03319c1d836eeb2d7f4d5f178dcf0196b371e9af7e13a1a4"
+GATE_B_MODEL_REVISION = "b968826d9c46dd6066d109eabc6255188de91218"
 GATE_A_PREDICTOR_REVISION = "bd5c5917846617da4311539859c137a262a6348b"
 GATE_A_MANIFEST_SHA256 = "dae42264d5b71435e363f7514f776fb15ccb4291a421131a6cc17e027daee382"
 GATE_A_SCORE_MASK_SHA256 = "a656a0d55c22517610546e724dbb65c6d276dbe0e551f5643e555526b74c9127"
@@ -67,7 +68,17 @@ def parse_args() -> argparse.Namespace:
     request_group.add_argument("--input-jsonl", type=Path, help="JSONL containing request_id/context/question.")
     parser.add_argument("--request-id", help="Select exactly one request from --input-jsonl.")
     parser.add_argument("--model-name", default=DEFAULT_MODEL, help="Base model Hugging Face ID.")
+    parser.add_argument(
+        "--model-revision",
+        default=GATE_B_MODEL_REVISION,
+        help="Frozen base-model revision validated by Gate B.",
+    )
     parser.add_argument("--predictor-name", default=DEFAULT_PREDICTOR, help="Official KVzap predictor ID.")
+    parser.add_argument(
+        "--predictor-revision",
+        default=GATE_A_PREDICTOR_REVISION,
+        help="Frozen official predictor revision validated by Gate A.",
+    )
     parser.add_argument("--threshold", type=float, default=-4.0, help="Offline drop threshold.")
     parser.add_argument("--window-size", type=int, default=128, help="Newest context tokens protected offline.")
     parser.add_argument("--seed", type=int, default=42, help="Seed for the single observational prefill.")
@@ -512,6 +523,10 @@ def main() -> None:
     expected_predictor = f"nvidia/KVzap-mlp-{args.model_name.split('/')[-1]}"
     if args.model_name != DEFAULT_MODEL or args.predictor_name != expected_predictor:
         raise ValueError("The verified gate-A boundary supports only Qwen/Qwen3-8B with its official MLP predictor")
+    if args.model_revision != GATE_B_MODEL_REVISION:
+        raise ValueError(f"The verified Gate-B model revision is {GATE_B_MODEL_REVISION}")
+    if args.predictor_revision != GATE_A_PREDICTOR_REVISION:
+        raise ValueError(f"The verified Gate-A predictor revision is {GATE_A_PREDICTOR_REVISION}")
 
     gate_a_evidence = validate_gate_a_evidence(
         args.gate_a_evidence,
@@ -536,7 +551,7 @@ def main() -> None:
         request = build_builtin_request(args.preset, args.context_repetitions)
         request_source = f"builtin/{args.preset}"
         preset = args.preset
-    predictor_snapshot = Path(snapshot_download(repo_id=args.predictor_name))
+    predictor_snapshot = Path(snapshot_download(repo_id=args.predictor_name, revision=args.predictor_revision))
     predictor_revision = predictor_snapshot.name
     if predictor_revision != gate_a_evidence["predictor_revision"]:
         raise ValueError(
@@ -544,8 +559,16 @@ def main() -> None:
             f"expected {gate_a_evidence['predictor_revision']}, got {predictor_revision}"
         )
     print(f"Loading base model: {args.model_name}")
-    pipe = pipeline("kv-press-text-generation", model=args.model_name, device_map="auto", dtype="auto")
+    pipe = pipeline(
+        "kv-press-text-generation",
+        model=args.model_name,
+        revision=args.model_revision,
+        device_map="auto",
+        dtype="auto",
+    )
     model_revision = getattr(pipe.model.config, "_commit_hash", None)
+    if model_revision != args.model_revision:
+        raise ValueError(f"Loaded model revision {model_revision!r} differs from requested {args.model_revision!r}")
     tokenized = pipe.preprocess(
         request["context"],
         [request["question"]],

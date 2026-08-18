@@ -148,6 +148,92 @@ prefill-mask equivalence, decoding maturity/admission events, physical KV
 compaction, and speed measurement are deferred until predictor-only traces are
 stable. None may be inferred from the observational score trace.
 
+### Gate B freeze
+
+Retrieval, summarization, and reasoning predictor-only traces passed Gate B on
+2026-08-17 and are frozen in `analysis/predictor_trace_gate_b_freeze.json`.
+Their context lengths are 905, 891, and 2031 tokens; full-context logical
+removal is 71.88%, 72.66%, and 78.96%, while cold-region removal after
+excluding the fixed 128-token protected window is 83.72%, 84.85%, and 84.27%.
+
+This freezes collector correctness for these three synthetic requests, not a
+population distribution. The next approved step is offline structural analysis
+of schema `kvzap-predictor-trace-1.1`, followed by a separately designed
+multi-request real-data pilot.
+
+Run the frozen three-request offline analysis with:
+
+```bash
+python tools/analyze_kvzap_trace.py \
+  traces/retrieval_predictor_gate_b_01 \
+  traces/summarization_predictor_gate_b_01 \
+  traces/reasoning_predictor_gate_b_01 \
+  --output-dir analysis/experiments/qwen3_8b_gate_b_builtin_analysis
+```
+
+For predictor-only inputs, `decoding_growth.csv` is intentionally header-only.
+`request_pair_similarity.csv` compares layer and layer/head retention profiles;
+it does not align token masks across requests of different lengths. The other
+outputs cover cold-region run lengths, block occupancy, within-layer head-mask
+Jaccard similarity, retention imbalance, and score-threshold sensitivity.
+
+### Real-data structural pilot
+
+The first real-data pilot uses the repository-supported processed LongBench
+repository `Xnhyacinth/LongBench`. The default profile covers:
+
+- retrieval/document QA: `narrativeqa`, `qasper`;
+- summarization: `gov_report`, `qmsum`, `multi_news`;
+- multi-hop reasoning QA: `2wikimqa`, `musique`.
+
+It selects two unique contexts per category in each tokenizer-length bucket
+`[1024,4096)`, `[4096,8192)`, and `[8192,16384)`, for a target of 18 requests.
+RULER is not included in this first pilot because it is synthetic; it can later
+serve as a controlled context-length experiment.
+
+Prepare the ignored raw-text JSONL and its provenance manifest without loading
+the base model:
+
+```bash
+python tools/prepare_kvzap_real_pilot.py
+```
+
+The preparation step resolves the dataset revision to a commit, records the
+tokenizer revision, source row, dataset fingerprint, exact text hashes, bucket
+availability, and any shortfall. `HF_TOKEN` is optional but recommended for Hub
+rate limits.
+
+Before spending GPU time, inspect the child commands:
+
+```bash
+python tools/run_kvzap_predictor_pilot.py \
+  pilot_inputs/longbench_core_v1.jsonl \
+  --dry-run
+```
+
+Run exactly one remote request first:
+
+```bash
+python tools/run_kvzap_predictor_pilot.py \
+  pilot_inputs/longbench_core_v1.jsonl \
+  --output-root traces/pilots/longbench_core_v1_shard0 \
+  --max-requests 1
+```
+
+After that request is returned and validated, rerun without the cap. Resume
+will revalidate and skip the completed request, then run the rest:
+
+```bash
+python tools/run_kvzap_predictor_pilot.py \
+  pilot_inputs/longbench_core_v1.jsonl \
+  --output-root traces/pilots/longbench_core_v1_shard0
+```
+
+Every request uses a fresh process and the frozen Gate A evidence. The runner
+never overwrites an incomplete or invalid trace. This remains a structural
+predictor pilot: answers are omitted, generation is disabled, and no accuracy,
+decode lifecycle, measured memory, or speed conclusion is produced.
+
 ## Historical exporter: what is captured
 
 `tools/run_kvzap_trace.py` captures the following intermediate results for one

@@ -153,3 +153,34 @@ compression_factor = logical_total_kv / logical_kept_kv
 - trace 合并后结果必须与未分片运行一致；
 - 不保存完整 attention matrix，除非是明确指定的小样本。
 
+## 10. Predictor-only observational profile (`kvzap-predictor-trace-1.1`)
+
+当前稳定的 predictor-only exporter 使用一个更窄的 profile：
+
+- `score_mask.npz` 包含 `scores`、`score_valid_mask`、
+  `predicted_drop_mask`、`reconstructed_final_drop_mask`、
+  `context_token_ids` 和显式 `shape`；
+- final mask 是 `score < threshold` 加 prefill 末尾 128-token 保护的离线重建；
+- `gate_a_evidence.json` 必须与 manifest 内嵌证据完全一致且所有检查通过；
+- 不生成答案，不使用 DMS、fake-key attention 或 `masked_key_indices`；
+- 不包含 `decoding_events.csv`，因此 decoding growth/admission 指标明确不可用；
+- `request_summary.csv` 的 token 字段为 `context_tokens_scored` 和
+  `question_tokens_not_scored`，question 不属于 score/mask 的 token 轴。
+
+该 profile 可用于 score、margin、retention、run-length、block occupancy 和
+layer/head imbalance 分析，不能用于答案精度、decode 生命周期、物理显存或速度结论。
+
+## 11. Multi-request pilot manifest
+
+真实样本 pilot 不把多个请求塞入同一模型进程。`tools/run_kvzap_predictor_pilot.py`
+为每个 JSONL request 启动一个新的 predictor-only exporter，并在 output root 保存：
+
+```text
+pilot_run_manifest.json
+logs/<stable-request-name>.log
+requests/<stable-request-name>/<predictor-trace-files>
+```
+
+`pilot_run_manifest.json` 必须记录输入 JSONL/manifest/exporter 的 SHA-256、Gate A
+路径、threshold、window、seed、shard 配置、每个 request 的 source metadata、状态、
+日志和 trace 目录。Resume 只能跳过通过完整离线校验的请求；不完整目录禁止覆盖。

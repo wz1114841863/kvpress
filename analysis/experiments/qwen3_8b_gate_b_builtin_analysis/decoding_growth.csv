@@ -1,0 +1,1 @@
+trace_id,experiment_id,request_id,phase,step,event_kind,cache_tokens,tokens_added,newly_dropped_kv,newly_admitted_kv,drop_fraction_of_matured,logical_kept_kv,cumulative_dropped_kv

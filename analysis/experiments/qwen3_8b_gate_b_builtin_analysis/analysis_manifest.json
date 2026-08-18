@@ -1,0 +1,65 @@
+{
+  "analysis_config_hash": "68f7f6238ab9e1a87690dca869a1cfb2056078dcfca0c45a9aed28e7c70eafa9",
+  "analysis_git_commit": "43b4d95a681954e5878acfd25664fc6307d50a87+dirty",
+  "analysis_schema_version": "1.1",
+  "block_sizes": [
+    4,
+    8,
+    16,
+    32
+  ],
+  "notes": [
+    "All compression metrics are logical or offline physical-layout estimates.",
+    "Physical block estimates use keep-any allocation and report exact-span and padded variants.",
+    "Prompt chunks with tokens_added > 1 are separated from one-token generation events.",
+    "Predictor-only traces have no decoding events; decoding_growth.csv is header-only for such inputs.",
+    "Cross-request similarity compares layer/head retention ratios and does not align token masks.",
+    "No accuracy, HBM traffic, runtime speedup, or measured physical allocation is inferred."
+  ],
+  "plots_generated": true,
+  "source_artifact_sha256": [
+    {
+      "manifest.json": "32e0e5e392930e524b3838fe0fec97d5d813f29d0cd53a3bf67c77dd4e144aba",
+      "score_mask.npz": "89c89ad8e145a2bdc9a000a9518931bde50a45eb532befaea12f99506f52dcdd"
+    },
+    {
+      "manifest.json": "b8a89678fc5e361cdd63aa4f7b03ac80053e9123aa0727966d53c8d3f6acdbea",
+      "score_mask.npz": "110eb7185147a048de732db840ba9c18da804d18d63562292b47f97831ce0787"
+    },
+    {
+      "manifest.json": "4a5997d59b068d7df50a2f9d18dea5cb990d47a6b72298a8069f1f8889455979",
+      "score_mask.npz": "1396be8d5b2341838be9f6b2b1966e18c1e087fbbefc95d9cee5beb0f72f7902"
+    }
+  ],
+  "source_config_hashes": [
+    "70a5f4c95b8a8791f7a0a6214fb6c00e5787d4fd3bfdb10429e1e9a5a9d23cb7",
+    "fd7ade00b892d55d5946b56d76d9b59c07c1ba6d7703ac2650eb354bcc1a891e",
+    "14dd0b4d66bb8fc629da8316ef1c759cb995ce90bc22e0f14242a82cb88701ac"
+  ],
+  "source_experiment_ids": [
+    "kvzap-predictor-trace-20260817T085505Z",
+    "kvzap-predictor-trace-20260817T122012Z",
+    "kvzap-predictor-trace-20260817T122049Z"
+  ],
+  "source_git_commits": [
+    "43b4d95a681954e5878acfd25664fc6307d50a87",
+    "43b4d95a681954e5878acfd25664fc6307d50a87",
+    "43b4d95a681954e5878acfd25664fc6307d50a87"
+  ],
+  "source_trace_schemas": [
+    "kvzap-predictor-trace-1.1"
+  ],
+  "source_traces": [
+    "traces/retrieval_predictor_gate_b_01",
+    "traces/summarization_predictor_gate_b_01",
+    "traces/reasoning_predictor_gate_b_01"
+  ],
+  "threshold_deltas": [
+    -0.5,
+    -0.25,
+    0.0,
+    0.25,
+    0.5
+  ],
+  "trace_count": 3
+}

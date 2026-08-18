@@ -1,0 +1,16 @@
+trace_id,experiment_id,request_id,threshold_delta,effective_threshold,predicted_drop_fraction
+kvzap-predictor-trace-20260817T085505Z::builtin_retrieval_trace,kvzap-predictor-trace-20260817T085505Z,builtin_retrieval_trace,-0.5,-4.5,0.7925299263351749
+kvzap-predictor-trace-20260817T085505Z::builtin_retrieval_trace,kvzap-predictor-trace-20260817T085505Z,builtin_retrieval_trace,-0.25,-4.25,0.8212476979742173
+kvzap-predictor-trace-20260817T085505Z::builtin_retrieval_trace,kvzap-predictor-trace-20260817T085505Z,builtin_retrieval_trace,0.0,-4.0,0.84652394106814
+kvzap-predictor-trace-20260817T085505Z::builtin_retrieval_trace,kvzap-predictor-trace-20260817T085505Z,builtin_retrieval_trace,0.25,-3.75,0.8694789748311847
+kvzap-predictor-trace-20260817T085505Z::builtin_retrieval_trace,kvzap-predictor-trace-20260817T085505Z,builtin_retrieval_trace,0.5,-3.5,0.8904465930018416
+kvzap-predictor-trace-20260817T122012Z::builtin_summarization_trace,kvzap-predictor-trace-20260817T122012Z,builtin_summarization_trace,-0.5,-4.5,0.8049242424242424
+kvzap-predictor-trace-20260817T122012Z::builtin_summarization_trace,kvzap-predictor-trace-20260817T122012Z,builtin_summarization_trace,-0.25,-4.25,0.8326825352288315
+kvzap-predictor-trace-20260817T122012Z::builtin_summarization_trace,kvzap-predictor-trace-20260817T122012Z,builtin_summarization_trace,0.0,-4.0,0.8565126574385834
+kvzap-predictor-trace-20260817T122012Z::builtin_summarization_trace,kvzap-predictor-trace-20260817T122012Z,builtin_summarization_trace,0.25,-3.75,0.8786709689487467
+kvzap-predictor-trace-20260817T122012Z::builtin_summarization_trace,kvzap-predictor-trace-20260817T122012Z,builtin_summarization_trace,0.5,-3.5,0.898872989150767
+kvzap-predictor-trace-20260817T122049Z::builtin_reasoning_trace,kvzap-predictor-trace-20260817T122049Z,builtin_reasoning_trace,-0.5,-4.5,0.7870866157886098
+kvzap-predictor-trace-20260817T122049Z::builtin_reasoning_trace,kvzap-predictor-trace-20260817T122049Z,builtin_reasoning_trace,-0.25,-4.25,0.8179245992669183
+kvzap-predictor-trace-20260817T122049Z::builtin_reasoning_trace,kvzap-predictor-trace-20260817T122049Z,builtin_reasoning_trace,0.0,-4.0,0.8451467531046556
+kvzap-predictor-trace-20260817T122049Z::builtin_reasoning_trace,kvzap-predictor-trace-20260817T122049Z,builtin_reasoning_trace,0.25,-3.75,0.8696984928059522
+kvzap-predictor-trace-20260817T122049Z::builtin_reasoning_trace,kvzap-predictor-trace-20260817T122049Z,builtin_reasoning_trace,0.5,-3.5,0.8917883910498386

@@ -377,11 +377,15 @@ results/
 2. **已完成**：用相同 987-token hardware 输入对照
    `traces/qwen3_8b_single_384/score_mask.npz`；predictor-only acceptance gate A
    于 2026-08-17 通过，冻结证据见 `analysis/predictor_trace_gate_a.json`；
-3. **当前任务**：使用 `tools/export_kvzap_predictor_trace.py` 先导出并验证一个
-   retrieval Gate B trace；每次运行必须先通过 Gate A 文件哈希与元数据校验；
-4. retrieval 验证后，再分别以新进程导出少量 summarization、reasoning
-   predictor traces；
-5. 完成 run-length、block occupancy、head similarity 和 score-margin 分析；
+3. **已完成并冻结**：retrieval、summarization、reasoning 三个内置请求均通过
+   predictor-only Gate B；证据、哈希和结论边界见
+   `analysis/predictor_trace_gate_b_freeze.json`；
+4. **已完成**：扩展并验证 `tools/analyze_kvzap_trace.py` 对
+   `kvzap-predictor-trace-1.1` 的 run-length、block occupancy、head similarity、
+   load imbalance 和 score-margin 离线分析；
+5. **当前任务**：使用 `tools/prepare_kvzap_real_pilot.py` 和
+   `tools/run_kvzap_predictor_pilot.py` 采集 JSONL 分片、单请求独立进程、断点续跑的
+   LongBench 真实样本 pilot；先运行一条并返回验证，再恢复执行其余请求；
 6. 只有 predictor-only 结果稳定后，才单独设计 actual DMS mask 与 decode 生命周期验证；
 7. 基于可信 trace 决定是否推进 block/page/head-group 结构化策略；
 8. 任何结构化策略都必须回到独立精度评测，不能由 trace 直接推断准确率。

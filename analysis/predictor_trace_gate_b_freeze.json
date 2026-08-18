@@ -1,0 +1,83 @@
+{
+  "schema_version": "predictor-trace-gate-b-freeze-1.0",
+  "status": "passed",
+  "verified_at": "2026-08-17",
+  "collector_git_commit": "43b4d95a681954e5878acfd25664fc6307d50a87",
+  "model": "Qwen/Qwen3-8B",
+  "model_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+  "predictor": "nvidia/KVzap-mlp-Qwen3-8B",
+  "predictor_revision": "bd5c5917846617da4311539859c137a262a6348b",
+  "threshold": -4.0,
+  "sliding_window": 128,
+  "trace_schema": "kvzap-predictor-trace-1.1",
+  "gate_a_experiment_id": "kvzap-predictor-trace-20260817T080939Z",
+  "requests": [
+    {
+      "preset": "retrieval",
+      "experiment_id": "kvzap-predictor-trace-20260817T085505Z",
+      "config_hash": "70a5f4c95b8a8791f7a0a6214fb6c00e5787d4fd3bfdb10429e1e9a5a9d23cb7",
+      "score_shape": [36, 8, 905],
+      "logical_removed_fraction": 0.7187576734192757,
+      "cold_removed_fraction": 0.837163055913056,
+      "artifact_sha256": {
+        "manifest.json": "32e0e5e392930e524b3838fe0fec97d5d813f29d0cd53a3bf67c77dd4e144aba",
+        "score_mask.npz": "89c89ad8e145a2bdc9a000a9518931bde50a45eb532befaea12f99506f52dcdd",
+        "request_summary.csv": "cb3eb05626d9d6569089a9452b50861520c7443927eceb60da524fe85394f12a",
+        "layer_head_summary.csv": "2a84635367c40519a839eb88158a4c4f2eb3f8f7f74c9f13dc411e676a51dbd8",
+        "gate_a_evidence.json": "aacd613fff9f10a00185948ef02d7ae7f4e4768f3cbbfd3b3ff3d6afd9eb7626"
+      }
+    },
+    {
+      "preset": "summarization",
+      "experiment_id": "kvzap-predictor-trace-20260817T122012Z",
+      "config_hash": "fd7ade00b892d55d5946b56d76d9b59c07c1ba6d7703ac2650eb354bcc1a891e",
+      "score_shape": [36, 8, 891],
+      "logical_removed_fraction": 0.7265868562164859,
+      "cold_removed_fraction": 0.8484782292121742,
+      "artifact_sha256": {
+        "manifest.json": "b8a89678fc5e361cdd63aa4f7b03ac80053e9123aa0727966d53c8d3f6acdbea",
+        "score_mask.npz": "110eb7185147a048de732db840ba9c18da804d18d63562292b47f97831ce0787",
+        "request_summary.csv": "e18e57a5a6d2161d584e7113049c5e1edb0cccfd6505f21f38c647c3b9afb5f9",
+        "layer_head_summary.csv": "680e29933bd34a460db679f7f75524cb268665836c3afedfab58912f3cd102ae",
+        "gate_a_evidence.json": "aacd613fff9f10a00185948ef02d7ae7f4e4768f3cbbfd3b3ff3d6afd9eb7626"
+      }
+    },
+    {
+      "preset": "reasoning",
+      "experiment_id": "kvzap-predictor-trace-20260817T122049Z",
+      "config_hash": "14dd0b4d66bb8fc629da8316ef1c759cb995ce90bc22e0f14242a82cb88701ac",
+      "score_shape": [36, 8, 2031],
+      "logical_removed_fraction": 0.789574101427868,
+      "cold_removed_fraction": 0.8426826064109301,
+      "artifact_sha256": {
+        "manifest.json": "4a5997d59b068d7df50a2f9d18dea5cb990d47a6b72298a8069f1f8889455979",
+        "score_mask.npz": "1396be8d5b2341838be9f6b2b1966e18c1e087fbbefc95d9cee5beb0f72f7902",
+        "request_summary.csv": "1c8af42b6345f89cca6c93d4227d20bd734dc8f10e2e8f348c1d9a13a25b5960",
+        "layer_head_summary.csv": "b55e9023b5c1f8bb86efaa2c73509fce10630bf94da6b1e8b4c91a5c67da9d4f",
+        "gate_a_evidence.json": "aacd613fff9f10a00185948ef02d7ae7f4e4768f3cbbfd3b3ff3d6afd9eb7626"
+      }
+    }
+  ],
+  "validated_invariants": [
+    "all 36 layers and 8 KV heads are present",
+    "all scores are finite and score_valid_mask is dense",
+    "predicted_drop_mask is exactly score < threshold",
+    "reconstructed final mask exactly protects the newest 128 context tokens",
+    "request and layer-head CSV summaries match score_mask.npz",
+    "Gate A evidence and artifact hashes pass for every request"
+  ],
+  "valid_for": [
+    "score and threshold-margin analysis",
+    "logical and cold-region retention analysis",
+    "run-length and block-occupancy estimates",
+    "layer-head imbalance and retention-profile comparison"
+  ],
+  "not_valid_for": [
+    "answer accuracy",
+    "actual DMS decode-mask equivalence",
+    "decoding admission or KV-growth analysis",
+    "measured physical memory reduction",
+    "HBM traffic or wall-clock speedup",
+    "population percentiles from only three synthetic requests"
+  ]
+}
