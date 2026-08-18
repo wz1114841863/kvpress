@@ -112,6 +112,24 @@ def text_sha256(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
+def resolve_hub_revision(api: HfApi, repo_id: str, revision: str, *, repo_type: str) -> str:
+    """Resolve a Hub ref without relying on private attributes of a loaded object."""
+    if repo_type == "dataset":
+        info = api.dataset_info(repo_id, revision=revision)
+    elif repo_type == "model":
+        info = api.model_info(repo_id, revision=revision)
+    else:
+        raise ValueError(f"Unsupported Hub repository type: {repo_type}")
+    resolved = getattr(info, "sha", None)
+    if not resolved:
+        raise ValueError(f"The Hub did not return a resolved revision for {repo_type} {repo_id}@{revision}")
+    if len(revision) == 40 and resolved != revision:
+        raise ValueError(
+            f"Resolved {repo_type} revision {resolved!r} differs from requested immutable commit {revision!r}"
+        )
+    return resolved
+
+
 def parse_task_specs(specs: Iterable[str]) -> list[tuple[str, str]]:
     parsed = []
     for spec in specs:
@@ -306,15 +324,16 @@ def main() -> None:
     if requested_categories != ["reasoning", "retrieval", "summarization"]:
         print(f"Warning: non-default category set requested: {requested_categories}")
 
-    dataset_info = HfApi().dataset_info(args.dataset_repo, revision=args.dataset_revision)
-    resolved_dataset_revision = dataset_info.sha
+    hub_api = HfApi()
+    resolved_dataset_revision = resolve_hub_revision(
+        hub_api, args.dataset_repo, args.dataset_revision, repo_type="dataset"
+    )
     print(f"Resolved dataset revision: {args.dataset_repo}@{resolved_dataset_revision}")
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name, revision=args.model_revision)
-    tokenizer_revision = getattr(tokenizer, "_commit_hash", None)
-    if tokenizer_revision != args.model_revision:
-        raise ValueError(
-            f"Loaded tokenizer revision {tokenizer_revision!r} differs from requested {args.model_revision!r}"
-        )
+    resolved_model_revision = resolve_hub_revision(
+        hub_api, args.model_name, args.model_revision, repo_type="model"
+    )
+    print(f"Resolved tokenizer revision: {args.model_name}@{resolved_model_revision}")
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name, revision=resolved_model_revision)
     candidates, task_report = collect_candidates(
         task_specs,
         bins,
@@ -355,7 +374,8 @@ def main() -> None:
         "split": args.split,
         "model_tokenizer": args.model_name,
         "model_revision_requested": args.model_revision,
-        "tokenizer_revision": tokenizer_revision,
+        "model_revision_resolved": resolved_model_revision,
+        "tokenizer_revision": resolved_model_revision,
         "enable_thinking": False,
         "seed": args.seed,
         "task_specs": [{"category": category, "task": task} for category, task in task_specs],

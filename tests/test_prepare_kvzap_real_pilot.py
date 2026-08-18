@@ -9,6 +9,7 @@ from tools.prepare_kvzap_real_pilot import (
     length_bucket,
     parse_length_bins,
     parse_task_specs,
+    resolve_hub_revision,
     select_pilot_rows,
 )
 
@@ -20,6 +21,17 @@ class PlainTokenizer:
     def encode(self, text, add_special_tokens=False):
         assert add_special_tokens is False
         return list(text)
+
+
+class FakeHubApi:
+    def dataset_info(self, repo_id, revision):
+        assert repo_id == "dataset/repo"
+        assert revision == "main"
+        return type("Info", (), {"sha": "dataset-sha"})()
+
+    def model_info(self, repo_id, revision):
+        assert repo_id == "model/repo"
+        return type("Info", (), {"sha": revision})()
 
 
 def candidate(category, task, source_index, token_count):
@@ -42,6 +54,16 @@ def test_parse_specs_bins_and_context_count():
         parse_length_bins(["0:10", "9:20"])
     with pytest.raises(ValueError, match="Duplicate"):
         parse_task_specs(["retrieval:qasper", "retrieval:qasper"])
+
+
+def test_resolve_hub_revision_uses_repository_metadata():
+    api = FakeHubApi()
+    assert resolve_hub_revision(api, "dataset/repo", "main", repo_type="dataset") == "dataset-sha"
+    immutable_revision = "a" * 40
+    assert resolve_hub_revision(api, "model/repo", immutable_revision, repo_type="model") == immutable_revision
+
+    with pytest.raises(ValueError, match="Unsupported"):
+        resolve_hub_revision(api, "model/repo", immutable_revision, repo_type="space")
 
 
 def test_balanced_take_round_robins_tasks_deterministically():
