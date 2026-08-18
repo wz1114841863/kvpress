@@ -47,6 +47,27 @@ REQUEST_PAIR_COLUMNS = (
     "logical_removed_fraction_delta",
     "cold_removed_fraction_delta",
 )
+GROUP_SUMMARY_COLUMNS = (
+    "group_type",
+    "group_value",
+    "request_count",
+    "sequence_tokens_min",
+    "sequence_tokens_mean",
+    "sequence_tokens_max",
+    "logical_removed_fraction_weighted",
+    "logical_removed_fraction_mean",
+    "logical_removed_fraction_p50",
+    "logical_removed_fraction_p90",
+    "logical_removed_fraction_min",
+    "logical_removed_fraction_max",
+    "logical_compression_factor_weighted",
+    "logical_compression_factor_mean",
+    "layer_load_cv_mean",
+    "global_head_load_cv_mean",
+    "head_keep_jaccard_mean",
+    "head_keep_jaccard_excess_mean",
+    "near_threshold_0_25_fraction_mean",
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -81,6 +102,14 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=list(DEFAULT_THRESHOLD_DELTAS),
         help="Offsets added to the recorded threshold for score sensitivity analysis.",
+    )
+    parser.add_argument(
+        "--pilot-manifest",
+        type=Path,
+        help=(
+            "Optional preparation manifest whose selected-request metadata enables category, task, "
+            "and tokenizer-length-bucket summaries."
+        ),
     )
     parser.add_argument("--no-plots", action="store_true", help="Write CSV/JSON only; do not require matplotlib.")
     return parser.parse_args()
@@ -165,6 +194,14 @@ def run_lengths(mask: np.ndarray, value: bool) -> np.ndarray:
 def jaccard(left: np.ndarray, right: np.ndarray) -> float:
     union = int(np.logical_or(left, right).sum())
     return float(np.logical_and(left, right).sum() / union) if union else 1.0
+
+
+def independent_jaccard(left_fraction: float, right_fraction: float) -> float:
+    """Expected Jaccard if two masks with fixed marginal rates were independent."""
+
+    intersection = left_fraction * right_fraction
+    union = left_fraction + right_fraction - intersection
+    return intersection / union if union else 1.0
 
 
 def validate_trace(trace_dir: Path) -> dict[str, Any]:
@@ -451,20 +488,36 @@ def analyze_trace(
             for right_head in range(left_head + 1, heads):
                 left_drop = cold_final[layer, left_head]
                 right_drop = cold_final[layer, right_head]
+                left_drop_fraction = float(left_drop.mean())
+                right_drop_fraction = float(right_drop.mean())
+                expected_drop = independent_jaccard(left_drop_fraction, right_drop_fraction)
+                expected_keep = independent_jaccard(1 - left_drop_fraction, 1 - right_drop_fraction)
+                actual_drop = jaccard(left_drop, right_drop)
+                actual_keep = jaccard(~left_drop, ~right_drop)
                 head_similarity_rows.append(
                     {
                         **base,
                         "layer": layer,
                         "left_kv_head": left_head,
                         "right_kv_head": right_head,
-                        "drop_jaccard": jaccard(left_drop, right_drop),
-                        "keep_jaccard": jaccard(~left_drop, ~right_drop),
+                        "drop_jaccard": actual_drop,
+                        "expected_drop_jaccard_independent": expected_drop,
+                        "drop_jaccard_excess": actual_drop - expected_drop,
+                        "keep_jaccard": actual_keep,
+                        "expected_keep_jaccard_independent": expected_keep,
+                        "keep_jaccard_excess": actual_keep - expected_keep,
                     }
                 )
     summary.update(
         {
             "head_drop_jaccard_mean": float(np.mean([row["drop_jaccard"] for row in head_similarity_rows])),
             "head_keep_jaccard_mean": float(np.mean([row["keep_jaccard"] for row in head_similarity_rows])),
+            "head_drop_jaccard_excess_mean": float(
+                np.mean([row["drop_jaccard_excess"] for row in head_similarity_rows])
+            ),
+            "head_keep_jaccard_excess_mean": float(
+                np.mean([row["keep_jaccard_excess"] for row in head_similarity_rows])
+            ),
         }
     )
 
@@ -623,6 +676,91 @@ def analyze_request_pairs(results: list[dict[str, Any]]) -> list[dict[str, Any]]
                     ),
                 }
             )
+    return rows
+
+
+def load_pilot_metadata(path: Path) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    if manifest.get("schema_version") not in {"kvzap-real-pilot-1.0", "kvzap-real-pilot-1.1"}:
+        raise ValueError(f"Unsupported pilot manifest schema in {path}: {manifest.get('schema_version')!r}")
+    selected = manifest.get("selected_requests")
+    if not isinstance(selected, list):
+        raise ValueError(f"Pilot manifest {path} is missing selected_requests")
+    metadata = {}
+    for row in selected:
+        missing = {"request_id", "category", "task", "length_bucket"} - set(row)
+        if missing:
+            raise ValueError(f"Pilot manifest request is missing fields: {sorted(missing)}")
+        request_id = str(row["request_id"])
+        if request_id in metadata:
+            raise ValueError(f"Pilot manifest contains duplicate request_id {request_id!r}")
+        bounds = row["length_bucket"]
+        if not isinstance(bounds, list) or len(bounds) != 2 or int(bounds[0]) >= int(bounds[1]):
+            raise ValueError(f"Pilot manifest request {request_id!r} has invalid length_bucket {bounds!r}")
+        metadata[request_id] = dict(row, length_bucket=[int(bounds[0]), int(bounds[1])])
+    if len(metadata) != int(manifest.get("selected_request_count", -1)):
+        raise ValueError(f"Pilot manifest selected_request_count does not match selected_requests in {path}")
+    return manifest, metadata
+
+
+def analyze_groups(
+    results: list[dict[str, Any]], pilot_metadata: dict[str, dict[str, Any]] | None
+) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for result in results:
+        summary = result["summary"]
+        grouped[("all", "all")].append(summary)
+        if pilot_metadata is None:
+            continue
+        metadata = pilot_metadata[summary["request_id"]]
+        bounds = metadata["length_bucket"]
+        grouped[("category", str(metadata["category"]))].append(summary)
+        grouped[("task", f"{metadata['category']}/{metadata['task']}")].append(summary)
+        grouped[("length_bucket", f"[{bounds[0]},{bounds[1]})")].append(summary)
+
+    type_rank = {"all": 0, "category": 1, "length_bucket": 2, "task": 3}
+    rows = []
+    for (group_type, group_value), summaries in sorted(
+        grouped.items(), key=lambda item: (type_rank[item[0][0]], item[0][1])
+    ):
+        logical_total = sum(int(row["logical_total_kv"]) for row in summaries)
+        logical_removed = sum(int(row["logical_removed_kv"]) for row in summaries)
+        tokens = [int(row["sequence_tokens"]) for row in summaries]
+        removed = [float(row["logical_removed_fraction"]) for row in summaries]
+        factors = [float(row["logical_compression_factor"]) for row in summaries]
+        rows.append(
+            {
+                "group_type": group_type,
+                "group_value": group_value,
+                "request_count": len(summaries),
+                "sequence_tokens_min": min(tokens),
+                "sequence_tokens_mean": float(np.mean(tokens)),
+                "sequence_tokens_max": max(tokens),
+                "logical_removed_fraction_weighted": logical_removed / logical_total,
+                "logical_removed_fraction_mean": float(np.mean(removed)),
+                "logical_removed_fraction_p50": percentile(removed, 50),
+                "logical_removed_fraction_p90": percentile(removed, 90),
+                "logical_removed_fraction_min": min(removed),
+                "logical_removed_fraction_max": max(removed),
+                "logical_compression_factor_weighted": safe_divide(
+                    logical_total, logical_total - logical_removed
+                ),
+                "logical_compression_factor_mean": float(np.mean(factors)),
+                "layer_load_cv_mean": float(np.mean([row["layer_load_cv"] for row in summaries])),
+                "global_head_load_cv_mean": float(
+                    np.mean([row["global_head_load_cv"] for row in summaries])
+                ),
+                "head_keep_jaccard_mean": float(
+                    np.mean([row["head_keep_jaccard_mean"] for row in summaries])
+                ),
+                "head_keep_jaccard_excess_mean": float(
+                    np.mean([row["head_keep_jaccard_excess_mean"] for row in summaries])
+                ),
+                "near_threshold_0_25_fraction_mean": float(
+                    np.mean([row["near_threshold_0_25_fraction"] for row in summaries])
+                ),
+            }
+        )
     return rows
 
 
@@ -821,6 +959,17 @@ def main() -> None:
                 "threshold, and sliding window"
             )
     results = [analyze_trace(trace, args.block_sizes, args.threshold_deltas) for trace in traces]
+    pilot_manifest = None
+    pilot_metadata = None
+    if args.pilot_manifest is not None:
+        pilot_manifest, pilot_metadata = load_pilot_metadata(args.pilot_manifest)
+        missing_requests = sorted(
+            result["summary"]["request_id"]
+            for result in results
+            if result["summary"]["request_id"] not in pilot_metadata
+        )
+        if missing_requests:
+            raise ValueError(f"Trace requests are missing from the pilot manifest: {missing_requests}")
     args.output_dir.mkdir(parents=True)
 
     outputs = {
@@ -833,12 +982,15 @@ def main() -> None:
         "score_threshold_sensitivity.csv": [row for result in results for row in result["score_sensitivity"]],
         "decoding_growth.csv": [row for result in results for row in result["decoding"]],
         "request_pair_similarity.csv": analyze_request_pairs(results),
+        "request_group_summary.csv": analyze_groups(results, pilot_metadata),
     }
     for filename, rows in outputs.items():
         if filename == "decoding_growth.csv":
             write_csv(args.output_dir / filename, rows, DECODING_COLUMNS)
         elif filename == "request_pair_similarity.csv":
             write_csv(args.output_dir / filename, rows, REQUEST_PAIR_COLUMNS)
+        elif filename == "request_group_summary.csv":
+            write_csv(args.output_dir / filename, rows, GROUP_SUMMARY_COLUMNS)
         else:
             write_csv(args.output_dir / filename, rows)
 
@@ -848,13 +1000,21 @@ def main() -> None:
         "block_sizes": args.block_sizes,
         "threshold_deltas": args.threshold_deltas,
         "plots_generated": not args.no_plots,
+        "pilot_manifest": None if args.pilot_manifest is None else str(args.pilot_manifest),
+        "pilot_manifest_sha256": None
+        if args.pilot_manifest is None
+        else file_sha256(args.pilot_manifest),
     }
     analysis_manifest = {
-        "analysis_schema_version": "1.1",
+        "analysis_schema_version": "1.2",
         "analysis_git_commit": get_git_commit(),
         "analysis_config_hash": stable_hash(analysis_config),
         "source_trace_schemas": sorted({trace["manifest"]["schema_version"] for trace in traces}),
         "trace_count": len(traces),
+        "pilot_manifest_schema": None if pilot_manifest is None else pilot_manifest["schema_version"],
+        "pilot_manifest_selected_request_count": None
+        if pilot_manifest is None
+        else pilot_manifest["selected_request_count"],
         "source_traces": [str(trace["trace_dir"]) for trace in traces],
         "source_git_commits": [trace["manifest"]["git_commit"] for trace in traces],
         "source_artifact_sha256": [
@@ -871,6 +1031,9 @@ def main() -> None:
             "Prompt chunks with tokens_added > 1 are separated from one-token generation events.",
             "Predictor-only traces have no decoding events; decoding_growth.csv is header-only for such inputs.",
             "Cross-request similarity compares layer/head retention ratios and does not align token masks.",
+            "Head Jaccard excess subtracts the independent-mask expectation at the observed marginal rates.",
+            "Category, task, and tokenizer-length groups require --pilot-manifest; no group labels are inferred "
+            "from request names.",
             "No accuracy, HBM traffic, runtime speedup, or measured physical allocation is inferred.",
         ],
     }

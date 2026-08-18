@@ -184,3 +184,24 @@ requests/<stable-request-name>/<predictor-trace-files>
 `pilot_run_manifest.json` 必须记录输入 JSONL/manifest/exporter 的 SHA-256、Gate A
 路径、threshold、window、seed、shard 配置、每个 request 的 source metadata、状态、
 日志和 trace 目录。Resume 只能跳过通过完整离线校验的请求；不完整目录禁止覆盖。
+
+## 12. Balanced pilot preparation 与分组分析
+
+`kvzap-real-pilot-1.1` preparation manifest 在 v1.0 provenance 基础上增加：
+
+- `selection_policy=rotating-balanced-round-robin-v2`；
+- 每个 category/length bucket 的 `available_by_task` 与 `selected_by_task`；
+- `tasks_without_candidates` 与 `available_tasks_not_selected`，禁止静默掩盖 task coverage 缺口；
+- 默认目标为每个 category/length bucket 5 条，共 45 条。
+
+离线分析传入 `--pilot-manifest` 后必须生成 `request_group_summary.csv`，至少包含：
+
+- `all`、`category`、`task`、`length_bucket` 分组；
+- request count 和 token 范围；
+- request-mean、weighted、P50、P90、min/max logical removed fraction；
+- weighted/mean logical compression；
+- layer/head load CV、head keep Jaccard、score-margin 汇总。
+
+`head_similarity.csv` 同时保存实际 Jaccard、在 observed marginal keep/drop rates 下
+independent mask 的期望 Jaccard，以及 `actual - expected` excess。该 excess 只用于区分
+边际保留率导致的表观重叠与额外 token-position sharing，仍不能推出共享 mask 的精度。

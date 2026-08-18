@@ -178,3 +178,6 @@ traces/*
 
 # Raw public-benchmark pilot prompts and preparation manifests are regenerated from frozen dataset revisions.
 pilot_inputs/
+logs/
+
+**/figures/*

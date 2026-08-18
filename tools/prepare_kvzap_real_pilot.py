@@ -32,7 +32,8 @@ DEFAULT_TASK_SPECS = (
     "reasoning:musique",
 )
 DEFAULT_LENGTH_BINS = ("1024:4096", "4096:8192", "8192:16384")
-PILOT_SCHEMA = "kvzap-real-pilot-1.0"
+PILOT_SCHEMA = "kvzap-real-pilot-1.1"
+SELECTION_POLICY = "rotating-balanced-round-robin-v2"
 
 
 def parse_args() -> argparse.Namespace:
@@ -66,8 +67,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--samples-per-bucket",
         type=int,
-        default=2,
-        help="Samples selected for every category x length bucket (default yields up to 18 requests).",
+        default=5,
+        help="Samples selected for every category x length bucket (default yields up to 45 requests).",
     )
     parser.add_argument("--seed", type=int, default=42, help="Deterministic selection seed.")
     parser.add_argument(
@@ -78,13 +79,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-jsonl",
         type=Path,
-        default=Path("pilot_inputs/longbench_core_v1.jsonl"),
+        default=Path("pilot_inputs/longbench_balanced_v2.jsonl"),
         help="Ignored raw-text JSONL consumed by the batch trace runner.",
     )
     parser.add_argument(
         "--output-manifest",
         type=Path,
-        default=Path("pilot_inputs/longbench_core_v1.manifest.json"),
+        default=Path("pilot_inputs/longbench_balanced_v2.manifest.json"),
         help="Preparation provenance and selected source rows.",
     )
     return parser.parse_args()
@@ -189,7 +190,9 @@ def deterministic_key(seed: int, candidate: dict[str, Any]) -> str:
     return hashlib.sha256(identity.encode("utf-8")).hexdigest()
 
 
-def balanced_take(candidates: list[dict[str, Any]], count: int, seed: int) -> list[dict[str, Any]]:
+def balanced_take(
+    candidates: list[dict[str, Any]], count: int, seed: int, *, task_rotation: int = 0
+) -> list[dict[str, Any]]:
     """Round-robin across task configs, with deterministic within-task ordering."""
 
     by_task: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -198,6 +201,9 @@ def balanced_take(candidates: list[dict[str, Any]], count: int, seed: int) -> li
     for task in by_task:
         by_task[task].sort(key=lambda row: deterministic_key(seed, row))
     task_order = sorted(by_task, key=lambda task: hashlib.sha256(f"{seed}:{task}".encode()).hexdigest())
+    if task_order:
+        offset = task_rotation % len(task_order)
+        task_order = task_order[offset:] + task_order[:offset]
     selected = []
     while len(selected) < count:
         progressed = False
@@ -216,19 +222,27 @@ def select_pilot_rows(
     bins: list[tuple[int, int]],
     samples_per_bucket: int,
     seed: int,
+    category_tasks: dict[str, list[str]] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     categories = list(dict.fromkeys(candidate["category"] for candidate in candidates))
     category_rank = {category: index for index, category in enumerate(categories)}
     selected = []
     bucket_report = []
     for category in categories:
-        for bounds in bins:
+        configured_tasks = (
+            category_tasks[category]
+            if category_tasks is not None
+            else sorted({candidate["task"] for candidate in candidates if candidate["category"] == category})
+        )
+        for bucket_index, bounds in enumerate(bins):
             eligible = [
                 candidate
                 for candidate in candidates
                 if candidate["category"] == category and candidate["length_bucket"] == bounds
             ]
-            chosen = balanced_take(eligible, samples_per_bucket, seed)
+            chosen = balanced_take(eligible, samples_per_bucket, seed, task_rotation=bucket_index)
+            available_by_task = Counter(candidate["task"] for candidate in eligible)
+            selected_by_task = Counter(candidate["task"] for candidate in chosen)
             selected.extend(chosen)
             bucket_report.append(
                 {
@@ -239,6 +253,12 @@ def select_pilot_rows(
                     "selected": len(chosen),
                     "requested": samples_per_bucket,
                     "shortfall": samples_per_bucket - len(chosen),
+                    "available_by_task": {task: available_by_task[task] for task in configured_tasks},
+                    "selected_by_task": {task: selected_by_task[task] for task in configured_tasks},
+                    "tasks_without_candidates": [task for task in configured_tasks if not available_by_task[task]],
+                    "available_tasks_not_selected": [
+                        task for task in configured_tasks if available_by_task[task] and not selected_by_task[task]
+                    ],
                 }
             )
     selected.sort(
@@ -347,6 +367,10 @@ def main() -> None:
         bins=bins,
         samples_per_bucket=args.samples_per_bucket,
         seed=args.seed,
+        category_tasks={
+            category: [task for task_category, task in task_specs if task_category == category]
+            for category in requested_categories
+        },
     )
     shortfalls = [row for row in bucket_report if row["shortfall"]]
     if shortfalls and args.strict_buckets:
@@ -378,6 +402,7 @@ def main() -> None:
         "tokenizer_revision": resolved_model_revision,
         "enable_thinking": False,
         "seed": args.seed,
+        "selection_policy": SELECTION_POLICY,
         "task_specs": [{"category": category, "task": task} for category, task in task_specs],
         "length_bins": [list(bounds) for bounds in bins],
         "samples_per_bucket": args.samples_per_bucket,
@@ -398,6 +423,8 @@ def main() -> None:
             "The JSONL contains public benchmark text and is ignored by Git.",
             "estimated_context_tokens reproduces the current KVPress context/chat-template boundary without a model.",
             "The exporter records the actual scored context length; analysis must use that observed length.",
+            "Task priority rotates deterministically across category/length buckets; selected_by_task records "
+            "the realized balance and unavailable tasks are never silently substituted.",
             "Answers are intentionally omitted because this pilot collects predictor-only structural traces, "
             "not accuracy.",
         ],

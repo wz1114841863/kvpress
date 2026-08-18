@@ -8,9 +8,12 @@ import numpy as np
 
 from tools.analyze_kvzap_trace import (
     analyze_decoding_events,
+    analyze_groups,
     analyze_request_pairs,
     analyze_trace,
+    independent_jaccard,
     jaccard,
+    load_pilot_metadata,
     run_lengths,
     validate_trace,
 )
@@ -21,6 +24,7 @@ def test_run_lengths_and_jaccard():
     assert run_lengths(mask, True).tolist() == [2, 1]
     assert run_lengths(mask, False).tolist() == [1, 2]
     assert jaccard(np.asarray([True, False, True]), np.asarray([True, True, False])) == 1 / 3
+    assert independent_jaccard(0.5, 0.5) == 1 / 3
 
 
 def make_event(step, cache_tokens, newly_dropped, newly_admitted, cumulative_dropped):
@@ -196,6 +200,11 @@ def test_predictor_only_trace_validation_and_analysis(tmp_path):
     assert result["summary"]["context_tokens_scored"] == 6
     assert result["summary"]["question_tokens_not_scored"] == 2
     assert result["summary"]["cold_removed_fraction"] == 5 / 8
+    head_pair = result["head_similarity"][0]
+    assert np.isclose(
+        head_pair["keep_jaccard_excess"],
+        head_pair["keep_jaccard"] - head_pair["expected_keep_jaccard_independent"],
+    )
 
 
 def test_request_pair_similarity_uses_retention_profiles(tmp_path):
@@ -212,3 +221,38 @@ def test_request_pair_similarity_uses_retention_profiles(tmp_path):
 
     assert len(rows) == 1
     assert rows[0]["layer_head_retention_pearson"] == 1.0
+
+
+def test_pilot_metadata_enables_group_summaries(tmp_path):
+    trace_dir = tmp_path / "trace"
+    write_predictor_trace(trace_dir, "r0")
+    result = analyze_trace(validate_trace(trace_dir), block_sizes=[2], threshold_deltas=[0.0])
+    manifest_path = tmp_path / "pilot.manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "kvzap-real-pilot-1.1",
+                "selected_request_count": 1,
+                "selected_requests": [
+                    {
+                        "request_id": "r0",
+                        "category": "retrieval",
+                        "task": "qasper",
+                        "length_bucket": [0, 10],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    _, metadata = load_pilot_metadata(manifest_path)
+    rows = analyze_groups([result], metadata)
+
+    assert {(row["group_type"], row["group_value"]) for row in rows} == {
+        ("all", "all"),
+        ("category", "retrieval"),
+        ("task", "retrieval/qasper"),
+        ("length_bucket", "[0,10)"),
+    }
+    assert all(row["request_count"] == 1 for row in rows)

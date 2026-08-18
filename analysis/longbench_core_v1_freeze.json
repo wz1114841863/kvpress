@@ -1,0 +1,120 @@
+{
+  "schema_version": "kvzap-longbench-pilot-freeze-1.0",
+  "status": "passed",
+  "verified_at": "2026-08-18",
+  "pilot_id": "longbench_core_v1",
+  "preparation_git_commit": "c64987f3ae595a60c0deb1d8532f90a780f0ffe9",
+  "runner_git_commit": "c64987f3ae595a60c0deb1d8532f90a780f0ffe9",
+  "analysis_git_commit": "c64987f3ae595a60c0deb1d8532f90a780f0ffe9+dirty",
+  "dataset": "Xnhyacinth/LongBench",
+  "dataset_revision": "2e9ade51ebf45d98942056c0716234f9d5d257d5",
+  "model": "Qwen/Qwen3-8B",
+  "model_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+  "predictor": "nvidia/KVzap-mlp-Qwen3-8B",
+  "predictor_revision": "bd5c5917846617da4311539859c137a262a6348b",
+  "threshold": -4.0,
+  "sliding_window": 128,
+  "seed": 42,
+  "trace_schema": "kvzap-predictor-trace-1.1",
+  "request_count": 18,
+  "request_status": {
+    "complete": 18,
+    "failed": 0,
+    "offline_validation_errors": 0
+  },
+  "sampling": {
+    "samples_per_category_length_bucket": 2,
+    "length_bins": [[1024, 4096], [4096, 8192], [8192, 16384]],
+    "category_counts": {
+      "retrieval": 6,
+      "summarization": 6,
+      "reasoning": 6
+    },
+    "task_counts": {
+      "narrativeqa": 1,
+      "qasper": 5,
+      "gov_report": 3,
+      "qmsum": 0,
+      "multi_news": 3,
+      "2wikimqa": 4,
+      "musique": 2
+    },
+    "known_limit": "Category and length buckets are balanced, but task coverage is not; qasper contributes 5/6 retrieval requests and qmsum contributes none."
+  },
+  "observed_metrics": {
+    "logical_removed_fraction": {
+      "request_mean": 0.6626102534904702,
+      "token_weighted": 0.6591755203537216,
+      "min": 0.63863137121053,
+      "p50_higher": 0.6654688810784228,
+      "max": 0.6700282816551758
+    },
+    "logical_compression_factor": {
+      "request_mean": 2.9657784662517575,
+      "token_weighted": 2.9340615469811357
+    },
+    "layer_load_cv_mean": 0.48917542608204123,
+    "global_head_load_cv_mean": 0.20288625815399317,
+    "head_keep_jaccard_mean": 0.20541329989253948,
+    "head_drop_jaccard_mean": 0.5348288914561087,
+    "cross_request_layer_head_retention_pearson_mean": 0.9852031594013836,
+    "near_threshold_0_25_fraction_mean": 0.06573465977050348,
+    "block_keep_any_request_mean": {
+      "4": {
+        "mixed_block_fraction": 0.326850590064221,
+        "internal_fragmentation_padded": 0.34464449987580376,
+        "physical_compression_factor_padded": 1.9951163632037274
+      },
+      "8": {
+        "mixed_block_fraction": 0.45330619364019525,
+        "internal_fragmentation_padded": 0.430529699818733,
+        "physical_compression_factor_padded": 1.7451948273686435
+      },
+      "16": {
+        "mixed_block_fraction": 0.5542607705922712,
+        "internal_fragmentation_padded": 0.4899095515992406,
+        "physical_compression_factor_padded": 1.5704474627307417
+      },
+      "32": {
+        "mixed_block_fraction": 0.6369352546325974,
+        "internal_fragmentation_padded": 0.5349313632228815,
+        "physical_compression_factor_padded": 1.4368366208852468
+      }
+    }
+  },
+  "artifact_sha256": {
+    "pilot_inputs/longbench_core_v1.jsonl": "997187c82f4141886ddda59f62e703782716bad4fb38200513c27b981a27ab51",
+    "pilot_inputs/longbench_core_v1.manifest.json": "15f0cc01f7445198ccd4cdce42e64e19bf1d0b5337e40c8a7792ac3c28d228f1",
+    "traces/pilots/longbench_core_v1_shard0/pilot_run_manifest.json": "95133d00e68876ae30fe6ecf056d731983b97ea9710f3012dbae54bb0b5eaa7d",
+    "analysis/experiments/longbench_core_v1_analysis/analysis_manifest.json": "44e8099fa3f55a78a10d0a17a98deda6482f1fd9fc3c10500ee3dc201bf8c143",
+    "analysis/experiments/longbench_core_v1_analysis/request_summary.csv": "9c9a1a5abb118b6436ae08370ff059b84217ae1393da65419dbc625b9face368",
+    "analysis/experiments/longbench_core_v1_analysis/layer_head_retention.csv": "3b630850aa70df1117d819a1c29b7cc7e85236c529b6a274277983b328f8a75b",
+    "analysis/experiments/longbench_core_v1_analysis/run_length_distribution.csv": "861b31096fc81bf38f438eb1983a7b67202a1ec29472c2430718dea59973c222",
+    "analysis/experiments/longbench_core_v1_analysis/block_occupancy.csv": "d7e34431023f9320aec6e172a6a39d5d09fb5ab75be0fa701e68f28f8822e416",
+    "analysis/experiments/longbench_core_v1_analysis/head_similarity.csv": "84d4349382cc1f1b2fcd881aaaba4d36447ee8c4e893f66c6344ccd88aefbe67",
+    "analysis/experiments/longbench_core_v1_analysis/request_pair_similarity.csv": "bdb725d4fa9f751b6762ba9b04dae671d510cfa248f74f94c39feb4650f094e3",
+    "analysis/experiments/longbench_core_v1_analysis/score_threshold_sensitivity.csv": "e6bc67e24866a9bc714ef41791ecccb0d7815eebe1b2afcddc259d46155c7a3a"
+  },
+  "trace_integrity": "The frozen analysis_manifest.json contains ordered SHA-256 values for every source trace manifest.json and score_mask.npz.",
+  "validated_invariants": [
+    "all 18 requests are complete in pilot_run_manifest.json",
+    "all 18 trace directories pass the schema-1.1 offline validator",
+    "all scores are finite and all score_valid_mask arrays are dense",
+    "predicted_drop_mask is exactly score < threshold",
+    "the reconstructed final mask protects the newest 128 context tokens",
+    "request summaries and layer/head summaries match score_mask.npz",
+    "Gate A evidence passes for every request"
+  ],
+  "valid_for": [
+    "pilot-scale LongBench score, margin, retention, run-length, and block-occupancy analysis",
+    "comparing layer/head retention profiles across these 18 requests",
+    "forming hypotheses for task-balanced follow-up collection"
+  ],
+  "not_valid_for": [
+    "answer accuracy or faithful generation",
+    "actual DMS decode-mask equivalence or decode lifecycle",
+    "measured physical memory reduction, HBM traffic, or wall-clock speedup",
+    "population-level task conclusions from only two requests per category/length bucket",
+    "task-balanced conclusions because qmsum is absent and retrieval is dominated by qasper"
+  ]
+}

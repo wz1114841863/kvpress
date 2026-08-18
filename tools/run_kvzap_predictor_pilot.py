@@ -52,8 +52,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-root",
         type=Path,
-        default=Path("traces/pilots/longbench_core_v1_shard0"),
-        help="Root for request trace directories, logs, and pilot_run_manifest.json.",
+        help=(
+            "Root for request traces, logs, and pilot_run_manifest.json. Defaults to "
+            "traces/pilots/<input-stem>_shard<index>."
+        ),
     )
     parser.add_argument(
         "--gate-a-evidence",
@@ -108,6 +110,10 @@ def file_sha256(path: Path) -> str:
 def stable_hash(value: dict[str, Any]) -> str:
     payload = json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
+
+
+def default_output_root(input_jsonl: Path, shard_index: int) -> Path:
+    return Path("traces/pilots") / f"{input_jsonl.stem}_shard{shard_index}"
 
 
 def get_git_commit() -> str:
@@ -227,6 +233,8 @@ def main() -> None:
         raise ValueError("Require --num-shards > 0 and 0 <= --shard-index < --num-shards")
     if args.max_requests is not None and args.max_requests <= 0:
         raise ValueError("--max-requests must be positive")
+    if args.output_root is None:
+        args.output_root = default_output_root(args.input_jsonl, args.shard_index)
     if args.timeout_seconds < 0:
         raise ValueError("--timeout-seconds must be non-negative")
     if not args.input_jsonl.is_file():

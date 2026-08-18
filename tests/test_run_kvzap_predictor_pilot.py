@@ -10,6 +10,7 @@ import pytest
 
 from tools.run_kvzap_predictor_pilot import (
     build_child_command,
+    default_output_root,
     load_requests,
     request_shard,
     safe_trace_dir_name,
@@ -17,6 +18,12 @@ from tools.run_kvzap_predictor_pilot import (
     verify_input_manifest,
     main,
 )
+
+
+def test_default_output_root_follows_input_and_shard():
+    assert default_output_root(Path("pilot_inputs/longbench_balanced_v2.jsonl"), 2) == Path(
+        "traces/pilots/longbench_balanced_v2_shard2"
+    )
 
 
 def write_jsonl(path, rows):

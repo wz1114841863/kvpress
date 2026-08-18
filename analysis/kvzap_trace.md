@@ -177,25 +177,35 @@ it does not align token masks across requests of different lengths. The other
 outputs cover cold-region run lengths, block occupancy, within-layer head-mask
 Jaccard similarity, retention imbalance, and score-threshold sensitivity.
 
-### Real-data structural pilot
+### Frozen real-data structural pilot v1
 
 The first real-data pilot uses the repository-supported processed LongBench
-repository `Xnhyacinth/LongBench`. The default profile covers:
+repository `Xnhyacinth/LongBench`. The frozen v1 profile covers:
 
 - retrieval/document QA: `narrativeqa`, `qasper`;
 - summarization: `gov_report`, `qmsum`, `multi_news`;
 - multi-hop reasoning QA: `2wikimqa`, `musique`.
 
-It selects two unique contexts per category in each tokenizer-length bucket
-`[1024,4096)`, `[4096,8192)`, and `[8192,16384)`, for a target of 18 requests.
+It selected two unique contexts per category in each tokenizer-length bucket
+`[1024,4096)`, `[4096,8192)`, and `[8192,16384)`, for 18 requests.
 RULER is not included in this first pilot because it is synthetic; it can later
 serve as a controlled context-length experiment.
 
-Prepare the ignored raw-text JSONL and its provenance manifest without loading
-the base model:
+All 18 requests passed offline validation. The frozen request-mean logical
+removed fraction is 66.26% (`63.86%..67.00%`) and request-mean logical
+compression is 2.97x. The authoritative hashes and evidence limits are in
+`analysis/longbench_core_v1_freeze.json`. Do not overwrite the v1 inputs,
+traces, or `analysis/experiments/longbench_core_v1_analysis/`.
+
+The historical preparation command below applies to the frozen collector commit
+`c64987f3ae595a60c0deb1d8532f90a780f0ffe9`; current code intentionally uses the
+v2 selection policy and must not be used to overwrite v1:
 
 ```bash
-python tools/prepare_kvzap_real_pilot.py
+python tools/prepare_kvzap_real_pilot.py \
+  --samples-per-bucket 2 \
+  --output-jsonl pilot_inputs/longbench_core_v1.jsonl \
+  --output-manifest pilot_inputs/longbench_core_v1.manifest.json
 ```
 
 The preparation step resolves the dataset revision to a commit, records the
@@ -233,6 +243,56 @@ Every request uses a fresh process and the frozen Gate A evidence. The runner
 never overwrites an incomplete or invalid trace. This remains a structural
 predictor pilot: answers are omitted, generation is disabled, and no accuracy,
 decode lifecycle, measured memory, or speed conclusion is produced.
+
+### Task-balanced LongBench follow-up v2
+
+The current preparation defaults describe a new `kvzap-real-pilot-1.1` profile:
+
+- five requests per category/length bucket, for a target of 45;
+- deterministic round-robin selection across task configs;
+- task priority rotates across length buckets so the extra slots do not always
+  go to the same task;
+- each bucket records `available_by_task`, `selected_by_task`,
+  `tasks_without_candidates`, and `available_tasks_not_selected`.
+
+Prepare and inspect the new sample set without touching v1:
+
+```bash
+python tools/prepare_kvzap_real_pilot.py \
+  2>&1 | tee logs/prepare_longbench_balanced_v2.log
+
+python tools/run_kvzap_predictor_pilot.py \
+  pilot_inputs/longbench_balanced_v2.jsonl \
+  --output-root traces/pilots/longbench_balanced_v2_shard0 \
+  --dry-run
+```
+
+Run one request first, then resume the full set after returning that request for
+validation:
+
+```bash
+python tools/run_kvzap_predictor_pilot.py \
+  pilot_inputs/longbench_balanced_v2.jsonl \
+  --output-root traces/pilots/longbench_balanced_v2_shard0 \
+  --max-requests 1 \
+  2>&1 | tee logs/longbench_balanced_v2_first.log
+```
+
+After all requests complete, preserve category/task/length labels during analysis:
+
+```bash
+python tools/analyze_kvzap_trace.py \
+  traces/pilots/longbench_balanced_v2_shard0/requests/* \
+  --pilot-manifest pilot_inputs/longbench_balanced_v2.manifest.json \
+  --output-dir analysis/experiments/longbench_balanced_v2_analysis
+```
+
+`request_group_summary.csv` reports weighted and request-level statistics for
+the full set, category, task, and length buckets. `head_similarity.csv` also
+reports the Jaccard value expected from independent masks at the observed
+marginal keep/drop rates and the actual-minus-expected excess. These additions
+separate stable layer/head capacity profiles from genuine token-position mask
+sharing.
 
 ## Historical exporter: what is captured
 

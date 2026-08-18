@@ -95,3 +95,23 @@ def test_select_pilot_rows_reports_bucket_shortfalls():
 
     assert len(selected) == 3
     assert [row["shortfall"] for row in report] == [0, 1]
+
+
+def test_select_pilot_rows_balances_tasks_and_reports_coverage():
+    rows = []
+    for task in ("a", "b", "c"):
+        rows.extend(candidate("summarization", task, index, 5) for index in range(6))
+        rows.extend(candidate("summarization", task, index + 10, 15) for index in range(6))
+
+    selected, report = select_pilot_rows(
+        rows,
+        bins=[(0, 10), (10, 20)],
+        samples_per_bucket=5,
+        seed=42,
+        category_tasks={"summarization": ["a", "b", "c"]},
+    )
+
+    assert len(selected) == 10
+    assert all(sorted(row["selected_by_task"].values()) == [1, 2, 2] for row in report)
+    assert all(row["tasks_without_candidates"] == [] for row in report)
+    assert all(row["available_tasks_not_selected"] == [] for row in report)

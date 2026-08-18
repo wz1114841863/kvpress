@@ -46,6 +46,25 @@ RULER/LongBench 精度、任意请求上的 faithful generation、物理显存�
 5. `traces/qwen3_8b_single_384/` 是单个 hardware 请求的补充 Trace 参考，不属于
    Phase 0 baseline，也不能替代多请求 Trace 验证。
 
+### 1.2 LongBench predictor-only pilot 冻结状态（2026-08-18）
+
+首轮真实样本结构 pilot `longbench_core_v1` 已冻结，权威记录为
+`analysis/longbench_core_v1_freeze.json`：
+
+- 18/18 请求完成并通过 `kvzap-predictor-trace-1.1` 离线校验；
+- retrieval、summarization、reasoning 各 6 条，并各覆盖
+  `[1024,4096)`、`[4096,8192)`、`[8192,16384)` 三个 tokenizer 长度桶；
+- request-mean logical removed fraction 为 `66.26%`，范围为 `63.86%..67.00%`，
+  request-mean logical compression 为 `2.97x`；
+- layer/head retention profile 跨请求稳定，但原始 token mask 仍呈现较低 keep-mask
+  Jaccard 与明显 block fragmentation；
+- 该 pilot 的子任务组成不均衡：qasper 占 retrieval 的 5/6，qmsum 未入选。
+
+冻结规则：不得覆盖 v1 的 JSONL、manifest、pilot run 或 analysis 目录。后续验证使用
+`longbench_balanced_v2`，将每个 category/length bucket 扩展到 5 条，并记录每个 task
+在各桶的 available/selected 数量。v1 和 v2 均为 predictor-only 结构证据，不能用于
+准确率、decode 生命周期、物理显存或速度结论。
+
 ## 2. 研究边界
 
 ### 当前应做
@@ -383,9 +402,12 @@ results/
 4. **已完成**：扩展并验证 `tools/analyze_kvzap_trace.py` 对
    `kvzap-predictor-trace-1.1` 的 run-length、block occupancy、head similarity、
    load imbalance 和 score-margin 离线分析；
-5. **当前任务**：使用 `tools/prepare_kvzap_real_pilot.py` 和
-   `tools/run_kvzap_predictor_pilot.py` 采集 JSONL 分片、单请求独立进程、断点续跑的
-   LongBench 真实样本 pilot；先运行一条并返回验证，再恢复执行其余请求；
-6. 只有 predictor-only 结果稳定后，才单独设计 actual DMS mask 与 decode 生命周期验证；
-7. 基于可信 trace 决定是否推进 block/page/head-group 结构化策略；
-8. 任何结构化策略都必须回到独立精度评测，不能由 trace 直接推断准确率。
+5. **已完成并冻结**：18 条 `longbench_core_v1` predictor-only pilot；证据、哈希、
+   统计结论和采样限制见 `analysis/longbench_core_v1_freeze.json`；
+6. **当前任务**：使用 task-priority rotating round-robin 采集 45 条
+   `longbench_balanced_v2`，并用 preparation manifest 生成 category/task/length-bucket
+   分组统计和 marginal-rate-adjusted head Jaccard；
+7. 若 v2 保持相同结构规律，优先离线筛选 B=4/8、head-length bucketing 和
+   margin-aware block coalescing；
+8. 只有 predictor-only 结果稳定后，才单独设计 actual DMS mask 与 decode 生命周期验证；
+9. 任何结构化策略都必须回到独立精度评测，不能由 trace 直接推断准确率。
