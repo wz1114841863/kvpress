@@ -1,0 +1,19 @@
+{
+  "created_at": "2026-08-22T02:56:44.953335+00:00",
+  "input_jsonl_sha256": "c4efc7e1a3a6be04ee6823918df3f85c71ba37aa2f1455a98a02ed2db86c4656",
+  "input_manifest": "pilot_inputs/longbench_balanced_v2_accuracy.manifest.json",
+  "input_manifest_sha256": "edfb8d2a452d54fdc602c6508f0c9e9cf0f14ebbd98abb58adb2bc6b6cbf966d",
+  "max_new_tokens": 128,
+  "max_requests": 1,
+  "notes": [
+    "Prefill-only DMS; actual fake-key masking applies during question/generation attention.",
+    "F1 and whitespace-token ROUGE-L are screening metrics; reproduce official LongBench metrics separately for publication."
+  ],
+  "schema_version": "kvzap-structured-accuracy-1.0",
+  "seed": 42,
+  "threshold": -4.0,
+  "variants": [
+    "kvzap_original"
+  ],
+  "window": 128
+}

@@ -114,12 +114,12 @@ class DMSPress(BasePress):
             self.scores_buffer[layer_idx] = self.scores_buffer[layer_idx][..., n_to_evict:]
             matured_scores = scores_to_evict
             matured_drop_mask = scores_to_evict < self.threshold
+            matured_start = cache_len - scores_to_evict.shape[2] - self.sliding_window_size
             if self.drop_mask_transform is not None:
                 transformed = self.drop_mask_transform(scores_to_evict, float(self.threshold), int(matured_start))
                 if transformed.shape != matured_drop_mask.shape or transformed.dtype != torch.bool:
                     raise ValueError("DMS drop_mask_transform must return a boolean tensor matching matured scores")
                 matured_drop_mask = transformed
-            matured_start = cache_len - scores_to_evict.shape[2] - self.sliding_window_size
 
             # Find tokens below threshold: returns (batch_idx, head_idx, token_idx) tuples
             new_masked_key_indices = list(torch.where(matured_drop_mask))

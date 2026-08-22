@@ -1,0 +1,2 @@
+request_id,task,variant,metric_name,metric_value,answer,mask_gate_pass,logical_removed_fraction
+longbench__qasper__row000037,qasper,full_kv,qa_f1,0.782608695652174,The Nguni languages and the Sotho languages are similar to each other.,True,0.0
