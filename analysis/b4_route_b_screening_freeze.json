@@ -1,0 +1,97 @@
+{
+  "schema_version": "kvzap-b4-route-b-screening-freeze-1.0",
+  "status": "frozen",
+  "frozen_at": "2026-08-22",
+  "analysis_git_commit": "f19de6920c34703e081dbe56c40a10da1d3a2843",
+  "source_pilot": "longbench_balanced_v2",
+  "source_pilot_freeze": "analysis/longbench_balanced_v2_freeze.json",
+  "source_pilot_freeze_sha256": "f740de5bbb30244995a058d224fe127010b7056b8dd6a86466434a9437edf673",
+  "model": "Qwen/Qwen3-8B",
+  "predictor": "nvidia/KVzap-mlp-Qwen3-8B",
+  "predictor_revision": "bd5c5917846617da4311539859c137a262a6348b",
+  "threshold": -4.0,
+  "sliding_window": 128,
+  "candidate": {
+    "policy": "margin-aware cold-block coalescing",
+    "block_size": 4,
+    "margin": 0.25,
+    "scope": "Only mature cold tokens; the final 128-token protected window is unchanged."
+  },
+  "artifacts_sha256": {
+    "analysis/experiments/longbench_balanced_v2_structured_policy_v3/evaluation_manifest.json": "c87c6be6d5c0fbf9a0761d76d5ff57f2fb3bb664e481514d1b7b7ffd5668598b",
+    "analysis/experiments/longbench_balanced_v2_structured_policy_v3/structured_policy_request.csv": "f38b4eb6d41667d2081789df38f43acc489ce3daf21e3c51e34b56fa61aa61b9",
+    "analysis/experiments/longbench_balanced_v2_structured_policy_v3/structured_policy_summary.csv": "9e6bf40dc6d7ecc16c8702804a6dbb9ec712a3bd8444babe61f32e30033095fb",
+    "analysis/experiments/accuracy_b4_m0_probe_02/run_manifest.json": "f1cda13aed71de02855933e73410c45bf8db09ab28f7abeb55f88755b7b35ed1",
+    "analysis/experiments/accuracy_b4_m0_probe_02/request_results.csv": "d742c8f22be1e3f50d507fd4ea7b36bf6b26a0af54fbe07ef9b33921d1ff5361",
+    "analysis/experiments/accuracy_b4_m0_sentinel_01/run_manifest.json": "eeeb5b1362ebbfe48f979a7d0c7b5bc217feca156cd5481140e9c538dd79df67",
+    "analysis/experiments/accuracy_b4_m0_sentinel_01/request_results.csv": "4be4602ecf3eee7e43fc6f29dfefe95c8a5da4c12d9e95087dd1b4f23b70a1c3",
+    "analysis/experiments/accuracy_b4_m025_sentinel_01/run_manifest.json": "aeaf8e28fd4a87b6731a3065ade76d73abf03ccada48119542a88b7837ebf13f",
+    "analysis/experiments/accuracy_b4_m025_sentinel_01/request_results.csv": "d809d0108f2b6ebb042abd7dcb7622c6977c01a539005981d45ca12e6d0a7245",
+    "analysis/experiments/accuracy_b4_stratified9_01/run_manifest.json": "af0136165659b00a64fb1dee218742e51d26e18c1d70d8cc82aab78036a7f01c",
+    "analysis/experiments/accuracy_b4_stratified9_01/request_results.csv": "06816316b6b2ddf736a69775d68743e00c04a93750a1e2dbf09f717a2ce389c3",
+    "analysis/experiments/longbench_balanced_v2_phase3_layout_01/evaluation_manifest.json": "af97d6cc9f5c0e549c221ee0e1f19ed4843052b98245a242a64fcf22f806768f",
+    "analysis/experiments/longbench_balanced_v2_phase3_layout_01/layout_cost_summary.csv": "4e6edce26ba937f352d877dfe58f409a92cea6d3555d68086c24d1f8b1cb9039",
+    "analysis/experiments/longbench_balanced_v2_phase3_layout_01/request_layout_cost.csv": "21abcf418e35adc23caae5026bab6cd79fea53fe1770aaa7d2610e70ab69b2ea",
+    "analysis/experiments/longbench_balanced_v2_phase3_layout_01/layer_head_page_cost.csv": "becee24a22b12e8129e8cc042eca58fb3c5f46dde3f447b5de10b4777a12a070"
+  },
+  "implementation_sha256": {
+    "tools/run_kvzap_structured_accuracy.py": "031b6cf5564349e816f0cc9d400a9eefa363cce2c72607e80d6daea1e0586799",
+    "kvpress/presses/margin_block_dms.py": "43d5772bbac14dcd860d25de0e9b4e5526fb4202f62a14918e309bc05619a058",
+    "kvpress/presses/dms_press.py": "88b3071b37e6f68b4e05c87a930968586cbe038391d360394a53a12c6539aa93",
+    "tools/evaluate_kvzap_physical_layout.py": "9609a795e1eb5836e53559c6ae70357645db1471d4cb0b05a3f456a89aa5f822"
+  },
+  "validated_actual_dms_screening": {
+    "single_request_b4_m0": "One qasper request passed the B=4 transform mask gate; actual removed fraction 0.5112144420131292 matched the offline estimate 0.5116171286165816.",
+    "stratified9": {
+      "request_count": 9,
+      "variant_count": 4,
+      "generation_count": 36,
+      "all_mask_gates_passed": true,
+      "all_runs_completed_without_runtime_error": true,
+      "screening_metrics": "QA F1 and whitespace-token ROUGE-L only; these are not official LongBench metrics.",
+      "b4_m025_vs_original": "Six QA screening scores were unchanged. The three qmsum ROUGE-L deltas were -0.0207, +0.0319, and -0.0371; sample-level variation remains unresolved."
+    }
+  },
+  "offline_structural_metrics": {
+    "original_logical_removed_fraction_weighted": 0.662269448925271,
+    "b4_m0_logical_removed_fraction_weighted": 0.49223941995049897,
+    "b4_m025_logical_removed_fraction_weighted": 0.5321955055264767,
+    "b4_m025_logical_compression_factor_weighted": 2.1376451312752356,
+    "interpretation": "B=4,m=+0.25 recovers about four percentage points of logical deletion over B=4,m=0, but remains materially less sparse than original KVzap."
+  },
+  "phase3_timeline_layout_estimate": {
+    "assumptions": {
+      "kv_bytes_per_layer_head_token": 512,
+      "metadata_bytes_per_page": 16,
+      "read_proxy": "one query reading all allocated active KV plus page metadata"
+    },
+    "b4_m025_vs_original": {
+      "page_4": {"timeline_compression_factor_original": 1.9691, "timeline_compression_factor_b4_m025": 2.1373, "capacity_and_read_proxy_change": -0.0787},
+      "page_16": {"timeline_compression_factor_original": 1.5418, "timeline_compression_factor_b4_m025": 1.6417, "capacity_and_read_proxy_change": -0.0609},
+      "page_32": {"timeline_compression_factor_original": 1.4130, "timeline_compression_factor_b4_m025": 1.4950, "capacity_and_read_proxy_change": -0.0548},
+      "page_64": {"timeline_compression_factor_original": 1.3139, "timeline_compression_factor_b4_m025": 1.3815, "capacity_and_read_proxy_change": -0.0489}
+    },
+    "tail_result": "B=4,m=+0.25 lowers mean page allocation but does not lower the mean request-level P95 or maximum per-layer/head timeline-page count in this sample.",
+    "counterfactual_lower_bound": "For page=16, arbitrary-token packed original KVzap has 2.9502x compression versus 2.1328x for B=4,m=+0.25; Route A can therefore retain substantially more potential compression if it can compact token-level sparsity."
+  },
+  "decision": {
+    "route_b_status": "Conditional backup only. It is beneficial only under the tested timeline-page allocation model where arbitrary token compaction is unavailable.",
+    "accuracy_action": "Do not expand B=4,m=+0.25 to the complete 45-request accuracy screen now.",
+    "route_a_status": "Primary next direction: model predict-at-creation / compact-at-maturity KV lifecycle and token/page compaction costs while preserving the original KVzap mask."
+  },
+  "valid_for": [
+    "Reproducing the bounded B=4 candidate screen and Phase-3 page-layout estimates",
+    "Comparing Route A and Route B hypotheses under the stated allocation assumptions"
+  ],
+  "not_valid_for": [
+    "Official LongBench accuracy or faithful generation claims",
+    "Measured GPU allocator memory, HBM traffic, latency, throughput, or speedup",
+    "Actual decode lifecycle behaviour",
+    "Claims about models, predictors, page sizes, or datasets outside the recorded scope"
+  ],
+  "freeze_rules": [
+    "Do not overwrite the listed experiment directories or hand-edit their CSV/JSON results.",
+    "New B=4 variants or accuracy runs must use a new experiment directory and separate manifest.",
+    "Route A results must remain separate from this Route B evidence and may not reinterpret its byte proxies as measurements."
+  ]
+}

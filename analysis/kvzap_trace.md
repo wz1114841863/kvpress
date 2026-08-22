@@ -315,6 +315,28 @@ bucketing. Coalescing modifies a hypothetical final mask and must preserve the
 last 128 tokens. `newly_dropped_fraction` is a risk indicator, not a quality
 result: every coalescing candidate needs an independent accuracy run.
 
+### Frozen B=4 Route-B screen and Route-A handoff
+
+The B=4 evidence boundary is `analysis/b4_route_b_screening_freeze.json`.
+It covers the frozen v2 offline policies, a one-request actual DMS B=4 mask
+gate, a nine-request stratified screening run, and a 45-trace Phase-3 page
+layout estimate. It does **not** establish official LongBench accuracy,
+faithful generation, allocator memory, HBM bandwidth, latency, or throughput.
+
+The bounded outcome is deliberately conditional:
+
+- B=4,m=+0.25 improves timeline-page capacity/read-byte proxies by about
+  4.89%--7.87% versus the original mask for page sizes 64--4, respectively;
+- it does not reduce the observed per-layer/head timeline-page P95 or maximum;
+- original KVzap remains substantially better under arbitrary-token packed
+  compaction (for page=16: `2.9502x` original versus `2.1328x` B=4,m=+0.25).
+
+Route A is therefore the next active direction: keep the original predictor
+mask and analyze a cold-store lifecycle of `predict at creation, compact at
+maturity`, with page sealing and a per-head page table. Route-B results remain
+a fallback only for systems constrained to timeline-aligned pages without
+token compaction.
+
 ## Historical exporter: what is captured
 
 `tools/run_kvzap_trace.py` captures the following intermediate results for one

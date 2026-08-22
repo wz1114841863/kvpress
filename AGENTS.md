@@ -4,15 +4,16 @@
 
 本仓库用于研究 NVIDIA 论文 **KVzap: Fast, Adaptive, and Faithful KV Cache Pruning** 的算法行为与硬件友好实现。
 
-当前阶段的首要目标不是训练新的 KVzap predictor，也不是立即实现完整加速器，而是：
+当前阶段的首要目标不是训练新的 KVzap predictor，也不是立即实现 RTL，而是把冻结的
+KVzap 原始 mask 转化为可证伪的 Route-A 物理系统假设：
 
 1. 复核官方实现与论文结果的一致性；
 2. 导出可复用的 score / mask / KV-size trace；
 3. 系统分析 KVzap 稀疏模式；
-4. 判断后续更适合：
-   - 路线 A：保留原始稀疏模式，设计高效稀疏 KV 后端；
-   - 路线 B：在不重新训练 predictor 的前提下，把原始稀疏转化为硬件友好的 block/page/head-group 结构；
-5. 只有在上述分析完成后，才开始实现硬件模型、调度器或 RTL。
+4. 验证一次 packing/admission 是否能被后续 decode KV-read 减少快速摊销；
+5. 验证 variable-length head/page workload 是否造成可恢复的调度损失；
+6. 用显式 byte/cycle 模型验证物理容量能否转化为净 traffic 与性能收益；
+7. 仅在这些门槛通过后，冻结架构规格并进入 RTL。
 
 ### 1.1 当前冻结状态（2026-08-17）
 
@@ -83,6 +84,42 @@ RULER/LongBench 精度、任意请求上的 faithful generation、物理显存�
 SHA-256 由 preparation manifest 和 freeze record 保存，未同步到本地时不得伪称已重算。
 该冻结同样仅是 predictor-only 结构证据。
 
+### 1.4 B=4 Route-B 筛查冻结状态（2026-08-22）
+
+`analysis/b4_route_b_screening_freeze.json` 是 B=4 margin-aware block
+coalescing 的权威边界。它冻结了 45 条 v2 trace 的离线结构筛查、实际 DMS mask gate、
+9 条分层 screening generation，以及 page-layout 成本模型。
+
+- B=4,m=+0.25 在 9 条 screening 的 36/36 次运行中通过 mask gate；所用 QA F1 和
+  whitespace-token ROUGE-L 仅为筛查指标，不是官方 LongBench accuracy；
+- 原始 KVzap 在 arbitrary-token packed 下明显更优；B=4,m=+0.25 只在无法 token
+  compaction 的 timeline-page 假设下有约 5--8% 容量/read proxy 优势；
+- 该候选没有改善 sample 中 per-layer/head page-count 的 P95 或最大值。
+
+结论：Route B 是受限备选，不扩大 B=4,m=+0.25 的 45 条 accuracy screen。byte/read
+数值为显式假设下的代理，不是物理显存、HBM 流量或速度测量。
+
+### 1.5 Route-A 研究计划（当前，2026-08-22）
+
+权威交接和实验合同为 `KVZAP_ARCHITECTURE_PATH.md` 与
+`analysis/route_a_research_plan.md`。Route A 保留原始 KVzap mask，并实现：
+
+```text
+predict at creation -> hot window (128) -> compact at maturity
+-> append-only per-layer/head packed cold pages -> load-aware attention scheduling
+```
+
+当前先在冻结 v2 predictor-only trace 上做静态 page feasibility、容量尾部、批量调度和
+byte/cycle DSE；这些都不加载模型。现有 trace **不能**证明 admission break-even 或
+end-to-end 性能：两者需要安全的 read-only decode-lifecycle trace 或独立测量。
+
+Route A 的 go/no-go 问题为：
+
+1. packing/admission 是否在有用的未来 decode horizon 内回本；
+2. 静态 head mapping 是否存在显著可恢复的 utilization 损失；
+3. metadata、admission、scheduler 与 merge 开销后，net traffic 和 modeled latency
+   是否仍显著优于 Full KV。
+
 ## 2. 研究边界
 
 ### 当前应做
@@ -141,36 +178,33 @@ SHA-256 由 preparation manifest 和 freeze record 保存，未同步到本地�
 - 长上下文下是否出现 score distribution shift？
 - 可获得 KVzip+ oracle 时，false negative 主要出现在哪些 layer/head？
 
-### Q2. 原始稀疏模式是否具有硬件可利用结构？
+### Q2. Packing 是否保留原始 mask 的物理容量价值？
 
-- 连续删除区间是否足够长？
-- block occupancy 是否集中在 0 或 1？
-- 不同 KV head 的 mask 是否相似？
-- 不同 layer 的 mask 是否相似？
-- 每个 head 的有效长度差异有多大？
+- `P ∈ {16,32,64,128}` 的 append-only packed pages 是否接近逻辑压缩？
+- tail-page fragmentation、page-table metadata 和 page count 的 P50/P95/P99 是多少？
+- 任意-token packed 下界与 timeline-position page 的差距有多大？
+- compaction 是否需要辅助原始 position metadata？未检查代码前不得假设。
 
-### Q3. 输入自适应是否造成容量和负载尾部风险？
+### Q3. 负载不均衡是否严重，调度是否值得？
 
-- 每个 request 的 compression ratio 分布是什么？
-- P50/P90/P95/P99 物理 KV 容量是多少？
-- decoding 过程中 KV 增长是否平稳？
-- admission 是否存在 burst？
+- static head ownership 的 makespan、PE utilization 与 idle cycles 是多少？
+- length-aware whole-head scheduling 能回收多少损失，是否已经足够？
+- page/chunk dynamic scheduling 的额外 queue/merge 开销是否值得？
+- batch `{1,2,4,8}` 的离线组合工作负载中，tail latency 和 request fairness 如何变化？
 
-### Q4. 不重新训练时，能否获得更规则的稀疏？
+### Q4. Physical compression 能否成为净 traffic 与性能收益？
 
-优先评估：
+必须分开报告 Full KV、ideal packed KVzap、packed+static、packed+selected scheduler：
 
-- token block pruning；
-- page-aligned pruning；
-- head-group shared mask；
-- head-length bucketing；
-- margin-aware block coalescing；
-- fixed-point / INT8 score quantization；
-- layer/head protection policy。
+- hot/cold KV read/write bytes；
+- page metadata、allocator、queue 和 partial-softmax merge bytes/cycles；
+- attention compute cycles 与 bandwidth roofline；
+- admission break-even future decode steps；
+- modeled decode latency、tokens/s 和敏感性分析。
 
 ## 6. 两条后续路线
 
-### 路线 A：固定 predictor，设计稀疏 KV 后端
+### 路线 A：固定 predictor，设计稀疏 KV 后端（主线）
 
 保持原始 score/mask 语义，重点研究：
 
@@ -186,7 +220,7 @@ SHA-256 由 preparation manifest 和 freeze record 保存，未同步到本地�
 
 此路线的主要风险是与已有 sparse KV / PagedAttention 工作重叠，因此必须突出 KVzap 的静态 score、一次预测、一次 admission、后续重复访问的生命周期特性。
 
-### 路线 B：结构化稀疏软硬件协同
+### 路线 B：结构化稀疏软硬件协同（冻结备选）
 
 不训练 predictor，只改变 score-to-mask 过程，使稀疏更适合硬件：
 
@@ -198,7 +232,8 @@ SHA-256 由 preparation manifest 和 freeze record 保存，未同步到本地�
 - effective length bucketing；
 - layer/head selective protection。
 
-必须重新运行精度评测，不允许只根据 trace 推断精度。
+必须重新运行精度评测，不允许只根据 trace 推断精度。除非 Route-A 的静态与系统模型
+失败或 Route-B 出现明确的系统 Pareto 优势，否则不继续扩大该分支。
 
 ## 7. 实验阶段与门槛
 
@@ -251,36 +286,26 @@ SHA-256 由 preparation manifest 和 freeze record 保存，未同步到本地�
 7. decoding KV size over time；
 8. score margin distribution。
 
-### Phase 3：结构化策略筛选
+### Phase 3：Route-A static packed-page feasibility（当前）
 
-先用 trace 离线估算：
+只用冻结 trace，模拟 per-layer/head append-only packed cold page lists，输出 capacity、
+tail waste、metadata、page count、per-head tail 和 Full-KV/ideal-packed 基线。不能把
+静态最终 mask 伪称为 decoding admission trace。
 
-- logical occupancy；
-- physical occupancy；
-- metadata bytes；
-- page count；
-- average burst length；
-- head load imbalance。
+### Phase 4：Route-A scheduler 与 traffic/cycle DSE
 
-只将 Pareto 较优的少量策略送入完整精度评测。
+在明确的 page/PE/bandwidth/throughput 假设下，比较 static head、length-aware head 和
+dynamic page/chunk scheduling。离线合成的多 request workload 必须标为 simulated batch。
 
-### Phase 4：重新评测精度
+### Phase 5：安全 decode-lifecycle trace 与 break-even
 
-必须报告：
+只有 static DSE 给出可行 Pareto 区域后，才采集不改变输出的 generated-token scores 和
+maturity events，验证 admissions、page seals、promotion traffic、cold growth 与 break-even。
 
-- accuracy；
-- logical compression；
-- physical compression；
-- per-subtask degradation；
-- failure samples；
-- 与原始 KVzap 的差异。
+### Phase 6：架构规格、校准与 RTL 决策
 
-### Phase 5：硬件/系统模型
-
-只有在以下条件满足时进入：
-
-- 结构化策略保留了足够精度和物理压缩；或
-- 原始 mask 明确不适合结构化，因此路线 A 的 token/page compaction 必要性成立。
+只有 packed capacity、admission horizon、scheduler gain 和 net modeled traffic/latency 同时
+通过预先记录的 go/no-go 门槛，才冻结 `analysis/architecture_spec.md` 并进入 RTL。
 
 ## 8. Trace 与数据处理原则
 
@@ -424,7 +449,15 @@ results/
    统计结论和采样限制见 `analysis/longbench_core_v1_freeze.json`；
 6. **已完成并冻结**：45 条 `longbench_balanced_v2`，并完成 category/task/length-bucket
    分组统计和 marginal-rate-adjusted head Jaccard；
-7. **当前任务**：使用冻结 v2 Trace 离线筛选 B=4/8、head-length capacity bucketing 和
-   margin-aware block coalescing；coalescing 候选必须记录新增 drop 与恢复 keep；
-8. 只有 predictor-only 结果稳定后，才单独设计 actual DMS mask 与 decode 生命周期验证；
-9. 任何会改变 mask 的结构化策略都必须回到独立精度评测，不能由 trace 直接推断准确率。
+7. **已完成并冻结**：B=4/m=0 与 B=4/m=+0.25 的离线结构、实际 DMS mask gate、9 条
+   分层 screening 和 Phase-3 page-layout 筛查；权威记录为
+   `analysis/b4_route_b_screening_freeze.json`；
+8. **当前 Route-A0**：实现并验证 `PackedKVSimulator` 的静态 packed-page replay；先回答
+   物理 capacity、tail waste、metadata 和 per-head tail 是否接近原始 logical KVzap；
+9. **Route-A1**：基于同一 page replay，模拟 static、length-aware、dynamic page/chunk
+   scheduler，在 batch `{1,2,4,8}`、page/PE 参数 sweep 中量化 utilization 与 overhead；
+10. **Route-A2**：仅在 A0/A1 出现可行 Pareto 区域后，设计 read-only、trace-on/off
+    等价的 decode-lifecycle collector，验证 admission burst、page seal 和 break-even；
+11. **Route-A3**：以 Full KV/ideal packed/static/selected scheduler 基线建立显式 HBM 和
+    cycle 模型。只有净 modeled 收益明确后才冻结架构规格、考虑 RTL；
+12. 任何会改变 mask 的结构化策略都必须回到独立精度评测，不能由 trace 直接推断准确率。

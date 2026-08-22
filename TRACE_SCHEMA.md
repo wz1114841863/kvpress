@@ -235,3 +235,38 @@ non-interchangeable storage estimates for each policy and page size:
 The output also records page metadata and one-query all-active-KV read-byte
 proxies under explicit byte assumptions. These are analytical estimates, not
 allocator measurements, physical HBM traces, bandwidth, latency, or speed.
+
+## 15. Route-A packed-page and lifecycle evidence
+
+The active Route-A contract is `analysis/route_a_research_plan.md`. It keeps
+the original KVzap final mask and distinguishes two evidence tiers.
+
+### Static packed-page replay
+
+Frozen predictor-only prefill traces can support a model-free replay into
+append-only, per-`(layer, kv_head)` packed cold-page lists. Every result must
+record page size, cache dtype/bytes per K+V token, page metadata format/bytes,
+and whether it is a packed lower bound or a timeline-position layout. Required
+outputs include logical kept tokens, allocated slots, tail waste, page count,
+metadata bytes, and per-head P50/P95/P99/max page counts.
+
+Static replay may not claim an admission rate, packing break-even, real HBM
+traffic, allocator memory, latency, or throughput.
+
+### Read-only decode-lifecycle trace (future)
+
+Only after static packing and scheduling DSE selects plausible parameters may a
+new collector record generated-token maturity. It must prove output/mask
+equivalence with tracing disabled and must not mutate `DMSPress`,
+`scores_buffer`, `masked_key_indices`, or fake-key attention state.
+
+The lifecycle trace must make these fields explicit per request/step/layer/head
+or under a documented aggregation:
+
+- `hot_tokens_before`, `matured_tokens`, `cold_admitted_tokens`, `cold_dropped_tokens`;
+- `cold_page_allocations`, `cold_page_seals`, `tail_valid_count`;
+- `hot_to_cold_read_bytes`, `cold_write_bytes`, `metadata_update_bytes`;
+- `cold_logical_tokens`, `cold_allocated_slots`, `cold_page_count`.
+
+These trace-derived events are still not HBM counter measurements. They are the
+inputs to a separately parameterized break-even and cycle model.
