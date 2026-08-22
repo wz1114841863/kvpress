@@ -82,6 +82,23 @@ def load_rows(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def select_rows(
+    rows: list[dict[str, Any]], request_ids: list[str] | None, max_requests: int
+) -> list[dict[str, Any]]:
+    """Select an explicit, ordered sentinel set or the historical input prefix."""
+    if request_ids is None:
+        if max_requests < 1:
+            raise ValueError("--max-requests must be at least 1")
+        return rows[:max_requests]
+    if len(set(request_ids)) != len(request_ids):
+        raise ValueError("--request-id must not contain duplicates")
+    by_id = {row["request_id"]: row for row in rows}
+    unknown = [request_id for request_id in request_ids if request_id not in by_id]
+    if unknown:
+        raise ValueError(f"Unknown --request-id value(s): {', '.join(unknown)}")
+    return [by_id[request_id] for request_id in request_ids]
+
+
 def make_press(variant: str, threshold: float, window: int, callback):
     if variant == "full_kv":
         return None
@@ -106,7 +123,20 @@ def main() -> None:
     parser.add_argument("--input-manifest", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--variants", nargs="+", choices=VARIANTS, default=list(VARIANTS))
-    parser.add_argument("--max-requests", type=int, default=1)
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument(
+        "--max-requests",
+        type=int,
+        default=None,
+        help="Run the first N input rows (default: 1; retained for compatibility).",
+    )
+    selection.add_argument(
+        "--request-id",
+        action="append",
+        dest="request_ids",
+        metavar="ID",
+        help="Run one exact request ID; repeat to build an ordered cross-task sentinel set.",
+    )
     parser.add_argument("--max-new-tokens", type=int, default=128)
     parser.add_argument("--threshold", type=float, default=-4.0)
     parser.add_argument("--window", type=int, default=128)
@@ -115,7 +145,7 @@ def main() -> None:
     args = parser.parse_args()
     if args.output_dir.exists():
         raise FileExistsError(f"Output exists: {args.output_dir}")
-    rows = load_rows(args.input_jsonl)[: args.max_requests]
+    rows = select_rows(load_rows(args.input_jsonl), args.request_ids, args.max_requests or 1)
     source = json.loads(args.input_manifest.read_text(encoding="utf-8"))
     if hashlib.sha256(args.input_jsonl.read_bytes()).hexdigest() != source["output_jsonl_sha256"]:
         raise ValueError("Input JSONL hash differs from manifest")
@@ -183,6 +213,8 @@ def main() -> None:
         "input_jsonl_sha256": source["output_jsonl_sha256"],
         "variants": args.variants,
         "max_requests": args.max_requests,
+        "selected_request_ids": [row["request_id"] for row in rows],
+        "selected_request_count": len(rows),
         "max_new_tokens": args.max_new_tokens,
         "threshold": args.threshold,
         "window": args.window,
