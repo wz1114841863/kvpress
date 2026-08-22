@@ -253,6 +253,22 @@ metadata bytes, and per-head P50/P95/P99/max page counts.
 Static replay may not claim an admission rate, packing break-even, real HBM
 traffic, allocator memory, latency, or throughput.
 
+`tools/simulate_kvzap_packed_pages.py` implements the Route-A0 profile as
+`kvzap-route-a0-static-packed-page-replay-1.0`. It accepts only validated
+predictor-only traces and writes a new directory containing
+`request_packed_page_replay.csv`, `layer_head_packed_page_replay.csv`,
+`packed_page_replay_summary.csv`, and `replay_manifest.json`. The manifest
+records source `manifest.json`/`score_mask.npz` hashes, cache dtype and byte
+assumptions, page metadata bytes, and git commit.
+
+For a final mask `[L,H,T]`, `hot_slots` are valid trailing-window positions;
+each mature kept stream independently allocates
+`ceil(cold_logical_kept_slots / page_tokens) * page_tokens` cold slots.
+`tail_waste_slots` is the difference from mature kept slots and
+`fragmentation_fraction` divides it by cold allocated slots. Byte fields are
+storage accounting assumptions, not HBM traffic measurements. This profile is
+always a static final-mask replay, never a decode-admission replay.
+
 ### Read-only decode-lifecycle trace (future)
 
 Only after static packing and scheduling DSE selects plausible parameters may a

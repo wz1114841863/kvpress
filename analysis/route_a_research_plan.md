@@ -89,7 +89,7 @@ claim measured speed.
 
 ## Execution order and gates
 
-### A0 — static packed-page feasibility (next; no model execution)
+### A0 — static packed-page feasibility (implementation; no model execution)
 
 Implement a `PackedKVSimulator` that consumes frozen score/mask traces and
 replays their final cold masks into append-only per-layer/head page lists for
@@ -97,6 +97,16 @@ replays their final cold masks into append-only per-layer/head page lists for
 metadata, per-head length/page distributions, and a full-KV baseline. This
 answers whether physical storage remains close to the packed lower bound and
 supplies task sizes for scheduler simulation.
+
+`tools/simulate_kvzap_packed_pages.py` is the model-free implementation. It
+preserves the validated `final_drop_mask`, stores the trailing window regularly,
+and appends each mature kept `(layer, kv_head)` stream independently into fixed
+cold pages. Its scheduler handoff is `layer_head_packed_page_replay.csv`, keyed
+by `trace_id`, `page_tokens`, `layer`, and `kv_head`, with
+`cold_page_count`, `cold_allocated_slots`, and `tail_page_valid_slots` as the
+static work descriptors. Its byte fields are declared capacity accounting only;
+A0 does not establish dynamic admission, HBM traffic, allocator memory, or
+performance.
 
 ### A1 — static scheduling and traffic DSE (no new model execution)
 

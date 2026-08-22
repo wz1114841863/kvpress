@@ -878,13 +878,13 @@ and report:
 
 Codex should proceed in the following order and should not jump directly to RTL.
 
-### Phase 1 — Frozen algorithm and structural evidence
+### Phase 1 _ Frozen algorithm and structural evidence
 
 1. Preserve Phase-0 baseline, v2 predictor-only trace, and B=4 Route-B freeze.
 2. Keep the original KVzap mask as the Route-A front-end contract.
 3. Do not infer decode lifecycle or speed from the frozen prefill trace.
 
-### Phase 2 — Build the static physical KV simulator
+### Phase 2 _ Build the static physical KV simulator
 
 Implement:
 
@@ -902,14 +902,14 @@ First output final-state physical bytes, fragmentation, metadata, page count,
 per-head capacity tails, and occupancy. This is a trace-derived static replay,
 not a dynamic admission measurement.
 
-### Phase 3 — Scheduler and traffic/cycle DSE
+### Phase 3 _ Scheduler and traffic/cycle DSE
 
 Before new model execution, simulate static-head, length-aware-head, and
 page/chunk dynamic policies under declared page/PE/bandwidth/throughput
 parameters. Construct batch `{1,2,4,8}` only by explicitly labelled offline
 combination of independent traces.
 
-### Phase 4 — Implement safe streaming admission replay
+### Phase 4 _ Implement safe streaming admission replay
 
 Replay real decoding traces.
 
@@ -925,7 +925,7 @@ Output:
 The collector must be read-only and establish trace-off/trace-on equivalence;
 it must not reuse the failed stateful DMS/fake-key tracing path.
 
-### Phase 5 — Calibrated attention and HBM cost models
+### Phase 5 _ Calibrated attention and HBM cost models
 
 Explicitly model:
 
