@@ -53,6 +53,9 @@ class DMSPress(BasePress):
     sliding_window_size: int = 128
     decoding: bool = False
     trace_callback: Optional[Callable[..., None]] = field(default=None, repr=False, compare=False)
+    drop_mask_transform: Optional[Callable[[torch.Tensor, float, int], torch.Tensor]] = field(
+        default=None, repr=False, compare=False
+    )
     scores_buffer: dict[int, torch.Tensor] = field(default_factory=dict, init=False, repr=False)
     compression_ratios: dict[int, float] = field(default_factory=dict, init=False, repr=False)
 
@@ -111,6 +114,11 @@ class DMSPress(BasePress):
             self.scores_buffer[layer_idx] = self.scores_buffer[layer_idx][..., n_to_evict:]
             matured_scores = scores_to_evict
             matured_drop_mask = scores_to_evict < self.threshold
+            if self.drop_mask_transform is not None:
+                transformed = self.drop_mask_transform(scores_to_evict, float(self.threshold), int(matured_start))
+                if transformed.shape != matured_drop_mask.shape or transformed.dtype != torch.bool:
+                    raise ValueError("DMS drop_mask_transform must return a boolean tensor matching matured scores")
+                matured_drop_mask = transformed
             matured_start = cache_len - scores_to_evict.shape[2] - self.sliding_window_size
 
             # Find tokens below threshold: returns (batch_idx, head_idx, token_idx) tuples

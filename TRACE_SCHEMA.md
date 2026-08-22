@@ -205,3 +205,18 @@ requests/<stable-request-name>/<predictor-trace-files>
 `head_similarity.csv` 同时保存实际 Jaccard、在 observed marginal keep/drop rates 下
 independent mask 的期望 Jaccard，以及 `actual - expected` excess。该 excess 只用于区分
 边际保留率导致的表观重叠与额外 token-position sharing，仍不能推出共享 mask 的精度。
+
+## 13. Frozen-pilot structured policy evaluation
+
+`tools/evaluate_kvzap_structured_masks.py` consumes only validated
+`kvzap-predictor-trace-1.1` traces and writes a separate, never-overwritten
+evaluation directory. `head_length_bucketing.csv` rounds per-layer/head cold
+capacity to a token quantum and does not change a mask. In contrast,
+`structured_policy_request.csv` applies margin-aware B=4/8 coalescing only to
+the mature cold region and reports both `newly_dropped_fraction` and
+`recovered_keep_fraction`.
+
+The protected trailing window must remain unchanged. Positive coalescing
+margins may add drops and are candidates for later accuracy evaluation only.
+`structured_policy_summary.csv` reports both weighted and request-mean padded
+physical-compression estimates; neither is measured memory or speed.

@@ -65,6 +65,24 @@ RULER/LongBench 精度、任意请求上的 faithful generation、物理显存�
 在各桶的 available/selected 数量。v1 和 v2 均为 predictor-only 结构证据，不能用于
 准确率、decode 生命周期、物理显存或速度结论。
 
+### 1.3 LongBench task-balanced v2 冻结状态（2026-08-22）
+
+`longbench_balanced_v2` 的权威冻结记录为
+`analysis/longbench_balanced_v2_freeze.json`：
+
+- 45/45 predictor-only requests 完成，并逐条通过 `kvzap-predictor-trace-1.1` 离线校验；
+- retrieval、summarization、reasoning 各 15 条；每个 category/length bucket 各 5 条；
+- token-weighted logical removed fraction 为 `66.23%`，request mean 为 `66.47%`，
+  logical compression 为 `2.96x`；
+- 跨请求 layer / layer-head retention Pearson 均值分别为 `0.972` / `0.980`；
+- 原始 keep-mask Jaccard 均值 `0.205`，扣除 marginal-rate 后 excess `0.069`，不能把
+  稳定的 layer/head 宏观轮廓误解为可直接共享的 token mask。
+
+冻结规则：不得覆盖 v2 preparation manifest、pilot run、trace 或
+`analysis/experiments/longbench_balanced_v2_analysis/`。原始 JSONL 被 gitignore；其
+SHA-256 由 preparation manifest 和 freeze record 保存，未同步到本地时不得伪称已重算。
+该冻结同样仅是 predictor-only 结构证据。
+
 ## 2. 研究边界
 
 ### 当前应做
@@ -404,10 +422,9 @@ results/
    load imbalance 和 score-margin 离线分析；
 5. **已完成并冻结**：18 条 `longbench_core_v1` predictor-only pilot；证据、哈希、
    统计结论和采样限制见 `analysis/longbench_core_v1_freeze.json`；
-6. **当前任务**：使用 task-priority rotating round-robin 采集 45 条
-   `longbench_balanced_v2`，并用 preparation manifest 生成 category/task/length-bucket
+6. **已完成并冻结**：45 条 `longbench_balanced_v2`，并完成 category/task/length-bucket
    分组统计和 marginal-rate-adjusted head Jaccard；
-7. 若 v2 保持相同结构规律，优先离线筛选 B=4/8、head-length bucketing 和
-   margin-aware block coalescing；
+7. **当前任务**：使用冻结 v2 Trace 离线筛选 B=4/8、head-length capacity bucketing 和
+   margin-aware block coalescing；coalescing 候选必须记录新增 drop 与恢复 keep；
 8. 只有 predictor-only 结果稳定后，才单独设计 actual DMS mask 与 decode 生命周期验证；
-9. 任何结构化策略都必须回到独立精度评测，不能由 trace 直接推断准确率。
+9. 任何会改变 mask 的结构化策略都必须回到独立精度评测，不能由 trace 直接推断准确率。

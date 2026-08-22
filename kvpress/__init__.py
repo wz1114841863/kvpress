@@ -18,6 +18,7 @@ from kvpress.presses.criticalkv_press import CriticalAdaKVPress, CriticalKVPress
 from kvpress.presses.cur_press import CURPress
 from kvpress.presses.decoding_press import DecodingPress
 from kvpress.presses.dms_press import DMSPress
+from kvpress.presses.margin_block_dms import make_margin_block_drop_transform
 from kvpress.presses.duo_attention_press import DuoAttentionPress
 from kvpress.presses.expected_attention_press import ExpectedAttentionPress
 from kvpress.presses.expected_attention_with_stats import ExpectedAttentionStatsPress
@@ -90,6 +91,7 @@ __all__ = [
     "NonCausalAttnPress",
     "KVzapPress",
     "DMSPress",
+    "make_margin_block_drop_transform",
     "FastKVzipPress",
     "KVComposePress",
     "MergingPress",

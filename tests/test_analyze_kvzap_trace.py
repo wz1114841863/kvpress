@@ -17,6 +17,7 @@ from tools.analyze_kvzap_trace import (
     run_lengths,
     validate_trace,
 )
+from tools.evaluate_kvzap_structured_masks import capacity_bucket_metrics, coalesced_drop_mask
 
 
 def test_run_lengths_and_jaccard():
@@ -111,6 +112,28 @@ def test_analyze_trace_block_and_window_metrics():
     assert block["block_size"] == 2
     assert 0 <= block["mixed_block_fraction"] <= 1
     assert block["physical_compression_factor_padded"] <= summary["logical_compression_factor"]
+
+
+def test_block_coalescing_preserves_window_and_b1_is_original():
+    scores = np.asarray([[[-2.0, 1.0, -3.0, -4.0, -5.0, 2.0]]], dtype=np.float32)
+    valid = np.ones_like(scores, dtype=np.bool_)
+    original = scores < 0
+    original[..., -2:] = False
+    b1 = coalesced_drop_mask(scores, valid, original, threshold=0.0, window=2, block_size=1, margin=0.0)
+    assert np.array_equal(b1, original)
+    b2 = coalesced_drop_mask(scores, valid, original, threshold=0.0, window=2, block_size=2, margin=0.0)
+    assert np.array_equal(b2[..., -2:], original[..., -2:])
+    assert not b2[..., :2].any()
+    assert b2[..., 2:4].all()
+
+
+def test_head_capacity_bucket_only_changes_capacity_estimate():
+    final = np.asarray([[[True, False, False, False, False, False]]])
+    valid = np.ones_like(final, dtype=np.bool_)
+    metrics = capacity_bucket_metrics(final, valid, window=2, quantum=4)
+    assert metrics["logical_compression_factor"] == 6 / 5
+    assert metrics["capacity_compression_factor"] == 1.0
+    assert metrics["capacity_fragmentation"] == 0.25
 
 
 def write_predictor_trace(path, request_id="r0"):
@@ -213,8 +236,7 @@ def test_request_pair_similarity_uses_retention_profiles(tmp_path):
     write_predictor_trace(left_dir, "left")
     write_predictor_trace(right_dir, "right")
     results = [
-        analyze_trace(validate_trace(path), block_sizes=[2], threshold_deltas=[0.0])
-        for path in (left_dir, right_dir)
+        analyze_trace(validate_trace(path), block_sizes=[2], threshold_deltas=[0.0]) for path in (left_dir, right_dir)
     ]
 
     rows = analyze_request_pairs(results)

@@ -294,6 +294,27 @@ marginal keep/drop rates and the actual-minus-expected excess. These additions
 separate stable layer/head capacity profiles from genuine token-position mask
 sharing.
 
+### Frozen v2 and offline structured screening
+
+The completed 45-request task-balanced run is frozen in
+`analysis/longbench_balanced_v2_freeze.json`. It remains predictor-only
+evidence. The raw JSONL is gitignored; its expected SHA-256 is recorded in the
+preparation manifest and freeze record.
+
+Run the reproducible, model-free structural screen against the frozen traces:
+
+```bash
+python tools/evaluate_kvzap_structured_masks.py \
+  traces/pilots/longbench_balanced_v2_shard0/requests/* \
+  --pilot-manifest pilot_inputs/longbench_balanced_v2.manifest.json \
+  --output-dir analysis/experiments/<new_policy_id>
+```
+
+It evaluates B=4/8 margin-aware cold-block coalescing and head-length capacity
+bucketing. Coalescing modifies a hypothetical final mask and must preserve the
+last 128 tokens. `newly_dropped_fraction` is a risk indicator, not a quality
+result: every coalescing candidate needs an independent accuracy run.
+
 ## Historical exporter: what is captured
 
 `tools/run_kvzap_trace.py` captures the following intermediate results for one

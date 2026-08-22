@@ -1,0 +1,167 @@
+{
+  "analysis_git_commit": "d4baf56a186d2776178a71cfdff6c113db12afff",
+  "artifact_sha256": {
+    "analysis/experiments/longbench_balanced_v2_analysis/analysis_manifest.json": {
+      "bytes": 22728,
+      "sha256": "b68e1270dcec5f48d1d2ab64d04e0f11d8e6b155488ccecdfb20ef20c14095f7"
+    },
+    "analysis/experiments/longbench_balanced_v2_analysis/block_occupancy.csv": {
+      "bytes": 61861,
+      "sha256": "90c6470c99a537e057bc7429ac34fd32dcb57b6f11047b6695100b44e8ea7913"
+    },
+    "analysis/experiments/longbench_balanced_v2_analysis/head_similarity.csv": {
+      "bytes": 12137366,
+      "sha256": "73296d19505a17e3213ed3d392ace47316ca8f0829671c51e36ad73fa904316f"
+    },
+    "analysis/experiments/longbench_balanced_v2_analysis/layer_head_retention.csv": {
+      "bytes": 3826765,
+      "sha256": "f45a68606366ca6e01190d72a15d77f157710c0be3b441f41ff1774329c67890"
+    },
+    "analysis/experiments/longbench_balanced_v2_analysis/request_group_summary.csv": {
+      "bytes": 4666,
+      "sha256": "abb58fea948f7e539d0b87a1c63a919c336e2a8a4af34ffc9ab3092973a68e79"
+    },
+    "analysis/experiments/longbench_balanced_v2_analysis/request_pair_similarity.csv": {
+      "bytes": 281530,
+      "sha256": "aa3e85786960775436c403c6b33616d6b3432c817fd0d904a0aa695d0e0b0eda"
+    },
+    "analysis/experiments/longbench_balanced_v2_analysis/request_summary.csv": {
+      "bytes": 31247,
+      "sha256": "bfb96008805f0feaaca9ba391948cb17de35adbb6d28c59e03efd9e2917a41a2"
+    },
+    "analysis/experiments/longbench_balanced_v2_analysis/run_length_distribution.csv": {
+      "bytes": 5069275,
+      "sha256": "3c11fccb9d4cd325e7bb5d1499f1e03a58966ec3a76083800379b49319632efd"
+    },
+    "analysis/experiments/longbench_balanced_v2_analysis/score_threshold_sensitivity.csv": {
+      "bytes": 38430,
+      "sha256": "d6c3b09ea97d7b1a6e91e4d2a8a10e034eedf9c311533ca59003c9d2801ba202"
+    },
+    "pilot_inputs/longbench_balanced_v2.jsonl": {
+      "locally_available": false,
+      "sha256_from_preparation_manifest": "a497d6a9d2b1c9532044c52b0003c37e4782312e979828b8ff7c6a0d72b2aeee"
+    },
+    "pilot_inputs/longbench_balanced_v2.manifest.json": {
+      "bytes": 32314,
+      "sha256": "6692a90d6a30cc1003b63b3e10d81bd72d21961024b96bea12f18dcf32481420"
+    },
+    "traces/pilots/longbench_balanced_v2_shard0/pilot_run_manifest.json": {
+      "bytes": 51282,
+      "sha256": "4734c786b560281e359e31ec0c199caaff3b4ac95a1d7791af20b76ac6c50655"
+    }
+  },
+  "dataset": "Xnhyacinth/LongBench",
+  "dataset_revision": "2e9ade51ebf45d98942056c0716234f9d5d257d5",
+  "input_jsonl_local_status": "The JSONL is gitignored and may be absent locally; its expected SHA-256 is retained in the preparation manifest and this freeze record.",
+  "model": "Qwen/Qwen3-8B",
+  "model_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+  "not_valid_for": [
+    "answer accuracy or faithful generation",
+    "actual DMS/decode lifecycle",
+    "measured physical memory, HBM traffic, or speed",
+    "claims beyond the sampled LongBench tasks and length buckets"
+  ],
+  "observed_metrics": {
+    "all_group": {
+      "global_head_load_cv_mean": "0.2034705954154016",
+      "group_type": "all",
+      "group_value": "all",
+      "head_keep_jaccard_excess_mean": "0.06893059742370154",
+      "head_keep_jaccard_mean": "0.20461841816147314",
+      "layer_load_cv_mean": "0.4889958917077552",
+      "logical_compression_factor_mean": "2.987584135712733",
+      "logical_compression_factor_weighted": "2.9609403023143495",
+      "logical_removed_fraction_max": "0.7224042688261528",
+      "logical_removed_fraction_mean": "0.6647052050854738",
+      "logical_removed_fraction_min": "0.63863137121053",
+      "logical_removed_fraction_p50": "0.6625041603836384",
+      "logical_removed_fraction_p90": "0.6746711197876792",
+      "logical_removed_fraction_weighted": "0.662269448925271",
+      "near_threshold_0_25_fraction_mean": "0.06534982267112927",
+      "request_count": "45",
+      "sequence_tokens_max": "16042",
+      "sequence_tokens_mean": "6640.0888888888885",
+      "sequence_tokens_min": "2143"
+    },
+    "global_head_load_cv_mean": 0.2034705954154016,
+    "head_keep_jaccard_excess_mean": 0.06893059742370154,
+    "head_keep_jaccard_mean": 0.20461841816147314,
+    "layer_load_cv_mean": 0.4889958917077552,
+    "logical_compression_factor": {
+      "request_mean": 2.987584135712733,
+      "token_weighted": 2.9609403023143495
+    },
+    "logical_removed_fraction": {
+      "max": 0.7224042688261528,
+      "min": 0.63863137121053,
+      "p50_higher": 0.6625041603836384,
+      "request_mean": 0.6647052050854738,
+      "token_weighted": 0.662269448925271
+    },
+    "near_threshold_0_25_fraction_mean": 0.06534982267112927
+  },
+  "pilot_id": "longbench_balanced_v2",
+  "predictor": "nvidia/KVzap-mlp-Qwen3-8B",
+  "predictor_revision": "bd5c5917846617da4311539859c137a262a6348b",
+  "preparation_git_commit": "d4baf56a186d2776178a71cfdff6c113db12afff",
+  "request_count": 45,
+  "request_status": {
+    "complete": 45,
+    "failed": 0,
+    "offline_validation_errors": 0
+  },
+  "runner_git_commit": "d4baf56a186d2776178a71cfdff6c113db12afff",
+  "sampling": {
+    "category_counts": {
+      "reasoning": 15,
+      "retrieval": 15,
+      "summarization": 15
+    },
+    "known_limit": "Task availability remains unequal in some category/length buckets; bucket_report records each gap.",
+    "length_bins": [
+      [
+        1024,
+        4096
+      ],
+      [
+        4096,
+        8192
+      ],
+      [
+        8192,
+        16384
+      ]
+    ],
+    "samples_per_category_length_bucket": 5,
+    "selection_policy": "rotating-balanced-round-robin-v2",
+    "task_counts": {
+      "2wikimqa": 10,
+      "gov_report": 5,
+      "multi_news": 5,
+      "musique": 5,
+      "narrativeqa": 3,
+      "qasper": 12,
+      "qmsum": 5
+    }
+  },
+  "schema_version": "kvzap-longbench-pilot-freeze-1.1",
+  "seed": 42,
+  "sliding_window": 128,
+  "status": "frozen",
+  "threshold": -4.0,
+  "trace_integrity": "analysis_manifest.json stores ordered SHA-256 values for every source trace manifest.json and score_mask.npz.",
+  "trace_schema": "kvzap-predictor-trace-1.1",
+  "valid_for": [
+    "LongBench predictor-only structural analysis",
+    "offline regularization hypothesis screening"
+  ],
+  "validated_invariants": [
+    "all selected requests are complete",
+    "all trace directories pass schema-1.1 validation",
+    "scores are finite and valid",
+    "predicted masks equal score < threshold",
+    "the newest 128 tokens are protected",
+    "Gate A evidence passes",
+    "analysis count matches validated traces"
+  ]
+}
