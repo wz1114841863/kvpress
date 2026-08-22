@@ -8,15 +8,23 @@ import hashlib
 import json
 import random
 import re
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-import torch
-from transformers import pipeline
+# Running ``python tools/<script>.py`` otherwise places ``tools/`` before the
+# repository root on sys.path.  Some research environments also have another
+# editable ``kvpress`` installed (for example FocusKV's vendored checkout).
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from kvpress import DMSPress, KVzapPress, make_margin_block_drop_transform
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
+from transformers import pipeline  # noqa: E402
+
+from kvpress import DMSPress, KVzapPress, make_margin_block_drop_transform  # noqa: E402
 
 
 VARIANTS = ("full_kv", "kvzap_original", "b4_m0", "b4_m025")
