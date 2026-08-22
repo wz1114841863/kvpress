@@ -18,6 +18,7 @@ from tools.analyze_kvzap_trace import (
     validate_trace,
 )
 from tools.evaluate_kvzap_structured_masks import capacity_bucket_metrics, coalesced_drop_mask
+from tools.evaluate_kvzap_physical_layout import page_counts
 
 
 def test_run_lengths_and_jaccard():
@@ -134,6 +135,15 @@ def test_head_capacity_bucket_only_changes_capacity_estimate():
     assert metrics["logical_compression_factor"] == 6 / 5
     assert metrics["capacity_compression_factor"] == 1.0
     assert metrics["capacity_fragmentation"] == 0.25
+
+
+def test_page_counts_distinguish_packed_and_timeline_layouts():
+    # Four kept tokens fit one packed 4-token page, but span three timeline pages.
+    keep = np.asarray([[[True, False, False, False, True, True, False, False, False, False, True, False]]])
+    kept, packed, timeline = page_counts(keep, page_tokens=4)
+    assert kept.tolist() == [[4]]
+    assert packed.tolist() == [[1]]
+    assert timeline.tolist() == [[3]]
 
 
 def write_predictor_trace(path, request_id="r0"):

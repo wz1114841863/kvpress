@@ -220,3 +220,18 @@ The protected trailing window must remain unchanged. Positive coalescing
 margins may add drops and are candidates for later accuracy evaluation only.
 `structured_policy_summary.csv` reports both weighted and request-mean padded
 physical-compression estimates; neither is measured memory or speed.
+
+## 14. Phase-3 physical-layout estimate
+
+`tools/evaluate_kvzap_physical_layout.py` consumes the same validated
+predictor-only traces without loading a model. It reports two named, mutually
+non-interchangeable storage estimates for each policy and page size:
+
+- `packed`: a per-layer/head arbitrary-token compaction lower bound, followed
+  by page rounding;
+- `timeline`: original token-position pages, allocated whenever a page has one
+  or more kept mature tokens.
+
+The output also records page metadata and one-query all-active-KV read-byte
+proxies under explicit byte assumptions. These are analytical estimates, not
+allocator measurements, physical HBM traces, bandwidth, latency, or speed.
