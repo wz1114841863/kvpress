@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gc
 import hashlib
 import json
 import random
@@ -120,10 +121,10 @@ def main() -> None:
         raise ValueError("Input JSONL hash differs from manifest")
     args.output_dir.mkdir(parents=True)
     result_path = args.output_dir / "request_results.csv"
-    print(f"Loading base model: {args.model}")
-    pipe = pipeline("kv-press-text-generation", model=args.model, device_map="auto", dtype="auto")
     results = []
     for variant in args.variants:
+        print(f"Loading isolated base model for variant: {variant}")
+        pipe = pipeline("kv-press-text-generation", model=args.model, device_map="auto", dtype="auto")
         for row in rows:
             observed = []
 
@@ -166,6 +167,10 @@ def main() -> None:
             print(f"[{variant}] {row['request_id']}: {metric_name}={score:.4f}, mask_gate={gate}")
             if not gate:
                 raise AssertionError("Mask gate failed; refusing to continue")
+        del pipe
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
     with result_path.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(results[0]))
         writer.writeheader()
