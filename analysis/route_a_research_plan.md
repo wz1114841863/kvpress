@@ -185,7 +185,10 @@ Failure of any gate is a design result: revise the page/scheduler architecture
 before considering RTL. RTL follows only an architecture-spec freeze.
 
 `tools/simulate_kvzap_route_a3_traffic.py` implements the first model-free A3
-ledger over one A2 lifecycle directory and its P={16,32,64,128} replay. For
+ledger over one or more A2 lifecycle directories and their P={16,32,64,128}
+replays. The named `conservative_three` suite fixes the input set to the frozen
+retrieval Qasper, reasoning 2WikiMQA, and long-horizon GovReport-row109 A2
+artifacts; it is intended for cross-workload page-size Pareto scans. For
 each observed `phase=decode` call it reports four baselines: Full KV; ideal
 packed KVzap (hot plus logical cold tokens, zero admission/metadata/scheduler
 cost); packed static-head; and packed length-aware whole-head LPT. Context and

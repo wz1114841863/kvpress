@@ -376,3 +376,7 @@ duplicated over these scheduler-only sensitivity points for a rectangular DSE.
 The A3 CLI accepts ordered repeated `--lifecycle-dir` / `--page-replay-dir`
 pairs to create one cross-workload suite; each pair must separately validate
 against the A2 freeze and is recorded with individual hashes in the manifest.
+It also provides the frozen `--workload-suite conservative_three` preset:
+`retrieval_qasper`, `reasoning_2wikimqa`, and
+`longhorizon_gov_report_row109`. Each CSV row has a `workload` field, so
+cross-workload results cannot be accidentally aggregated only by request ID.
