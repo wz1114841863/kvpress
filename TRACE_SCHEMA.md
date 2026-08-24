@@ -269,6 +269,25 @@ each mature kept stream independently allocates
 storage accounting assumptions, not HBM traffic measurements. This profile is
 always a static final-mask replay, never a decode-admission replay.
 
+### Route-A1 scheduler DSE
+
+`tools/simulate_kvzap_route_a1_scheduler.py` consumes only a completed A0
+directory, not a model or raw trace. It forms deterministic sequential
+combinations of independent request trace IDs and labels every combination as a
+simulated serving batch. The final short batch is retained with its explicit
+actual size unless `--drop-incomplete-batch` is selected.
+
+The output directory contains `scheduler_layer_results.csv`,
+`scheduler_batch_results.csv`, `scheduler_summary.csv`, and
+`scheduler_manifest.json`. The manifest must hash the A0 replay inputs and
+record all cost constants, PE count, page size, policy, source order, and batch
+construction. Policies are `static_head`, `length_aware_head`, and
+`dynamic_page`; the latter records per-task dispatch and serial partial-softmax
+merge cost separately. `useful_cycles`, overhead cycles, utilization,
+makespan, queue depth, and fairness fields are modeled quantities only. They
+are not actual scheduling traces, HBM measurements, latency, throughput, or
+decode-lifecycle evidence.
+
 ### Read-only decode-lifecycle trace (future)
 
 Only after static packing and scheduling DSE selects plausible parameters may a

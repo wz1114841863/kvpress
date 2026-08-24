@@ -108,13 +108,22 @@ static work descriptors. Its byte fields are declared capacity accounting only;
 A0 does not establish dynamic admission, HBM traffic, allocator memory, or
 performance.
 
-### A1 — static scheduling and traffic DSE (no new model execution)
+### A1 — static scheduling and traffic DSE (implementation; no new model execution)
 
 Use A0 page lists to simulate batch sizes `{1,2,4,8}` by explicitly combining
 independent traces offline. Sweep PE count, page size, and scheduler policy.
 Use a configurable attention page cost
 `max(bytes / bandwidth, operations / throughput)` plus metadata, queue, and
 merge costs. Label these workloads as simulated serving batches.
+
+`tools/simulate_kvzap_route_a1_scheduler.py` implements this first scheduler
+screen over a completed A0 directory. It uses a fixed per-`(batch slot,
+kv_head)` mapping for `static_head`, LPT whole-head scheduling for
+`length_aware_head`, and an LPT queue of a hot segment plus allocated cold-page
+tasks for `dynamic_page`. The dynamic policy separately records declared task
+dispatch and serial partial-softmax merge overhead. It supplies layer, batch,
+summary, and provenance artifacts but does not yet model admission traffic or
+measure any execution property.
 
 ### A2 — read-only decode-lifecycle trace
 
