@@ -1,9 +1,13 @@
+import csv
+import json
+
 import numpy as np
 import torch
 
-from kvpress.lifecycle import LifecycleSimulator, PackedColdPageState
+from kvpress.lifecycle import FINAL_COLUMNS, LIFECYCLE_COLUMNS, LifecycleSimulator, PackedColdPageState
 from kvpress.presses.kvzap_press import KVzapPress
 from tools.replay_kvzap_decode_lifecycle_pages import replay
+from tools.validate_kvzap_decode_lifecycle_trace import validate
 
 
 def test_packed_cold_page_state_allocates_and_seals():
@@ -72,3 +76,28 @@ def test_lifecycle_page_replay_preserves_admissions_and_changes_only_page_geomet
     assert summary["declared_hot_to_cold_read_bytes"] == 32
     assert summary["declared_cold_write_bytes"] == 24
     assert summary["physical_capacity_compression"] == 1.0
+
+
+def test_validator_counts_request_level_phase_once_not_once_per_head(tmp_path):
+    simulator = LifecycleSimulator(layers=1, heads=2, window=2, page_tokens=2, kv_bytes_per_token=8, metadata_bytes_per_page=2)
+    rows = simulator.observe(0, 0, np.asarray([[1.0, 1.0, 1.0], [-1.0, -1.0, -1.0]], dtype=np.float32), 0.0, 0, "context_prefill")
+    for row in rows:
+        row["request_id"] = "r"
+    with (tmp_path / "lifecycle_events.csv").open("w", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=LIFECYCLE_COLUMNS)
+        writer.writeheader()
+        writer.writerows(rows)
+    final = [{"request_id": "r", **row} for row in simulator.final_rows()]
+    with (tmp_path / "lifecycle_final_state.csv").open("w", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=FINAL_COLUMNS)
+        writer.writeheader()
+        writer.writerows(final)
+    manifest = {
+        "schema_version": "kvzap-route-a2-readonly-lifecycle-1.0", "page_tokens": 2,
+        "kv_bytes_per_layer_head_token": 8, "metadata_bytes_per_cold_page": 2, "sliding_window": 2,
+        "trace_equivalence": {"answers_identical": True, "lifecycle_digests_identical": True, "lifecycle_summaries_identical": True},
+        "observational_guards": {"dms_press_used": False, "masked_key_indices_created": False, "fake_key_attention_used": False, "model_cache_mutated_by_collector": False},
+        "decode_lifecycle_observation": {"decode_model_call_count": 0, "pipeline_generated_token_ids_observed": 1, "answer_retokenized_token_count": 0, "phase_summary": {"context_prefill": {"model_call_count": 1, "query_tokens": 3, "matured_layer_head_slots": 2, "cold_admitted_tokens": 1, "cold_dropped_tokens": 1, "cold_page_allocations": 1, "cold_page_seals": 0, "hot_to_cold_read_bytes": 16, "cold_write_bytes": 8, "metadata_update_bytes": 2}}},
+    }
+    (tmp_path / "lifecycle_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    assert validate(tmp_path) == {"layers": 1, "layer_heads": 2, "events": 2}

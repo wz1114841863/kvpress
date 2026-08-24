@@ -84,10 +84,16 @@ def validate(trace_dir: Path) -> dict[str, int]:
     if observation is not None:
         phase_summary: dict[str, dict[str, int]] = {}
         first_layer = min(layer for layer, _ in grouped)
+        first_layer_calls: set[tuple[str, int]] = set()
         for row in events:
             phase = row["phase"]
             actual = phase_summary.setdefault(phase, {"model_call_count": 0, "query_tokens": 0, "matured_layer_head_slots": 0, "cold_admitted_tokens": 0, "cold_dropped_tokens": 0, "cold_page_allocations": 0, "cold_page_seals": 0, "hot_to_cold_read_bytes": 0, "cold_write_bytes": 0, "metadata_update_bytes": 0})
-            if int(row["layer"]) == first_layer:
+            # One serialized row exists for each KV head.  Request-level call
+            # and query-token fields must therefore use each (phase, call)
+            # pair once, while the remaining counters intentionally sum L/H.
+            call_key = (phase, int(row["model_call"]))
+            if int(row["layer"]) == first_layer and call_key not in first_layer_calls:
+                first_layer_calls.add(call_key)
                 actual["model_call_count"] += 1
                 actual["query_tokens"] += int(row["q_len"])
             for source, target in (("matured_tokens", "matured_layer_head_slots"), ("cold_admitted_tokens", "cold_admitted_tokens"), ("cold_dropped_tokens", "cold_dropped_tokens"), ("cold_page_allocations", "cold_page_allocations"), ("cold_page_seals", "cold_page_seals"), ("hot_to_cold_read_bytes", "hot_to_cold_read_bytes"), ("cold_write_bytes", "cold_write_bytes"), ("metadata_update_bytes", "metadata_update_bytes")):
