@@ -1,0 +1,69 @@
+{
+  "schema_version": "kvzap-route-a2-lifecycle-freeze-1.0",
+  "freeze_status": "completed_evidence_boundary",
+  "frozen_at": "2026-08-24",
+  "scope": "Read-only Route-A2 lifecycle observation and model-free packed-page replay. This is not a KVzap-pruned generation benchmark or a hardware measurement.",
+  "fixed_configuration": {
+    "model": "Qwen/Qwen3-8B",
+    "model_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "predictor": "nvidia/KVzap-mlp-Qwen3-8B",
+    "predictor_revision": "bd5c5917846617da4311539859c137a262a6348b",
+    "threshold": -4.0,
+    "sliding_window": 128,
+    "cache_bytes_per_layer_head_token": 512,
+    "metadata_bytes_per_cold_page": 16,
+    "page_sizes_replayed": [16, 32, 64, 128],
+    "seed": 42
+  },
+  "collection_contract": {
+    "collector": "tools/run_kvzap_decode_lifecycle_trace.py",
+    "validator": "tools/validate_kvzap_decode_lifecycle_trace.py",
+    "page_replay": "tools/replay_kvzap_decode_lifecycle_pages.py",
+    "required_guards": ["normal/observer-record answer hashes identical", "observer-no-record/record lifecycle digests identical", "observer summaries identical", "no DMSPress", "no masked_key_indices", "no fake-key attention", "no model-cache mutation by collector"],
+    "page_replay_scope": "Pure offline replay of collector admissions; it does not load a model or re-score tokens."
+  },
+  "validated_samples": [
+    {"experiment": "route_a2_lifecycle_probe_02", "request_id": "builtin_retrieval_trace", "subset": "builtin/retrieval", "context_tokens": 905, "decode_model_call_count": 8, "generated_token_ids_observed": 9, "max_new_tokens": 32, "terminated_before_limit": true},
+    {"experiment": "route_a2_longbench_retrieval_01", "request_id": "longbench__qasper__row000037", "subset": "retrieval/qasper", "context_tokens": 2742, "decode_model_call_count": 17, "generated_token_ids_observed": 18, "max_new_tokens": 32, "terminated_before_limit": true},
+    {"experiment": "route_a2_longbench_summarization_01", "request_id": "longbench__gov_report__row000096", "subset": "summarization/gov_report", "context_tokens": 2698, "decode_model_call_count": 31, "generated_token_ids_observed": 32, "max_new_tokens": 32, "terminated_before_limit": false},
+    {"experiment": "route_a2_longbench_reasoning_01", "request_id": "longbench__2wikimqa__row000062", "subset": "reasoning/2wikimqa", "context_tokens": 3371, "decode_model_call_count": 5, "generated_token_ids_observed": 6, "max_new_tokens": 32, "terminated_before_limit": true},
+    {"experiment": "route_a2_longhorizon_gov_report_01", "request_id": "longbench__gov_report__row000109", "subset": "summarization/gov_report", "context_tokens": 2880, "decode_model_call_count": 127, "generated_token_ids_observed": 128, "max_new_tokens": 128, "terminated_before_limit": false},
+    {"experiment": "route_a2_longhorizon_gov_report_02", "request_id": "longbench__gov_report__row000180", "subset": "summarization/gov_report", "context_tokens": 4838, "decode_model_call_count": 127, "generated_token_ids_observed": 128, "max_new_tokens": 128, "terminated_before_limit": false},
+    {"experiment": "route_a2_longhorizon_gov_report_03", "request_id": "longbench__gov_report__row000180", "subset": "summarization/gov_report", "context_tokens": 4838, "decode_model_call_count": 255, "generated_token_ids_observed": 256, "max_new_tokens": 256, "terminated_before_limit": false}
+  ],
+  "frozen_findings": [
+    "All seven collector directories passed the offline lifecycle validator and their replay manifests hash-match their collector event and manifest inputs.",
+    "Across the three category representatives, total cold admission was 30.50%, 30.50%, and 31.19% for retrieval, summarization, and reasoning respectively; this is trace-derived declared Route-A admission accounting.",
+    "The row000180 256-token-limit run reproduces the row000180 128-token-limit lifecycle event prefix exactly through model_call 128. It observes 255 decode calls, and its second 128-call segment has 38.25% cold admission (14,100 admissions out of 36,864 L/H maturity slots).",
+    "In row000180 at the 256-token limit, P64 has ideal capacity compression 3.0091x, physical capacity compression 2.9502x, and 2.11% cold-page fragmentation under the stated 512-byte-token and 16-byte-page-metadata assumptions.",
+    "The long-horizon samples reached their configured output limits. They establish bounded observed decode prefixes, not natural EOS lengths or a generated-length distribution.",
+    "Prefill remains the majority of maturity/admission work even for the 255-step prefix; decode work is observed and nonzero, but A2 alone does not establish whether admission traffic amortizes against future attention reads."
+  ],
+  "not_established": [
+    "KVzap-pruned generation accuracy or equivalence to Full KV; the collector observes scores during normal dense-KV generation and does not apply pruning to attention.",
+    "Actual GPU allocator memory, physical HBM traffic, cache residency, bandwidth, latency, throughput, or wall-clock speedup.",
+    "A natural complete output length for the two long-horizon gov_report requests, because both hit their max_new_tokens limits.",
+    "A cross-task or cross-model generalization claim from these seven requests."
+  ],
+  "a3_handoff": {
+    "required_inputs": ["validated lifecycle_events.csv for temporal cold logical/allocated/page state and admission writes", "lifecycle_page_replay_summary.csv for P={16,32,64,128} final geometry", "A0 full/ideal packed baselines", "A1 selected static/length-aware scheduler cost assumptions"],
+    "required_outputs": ["Full KV, ideal packed KVzap, packed+static, and packed+selected-scheduler modeled byte/cycle ladder", "per-step and cumulative hot/cold read/write/metadata bytes", "break-even future decode steps over declared page/bandwidth/cache/scheduler sweeps", "modeled latency sensitivity and explicit go/no-go boundary"],
+    "claim_boundary": "All A3 bytes, cycles, break-even, and latency values are modeled under declared assumptions unless independently measured."
+  },
+  "artifact_sha256": {
+    "route_a2_lifecycle_probe_02": {"lifecycle_events.csv": "d558db4b91a4f79b29f6501ce51982d4611f37ecc59c10c0a5795d7b4596aafa", "lifecycle_final_state.csv": "dc1b9c124d4fcdce76398c3fadc4516ccf99257a5321c3a97191e900a78ffa7f", "lifecycle_manifest.json": "5b3b5c8bd72f83ab908dfcb01e41cdb17139188bcb5ebbf6bef03723fc23c20c"},
+    "route_a2_lifecycle_probe_02_pages": {"lifecycle_page_replay_events.csv": "43123a68411accf0acd665ee8b01f9be28d75156303b28b07259405f8f5faf39", "lifecycle_page_replay_final.csv": "d1b67e35a3baf98e085cb76962bdf7797b1264d88ba4dcf37f1449c335b6ccd4", "lifecycle_page_replay_manifest.json": "f780733b64f16f5b44bd46952737bcfe054f10a87b9774422e0380c2d6de4bf1", "lifecycle_page_replay_summary.csv": "e3539e16ab15e770150dcf39f2a4ce1e1cd5efbd06b01a26f807d33349af3164"},
+    "route_a2_longbench_retrieval_01": {"lifecycle_events.csv": "8068f3bd1aa2e5bc2110cc3831fa4834ab064f71e64aeba13b2f1d63d62f7a39", "lifecycle_final_state.csv": "18fdb3f414ecc3de1feb934b6856ba4e2e75142ed4b4ed5f99a94117584552d4", "lifecycle_manifest.json": "92e541006d6c44290498e27637e411130bb7f616af357f3bb2c0c25ebb3c3c8b"},
+    "route_a2_longbench_retrieval_01_pages": {"lifecycle_page_replay_events.csv": "d9e32d9c121d48f0b967fd6e3e0f2e726c288cdbfa559cde9b1328cc89146b2f", "lifecycle_page_replay_final.csv": "c3190d14ceec6b5d326cb21048fdec5a50dd5659bb791837b8c9ef3aeb652fa1", "lifecycle_page_replay_manifest.json": "1ba8b64956c2475d3ee5d6154a31eb986dd5bb94f3f90e9e1e2d6b74696ab2fe", "lifecycle_page_replay_summary.csv": "b54b655a0f61d49b0e3db771061afdf9d01fb3804e2eea12e0a7f7ea00548375"},
+    "route_a2_longbench_summarization_01": {"lifecycle_events.csv": "300a67281f7d11762729c5d0c6c3eaff4a76617693e14b28ee865a85f0e33adb", "lifecycle_final_state.csv": "6654ec24870265592fd4e3b198e8d2552d3adca66effd62d0ff43aeffdeda973", "lifecycle_manifest.json": "95e09b07c6157cba17eb20dc17ea98b6379832cd446adb3a3aa7d68277341f87"},
+    "route_a2_longbench_summarization_01_pages": {"lifecycle_page_replay_events.csv": "ed454376631b8c7969883abad614b2f9f00631d731f0115fe215bd1231269368", "lifecycle_page_replay_final.csv": "6550188aaf80600b279fd31655f6a42ba498d9db1de637e131ae8ad4d58c2748", "lifecycle_page_replay_manifest.json": "93e681c82aea346780ccc6f7531cd0f8079f223ddd77ef41128fc7df7aaf0080", "lifecycle_page_replay_summary.csv": "d0f9d894c0b9d3aea97d01d19789657f41499278c79920b54b6daa2289fd7173"},
+    "route_a2_longbench_reasoning_01": {"lifecycle_events.csv": "b13c8b89a2bef39a08eec6e2c8ab197093041bf7e307594d0ab6893c1f103024", "lifecycle_final_state.csv": "7f72aa5cb8522bb6165d5d1a19a0690b34f2137830a18061497f05cb84400846", "lifecycle_manifest.json": "b766a0382c95f9fc5501787f16c7fce521db9f0d1910c3270d0a26c8114cc625"},
+    "route_a2_longbench_reasoning_01_pages": {"lifecycle_page_replay_events.csv": "7bb97e1888ce19396cc361f5571cb2df5b4e24eebbea3ac19e3cb649415a4b73", "lifecycle_page_replay_final.csv": "27b811659a72f4ea9e23018e192bf068b44187bf5f661129f5400708f9d9e491", "lifecycle_page_replay_manifest.json": "ab2b32e5a56cb301154d614e1d2d80edae77cbfa78cad11259ce17bac026c8ce", "lifecycle_page_replay_summary.csv": "25311aac152de62d51b36d86a8958d91b0fa3fcebb6ede86f07669f619afccd1"},
+    "route_a2_longhorizon_gov_report_01": {"lifecycle_events.csv": "c428726bbf2b83ec0f87c8ebffe7a5233e9a93d910b962327f6d584533ca3c35", "lifecycle_final_state.csv": "eb732324d0bc3ed82f9bd87282108e17d0cf62ac26059004eb4fc30fbcb7d931", "lifecycle_manifest.json": "d8297b40f5202c2184bbca8e4411916dc58eec0db5bebd5abb29935d9ae0886a"},
+    "route_a2_longhorizon_gov_report_01_pages": {"lifecycle_page_replay_events.csv": "96d24a999fd83253a6ec63dff9850ec29beb845f232dbc326a9d0d8675aee02b", "lifecycle_page_replay_final.csv": "e0800301160b17a47637741d2f888a14882bf1c60f26cae1a04b1a02cbaa79f6", "lifecycle_page_replay_manifest.json": "fe8142cff789f3d9a4c5905408dce65cd194bf4d421531965f4b919726ebf9d3", "lifecycle_page_replay_summary.csv": "494318ed0611288b7feae6822dd072523574eedafbc8d459e568d071ed0d3a49"},
+    "route_a2_longhorizon_gov_report_02": {"lifecycle_events.csv": "0b968f83992f816fc9931f76f56d317091ceb1191a831f529a96faea75d3bb1d", "lifecycle_final_state.csv": "7a7d424b18e1f304af36f9997af976d5194cf5f6eca76941e066ddbca04dfd26", "lifecycle_manifest.json": "16567bd2fd3a49957777bfe5be4e43363a5a8720750fe9dd0522967cbb698923"},
+    "route_a2_longhorizon_gov_report_02_pages": {"lifecycle_page_replay_events.csv": "2333e108495270e5ad5dbc0476ba5d5d7ba1ca662a95419c4311c9591fdca69e", "lifecycle_page_replay_final.csv": "0cfdcb3b530fc825c4ff8e4c6fe1c977f880a24a031f598663d4ccb08a224a2e", "lifecycle_page_replay_manifest.json": "0bc101f3fdc7c4006b98af1db40c1fa43e690421a905e50485a9e934253e1fa8", "lifecycle_page_replay_summary.csv": "f1af1404025d25722eb1c394ec968a7793816291a4894278aeb0d7fddcc20f2f"},
+    "route_a2_longhorizon_gov_report_03": {"lifecycle_events.csv": "0d1b221823d45054bcdcb3ef4e05e9c9c9e469dd44b4391fedea13585bfaa151", "lifecycle_final_state.csv": "0df22b86e30868772bb01f68a1259488735686f34f616e4a52e79ab63b907905", "lifecycle_manifest.json": "7016178225d0d6d34799401f95b7a620959a2e86362b582afa048cbc4a652e1b"},
+    "route_a2_longhorizon_gov_report_03_pages": {"lifecycle_page_replay_events.csv": "64dfdaeb212c333fab24561f74347b6fa43c798d28099d7405e73aed7fb14dc0", "lifecycle_page_replay_final.csv": "663693bdde0433f98dfe125ace8fd43b79e158a81067e95592d667e664b45301", "lifecycle_page_replay_manifest.json": "5ae19b11a9231bb339037a8514f99f875fe97f89dbac094bbb785fe39303ad5d", "lifecycle_page_replay_summary.csv": "40d8f4a4a87ba454cc2e1d191e6d8cfef23ff2617a1c94ade6b20899760b0055"}
+  }
+}

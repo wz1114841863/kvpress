@@ -125,7 +125,7 @@ dispatch and serial partial-softmax merge overhead. It supplies layer, batch,
 summary, and provenance artifacts but does not yet model admission traffic or
 measure any execution property.
 
-### A2 — read-only decode-lifecycle trace (collector implementation; staged collection)
+### A2 — read-only decode-lifecycle trace (completed evidence freeze)
 
 Only after A0/A1 identify a plausible Pareto region, design a separate,
 non-mutating collector for generated-token predictor scores and maturity
@@ -162,6 +162,14 @@ that naturally exceed a declared threshold. It must not be used as accuracy
 evidence or as a lifecycle result; re-collect each accepted request through the
 three-pass A2 collector and use its observed decode-call count as the horizon.
 
+The completed A2 evidence boundary, source artifact hashes, validated samples,
+and permitted conclusions are frozen in `analysis/route_a2_lifecycle_freeze.json`.
+It includes a deterministic 255-step observed decode prefix for
+`longbench__gov_report__row000180`; both its 128- and 256-token-limit runs hit
+their configured limits, so no natural EOS-length claim is frozen. A2 supports
+the input accounting for A3, not a physical HBM, latency, throughput, or
+KVzap-pruned-accuracy claim.
+
 ### A3 — calibrated system model and stop/go
 
 Calibrate byte/cycle parameters to a declared target. Route A advances only if
@@ -175,6 +183,19 @@ all three gates hold under stated assumptions:
 
 Failure of any gate is a design result: revise the page/scheduler architecture
 before considering RTL. RTL follows only an architecture-spec freeze.
+
+`tools/simulate_kvzap_route_a3_traffic.py` implements the first model-free A3
+ledger over one A2 lifecycle directory and its P={16,32,64,128} replay. For
+each observed `phase=decode` call it reports four baselines: Full KV; ideal
+packed KVzap (hot plus logical cold tokens, zero admission/metadata/scheduler
+cost); packed static-head; and packed length-aware whole-head LPT. Context and
+prompt admissions are charged once before decode step one; decode admissions
+are charged at the matching observed step. The two physical baselines read
+allocated cold slots and page metadata under declared byte assumptions. A1 is
+recorded as policy/cost provenance only: A3's selected-scheduler cycle result
+is a single-request temporal model, not an A1 native-batch replay or a
+measurement. It must emit per-step cumulative accounting, break-even steps,
+baseline summaries, and source-hash provenance. All output is modeled.
 
 ## Required provenance and conclusion boundaries
 

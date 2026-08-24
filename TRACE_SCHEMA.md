@@ -341,3 +341,29 @@ without predictor, observer, DMS, or pruning and stores only answer hashes plus
 decoded-text re-tokenization lengths. This length is a selection proxy, not an
 accuracy metric or lifecycle measure; only a subsequent three-pass A2 collector
 run establishes the authoritative decode-call horizon.
+
+The completed A2 evidence freeze is `analysis/route_a2_lifecycle_freeze.json`.
+It preserves source SHA-256 values for each collector and replay artifact and
+records the hard boundary between trace-derived lifecycle accounting and the
+modeled byte/cycle quantities required by A3.
+
+### Route-A3 modeled traffic/cycle DSE
+
+`tools/simulate_kvzap_route_a3_traffic.py` consumes a validator-approved A2
+lifecycle directory, matching page replay, the A2 freeze, and an A1 scheduler
+manifest. It emits `a3_step_results.csv`, `a3_baseline_summary.csv`, and
+`a3_manifest.json`. The step file is restricted to observed `phase=decode`
+calls. It charges all prior context/prompt admission once before decode step 1
+and matching decode admission at every later step.
+
+The four `baseline` values are `full_kv`, `ideal_packed_kvzap`,
+`packed_static_head`, and `packed_length_aware_head`. Full KV reads each L/H
+cache length. Ideal packed reads the protected hot window plus logical cold
+tokens and deliberately assumes zero admission, metadata, and scheduler cost.
+The physical baselines read hot plus *allocated* cold slots, add declared page
+metadata lookups and A2 admission bytes, and differ only by static affinity or
+whole-head LPT cycles. `break_even_decode_step` means cumulative modeled bytes
+first become lower than Full KV; it is not a measured event. The A1 manifest is
+policy/cost provenance, not evidence that its simulated batches occurred in
+the A2 request. All bytes/cycles and any derived latency interpretation remain
+explicitly modeled.
