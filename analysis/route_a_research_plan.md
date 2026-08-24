@@ -125,7 +125,7 @@ dispatch and serial partial-softmax merge overhead. It supplies layer, batch,
 summary, and provenance artifacts but does not yet model admission traffic or
 measure any execution property.
 
-### A2 — read-only decode-lifecycle trace
+### A2 — read-only decode-lifecycle trace (collector implementation; collection pending)
 
 Only after A0/A1 identify a plausible Pareto region, design a separate,
 non-mutating collector for generated-token predictor scores and maturity
@@ -137,6 +137,16 @@ must demonstrate trace-off/trace-on output equivalence before recording:
 - page allocations/seals;
 - cold growth;
 - actual output horizon for R1.
+
+`tools/run_kvzap_decode_lifecycle_trace.py` and
+`kvpress/lifecycle.py` implement the bounded collector. They observe normal
+dense-KV generation through read-only attention hooks and simulate Route-A
+hot-to-cold accounting from the predictor score at token creation; they do not
+run DMS or apply pruning to attention. A three-pass answer/digest gate prevents
+event serialization from changing either generation or lifecycle decisions.
+The first collection must remain a single small request and must be inspected
+before any expansion. Its event bytes are declared accounting assumptions, not
+physical HBM or allocator measurements.
 
 ### A3 — calibrated system model and stop/go
 

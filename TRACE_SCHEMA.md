@@ -305,3 +305,19 @@ or under a documented aggregation:
 
 These trace-derived events are still not HBM counter measurements. They are the
 inputs to a separately parameterized break-even and cycle model.
+
+`tools/run_kvzap_decode_lifecycle_trace.py` implements the Route-A2 collector.
+It runs normal dense-KV generation without `DMSPress`, observes attention inputs
+through read-only forward hooks, and applies the fixed official predictor only
+for lifecycle accounting. It must never write `scores_buffer`,
+`masked_key_indices`, fake keys, or the model cache. It uses three same-seed
+passes: normal/no observer, observer/no serialization, and observer/serialized.
+The answer hash must match across all passes and the two observer lifecycle
+digests must match before it writes anything.
+
+Its output includes `lifecycle_events.csv` (one model-call/layer/KV-head row),
+`lifecycle_final_state.csv`, and `lifecycle_manifest.json`. Event fields cover
+hot tokens before maturity, matured tokens, admitted/dropped tokens, page
+allocations/seals, tail validity, and declared hot-to-cold/cold-write/metadata
+byte accounting. These bytes are based on manifest assumptions and must not be
+called HBM traffic or allocator measurements.
