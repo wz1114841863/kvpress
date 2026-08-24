@@ -125,7 +125,7 @@ dispatch and serial partial-softmax merge overhead. It supplies layer, batch,
 summary, and provenance artifacts but does not yet model admission traffic or
 measure any execution property.
 
-### A2 — read-only decode-lifecycle trace (collector implementation; collection pending)
+### A2 — read-only decode-lifecycle trace (collector implementation; staged collection)
 
 Only after A0/A1 identify a plausible Pareto region, design a separate,
 non-mutating collector for generated-token predictor scores and maturity
@@ -144,9 +144,15 @@ dense-KV generation through read-only attention hooks and simulate Route-A
 hot-to-cold accounting from the predictor score at token creation; they do not
 run DMS or apply pruning to attention. A three-pass answer/digest gate prevents
 event serialization from changing either generation or lifecycle decisions.
-The first collection must remain a single small request and must be inspected
-before any expansion. Its event bytes are declared accounting assumptions, not
-physical HBM or allocator measurements.
+The manifest records phase-wise request calls/query tokens and aggregate L/H
+maturity/admission/page work. It distinguishes generated-token ids implied by
+the KVPress greedy loop from a decoded-text tokenizer re-count.
+`tools/replay_kvzap_decode_lifecycle_pages.py` then performs a model-free
+multi-page-size replay of recorded admissions, permitting P={16,32,64,128}
+geometry comparisons without repeating generation. The first collection must
+remain a single small request and be inspected before any expansion. Its event
+bytes are declared accounting assumptions, not physical HBM or allocator
+measurements.
 
 ### A3 — calibrated system model and stop/go
 

@@ -80,6 +80,29 @@ def validate(trace_dir: Path) -> dict[str, int]:
         for field in ("cold_logical_tokens", "cold_allocated_slots", "cold_page_count", "tail_valid_count"):
             if row[field] != final[field]:
                 raise ValueError(f"{key}: final-state {field} differs from final event")
+    observation = manifest.get("decode_lifecycle_observation")
+    if observation is not None:
+        phase_summary: dict[str, dict[str, int]] = {}
+        first_layer = min(layer for layer, _ in grouped)
+        for row in events:
+            phase = row["phase"]
+            actual = phase_summary.setdefault(phase, {"model_call_count": 0, "query_tokens": 0, "matured_layer_head_slots": 0, "cold_admitted_tokens": 0, "cold_dropped_tokens": 0, "cold_page_allocations": 0, "cold_page_seals": 0, "hot_to_cold_read_bytes": 0, "cold_write_bytes": 0, "metadata_update_bytes": 0})
+            if int(row["layer"]) == first_layer:
+                actual["model_call_count"] += 1
+                actual["query_tokens"] += int(row["q_len"])
+            for source, target in (("matured_tokens", "matured_layer_head_slots"), ("cold_admitted_tokens", "cold_admitted_tokens"), ("cold_dropped_tokens", "cold_dropped_tokens"), ("cold_page_allocations", "cold_page_allocations"), ("cold_page_seals", "cold_page_seals"), ("hot_to_cold_read_bytes", "hot_to_cold_read_bytes"), ("cold_write_bytes", "cold_write_bytes"), ("metadata_update_bytes", "metadata_update_bytes")):
+                actual[target] += int(row[source])
+        if observation.get("phase_summary") != phase_summary:
+            raise ValueError("Manifest phase summary disagrees with lifecycle events")
+        decode_calls = int(observation["decode_model_call_count"])
+        if decode_calls != phase_summary.get("decode", {}).get("model_call_count", 0):
+            raise ValueError("Observed decode model-call count disagrees with lifecycle events")
+        if int(observation["pipeline_generated_token_ids_observed"]) != 1 + decode_calls:
+            raise ValueError("Observed generated-token-id count disagrees with decode model-call count")
+        if int(observation["answer_retokenized_token_count"]) < 0:
+            raise ValueError("Retokenized answer count must be non-negative")
+        if not equivalence.get("lifecycle_summaries_identical"):
+            raise ValueError("Recorded and silent lifecycle summaries differ")
     return {"layers": len({layer for layer, _ in grouped}), "layer_heads": len(grouped), "events": len(events)}
 
 

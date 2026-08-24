@@ -155,6 +155,7 @@ class ReadOnlyKVzapLifecycleObserver(AbstractContextManager):
         self.events: list[dict[str, Any]] = []
         self.original_score_dtypes: set[str] = set()
         self._digest = hashlib.sha256()
+        self._phase_summary: dict[str, dict[str, int]] = {}
 
     def _hook(self, module, _inputs, kwargs, _output) -> None:
         layer = int(module.layer_idx)
@@ -182,10 +183,38 @@ class ReadOnlyKVzapLifecycleObserver(AbstractContextManager):
         self.original_score_dtypes.add(str(scores.dtype))
         model_call = self._layer_calls.get(layer, 0)
         self._layer_calls[layer] = model_call + 1
-        phase = "context_prefill" if score_start == 0 and hidden.shape[1] > 1 else (
-            "prompt_chunk" if hidden.shape[1] > 1 else "decode"
+        # KVPress first forwards the context and then the complete question;
+        # the latter may itself be one token, so phase must use call order
+        # rather than q_len alone.  Later one-token calls are greedy decode.
+        phase = "context_prefill" if model_call == 0 else (
+            "prompt_query" if model_call == 1 else "decode"
         )
         rows = self.simulator.observe(layer, score_start, scores[0].detach().to(device="cpu", dtype=torch.float32).numpy(), self.threshold, model_call, phase)
+        summary = self._phase_summary.setdefault(phase, {
+            "model_call_count": 0,
+            "query_tokens": 0,
+            "matured_layer_head_slots": 0,
+            "cold_admitted_tokens": 0,
+            "cold_dropped_tokens": 0,
+            "cold_page_allocations": 0,
+            "cold_page_seals": 0,
+            "hot_to_cold_read_bytes": 0,
+            "cold_write_bytes": 0,
+            "metadata_update_bytes": 0,
+        })
+        # Query tokens and calls are request-level quantities, so count layer 0
+        # once.  All remaining fields are explicit aggregate L/H work.
+        if layer == 0:
+            summary["model_call_count"] += 1
+            summary["query_tokens"] += int(hidden.shape[1])
+        for row in rows:
+            for field in (
+                "matured_tokens", "cold_admitted_tokens", "cold_dropped_tokens",
+                "cold_page_allocations", "cold_page_seals", "hot_to_cold_read_bytes",
+                "cold_write_bytes", "metadata_update_bytes",
+            ):
+                target = "matured_layer_head_slots" if field == "matured_tokens" else field
+                summary[target] += int(row[field])
         for row in rows:
             encoded = json.dumps(row, sort_keys=True, separators=(",", ":")).encode()
             self._digest.update(encoded)
@@ -212,6 +241,22 @@ class ReadOnlyKVzapLifecycleObserver(AbstractContextManager):
         if self.simulator is None:
             raise RuntimeError("No lifecycle events were observed")
         return [{"request_id": self.request_id, **row} for row in self.simulator.final_rows()]
+
+    def summary(self) -> dict[str, Any]:
+        """Return request-level counters without exposing model/cache internals.
+
+        ``pipeline_generated_token_ids_observed`` follows KVPress's fixed
+        greedy loop: the first prompt/question forward produces one token and
+        every q_len=1 decode forward produces one additional token.  It is not
+        a tokenizer re-encoding of the decoded answer string.
+        """
+        phases = {phase: dict(values) for phase, values in self._phase_summary.items()}
+        decode_calls = phases.get("decode", {}).get("model_call_count", 0)
+        return {
+            "phase_summary": phases,
+            "decode_model_call_count": decode_calls,
+            "pipeline_generated_token_ids_observed": 1 + decode_calls,
+        }
 
     def write(self, output_dir: Path) -> dict[str, Path]:
         if not self.record_events:

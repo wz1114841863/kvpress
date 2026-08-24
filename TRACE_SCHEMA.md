@@ -288,7 +288,7 @@ makespan, queue depth, and fairness fields are modeled quantities only. They
 are not actual scheduling traces, HBM measurements, latency, throughput, or
 decode-lifecycle evidence.
 
-### Read-only decode-lifecycle trace (future)
+### Read-only decode-lifecycle trace (Route-A2 collector)
 
 Only after static packing and scheduling DSE selects plausible parameters may a
 new collector record generated-token maturity. It must prove output/mask
@@ -319,5 +319,17 @@ Its output includes `lifecycle_events.csv` (one model-call/layer/KV-head row),
 `lifecycle_final_state.csv`, and `lifecycle_manifest.json`. Event fields cover
 hot tokens before maturity, matured tokens, admitted/dropped tokens, page
 allocations/seals, tail validity, and declared hot-to-cold/cold-write/metadata
-byte accounting. These bytes are based on manifest assumptions and must not be
-called HBM traffic or allocator measurements.
+byte accounting. The manifest also records phase-wise request calls/query
+tokens and aggregate L/H work, observed `q_len=1` decode-call count, the
+generated-token-id count implied by the fixed KVPress greedy loop, and a
+separately labelled decoded-answer re-tokenization count. These bytes are
+based on manifest assumptions and must not be called HBM traffic or allocator
+measurements.
+
+`tools/replay_kvzap_decode_lifecycle_pages.py` is a second, model-free stage:
+it validates one lifecycle directory, then replays its already-recorded cold
+admissions for one or more page sizes. It outputs replay event/final/summary
+CSVs plus a source-hash manifest. Its page-size sweeps are static
+capacity/accounting comparisons only; they do not re-run generation, measure
+admission, or establish HBM, allocator, latency, throughput, or break-even
+results.

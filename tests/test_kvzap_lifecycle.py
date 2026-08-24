@@ -3,6 +3,7 @@ import torch
 
 from kvpress.lifecycle import LifecycleSimulator, PackedColdPageState
 from kvpress.presses.kvzap_press import KVzapPress
+from tools.replay_kvzap_decode_lifecycle_pages import replay
 
 
 def test_packed_cold_page_state_allocates_and_seals():
@@ -57,3 +58,17 @@ def test_kvzap_press_passes_explicit_predictor_revision(monkeypatch):
     model = type("Model", (), {"config": type("Config", (), {"name_or_path": "Qwen/Qwen3-8B"})()})()
     KVzapPress(model_type="mlp", predictor_revision="frozen-revision").post_init_from_model(model)
     assert loaded == {"name": "nvidia/KVzap-mlp-Qwen3-8B", "revision": "frozen-revision"}
+
+
+def test_lifecycle_page_replay_preserves_admissions_and_changes_only_page_geometry():
+    events = [
+        {"request_id": "r", "model_call": "0", "phase": "context_prefill", "layer": "0", "kv_head": "0", "score_start": "0", "q_len": "5", "cache_tokens_after": "5", "matured_tokens": "3", "cold_admitted_tokens": "3", "cold_dropped_tokens": "0"},
+        {"request_id": "r", "model_call": "1", "phase": "decode", "layer": "0", "kv_head": "0", "score_start": "5", "q_len": "1", "cache_tokens_after": "6", "matured_tokens": "1", "cold_admitted_tokens": "0", "cold_dropped_tokens": "1"},
+    ]
+    rows, final, summary = replay(events, page_tokens=2, metadata_bytes_per_page=4, kv_bytes_per_token=8, window=2)
+    assert [row["cold_logical_tokens"] for row in rows] == [3, 3]
+    assert final[0]["cold_allocated_slots"] == 4
+    assert final[0]["tail_waste_slots"] == 1
+    assert summary["declared_hot_to_cold_read_bytes"] == 32
+    assert summary["declared_cold_write_bytes"] == 24
+    assert summary["physical_capacity_compression"] == 1.0
