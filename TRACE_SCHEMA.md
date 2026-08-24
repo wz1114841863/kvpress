@@ -380,3 +380,16 @@ It also provides the frozen `--workload-suite conservative_three` preset:
 `retrieval_qasper`, `reasoning_2wikimqa`, and
 `longhorizon_gov_report_row109`. Each CSV row has a `workload` field, so
 cross-workload results cannot be accidentally aggregated only by request ID.
+
+Route-A3 schema `kvzap-route-a3-traffic-cycle-dse-1.1` additionally supports
+optional policy-sensitivity rows. `--oracle-min-decode-steps` emits
+`packed_oracle_*`: an offline whole-request horizon gate that uses Full KV
+when the completed observed horizon is below its threshold. It is an oracle
+upper bound only and must never be described as an online policy. The
+`--deferred-admission-decode-steps` rows (`packed_deferred_*`) read Full KV
+for the first N observed decode calls; if call N+1 exists, they charge all
+previously deferred declared admission bytes and start physical packed reads.
+The `policy_kind`, `policy_threshold_decode_steps`, and
+`policy_activation_decode_step` fields make these cases distinct from the four
+fixed baselines. Deferred rows are a storage-policy model only: they do not
+establish mask-equivalent generation or accuracy.

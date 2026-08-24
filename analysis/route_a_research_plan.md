@@ -206,6 +206,16 @@ For a cross-task robustness suite, pass repeated ordered A2 lifecycle/replay
 pairs to the A3 CLI; do not merge CSV files by hand or compare results with
 different stated overhead points.
 
+The next A3 sensitivity separates an offline upper bound from a potentially
+online delay. `packed_oracle_*` uses the *completed* observed decode horizon to
+select either Full KV for the whole request or the packed path from step one;
+it is not deployable without an independently validated horizon predictor.
+`packed_deferred_*` uses Full KV through N observed decode calls, then packs at
+call N+1 and charges the accumulated declared admission ledger. It is intended
+to test whether an online-observable delay can avoid short-horizon losses. Both
+change when KVzap's mask becomes physically active, so neither is a
+mask-equivalence or accuracy claim; they remain A3 modeled policy rows.
+
 ## Required provenance and conclusion boundaries
 
 Every Route-A experiment must record source trace hashes, page size, cache
