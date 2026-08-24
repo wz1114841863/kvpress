@@ -333,3 +333,11 @@ CSVs plus a source-hash manifest. Its page-size sweeps are static
 capacity/accounting comparisons only; they do not re-run generation, measure
 admission, or establish HBM, allocator, latency, throughput, or break-even
 results.
+
+When a prior A2 sample ends too early for a meaningful decode horizon,
+`tools/screen_kvzap_a2_output_horizon.py` may first screen an explicitly named,
+small candidate set sequentially. It runs ordinary dense-KV greedy generation
+without predictor, observer, DMS, or pruning and stores only answer hashes plus
+decoded-text re-tokenization lengths. This length is a selection proxy, not an
+accuracy metric or lifecycle measure; only a subsequent three-pass A2 collector
+run establishes the authoritative decode-call horizon.

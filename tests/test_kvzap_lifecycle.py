@@ -7,6 +7,7 @@ import torch
 from kvpress.lifecycle import FINAL_COLUMNS, LIFECYCLE_COLUMNS, LifecycleSimulator, PackedColdPageState
 from kvpress.presses.kvzap_press import KVzapPress
 from tools.replay_kvzap_decode_lifecycle_pages import replay
+from tools.screen_kvzap_a2_output_horizon import result_row
 from tools.validate_kvzap_decode_lifecycle_trace import validate
 
 
@@ -101,3 +102,10 @@ def test_validator_counts_request_level_phase_once_not_once_per_head(tmp_path):
     }
     (tmp_path / "lifecycle_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     assert validate(tmp_path) == {"layers": 1, "layer_heads": 2, "events": 2}
+
+
+def test_horizon_screen_row_has_no_answer_text_and_uses_explicit_threshold():
+    row = result_row({"request_id": "r", "dataset": "d", "subset": "s"}, context_tokens=100, max_new_tokens=128, decoded_answer_tokens=64, answer_sha256="hash", minimum=64)
+    assert row["meets_min_decoded_answer_tokens"] is True
+    assert row["decoded_answer_token_count"] == 64
+    assert "answer" not in set(row)

@@ -154,6 +154,14 @@ remain a single small request and be inspected before any expansion. Its event
 bytes are declared accounting assumptions, not physical HBM or allocator
 measurements.
 
+If selected A2 samples stop before providing a useful natural decode horizon,
+use `tools/screen_kvzap_a2_output_horizon.py` over an explicitly named, small
+candidate set. It runs sequential normal dense-KV greedy generations, records
+only answer hashes and decoded-text tokenizer lengths, and selects requests
+that naturally exceed a declared threshold. It must not be used as accuracy
+evidence or as a lifecycle result; re-collect each accepted request through the
+three-pass A2 collector and use its observed decode-call count as the horizon.
+
 ### A3 — calibrated system model and stop/go
 
 Calibrate byte/cycle parameters to a declared target. Route A advances only if
