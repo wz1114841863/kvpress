@@ -23,14 +23,14 @@ from tools.analyze_kvzap_trace import get_git_commit
 
 BASELINES = ("full_kv", "ideal_packed_kvzap", "packed_static_head", "packed_length_aware_head")
 STEP_COLUMNS = (
-    "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "pe_count", "baseline", "model_call", "decode_step",
+    "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "pe_count", "head_dispatch_cycles", "scheduler_queue_bytes_per_head", "baseline", "model_call", "decode_step",
     "cache_tokens_after", "full_read_bytes", "ideal_packed_read_bytes", "physical_packed_read_bytes",
     "metadata_lookup_bytes", "upfront_admission_bytes", "decode_admission_bytes", "scheduler_queue_bytes",
     "step_total_bytes", "cumulative_total_bytes", "cumulative_full_kv_bytes", "cumulative_net_bytes_saved",
     "attention_cycles", "admission_cycles", "scheduler_cycles", "step_total_cycles", "cumulative_total_cycles",
 )
 SUMMARY_COLUMNS = (
-    "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "pe_count", "baseline", "decode_steps",
+    "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "pe_count", "head_dispatch_cycles", "scheduler_queue_bytes_per_head", "baseline", "decode_steps",
     "full_kv_cumulative_bytes", "baseline_cumulative_bytes", "net_bytes_saved", "net_bytes_saved_fraction",
     "break_even_decode_step", "break_even_model_call", "full_kv_cumulative_cycles", "baseline_cumulative_cycles",
     "net_cycles_saved", "net_cycles_saved_fraction", "scheduler_cycle_source",
@@ -51,8 +51,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pe-counts", nargs="+", type=int, default=[4, 8, 16])
     parser.add_argument("--metadata-lookup-bytes-per-page", type=int, default=16)
     parser.add_argument("--metadata-lookup-cycles-per-page", type=float, default=1.0)
-    parser.add_argument("--head-dispatch-cycles", type=float, default=0.0, help="Declared whole-head LPT dispatch cost from the A1 policy family.")
-    parser.add_argument("--scheduler-queue-bytes-per-head", type=int, default=0, help="Declared per-head per-decode queue traffic for the selected scheduler.")
+    parser.add_argument("--head-dispatch-cycles", nargs="+", type=float, default=[0.0], help="Declared whole-head LPT dispatch cost(s) from the A1 policy family.")
+    parser.add_argument("--scheduler-queue-bytes-per-head", nargs="+", type=int, default=[0], help="Declared per-head per-decode queue traffic point(s) for the selected scheduler.")
     return parser.parse_args()
 
 
@@ -197,7 +197,7 @@ def simulate(source: list[dict[str, str]], replay: dict[tuple[int, int, int], di
             if baseline != "full_kv" and break_even[baseline] is None and cumulative_bytes[baseline] < cumulative_bytes["full_kv"]:
                 break_even[baseline] = (index, call)
             step_rows.append({
-                "request_id": request_id, "page_tokens": page_tokens, "bandwidth_bytes_per_cycle": bandwidth, "pe_count": pe_count, "baseline": baseline,
+                "request_id": request_id, "page_tokens": page_tokens, "bandwidth_bytes_per_cycle": bandwidth, "pe_count": pe_count, "head_dispatch_cycles": head_dispatch_cycles, "scheduler_queue_bytes_per_head": scheduler_queue_bytes_per_head, "baseline": baseline,
                 "model_call": call, "decode_step": index, "cache_tokens_after": int(rows[0]["cache_tokens_after"]),
                 "full_read_bytes": full_read, "ideal_packed_read_bytes": ideal_read, "physical_packed_read_bytes": physical_read,
                 "metadata_lookup_bytes": metadata_read if baseline.startswith("packed_") else 0,
@@ -215,7 +215,7 @@ def simulate(source: list[dict[str, str]], replay: dict[tuple[int, int, int], di
     for baseline in BASELINES:
         full_b, full_c = cumulative_bytes["full_kv"], cumulative_cycles["full_kv"]
         point = break_even.get(baseline)
-        summaries.append({"request_id": request_id, "page_tokens": page_tokens, "bandwidth_bytes_per_cycle": bandwidth, "pe_count": pe_count, "baseline": baseline, "decode_steps": len(decode_calls), "full_kv_cumulative_bytes": full_b, "baseline_cumulative_bytes": cumulative_bytes[baseline], "net_bytes_saved": full_b - cumulative_bytes[baseline], "net_bytes_saved_fraction": (full_b - cumulative_bytes[baseline]) / full_b if full_b else math.nan, "break_even_decode_step": point[0] if point else "not_reached", "break_even_model_call": point[1] if point else "not_reached", "full_kv_cumulative_cycles": full_c, "baseline_cumulative_cycles": cumulative_cycles[baseline], "net_cycles_saved": full_c - cumulative_cycles[baseline], "net_cycles_saved_fraction": (full_c - cumulative_cycles[baseline]) / full_c if full_c else math.nan, "scheduler_cycle_source": "A1_policy_constants_plus_A2_single_request_step_model" if baseline == "packed_length_aware_head" else "A3_single_request_step_model"})
+        summaries.append({"request_id": request_id, "page_tokens": page_tokens, "bandwidth_bytes_per_cycle": bandwidth, "pe_count": pe_count, "head_dispatch_cycles": head_dispatch_cycles, "scheduler_queue_bytes_per_head": scheduler_queue_bytes_per_head, "baseline": baseline, "decode_steps": len(decode_calls), "full_kv_cumulative_bytes": full_b, "baseline_cumulative_bytes": cumulative_bytes[baseline], "net_bytes_saved": full_b - cumulative_bytes[baseline], "net_bytes_saved_fraction": (full_b - cumulative_bytes[baseline]) / full_b if full_b else math.nan, "break_even_decode_step": point[0] if point else "not_reached", "break_even_model_call": point[1] if point else "not_reached", "full_kv_cumulative_cycles": full_c, "baseline_cumulative_cycles": cumulative_cycles[baseline], "net_cycles_saved": full_c - cumulative_cycles[baseline], "net_cycles_saved_fraction": (full_c - cumulative_cycles[baseline]) / full_c if full_c else math.nan, "scheduler_cycle_source": "A1_policy_constants_plus_A2_single_request_step_model" if baseline == "packed_length_aware_head" else "A3_single_request_step_model"})
     return step_rows, summaries
 
 
@@ -225,7 +225,7 @@ def main() -> None:
         raise FileExistsError(f"Output directory already exists: {args.output_dir}")
     if not args.page_tokens or not args.bandwidth_bytes_per_cycle or len(set(args.page_tokens)) != len(args.page_tokens) or len(set(args.bandwidth_bytes_per_cycle)) != len(args.bandwidth_bytes_per_cycle):
         raise ValueError("page sizes and bandwidth points must be non-empty and unique")
-    if len(set(args.pe_counts)) != len(args.pe_counts) or min(args.page_tokens) <= 0 or min(args.bandwidth_bytes_per_cycle) <= 0 or min(args.throughput_ops_per_cycle, args.attention_ops_per_kv_token, *args.pe_counts) <= 0 or min(args.metadata_lookup_bytes_per_page, args.scheduler_queue_bytes_per_head) < 0 or min(args.metadata_lookup_cycles_per_page, args.head_dispatch_cycles) < 0:
+    if len(set(args.pe_counts)) != len(args.pe_counts) or len(set(args.head_dispatch_cycles)) != len(args.head_dispatch_cycles) or len(set(args.scheduler_queue_bytes_per_head)) != len(args.scheduler_queue_bytes_per_head) or min(args.page_tokens) <= 0 or min(args.bandwidth_bytes_per_cycle) <= 0 or min(args.throughput_ops_per_cycle, args.attention_ops_per_kv_token, *args.pe_counts) <= 0 or min(args.metadata_lookup_bytes_per_page, *args.scheduler_queue_bytes_per_head) < 0 or min(args.metadata_lookup_cycles_per_page, *args.head_dispatch_cycles) < 0:
         raise ValueError("invalid non-negative/positive A3 assumptions")
     validate(args.lifecycle_dir)
     freeze = verify_a2_freeze(args.a2_freeze, args.lifecycle_dir, args.page_replay_dir)
@@ -236,9 +236,11 @@ def main() -> None:
         source, replay, lifecycle_manifest = build_rows(args.lifecycle_dir, args.page_replay_dir, page)
         for bandwidth in args.bandwidth_bytes_per_cycle:
             for pe_count in args.pe_counts:
-                steps, summaries = simulate(source, replay, lifecycle_manifest, page_tokens=page, bandwidth=bandwidth, throughput=args.throughput_ops_per_cycle, ops_per_token=args.attention_ops_per_kv_token, pe_count=pe_count, metadata_lookup_bytes=args.metadata_lookup_bytes_per_page, metadata_lookup_cycles=args.metadata_lookup_cycles_per_page, head_dispatch_cycles=args.head_dispatch_cycles, scheduler_queue_bytes_per_head=args.scheduler_queue_bytes_per_head)
-                all_steps.extend(steps)
-                all_summary.extend(summaries)
+                for dispatch_cycles in args.head_dispatch_cycles:
+                    for queue_bytes in args.scheduler_queue_bytes_per_head:
+                        steps, summaries = simulate(source, replay, lifecycle_manifest, page_tokens=page, bandwidth=bandwidth, throughput=args.throughput_ops_per_cycle, ops_per_token=args.attention_ops_per_kv_token, pe_count=pe_count, metadata_lookup_bytes=args.metadata_lookup_bytes_per_page, metadata_lookup_cycles=args.metadata_lookup_cycles_per_page, head_dispatch_cycles=dispatch_cycles, scheduler_queue_bytes_per_head=queue_bytes)
+                        all_steps.extend(steps)
+                        all_summary.extend(summaries)
     args.output_dir.mkdir(parents=True, exist_ok=False)
     write_csv(args.output_dir / "a3_step_results.csv", all_steps, STEP_COLUMNS)
     write_csv(args.output_dir / "a3_baseline_summary.csv", all_summary, SUMMARY_COLUMNS)

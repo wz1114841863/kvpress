@@ -196,6 +196,9 @@ recorded as policy/cost provenance only: A3's selected-scheduler cycle result
 is a single-request temporal model, not an A1 native-batch replay or a
 measurement. It must emit per-step cumulative accounting, break-even steps,
 baseline summaries, and source-hash provenance. All output is modeled.
+Sweep `head_dispatch_cycles` and `scheduler_queue_bytes_per_head` explicitly;
+the selected scheduler is acceptable only where it still improves the physical
+static baseline after these declared overheads.
 
 ## Required provenance and conclusion boundaries
 

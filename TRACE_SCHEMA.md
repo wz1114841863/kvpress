@@ -367,3 +367,9 @@ first become lower than Full KV; it is not a measured event. The A1 manifest is
 policy/cost provenance, not evidence that its simulated batches occurred in
 the A2 request. All bytes/cycles and any derived latency interpretation remain
 explicitly modeled.
+
+`head_dispatch_cycles` and `scheduler_queue_bytes_per_head` are first-class
+A3 sweep axes. They appear in both A3 CSV outputs so a selected-scheduler
+comparison must use the same page, bandwidth, PE, and overhead point as its
+static baseline. Values for Full, ideal, and static rows are intentionally
+duplicated over these scheduler-only sensitivity points for a rectangular DSE.
