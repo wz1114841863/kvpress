@@ -39,8 +39,8 @@ SUMMARY_COLUMNS = (
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Offline Route-A3 byte/cycle DSE over one validated A2 lifecycle and page replay.")
-    parser.add_argument("--lifecycle-dir", type=Path, required=True)
-    parser.add_argument("--page-replay-dir", type=Path, required=True)
+    parser.add_argument("--lifecycle-dir", type=Path, action="append", required=True, help="Validated A2 lifecycle directory; repeat with matching --page-replay-dir for a multi-workload suite.")
+    parser.add_argument("--page-replay-dir", type=Path, action="append", required=True, help="Matching A2 page-replay directory; repeat in the same order as --lifecycle-dir.")
     parser.add_argument("--a1-dir", type=Path, required=True, help="Completed A1 DSE used only as the declared scheduler-policy provenance.")
     parser.add_argument("--a2-freeze", type=Path, default=Path("analysis/route_a2_lifecycle_freeze.json"))
     parser.add_argument("--output-dir", type=Path, required=True, help="New directory only; existing output directories are never overwritten.")
@@ -227,24 +227,34 @@ def main() -> None:
         raise ValueError("page sizes and bandwidth points must be non-empty and unique")
     if len(set(args.pe_counts)) != len(args.pe_counts) or len(set(args.head_dispatch_cycles)) != len(args.head_dispatch_cycles) or len(set(args.scheduler_queue_bytes_per_head)) != len(args.scheduler_queue_bytes_per_head) or min(args.page_tokens) <= 0 or min(args.bandwidth_bytes_per_cycle) <= 0 or min(args.throughput_ops_per_cycle, args.attention_ops_per_kv_token, *args.pe_counts) <= 0 or min(args.metadata_lookup_bytes_per_page, *args.scheduler_queue_bytes_per_head) < 0 or min(args.metadata_lookup_cycles_per_page, *args.head_dispatch_cycles) < 0:
         raise ValueError("invalid non-negative/positive A3 assumptions")
-    validate(args.lifecycle_dir)
-    freeze = verify_a2_freeze(args.a2_freeze, args.lifecycle_dir, args.page_replay_dir)
+    if len(args.lifecycle_dir) != len(args.page_replay_dir):
+        raise ValueError("--lifecycle-dir and --page-replay-dir must have the same number of ordered entries")
+    for lifecycle_dir, replay_dir in zip(args.lifecycle_dir, args.page_replay_dir):
+        validate(lifecycle_dir)
+    freeze = verify_a2_freeze(args.a2_freeze, args.lifecycle_dir[0], args.page_replay_dir[0])
+    for lifecycle_dir, replay_dir in zip(args.lifecycle_dir[1:], args.page_replay_dir[1:]):
+        verify_a2_freeze(args.a2_freeze, lifecycle_dir, replay_dir)
     a1 = validate_a1(args.a1_dir)
     all_steps: list[dict[str, Any]] = []
     all_summary: list[dict[str, Any]] = []
-    for page in args.page_tokens:
-        source, replay, lifecycle_manifest = build_rows(args.lifecycle_dir, args.page_replay_dir, page)
-        for bandwidth in args.bandwidth_bytes_per_cycle:
-            for pe_count in args.pe_counts:
-                for dispatch_cycles in args.head_dispatch_cycles:
-                    for queue_bytes in args.scheduler_queue_bytes_per_head:
-                        steps, summaries = simulate(source, replay, lifecycle_manifest, page_tokens=page, bandwidth=bandwidth, throughput=args.throughput_ops_per_cycle, ops_per_token=args.attention_ops_per_kv_token, pe_count=pe_count, metadata_lookup_bytes=args.metadata_lookup_bytes_per_page, metadata_lookup_cycles=args.metadata_lookup_cycles_per_page, head_dispatch_cycles=dispatch_cycles, scheduler_queue_bytes_per_head=queue_bytes)
-                        all_steps.extend(steps)
-                        all_summary.extend(summaries)
+    for lifecycle_dir, replay_dir in zip(args.lifecycle_dir, args.page_replay_dir):
+        for page in args.page_tokens:
+            source, replay, lifecycle_manifest = build_rows(lifecycle_dir, replay_dir, page)
+            for bandwidth in args.bandwidth_bytes_per_cycle:
+                for pe_count in args.pe_counts:
+                    for dispatch_cycles in args.head_dispatch_cycles:
+                        for queue_bytes in args.scheduler_queue_bytes_per_head:
+                            steps, summaries = simulate(source, replay, lifecycle_manifest, page_tokens=page, bandwidth=bandwidth, throughput=args.throughput_ops_per_cycle, ops_per_token=args.attention_ops_per_kv_token, pe_count=pe_count, metadata_lookup_bytes=args.metadata_lookup_bytes_per_page, metadata_lookup_cycles=args.metadata_lookup_cycles_per_page, head_dispatch_cycles=dispatch_cycles, scheduler_queue_bytes_per_head=queue_bytes)
+                            all_steps.extend(steps)
+                            all_summary.extend(summaries)
     args.output_dir.mkdir(parents=True, exist_ok=False)
     write_csv(args.output_dir / "a3_step_results.csv", all_steps, STEP_COLUMNS)
     write_csv(args.output_dir / "a3_baseline_summary.csv", all_summary, SUMMARY_COLUMNS)
-    manifest = {"schema_version": "kvzap-route-a3-traffic-cycle-dse-1.0", "git_commit": get_git_commit(), "lifecycle_dir": str(args.lifecycle_dir), "page_replay_dir": str(args.page_replay_dir), "a1_dir": str(args.a1_dir), "source_artifact_sha256": {"a2_freeze": sha256(args.a2_freeze), "lifecycle_manifest": sha256(args.lifecycle_dir / "lifecycle_manifest.json"), "lifecycle_events": sha256(args.lifecycle_dir / "lifecycle_events.csv"), "page_replay_manifest": sha256(args.page_replay_dir / "lifecycle_page_replay_manifest.json"), "page_replay_events": sha256(args.page_replay_dir / "lifecycle_page_replay_events.csv"), "a1_scheduler_manifest": sha256(args.a1_dir / "scheduler_manifest.json")}, "a2_freeze_status": freeze["freeze_status"], "a1_schema_version": a1["schema_version"], "assumptions": {"page_tokens": args.page_tokens, "bandwidth_bytes_per_cycle": args.bandwidth_bytes_per_cycle, "throughput_ops_per_cycle": args.throughput_ops_per_cycle, "attention_ops_per_kv_token": args.attention_ops_per_kv_token, "pe_counts": args.pe_counts, "metadata_lookup_bytes_per_page": args.metadata_lookup_bytes_per_page, "metadata_lookup_cycles_per_page": args.metadata_lookup_cycles_per_page, "head_dispatch_cycles": args.head_dispatch_cycles, "scheduler_queue_bytes_per_head": args.scheduler_queue_bytes_per_head}, "baseline_definitions": {"full_kv": "Dense cache read at cache_tokens_after; no admission or metadata.", "ideal_packed_kvzap": "Hot window plus cold logical tokens; zero admission, metadata, and scheduler overhead.", "packed_static_head": "Hot window plus allocated cold slots, per-page metadata lookup, and declared A2 admission bytes; static head affinity.", "packed_length_aware_head": "Same physical bytes as packed_static_head plus declared queue traffic; whole-head LPT using A1 policy-family constants over A2 single-request step tasks."}, "notes": ["Only phase=decode attention reads are modeled. Context/prompt lifecycle admission is charged once before decode step 1.", "hot_to_cold_read_bytes, cold_write_bytes, and metadata_update_bytes are declared accounting inputs, not HBM counters.", "A1 provides policy/cost provenance; selected-scheduler cycles are an A3 single-request-step model, not a measured or native-batch A1 replay.", "All byte, cycle, break-even, and latency-related conclusions are modeled under these declared assumptions, not measured performance."]}
+    workload_hashes = {}
+    for index, (lifecycle_dir, replay_dir) in enumerate(zip(args.lifecycle_dir, args.page_replay_dir)):
+        key = f"{index:02d}_{lifecycle_dir.name}"
+        workload_hashes[key] = {"lifecycle_dir": str(lifecycle_dir), "page_replay_dir": str(replay_dir), "lifecycle_manifest": sha256(lifecycle_dir / "lifecycle_manifest.json"), "lifecycle_events": sha256(lifecycle_dir / "lifecycle_events.csv"), "page_replay_manifest": sha256(replay_dir / "lifecycle_page_replay_manifest.json"), "page_replay_events": sha256(replay_dir / "lifecycle_page_replay_events.csv")}
+    manifest = {"schema_version": "kvzap-route-a3-traffic-cycle-dse-1.0", "git_commit": get_git_commit(), "workloads": workload_hashes, "a1_dir": str(args.a1_dir), "source_artifact_sha256": {"a2_freeze": sha256(args.a2_freeze), "a1_scheduler_manifest": sha256(args.a1_dir / "scheduler_manifest.json")}, "a2_freeze_status": freeze["freeze_status"], "a1_schema_version": a1["schema_version"], "assumptions": {"page_tokens": args.page_tokens, "bandwidth_bytes_per_cycle": args.bandwidth_bytes_per_cycle, "throughput_ops_per_cycle": args.throughput_ops_per_cycle, "attention_ops_per_kv_token": args.attention_ops_per_kv_token, "pe_counts": args.pe_counts, "metadata_lookup_bytes_per_page": args.metadata_lookup_bytes_per_page, "metadata_lookup_cycles_per_page": args.metadata_lookup_cycles_per_page, "head_dispatch_cycles": args.head_dispatch_cycles, "scheduler_queue_bytes_per_head": args.scheduler_queue_bytes_per_head}, "baseline_definitions": {"full_kv": "Dense cache read at cache_tokens_after; no admission or metadata.", "ideal_packed_kvzap": "Hot window plus cold logical tokens; zero admission, metadata, and scheduler overhead.", "packed_static_head": "Hot window plus allocated cold slots, per-page metadata lookup, and declared A2 admission bytes; static head affinity.", "packed_length_aware_head": "Same physical bytes as packed_static_head plus declared queue traffic; whole-head LPT using A1 policy-family constants over A2 single-request step tasks."}, "notes": ["Only phase=decode attention reads are modeled. Context/prompt lifecycle admission is charged once before decode step 1.", "hot_to_cold_read_bytes, cold_write_bytes, and metadata_update_bytes are declared accounting inputs, not HBM counters.", "A1 provides policy/cost provenance; selected-scheduler cycles are an A3 single-request-step model, not a measured or native-batch A1 replay.", "All byte, cycle, break-even, and latency-related conclusions are modeled under these declared assumptions, not measured performance."]}
     (args.output_dir / "a3_manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"Route-A3 modeled {len(all_summary)} baseline summaries and {len(all_steps)} step rows: {args.output_dir}")
 

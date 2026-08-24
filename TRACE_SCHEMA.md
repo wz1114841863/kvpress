@@ -373,3 +373,6 @@ A3 sweep axes. They appear in both A3 CSV outputs so a selected-scheduler
 comparison must use the same page, bandwidth, PE, and overhead point as its
 static baseline. Values for Full, ideal, and static rows are intentionally
 duplicated over these scheduler-only sensitivity points for a rectangular DSE.
+The A3 CLI accepts ordered repeated `--lifecycle-dir` / `--page-replay-dir`
+pairs to create one cross-workload suite; each pair must separately validate
+against the A2 freeze and is recorded with individual hashes in the manifest.

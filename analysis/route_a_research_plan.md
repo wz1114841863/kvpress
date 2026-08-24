@@ -199,6 +199,9 @@ baseline summaries, and source-hash provenance. All output is modeled.
 Sweep `head_dispatch_cycles` and `scheduler_queue_bytes_per_head` explicitly;
 the selected scheduler is acceptable only where it still improves the physical
 static baseline after these declared overheads.
+For a cross-task robustness suite, pass repeated ordered A2 lifecycle/replay
+pairs to the A3 CLI; do not merge CSV files by hand or compare results with
+different stated overhead points.
 
 ## Required provenance and conclusion boundaries
 
