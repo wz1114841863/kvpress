@@ -12,6 +12,7 @@ import csv
 import hashlib
 import json
 import time
+import heapq
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -27,7 +28,7 @@ BATCH_COLUMNS = (
     "request_id", "model_call", "phase", "layer", "member_head_count", "active_head_count", "matured_layer_head_slots", "admitted_tokens", "dropped_tokens", "source_kv_bytes", "packed_kv_bytes", "position_metadata_bytes", "new_page_allocations", "cold_logical_tokens", "cold_allocated_slots", "cold_page_count", "host_submit_us", "device_elapsed_ms",
 )
 V2_COLUMNS = (
-    "request_id", "submission_mode", "model_call", "phase", "layer", "kv_head", "member_head_count", "active_head_count", "matured_layer_head_slots", "decided_admitted_tokens", "packed_admitted_tokens", "dropped_tokens", "pending_tokens_before", "pending_tokens_after", "source_kv_bytes", "packed_kv_bytes", "position_metadata_bytes", "new_page_allocations", "planning_host_us", "submit_host_us", "gpu_envelope_ms",
+    "request_id", "submission_mode", "model_call", "phase", "layer", "kv_head", "member_head_count", "active_head_count", "matured_layer_head_slots", "decided_admitted_tokens", "packed_admitted_tokens", "dropped_tokens", "pending_tokens_before", "pending_tokens_after", "admission_flush_token_budget", "source_kv_bytes", "packed_kv_bytes", "position_metadata_bytes", "new_page_allocations", "planning_host_us", "submit_host_us", "gpu_envelope_ms",
 )
 FINAL_COLUMNS = (
     "request_id", "layer", "kv_head", "cold_logical_tokens", "cold_allocated_slots", "cold_page_count", "tail_valid_count", "cold_page_allocations", "packed_kv_bytes", "position_metadata_bytes", "key_sum", "value_sum", "position_sum",
@@ -297,12 +298,13 @@ class LayerBatchAdmissionShadow(PackedKVAdmissionShadow):
 class CalibratedAdmissionShadow(PackedKVAdmissionShadow):
     """A3.5b-V2 paired timing and deferred-flush reference."""
 
-    def __init__(self, *, submission_mode: str, deferred_decode_steps: int, **kwargs: Any):
-        if submission_mode not in {"per_head_v2", "per_layer_batch_v2"} or deferred_decode_steps < 0:
+    def __init__(self, *, submission_mode: str, deferred_decode_steps: int, admission_flush_token_budget: int | None = None, **kwargs: Any):
+        if submission_mode not in {"per_head_v2", "per_layer_batch_v2"} or deferred_decode_steps < 0 or admission_flush_token_budget is not None and admission_flush_token_budget <= 0:
             raise ValueError("invalid A3.5b-V2 submission mode or deferred gate")
         super().__init__(**kwargs)
         self.submission_mode, self.deferred_decode_steps = submission_mode, deferred_decode_steps
-        self._pending: dict[tuple[int, int], list[int]] = defaultdict(list)
+        self.admission_flush_token_budget = admission_flush_token_budget
+        self._pending: dict[tuple[int, int], deque[int]] = defaultdict(deque)
         self._v2_tasks: list[dict[str, Any]] = []
 
     def observe(self, *, layer: int, score_start: int, scores: torch.Tensor, threshold: float, model_call: int, phase: str, kwargs: dict[str, Any], lifecycle_rows: list[dict[str, Any]]) -> None:
@@ -331,14 +333,21 @@ class CalibratedAdmissionShadow(PackedKVAdmissionShadow):
                 raise AssertionError("A3.5b-V2 decisions disagree with lifecycle")
             identity = (layer, head)
             pending_before = len(self._pending[identity])
-            if active:
-                old = torch.tensor(self._pending[identity], dtype=torch.long, device=keys.device) if self._pending[identity] else positions.new_empty((0,))
-                payload = torch.cat((old, decided))
-                self._pending[identity].clear()
-            else:
-                self._pending[identity].extend(int(item) for item in decided.detach().cpu().tolist())
-                payload = positions.new_empty((0,))
-            plans.append({"head": head, "decided": decided, "payload": payload, "pending_before": pending_before, "pending_after": len(self._pending[identity]), "matured": len(matured)})
+            self._pending[identity].extend(int(item) for item in decided.detach().cpu().tolist())
+            plans.append({"head": head, "decided": decided, "payload_positions": [], "pending_before": pending_before, "matured": len(matured)})
+        if active:
+            budget = self.admission_flush_token_budget if self.admission_flush_token_budget is not None else sum(len(self._pending[(layer, head)]) for head in range(self.heads))
+            oldest: list[tuple[int, int]] = [(self._pending[(layer, head)][0], head) for head in range(self.heads) if self._pending[(layer, head)]]
+            heapq.heapify(oldest)
+            while oldest and budget:
+                _position, head = heapq.heappop(oldest)
+                plans[head]["payload_positions"].append(self._pending[(layer, head)].popleft())
+                budget -= 1
+                if self._pending[(layer, head)]:
+                    heapq.heappush(oldest, (self._pending[(layer, head)][0], head))
+        for plan in plans:
+            plan["payload"] = torch.tensor(plan.pop("payload_positions"), dtype=torch.long, device=keys.device) if plan["payload_positions"] else positions.new_empty((0,))
+            plan["pending_after"] = len(self._pending[(layer, plan["head"])])
         planning_us = (time.perf_counter_ns() - planning_started) / 1000.0
         groups = [[plan] for plan in plans] if self.submission_mode == "per_head_v2" else [plans]
         for group in groups:
@@ -358,7 +367,7 @@ class CalibratedAdmissionShadow(PackedKVAdmissionShadow):
             packed = sum(int(plan["payload"].numel()) for plan in group)
             decided = sum(int(plan["decided"].numel()) for plan in group)
             matured_slots = sum(int(plan["matured"]) for plan in group)
-            row = {"request_id": self.request_id, "submission_mode": self.submission_mode, "model_call": model_call, "phase": phase, "layer": layer, "kv_head": group[0]["head"] if len(group) == 1 else "all", "member_head_count": len(group), "active_head_count": sum(plan["payload"].numel() > 0 for plan in group), "matured_layer_head_slots": matured_slots, "decided_admitted_tokens": decided, "packed_admitted_tokens": packed, "dropped_tokens": matured_slots - decided, "pending_tokens_before": sum(int(plan["pending_before"]) for plan in group), "pending_tokens_after": sum(int(plan["pending_after"]) for plan in group), "source_kv_bytes": matured_slots * kv_bytes, "packed_kv_bytes": packed * kv_bytes, "position_metadata_bytes": packed * 8, "new_page_allocations": allocations, "planning_host_us": planning_us / len(groups), "submit_host_us": (time.perf_counter_ns() - submit_started) / 1000.0, "gpu_envelope_ms": "not_available"}
+            row = {"request_id": self.request_id, "submission_mode": self.submission_mode, "model_call": model_call, "phase": phase, "layer": layer, "kv_head": group[0]["head"] if len(group) == 1 else "all", "member_head_count": len(group), "active_head_count": sum(plan["payload"].numel() > 0 for plan in group), "matured_layer_head_slots": matured_slots, "decided_admitted_tokens": decided, "packed_admitted_tokens": packed, "dropped_tokens": matured_slots - decided, "pending_tokens_before": sum(int(plan["pending_before"]) for plan in group), "pending_tokens_after": sum(int(plan["pending_after"]) for plan in group), "admission_flush_token_budget": self.admission_flush_token_budget if self.admission_flush_token_budget is not None else "unbounded", "source_kv_bytes": matured_slots * kv_bytes, "packed_kv_bytes": packed * kv_bytes, "position_metadata_bytes": packed * 8, "new_page_allocations": allocations, "planning_host_us": planning_us / len(groups), "submit_host_us": (time.perf_counter_ns() - submit_started) / 1000.0, "gpu_envelope_ms": "not_available"}
             semantic = {key: value for key, value in row.items() if key not in {"planning_host_us", "submit_host_us", "gpu_envelope_ms"}}
             self._digest.update(json.dumps(semantic, sort_keys=True, separators=(",", ":")).encode())
             if start_event is not None and end_event is not None:
@@ -381,7 +390,8 @@ class CalibratedAdmissionShadow(PackedKVAdmissionShadow):
     def summary(self) -> dict[str, Any]:
         self.finalize()
         rows = self.final_rows()
-        return {"semantic_digest": self.semantic_digest, "task_count": len(self._v2_tasks) if self.record_tasks else 0, "admitted_tokens": sum(int(row["cold_logical_tokens"]) for row in rows), "allocated_slots": sum(int(row["cold_allocated_slots"]) for row in rows), "page_count": sum(int(row["cold_page_count"]) for row in rows)}
+        pending = sum(len(queue) for queue in self._pending.values())
+        return {"semantic_digest": self.semantic_digest, "task_count": len(self._v2_tasks) if self.record_tasks else 0, "admitted_tokens": sum(int(row["cold_logical_tokens"]) for row in rows), "allocated_slots": sum(int(row["cold_allocated_slots"]) for row in rows), "page_count": sum(int(row["cold_page_count"]) for row in rows), "pending_tokens_at_end": pending, "admission_flush_token_budget": self.admission_flush_token_budget if self.admission_flush_token_budget is not None else "unbounded"}
 
     def finalize(self) -> None:
         if self._finalized:

@@ -278,6 +278,14 @@ lifecycle manifest. The runner validates the original JSONL request content
 hash and matching model/predictor/page configuration before collection, then
 requires the normal Full-KV answer hash to match the frozen A2 manifest.
 
+### A3.5c — budgeted continuous admission
+
+For long-horizon requests, a fixed deferred gate must not flush the complete
+context backlog at once. A3.5c drains retained-position FIFOs oldest first with
+an explicit per-(model-call, layer) token budget. It records burst percentiles,
+queue depth, and end-of-horizon backlog. The budget is a reference workload
+control, not a hardware service-rate or sparse-attention result.
+
 ## Required provenance and conclusion boundaries
 
 Every Route-A experiment must record source trace hashes, page size, cache

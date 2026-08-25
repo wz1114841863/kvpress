@@ -468,3 +468,9 @@ expected-a2-lifecycle-dir together with the original input JSONL and request id.
 It checks request content hash and frozen model/predictor/page parameters before
 loading the model, then checks the normal Full-KV answer hash before recording
 any A3.5 output.
+
+Schema kvzap-route-a35-admission-shadow-1.3 adds budgeted oldest-first flush.
+admission-flush-token-budget bounds physical packed writes per model-call/layer;
+unserved retained positions remain in a FIFO pending queue. The companion
+analyze_kvzap_admission_budget tool reports p50/p95/p99/max packed burst,
+max pending depth, and whether the queue drained by the observed horizon.

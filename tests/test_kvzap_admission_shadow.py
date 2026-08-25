@@ -57,6 +57,19 @@ def test_v2_batch_uses_common_planning_scope_and_zero_delay_packs_immediately():
     assert task["member_head_count"] == 2
 
 
+def test_v2_budget_caps_layer_flush_and_retains_pending_fifo():
+    keys = torch.arange(12, dtype=torch.float32).reshape(1, 2, 3, 2)
+    cache = SimpleNamespace(layers=[SimpleNamespace(keys=keys, values=keys + 100)])
+    shadow = CalibratedAdmissionShadow(request_id="unit", layers=1, heads=2, window=2, page_tokens=2, expected_kv_bytes_per_token=16, record_tasks=True, submission_mode="per_layer_batch_v2", deferred_decode_steps=0, admission_flush_token_budget=1)
+    rows = [{"layer": 0, "kv_head": 0, "cold_admitted_tokens": 1}, {"layer": 0, "kv_head": 1, "cold_admitted_tokens": 1}]
+    shadow.observe(layer=0, score_start=0, scores=torch.zeros((2, 3)), threshold=-0.5, model_call=0, phase="context_prefill", kwargs={"past_key_values": cache}, lifecycle_rows=rows)
+    shadow.finalize()
+    task = shadow._v2_tasks[0]
+    assert task["packed_admitted_tokens"] == 1
+    assert task["pending_tokens_after"] == 1
+    assert shadow.summary()["pending_tokens_at_end"] == 1
+
+
 def test_expected_a2_binding_rejects_different_request_content(tmp_path):
     request = {"request_id": "r", "context": "c", "question": "q"}
     args = SimpleNamespace(model_name="m", model_revision="mr", predictor_name="p", predictor_revision="pr", threshold=-4.0, window_size=128, page_tokens=64, kv_bytes_per_token=512, max_new_tokens=8)
