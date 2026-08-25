@@ -5,6 +5,7 @@ import torch
 
 from kvpress.admission_shadow import CalibratedAdmissionShadow, LayerBatchAdmissionShadow, PackedKVAdmissionShadow
 from tools.run_kvzap_admission_shadow import validate_expected_a2
+from tools.validate_kvzap_admission_shadow import validate_hybrid_head_progress
 
 
 def test_shadow_reads_kv_without_mutating_source_and_packs_mature_keep_positions():
@@ -84,6 +85,22 @@ def test_v2_hybrid_head_progress_writes_separate_untimed_csv(tmp_path):
     paths = shadow.write(output)
     assert paths["hybrid_head_progress"].is_file()
     assert len(paths["hybrid_head_progress"].read_text(encoding="utf-8").splitlines()) == 3
+
+
+def test_hybrid_progress_accepts_a_deferred_backlog_flush():
+    lifecycle = [
+        {"model_call": "0", "layer": "0", "kv_head": "0", "cold_admitted_tokens": "2"},
+        {"model_call": "1", "layer": "0", "kv_head": "0", "cold_admitted_tokens": "0"},
+    ]
+    progress = [
+        {"model_call": "0", "layer": "0", "kv_head": "0", "decided_admitted_tokens": "2", "packed_admitted_tokens": "0", "pending_tokens_before": "0", "pending_tokens_after": "2", "cold_logical_tokens_after": "0", "cold_allocated_slots_after": "0", "cold_page_count_after": "0"},
+        {"model_call": "1", "layer": "0", "kv_head": "0", "decided_admitted_tokens": "0", "packed_admitted_tokens": "2", "pending_tokens_before": "2", "pending_tokens_after": "0", "cold_logical_tokens_after": "2", "cold_allocated_slots_after": "2", "cold_page_count_after": "1"},
+    ]
+    tasks = [
+        {"model_call": "0", "layer": "0", "member_head_count": "1", "packed_admitted_tokens": "0", "pending_tokens_after": "2"},
+        {"model_call": "1", "layer": "0", "member_head_count": "1", "packed_admitted_tokens": "2", "pending_tokens_after": "0"},
+    ]
+    validate_hybrid_head_progress(progress, lifecycle, tasks)
 
 
 def test_expected_a2_binding_rejects_different_request_content(tmp_path):
