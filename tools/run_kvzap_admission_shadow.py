@@ -103,7 +103,10 @@ def main() -> None:
     hashes = [answer_hash(item) for item in (normal, silent, recorded)]
     if len(set(hashes)) != 1 or silent_observer.lifecycle_digest != recorded_observer.lifecycle_digest or silent_shadow.semantic_digest != recorded_shadow.semantic_digest:
         raise AssertionError("A3.5 equivalence failed; no output was written")
-    args.output_dir.mkdir(parents=True, exist_ok=False)
+    # Keep the A2 writer's non-overwrite contract: it atomically establishes
+    # the fresh output directory only after all three equivalence gates pass.
+    # Creating it here would make recorded_observer.write() reject its own
+    # output directory.
     lifecycle_paths = recorded_observer.write(args.output_dir)
     shadow_paths = recorded_shadow.write(args.output_dir)
     config = {"model": args.model_name, "model_revision": model_revision, "predictor": args.predictor_name, "predictor_revision": args.predictor_revision, "threshold": args.threshold, "sliding_window": args.window_size, "page_tokens": args.page_tokens, "kv_bytes_per_layer_head_token": args.kv_bytes_per_token, "metadata_bytes_per_cold_page": args.metadata_bytes_per_page, "seed": args.seed, "max_new_tokens": args.max_new_tokens, "request_id": request["request_id"]}
