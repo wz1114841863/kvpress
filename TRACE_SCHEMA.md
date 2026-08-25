@@ -538,3 +538,16 @@ guard margin.  A staging overflow remains explicitly labeled Full-KV fallback.
 Schema `kvzap-route-a37-adaptive-gate-dse-1.0` is an oracle-like same-call
 cost gate: it is not an online predictor, hardware controller, sparse
 attention execution, generation-equivalence result, or measured performance.
+
+`tools/simulate_kvzap_route_a38_observable_gate.py` is the follow-on
+screen.  It consumes a matching A3.7 memory-system ledger and cycle-objective
+oracle-gate manifest, but its decision rule may use only features available
+before attention: pending FIFO tokens, deterministic projected maximum bank
+bursts, and the staging-overflow flag.  It sweeps declared token/burst
+threshold pairs and reports agreement, false-hybrid/false-full counts, and
+byte/cycle regret against the A3.7 oracle.  Schema
+`kvzap-route-a38-observable-gate-dse-1.0` may optionally emit audit rows for
+one threshold pair.  Costs are used only after selection to score the rule.
+Threshold selection on the same workload is a heuristic sensitivity screen,
+not a calibrated online controller, cross-workload generalization result, or
+hardware measurement.

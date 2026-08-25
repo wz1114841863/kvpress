@@ -367,6 +367,18 @@ it is not an online gate implementation.  A subsequent architecture-spec or
 prototype must replace it with observable, conservative features and validate
 the decision error separately.
 
+### A3.8 — observable-feature gate screen
+
+`tools/simulate_kvzap_route_a38_observable_gate.py` performs that first
+replacement without model execution.  It deliberately forbids same-call
+byte/cycle values from the decision.  A pre-attention rule may only inspect
+pending FIFO depth, projected maximum bank burst count from the declared A3.7
+mapping, and staging overflow; it chooses hybrid only below explicit pending
+and burst thresholds.  The A3.7 ledger is then used after the choice to report
+agreement and regret versus the oracle gate.  Thresholds must be fixed on one
+named calibration workload and evaluated on disjoint workloads before this can
+be described as a deployable controller.
+
 ## Required provenance and conclusion boundaries
 
 Every Route-A experiment must record source trace hashes, page size, cache
