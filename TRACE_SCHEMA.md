@@ -434,6 +434,19 @@ deferred gate is explicitly `not_applicable_full_kv_fallback`; a missing point
 is `no_nonnegative_point_in_scan`. Neither field is a calibrated hardware
 requirement.
 
+When `--admission-contract-dir` supplies one validated
+`kvzap-route-a35-admission-shadow-1.3` directory per ordered workload, A3-edge
+also emits `a3_edge_budgeted_admission_contract.csv`. The source must use
+`per_layer_batch_v2`, contain a positive `admission_flush_token_budget`, obey
+that budget in every task row, and drain its observed pending queue. For budget
+`B`, layer count `L`, declared K+V bytes/token `K`, and a Full-KV attention
+window of `T` modeled cycles, it records the *declared demand screen*
+`B*K/T` (one per-layer engine) and `L*B*K/T` (one shared engine). It compares
+the shared demand with the DSE point's declared `engine_count *
+per_engine_pack_bytes_per_cycle`, plus the matching deferred packed
+length-aware model sign. This is neither a measured service rate nor a proof that admission and
+attention overlap; A3's original traffic/cycle ledger remains separate.
+
 ### Route-A3.5 admission shadow reference
 
 `tools/run_kvzap_admission_shadow.py` runs normal Full-KV generation plus

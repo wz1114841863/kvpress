@@ -246,6 +246,31 @@ among the scanned configurations that preserves non-negative modeled cycles,
 keeps equivalent engine/throughput decompositions, and labels unactivated
 deferred policies as Full-KV fallback rather than as a capacity requirement.
 
+### A3.5c-to-A3 bounded-service contract
+
+`tools/simulate_kvzap_route_a3_edge.py --admission-contract-dir <A3.5c-dir>`
+imports one validated schema-1.3 budgeted shadow trace per ordered A2 workload.
+It consumes only the trace-derived contract: budget `B` retained tokens per
+`(model-call, layer)`, layer count, K+V bytes per layer/head/token, and the
+fact that the observed queue drained. It deliberately excludes host/CUDA timing
+from the Python shadow reference. The emitted
+`a3_edge_budgeted_admission_contract.csv` evaluates both forms of the explicit
+contract over each A3 point and its Full-KV attention-cycle window `T`:
+
+```text
+per-layer parallel backend: R_layer * T >= B * KV_bytes
+shared backend:             R_shared * T >= L * B * KV_bytes
+```
+
+The table compares the shared form with declared `E * P` admission capacity,
+reports P50/P95/P99/worst required bytes/cycle, and retains the A3
+`packed_deferred_length_aware_head` net-cycle sign at the contract's same
+deferred gate as a separate screen. It is not a new
+traffic/cycle resimulation: it does not prove temporal overlap, does not import
+shadow timing, and does not make a sparse-attention or hardware-throughput
+claim. A policy-on backend must later show how pending cold tokens are read
+while its admission FIFO is nonempty.
+
 ### A3.5 — calibratable admission shadow reference
 
 Before a policy-on sparse-attention backend, the A3.5 shadow reference reads

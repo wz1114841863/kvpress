@@ -1,8 +1,9 @@
 import json
+from pathlib import Path
 
 import pytest
 
-from tools.simulate_kvzap_route_a3_edge import admission_task, derive_admission_constraints, load_architecture_config, parse_args, resolve_admission_points, schedule_admission, simulate_edge
+from tools.simulate_kvzap_route_a3_edge import admission_task, derive_admission_constraints, derive_budgeted_service_contracts, load_architecture_config, parse_args, resolve_admission_points, schedule_admission, simulate_edge
 
 
 def test_admission_dse_axes_override_legacy_single_point_flags():
@@ -85,3 +86,21 @@ def test_edge_zero_delay_lpt_is_exactly_fixed_packed_lpt():
     deferred = next(row for row in summaries if row["baseline"] == "packed_deferred_length_aware_head" and row["policy_threshold_decode_steps"] == 0)
     assert deferred["baseline_cumulative_bytes"] == fixed["baseline_cumulative_bytes"]
     assert deferred["baseline_cumulative_cycles"] == fixed["baseline_cumulative_cycles"]
+
+
+def test_budgeted_service_contract_translates_b_tokens_per_layer_to_shared_byte_rate():
+    point = {"workload": "w", "request_id": "r", "page_tokens": 64, "bandwidth_bytes_per_cycle": 1024.0, "attention_engine_count": 4, "admission_engine_count": 2, "admission_pack_bytes_per_cycle": 24000.0}
+    steps = [
+        {**point, "baseline": "full_kv", "decode_step": 1, "attention_cycles": 100.0},
+        {**point, "baseline": "full_kv", "decode_step": 2, "attention_cycles": 200.0},
+    ]
+    summaries = [{**point, "baseline": "packed_deferred_length_aware_head", "policy_threshold_decode_steps": 0, "net_cycles_saved": 1.0}]
+    contracts = {("w", "r"): {"shadow_dir": Path("shadow"), "shadow_manifest_sha256": "digest", "budget": 256, "deferred_steps": 0, "layer_count": 36, "kv_bytes": 512, "max_pending_tokens_per_layer": 28404}}
+    rows = derive_budgeted_service_contracts(steps, summaries, contracts)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["contract_per_layer_bytes_per_call"] == 131072.0
+    assert row["contract_shared_bytes_per_call"] == 4718592.0
+    assert row["required_shared_pack_bytes_per_cycle_p99"] == 47185.92
+    assert row["contract_worst_case_capacity_status"] == "meets"
+    assert row["combined_screen_status"] == "meets_worst_case_contract_and_nonnegative_model"

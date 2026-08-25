@@ -42,6 +42,9 @@ SUMMARY_COLUMNS = (
 CONSTRAINT_COLUMNS = (
     "workload", "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "attention_engine_count", "baseline", "policy_kind", "policy_threshold_decode_steps", "policy_activation_decode_step", "decode_steps", "candidate_dse_points", "constraint_status", "minimum_declared_total_pack_bytes_per_cycle", "minimum_capacity_candidate_count", "minimum_capacity_candidates", "recommended_admission_engine_count", "recommended_per_engine_pack_bytes_per_cycle", "recommended_net_cycles_saved", "recommended_net_cycles_saved_fraction", "interpretation",
 )
+CONTRACT_COLUMNS = (
+    "workload", "request_id", "shadow_contract_dir", "shadow_contract_manifest_sha256", "admission_flush_token_budget", "deferred_admission_decode_steps", "layer_count", "kv_bytes_per_layer_head_token", "queue_drained_by_end", "max_pending_tokens_per_layer", "page_tokens", "bandwidth_bytes_per_cycle", "attention_engine_count", "admission_engine_count", "admission_pack_bytes_per_cycle", "declared_aggregate_pack_bytes_per_cycle", "contract_per_layer_bytes_per_call", "contract_shared_bytes_per_call", "full_attention_window_cycles_p50", "full_attention_window_cycles_p95", "full_attention_window_cycles_p99", "full_attention_window_cycles_min", "required_per_layer_pack_bytes_per_cycle_p50", "required_per_layer_pack_bytes_per_cycle_p95", "required_per_layer_pack_bytes_per_cycle_p99", "required_per_layer_pack_bytes_per_cycle_max", "required_shared_pack_bytes_per_cycle_p50", "required_shared_pack_bytes_per_cycle_p95", "required_shared_pack_bytes_per_cycle_p99", "required_shared_pack_bytes_per_cycle_max", "contract_p99_capacity_status", "contract_worst_case_capacity_status", "modeled_policy_net_cycles_saved", "modeled_policy_nonnegative", "combined_screen_status", "interpretation",
+)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -70,6 +73,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--admission-pack-bytes-per-cycle-points", nargs="+", type=float, default=None, help="Per-admission-engine packing-throughput DSE points; overrides the singular compatibility flag.")
     parser.add_argument("--admission-memory-burst-bytes", type=int, default=64, help="Declared DRAM transaction granularity used to round admission transfers.")
     parser.add_argument("--admission-page-setup-cycles", type=float, default=1.0, help="Declared per cold-page allocation/descriptor setup cost.")
+    parser.add_argument("--admission-contract-dir", type=Path, action="append", help="Validated Route-A3.5c shadow directory, once per ordered workload. It supplies a B-token/(model-call, layer) service contract and emits a compatibility screen; it does not import shadow timings.")
     parser.add_argument("--deferred-admission-decode-steps", nargs="+", type=int, default=[])
     parser.add_argument("--deferred-admission-decode-step-range", nargs=2, type=int, metavar=("START", "STOP"), help="Inclusive online deferred-delay range, merged with explicit points.")
     return parser.parse_args(argv)
@@ -82,6 +86,64 @@ def resolve_admission_points(args: argparse.Namespace) -> tuple[list[int], list[
     if min(engine_counts) <= 0 or min(pack_points) <= 0 or len(set(engine_counts)) != len(engine_counts) or len(set(pack_points)) != len(pack_points):
         raise ValueError("invalid or duplicate admission-engine DSE assumptions")
     return engine_counts, pack_points
+
+
+def percentile(values: list[float], probability: float) -> float:
+    """Nearest-rank percentile for small, explicit DSE samples."""
+    if not values:
+        raise ValueError("cannot calculate a percentile from no values")
+    ordered = sorted(values)
+    return ordered[round((len(ordered) - 1) * probability)]
+
+
+def load_admission_contract(shadow_dir: Path) -> dict[str, Any]:
+    """Load a validated A3.5c B-token/(call, layer) workload contract.
+
+    The contract deliberately consumes only the bounded task-count evidence,
+    not host/CUDA timings from the shadow implementation.  It is therefore a
+    trace-derived service-demand input to A3, rather than a calibration claim.
+    """
+    from tools.validate_kvzap_admission_shadow import validate as validate_shadow
+
+    validate_shadow(shadow_dir)
+    manifest_path = shadow_dir / "admission_shadow_manifest.json"
+    task_path = shadow_dir / "admission_shadow_v2_tasks.csv"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("schema_version") != "kvzap-route-a35-admission-shadow-1.3":
+        raise ValueError("admission contract requires a Route-A3.5c schema-1.3 budgeted shadow directory")
+    if manifest.get("submission_mode") != "per_layer_batch_v2":
+        raise ValueError("admission contract requires per_layer_batch_v2 tasks")
+    budget = manifest.get("admission_flush_token_budget")
+    if not isinstance(budget, int) or budget <= 0:
+        raise ValueError("admission contract is missing a positive admission_flush_token_budget")
+    summary = manifest.get("shadow_summary", {})
+    if summary.get("pending_tokens_at_end") != 0:
+        raise ValueError("admission contract queue did not drain by the observed horizon")
+    tasks = list(csv.DictReader(task_path.open(encoding="utf-8", newline="")))
+    if not tasks:
+        raise ValueError("admission contract has no task rows")
+    if any(int(row["admission_flush_token_budget"]) != budget for row in tasks):
+        raise ValueError("admission contract task budget disagrees with its manifest")
+    if max(int(row["packed_admitted_tokens"]) for row in tasks) > budget:
+        raise ValueError("admission contract task exceeds its declared token budget")
+    request_ids = {row["request_id"] for row in tasks}
+    layers = {int(row["layer"]) for row in tasks}
+    if len(request_ids) != 1 or not layers:
+        raise ValueError("admission contract must contain one request and at least one layer")
+    config = manifest.get("config", {})
+    kv_bytes = config.get("kv_bytes_per_layer_head_token")
+    if not isinstance(kv_bytes, int) or kv_bytes <= 0:
+        raise ValueError("admission contract is missing kv_bytes_per_layer_head_token")
+    return {
+        "shadow_dir": shadow_dir,
+        "shadow_manifest_sha256": sha256(manifest_path),
+        "request_id": next(iter(request_ids)),
+        "budget": budget,
+        "deferred_steps": manifest.get("deferred_admission_decode_steps"),
+        "layer_count": len(layers),
+        "kv_bytes": kv_bytes,
+        "max_pending_tokens_per_layer": max(int(row["pending_tokens_after"]) for row in tasks),
+    }
 
 
 def write_csv(path: Path, rows: list[dict[str, Any]], columns: Iterable[str]) -> None:
@@ -123,6 +185,101 @@ def derive_admission_constraints(summaries: list[dict[str, Any]], *, epsilon_cyc
         row.update({"constraint_status": "nonnegative_point_found", "minimum_declared_total_pack_bytes_per_cycle": minimum, "minimum_capacity_candidate_count": len(frontier), "minimum_capacity_candidates": ";".join(f"E{candidate['admission_engine_count']}xP{candidate['admission_pack_bytes_per_cycle']}" for candidate in sorted(frontier, key=lambda candidate: (int(candidate["admission_engine_count"]), float(candidate["admission_pack_bytes_per_cycle"])))), "recommended_admission_engine_count": recommended["admission_engine_count"], "recommended_per_engine_pack_bytes_per_cycle": recommended["admission_pack_bytes_per_cycle"], "recommended_net_cycles_saved": recommended["net_cycles_saved"], "recommended_net_cycles_saved_fraction": recommended["net_cycles_saved_fraction"], "interpretation": "Minimum declared aggregate pack capacity among scanned points with non-negative modeled cycles; alternatives at that capacity are retained explicitly."})
         constraints.append(row)
     return constraints
+
+
+def derive_budgeted_service_contracts(steps: list[dict[str, Any]], summaries: list[dict[str, Any]], contracts: dict[tuple[str, str], dict[str, Any]], *, epsilon_cycles: float = 1e-9) -> list[dict[str, Any]]:
+    """Screen A3 points against A3.5c's bounded token/call demand.
+
+    A3.5c establishes only a per-(call, layer) *demand* cap B.  For each A3
+    point this function asks whether a shared admission backend of E engines
+    at P B/cycle could serve all L layers' B-token allowance during the
+    corresponding Full-KV attention window.  The screen does not claim that
+    this overlap exists, nor does it replace the A3 admission-cycle ledger.
+    """
+    full_steps: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
+    point_keys = ("workload", "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "attention_engine_count", "admission_engine_count", "admission_pack_bytes_per_cycle")
+    for step in steps:
+        if step["baseline"] == "full_kv":
+            full_steps[tuple(step[key] for key in point_keys)].append(step)
+    deferred_summaries = {
+        (*tuple(row[key] for key in point_keys), int(row["policy_threshold_decode_steps"])): row
+        for row in summaries
+        if row["baseline"] == "packed_deferred_length_aware_head"
+    }
+    rows: list[dict[str, Any]] = []
+    for key, windows in sorted(full_steps.items()):
+        workload, request_id, _page, _bandwidth, _attention_engines, engine_count, per_engine = key
+        contract = contracts.get((workload, request_id))
+        if contract is None:
+            continue
+        deferred_steps = contract["deferred_steps"]
+        if not isinstance(deferred_steps, int) or deferred_steps < 0:
+            raise ValueError("admission contract must record a non-negative deferred-admission decode step")
+        active_windows = [step for step in windows if int(step["decode_step"]) > deferred_steps]
+        if not active_windows:
+            raise ValueError("admission contract activates after the observed A3 decode horizon")
+        full_window_cycles = [float(step["attention_cycles"]) for step in active_windows]
+        if any(value <= 0 for value in full_window_cycles):
+            raise ValueError("Full-KV attention window must be positive for an admission service contract")
+        per_layer_bytes = float(contract["budget"] * contract["kv_bytes"])
+        shared_bytes = per_layer_bytes * int(contract["layer_count"])
+        per_layer_rates = [per_layer_bytes / value for value in full_window_cycles]
+        shared_rates = [shared_bytes / value for value in full_window_cycles]
+        capacity = int(engine_count) * float(per_engine)
+        summary = deferred_summaries.get((*key, deferred_steps))
+        if summary is None:
+            raise ValueError("A3 point lacks the packed deferred length-aware summary matching its admission contract gate")
+        net_cycles = float(summary["net_cycles_saved"])
+        p99_ok = capacity + epsilon_cycles >= percentile(shared_rates, 0.99)
+        max_ok = capacity + epsilon_cycles >= max(shared_rates)
+        modeled_ok = net_cycles >= -epsilon_cycles
+        if max_ok and modeled_ok:
+            combined = "meets_worst_case_contract_and_nonnegative_model"
+        elif p99_ok and modeled_ok:
+            combined = "meets_p99_contract_but_not_worst_case_and_nonnegative_model"
+        elif max_ok:
+            combined = "meets_worst_case_contract_but_negative_model"
+        else:
+            combined = "insufficient_contract_capacity"
+        rows.append({
+            "workload": workload,
+            "request_id": request_id,
+            "shadow_contract_dir": str(contract["shadow_dir"]),
+            "shadow_contract_manifest_sha256": contract["shadow_manifest_sha256"],
+            "admission_flush_token_budget": contract["budget"],
+            "deferred_admission_decode_steps": contract["deferred_steps"],
+            "layer_count": contract["layer_count"],
+            "kv_bytes_per_layer_head_token": contract["kv_bytes"],
+            "queue_drained_by_end": True,
+            "max_pending_tokens_per_layer": contract["max_pending_tokens_per_layer"],
+            "page_tokens": key[2],
+            "bandwidth_bytes_per_cycle": key[3],
+            "attention_engine_count": key[4],
+            "admission_engine_count": engine_count,
+            "admission_pack_bytes_per_cycle": per_engine,
+            "declared_aggregate_pack_bytes_per_cycle": capacity,
+            "contract_per_layer_bytes_per_call": per_layer_bytes,
+            "contract_shared_bytes_per_call": shared_bytes,
+            "full_attention_window_cycles_p50": percentile(full_window_cycles, 0.50),
+            "full_attention_window_cycles_p95": percentile(full_window_cycles, 0.95),
+            "full_attention_window_cycles_p99": percentile(full_window_cycles, 0.99),
+            "full_attention_window_cycles_min": min(full_window_cycles),
+            "required_per_layer_pack_bytes_per_cycle_p50": percentile(per_layer_rates, 0.50),
+            "required_per_layer_pack_bytes_per_cycle_p95": percentile(per_layer_rates, 0.95),
+            "required_per_layer_pack_bytes_per_cycle_p99": percentile(per_layer_rates, 0.99),
+            "required_per_layer_pack_bytes_per_cycle_max": max(per_layer_rates),
+            "required_shared_pack_bytes_per_cycle_p50": percentile(shared_rates, 0.50),
+            "required_shared_pack_bytes_per_cycle_p95": percentile(shared_rates, 0.95),
+            "required_shared_pack_bytes_per_cycle_p99": percentile(shared_rates, 0.99),
+            "required_shared_pack_bytes_per_cycle_max": max(shared_rates),
+            "contract_p99_capacity_status": "meets" if p99_ok else "below",
+            "contract_worst_case_capacity_status": "meets" if max_ok else "below",
+            "modeled_policy_net_cycles_saved": net_cycles,
+            "modeled_policy_nonnegative": modeled_ok,
+            "combined_screen_status": combined,
+            "interpretation": "Shared-engine overlap screen: E*P is compared with L*B*KV-bytes divided by the Full-KV attention-cycle window. It is a declared byte/cycle contract screen, not a measured overlap, throughput, or sparse-attention result.",
+        })
+    return rows
 
 
 def load_architecture_config(path: Path) -> dict[str, Any]:
@@ -272,6 +429,14 @@ def main() -> None:
     if min(numeric) <= 0 or args.metadata_lookup_cycles_per_page < 0 or args.head_dispatch_cycles < 0 or args.scheduler_queue_bytes_per_head < 0 or args.admission_page_setup_cycles < 0 or any(value < 0 for value in args.deferred_admission_decode_steps) or len(set(args.page_tokens)) != len(args.page_tokens) or len(set(args.bandwidth_bytes_per_cycle)) != len(args.bandwidth_bytes_per_cycle) or len(set(engines)) != len(engines):
         raise ValueError("invalid or duplicate A3-edge assumptions")
     workloads = resolve_workloads(args)
+    if args.admission_contract_dir and len(args.admission_contract_dir) != len(workloads):
+        raise ValueError("--admission-contract-dir must appear once for each ordered workload")
+    contracts: dict[tuple[str, str], dict[str, Any]] = {}
+    if args.admission_contract_dir:
+        contracts = {
+            (workload, contract["request_id"]): contract
+            for (workload, _lifecycle_dir, _replay_dir), contract in zip(workloads, (load_admission_contract(path) for path in args.admission_contract_dir), strict=True)
+        }
     for _name, lifecycle_dir, _replay_dir in workloads:
         validate(lifecycle_dir)
     freeze = verify_a2_freeze(args.a2_freeze, workloads[0][1], workloads[0][2])
@@ -285,6 +450,14 @@ def main() -> None:
         for page in args.page_tokens:
             source, replay, lifecycle_manifest = build_rows(lifecycle_dir, replay_dir, page)
             validate_descriptor_against_trace(descriptor, source, lifecycle_manifest)
+            contract = contracts.get((workload, str(lifecycle_manifest["request_id"])))
+            if contract is not None:
+                if contract["request_id"] != lifecycle_manifest["request_id"]:
+                    raise ValueError("admission contract request_id does not match its ordered A2 lifecycle trace")
+                if contract["kv_bytes"] != int(lifecycle_manifest["kv_bytes_per_layer_head_token"]):
+                    raise ValueError("admission contract KV bytes/token does not match its A2 lifecycle trace")
+                if contract["layer_count"] != len({int(row["layer"]) for row in source}):
+                    raise ValueError("admission contract layer count does not match its A2 lifecycle trace")
             for bandwidth in args.bandwidth_bytes_per_cycle:
                 for engine_count in engines:
                     for admission_engine_count in admission_engine_counts:
@@ -298,7 +471,9 @@ def main() -> None:
     write_csv(args.output_dir / "a3_edge_step_results.csv", all_steps, STEP_COLUMNS)
     write_csv(args.output_dir / "a3_edge_baseline_summary.csv", all_summary, SUMMARY_COLUMNS)
     write_csv(args.output_dir / "a3_edge_admission_constraints.csv", derive_admission_constraints(all_summary), CONSTRAINT_COLUMNS)
-    manifest = {"schema_version": "kvzap-route-a3-edge-dse-1.1", "git_commit": get_git_commit(), "architecture_config": str(args.architecture_config), "architecture_config_sha256": sha256(args.architecture_config), "workload_suite": args.workload_suite, "workloads": workload_hashes, "a1_dir": str(args.a1_dir), "source_artifact_sha256": {"a2_freeze": sha256(args.a2_freeze), "a1_scheduler_manifest": sha256(args.a1_dir / "scheduler_manifest.json")}, "a2_freeze_status": freeze["freeze_status"], "a1_schema_version": a1["schema_version"], "assumptions": {"page_tokens": args.page_tokens, "bandwidth_bytes_per_cycle": args.bandwidth_bytes_per_cycle, "attention_engine_counts": engines, "throughput_ops_per_cycle": args.throughput_ops_per_cycle, "attention_ops_per_kv_token": args.attention_ops_per_kv_token, "metadata_lookup_bytes_per_page": args.metadata_lookup_bytes_per_page, "metadata_lookup_cycles_per_page": args.metadata_lookup_cycles_per_page, "head_dispatch_cycles": args.head_dispatch_cycles, "scheduler_queue_bytes_per_head": args.scheduler_queue_bytes_per_head, "admission_engine_counts": admission_engine_counts, "admission_pack_bytes_per_cycle_points": admission_pack_points, "admission_memory_burst_bytes": args.admission_memory_burst_bytes, "admission_page_setup_cycles": args.admission_page_setup_cycles, "deferred_admission_decode_steps": args.deferred_admission_decode_steps}, "admission_model": "per-(model_call, layer, KV-head) declared A2 admission bytes are rounded to memory bursts, combined with pack throughput and per-page setup, then LPT-scheduled on shared admission engines; context admission is sequentially charged before decode step one.", "required_followups": ["No generation-equivalence or accuracy result: the deferred policy changes when the packed path becomes active.", "No HBM/DRAM, allocator, latency, throughput, power, area, or PPA measurement is produced.", "Another model requires its own descriptor plus A0/A2/A3-edge evidence; this descriptor is not a cross-model claim."], "notes": ["attention_engine_count is a head-group task service-resource count, not a systolic-array MAC count.", "No cross-engine partial-softmax merge is modeled; all pages of a KV head-group remain on one attention engine per layer.", "All model constants and microarchitecture costs are explicit assumptions, not hardware calibration."]}
+    if contracts:
+        write_csv(args.output_dir / "a3_edge_budgeted_admission_contract.csv", derive_budgeted_service_contracts(all_steps, all_summary, contracts), CONTRACT_COLUMNS)
+    manifest = {"schema_version": "kvzap-route-a3-edge-dse-1.2", "git_commit": get_git_commit(), "architecture_config": str(args.architecture_config), "architecture_config_sha256": sha256(args.architecture_config), "workload_suite": args.workload_suite, "workloads": workload_hashes, "a1_dir": str(args.a1_dir), "source_artifact_sha256": {"a2_freeze": sha256(args.a2_freeze), "a1_scheduler_manifest": sha256(args.a1_dir / "scheduler_manifest.json"), "admission_contract_manifests": {workload: contract["shadow_manifest_sha256"] for (workload, _request_id), contract in contracts.items()}}, "a2_freeze_status": freeze["freeze_status"], "a1_schema_version": a1["schema_version"], "assumptions": {"page_tokens": args.page_tokens, "bandwidth_bytes_per_cycle": args.bandwidth_bytes_per_cycle, "attention_engine_counts": engines, "throughput_ops_per_cycle": args.throughput_ops_per_cycle, "attention_ops_per_kv_token": args.attention_ops_per_kv_token, "metadata_lookup_bytes_per_page": args.metadata_lookup_bytes_per_page, "metadata_lookup_cycles_per_page": args.metadata_lookup_cycles_per_page, "head_dispatch_cycles": args.head_dispatch_cycles, "scheduler_queue_bytes_per_head": args.scheduler_queue_bytes_per_head, "admission_engine_counts": admission_engine_counts, "admission_pack_bytes_per_cycle_points": admission_pack_points, "admission_memory_burst_bytes": args.admission_memory_burst_bytes, "admission_page_setup_cycles": args.admission_page_setup_cycles, "deferred_admission_decode_steps": args.deferred_admission_decode_steps, "admission_contract_dirs": [str(path) for path in args.admission_contract_dir or []]}, "admission_model": "per-(model_call, layer, KV-head) declared A2 admission bytes are rounded to memory bursts, combined with pack throughput and per-page setup, then LPT-scheduled on shared admission engines; context admission is sequentially charged before decode step one.", "budgeted_contract_model": "When supplied, Route-A3.5c establishes a trace-derived B-token/(model-call, layer) maximum. The contract table divides L*B*KV-bytes by each Full-KV attention-cycle window and screens it against E*P. It does not import Python shadow timing, prove temporal overlap, change A3 traffic/cycle accounting, or establish policy-on sparse-attention equivalence.", "required_followups": ["No generation-equivalence or accuracy result: the deferred policy changes when the packed path becomes active.", "No HBM/DRAM, allocator, latency, throughput, power, area, or PPA measurement is produced.", "Another model requires its own descriptor plus A0/A2/A3-edge evidence; this descriptor is not a cross-model claim."], "notes": ["attention_engine_count is a head-group task service-resource count, not a systolic-array MAC count.", "No cross-engine partial-softmax merge is modeled; all pages of a KV head-group remain on one attention engine per layer.", "All model constants and microarchitecture costs are explicit assumptions, not hardware calibration."]}
     (args.output_dir / "a3_edge_manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"Route-A3-edge modeled {len(all_summary)} summaries and {len(all_steps)} step rows: {args.output_dir}")
 
