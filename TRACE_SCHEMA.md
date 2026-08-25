@@ -418,3 +418,33 @@ admission is charged before decode step one. These are explicit cycle-model
 assumptions, not DRAM/HBM measurements, and the tool does not model overlap or
 prove a gate's generation equivalence. The manifest carries interfaces for the
 separate policy-on generation validation and cross-model repeat required later.
+
+The `kvzap-route-a3-edge-dse-1.1` manifest additionally records the Cartesian
+scan axes `admission_engine_counts` and
+`admission_pack_bytes_per_cycle_points`.  The resulting rows retain both
+per-point values, so an admission-engine design-space result cannot be confused
+with a measurement of an allocator, DRAM/HBM, latency, or throughput.
+
+The same run emits `a3_edge_admission_constraints.csv`. For each active packed
+length-aware policy and each workload/page/bandwidth point, it reports the
+minimum *declared aggregate pack capacity* (`engine_count × per_engine_pack
+bytes/cycle`) among scanned points whose modeled total cycles are non-negative
+versus Full KV. Equal-capacity decompositions remain listed. An unactivated
+deferred gate is explicitly `not_applicable_full_kv_fallback`; a missing point
+is `no_nonnegative_point_in_scan`. Neither field is a calibrated hardware
+requirement.
+
+### Route-A3.5 admission shadow reference
+
+`tools/run_kvzap_admission_shadow.py` runs normal Full-KV generation plus
+silent and recorded read-only shadow passes. The shadow observes the already
+updated dense `DynamicCache`, gathers only lifecycle-matured tokens retained by
+the same fixed KVzap predictor, and appends them to separately allocated
+per-layer/head packed K/V pages. It never supplies attention, changes the model
+cache, or applies DMS. It writes lifecycle CSVs plus
+`admission_shadow_tasks.csv`, `admission_shadow_final_state.csv`, and an A3.5
+manifest. Host submission and CUDA-event times characterize only this reference
+implementation; they are not end-to-end latency, allocator, HBM/DRAM, edge
+hardware, or throughput measurements. `tools/validate_kvzap_admission_shadow.py`
+checks answer/digest guards and lifecycle/task/final-count consistency without
+loading a model.

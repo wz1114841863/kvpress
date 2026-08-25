@@ -144,9 +144,10 @@ class LifecycleSimulator:
 class ReadOnlyKVzapLifecycleObserver(AbstractContextManager):
     """Forward-hook observer that does not alter model or cache state."""
 
-    def __init__(self, model, predictor, *, request_id: str, threshold: float, window: int, page_tokens: int, kv_bytes_per_token: int, metadata_bytes_per_page: int, record_events: bool):
+    def __init__(self, model, predictor, *, request_id: str, threshold: float, window: int, page_tokens: int, kv_bytes_per_token: int, metadata_bytes_per_page: int, record_events: bool, admission_sink: Any | None = None):
         self.model, self.predictor, self.request_id = model, predictor, request_id
         self.threshold, self.record_events = threshold, record_events
+        self.admission_sink = admission_sink
         layers = len(language_model_layers(model))
         self.simulator: LifecycleSimulator | None = None
         self._dimensions = (layers, window, page_tokens, kv_bytes_per_token, metadata_bytes_per_page)
@@ -190,6 +191,15 @@ class ReadOnlyKVzapLifecycleObserver(AbstractContextManager):
             "prompt_query" if model_call == 1 else "decode"
         )
         rows = self.simulator.observe(layer, score_start, scores[0].detach().to(device="cpu", dtype=torch.float32).numpy(), self.threshold, model_call, phase)
+        if self.admission_sink is not None:
+            # The sink may only read cache tensors and allocate its own shadow
+            # storage. It is deliberately called after normal attention/cache
+            # update and receives no mutable model output.
+            self.admission_sink.observe(
+                layer=layer, score_start=score_start, scores=scores[0].detach(),
+                threshold=self.threshold, model_call=model_call, phase=phase,
+                kwargs=kwargs, lifecycle_rows=rows,
+            )
         summary = self._phase_summary.setdefault(phase, {
             "model_call_count": 0,
             "query_tokens": 0,

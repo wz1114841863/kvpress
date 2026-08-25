@@ -233,6 +233,31 @@ makespan. Its P64/P128 plus deferred-gate scan is still a model; it neither
 measures a device nor validates policy-on generation. A second model must
 supply its own descriptor and rerun the required A0/A2/A3-edge evidence.
 
+The follow-on admission-engine DSE scans shared admission-engine count and
+per-engine pack bytes/cycle independently (`--admission-engine-counts` and
+`--admission-pack-bytes-per-cycle-points`). This isolates the design pressure
+identified by the edge scan: when attention becomes faster, a fixed admission
+path can dominate the modeled critical path. It is not evidence of an actual
+memory controller, allocator, device latency, or throughput result.
+
+Each DSE run also derives an architecture-constraint table from its own summary
+rows. It identifies the minimum declared aggregate admission pack capacity
+among the scanned configurations that preserves non-negative modeled cycles,
+keeps equivalent engine/throughput decompositions, and labels unactivated
+deferred policies as Full-KV fallback rather than as a capacity requirement.
+
+### A3.5 — calibratable admission shadow reference
+
+Before a policy-on sparse-attention backend, the A3.5 shadow reference reads
+the normal dense cache after attention updates and writes an independent packed
+cold store using the same maturity and original predictor mask decisions. Full
+KV remains authoritative for generation. Its task-level timing and byte fields
+calibrate only the reference gather/pack/page-table implementation on the test
+device; they must not be promoted to end-to-end, HBM, allocator, throughput, or
+edge-hardware claims. The mandatory guards are normal/silent/recorded answer
+equality, lifecycle-digest equality, shadow semantic-digest equality, and
+lifecycle/task/final-state count consistency.
+
 ## Required provenance and conclusion boundaries
 
 Every Route-A experiment must record source trace hashes, page size, cache

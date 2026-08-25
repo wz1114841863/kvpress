@@ -39,6 +39,9 @@ STEP_COLUMNS = (
 SUMMARY_COLUMNS = (
     "workload", "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "attention_engine_count", "admission_engine_count", "admission_pack_bytes_per_cycle", "admission_memory_burst_bytes", "admission_page_setup_cycles", "head_dispatch_cycles", "scheduler_queue_bytes_per_head", "baseline", "policy_kind", "policy_threshold_decode_steps", "policy_activation_decode_step", "decode_steps", "full_kv_cumulative_bytes", "baseline_cumulative_bytes", "net_bytes_saved", "net_bytes_saved_fraction", "break_even_decode_step", "break_even_model_call", "full_kv_cumulative_cycles", "baseline_cumulative_cycles", "net_cycles_saved", "net_cycles_saved_fraction", "scheduler_cycle_source",
 )
+CONSTRAINT_COLUMNS = (
+    "workload", "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "attention_engine_count", "baseline", "policy_kind", "policy_threshold_decode_steps", "policy_activation_decode_step", "decode_steps", "candidate_dse_points", "constraint_status", "minimum_declared_total_pack_bytes_per_cycle", "minimum_capacity_candidate_count", "minimum_capacity_candidates", "recommended_admission_engine_count", "recommended_per_engine_pack_bytes_per_cycle", "recommended_net_cycles_saved", "recommended_net_cycles_saved_fraction", "interpretation",
+)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -63,6 +66,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--scheduler-queue-bytes-per-head", type=int, default=64)
     parser.add_argument("--admission-engine-count", type=int, default=1, help="Shared mature-KV pack engines. This is a declared model parameter, not measured hardware.")
     parser.add_argument("--admission-pack-bytes-per-cycle", type=float, default=512.0, help="Per admission engine scan/filter/write throughput assumption.")
+    parser.add_argument("--admission-engine-counts", nargs="+", type=int, default=None, help="Admission-engine-count DSE points; overrides the singular compatibility flag.")
+    parser.add_argument("--admission-pack-bytes-per-cycle-points", nargs="+", type=float, default=None, help="Per-admission-engine packing-throughput DSE points; overrides the singular compatibility flag.")
     parser.add_argument("--admission-memory-burst-bytes", type=int, default=64, help="Declared DRAM transaction granularity used to round admission transfers.")
     parser.add_argument("--admission-page-setup-cycles", type=float, default=1.0, help="Declared per cold-page allocation/descriptor setup cost.")
     parser.add_argument("--deferred-admission-decode-steps", nargs="+", type=int, default=[])
@@ -70,11 +75,54 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def resolve_admission_points(args: argparse.Namespace) -> tuple[list[int], list[float]]:
+    """Resolve explicit admission DSE axes while retaining single-point CLI use."""
+    engine_counts = args.admission_engine_counts or [args.admission_engine_count]
+    pack_points = args.admission_pack_bytes_per_cycle_points or [args.admission_pack_bytes_per_cycle]
+    if min(engine_counts) <= 0 or min(pack_points) <= 0 or len(set(engine_counts)) != len(engine_counts) or len(set(pack_points)) != len(pack_points):
+        raise ValueError("invalid or duplicate admission-engine DSE assumptions")
+    return engine_counts, pack_points
+
+
 def write_csv(path: Path, rows: list[dict[str, Any]], columns: Iterable[str]) -> None:
     with path.open("w", encoding="utf-8", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(columns))
         writer.writeheader()
         writer.writerows(rows)
+
+
+def derive_admission_constraints(summaries: list[dict[str, Any]], *, epsilon_cycles: float = 1e-9) -> list[dict[str, Any]]:
+    """Extract the minimum scanned pack capacity needed for non-negative cycles.
+
+    This is a feasibility table over declared DSE points, not a hardware
+    requirement. Unactivated deferred policies correctly remain Full-KV
+    fallback rather than pretending to require admission capacity.
+    """
+    selected = [row for row in summaries if row["baseline"] in {"packed_length_aware_head", "packed_deferred_length_aware_head"}]
+    keys = ("workload", "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "attention_engine_count", "baseline", "policy_kind", "policy_threshold_decode_steps", "policy_activation_decode_step", "decode_steps")
+    groups: dict[tuple[Any, ...], list[dict[str, Any]]] = defaultdict(list)
+    for row in selected:
+        groups[tuple(row[key] for key in keys)].append(row)
+    constraints: list[dict[str, Any]] = []
+    for key, candidates in sorted(groups.items()):
+        row = dict(zip(keys, key, strict=True))
+        row["candidate_dse_points"] = len(candidates)
+        if row["policy_activation_decode_step"] == "not_activated":
+            row.update({"constraint_status": "not_applicable_full_kv_fallback", "minimum_declared_total_pack_bytes_per_cycle": "not_applicable", "minimum_capacity_candidate_count": 0, "minimum_capacity_candidates": "not_applicable", "recommended_admission_engine_count": "not_applicable", "recommended_per_engine_pack_bytes_per_cycle": "not_applicable", "recommended_net_cycles_saved": 0.0, "recommended_net_cycles_saved_fraction": 0.0, "interpretation": "Deferred policy never activates; it exactly falls back to Full KV, so no admission capacity is required by this trace horizon."})
+            constraints.append(row)
+            continue
+        feasible = [candidate for candidate in candidates if float(candidate["net_cycles_saved"]) >= -epsilon_cycles]
+        if not feasible:
+            row.update({"constraint_status": "no_nonnegative_point_in_scan", "minimum_declared_total_pack_bytes_per_cycle": "not_found", "minimum_capacity_candidate_count": 0, "minimum_capacity_candidates": "not_found", "recommended_admission_engine_count": "not_found", "recommended_per_engine_pack_bytes_per_cycle": "not_found", "recommended_net_cycles_saved": "not_found", "recommended_net_cycles_saved_fraction": "not_found", "interpretation": "No scanned admission configuration reaches non-negative modeled cycles; expand the DSE or retain Full KV for this operating point."})
+            constraints.append(row)
+            continue
+        capacity = lambda candidate: int(candidate["admission_engine_count"]) * float(candidate["admission_pack_bytes_per_cycle"])
+        minimum = min(capacity(candidate) for candidate in feasible)
+        frontier = [candidate for candidate in feasible if math.isclose(capacity(candidate), minimum)]
+        recommended = max(frontier, key=lambda candidate: (float(candidate["net_cycles_saved"]), -int(candidate["admission_engine_count"])))
+        row.update({"constraint_status": "nonnegative_point_found", "minimum_declared_total_pack_bytes_per_cycle": minimum, "minimum_capacity_candidate_count": len(frontier), "minimum_capacity_candidates": ";".join(f"E{candidate['admission_engine_count']}xP{candidate['admission_pack_bytes_per_cycle']}" for candidate in sorted(frontier, key=lambda candidate: (int(candidate["admission_engine_count"]), float(candidate["admission_pack_bytes_per_cycle"])))), "recommended_admission_engine_count": recommended["admission_engine_count"], "recommended_per_engine_pack_bytes_per_cycle": recommended["admission_pack_bytes_per_cycle"], "recommended_net_cycles_saved": recommended["net_cycles_saved"], "recommended_net_cycles_saved_fraction": recommended["net_cycles_saved_fraction"], "interpretation": "Minimum declared aggregate pack capacity among scanned points with non-negative modeled cycles; alternatives at that capacity are retained explicitly."})
+        constraints.append(row)
+    return constraints
 
 
 def load_architecture_config(path: Path) -> dict[str, Any]:
@@ -189,7 +237,7 @@ def simulate_edge(source: list[dict[str, str]], replay: dict[tuple[int, int, int
                     admission = schedule_admission(upfront_task_list + delayed, admission_engine_count)
                 else:
                     admission = add_admission(upfront, current) if index == 1 else current
-                scheduler_bytes = queue_bytes if variant["scheduler"] == "length_aware_head" else 0
+                scheduler_bytes = queue_bytes if active and variant["scheduler"] == "length_aware_head" else 0
             attention_value = full_cycles if attention == "full" else ideal_cycles if attention == "ideal" else static_cycles if variant["scheduler"] == "static_head" else lpt_cycles
             read_bytes = full_read if attention == "full" else ideal_read if attention == "ideal" else physical_read
             total_bytes = read_bytes + (metadata_read if attention == "physical" else 0) + admission["bytes"] + scheduler_bytes
@@ -219,7 +267,8 @@ def main() -> None:
     descriptor = load_architecture_config(args.architecture_config)
     args.deferred_admission_decode_steps = sorted(set(args.deferred_admission_decode_steps + expand_inclusive_range(args.deferred_admission_decode_step_range, flag="--deferred-admission-decode-step-range")))
     engines = args.attention_engine_counts or descriptor["edge_execution"]["attention_engine_candidates"]
-    numeric = [*args.page_tokens, *args.bandwidth_bytes_per_cycle, *engines, args.throughput_ops_per_cycle, args.attention_ops_per_kv_token, args.metadata_lookup_bytes_per_page, args.admission_engine_count, args.admission_pack_bytes_per_cycle, args.admission_memory_burst_bytes]
+    admission_engine_counts, admission_pack_points = resolve_admission_points(args)
+    numeric = [*args.page_tokens, *args.bandwidth_bytes_per_cycle, *engines, args.throughput_ops_per_cycle, args.attention_ops_per_kv_token, args.metadata_lookup_bytes_per_page, args.admission_memory_burst_bytes]
     if min(numeric) <= 0 or args.metadata_lookup_cycles_per_page < 0 or args.head_dispatch_cycles < 0 or args.scheduler_queue_bytes_per_head < 0 or args.admission_page_setup_cycles < 0 or any(value < 0 for value in args.deferred_admission_decode_steps) or len(set(args.page_tokens)) != len(args.page_tokens) or len(set(args.bandwidth_bytes_per_cycle)) != len(args.bandwidth_bytes_per_cycle) or len(set(engines)) != len(engines):
         raise ValueError("invalid or duplicate A3-edge assumptions")
     workloads = resolve_workloads(args)
@@ -238,15 +287,18 @@ def main() -> None:
             validate_descriptor_against_trace(descriptor, source, lifecycle_manifest)
             for bandwidth in args.bandwidth_bytes_per_cycle:
                 for engine_count in engines:
-                    steps, summaries = simulate_edge(source, replay, lifecycle_manifest, workload=workload, page_tokens=page, bandwidth=bandwidth, attention_engines=engine_count, throughput=args.throughput_ops_per_cycle, ops_per_token=args.attention_ops_per_kv_token, metadata_lookup_bytes=args.metadata_lookup_bytes_per_page, metadata_lookup_cycles=args.metadata_lookup_cycles_per_page, head_dispatch_cycles=args.head_dispatch_cycles, scheduler_queue_bytes_per_head=args.scheduler_queue_bytes_per_head, admission_engine_count=args.admission_engine_count, admission_pack_bytes_per_cycle=args.admission_pack_bytes_per_cycle, admission_memory_burst_bytes=args.admission_memory_burst_bytes, admission_page_setup_cycles=args.admission_page_setup_cycles, deferred_thresholds=args.deferred_admission_decode_steps)
-                    all_steps.extend(steps)
-                    all_summary.extend(summaries)
+                    for admission_engine_count in admission_engine_counts:
+                        for admission_pack_bytes_per_cycle in admission_pack_points:
+                            steps, summaries = simulate_edge(source, replay, lifecycle_manifest, workload=workload, page_tokens=page, bandwidth=bandwidth, attention_engines=engine_count, throughput=args.throughput_ops_per_cycle, ops_per_token=args.attention_ops_per_kv_token, metadata_lookup_bytes=args.metadata_lookup_bytes_per_page, metadata_lookup_cycles=args.metadata_lookup_cycles_per_page, head_dispatch_cycles=args.head_dispatch_cycles, scheduler_queue_bytes_per_head=args.scheduler_queue_bytes_per_head, admission_engine_count=admission_engine_count, admission_pack_bytes_per_cycle=admission_pack_bytes_per_cycle, admission_memory_burst_bytes=args.admission_memory_burst_bytes, admission_page_setup_cycles=args.admission_page_setup_cycles, deferred_thresholds=args.deferred_admission_decode_steps)
+                            all_steps.extend(steps)
+                            all_summary.extend(summaries)
         key = f"{index:02d}_{workload}"
         workload_hashes[key] = {"lifecycle_dir": str(lifecycle_dir), "page_replay_dir": str(replay_dir), "lifecycle_manifest": sha256(lifecycle_dir / "lifecycle_manifest.json"), "lifecycle_events": sha256(lifecycle_dir / "lifecycle_events.csv"), "page_replay_manifest": sha256(replay_dir / "lifecycle_page_replay_manifest.json"), "page_replay_events": sha256(replay_dir / "lifecycle_page_replay_events.csv")}
     args.output_dir.mkdir(parents=True, exist_ok=False)
     write_csv(args.output_dir / "a3_edge_step_results.csv", all_steps, STEP_COLUMNS)
     write_csv(args.output_dir / "a3_edge_baseline_summary.csv", all_summary, SUMMARY_COLUMNS)
-    manifest = {"schema_version": "kvzap-route-a3-edge-dse-1.0", "git_commit": get_git_commit(), "architecture_config": str(args.architecture_config), "architecture_config_sha256": sha256(args.architecture_config), "workload_suite": args.workload_suite, "workloads": workload_hashes, "a1_dir": str(args.a1_dir), "source_artifact_sha256": {"a2_freeze": sha256(args.a2_freeze), "a1_scheduler_manifest": sha256(args.a1_dir / "scheduler_manifest.json")}, "a2_freeze_status": freeze["freeze_status"], "a1_schema_version": a1["schema_version"], "assumptions": {"page_tokens": args.page_tokens, "bandwidth_bytes_per_cycle": args.bandwidth_bytes_per_cycle, "attention_engine_counts": engines, "throughput_ops_per_cycle": args.throughput_ops_per_cycle, "attention_ops_per_kv_token": args.attention_ops_per_kv_token, "metadata_lookup_bytes_per_page": args.metadata_lookup_bytes_per_page, "metadata_lookup_cycles_per_page": args.metadata_lookup_cycles_per_page, "head_dispatch_cycles": args.head_dispatch_cycles, "scheduler_queue_bytes_per_head": args.scheduler_queue_bytes_per_head, "admission_engine_count": args.admission_engine_count, "admission_pack_bytes_per_cycle": args.admission_pack_bytes_per_cycle, "admission_memory_burst_bytes": args.admission_memory_burst_bytes, "admission_page_setup_cycles": args.admission_page_setup_cycles, "deferred_admission_decode_steps": args.deferred_admission_decode_steps}, "admission_model": "per-(model_call, layer, KV-head) declared A2 admission bytes are rounded to memory bursts, combined with pack throughput and per-page setup, then LPT-scheduled on shared admission engines; context admission is sequentially charged before decode step one.", "required_followups": ["No generation-equivalence or accuracy result: the deferred policy changes when the packed path becomes active.", "No HBM/DRAM, allocator, latency, throughput, power, area, or PPA measurement is produced.", "Another model requires its own descriptor plus A0/A2/A3-edge evidence; this descriptor is not a cross-model claim."], "notes": ["attention_engine_count is a head-group task service-resource count, not a systolic-array MAC count.", "No cross-engine partial-softmax merge is modeled; all pages of a KV head-group remain on one attention engine per layer.", "All model constants and microarchitecture costs are explicit assumptions, not hardware calibration."]}
+    write_csv(args.output_dir / "a3_edge_admission_constraints.csv", derive_admission_constraints(all_summary), CONSTRAINT_COLUMNS)
+    manifest = {"schema_version": "kvzap-route-a3-edge-dse-1.1", "git_commit": get_git_commit(), "architecture_config": str(args.architecture_config), "architecture_config_sha256": sha256(args.architecture_config), "workload_suite": args.workload_suite, "workloads": workload_hashes, "a1_dir": str(args.a1_dir), "source_artifact_sha256": {"a2_freeze": sha256(args.a2_freeze), "a1_scheduler_manifest": sha256(args.a1_dir / "scheduler_manifest.json")}, "a2_freeze_status": freeze["freeze_status"], "a1_schema_version": a1["schema_version"], "assumptions": {"page_tokens": args.page_tokens, "bandwidth_bytes_per_cycle": args.bandwidth_bytes_per_cycle, "attention_engine_counts": engines, "throughput_ops_per_cycle": args.throughput_ops_per_cycle, "attention_ops_per_kv_token": args.attention_ops_per_kv_token, "metadata_lookup_bytes_per_page": args.metadata_lookup_bytes_per_page, "metadata_lookup_cycles_per_page": args.metadata_lookup_cycles_per_page, "head_dispatch_cycles": args.head_dispatch_cycles, "scheduler_queue_bytes_per_head": args.scheduler_queue_bytes_per_head, "admission_engine_counts": admission_engine_counts, "admission_pack_bytes_per_cycle_points": admission_pack_points, "admission_memory_burst_bytes": args.admission_memory_burst_bytes, "admission_page_setup_cycles": args.admission_page_setup_cycles, "deferred_admission_decode_steps": args.deferred_admission_decode_steps}, "admission_model": "per-(model_call, layer, KV-head) declared A2 admission bytes are rounded to memory bursts, combined with pack throughput and per-page setup, then LPT-scheduled on shared admission engines; context admission is sequentially charged before decode step one.", "required_followups": ["No generation-equivalence or accuracy result: the deferred policy changes when the packed path becomes active.", "No HBM/DRAM, allocator, latency, throughput, power, area, or PPA measurement is produced.", "Another model requires its own descriptor plus A0/A2/A3-edge evidence; this descriptor is not a cross-model claim."], "notes": ["attention_engine_count is a head-group task service-resource count, not a systolic-array MAC count.", "No cross-engine partial-softmax merge is modeled; all pages of a KV head-group remain on one attention engine per layer.", "All model constants and microarchitecture costs are explicit assumptions, not hardware calibration."]}
     (args.output_dir / "a3_edge_manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"Route-A3-edge modeled {len(all_summary)} summaries and {len(all_steps)} step rows: {args.output_dir}")
 
