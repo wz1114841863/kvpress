@@ -1,4 +1,4 @@
-from tools.simulate_kvzap_route_a3_traffic import attention_cycles, layer_cycles, parse_args, policy_activation_step, policy_active, resolve_workloads, simulate, task_cycles
+from tools.simulate_kvzap_route_a3_traffic import attention_cycles, expand_inclusive_range, layer_cycles, parse_args, policy_activation_step, policy_active, resolve_policy_thresholds, resolve_workloads, simulate, task_cycles
 
 
 def test_task_cycles_uses_roofline_and_metadata_cost():
@@ -74,3 +74,18 @@ def test_policy_activation_has_no_hidden_horizon_prediction():
     assert policy_active("deferred_observed_steps", 2, decode_step=2, decode_steps=100) is False
     assert policy_active("deferred_observed_steps", 2, decode_step=3, decode_steps=3) is True
     assert policy_activation_step("oracle_horizon_gate", 8, decode_steps=5) == "not_activated"
+
+
+def test_deferred_range_expands_inclusively_and_deduplicates_explicit_points():
+    args = parse_args(["--workload-suite", "conservative_three", "--a1-dir", "unused", "--output-dir", "new-output", "--deferred-admission-decode-steps", "0", "5", "--deferred-admission-decode-step-range", "4", "7"])
+    resolve_policy_thresholds(args)
+    assert args.deferred_admission_decode_steps == [0, 4, 5, 6, 7]
+
+
+def test_deferred_range_rejects_negative_or_reversed_bounds():
+    try:
+        expand_inclusive_range([7, 4], flag="--deferred-admission-decode-step-range")
+    except ValueError as error:
+        assert "START <= STOP" in str(error)
+    else:
+        raise AssertionError("reversed range must be rejected")

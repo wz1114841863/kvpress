@@ -215,6 +215,10 @@ call N+1 and charges the accumulated declared admission ledger. It is intended
 to test whether an online-observable delay can avoid short-horizon losses. Both
 change when KVzap's mask becomes physically active, so neither is a
 mask-equivalence or accuracy claim; they remain A3 modeled policy rows.
+Use `--deferred-admission-decode-step-range START STOP` for a contiguous,
+manifest-recorded online-delay sweep. It is specifically needed around an
+observed short-horizon boundary (for example N=5,6,7 after a five-call trace),
+where sparse hand-picked thresholds could conceal the relevant transition.
 
 ## Required provenance and conclusion boundaries
 

@@ -79,6 +79,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--scheduler-queue-bytes-per-head", nargs="+", type=int, default=[0], help="Declared per-head per-decode queue traffic point(s) for the selected scheduler.")
     parser.add_argument("--oracle-min-decode-steps", nargs="+", type=int, default=[], help="Optional offline-only whole-request horizon gates. If the observed total decode steps are below a threshold, use Full KV for the entire request. This is an oracle upper bound, not an online policy.")
     parser.add_argument("--deferred-admission-decode-steps", nargs="+", type=int, default=[], help="Optional online-observable delay(s). Use Full KV for the first N decode attention calls; if call N+1 exists, compact then and charge all deferred declared admission bytes together. N=0 degenerates to the fixed packed baselines.")
+    parser.add_argument("--deferred-admission-decode-step-range", nargs=2, type=int, metavar=("START", "STOP"), help="Inclusive integer deferred-delay sweep. It is merged and deduplicated with --deferred-admission-decode-steps; e.g. 0 32 evaluates every N from 0 through 32.")
     return parser.parse_args(argv)
 
 
@@ -94,6 +95,22 @@ def resolve_workloads(args: argparse.Namespace) -> list[tuple[str, Path, Path]]:
     if len(names) != len(args.lifecycle_dir) or len(set(names)) != len(names):
         raise ValueError("--workload-name must provide one unique label per --lifecycle-dir")
     return list(zip(names, args.lifecycle_dir, args.page_replay_dir))
+
+
+def expand_inclusive_range(bounds: list[int] | None, *, flag: str) -> list[int]:
+    if bounds is None:
+        return []
+    start, stop = bounds
+    if start < 0 or stop < 0 or start > stop:
+        raise ValueError(f"{flag} requires 0 <= START <= STOP")
+    return list(range(start, stop + 1))
+
+
+def resolve_policy_thresholds(args: argparse.Namespace) -> None:
+    """Normalize policy axes before validating assumptions or writing provenance."""
+    deferred = args.deferred_admission_decode_steps + expand_inclusive_range(args.deferred_admission_decode_step_range, flag="--deferred-admission-decode-step-range")
+    args.deferred_admission_decode_steps = sorted(set(deferred))
+    args.oracle_min_decode_steps = sorted(set(args.oracle_min_decode_steps))
 
 
 def sha256(path: Path) -> str:
@@ -323,6 +340,7 @@ def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
         raise FileExistsError(f"Output directory already exists: {args.output_dir}")
+    resolve_policy_thresholds(args)
     if not args.page_tokens or not args.bandwidth_bytes_per_cycle or len(set(args.page_tokens)) != len(args.page_tokens) or len(set(args.bandwidth_bytes_per_cycle)) != len(args.bandwidth_bytes_per_cycle):
         raise ValueError("page sizes and bandwidth points must be non-empty and unique")
     if len(set(args.pe_counts)) != len(args.pe_counts) or len(set(args.head_dispatch_cycles)) != len(args.head_dispatch_cycles) or len(set(args.scheduler_queue_bytes_per_head)) != len(args.scheduler_queue_bytes_per_head) or len(set(args.oracle_min_decode_steps)) != len(args.oracle_min_decode_steps) or len(set(args.deferred_admission_decode_steps)) != len(args.deferred_admission_decode_steps) or min(args.page_tokens) <= 0 or min(args.bandwidth_bytes_per_cycle) <= 0 or min(args.throughput_ops_per_cycle, args.attention_ops_per_kv_token, *args.pe_counts) <= 0 or min(args.metadata_lookup_bytes_per_page, *args.scheduler_queue_bytes_per_head, *args.oracle_min_decode_steps, *args.deferred_admission_decode_steps) < 0 or min(args.metadata_lookup_cycles_per_page, *args.head_dispatch_cycles) < 0:

@@ -393,3 +393,8 @@ The `policy_kind`, `policy_threshold_decode_steps`, and
 `policy_activation_decode_step` fields make these cases distinct from the four
 fixed baselines. Deferred rows are a storage-policy model only: they do not
 establish mask-equivalent generation or accuracy.
+`--deferred-admission-decode-step-range START STOP` expands every inclusive
+integer N in that range and merges it with explicit deferred points before the
+resolved, sorted threshold list is written to the manifest. This is the
+reproducible interface for boundary scans such as N=0..32; it does not add
+oracle rows.
