@@ -258,6 +258,15 @@ edge-hardware claims. The mandatory guards are normal/silent/recorded answer
 equality, lifecycle-digest equality, shadow semantic-digest equality, and
 lifecycle/task/final-state count consistency.
 
+### A3.5b — batched admission-submission reference
+
+The first A3.5b increment groups all KV heads in one `(model call, layer)` into
+one timed submission envelope while preserving exactly the same per-head packed
+pages and lifecycle decisions. It isolates dispatch/task-granularity pressure
+from storage semantics. Its grouped envelope is not a fused gather kernel and
+does not establish an implementable accelerator throughput; a later deferred
+gate flush and fused kernel prototype require separate validation.
+
 ## Required provenance and conclusion boundaries
 
 Every Route-A experiment must record source trace hashes, page size, cache

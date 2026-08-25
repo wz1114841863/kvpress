@@ -448,3 +448,10 @@ implementation; they are not end-to-end latency, allocator, HBM/DRAM, edge
 hardware, or throughput measurements. `tools/validate_kvzap_admission_shadow.py`
 checks answer/digest guards and lifecycle/task/final-count consistency without
 loading a model.
+
+Schema `kvzap-route-a35-admission-shadow-1.1` adds the A3.5b
+`--submission-mode per_layer_batch` reference. It emits one timed batch envelope
+per `(model_call, layer)` plus untimed constituent head rows. This reduces the
+software submission granularity from one row per layer/head to one per layer,
+but the implementation still performs each head's gather/page write separately;
+it must not be described as a fused attention or gather kernel.

@@ -15,21 +15,33 @@ def parse_args() -> argparse.Namespace:
 
 
 def validate(shadow_dir: Path) -> dict[str, int]:
-    manifest_path, tasks_path, final_path = (shadow_dir / "admission_shadow_manifest.json", shadow_dir / "admission_shadow_tasks.csv", shadow_dir / "admission_shadow_final_state.csv")
-    if not all(path.is_file() for path in (manifest_path, tasks_path, final_path)):
-        raise FileNotFoundError("A3.5 requires manifest, task, and final-state CSVs")
+    manifest_path, final_path = shadow_dir / "admission_shadow_manifest.json", shadow_dir / "admission_shadow_final_state.csv"
+    if not all(path.is_file() for path in (manifest_path, final_path)):
+        raise FileNotFoundError("A3.5 requires manifest and final-state CSVs")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("schema_version") != "kvzap-route-a35-admission-shadow-1.0":
+    if manifest.get("schema_version") not in {"kvzap-route-a35-admission-shadow-1.0", "kvzap-route-a35-admission-shadow-1.1"}:
         raise ValueError("Unsupported A3.5 schema")
     if not all(manifest.get("trace_equivalence", {}).get(key) for key in ("answers_identical", "lifecycle_digests_identical", "shadow_semantic_digests_identical")):
         raise ValueError("A3.5 equivalence guard failed")
     lifecycle_path = shadow_dir / "lifecycle_events.csv"
     if not lifecycle_path.is_file():
         raise FileNotFoundError("A3.5 requires its recorded lifecycle_events.csv")
+    batch_mode = manifest.get("submission_mode", "per_head")
+    tasks_path = shadow_dir / ("admission_shadow_batch_tasks.csv" if batch_mode == "per_layer_batch" else "admission_shadow_tasks.csv")
+    if not tasks_path.is_file():
+        raise FileNotFoundError("A3.5 task CSV for declared submission mode is missing")
     tasks, final = list(csv.DictReader(tasks_path.open())), list(csv.DictReader(final_path.open()))
-    lifecycle = {(row["model_call"], row["layer"], row["kv_head"]): row for row in csv.DictReader(lifecycle_path.open())}
+    lifecycle_rows = list(csv.DictReader(lifecycle_path.open()))
+    lifecycle = {(row["model_call"], row["layer"], row["kv_head"]): row for row in lifecycle_rows}
     totals: dict[tuple[int, int], int] = defaultdict(int)
     for row in tasks:
+        if batch_mode == "per_layer_batch":
+            matching = [item for item in lifecycle_rows if item["model_call"] == row["model_call"] and item["layer"] == row["layer"]]
+            if len(matching) != int(row["member_head_count"]) or int(row["admitted_tokens"]) != sum(int(item["cold_admitted_tokens"]) for item in matching) or int(row["dropped_tokens"]) != sum(int(item["cold_dropped_tokens"]) for item in matching):
+                raise ValueError("batched shadow disposition disagrees with recorded read-only lifecycle")
+            for item in matching:
+                totals[(int(item["layer"]), int(item["kv_head"]))] += int(item["cold_admitted_tokens"])
+            continue
         observed = lifecycle.get((row["model_call"], row["layer"], row["kv_head"]))
         if observed is None or int(row["admitted_tokens"]) != int(observed["cold_admitted_tokens"]) or int(row["dropped_tokens"]) != int(observed["cold_dropped_tokens"]):
             raise ValueError("shadow task disposition disagrees with recorded read-only lifecycle")
