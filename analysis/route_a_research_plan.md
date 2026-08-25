@@ -220,6 +220,19 @@ manifest-recorded online-delay sweep. It is specifically needed around an
 observed short-horizon boundary (for example N=5,6,7 after a five-call trace),
 where sparse hand-picked thresholds could conceal the relevant transition.
 
+### A3-edge — parameterized edge-target refinement
+
+Before architecture-spec freeze, use a candidate target descriptor (initially
+`analysis/qwen3_8b_edge_target_v0.json`) rather than treating Qwen3-8B as a
+universal fixed design. The descriptor records `Hq`, `Hkv`, GQA group size,
+head dimension, cache bytes, window, and candidate layer-local attention
+stream-engine count. `tools/simulate_kvzap_route_a3_edge.py` validates the
+trace-visible dimensions and adds a declared shared admission-engine model:
+memory-burst rounding, pack throughput, per-page setup and admission-engine
+makespan. Its P64/P128 plus deferred-gate scan is still a model; it neither
+measures a device nor validates policy-on generation. A second model must
+supply its own descriptor and rerun the required A0/A2/A3-edge evidence.
+
 ## Required provenance and conclusion boundaries
 
 Every Route-A experiment must record source trace hashes, page size, cache

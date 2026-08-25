@@ -398,3 +398,23 @@ integer N in that range and merges it with explicit deferred points before the
 resolved, sorted threshold list is written to the manifest. This is the
 reproducible interface for boundary scans such as N=0..32; it does not add
 oracle rows.
+
+### Route-A3 edge microarchitecture DSE
+
+`tools/simulate_kvzap_route_a3_edge.py` consumes the same validator-approved
+A2 lifecycle/replay pairs but also requires a parameterized edge-target JSON,
+such as `analysis/qwen3_8b_edge_target_v0.json`. The descriptor fixes model
+dimensions, cache bytes, hot window, GQA grouping, and the candidate number of
+layer-local attention stream engines. Its engine count is a head-group task
+service-resource count, never a physical systolic-array MAC count.
+
+The edge tool emits `a3_edge_step_results.csv`,
+`a3_edge_baseline_summary.csv`, and `a3_edge_manifest.json`. For every
+declared A2 admission event it rounds declared bytes to a configured memory
+burst, combines the transfer cost with a configured pack throughput and
+per-page setup cost, and LPT-schedules independent `(model call, layer, KV
+head)` admissions on a configured number of shared admission engines. Context
+admission is charged before decode step one. These are explicit cycle-model
+assumptions, not DRAM/HBM measurements, and the tool does not model overlap or
+prove a gate's generation equivalence. The manifest carries interfaces for the
+separate policy-on generation validation and cross-model repeat required later.

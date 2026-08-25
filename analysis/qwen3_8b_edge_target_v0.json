@@ -1,0 +1,37 @@
+{
+  "schema_version": "kvzap-route-a3-edge-target-1.0",
+  "target_name": "qwen3_8b_edge_v0",
+  "status": "candidate A3 target contract; not an architecture-spec freeze",
+  "model": {
+    "hf_id": "Qwen/Qwen3-8B",
+    "model_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "num_hidden_layers": 36,
+    "num_attention_heads": 32,
+    "num_key_value_heads": 8,
+    "head_dim": 128,
+    "gqa_group_size": 4,
+    "cache_dtype": "bfloat16",
+    "kv_bytes_per_layer_head_token": 512,
+    "model_config_source": "https://huggingface.co/Qwen/Qwen3-8B/raw/main/config.json"
+  },
+  "route_a": {
+    "hot_window_tokens": 128,
+    "page_tokens_candidates": [64, 128],
+    "storage_model": "independent append-only cold pages per (layer, KV head); original KVzap mask is unchanged once the packed path is active"
+  },
+  "edge_execution": {
+    "batch_size": 1,
+    "attention_engine_candidates": [4],
+    "scheduling_unit": "complete (layer, KV head, GQA query-head group) task",
+    "scheduler": "layer-local whole-head LPT; no cross-engine partial-softmax merge",
+    "notes": [
+      "attention_engine_count is an independently schedulable attention stream-engine count, not a systolic-array MAC count.",
+      "SRAM, DRAM burst, admission-engine throughput, page-setup latency, and overlap are deliberately supplied by the A3-edge CLI and remain explicit uncalibrated assumptions until a target device is selected."
+    ]
+  },
+  "required_followups": [
+    "Validate policy-on generation equivalence or accuracy separately; A3-edge is accounting only.",
+    "Repeat A0/A2/A3-edge evidence on another supported model before making cross-model claims.",
+    "Freeze a real edge memory/clock/SRAM target before RTL or PPA claims."
+  ]
+}
