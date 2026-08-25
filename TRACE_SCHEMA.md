@@ -505,3 +505,13 @@ merge, bandwidth, and cycle assumptions. The state for decode call `c` is the
 FIFO state after calls strictly before `c`; current-call admissions are charged
 after its attention proxy. Its bytes/cycles are not HBM/DRAM, allocator,
 latency, throughput, or policy-on generation measurements.
+
+Schema `kvzap-route-a36-hybrid-activation-dse-1.1` records one Cartesian
+hardware-sensitivity point in every step and summary row: effective pending
+gather bytes/token, merge-state bytes/head, merge cycles/head, and per-layer
+pending staging capacity. Effective pending gather bytes/token is at least the
+declared K+V bytes/token; larger values are an explicit scatter/burst
+amplification proxy. With bounded staging, the declared conservative
+`layer_full_kv_fallback` reads all heads in any over-capacity layer from Full
+KV for that call. These remain analytical sensitivity assumptions, not
+calibrated hardware facts.

@@ -338,6 +338,16 @@ attention execution, or generation/accuracy result. In particular, it makes
 the required dual-source and online-softmax-merge architecture cost explicit
 rather than silently treating a layer-batch aggregate as per-head layout.
 
+The A3.6 schema-1.1 DSE additionally scans three architecture boundaries
+without rerunning the model: `--pending-gather-bytes-per-token-points` models
+effective pending-KV read amplification from gather/burst granularity;
+`--hybrid-merge-state-bytes-per-head-points` and
+`--hybrid-merge-cycles-per-head-points` model online-softmax merge cost; and
+`--pending-staging-capacity-tokens-per-layer-points` limits the per-layer FIFO
+staging. The only initial overflow policy is explicit conservative
+`layer_full_kv_fallback`: an over-capacity layer reads Full KV for that call.
+These are sensitivity axes, not calibrated hardware facts.
+
 ## Required provenance and conclusion boundaries
 
 Every Route-A experiment must record source trace hashes, page size, cache

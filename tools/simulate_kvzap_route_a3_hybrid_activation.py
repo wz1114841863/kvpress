@@ -23,10 +23,10 @@ from tools.validate_kvzap_decode_lifecycle_trace import validate as validate_lif
 
 
 STEP_COLUMNS = (
-    "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "pe_count", "scheduler", "baseline", "model_call", "decode_step", "state_source_model_call", "cache_tokens_after", "packed_cold_logical_tokens", "packed_cold_allocated_slots", "packed_cold_page_count", "pending_dense_tokens", "hybrid_merge_head_count", "full_read_bytes", "attention_read_bytes", "pending_position_bytes", "packed_metadata_lookup_bytes", "hybrid_merge_bytes", "admission_bytes", "step_total_bytes", "cumulative_total_bytes", "cumulative_full_kv_bytes", "cumulative_net_bytes_saved", "attention_cycle_proxy", "admission_cycle_proxy", "step_total_cycle_proxy", "cumulative_total_cycle_proxy",
+    "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "pe_count", "scheduler", "baseline", "pending_gather_bytes_per_token", "hybrid_merge_state_bytes_per_head", "hybrid_merge_cycles_per_head", "pending_staging_capacity_tokens_per_layer", "pending_overflow_policy", "model_call", "decode_step", "state_source_model_call", "cache_tokens_after", "packed_cold_logical_tokens", "packed_cold_allocated_slots", "packed_cold_page_count", "pending_dense_tokens", "fallback_dense_layer_count", "hybrid_merge_head_count", "full_read_bytes", "attention_read_bytes", "pending_position_bytes", "packed_metadata_lookup_bytes", "hybrid_merge_bytes", "admission_bytes", "step_total_bytes", "cumulative_total_bytes", "cumulative_full_kv_bytes", "cumulative_net_bytes_saved", "attention_cycle_proxy", "admission_cycle_proxy", "step_total_cycle_proxy", "cumulative_total_cycle_proxy",
 )
 SUMMARY_COLUMNS = (
-    "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "pe_count", "scheduler", "baseline", "decode_steps", "activation_decode_step", "full_kv_cumulative_bytes", "baseline_cumulative_bytes", "net_bytes_saved", "net_bytes_saved_fraction", "break_even_decode_step", "full_kv_cumulative_cycle_proxy", "baseline_cumulative_cycle_proxy", "net_cycle_proxy_saved", "net_cycle_proxy_saved_fraction", "interpretation",
+    "request_id", "page_tokens", "bandwidth_bytes_per_cycle", "pe_count", "scheduler", "baseline", "pending_gather_bytes_per_token", "hybrid_merge_state_bytes_per_head", "hybrid_merge_cycles_per_head", "pending_staging_capacity_tokens_per_layer", "pending_overflow_policy", "decode_steps", "activation_decode_step", "full_kv_cumulative_bytes", "baseline_cumulative_bytes", "net_bytes_saved", "net_bytes_saved_fraction", "break_even_decode_step", "full_kv_cumulative_cycle_proxy", "baseline_cumulative_cycle_proxy", "net_cycle_proxy_saved", "net_cycle_proxy_saved_fraction", "interpretation",
 )
 
 
@@ -47,8 +47,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--metadata-lookup-cycles-per-page", type=float, default=1.0)
     parser.add_argument("--head-dispatch-cycles", type=float, default=4.0)
     parser.add_argument("--pending-position-bytes-per-token", type=int, default=8, help="Declared dense-pending position/index read bytes per retained token.")
-    parser.add_argument("--hybrid-merge-state-bytes-per-head", type=int, default=16, help="Declared partial-softmax merge state traffic for a head with both pending and packed cold KV.")
-    parser.add_argument("--hybrid-merge-cycles-per-head", type=float, default=1.0, help="Declared merge-cycle proxy per head with both pending and packed cold KV.")
+    parser.add_argument("--pending-gather-bytes-per-token", type=int, help="Compatibility single point for effective pending-KV read bytes/token; default is the declared K+V bytes/token.")
+    parser.add_argument("--pending-gather-bytes-per-token-points", nargs="+", type=int, help="Effective pending-KV read bytes/token sweep. Values above K+V bytes/token model burst/granularity amplification.")
+    parser.add_argument("--hybrid-merge-state-bytes-per-head", type=int, default=16, help="Compatibility single point for partial-softmax merge state traffic.")
+    parser.add_argument("--hybrid-merge-state-bytes-per-head-points", nargs="+", type=int, help="Partial-softmax merge state traffic sweep.")
+    parser.add_argument("--hybrid-merge-cycles-per-head", type=float, default=1.0, help="Compatibility single point for merge-cycle proxy.")
+    parser.add_argument("--hybrid-merge-cycles-per-head-points", nargs="+", type=float, help="Partial-softmax merge-cycle proxy sweep.")
+    parser.add_argument("--pending-staging-capacity-tokens-per-layer-points", nargs="+", type=int, help="Per-layer pending staging capacity sweep. Omit for an unbounded staging reference; zero forces fallback whenever pending KV exists.")
+    parser.add_argument("--pending-overflow-policy", choices=("layer_full_kv_fallback",), default="layer_full_kv_fallback", help="Declared action when a layer pending FIFO exceeds the staging capacity.")
     return parser.parse_args(argv)
 
 
@@ -116,33 +122,53 @@ def admission_bytes(progress_rows: list[dict[str, str]], *, metadata_bytes: int)
     return sum(int(row["source_gather_bytes"]) + int(row["packed_kv_bytes"]) + int(row["position_metadata_bytes"]) + int(row["new_page_allocations"]) * metadata_bytes for row in progress_rows)
 
 
-def hybrid_attention(rows: list[dict[str, str]], state: dict[tuple[int, int], dict[str, int]], *, window: int, kv_bytes: int, page_tokens: int, bandwidth: float, throughput: float, ops_per_token: float, metadata_bytes: int, metadata_cycles: float, pending_position_bytes: int, merge_bytes: int, merge_cycles: float, pe_count: int, scheduler: str, head_dispatch_cycles: float) -> tuple[int, int, int, int, int, float, int, int, int, int]:
+def resolve_hardware_points(args: argparse.Namespace, *, kv_bytes: int) -> tuple[list[int], list[int], list[float], list[int | None]]:
+    gather = args.pending_gather_bytes_per_token_points or [args.pending_gather_bytes_per_token if args.pending_gather_bytes_per_token is not None else kv_bytes]
+    merge_bytes = args.hybrid_merge_state_bytes_per_head_points or [args.hybrid_merge_state_bytes_per_head]
+    merge_cycles = args.hybrid_merge_cycles_per_head_points or [args.hybrid_merge_cycles_per_head]
+    capacity: list[int | None] = args.pending_staging_capacity_tokens_per_layer_points or [None]
+    if min(gather) < kv_bytes or min(merge_bytes) < 0 or min(merge_cycles) < 0 or any(item is not None and item < 0 for item in capacity):
+        raise ValueError("invalid hybrid hardware sweep point")
+    if any(len(set(values)) != len(values) for values in (gather, merge_bytes, merge_cycles)) or len(set(capacity)) != len(capacity):
+        raise ValueError("duplicate hybrid hardware sweep point")
+    return gather, merge_bytes, merge_cycles, capacity
+
+
+def hybrid_attention(rows: list[dict[str, str]], state: dict[tuple[int, int], dict[str, int]], *, window: int, kv_bytes: int, pending_gather_bytes: int, pending_capacity: int | None, overflow_policy: str, bandwidth: float, throughput: float, ops_per_token: float, metadata_bytes: int, metadata_cycles: float, pending_position_bytes: int, merge_bytes: int, merge_cycles: float, pe_count: int, scheduler: str, head_dispatch_cycles: float) -> tuple[int, int, int, int, int, int, float, int, int, int, int]:
     """Return token-granular hybrid traffic and declared layer/head cycle proxy."""
     by_layer: dict[int, list[tuple[int, float]]] = defaultdict(list)
+    pending_by_layer: dict[int, int] = defaultdict(int)
+    for (layer, _head), item in state.items():
+        pending_by_layer[layer] += item["pending"]
+    overflow_layers = {layer for layer, pending in pending_by_layer.items() if pending_capacity is not None and pending > pending_capacity}
+    if overflow_policy != "layer_full_kv_fallback":
+        raise ValueError("unsupported pending overflow policy")
     read_bytes = index_bytes = metadata_read = merge_read = pending_total = 0
     packed_logical = packed_slots = packed_pages = merge_heads = 0
     for row in rows:
         layer, head = int(row["layer"]), int(row["kv_head"])
         item = state.get((layer, head), {"packed_logical": 0, "packed_slots": 0, "packed_pages": 0, "pending": 0})
         hot, pending = min(window, int(row["cache_tokens_after"])), item["pending"]
-        slots, pages = hot + item["packed_slots"] + pending, item["packed_pages"]
+        fallback = layer in overflow_layers
+        slots, pages = (int(row["cache_tokens_after"]), 0) if fallback else (hot + item["packed_slots"] + pending, item["packed_pages"])
         packed_logical += item["packed_logical"]
         packed_slots += item["packed_slots"]
         packed_pages += pages
         pending_total += pending
-        head_read = slots * kv_bytes + pages * metadata_bytes + pending * pending_position_bytes
-        both = item["packed_logical"] > 0 and pending > 0
+        packed_payload_slots = 0 if fallback else hot + item["packed_slots"]
+        head_read = slots * kv_bytes if fallback else packed_payload_slots * kv_bytes + pending * pending_gather_bytes + pages * metadata_bytes + pending * pending_position_bytes
+        both = not fallback and item["packed_logical"] > 0 and pending > 0
         if both:
             head_read += merge_bytes
             merge_heads += 1
-        read_bytes += slots * kv_bytes
+        read_bytes += slots * kv_bytes if fallback else packed_payload_slots * kv_bytes + pending * pending_gather_bytes
         metadata_read += pages * metadata_bytes
-        index_bytes += pending * pending_position_bytes
+        index_bytes += 0 if fallback else pending * pending_position_bytes
         merge_read += merge_bytes if both else 0
-        cycles = task_cycles(slots, pages, kv_bytes=kv_bytes, bandwidth=bandwidth, throughput=throughput, ops_per_token=ops_per_token, metadata_lookup_bytes=metadata_bytes, metadata_lookup_cycles=metadata_cycles) + (pending * pending_position_bytes + (merge_bytes if both else 0)) / bandwidth + (merge_cycles if both else 0.0)
+        cycles = max(head_read / bandwidth, slots * ops_per_token / throughput) + pages * metadata_cycles + (merge_cycles if both else 0.0)
         by_layer[layer].append((head, cycles))
     proxy = sum(layer_cycles(tasks, pe_count=pe_count, policy=scheduler, head_dispatch_cycles=head_dispatch_cycles) for _layer, tasks in sorted(by_layer.items()))
-    return read_bytes, index_bytes, metadata_read, merge_read, pending_total, proxy, packed_logical, packed_slots, packed_pages, merge_heads
+    return read_bytes, index_bytes, metadata_read, merge_read, pending_total, len(overflow_layers), proxy, packed_logical, packed_slots, packed_pages, merge_heads
 
 
 def run(args: argparse.Namespace) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
@@ -163,46 +189,51 @@ def run(args: argparse.Namespace) -> tuple[list[dict[str, Any]], list[dict[str, 
     if not decode_calls:
         raise ValueError("hybrid DSE requires observed decode calls")
     variants = ("full_kv", "hybrid_dense_pending_packed", "wait_for_queue_drain")
+    gather_points, merge_byte_points, merge_cycle_points, capacity_points = resolve_hardware_points(args, kv_bytes=kv_bytes)
     all_steps: list[dict[str, Any]] = []
     all_summaries: list[dict[str, Any]] = []
-    for bandwidth in args.bandwidth_bytes_per_cycle:
-        for pe_count in args.pe_counts:
-            for scheduler in args.schedulers:
-                cumulative_bytes = {name: 0.0 for name in variants}
-                cumulative_cycles = {name: 0.0 for name in variants}
-                break_even: dict[str, int | None] = {name: None for name in variants if name != "full_kv"}
-                activation: int | str = "not_activated"
-                for step, call in enumerate(decode_calls, start=1):
-                    rows, state = lifecycle_by_call[call], states.get(call, {})
-                    full_read = sum(int(row["cache_tokens_after"]) * kv_bytes for row in rows)
-                    admission = admission_bytes(progress_by_call[call], metadata_bytes=int(shadow_manifest["config"]["metadata_bytes_per_cold_page"]))
-                    packed_pending = sum(item["pending"] for item in state.values())
-                    drained = bool(state) and packed_pending == 0
-                    if drained and activation == "not_activated":
-                        activation = step
-                    for baseline in variants:
-                        if baseline == "full_kv":
-                            read, pending_index, metadata_read, merge_read, pending, cycles = full_read, 0, 0, 0, 0, attention_cycles(rows, kind="full", page_tokens=args.page_tokens, window=window, kv_bytes=kv_bytes, bandwidth=bandwidth, throughput=args.throughput_ops_per_cycle, ops_per_token=args.attention_ops_per_kv_token, metadata_lookup_bytes=0, metadata_lookup_cycles=0.0, pe_count=pe_count, policy=scheduler, head_dispatch_cycles=args.head_dispatch_cycles)
-                            packed_logical = packed_slots = packed_pages = merge_heads = 0
-                            charged_admission = 0
-                        elif baseline == "wait_for_queue_drain" and not drained:
-                            read, pending_index, metadata_read, merge_read, pending, cycles = full_read, 0, 0, 0, packed_pending, attention_cycles(rows, kind="full", page_tokens=args.page_tokens, window=window, kv_bytes=kv_bytes, bandwidth=bandwidth, throughput=args.throughput_ops_per_cycle, ops_per_token=args.attention_ops_per_kv_token, metadata_lookup_bytes=0, metadata_lookup_cycles=0.0, pe_count=pe_count, policy=scheduler, head_dispatch_cycles=args.head_dispatch_cycles)
-                            packed_logical = packed_slots = packed_pages = merge_heads = 0
-                            charged_admission = admission
-                        else:
-                            read, pending_index, metadata_read, merge_read, pending, cycles, packed_logical, packed_slots, packed_pages, merge_heads = hybrid_attention(rows, state, window=window, kv_bytes=kv_bytes, page_tokens=args.page_tokens, bandwidth=bandwidth, throughput=args.throughput_ops_per_cycle, ops_per_token=args.attention_ops_per_kv_token, metadata_bytes=args.metadata_lookup_bytes_per_page, metadata_cycles=args.metadata_lookup_cycles_per_page, pending_position_bytes=args.pending_position_bytes_per_token if baseline == "hybrid_dense_pending_packed" else 0, merge_bytes=args.hybrid_merge_state_bytes_per_head if baseline == "hybrid_dense_pending_packed" else 0, merge_cycles=args.hybrid_merge_cycles_per_head if baseline == "hybrid_dense_pending_packed" else 0.0, pe_count=pe_count, scheduler=scheduler, head_dispatch_cycles=args.head_dispatch_cycles)
-                            charged_admission = admission
-                        total_bytes = read + pending_index + metadata_read + merge_read + charged_admission
-                        admission_cycles = charged_admission / bandwidth
-                        total_cycles = cycles + admission_cycles
-                        cumulative_bytes[baseline] += total_bytes
-                        cumulative_cycles[baseline] += total_cycles
-                        if baseline != "full_kv" and break_even[baseline] is None and cumulative_bytes[baseline] < cumulative_bytes["full_kv"]:
-                            break_even[baseline] = step
-                        all_steps.append({"request_id": manifest["request_id"], "page_tokens": args.page_tokens, "bandwidth_bytes_per_cycle": bandwidth, "pe_count": pe_count, "scheduler": scheduler, "baseline": baseline, "model_call": call, "decode_step": step, "state_source_model_call": call - 1, "cache_tokens_after": int(rows[0]["cache_tokens_after"]), "packed_cold_logical_tokens": packed_logical, "packed_cold_allocated_slots": packed_slots, "packed_cold_page_count": packed_pages, "pending_dense_tokens": pending, "hybrid_merge_head_count": merge_heads, "full_read_bytes": full_read, "attention_read_bytes": read, "pending_position_bytes": pending_index, "packed_metadata_lookup_bytes": metadata_read, "hybrid_merge_bytes": merge_read, "admission_bytes": charged_admission, "step_total_bytes": total_bytes, "cumulative_total_bytes": cumulative_bytes[baseline], "cumulative_full_kv_bytes": cumulative_bytes["full_kv"], "cumulative_net_bytes_saved": cumulative_bytes["full_kv"] - cumulative_bytes[baseline], "attention_cycle_proxy": cycles, "admission_cycle_proxy": admission_cycles, "step_total_cycle_proxy": total_cycles, "cumulative_total_cycle_proxy": cumulative_cycles[baseline]})
-                for baseline in variants:
-                    full_b, full_c = cumulative_bytes["full_kv"], cumulative_cycles["full_kv"]
-                    all_summaries.append({"request_id": manifest["request_id"], "page_tokens": args.page_tokens, "bandwidth_bytes_per_cycle": bandwidth, "pe_count": pe_count, "scheduler": scheduler, "baseline": baseline, "decode_steps": len(decode_calls), "activation_decode_step": "not_applicable" if baseline == "full_kv" else 1 if baseline == "hybrid_dense_pending_packed" else activation, "full_kv_cumulative_bytes": full_b, "baseline_cumulative_bytes": cumulative_bytes[baseline], "net_bytes_saved": full_b - cumulative_bytes[baseline], "net_bytes_saved_fraction": (full_b - cumulative_bytes[baseline]) / full_b, "break_even_decode_step": "not_reached" if break_even.get(baseline) is None else break_even[baseline], "full_kv_cumulative_cycle_proxy": full_c, "baseline_cumulative_cycle_proxy": cumulative_cycles[baseline], "net_cycle_proxy_saved": full_c - cumulative_cycles[baseline], "net_cycle_proxy_saved_fraction": (full_c - cumulative_cycles[baseline]) / full_c, "interpretation": "Hybrid reads exact schema-1.4 per-head packed/pending counts but uses declared index/metadata/merge byte and cycle costs. Admission is conservatively charged sequentially. It is a candidate-backend model, not sparse-attention generation, HBM, allocator, or latency evidence."})
+    for pending_gather_bytes in gather_points:
+        for merge_bytes in merge_byte_points:
+            for merge_cycles in merge_cycle_points:
+                for pending_capacity in capacity_points:
+                    for bandwidth in args.bandwidth_bytes_per_cycle:
+                        for pe_count in args.pe_counts:
+                            for scheduler in args.schedulers:
+                                cumulative_bytes = {name: 0.0 for name in variants}
+                                cumulative_cycles = {name: 0.0 for name in variants}
+                                break_even: dict[str, int | None] = {name: None for name in variants if name != "full_kv"}
+                                activation: int | str = "not_activated"
+                                for step, call in enumerate(decode_calls, start=1):
+                                    rows, state = lifecycle_by_call[call], states.get(call, {})
+                                    full_read = sum(int(row["cache_tokens_after"]) * kv_bytes for row in rows)
+                                    admission = admission_bytes(progress_by_call[call], metadata_bytes=int(shadow_manifest["config"]["metadata_bytes_per_cold_page"]))
+                                    packed_pending = sum(item["pending"] for item in state.values())
+                                    drained = bool(state) and packed_pending == 0
+                                    if drained and activation == "not_activated":
+                                        activation = step
+                                    for baseline in variants:
+                                        if baseline == "full_kv":
+                                            read, pending_index, metadata_read, merge_read, pending, fallback_layers, cycles = full_read, 0, 0, 0, 0, 0, attention_cycles(rows, kind="full", page_tokens=args.page_tokens, window=window, kv_bytes=kv_bytes, bandwidth=bandwidth, throughput=args.throughput_ops_per_cycle, ops_per_token=args.attention_ops_per_kv_token, metadata_lookup_bytes=0, metadata_lookup_cycles=0.0, pe_count=pe_count, policy=scheduler, head_dispatch_cycles=args.head_dispatch_cycles)
+                                            packed_logical = packed_slots = packed_pages = merge_heads = 0
+                                            charged_admission = 0
+                                        elif baseline == "wait_for_queue_drain" and not drained:
+                                            read, pending_index, metadata_read, merge_read, pending, fallback_layers, cycles = full_read, 0, 0, 0, packed_pending, 0, attention_cycles(rows, kind="full", page_tokens=args.page_tokens, window=window, kv_bytes=kv_bytes, bandwidth=bandwidth, throughput=args.throughput_ops_per_cycle, ops_per_token=args.attention_ops_per_kv_token, metadata_lookup_bytes=0, metadata_lookup_cycles=0.0, pe_count=pe_count, policy=scheduler, head_dispatch_cycles=args.head_dispatch_cycles)
+                                            packed_logical = packed_slots = packed_pages = merge_heads = 0
+                                            charged_admission = admission
+                                        else:
+                                            read, pending_index, metadata_read, merge_read, pending, fallback_layers, cycles, packed_logical, packed_slots, packed_pages, merge_heads = hybrid_attention(rows, state, window=window, kv_bytes=kv_bytes, pending_gather_bytes=pending_gather_bytes, pending_capacity=pending_capacity if baseline == "hybrid_dense_pending_packed" else None, overflow_policy=args.pending_overflow_policy, bandwidth=bandwidth, throughput=args.throughput_ops_per_cycle, ops_per_token=args.attention_ops_per_kv_token, metadata_bytes=args.metadata_lookup_bytes_per_page, metadata_cycles=args.metadata_lookup_cycles_per_page, pending_position_bytes=args.pending_position_bytes_per_token if baseline == "hybrid_dense_pending_packed" else 0, merge_bytes=merge_bytes if baseline == "hybrid_dense_pending_packed" else 0, merge_cycles=merge_cycles if baseline == "hybrid_dense_pending_packed" else 0.0, pe_count=pe_count, scheduler=scheduler, head_dispatch_cycles=args.head_dispatch_cycles)
+                                            charged_admission = admission
+                                        total_bytes = read + pending_index + metadata_read + merge_read + charged_admission
+                                        admission_cycles = charged_admission / bandwidth
+                                        total_cycles = cycles + admission_cycles
+                                        cumulative_bytes[baseline] += total_bytes
+                                        cumulative_cycles[baseline] += total_cycles
+                                        if baseline != "full_kv" and break_even[baseline] is None and cumulative_bytes[baseline] < cumulative_bytes["full_kv"]:
+                                            break_even[baseline] = step
+                                        all_steps.append({"request_id": manifest["request_id"], "page_tokens": args.page_tokens, "bandwidth_bytes_per_cycle": bandwidth, "pe_count": pe_count, "scheduler": scheduler, "baseline": baseline, "pending_gather_bytes_per_token": pending_gather_bytes, "hybrid_merge_state_bytes_per_head": merge_bytes, "hybrid_merge_cycles_per_head": merge_cycles, "pending_staging_capacity_tokens_per_layer": pending_capacity if pending_capacity is not None else "unbounded", "pending_overflow_policy": args.pending_overflow_policy, "model_call": call, "decode_step": step, "state_source_model_call": call - 1, "cache_tokens_after": int(rows[0]["cache_tokens_after"]), "packed_cold_logical_tokens": packed_logical, "packed_cold_allocated_slots": packed_slots, "packed_cold_page_count": packed_pages, "pending_dense_tokens": pending, "fallback_dense_layer_count": fallback_layers, "hybrid_merge_head_count": merge_heads, "full_read_bytes": full_read, "attention_read_bytes": read, "pending_position_bytes": pending_index, "packed_metadata_lookup_bytes": metadata_read, "hybrid_merge_bytes": merge_read, "admission_bytes": charged_admission, "step_total_bytes": total_bytes, "cumulative_total_bytes": cumulative_bytes[baseline], "cumulative_full_kv_bytes": cumulative_bytes["full_kv"], "cumulative_net_bytes_saved": cumulative_bytes["full_kv"] - cumulative_bytes[baseline], "attention_cycle_proxy": cycles, "admission_cycle_proxy": admission_cycles, "step_total_cycle_proxy": total_cycles, "cumulative_total_cycle_proxy": cumulative_cycles[baseline]})
+                                for baseline in variants:
+                                    full_b, full_c = cumulative_bytes["full_kv"], cumulative_cycles["full_kv"]
+                                    all_summaries.append({"request_id": manifest["request_id"], "page_tokens": args.page_tokens, "bandwidth_bytes_per_cycle": bandwidth, "pe_count": pe_count, "scheduler": scheduler, "baseline": baseline, "pending_gather_bytes_per_token": pending_gather_bytes, "hybrid_merge_state_bytes_per_head": merge_bytes, "hybrid_merge_cycles_per_head": merge_cycles, "pending_staging_capacity_tokens_per_layer": pending_capacity if pending_capacity is not None else "unbounded", "pending_overflow_policy": args.pending_overflow_policy, "decode_steps": len(decode_calls), "activation_decode_step": "not_applicable" if baseline == "full_kv" else 1 if baseline == "hybrid_dense_pending_packed" else activation, "full_kv_cumulative_bytes": full_b, "baseline_cumulative_bytes": cumulative_bytes[baseline], "net_bytes_saved": full_b - cumulative_bytes[baseline], "net_bytes_saved_fraction": (full_b - cumulative_bytes[baseline]) / full_b, "break_even_decode_step": "not_reached" if break_even.get(baseline) is None else break_even[baseline], "full_kv_cumulative_cycle_proxy": full_c, "baseline_cumulative_cycle_proxy": cumulative_cycles[baseline], "net_cycle_proxy_saved": full_c - cumulative_cycles[baseline], "net_cycle_proxy_saved_fraction": (full_c - cumulative_cycles[baseline]) / full_c, "interpretation": "Hybrid reads exact schema-1.4 per-head packed/pending counts. Pending gather effective bytes/token, merge bytes/cycles, and staging fallback are declared DSE assumptions; admission is charged sequentially. This is a candidate-backend model, not sparse-attention generation, HBM, allocator, or latency evidence."})
     provenance = {"a2_freeze_sha256": sha256(args.a2_freeze), "a2_freeze_status": freeze.get("freeze_status"), "lifecycle_manifest_sha256": sha256(args.lifecycle_dir / "lifecycle_manifest.json"), "lifecycle_events_sha256": sha256(args.lifecycle_dir / "lifecycle_events.csv"), "shadow_manifest_sha256": sha256(args.shadow_dir / "admission_shadow_manifest.json"), "hybrid_head_progress_sha256": sha256(args.shadow_dir / "admission_shadow_v2_head_progress.csv")}
     return all_steps, all_summaries, provenance
 
@@ -211,14 +242,14 @@ def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
         raise FileExistsError(f"Output directory already exists: {args.output_dir}")
-    numeric = [args.page_tokens, *args.bandwidth_bytes_per_cycle, *args.pe_counts, args.throughput_ops_per_cycle, args.attention_ops_per_kv_token, args.metadata_lookup_bytes_per_page, args.pending_position_bytes_per_token, args.hybrid_merge_state_bytes_per_head]
-    if min(numeric) <= 0 or args.metadata_lookup_cycles_per_page < 0 or args.head_dispatch_cycles < 0 or args.hybrid_merge_cycles_per_head < 0 or len(set(args.bandwidth_bytes_per_cycle)) != len(args.bandwidth_bytes_per_cycle) or len(set(args.pe_counts)) != len(args.pe_counts) or len(set(args.schedulers)) != len(args.schedulers):
+    numeric = [args.page_tokens, *args.bandwidth_bytes_per_cycle, *args.pe_counts, args.throughput_ops_per_cycle, args.attention_ops_per_kv_token, args.metadata_lookup_bytes_per_page, args.pending_position_bytes_per_token]
+    if min(numeric) <= 0 or args.metadata_lookup_cycles_per_page < 0 or args.head_dispatch_cycles < 0 or len(set(args.bandwidth_bytes_per_cycle)) != len(args.bandwidth_bytes_per_cycle) or len(set(args.pe_counts)) != len(args.pe_counts) or len(set(args.schedulers)) != len(args.schedulers):
         raise ValueError("invalid or duplicate hybrid DSE assumptions")
     steps, summaries, provenance = run(args)
     args.output_dir.mkdir(parents=True, exist_ok=False)
     write_csv(args.output_dir / "hybrid_activation_step_results.csv", steps, STEP_COLUMNS)
     write_csv(args.output_dir / "hybrid_activation_summary.csv", summaries, SUMMARY_COLUMNS)
-    manifest = {"schema_version": "kvzap-route-a36-hybrid-activation-dse-1.0", "git_commit": get_git_commit(), "lifecycle_dir": str(args.lifecycle_dir), "shadow_dir": str(args.shadow_dir), "a1_dir": str(args.a1_dir), "source_artifact_sha256": provenance, "assumptions": {"page_tokens": args.page_tokens, "bandwidth_bytes_per_cycle": args.bandwidth_bytes_per_cycle, "pe_counts": args.pe_counts, "schedulers": args.schedulers, "throughput_ops_per_cycle": args.throughput_ops_per_cycle, "attention_ops_per_kv_token": args.attention_ops_per_kv_token, "metadata_lookup_bytes_per_page": args.metadata_lookup_bytes_per_page, "metadata_lookup_cycles_per_page": args.metadata_lookup_cycles_per_page, "head_dispatch_cycles": args.head_dispatch_cycles, "pending_position_bytes_per_token": args.pending_position_bytes_per_token, "hybrid_merge_state_bytes_per_head": args.hybrid_merge_state_bytes_per_head, "hybrid_merge_cycles_per_head": args.hybrid_merge_cycles_per_head}, "state_timing": "For decode model call c, packed/pending state is taken after all shadow admissions from calls strictly before c; current-call admissions are charged after that attention proxy.", "baselines": {"full_kv": "Dense Full-KV read without admission charge.", "hybrid_dense_pending_packed": "Candidate sparse attention: pending retained cold KV is token-gathered from dense staging while admitted cold KV is read from exact shadow packed pages.", "wait_for_queue_drain": "Full KV until the pre-call shadow FIFO is empty, then the same packed-page proxy without hybrid merge/index costs."}, "boundaries": ["The source generation used Full KV; no policy-on sparse attention was executed.", "Admission, metadata, index, merge, bandwidth, and cycles are explicit model accounting, not HBM/DRAM counters, allocator measurements, or latency/throughput results.", "Sequential admission-cycle charging is a conservative proxy and does not establish actual overlap."]}
+    manifest = {"schema_version": "kvzap-route-a36-hybrid-activation-dse-1.1", "git_commit": get_git_commit(), "lifecycle_dir": str(args.lifecycle_dir), "shadow_dir": str(args.shadow_dir), "a1_dir": str(args.a1_dir), "source_artifact_sha256": provenance, "assumptions": {"page_tokens": args.page_tokens, "bandwidth_bytes_per_cycle": args.bandwidth_bytes_per_cycle, "pe_counts": args.pe_counts, "schedulers": args.schedulers, "throughput_ops_per_cycle": args.throughput_ops_per_cycle, "attention_ops_per_kv_token": args.attention_ops_per_kv_token, "metadata_lookup_bytes_per_page": args.metadata_lookup_bytes_per_page, "metadata_lookup_cycles_per_page": args.metadata_lookup_cycles_per_page, "head_dispatch_cycles": args.head_dispatch_cycles, "pending_position_bytes_per_token": args.pending_position_bytes_per_token, "pending_gather_bytes_per_token_points": args.pending_gather_bytes_per_token_points, "hybrid_merge_state_bytes_per_head_points": args.hybrid_merge_state_bytes_per_head_points, "hybrid_merge_cycles_per_head_points": args.hybrid_merge_cycles_per_head_points, "pending_staging_capacity_tokens_per_layer_points": args.pending_staging_capacity_tokens_per_layer_points, "pending_overflow_policy": args.pending_overflow_policy}, "state_timing": "For decode model call c, packed/pending state is taken after all shadow admissions from calls strictly before c; current-call admissions are charged after that attention proxy.", "baselines": {"full_kv": "Dense Full-KV read without admission charge.", "hybrid_dense_pending_packed": "Candidate sparse attention: pending retained cold KV is token-gathered from dense staging while admitted cold KV is read from exact shadow packed pages. A layer exceeding staging capacity uses declared Full-KV fallback.", "wait_for_queue_drain": "Full KV until the pre-call shadow FIFO is empty, then the same packed-page proxy without hybrid merge/index costs."}, "boundaries": ["The source generation used Full KV; no policy-on sparse attention was executed.", "Admission, metadata, index, merge, gather amplification, staging fallback, bandwidth, and cycles are explicit model accounting, not HBM/DRAM counters, allocator measurements, or latency/throughput results.", "Sequential admission-cycle charging is a conservative proxy and does not establish actual overlap."]}
     (args.output_dir / "hybrid_activation_manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"Route-A3.6 modeled {len(summaries)} summaries and {len(steps)} step rows: {args.output_dir}")
 
