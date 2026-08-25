@@ -1,8 +1,10 @@
 from types import SimpleNamespace
+import json
 
 import torch
 
 from kvpress.admission_shadow import CalibratedAdmissionShadow, LayerBatchAdmissionShadow, PackedKVAdmissionShadow
+from tools.run_kvzap_admission_shadow import validate_expected_a2
 
 
 def test_shadow_reads_kv_without_mutating_source_and_packs_mature_keep_positions():
@@ -53,3 +55,12 @@ def test_v2_batch_uses_common_planning_scope_and_zero_delay_packs_immediately():
     assert task["planning_host_us"] >= 0
     assert task["packed_admitted_tokens"] == task["decided_admitted_tokens"] == 1
     assert task["member_head_count"] == 2
+
+
+def test_expected_a2_binding_rejects_different_request_content(tmp_path):
+    request = {"request_id": "r", "context": "c", "question": "q"}
+    args = SimpleNamespace(model_name="m", model_revision="mr", predictor_name="p", predictor_revision="pr", threshold=-4.0, window_size=128, page_tokens=64, kv_bytes_per_token=512, max_new_tokens=8)
+    from tools.export_kvzap_predictor_trace import stable_hash
+    manifest = {"schema_version": "kvzap-route-a2-readonly-lifecycle-1.0", "request_id": "r", "model": "m", "model_revision": "mr", "predictor_checkpoint": "p", "predictor_revision": "pr", "threshold": -4.0, "sliding_window": 128, "page_tokens": 64, "kv_bytes_per_layer_head_token": 512, "max_new_tokens": 8, "config": {"request_content_hash": stable_hash({"context": "c", "question": "q"})}, "trace_equivalence": {"normal_observer_record_answer_sha256": "a" * 64}}
+    (tmp_path / "lifecycle_manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    assert validate_expected_a2(tmp_path, args, request) == "a" * 64

@@ -27,6 +27,7 @@ def parse_args() -> argparse.Namespace:
     request.add_argument("--preset", choices=PRESETS, default="retrieval")
     request.add_argument("--input-jsonl", type=Path)
     parser.add_argument("--request-id")
+    parser.add_argument("--expected-a2-lifecycle-dir", type=Path, help="Optional frozen A2 directory. Verify request content/config before running and Full-KV answer hash after running.")
     parser.add_argument("--context-repetitions", type=int, default=12)
     parser.add_argument("--model-name", default=DEFAULT_MODEL)
     parser.add_argument("--model-revision", default=GATE_B_MODEL_REVISION)
@@ -64,6 +65,38 @@ def run_shadow(pipe, observer: ReadOnlyKVzapLifecycleObserver, shadow: PackedKVA
     return output
 
 
+def validate_expected_a2(path: Path, args: argparse.Namespace, request: dict[str, Any]) -> str:
+    manifest_path = path / "lifecycle_manifest.json"
+    if not manifest_path.is_file():
+        raise FileNotFoundError("expected A2 directory lacks lifecycle_manifest.json")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("schema_version") != "kvzap-route-a2-readonly-lifecycle-1.0":
+        raise ValueError("expected A2 manifest schema is unsupported")
+    expected_hash = stable_hash({"context": request["context"], "question": request["question"]})
+    config = manifest.get("config", {})
+    if config.get("request_content_hash") != expected_hash:
+        raise ValueError("input request content does not match expected frozen A2 lifecycle")
+    checks = {
+        "request_id": str(request["request_id"]) == str(manifest.get("request_id")),
+        "model": args.model_name == manifest.get("model"),
+        "model_revision": args.model_revision == manifest.get("model_revision"),
+        "predictor": args.predictor_name == manifest.get("predictor_checkpoint"),
+        "predictor_revision": args.predictor_revision == manifest.get("predictor_revision"),
+        "threshold": args.threshold == float(manifest.get("threshold")),
+        "window": args.window_size == int(manifest.get("sliding_window")),
+        "page_tokens": args.page_tokens == int(manifest.get("page_tokens")),
+        "kv_bytes": args.kv_bytes_per_token == int(manifest.get("kv_bytes_per_layer_head_token")),
+        "max_new_tokens": args.max_new_tokens == int(manifest.get("max_new_tokens")),
+    }
+    failed = [name for name, passed in checks.items() if not passed]
+    if failed:
+        raise ValueError(f"A3.5 request/config differs from expected frozen A2 fields: {failed}")
+    answer = manifest.get("trace_equivalence", {}).get("normal_observer_record_answer_sha256")
+    if not answer:
+        raise ValueError("expected A2 manifest lacks normal Full-KV answer hash")
+    return str(answer)
+
+
 def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
@@ -78,6 +111,7 @@ def main() -> None:
     if not gate["passed"]:
         raise ValueError("Frozen Gate-A evidence failed validation")
     request = load_jsonl_request(args.input_jsonl, args.request_id) if args.input_jsonl else build_builtin_request(args.preset, args.context_repetitions)
+    expected_a2_answer = validate_expected_a2(args.expected_a2_lifecycle_dir, args, request) if args.expected_a2_lifecycle_dir else None
     predictor_snapshot = Path(snapshot_download(repo_id=args.predictor_name, revision=args.predictor_revision))
     if predictor_snapshot.name != args.predictor_revision:
         raise ValueError("Resolved predictor snapshot does not match the frozen revision")
@@ -101,6 +135,8 @@ def main() -> None:
         shadow_args.update(submission_mode=args.submission_mode, deferred_decode_steps=args.deferred_admission_decode_steps)
     print("Pass 1/3: normal Full-KV generation without observer...")
     normal = run_request(pipe, str(request["context"]), str(request["question"]), args.seed, args.max_new_tokens)
+    if expected_a2_answer is not None and answer_hash(normal) != expected_a2_answer:
+        raise AssertionError("normal Full-KV answer differs from the expected frozen A2 lifecycle; no shadow run was written")
     print("Pass 2/3: silent read-only lifecycle plus shadow packing...")
     silent_shadow = shadow_class(record_tasks=False, **shadow_args)
     silent_observer = ReadOnlyKVzapLifecycleObserver(pipe.model, KVzapPress(model_type="mlp", predictor_revision=args.predictor_revision), record_events=False, admission_sink=silent_shadow, **common)
@@ -120,7 +156,7 @@ def main() -> None:
     shadow_paths = recorded_shadow.write(args.output_dir)
     config = {"model": args.model_name, "model_revision": model_revision, "predictor": args.predictor_name, "predictor_revision": args.predictor_revision, "threshold": args.threshold, "sliding_window": args.window_size, "page_tokens": args.page_tokens, "kv_bytes_per_layer_head_token": args.kv_bytes_per_token, "metadata_bytes_per_cold_page": args.metadata_bytes_per_page, "seed": args.seed, "max_new_tokens": args.max_new_tokens, "request_id": request["request_id"]}
     schema = "kvzap-route-a35-admission-shadow-1.2" if args.submission_mode.endswith("_v2") else "kvzap-route-a35-admission-shadow-1.1"
-    manifest = {"schema_version": schema, "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config_hash": stable_hash(config), "config": config, "submission_mode": args.submission_mode, "deferred_admission_decode_steps": args.deferred_admission_decode_steps, "model": args.model_name, "model_revision": model_revision, "predictor_checkpoint": args.predictor_name, "predictor_revision": args.predictor_revision, "request_id": request["request_id"], "gate_a_evidence": gate, "source_artifact_sha256": {"gate_a_manifest": file_sha256(args.gate_a_evidence / "manifest.json"), "gate_a_score_mask": file_sha256(args.gate_a_evidence / "score_mask.npz")}, "trace_equivalence": {"answers_identical": True, "answer_sha256": hashes[0], "lifecycle_digests_identical": True, "shadow_semantic_digests_identical": True, "shadow_semantic_digest": recorded_shadow.semantic_digest}, "shadow_summary": recorded_shadow.summary(), "observational_guards": {"full_kv_remains_authoritative": True, "dms_press_used": False, "model_cache_mutated_by_shadow": False, "sparse_attention_used": False}, "measurement_boundary": ["planning_host_us, submit_host_us, and gpu_envelope_ms measure this reference implementation only, not end-to-end decode latency.", "per_layer_batch_v2 is a grouped reference submission envelope; its inner per-head gather/page writes are not a fused kernel.", "No field is an HBM/DRAM counter, allocator measurement, throughput result, or edge-hardware calibration."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
+    manifest = {"schema_version": schema, "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config_hash": stable_hash(config), "config": config, "submission_mode": args.submission_mode, "deferred_admission_decode_steps": args.deferred_admission_decode_steps, "expected_a2_lifecycle_dir": str(args.expected_a2_lifecycle_dir) if args.expected_a2_lifecycle_dir else None, "model": args.model_name, "model_revision": model_revision, "predictor_checkpoint": args.predictor_name, "predictor_revision": args.predictor_revision, "request_id": request["request_id"], "gate_a_evidence": gate, "source_artifact_sha256": {"gate_a_manifest": file_sha256(args.gate_a_evidence / "manifest.json"), "gate_a_score_mask": file_sha256(args.gate_a_evidence / "score_mask.npz")}, "trace_equivalence": {"answers_identical": True, "answer_sha256": hashes[0], "expected_a2_answer_sha256": expected_a2_answer, "expected_a2_answer_matches": expected_a2_answer is None or hashes[0] == expected_a2_answer, "lifecycle_digests_identical": True, "shadow_semantic_digests_identical": True, "shadow_semantic_digest": recorded_shadow.semantic_digest}, "shadow_summary": recorded_shadow.summary(), "observational_guards": {"full_kv_remains_authoritative": True, "dms_press_used": False, "model_cache_mutated_by_shadow": False, "sparse_attention_used": False}, "measurement_boundary": ["planning_host_us, submit_host_us, and gpu_envelope_ms measure this reference implementation only, not end-to-end decode latency.", "per_layer_batch_v2 is a grouped reference submission envelope; its inner per-head gather/page writes are not a fused kernel.", "No field is an HBM/DRAM counter, allocator measurement, throughput result, or edge-hardware calibration."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
     manifest_path = args.output_dir / "admission_shadow_manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print("A3.5 equivalence passed: Full-KV answers, lifecycle digest, and shadow semantic digest match.")

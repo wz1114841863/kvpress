@@ -273,6 +273,11 @@ step N+1. It reports planning, submit, and GPU-envelope components separately.
 The deferred queue is a shadow-store experiment only; it neither changes dense
 attention nor validates a packed-attention generation policy.
 
+Cross-workload A3.5b repeats must bind to their corresponding frozen A2
+lifecycle manifest. The runner validates the original JSONL request content
+hash and matching model/predictor/page configuration before collection, then
+requires the normal Full-KV answer hash to match the frozen A2 manifest.
+
 ## Required provenance and conclusion boundaries
 
 Every Route-A experiment must record source trace hashes, page size, cache

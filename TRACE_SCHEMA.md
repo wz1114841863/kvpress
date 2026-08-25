@@ -462,3 +462,9 @@ per_layer_batch_v2 timing. Both record a common planning scope
 envelope (gpu_envelope_ms). Optional deferred-admission-decode-steps N queues
 retained mature positions through the first N decode calls and flushes them at
 call N+1 if it is observed. Dense Full KV remains the attention source.
+
+For a repeat of a frozen LongBench A2 request, the runner accepts
+expected-a2-lifecycle-dir together with the original input JSONL and request id.
+It checks request content hash and frozen model/predictor/page parameters before
+loading the model, then checks the normal Full-KV answer hash before recording
+any A3.5 output.
