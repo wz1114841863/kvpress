@@ -19,7 +19,7 @@ def validate(shadow_dir: Path) -> dict[str, int]:
     if not all(path.is_file() for path in (manifest_path, final_path)):
         raise FileNotFoundError("A3.5 requires manifest and final-state CSVs")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("schema_version") not in {"kvzap-route-a35-admission-shadow-1.0", "kvzap-route-a35-admission-shadow-1.1", "kvzap-route-a35-admission-shadow-1.2", "kvzap-route-a35-admission-shadow-1.3"}:
+    if manifest.get("schema_version") not in {"kvzap-route-a35-admission-shadow-1.0", "kvzap-route-a35-admission-shadow-1.1", "kvzap-route-a35-admission-shadow-1.2", "kvzap-route-a35-admission-shadow-1.3", "kvzap-route-a35-admission-shadow-1.4"}:
         raise ValueError("Unsupported A3.5 schema")
     if not all(manifest.get("trace_equivalence", {}).get(key) for key in ("answers_identical", "lifecycle_digests_identical", "shadow_semantic_digests_identical")):
         raise ValueError("A3.5 equivalence guard failed")
@@ -70,6 +70,20 @@ def validate(shadow_dir: Path) -> dict[str, int]:
         packed_total = sum(int(row["packed_admitted_tokens"]) for row in tasks)
         if packed_total != sum(int(row["cold_logical_tokens"]) for row in final):
             raise ValueError("A3.5b-V2 final state disagrees with packed admissions")
+    if manifest.get("schema_version") == "kvzap-route-a35-admission-shadow-1.4":
+        progress_path = shadow_dir / "admission_shadow_v2_head_progress.csv"
+        if not progress_path.is_file():
+            raise FileNotFoundError("A3.6 hybrid-head progress CSV is missing")
+        progress = list(csv.DictReader(progress_path.open()))
+        by_batch: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
+        for row in progress:
+            by_batch[(row["model_call"], row["layer"])].append(row)
+            if int(row["packed_admitted_tokens"]) > int(row["decided_admitted_tokens"]):
+                raise ValueError("hybrid-head progress packs more than its lifecycle decision")
+        for task in tasks:
+            matching = by_batch[(task["model_call"], task["layer"])]
+            if len(matching) != int(task["member_head_count"]) or sum(int(row["packed_admitted_tokens"]) for row in matching) != int(task["packed_admitted_tokens"]) or sum(int(row["pending_tokens_after"]) for row in matching) != int(task["pending_tokens_after"]):
+                raise ValueError("hybrid-head progress disagrees with its V2 layer batch")
     for row in final:
         if v2_mode:
             if int(row["cold_allocated_slots"]) < int(row["cold_logical_tokens"]):

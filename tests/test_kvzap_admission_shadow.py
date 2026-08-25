@@ -60,7 +60,7 @@ def test_v2_batch_uses_common_planning_scope_and_zero_delay_packs_immediately():
 def test_v2_budget_caps_layer_flush_and_retains_pending_fifo():
     keys = torch.arange(12, dtype=torch.float32).reshape(1, 2, 3, 2)
     cache = SimpleNamespace(layers=[SimpleNamespace(keys=keys, values=keys + 100)])
-    shadow = CalibratedAdmissionShadow(request_id="unit", layers=1, heads=2, window=2, page_tokens=2, expected_kv_bytes_per_token=16, record_tasks=True, submission_mode="per_layer_batch_v2", deferred_decode_steps=0, admission_flush_token_budget=1)
+    shadow = CalibratedAdmissionShadow(request_id="unit", layers=1, heads=2, window=2, page_tokens=2, expected_kv_bytes_per_token=16, record_tasks=True, submission_mode="per_layer_batch_v2", deferred_decode_steps=0, admission_flush_token_budget=1, record_hybrid_head_progress=True)
     rows = [{"layer": 0, "kv_head": 0, "cold_admitted_tokens": 1}, {"layer": 0, "kv_head": 1, "cold_admitted_tokens": 1}]
     shadow.observe(layer=0, score_start=0, scores=torch.zeros((2, 3)), threshold=-0.5, model_call=0, phase="context_prefill", kwargs={"past_key_values": cache}, lifecycle_rows=rows)
     shadow.finalize()
@@ -68,6 +68,22 @@ def test_v2_budget_caps_layer_flush_and_retains_pending_fifo():
     assert task["packed_admitted_tokens"] == 1
     assert task["pending_tokens_after"] == 1
     assert shadow.summary()["pending_tokens_at_end"] == 1
+    assert len(shadow._hybrid_head_progress) == 2
+    assert sum(row["packed_admitted_tokens"] for row in shadow._hybrid_head_progress) == 1
+    assert sum(row["pending_tokens_after"] for row in shadow._hybrid_head_progress) == 1
+
+
+def test_v2_hybrid_head_progress_writes_separate_untimed_csv(tmp_path):
+    keys = torch.arange(12, dtype=torch.float32).reshape(1, 2, 3, 2)
+    cache = SimpleNamespace(layers=[SimpleNamespace(keys=keys, values=keys + 100)])
+    shadow = CalibratedAdmissionShadow(request_id="unit", layers=1, heads=2, window=2, page_tokens=2, expected_kv_bytes_per_token=16, record_tasks=True, submission_mode="per_layer_batch_v2", deferred_decode_steps=0, admission_flush_token_budget=1, record_hybrid_head_progress=True)
+    rows = [{"layer": 0, "kv_head": 0, "cold_admitted_tokens": 1}, {"layer": 0, "kv_head": 1, "cold_admitted_tokens": 1}]
+    shadow.observe(layer=0, score_start=0, scores=torch.zeros((2, 3)), threshold=-0.5, model_call=0, phase="context_prefill", kwargs={"past_key_values": cache}, lifecycle_rows=rows)
+    output = tmp_path / "out"
+    output.mkdir()
+    paths = shadow.write(output)
+    assert paths["hybrid_head_progress"].is_file()
+    assert len(paths["hybrid_head_progress"].read_text(encoding="utf-8").splitlines()) == 3
 
 
 def test_expected_a2_binding_rejects_different_request_content(tmp_path):

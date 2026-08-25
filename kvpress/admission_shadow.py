@@ -30,6 +30,9 @@ BATCH_COLUMNS = (
 V2_COLUMNS = (
     "request_id", "submission_mode", "model_call", "phase", "layer", "kv_head", "member_head_count", "active_head_count", "matured_layer_head_slots", "decided_admitted_tokens", "packed_admitted_tokens", "dropped_tokens", "pending_tokens_before", "pending_tokens_after", "admission_flush_token_budget", "source_kv_bytes", "packed_kv_bytes", "position_metadata_bytes", "new_page_allocations", "planning_host_us", "submit_host_us", "gpu_envelope_ms",
 )
+HYBRID_HEAD_PROGRESS_COLUMNS = (
+    "request_id", "model_call", "phase", "layer", "kv_head", "decided_admitted_tokens", "packed_admitted_tokens", "pending_tokens_before", "pending_tokens_after", "admission_flush_token_budget", "source_gather_bytes", "packed_kv_bytes", "position_metadata_bytes", "new_page_allocations", "cold_logical_tokens_after", "cold_allocated_slots_after", "cold_page_count_after", "tail_valid_count_after", "packed_position_sum",
+)
 FINAL_COLUMNS = (
     "request_id", "layer", "kv_head", "cold_logical_tokens", "cold_allocated_slots", "cold_page_count", "tail_valid_count", "cold_page_allocations", "packed_kv_bytes", "position_metadata_bytes", "key_sum", "value_sum", "position_sum",
 )
@@ -298,14 +301,16 @@ class LayerBatchAdmissionShadow(PackedKVAdmissionShadow):
 class CalibratedAdmissionShadow(PackedKVAdmissionShadow):
     """A3.5b-V2 paired timing and deferred-flush reference."""
 
-    def __init__(self, *, submission_mode: str, deferred_decode_steps: int, admission_flush_token_budget: int | None = None, **kwargs: Any):
+    def __init__(self, *, submission_mode: str, deferred_decode_steps: int, admission_flush_token_budget: int | None = None, record_hybrid_head_progress: bool = False, **kwargs: Any):
         if submission_mode not in {"per_head_v2", "per_layer_batch_v2"} or deferred_decode_steps < 0 or admission_flush_token_budget is not None and admission_flush_token_budget <= 0:
             raise ValueError("invalid A3.5b-V2 submission mode or deferred gate")
         super().__init__(**kwargs)
         self.submission_mode, self.deferred_decode_steps = submission_mode, deferred_decode_steps
         self.admission_flush_token_budget = admission_flush_token_budget
+        self.record_hybrid_head_progress = record_hybrid_head_progress
         self._pending: dict[tuple[int, int], deque[int]] = defaultdict(deque)
         self._v2_tasks: list[dict[str, Any]] = []
+        self._hybrid_head_progress: list[dict[str, Any]] = []
 
     def observe(self, *, layer: int, score_start: int, scores: torch.Tensor, threshold: float, model_call: int, phase: str, kwargs: dict[str, Any], lifecycle_rows: list[dict[str, Any]]) -> None:
         if self._finalized or scores.ndim != 2 or scores.shape[0] != self.heads or score_start != self._next_position[layer]:
@@ -359,9 +364,11 @@ class CalibratedAdmissionShadow(PackedKVAdmissionShadow):
             allocations = 0
             for plan in group:
                 payload = plan["payload"]
+                plan["new_page_allocations"] = 0
                 if payload.numel():
                     state = self._state(layer, plan["head"], keys)
-                    allocations += state.append(keys[0, plan["head"]].index_select(0, payload), values[0, plan["head"]].index_select(0, payload), payload)
+                    plan["new_page_allocations"] = state.append(keys[0, plan["head"]].index_select(0, payload), values[0, plan["head"]].index_select(0, payload), payload)
+                    allocations += plan["new_page_allocations"]
             if end_event is not None:
                 end_event.record()
             packed = sum(int(plan["payload"].numel()) for plan in group)
@@ -374,6 +381,31 @@ class CalibratedAdmissionShadow(PackedKVAdmissionShadow):
                 self._pending_events.append((row, start_event, end_event))
             if self.record_tasks:
                 self._v2_tasks.append(row)
+                if self.record_hybrid_head_progress:
+                    for plan in group:
+                        state = self._pages.get((layer, plan["head"]))
+                        packed = int(plan["payload"].numel())
+                        self._hybrid_head_progress.append({
+                            "request_id": self.request_id,
+                            "model_call": model_call,
+                            "phase": phase,
+                            "layer": layer,
+                            "kv_head": plan["head"],
+                            "decided_admitted_tokens": int(plan["decided"].numel()),
+                            "packed_admitted_tokens": packed,
+                            "pending_tokens_before": int(plan["pending_before"]),
+                            "pending_tokens_after": int(plan["pending_after"]),
+                            "admission_flush_token_budget": self.admission_flush_token_budget,
+                            "source_gather_bytes": packed * kv_bytes,
+                            "packed_kv_bytes": packed * kv_bytes,
+                            "position_metadata_bytes": packed * 8,
+                            "new_page_allocations": plan["new_page_allocations"],
+                            "cold_logical_tokens_after": state.logical_tokens if state else 0,
+                            "cold_allocated_slots_after": state.allocated_slots if state else 0,
+                            "cold_page_count_after": len(state.keys) if state else 0,
+                            "tail_valid_count_after": state.tail_valid_count if state else 0,
+                            "packed_position_sum": int(plan["payload"].sum().item()) if packed else 0,
+                        })
 
     def write(self, output_dir: Path) -> dict[str, Path]:
         self.finalize()
@@ -385,7 +417,15 @@ class CalibratedAdmissionShadow(PackedKVAdmissionShadow):
                 writer = csv.DictWriter(stream, fieldnames=list(columns))
                 writer.writeheader()
                 writer.writerows(rows)
-        return {"v2_tasks": task_path, "final_state": final_path}
+        paths = {"v2_tasks": task_path, "final_state": final_path}
+        if self.record_hybrid_head_progress:
+            progress_path = output_dir / "admission_shadow_v2_head_progress.csv"
+            with progress_path.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(HYBRID_HEAD_PROGRESS_COLUMNS))
+                writer.writeheader()
+                writer.writerows(self._hybrid_head_progress)
+            paths["hybrid_head_progress"] = progress_path
+        return paths
 
     def summary(self) -> dict[str, Any]:
         self.finalize()

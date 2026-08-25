@@ -487,3 +487,21 @@ admission-flush-token-budget bounds physical packed writes per model-call/layer;
 unserved retained positions remain in a FIFO pending queue. The companion
 analyze_kvzap_admission_budget tool reports p50/p95/p99/max packed burst,
 max pending depth, and whether the queue drained by the observed horizon.
+
+Schema `kvzap-route-a35-admission-shadow-1.4` is opt-in through
+`--record-hybrid-head-progress` and requires budgeted `per_layer_batch_v2`.
+It additionally writes `admission_shadow_v2_head_progress.csv`: one untimed
+row per `(model_call, layer, kv_head)` with decided/packed/pending counts,
+actual packed-page state after the call, page allocations, and packed position
+sum. The V2 layer-batch task remains the timing envelope; the progress CSV is
+not a kernel timing record. The validator checks that every layer batch equals
+the sum of its head-progress rows.
+
+`tools/simulate_kvzap_route_a3_hybrid_activation.py` requires this 1.4 profile
+because a batch aggregate cannot determine a head's dense-pending versus
+packed-page read state. It models Full KV, hybrid dense-pending plus packed
+cold KV, and wait-for-queue-drain policies under explicit index, metadata,
+merge, bandwidth, and cycle assumptions. The state for decode call `c` is the
+FIFO state after calls strictly before `c`; current-call admissions are charged
+after its attention proxy. Its bytes/cycles are not HBM/DRAM, allocator,
+latency, throughput, or policy-on generation measurements.

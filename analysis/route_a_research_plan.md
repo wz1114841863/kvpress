@@ -311,6 +311,33 @@ an explicit per-(model-call, layer) token budget. It records burst percentiles,
 queue depth, and end-of-horizon backlog. The budget is a reference workload
 control, not a hardware service-rate or sparse-attention result.
 
+### A3.6 — hybrid dense-pending + packed-cold activation DSE
+
+The unresolved Route-A question is not aggregate B-token service alone: while
+the FIFO drains, a deployable attention path must read retained cold KV from two
+stores and merge their partial softmax state. Schema-1.4 of the A3.5 shadow is
+opt-in through `--record-hybrid-head-progress`; it records untimed per
+`(model-call, layer, kv_head)` FIFO state (packed logical/allocated/page state,
+pending retained tokens, and page allocations). It still leaves Full KV
+authoritative and establishes no sparse-attention equivalence.
+
+`tools/simulate_kvzap_route_a3_hybrid_activation.py` consumes a validated A2
+lifecycle and this schema-1.4 shadow. It uses the state produced strictly
+before each decode call and compares three declared accounting policies:
+
+- Full KV;
+- hybrid: token-gather pending retained cold KV from dense staging plus packed
+  pages already admitted, with explicit pending-index and partial-softmax merge
+  byte/cycle assumptions;
+- wait-for-drain: retain Full KV until the pre-call FIFO is empty, then use the
+  packed-page proxy.
+
+Admission bytes are deliberately charged sequentially in this first DSE. The
+hybrid result is not a measured overlap, HBM traffic, allocator result, sparse
+attention execution, or generation/accuracy result. In particular, it makes
+the required dual-source and online-softmax-merge architecture cost explicit
+rather than silently treating a layer-batch aggregate as per-head layout.
+
 ## Required provenance and conclusion boundaries
 
 Every Route-A experiment must record source trace hashes, page size, cache
