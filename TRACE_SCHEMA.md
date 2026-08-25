@@ -455,3 +455,10 @@ per `(model_call, layer)` plus untimed constituent head rows. This reduces the
 software submission granularity from one row per layer/head to one per layer,
 but the implementation still performs each head's gather/page write separately;
 it must not be described as a fused attention or gather kernel.
+
+Schema kvzap-route-a35-admission-shadow-1.2 adds paired per_head_v2 and
+per_layer_batch_v2 timing. Both record a common planning scope
+(planning_host_us), a copy/page-submit scope (submit_host_us), and a CUDA stream
+envelope (gpu_envelope_ms). Optional deferred-admission-decode-steps N queues
+retained mature positions through the first N decode calls and flushes them at
+call N+1 if it is observed. Dense Full KV remains the attention source.

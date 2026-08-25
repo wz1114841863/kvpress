@@ -26,6 +26,9 @@ TASK_COLUMNS = (
 BATCH_COLUMNS = (
     "request_id", "model_call", "phase", "layer", "member_head_count", "active_head_count", "matured_layer_head_slots", "admitted_tokens", "dropped_tokens", "source_kv_bytes", "packed_kv_bytes", "position_metadata_bytes", "new_page_allocations", "cold_logical_tokens", "cold_allocated_slots", "cold_page_count", "host_submit_us", "device_elapsed_ms",
 )
+V2_COLUMNS = (
+    "request_id", "submission_mode", "model_call", "phase", "layer", "kv_head", "member_head_count", "active_head_count", "matured_layer_head_slots", "decided_admitted_tokens", "packed_admitted_tokens", "dropped_tokens", "pending_tokens_before", "pending_tokens_after", "source_kv_bytes", "packed_kv_bytes", "position_metadata_bytes", "new_page_allocations", "planning_host_us", "submit_host_us", "gpu_envelope_ms",
+)
 FINAL_COLUMNS = (
     "request_id", "layer", "kv_head", "cold_logical_tokens", "cold_allocated_slots", "cold_page_count", "tail_valid_count", "cold_page_allocations", "packed_kv_bytes", "position_metadata_bytes", "key_sum", "value_sum", "position_sum",
 )
@@ -289,3 +292,102 @@ class LayerBatchAdmissionShadow(PackedKVAdmissionShadow):
                 writer.writeheader()
                 writer.writerows(rows)
         return {"batch_tasks": batch_path, "head_tasks": head_path, "final_state": final_path}
+
+
+class CalibratedAdmissionShadow(PackedKVAdmissionShadow):
+    """A3.5b-V2 paired timing and deferred-flush reference."""
+
+    def __init__(self, *, submission_mode: str, deferred_decode_steps: int, **kwargs: Any):
+        if submission_mode not in {"per_head_v2", "per_layer_batch_v2"} or deferred_decode_steps < 0:
+            raise ValueError("invalid A3.5b-V2 submission mode or deferred gate")
+        super().__init__(**kwargs)
+        self.submission_mode, self.deferred_decode_steps = submission_mode, deferred_decode_steps
+        self._pending: dict[tuple[int, int], list[int]] = defaultdict(list)
+        self._v2_tasks: list[dict[str, Any]] = []
+
+    def observe(self, *, layer: int, score_start: int, scores: torch.Tensor, threshold: float, model_call: int, phase: str, kwargs: dict[str, Any], lifecycle_rows: list[dict[str, Any]]) -> None:
+        if self._finalized or scores.ndim != 2 or scores.shape[0] != self.heads or score_start != self._next_position[layer]:
+            raise AssertionError("invalid or non-contiguous A3.5b-V2 observation")
+        keys, values = self._cache_tensors(kwargs, layer)
+        kv_bytes = 2 * keys.shape[-1] * keys.element_size()
+        if keys.shape[1] != self.heads or keys.shape[2] < score_start + scores.shape[1] or kv_bytes != self.expected_kv_bytes_per_token:
+            raise AssertionError("A3.5b-V2 cache dimensions or bytes/token disagree")
+        decisions = (scores >= threshold).detach().to(device="cpu", dtype=torch.bool)
+        matured: list[tuple[int, torch.Tensor]] = []
+        for offset in range(scores.shape[1]):
+            self._hot[layer].append((score_start + offset, decisions[:, offset]))
+            if len(self._hot[layer]) > self.window:
+                matured.append(self._hot[layer].popleft())
+        self._next_position[layer] += scores.shape[1]
+        planning_started = time.perf_counter_ns()
+        positions = torch.tensor([position for position, _keep in matured], dtype=torch.long, device=keys.device)
+        decode_step = model_call - 1 if phase == "decode" else 0
+        active = self.deferred_decode_steps == 0 or (phase == "decode" and decode_step > self.deferred_decode_steps)
+        plans: list[dict[str, Any]] = []
+        for head, lifecycle_row in enumerate(lifecycle_rows):
+            keep = torch.tensor([bool(mask[head]) for _position, mask in matured], dtype=torch.bool, device=keys.device)
+            decided = positions[keep]
+            if decided.numel() != int(lifecycle_row["cold_admitted_tokens"]):
+                raise AssertionError("A3.5b-V2 decisions disagree with lifecycle")
+            identity = (layer, head)
+            pending_before = len(self._pending[identity])
+            if active:
+                old = torch.tensor(self._pending[identity], dtype=torch.long, device=keys.device) if self._pending[identity] else positions.new_empty((0,))
+                payload = torch.cat((old, decided))
+                self._pending[identity].clear()
+            else:
+                self._pending[identity].extend(int(item) for item in decided.detach().cpu().tolist())
+                payload = positions.new_empty((0,))
+            plans.append({"head": head, "decided": decided, "payload": payload, "pending_before": pending_before, "pending_after": len(self._pending[identity]), "matured": len(matured)})
+        planning_us = (time.perf_counter_ns() - planning_started) / 1000.0
+        groups = [[plan] for plan in plans] if self.submission_mode == "per_head_v2" else [plans]
+        for group in groups:
+            submit_started = time.perf_counter_ns()
+            start_event = end_event = None
+            if keys.is_cuda:
+                start_event, end_event = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+                start_event.record()
+            allocations = 0
+            for plan in group:
+                payload = plan["payload"]
+                if payload.numel():
+                    state = self._state(layer, plan["head"], keys)
+                    allocations += state.append(keys[0, plan["head"]].index_select(0, payload), values[0, plan["head"]].index_select(0, payload), payload)
+            if end_event is not None:
+                end_event.record()
+            packed = sum(int(plan["payload"].numel()) for plan in group)
+            decided = sum(int(plan["decided"].numel()) for plan in group)
+            matured_slots = sum(int(plan["matured"]) for plan in group)
+            row = {"request_id": self.request_id, "submission_mode": self.submission_mode, "model_call": model_call, "phase": phase, "layer": layer, "kv_head": group[0]["head"] if len(group) == 1 else "all", "member_head_count": len(group), "active_head_count": sum(plan["payload"].numel() > 0 for plan in group), "matured_layer_head_slots": matured_slots, "decided_admitted_tokens": decided, "packed_admitted_tokens": packed, "dropped_tokens": matured_slots - decided, "pending_tokens_before": sum(int(plan["pending_before"]) for plan in group), "pending_tokens_after": sum(int(plan["pending_after"]) for plan in group), "source_kv_bytes": matured_slots * kv_bytes, "packed_kv_bytes": packed * kv_bytes, "position_metadata_bytes": packed * 8, "new_page_allocations": allocations, "planning_host_us": planning_us / len(groups), "submit_host_us": (time.perf_counter_ns() - submit_started) / 1000.0, "gpu_envelope_ms": "not_available"}
+            semantic = {key: value for key, value in row.items() if key not in {"planning_host_us", "submit_host_us", "gpu_envelope_ms"}}
+            self._digest.update(json.dumps(semantic, sort_keys=True, separators=(",", ":")).encode())
+            if start_event is not None and end_event is not None:
+                self._pending_events.append((row, start_event, end_event))
+            if self.record_tasks:
+                self._v2_tasks.append(row)
+
+    def write(self, output_dir: Path) -> dict[str, Path]:
+        self.finalize()
+        if not self.record_tasks:
+            raise RuntimeError("Only a recording A3.5b-V2 shadow can write tasks")
+        task_path, final_path = output_dir / "admission_shadow_v2_tasks.csv", output_dir / "admission_shadow_final_state.csv"
+        for path, rows, columns in ((task_path, self._v2_tasks, V2_COLUMNS), (final_path, self.final_rows(), FINAL_COLUMNS)):
+            with path.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(columns))
+                writer.writeheader()
+                writer.writerows(rows)
+        return {"v2_tasks": task_path, "final_state": final_path}
+
+    def summary(self) -> dict[str, Any]:
+        self.finalize()
+        rows = self.final_rows()
+        return {"semantic_digest": self.semantic_digest, "task_count": len(self._v2_tasks) if self.record_tasks else 0, "admitted_tokens": sum(int(row["cold_logical_tokens"]) for row in rows), "allocated_slots": sum(int(row["cold_allocated_slots"]) for row in rows), "page_count": sum(int(row["cold_page_count"]) for row in rows)}
+
+    def finalize(self) -> None:
+        if self._finalized:
+            return
+        if self._pending_events:
+            torch.cuda.synchronize()
+            for task, start, end in self._pending_events:
+                task["gpu_envelope_ms"] = start.elapsed_time(end)
+        self._finalized = True

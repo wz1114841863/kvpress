@@ -267,6 +267,12 @@ from storage semantics. Its grouped envelope is not a fused gather kernel and
 does not establish an implementable accelerator throughput; a later deferred
 gate flush and fused kernel prototype require separate validation.
 
+A3.5b-V2 makes the per-head and per-layer-batch reference timing boundaries
+explicitly comparable and can defer physical shadow writes until observed decode
+step N+1. It reports planning, submit, and GPU-envelope components separately.
+The deferred queue is a shadow-store experiment only; it neither changes dense
+attention nor validates a packed-attention generation policy.
+
 ## Required provenance and conclusion boundaries
 
 Every Route-A experiment must record source trace hashes, page size, cache

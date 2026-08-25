@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import torch
 
-from kvpress.admission_shadow import LayerBatchAdmissionShadow, PackedKVAdmissionShadow
+from kvpress.admission_shadow import CalibratedAdmissionShadow, LayerBatchAdmissionShadow, PackedKVAdmissionShadow
 
 
 def test_shadow_reads_kv_without_mutating_source_and_packs_mature_keep_positions():
@@ -40,3 +40,16 @@ def test_layer_batch_shadow_emits_one_batch_for_all_heads():
     assert shadow._tasks[0]["active_head_count"] == 1
     assert shadow._tasks[0]["admitted_tokens"] == 1
     assert len(shadow._head_tasks) == 2
+
+
+def test_v2_batch_uses_common_planning_scope_and_zero_delay_packs_immediately():
+    keys = torch.arange(12, dtype=torch.float32).reshape(1, 2, 3, 2)
+    cache = SimpleNamespace(layers=[SimpleNamespace(keys=keys, values=keys + 100)])
+    shadow = CalibratedAdmissionShadow(request_id="unit", layers=1, heads=2, window=2, page_tokens=2, expected_kv_bytes_per_token=16, record_tasks=True, submission_mode="per_layer_batch_v2", deferred_decode_steps=0)
+    rows = [{"layer": 0, "kv_head": 0, "cold_admitted_tokens": 1}, {"layer": 0, "kv_head": 1, "cold_admitted_tokens": 0}]
+    shadow.observe(layer=0, score_start=0, scores=torch.tensor([[0.0, -1.0, 0.0], [-1.0, 0.0, 0.0]]), threshold=-0.5, model_call=0, phase="context_prefill", kwargs={"past_key_values": cache}, lifecycle_rows=rows)
+    shadow.finalize()
+    task = shadow._v2_tasks[0]
+    assert task["planning_host_us"] >= 0
+    assert task["packed_admitted_tokens"] == task["decided_admitted_tokens"] == 1
+    assert task["member_head_count"] == 2

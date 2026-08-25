@@ -15,7 +15,7 @@ from huggingface_hub import snapshot_download
 from transformers import pipeline
 
 from kvpress import KVzapPress
-from kvpress.admission_shadow import LayerBatchAdmissionShadow, PackedKVAdmissionShadow
+from kvpress.admission_shadow import CalibratedAdmissionShadow, LayerBatchAdmissionShadow, PackedKVAdmissionShadow
 from kvpress.lifecycle import ReadOnlyKVzapLifecycleObserver, language_model_layers
 from tools.export_kvzap_predictor_trace import GATE_A_PREDICTOR_REVISION, GATE_B_MODEL_REVISION, assert_no_runtime_mask_state, file_sha256, get_git_commit, stable_hash, validate_gate_a_evidence
 from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, build_builtin_request, load_jsonl_request, seed_everything
@@ -40,7 +40,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metadata-bytes-per-page", type=int, default=16)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max-new-tokens", type=int, default=8, help="Small probe only: this runs normal, silent shadow, and recorded shadow passes.")
-    parser.add_argument("--submission-mode", choices=("per_head", "per_layer_batch"), default="per_head", help="A3.5b per_layer_batch times one layer/call envelope but does not claim a fused gather kernel.")
+    parser.add_argument("--submission-mode", choices=("per_head", "per_layer_batch", "per_head_v2", "per_layer_batch_v2"), default="per_head", help="A3.5b-V2 modes use a common planning/submit timing boundary; batch modes do not claim fused gather kernels.")
+    parser.add_argument("--deferred-admission-decode-steps", type=int, default=0, help="A3.5b-V2 only: queue retained mature positions and flush at observed decode step N+1.")
     parser.add_argument("--output-dir", type=Path, required=True, help="New directory only; existing directories are never overwritten.")
     return parser.parse_args()
 
@@ -91,7 +92,13 @@ def main() -> None:
     layers = len(language_model_layers(pipe.model))
     common = dict(request_id=str(request["request_id"]), threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, kv_bytes_per_token=args.kv_bytes_per_token, metadata_bytes_per_page=args.metadata_bytes_per_page)
     shadow_args = dict(request_id=str(request["request_id"]), layers=layers, heads=int(pipe.model.config.num_key_value_heads), window=args.window_size, page_tokens=args.page_tokens, expected_kv_bytes_per_token=args.kv_bytes_per_token)
-    shadow_class = PackedKVAdmissionShadow if args.submission_mode == "per_head" else LayerBatchAdmissionShadow
+    if args.deferred_admission_decode_steps < 0:
+        raise ValueError("--deferred-admission-decode-steps must be non-negative")
+    if args.submission_mode in {"per_head", "per_layer_batch"} and args.deferred_admission_decode_steps:
+        raise ValueError("--deferred-admission-decode-steps requires an A3.5b-V2 submission mode")
+    shadow_class = PackedKVAdmissionShadow if args.submission_mode == "per_head" else LayerBatchAdmissionShadow if args.submission_mode == "per_layer_batch" else CalibratedAdmissionShadow
+    if shadow_class is CalibratedAdmissionShadow:
+        shadow_args.update(submission_mode=args.submission_mode, deferred_decode_steps=args.deferred_admission_decode_steps)
     print("Pass 1/3: normal Full-KV generation without observer...")
     normal = run_request(pipe, str(request["context"]), str(request["question"]), args.seed, args.max_new_tokens)
     print("Pass 2/3: silent read-only lifecycle plus shadow packing...")
@@ -112,7 +119,8 @@ def main() -> None:
     lifecycle_paths = recorded_observer.write(args.output_dir)
     shadow_paths = recorded_shadow.write(args.output_dir)
     config = {"model": args.model_name, "model_revision": model_revision, "predictor": args.predictor_name, "predictor_revision": args.predictor_revision, "threshold": args.threshold, "sliding_window": args.window_size, "page_tokens": args.page_tokens, "kv_bytes_per_layer_head_token": args.kv_bytes_per_token, "metadata_bytes_per_cold_page": args.metadata_bytes_per_page, "seed": args.seed, "max_new_tokens": args.max_new_tokens, "request_id": request["request_id"]}
-    manifest = {"schema_version": "kvzap-route-a35-admission-shadow-1.1", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config_hash": stable_hash(config), "config": config, "submission_mode": args.submission_mode, "model": args.model_name, "model_revision": model_revision, "predictor_checkpoint": args.predictor_name, "predictor_revision": args.predictor_revision, "request_id": request["request_id"], "gate_a_evidence": gate, "source_artifact_sha256": {"gate_a_manifest": file_sha256(args.gate_a_evidence / "manifest.json"), "gate_a_score_mask": file_sha256(args.gate_a_evidence / "score_mask.npz")}, "trace_equivalence": {"answers_identical": True, "answer_sha256": hashes[0], "lifecycle_digests_identical": True, "shadow_semantic_digests_identical": True, "shadow_semantic_digest": recorded_shadow.semantic_digest}, "shadow_summary": recorded_shadow.summary(), "observational_guards": {"full_kv_remains_authoritative": True, "dms_press_used": False, "model_cache_mutated_by_shadow": False, "sparse_attention_used": False}, "measurement_boundary": ["host_submit_us and CUDA event timing measure this reference implementation only, not end-to-end decode latency.", "per_layer_batch is a grouped reference submission envelope; its inner per-head gather/page writes are not a fused kernel.", "No field is an HBM/DRAM counter, allocator measurement, throughput result, or edge-hardware calibration."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
+    schema = "kvzap-route-a35-admission-shadow-1.2" if args.submission_mode.endswith("_v2") else "kvzap-route-a35-admission-shadow-1.1"
+    manifest = {"schema_version": schema, "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config_hash": stable_hash(config), "config": config, "submission_mode": args.submission_mode, "deferred_admission_decode_steps": args.deferred_admission_decode_steps, "model": args.model_name, "model_revision": model_revision, "predictor_checkpoint": args.predictor_name, "predictor_revision": args.predictor_revision, "request_id": request["request_id"], "gate_a_evidence": gate, "source_artifact_sha256": {"gate_a_manifest": file_sha256(args.gate_a_evidence / "manifest.json"), "gate_a_score_mask": file_sha256(args.gate_a_evidence / "score_mask.npz")}, "trace_equivalence": {"answers_identical": True, "answer_sha256": hashes[0], "lifecycle_digests_identical": True, "shadow_semantic_digests_identical": True, "shadow_semantic_digest": recorded_shadow.semantic_digest}, "shadow_summary": recorded_shadow.summary(), "observational_guards": {"full_kv_remains_authoritative": True, "dms_press_used": False, "model_cache_mutated_by_shadow": False, "sparse_attention_used": False}, "measurement_boundary": ["planning_host_us, submit_host_us, and gpu_envelope_ms measure this reference implementation only, not end-to-end decode latency.", "per_layer_batch_v2 is a grouped reference submission envelope; its inner per-head gather/page writes are not a fused kernel.", "No field is an HBM/DRAM counter, allocator measurement, throughput result, or edge-hardware calibration."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
     manifest_path = args.output_dir / "admission_shadow_manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print("A3.5 equivalence passed: Full-KV answers, lifecycle digest, and shadow semantic digest match.")
