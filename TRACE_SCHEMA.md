@@ -515,3 +515,26 @@ amplification proxy. With bounded staging, the declared conservative
 `layer_full_kv_fallback` reads all heads in any over-capacity layer from Full
 KV for that call. These remain analytical sensitivity assumptions, not
 calibrated hardware facts.
+
+### Route-A3.7 memory-system and adaptive-gate DSE
+
+`tools/simulate_kvzap_route_a37_memory_system.py` consumes the same validated
+A2 lifecycle and schema-1.4 shadow inputs as A3.6, without rerunning the
+model.  It replaces the A3.6 effective pending-gather-bytes/token sensitivity
+axis with a declared contiguous per-head FIFO layout proxy: bank count, burst
+bytes, per-bank bytes/cycle, either token-round-robin or head-affine bank
+mapping, and a per-layer pending-staging capacity.  It writes layer, step, and
+summary ledgers.  Schema `kvzap-route-a37-memory-system-dse-1.0` records the
+bank/burst assumptions in every row and manifest.  Schema-1.4 does not retain
+pending token positions, so this is a deterministic layout proxy, not a trace
+of actual DRAM addresses, bank conflicts, HBM traffic, allocator behavior, or
+latency.
+
+`tools/simulate_kvzap_route_a37_adaptive_gate.py` consumes only a completed
+A3.7 layer ledger.  For each `(decode call, layer)`, it compares the modeled
+hybrid cost including current-call admission with the modeled Full-KV cost and
+selects the lower declared byte or cycle objective, optionally requiring a
+guard margin.  A staging overflow remains explicitly labeled Full-KV fallback.
+Schema `kvzap-route-a37-adaptive-gate-dse-1.0` is an oracle-like same-call
+cost gate: it is not an online predictor, hardware controller, sparse
+attention execution, generation-equivalence result, or measured performance.

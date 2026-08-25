@@ -348,6 +348,25 @@ staging. The only initial overflow policy is explicit conservative
 `layer_full_kv_fallback`: an over-capacity layer reads Full KV for that call.
 These are sensitivity axes, not calibrated hardware facts.
 
+### A3.7 — memory-system refinement and adaptive layer gate
+
+The next two offline DSEs refine the remaining A3.6 implementation questions
+without changing KVzap's mask or running a model.  The memory-system DSE
+consumes the validated A2 lifecycle plus schema-1.4 head-progress shadow and
+models pending retained KV as contiguous records in independent head FIFOs. It
+sweeps bank count, burst size, bank service bytes/cycle, a declared mapping
+proxy, and staging capacity.  Since schema-1.4 intentionally records counts
+rather than token physical addresses, the result is a reproducible bank/burst
+*assumption* rather than a DRAM/HBM or allocator measurement.
+
+The adaptive-gate DSE then consumes that layer ledger and selects hybrid or
+Full-KV per `(decode call, layer)` under a stated byte/cycle objective and
+guard margin.  This answers whether the hybrid path needs a layer-mode control
+to avoid expensive sparse gathers.  Its same-call comparison is oracle-like;
+it is not an online gate implementation.  A subsequent architecture-spec or
+prototype must replace it with observable, conservative features and validate
+the decision error separately.
+
 ## Required provenance and conclusion boundaries
 
 Every Route-A experiment must record source trace hashes, page size, cache
