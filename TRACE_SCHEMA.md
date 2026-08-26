@@ -604,3 +604,10 @@ charged and advances the replayed state. Its outputs compare the resulting
 candidate with Full KV at each caller-declared hardware point. They are modeled
 byte/cycle estimates, not HBM traffic, allocator measurements, latency,
 throughput, sparse-attention execution, or generation evidence.
+
+`tools/summarize_kvzap_route_a312_cross_workload.py` consumes two or more
+completed A3.11 directories. It rejects mismatched policy/hardware sweeps and
+reports every common point's minimum and mean modeled savings across named
+workloads. A point is marked positive only when every supplied workload has a
+strictly positive modeled result. It performs no threshold selection or
+controller calibration and remains a summary of modeled—not measured—results.

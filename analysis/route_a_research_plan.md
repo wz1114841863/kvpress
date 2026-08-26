@@ -423,6 +423,16 @@ and evolves the exact FIFO/page state. This separates the two policy meanings
 without claiming an implemented sparse attention backend or measured hardware
 behavior.
 
+### A3.12 — common-hardware cross-workload gate
+
+`tools/summarize_kvzap_route_a312_cross_workload.py` compares completed A3.11
+deferred branch sweeps only when their policy and hardware points align
+exactly. It records per-workload results and the minimum modeled byte/cycle
+saving at every shared point; it must not select a threshold or describe a
+same-workload screen as controller calibration. The next evidence gate is a
+schema-1.5/A3.10/A3.11 chain for the named retrieval and summarization A2
+requests, followed by this common-hardware summary.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization
