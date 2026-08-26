@@ -63,8 +63,15 @@ def validate_inputs(memory_dir: Path, oracle_dir: Path) -> tuple[dict[str, Any],
         raise ValueError("unsupported A3.7 input schema")
     if "cycles" not in oracle.get("assumptions", {}).get("decision_objectives", []):
         raise ValueError("A3.9 requires an A3.7 cycle-objective oracle-gate manifest")
-    if oracle.get("source_artifact_sha256", {}).get("memory_system_manifest_sha256") != sha256(memory_manifest_path):
-        raise ValueError("oracle gate is not bound to the supplied memory-system manifest")
+    expected_hash = sha256(memory_manifest_path)
+    observed_hash = oracle.get("source_artifact_sha256", {}).get("memory_system_manifest_sha256")
+    if observed_hash != expected_hash:
+        raise ValueError(
+            "oracle gate source mismatch: --oracle-gate-dir was generated from a different "
+            "A3.7 memory-system manifest. Run simulate_kvzap_route_a37_adaptive_gate.py "
+            "on --memory-system-dir first, then pass that new directory here "
+            f"(expected={expected_hash}, oracle_records={observed_hash})."
+        )
     return memory, oracle, layer_path
 
 

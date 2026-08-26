@@ -394,7 +394,10 @@ requires a later position-preserving trace or explicitly synthetic replay.
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization
-requests. `tools/summarize_kvzap_route_a39_cross_workload.py` must report both
+requests. For each evaluation workload, first run the A3.7 adaptive gate on
+that workload's newly generated A3.7 memory-system directory; its manifest is
+the provenance-bound cycle-oracle contract required by A3.9, and cannot be
+reused from the GovReport calibration directory. `tools/summarize_kvzap_route_a39_cross_workload.py` must report both
 the per-workload outcomes and the minimum result at every shared hardware
 point. Short-horizon reasoning remains a negative-control workload and must
 not be pooled with long-output amortization claims.
