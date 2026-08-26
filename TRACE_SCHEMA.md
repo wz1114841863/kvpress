@@ -551,3 +551,23 @@ one threshold pair.  Costs are used only after selection to score the rule.
 Threshold selection on the same workload is a heuristic sensitivity screen,
 not a calibrated online controller, cross-workload generalization result, or
 hardware measurement.
+
+`tools/simulate_kvzap_route_a39_consistent_gate.py` corrects the preliminary
+A3.7/A3.8 accounting ambiguity with explicit `continue_admission`: a Full-KV
+selection changes only the current attention read path. Recorded
+post-attention admission bytes are charged after either Full-KV or hybrid
+attention, so the canonical schema-1.4 shadow state remains valid for the
+following call. Its oracle and observable gate compare attention-only costs;
+the common admission ledger is added afterward. Schema
+`kvzap-route-a39-consistent-gate-dse-1.0` must not represent
+`defer_admission`: that policy requires branch-dependent FIFO/page evolution,
+and schema-1.4 count rows do not retain enough pending-position detail to
+replay the original oldest-first order exactly.
+
+`tools/summarize_kvzap_route_a39_cross_workload.py` takes completed A3.9
+`continue_admission` directories for at least two named workloads and one
+caller-fixed threshold pair. It writes per-workload results plus a common
+hardware-point table whose minimum is taken across workloads. It refuses to
+select a threshold itself or silently compare incompatible hardware sweeps.
+The summary is still a modeled robustness screen, not cross-workload hardware
+or controller validation.

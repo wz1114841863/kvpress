@@ -379,6 +379,26 @@ agreement and regret versus the oracle gate.  Thresholds must be fixed on one
 named calibration workload and evaluated on disjoint workloads before this can
 be described as a deployable controller.
 
+### A3.9 — state-consistent continue-admission gate
+
+The preliminary A3.7/A3.8 gate comparison charged current-call admission only
+on its hybrid path while retaining the canonical shadow's future packed state.
+`tools/simulate_kvzap_route_a39_consistent_gate.py` repairs that ambiguity for
+one implementable semantic: Full-KV is an attention-read fallback only, while
+the recorded admission service continues after either choice and is charged to
+both. This preserves the shadow state exactly. A different semantic,
+`defer_admission`, must evolve FIFO and packed pages under every prior gate
+decision; it cannot be represented exactly by schema-1.4 count-only rows and
+requires a later position-preserving trace or explicitly synthetic replay.
+
+For the first cross-workload A3.9 screen, select a threshold pair on the
+existing long-horizon GovReport calibration request, then collect matched
+schema-1.4 shadows for separately frozen A2 retrieval and summarization
+requests. `tools/summarize_kvzap_route_a39_cross_workload.py` must report both
+the per-workload outcomes and the minimum result at every shared hardware
+point. Short-horizon reasoning remains a negative-control workload and must
+not be pooled with long-output amortization claims.
+
 ## Required provenance and conclusion boundaries
 
 Every Route-A experiment must record source trace hashes, page size, cache
