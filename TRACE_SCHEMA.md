@@ -580,3 +580,16 @@ It is intentionally limited to selected workloads because it can be large.
 Together with the validated head-progress counts it preserves the exact input
 needed for branch-dependent oldest-first FIFO replay; it remains an
 observational Full-KV shadow trace and not sparse-attention execution.
+
+`tools/simulate_kvzap_route_a310_deferred_replay.py` consumes a frozen A2
+lifecycle plus that schema-1.5 position stream. For each declared
+`(deferred_decode_steps, admission_flush_token_budget)` point, it evolves a
+separate append-only per-head cold-page list and FIFO of exact retained
+positions. During the initial deferred horizon it records a Full-KV attention
+fallback and performs no admission service; afterwards it appends current-call
+decisions post-attention and serves a per-layer global oldest-first budget. It
+emits a head-progress audit, a `deferred_replay_layer_state.csv` contract for a
+later byte/cycle model, and a conservation-checked summary. These are
+branch-dependent modeled state inputs, not sparse-attention execution, HBM
+traffic, allocator measurement, latency, throughput, or policy-on generation
+evidence.

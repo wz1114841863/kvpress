@@ -403,6 +403,15 @@ decision using the original oldest-first order. The added position CSV is
 trace evidence only and can be large; collect it only for named calibration
 and holdout workloads after the existing A3.9 cross-workload checkpoint.
 
+`tools/simulate_kvzap_route_a310_deferred_replay.py` is the first consumer of
+this profile. It sweeps an explicit initial Full-KV/no-service horizon and a
+per-layer FIFO service budget. It uses the exact retained positions to replay
+branch-specific packed-page state rather than reusing A3.9's canonical
+continue-admission state. Its outputs are deliberately only a state and
+admission-accounting contract for a later byte/cycle model; a favorable
+conservation result does not establish sparse attention, HBM behavior, or
+generation equivalence.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization
