@@ -593,3 +593,14 @@ later byte/cycle model, and a conservation-checked summary. These are
 branch-dependent modeled state inputs, not sparse-attention execution, HBM
 traffic, allocator measurement, latency, throughput, or policy-on generation
 evidence.
+
+`tools/simulate_kvzap_route_a311_deferred_memory_system.py` consumes the
+A3.10 layer/head replay ledgers and applies the declared A3.7 bank, burst,
+staging, scheduler, and admission byte/cycle assumptions. During the initial
+deferred horizon it uses Full-KV attention and charges no service; after
+activation it uses the exact replayed pre-call state. If staging forces a
+Full-KV attention read after activation, current-call admission still remains
+charged and advances the replayed state. Its outputs compare the resulting
+candidate with Full KV at each caller-declared hardware point. They are modeled
+byte/cycle estimates, not HBM traffic, allocator measurements, latency,
+throughput, sparse-attention execution, or generation evidence.

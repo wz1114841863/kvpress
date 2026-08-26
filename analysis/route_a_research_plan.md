@@ -412,6 +412,17 @@ admission-accounting contract for a later byte/cycle model; a favorable
 conservation result does not establish sparse attention, HBM behavior, or
 generation equivalence.
 
+### A3.11 — branch-consistent deferred memory-system DSE
+
+`tools/simulate_kvzap_route_a311_deferred_memory_system.py` is the first
+byte/cycle consumer of A3.10. It differs from A3.9 by making an initial
+Full-KV gate suppress both the attention-path compression and admission
+service. Once activated, a staging-capacity fallback can still select Full-KV
+for that call's attention read, but post-attention admission remains charged
+and evolves the exact FIFO/page state. This separates the two policy meanings
+without claiming an implemented sparse attention backend or measured hardware
+behavior.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization
