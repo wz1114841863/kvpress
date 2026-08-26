@@ -571,3 +571,12 @@ hardware-point table whose minimum is taken across workloads. It refuses to
 select a threshold itself or silently compare incompatible hardware sweeps.
 The summary is still a modeled robustness screen, not cross-workload hardware
 or controller validation.
+
+Schema `kvzap-route-a35-admission-shadow-1.5` is an opt-in A3.10 collection
+profile. With `--record-deferred-replay-positions`, it adds
+`admission_shadow_v3_deferred_replay_positions.csv`, one row per retained
+mature token decision containing `(model_call, layer, kv_head, position)`.
+It is intentionally limited to selected workloads because it can be large.
+Together with the validated head-progress counts it preserves the exact input
+needed for branch-dependent oldest-first FIFO replay; it remains an
+observational Full-KV shadow trace and not sparse-attention execution.

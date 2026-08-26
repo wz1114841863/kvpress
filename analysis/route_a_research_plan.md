@@ -391,6 +391,18 @@ both. This preserves the shadow state exactly. A different semantic,
 decision; it cannot be represented exactly by schema-1.4 count-only rows and
 requires a later position-preserving trace or explicitly synthetic replay.
 
+### A3.10 — position-preserving deferred-admission input
+
+The branch-consistent `defer_admission` model cannot reuse A3.9's canonical
+shadow state after a layer chooses Full-KV. It first requires the selected
+schema-1.5 A3.5 shadow profile, enabled by
+`--record-deferred-replay-positions`, to retain every mature kept token's
+creation position per `(call, layer, head)`. This allows a later offline
+replayer to evolve each head FIFO and append-only page state after each gate
+decision using the original oldest-first order. The added position CSV is
+trace evidence only and can be large; collect it only for named calibration
+and holdout workloads after the existing A3.9 cross-workload checkpoint.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization

@@ -51,12 +51,29 @@ def validate_hybrid_head_progress(progress: list[dict[str, str]], lifecycle_rows
             raise ValueError("hybrid-head progress disagrees with its V2 layer batch")
 
 
+def validate_deferred_replay_positions(rows: list[dict[str, str]], progress: list[dict[str, str]]) -> None:
+    """Validate exact retained-decision multiplicity needed for A3.10 replay."""
+    expected = {(row["model_call"], row["layer"], row["kv_head"]): int(row["decided_admitted_tokens"]) for row in progress}
+    observed: dict[tuple[str, str, str], list[int]] = defaultdict(list)
+    for row in rows:
+        key = (row["model_call"], row["layer"], row["kv_head"])
+        if key not in expected:
+            raise ValueError("deferred-replay positions reference an unknown head-progress row")
+        observed[key].append(int(row["position"]))
+    if set(observed) != {key for key, value in expected.items() if value}:
+        raise ValueError("deferred-replay positions do not cover every nonempty retained decision")
+    for key, count in expected.items():
+        positions = observed.get(key, [])
+        if len(positions) != count or len(set(positions)) != len(positions) or positions != sorted(positions):
+            raise ValueError("deferred-replay positions disagree with retained decision count/order")
+
+
 def validate(shadow_dir: Path) -> dict[str, int]:
     manifest_path, final_path = shadow_dir / "admission_shadow_manifest.json", shadow_dir / "admission_shadow_final_state.csv"
     if not all(path.is_file() for path in (manifest_path, final_path)):
         raise FileNotFoundError("A3.5 requires manifest and final-state CSVs")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("schema_version") not in {"kvzap-route-a35-admission-shadow-1.0", "kvzap-route-a35-admission-shadow-1.1", "kvzap-route-a35-admission-shadow-1.2", "kvzap-route-a35-admission-shadow-1.3", "kvzap-route-a35-admission-shadow-1.4"}:
+    if manifest.get("schema_version") not in {"kvzap-route-a35-admission-shadow-1.0", "kvzap-route-a35-admission-shadow-1.1", "kvzap-route-a35-admission-shadow-1.2", "kvzap-route-a35-admission-shadow-1.3", "kvzap-route-a35-admission-shadow-1.4", "kvzap-route-a35-admission-shadow-1.5"}:
         raise ValueError("Unsupported A3.5 schema")
     if not all(manifest.get("trace_equivalence", {}).get(key) for key in ("answers_identical", "lifecycle_digests_identical", "shadow_semantic_digests_identical")):
         raise ValueError("A3.5 equivalence guard failed")
@@ -107,12 +124,17 @@ def validate(shadow_dir: Path) -> dict[str, int]:
         packed_total = sum(int(row["packed_admitted_tokens"]) for row in tasks)
         if packed_total != sum(int(row["cold_logical_tokens"]) for row in final):
             raise ValueError("A3.5b-V2 final state disagrees with packed admissions")
-    if manifest.get("schema_version") == "kvzap-route-a35-admission-shadow-1.4":
+    if manifest.get("schema_version") in {"kvzap-route-a35-admission-shadow-1.4", "kvzap-route-a35-admission-shadow-1.5"}:
         progress_path = shadow_dir / "admission_shadow_v2_head_progress.csv"
         if not progress_path.is_file():
             raise FileNotFoundError("A3.6 hybrid-head progress CSV is missing")
         progress = list(csv.DictReader(progress_path.open()))
         validate_hybrid_head_progress(progress, lifecycle_rows, tasks)
+        if manifest.get("schema_version") == "kvzap-route-a35-admission-shadow-1.5":
+            positions_path = shadow_dir / "admission_shadow_v3_deferred_replay_positions.csv"
+            if not positions_path.is_file():
+                raise FileNotFoundError("A3.10 deferred-replay position CSV is missing")
+            validate_deferred_replay_positions(list(csv.DictReader(positions_path.open())), progress)
     for row in final:
         if v2_mode:
             if int(row["cold_allocated_slots"]) < int(row["cold_logical_tokens"]):

@@ -5,7 +5,7 @@ import torch
 
 from kvpress.admission_shadow import CalibratedAdmissionShadow, LayerBatchAdmissionShadow, PackedKVAdmissionShadow
 from tools.run_kvzap_admission_shadow import validate_expected_a2
-from tools.validate_kvzap_admission_shadow import validate_hybrid_head_progress
+from tools.validate_kvzap_admission_shadow import validate_deferred_replay_positions, validate_hybrid_head_progress
 
 
 def test_shadow_reads_kv_without_mutating_source_and_packs_mature_keep_positions():
@@ -87,6 +87,19 @@ def test_v2_hybrid_head_progress_writes_separate_untimed_csv(tmp_path):
     assert len(paths["hybrid_head_progress"].read_text(encoding="utf-8").splitlines()) == 3
 
 
+def test_v3_deferred_replay_positions_write_retained_token_positions(tmp_path):
+    keys = torch.arange(12, dtype=torch.float32).reshape(1, 2, 3, 2)
+    cache = SimpleNamespace(layers=[SimpleNamespace(keys=keys, values=keys + 100)])
+    shadow = CalibratedAdmissionShadow(request_id="unit", layers=1, heads=2, window=2, page_tokens=2, expected_kv_bytes_per_token=16, record_tasks=True, submission_mode="per_layer_batch_v2", deferred_decode_steps=0, admission_flush_token_budget=1, record_hybrid_head_progress=True, record_deferred_replay_positions=True)
+    rows = [{"layer": 0, "kv_head": 0, "cold_admitted_tokens": 1}, {"layer": 0, "kv_head": 1, "cold_admitted_tokens": 0}]
+    shadow.observe(layer=0, score_start=0, scores=torch.tensor([[0.0, -1.0, 0.0], [-1.0, 0.0, 0.0]]), threshold=-0.5, model_call=0, phase="context_prefill", kwargs={"past_key_values": cache}, lifecycle_rows=rows)
+    output = tmp_path / "out"
+    output.mkdir()
+    paths = shadow.write(output)
+    assert paths["deferred_replay_positions"].is_file()
+    assert "unit,0,context_prefill,0,0,0" in paths["deferred_replay_positions"].read_text(encoding="utf-8")
+
+
 def test_hybrid_progress_accepts_a_deferred_backlog_flush():
     lifecycle = [
         {"model_call": "0", "layer": "0", "kv_head": "0", "cold_admitted_tokens": "2"},
@@ -101,6 +114,18 @@ def test_hybrid_progress_accepts_a_deferred_backlog_flush():
         {"model_call": "1", "layer": "0", "member_head_count": "1", "packed_admitted_tokens": "2", "pending_tokens_after": "0"},
     ]
     validate_hybrid_head_progress(progress, lifecycle, tasks)
+
+
+def test_deferred_replay_positions_match_retained_decision_count_and_order():
+    progress = [
+        {"model_call": "0", "layer": "0", "kv_head": "0", "decided_admitted_tokens": "2"},
+        {"model_call": "0", "layer": "0", "kv_head": "1", "decided_admitted_tokens": "0"},
+    ]
+    positions = [
+        {"model_call": "0", "layer": "0", "kv_head": "0", "position": "3"},
+        {"model_call": "0", "layer": "0", "kv_head": "0", "position": "7"},
+    ]
+    validate_deferred_replay_positions(positions, progress)
 
 
 def test_expected_a2_binding_rejects_different_request_content(tmp_path):

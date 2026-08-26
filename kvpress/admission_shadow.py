@@ -33,6 +33,9 @@ V2_COLUMNS = (
 HYBRID_HEAD_PROGRESS_COLUMNS = (
     "request_id", "model_call", "phase", "layer", "kv_head", "decided_admitted_tokens", "packed_admitted_tokens", "pending_tokens_before", "pending_tokens_after", "admission_flush_token_budget", "source_gather_bytes", "packed_kv_bytes", "position_metadata_bytes", "new_page_allocations", "cold_logical_tokens_after", "cold_allocated_slots_after", "cold_page_count_after", "tail_valid_count_after", "packed_position_sum",
 )
+DEFERRED_REPLAY_POSITION_COLUMNS = (
+    "request_id", "model_call", "phase", "layer", "kv_head", "position",
+)
 FINAL_COLUMNS = (
     "request_id", "layer", "kv_head", "cold_logical_tokens", "cold_allocated_slots", "cold_page_count", "tail_valid_count", "cold_page_allocations", "packed_kv_bytes", "position_metadata_bytes", "key_sum", "value_sum", "position_sum",
 )
@@ -301,16 +304,20 @@ class LayerBatchAdmissionShadow(PackedKVAdmissionShadow):
 class CalibratedAdmissionShadow(PackedKVAdmissionShadow):
     """A3.5b-V2 paired timing and deferred-flush reference."""
 
-    def __init__(self, *, submission_mode: str, deferred_decode_steps: int, admission_flush_token_budget: int | None = None, record_hybrid_head_progress: bool = False, **kwargs: Any):
+    def __init__(self, *, submission_mode: str, deferred_decode_steps: int, admission_flush_token_budget: int | None = None, record_hybrid_head_progress: bool = False, record_deferred_replay_positions: bool = False, **kwargs: Any):
         if submission_mode not in {"per_head_v2", "per_layer_batch_v2"} or deferred_decode_steps < 0 or admission_flush_token_budget is not None and admission_flush_token_budget <= 0:
             raise ValueError("invalid A3.5b-V2 submission mode or deferred gate")
         super().__init__(**kwargs)
         self.submission_mode, self.deferred_decode_steps = submission_mode, deferred_decode_steps
         self.admission_flush_token_budget = admission_flush_token_budget
         self.record_hybrid_head_progress = record_hybrid_head_progress
+        self.record_deferred_replay_positions = record_deferred_replay_positions
+        if self.record_deferred_replay_positions and not self.record_hybrid_head_progress:
+            raise ValueError("deferred-replay positions require hybrid-head progress")
         self._pending: dict[tuple[int, int], deque[int]] = defaultdict(deque)
         self._v2_tasks: list[dict[str, Any]] = []
         self._hybrid_head_progress: list[dict[str, Any]] = []
+        self._deferred_replay_positions: list[dict[str, Any]] = []
 
     def observe(self, *, layer: int, score_start: int, scores: torch.Tensor, threshold: float, model_call: int, phase: str, kwargs: dict[str, Any], lifecycle_rows: list[dict[str, Any]]) -> None:
         if self._finalized or scores.ndim != 2 or scores.shape[0] != self.heads or score_start != self._next_position[layer]:
@@ -339,6 +346,8 @@ class CalibratedAdmissionShadow(PackedKVAdmissionShadow):
             identity = (layer, head)
             pending_before = len(self._pending[identity])
             self._pending[identity].extend(int(item) for item in decided.detach().cpu().tolist())
+            if self.record_deferred_replay_positions:
+                self._deferred_replay_positions.extend({"request_id": self.request_id, "model_call": model_call, "phase": phase, "layer": layer, "kv_head": head, "position": int(item)} for item in decided.detach().cpu().tolist())
             plans.append({"head": head, "decided": decided, "payload_positions": [], "pending_before": pending_before, "matured": len(matured)})
         if active:
             budget = self.admission_flush_token_budget if self.admission_flush_token_budget is not None else sum(len(self._pending[(layer, head)]) for head in range(self.heads))
@@ -425,6 +434,13 @@ class CalibratedAdmissionShadow(PackedKVAdmissionShadow):
                 writer.writeheader()
                 writer.writerows(self._hybrid_head_progress)
             paths["hybrid_head_progress"] = progress_path
+        if self.record_deferred_replay_positions:
+            positions_path = output_dir / "admission_shadow_v3_deferred_replay_positions.csv"
+            with positions_path.open("w", encoding="utf-8", newline="") as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(DEFERRED_REPLAY_POSITION_COLUMNS))
+                writer.writeheader()
+                writer.writerows(self._deferred_replay_positions)
+            paths["deferred_replay_positions"] = positions_path
         return paths
 
     def summary(self) -> dict[str, Any]:
