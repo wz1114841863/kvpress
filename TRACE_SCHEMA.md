@@ -611,3 +611,11 @@ reports every common point's minimum and mean modeled savings across named
 workloads. A point is marked positive only when every supplied workload has a
 strictly positive modeled result. It performs no threshold selection or
 controller calibration and remains a summary of modeled—not measured—results.
+
+`tools/validate_kvzap_route_a313_short_horizon_guard.py` validates the
+trace-known-horizon control for a completed A3.11 directory. For each supplied
+guard horizon, it requires `horizon >= observed decode steps`, every decode
+call to remain an initial Full-KV fallback, no staging fallback, and cumulative
+candidate bytes/cycles exactly equal to Full KV. This deliberately establishes
+a no-gain/no-loss safety control only; it is not an online output-length
+predictor or a hardware measurement.

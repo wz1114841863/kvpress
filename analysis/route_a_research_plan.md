@@ -433,6 +433,16 @@ same-workload screen as controller calibration. The next evidence gate is a
 schema-1.5/A3.10/A3.11 chain for the named retrieval and summarization A2
 requests, followed by this common-hardware summary.
 
+### A3.13 — short-horizon no-admission control
+
+The A3.12 retrieval negative result distinguishes an initial Full-KV delay
+from a whole-request no-admission fallback: `defer=16` on a 17-step request
+still activates service after the final attention read. Use
+`tools/validate_kvzap_route_a313_short_horizon_guard.py` after replaying
+`defer >= observed decode length` to prove exact Full-KV/zero-admission
+degeneracy. This is a trace-known control that bounds the desired safety
+semantic; it does not provide a deployable horizon prediction policy.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization
