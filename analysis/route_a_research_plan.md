@@ -453,6 +453,24 @@ API-contract policy for requests explicitly capped short, but cannot prove
 protection for a request that advertises a high cap and ends early. Report its
 nonnegative region separately from strict positive cycle savings.
 
+### A3.15 — high-cap natural-early-stop counterexample
+
+Before treating `max_new_tokens` as a sufficient deployment contract, collect
+a second, independently trace-on/off-equivalent A2 lifecycle for the same
+request at a strictly higher cap. `tools/analyze_kvzap_route_a315_cap_mismatch.py`
+accepts the two validated lifecycle directories and rejects all changes other
+than the cap. A confirmed counterexample requires that the high-cap run ends
+before its cap and reproduces the reference answer hash. Only after such a
+pair exists is it justified to say that a cap-only admission gate leaves a
+high-cap/short-output hole and that a **lower-bound continuation contract** or
+safe Full-KV fallback must be considered. This collection/analysis proves no
+hardware benefit or controller accuracy by itself.
+
+Because A3.10/A3.11 require hash-bound lifecycle provenance, freeze any new
+A3.15 high-cap lifecycle with `tools/freeze_kvzap_route_a315_lifecycle.py`
+into a new output directory. Never append it to, replace, or hand-edit the
+existing Route-A2 freeze record.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization

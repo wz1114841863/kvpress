@@ -627,3 +627,21 @@ otherwise it uses one fixed A3.11 deferred policy. It reports per-workload and
 common nonnegative/positive modeled cycle regions. Since `max_new_tokens` is
 an upper bound rather than a future-length guarantee, this is an observable
 contract screen, not a general output-horizon predictor.
+
+`tools/analyze_kvzap_route_a315_cap_mismatch.py` compares two separately
+validated A2 lifecycle collections of the exact same request. The high-cap
+collection must use a strictly larger caller `max_new_tokens`; all frozen
+model, predictor, request-content, cache/page, threshold/window, and seed
+fields must match. Schema `kvzap-route-a315-cap-mismatch-1.0` reports the two
+caps, observed decode model-call counts, unused high-cap budget, and whether
+the answer hashes match. A confirmation requires both a natural high-cap
+early stop and the same answer hash. It is evidence that an upper-bound-only
+request-cap gate is insufficient for that request; it is not a hardware
+measurement or a general future-length predictor result.
+
+`tools/freeze_kvzap_route_a315_lifecycle.py` validates one newly collected A2
+lifecycle and writes a separate, hash-addressed
+`kvzap-route-a2-lifecycle-freeze-1.0` file for A3.10/A3.11. It never edits the
+existing A2 freeze. The new freeze contains only the three lifecycle artifacts
+and the source collection configuration; it freezes provenance, not a new
+hardware or accuracy claim.
