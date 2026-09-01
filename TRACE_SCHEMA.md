@@ -619,3 +619,11 @@ call to remain an initial Full-KV fallback, no staging fallback, and cumulative
 candidate bytes/cycles exactly equal to Full KV. This deliberately establishes
 a no-gain/no-loss safety control only; it is not an online output-length
 predictor or a hardware measurement.
+
+`tools/simulate_kvzap_route_a314_request_cap_gate.py` composes aligned A3.11
+results using only the caller-visible `max_new_tokens` from each A2 lifecycle
+manifest. Below a declared cap threshold it selects Full-KV/zero-admission;
+otherwise it uses one fixed A3.11 deferred policy. It reports per-workload and
+common nonnegative/positive modeled cycle regions. Since `max_new_tokens` is
+an upper bound rather than a future-length guarantee, this is an observable
+contract screen, not a general output-horizon predictor.

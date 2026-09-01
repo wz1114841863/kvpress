@@ -443,6 +443,16 @@ still activates service after the final attention read. Use
 degeneracy. This is a trace-known control that bounds the desired safety
 semantic; it does not provide a deployable horizon prediction policy.
 
+### A3.14 — observable request-cap contract screen
+
+`tools/simulate_kvzap_route_a314_request_cap_gate.py` tests a limited
+deployable signal: caller-provided `max_new_tokens`. A request whose cap is
+below a fixed threshold remains Full-KV with zero admission; other requests
+use a caller-fixed A3.11 deferred point. This can establish a conservative
+API-contract policy for requests explicitly capped short, but cannot prove
+protection for a request that advertises a high cap and ends early. Report its
+nonnegative region separately from strict positive cycle savings.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization
