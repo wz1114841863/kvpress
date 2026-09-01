@@ -654,3 +654,11 @@ compares the declaration with observed trace length only after selection. Schema
 `kvzap-route-a316-continuation-contract-gate-1.0` therefore distinguishes a
 held contract from a contract breach; it does not infer a future horizon from
 the trace, implement an online controller, or measure hardware behavior.
+
+`tools/simulate_kvzap_route_a317_contract_policy_sweep.py` extends A3.16 over
+an explicit Cartesian set of deferred-admission horizons and flush budgets.
+It requires every supplied A3.11 input to contain each selected policy and the
+same hardware points. Its cross summary separately records all-workload
+nonnegative cycles and whether every *active* workload has strictly positive
+modeled cycles; Full-KV-protected requests correctly contribute zero rather
+than making a selective-policy point appear strictly positive.

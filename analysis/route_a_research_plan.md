@@ -482,6 +482,17 @@ post-hoc contract audit. Cross-workload conclusions require both aligned A3.11
 hardware points and every supplied contract to hold; otherwise the result is a
 breach sensitivity, not a feasible deployment point.
 
+### A3.17 — cross-workload contract and policy robustness
+
+`tools/simulate_kvzap_route_a317_contract_policy_sweep.py` jointly sweeps the
+minimum-continuation gate with selected `(defer, budget)` policies. First
+collect aligned A3.11 ledgers for every candidate workload; the tool rejects a
+missing policy or mismatched hardware grid rather than silently intersecting
+them. The next evidence goal is a common region where every contract holds,
+every workload is nonnegative, and every workload admitted by the policy has
+strictly positive modeled cycles. This remains a modeled robustness screen,
+not a measured serving result.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization
