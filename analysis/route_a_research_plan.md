@@ -471,6 +471,17 @@ A3.15 high-cap lifecycle with `tools/freeze_kvzap_route_a315_lifecycle.py`
 into a new output directory. Never append it to, replace, or hand-edit the
 existing Route-A2 freeze record.
 
+### A3.16 — minimum-continuation contract gate
+
+`tools/simulate_kvzap_route_a316_continuation_contract_gate.py` evaluates the
+deployable semantic absent from A3.14: an external API or higher-level
+scheduler declares a lower bound on the decode calls still to come. The gate
+uses that declaration alone and reports Full-KV/no-admission below each
+declared threshold. Observed lifecycle length is retained solely as a
+post-hoc contract audit. Cross-workload conclusions require both aligned A3.11
+hardware points and every supplied contract to hold; otherwise the result is a
+breach sensitivity, not a feasible deployment point.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization

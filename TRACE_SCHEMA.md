@@ -645,3 +645,12 @@ lifecycle and writes a separate, hash-addressed
 existing A2 freeze. The new freeze contains only the three lifecycle artifacts
 and the source collection configuration; it freezes provenance, not a new
 hardware or accuracy claim.
+
+`tools/simulate_kvzap_route_a316_continuation_contract_gate.py` composes
+aligned A3.11 results using only an externally supplied lower bound on future
+decode calls. Below a declared contract threshold it selects Full-KV with zero
+admission; otherwise it selects one fixed A3.11 policy. Its separate audit
+compares the declaration with observed trace length only after selection. Schema
+`kvzap-route-a316-continuation-contract-gate-1.0` therefore distinguishes a
+held contract from a contract breach; it does not infer a future horizon from
+the trace, implement an online controller, or measure hardware behavior.
