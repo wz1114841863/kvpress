@@ -47,7 +47,7 @@ def test_all_kv_heads_replace_the_full_layer_without_calling_original_on_decode(
     assert backend.coverage() == {"selected_kv_heads": [0, 1], "heads": [{"kv_head": 0, "comparison_count": 1, "max_packed_tokens": 1, "max_pending_tokens": 2, "ever_retained_cold": True, "ever_pending": True}, {"kv_head": 1, "comparison_count": 1, "max_packed_tokens": 1, "max_pending_tokens": 2, "ever_retained_cold": True, "ever_pending": True}]}
 
 
-def test_executed_dtype_guard_accepts_one_ulp_but_rejects_two():
+def test_executed_dtype_ulp_diagnostic_is_measured_independently_of_fp32_guard():
     dense = torch.tensor([0.015625], dtype=torch.float16)
     one_ulp = torch.nextafter(dense, torch.full_like(dense, float("inf")))
     two_ulps = torch.nextafter(one_ulp, torch.full_like(one_ulp, float("inf")))
@@ -55,6 +55,17 @@ def test_executed_dtype_guard_accepts_one_ulp_but_rejects_two():
     _difference, two_ratio = RouteAPolicyAttentionBackend._cast_difference_in_ulps(two_ulps, dense)
     assert one_ratio == 1.0
     assert two_ratio == 2.0
+
+
+def test_executed_dtype_ulp_limit_is_explicit_and_validated():
+    backend = RouteAPolicyAttentionBackend(fake_model(), None, layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6, max_executed_dtype_ulps=16.0)
+    assert backend.max_executed_dtype_ulps == 16.0
+    try:
+        RouteAPolicyAttentionBackend(fake_model(), None, layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6, max_executed_dtype_ulps=0.0)
+    except ValueError as error:
+        assert "invalid Route-A policy dimensions" in str(error)
+    else:
+        raise AssertionError("non-positive execution-dtype ULP limit was accepted")
 
 
 def test_backend_set_keeps_independent_layer_state_and_aggregates_coverage():

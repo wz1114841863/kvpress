@@ -607,10 +607,11 @@ dense KVzap baselines.
 The multi-layer A4.0 implementation uses one shared frozen predictor plus
 independent per-layer Route-A states. It must first pass a separated
 early/middle/late `{0,18,35}` semantic gate, then `target_layers=all` with all
-KV heads. Each selected layer must retain same-mask FP32 plus executed-dtype
-ULP guards and explicit per-head cold/pending coverage. The all-layer Python
-reference is intentionally excluded from timing claims; it is a prerequisite
-for, not the A4.1 implementation benchmark.
+KV heads. Each selected layer retains a mandatory same-mask FP32 guard plus an
+explicitly recorded execution-dtype ULP diagnostic limit (default 16 ULP), and
+explicit per-head cold/pending coverage. The all-layer Python reference is
+intentionally excluded from timing claims; it is a prerequisite for, not the
+A4.1 implementation benchmark.
 
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched

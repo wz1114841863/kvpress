@@ -42,6 +42,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-new-tokens", type=int, default=8)
     parser.add_argument("--rtol", type=float, default=1e-4)
     parser.add_argument("--atol", type=float, default=1e-5)
+    parser.add_argument("--max-executed-dtype-ulps", type=float, default=16.0, help="Maximum post-cast ULP diagnostic difference. FP32 same-mask rtol/atol remains a mandatory semantic guard.")
     parser.add_argument("--require-pending-nonempty", action="store_true", help="Fail unless at least one policy decode comparison has pending retained cold staging.")
     parser.add_argument("--require-all-selected-heads-pending", action="store_true", help="Optional strict coverage assertion. This can legitimately fail when a selected original-mask head retains no mature cold token; use --require-pending-nonempty for the standard all-head gate.")
     parser.add_argument("--output-dir", type=Path, required=True, help="New output directory only.")
@@ -77,7 +78,7 @@ def main() -> None:
         raise FileExistsError(f"output directory already exists: {args.output_dir}")
     if args.request_id is not None and args.input_jsonl is None:
         raise ValueError("--request-id requires --input-jsonl")
-    if min(args.context_repetitions, args.page_tokens, args.admission_budget, args.max_new_tokens) <= 0 or args.window_size < 0:
+    if min(args.context_repetitions, args.page_tokens, args.admission_budget, args.max_new_tokens, args.max_executed_dtype_ulps) <= 0 or args.window_size < 0:
         raise ValueError("invalid Route-A policy-gate dimensions")
     if args.max_new_tokens < 2:
         raise ValueError("max-new-tokens must be at least 2")
@@ -111,7 +112,7 @@ def main() -> None:
     selected_layers = resolve_target_layers(args.target_layers, len(language_model.layers))
     args.resolved_target_layers = list(selected_layers)
     selected = None if args.target_kv_head == "all" else args.target_kv_head
-    backend = RouteAPolicyAttentionBackendSet(pipe.model, KVzapPress(model_type="mlp", predictor_revision=args.predictor_revision), layers=selected_layers, kv_head=selected, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol)
+    backend = RouteAPolicyAttentionBackendSet(pipe.model, KVzapPress(model_type="mlp", predictor_revision=args.predictor_revision), layers=selected_layers, kv_head=selected, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps)
     print(f"Pass 2/2: Route-A fast path with policy-on decode substitution in layers {list(selected_layers)}...")
     with torch.no_grad(), backend:
         fast = generate(pipe, request, args)
@@ -136,13 +137,13 @@ def main() -> None:
                 raise AssertionError(f"layer {layer}: strict pending coverage failed: seen={sorted(seen)}, expected={sorted(expected)}; inspect manifest coverage to distinguish no retained cold token from pending absence")
     config = {key: value for key, value in vars(args).items() if key not in {"output_dir", "gate_a_evidence"}}
     manifest = {
-        "schema_version": "kvzap-route-a40-policy-on-qwen-gate-1.1", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(),
+        "schema_version": "kvzap-route-a40-policy-on-qwen-gate-1.2", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(),
         "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}),
         "gate_a_evidence": gate_a, "full_kv_bypass_answer_sha256": answer_hash(full), "route_a_fast_path_answer_sha256": answer_hash(fast), "answers_identical": answer_hash(full) == answer_hash(fast),
         "policy_decode_call_count_by_layer": backend.policy_decode_calls, "comparisons": backend.comparisons, "policy_coverage": coverage,
         "source_artifact_sha256": {"gate_a_manifest": file_sha256(args.gate_a_evidence / "manifest.json"), "gate_a_score_mask": file_sha256(args.gate_a_evidence / "score_mask.npz")},
         "control_plane": {"full_kv_bypass": "Pass 1 uses no Route-A backend or admission.", "route_a_fast_path": "Pass 2 substitutes each selected layer/KV-head GQA query group at q_len=1; selected groups read hot/pending/packed only."},
-        "observational_guards": {"selected_head_original_attention_called_during_policy_decode": False, "dms_press_used": False, "masked_key_indices_created": False, "fake_key_attention_used": False, "model_cache_mutated_by_backend": False},
+        "observational_guards": {"selected_head_original_attention_called_during_policy_decode": False, "fp32_same_mask_guard": {"rtol": args.rtol, "atol": args.atol}, "executed_dtype_ulp_limit": args.max_executed_dtype_ulps, "dms_press_used": False, "masked_key_indices_created": False, "fake_key_attention_used": False, "model_cache_mutated_by_backend": False},
         "boundaries": ["This is a policy-on generation gate for the declared layers. With --target-kv-head all, every KV-head group in every declared layer is Route-A; undeclared layers remain dense.", "The Full-KV and Route-A answers need not match; numerical equality is required only between each substituted head's packed/pending/hot attention and the same-mask dense reference.", "No field is an allocator/HBM counter, timing, latency, throughput, energy, area, frequency, cross-workload result, or RTL evidence."],
         "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__),
     }

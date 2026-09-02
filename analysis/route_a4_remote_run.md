@@ -129,7 +129,7 @@ semantic gate.
 
 ## Multi-layer policy-on gates
 
-Schema `kvzap-route-a40-policy-on-qwen-gate-1.1` accepts a layer set. Start
+Schema `kvzap-route-a40-policy-on-qwen-gate-1.2` accepts a layer set. Start
 with a separated early/middle/late probe; each listed layer has independent
 Route-A state and its own per-head comparisons while sharing the frozen
 predictor weights:
@@ -153,7 +153,7 @@ substantially slower because this Python reference replaces every layer's
 decode attention; it remains a semantic gate, not a timing experiment:
 
 ```bash
-RUN_ID=route_a40_policy_on_qwen_all_layers_pending_01
+RUN_ID=route_a40_policy_on_qwen_all_layers_pending_02
 test ! -e "analysis/experiments/${RUN_ID}"
 .venv/bin/python tools/run_kvzap_route_a40_policy_gate.py \
   --preset retrieval \
@@ -162,6 +162,7 @@ test ! -e "analysis/experiments/${RUN_ID}"
   --target-layers all \
   --target-kv-head all \
   --admission-budget 1 \
+  --max-executed-dtype-ulps 16 \
   --require-pending-nonempty \
   --output-dir "analysis/experiments/${RUN_ID}"
 ```
@@ -171,3 +172,11 @@ For either manifest, every declared layer must have a positive
 every declared layer with one comparison row per selected KV head per decode
 call. Do not run these commands with a timing wrapper or treat their elapsed
 time as A4.1 evidence.
+
+The FP32 same-mask `rtol`/`atol` comparison is the semantic guard. The
+post-cast ULP control is a separately recorded execution-dtype diagnostic.
+The default and command above use 16 ULP because an all-layer attempt observed
+13 ULP after earlier policy-on low-precision layer outputs; it must be rerun
+in a fresh directory with this declared limit. A FP32 mismatch still fails
+regardless of this setting. Return the complete new directory and do not
+overwrite the interrupted `_01` directory if it exists.

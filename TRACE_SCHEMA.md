@@ -750,13 +750,15 @@ this is a layer-complete A4.0 semantic gate, not a full-model policy-on or
 A4.1 measurement result.
 
 For policy-on gates, the backend first compares online-merge and concatenated
-same-mask results in FP32 under the declared `rtol`/`atol`. It then casts both
-to the model execution dtype and permits at most one representable-value ULP,
-recording `max_abs_difference_fp32`, `max_abs_difference`, and
-`max_executed_dtype_ulps` in each comparison row. This prevents a reduction
-order's adjacent fp16/bf16 rounding value from being misreported as a semantic
-mismatch, while still failing any FP32 mismatch or executed-dtype difference
-greater than one ULP.
+same-mask results in FP32 under the declared `rtol`/`atol`; this is the
+mandatory semantic guard. It then casts both to the model execution dtype and
+records `max_abs_difference_fp32`, `max_abs_difference`,
+`max_executed_dtype_ulps`, and `executed_dtype_ulp_limit` in each comparison
+row. The post-cast ULP limit is an explicit diagnostic control (default 16,
+configured as `max_executed_dtype_ulps` in the manifest), not a replacement
+for the FP32 guard. It accounts for small low-precision differences that can
+accumulate when a policy-on output feeds later substituted layers, while still
+failing any FP32 mismatch or post-cast difference above the declared limit.
 
 Schema `kvzap-route-a40-policy-on-qwen-gate-1.1` generalizes the gate from one
 layer to an explicit `resolved_target_layers` set. Every selected layer has an
@@ -767,3 +769,10 @@ only. The manifest replaces the scalar policy-call field with
 nests each layer's selected-head coverage in `policy_coverage.layers`. The
 `target_layers: ["all"]` option denotes all model layers. This remains a
 functional reference whose Python execution time is excluded from A4.1.
+
+Schema `kvzap-route-a40-policy-on-qwen-gate-1.2` adds the declared
+`max_executed_dtype_ulps` configuration field and the two guard values in
+`observational_guards`. A successful run proves only that all per-head FP32
+same-mask comparisons passed and each recorded post-cast difference was within
+that declared diagnostic limit; it is not a timing or end-to-end answer
+equivalence claim.

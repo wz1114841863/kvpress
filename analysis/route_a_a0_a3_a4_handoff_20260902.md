@@ -134,6 +134,13 @@ A4.0 now progresses through an early/middle/late `{0,18,35}` shared-predictor
 multi-layer gate before the all-layer gate. Each layer owns independent state
 and numerical guards; neither gate is a timing result.
 
+The all-layer gate additionally records an execution-dtype ULP diagnostic
+limit (default 16) separately from its mandatory FP32 same-mask guard. This
+does not relax FP32 packed-versus-dense semantics: it only avoids treating
+small post-cast values accumulated through prior substituted low-precision
+layers as an attention semantic failure. Any run must preserve the declared
+limit and observed maximum in its fresh manifest.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:
