@@ -54,3 +54,40 @@ versions, GPU model, and the command's complete stdout/stderr. The manifest
 already carries source hashes, answer digest, target layer/head, comparison
 count, state summaries, and the maximum numerical difference needed for the
 next review.
+
+## Policy-on and non-empty-pending gate
+
+After the preceding read-only integration manifest is accepted, synchronize
+the policy backend files and run this separate fresh directory. The selected
+layer-0/KV-head-0 GQA group now bypasses the original attention function on
+every `q_len=1` decode call and reads only Route-A hot, pending, and packed K/V.
+All other heads deliberately remain dense in this minimum generation gate.
+The budget of one forces retained mature cold entries to remain in pending
+staging, so `--require-pending-nonempty` is a required semantic guard, not a
+performance setting.
+
+```bash
+RUN_ID=route_a40_policy_on_qwen_retrieval_pending_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a_policy_backend.py \
+  tests/test_kvzap_route_a4_reference.py \
+  tests/test_kvzap_lifecycle.py \
+  tests/test_kvzap_admission_shadow.py \
+  tests/test_simulate_kvzap_packed_pages.py
+.venv/bin/python tools/run_kvzap_route_a40_policy_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 0 \
+  --admission-budget 1 \
+  --require-pending-nonempty \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Return `a40_policy_on_qwen_manifest.json` from the new directory. A changed
+Full-KV answer is permitted in this policy-on test; the required semantic guard
+is per-call numerical equality between the substituted Route-A head and its
+same-mask dense reference, plus explicit proof that pending staging was read.
+Do not time this command or describe it as A4.1 measurement.

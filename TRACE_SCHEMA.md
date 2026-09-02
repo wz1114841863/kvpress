@@ -724,3 +724,16 @@ of DMS, fake keys, masked indices, cache mutation, or attention replacement.
 It is an A4.0 integration prerequisite, not policy-on generation or A4.1
 measurement; its reported differences are numerical-equivalence diagnostics,
 not timing or memory measurements.
+
+`tools/run_kvzap_route_a40_policy_gate.py` emits the new-directory-only
+`kvzap-route-a40-policy-on-qwen-gate-1.0` manifest. Its `full_kv_bypass` pass
+installs no backend and performs zero Route-A admission. Its selected
+`route_a_fast_path` installs `RouteAPolicyAttentionBackend`: during a
+single-layer/single-KV-head Qwen `q_len=1` decode call, the selected GQA query
+group bypasses the original attention function and reads only hot, pending,
+and packed cold K/V. The backend numerically guards that result against dense
+attention over the exact same retained records. Other query groups remain
+explicit dense attention in this minimum generation gate. An optional
+`require_pending_nonempty` guard requires actual pending-staging reads. A
+Full-KV/fast-path answer change is permitted; this is neither a Full-KV answer
+equivalence nor an A4.1 timing/allocator/HBM result.

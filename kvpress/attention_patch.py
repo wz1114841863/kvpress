@@ -59,6 +59,9 @@ def attention_patch(func):
     """
 
     def wrapper(module, query, key, value, attention_mask, dropout, **kwargs):
+        backend = getattr(module, "route_a_backend", None)
+        if backend is not None:
+            return backend.attention(func, module, query, key, value, attention_mask, dropout, **kwargs)
         if query.shape[2] == key.shape[2]:
             # Prefilling
             module.masked_key_indices = None

@@ -586,6 +586,16 @@ the same mask-selected records. Its fresh manifest must be reviewed before
 introducing an actual policy-on attention substitution. The remote command and
 artifact-return contract are in `analysis/route_a4_remote_run.md`.
 
+After that read-only gate passes, the minimum policy-on substitution is
+`kvpress/route_a_policy_backend.py` plus
+`tools/run_kvzap_route_a40_policy_gate.py`. It replaces the original attention
+call only for one selected layer/KV-head's Qwen GQA group on `q_len=1` decode;
+the group uses hot/pending/packed state and is guarded against its same-mask
+dense reference. A separate budget-one run must require non-empty pending
+staging. This remains an A4.0 semantic/generation gate, not a completed
+A4.1 measurement: non-target heads remain dense and the runner records no
+timing or allocator/profiler counter.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization

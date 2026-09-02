@@ -118,6 +118,13 @@ The remote-capable runner for that gate is
 `analysis/route_a4_remote_run.md`. It is deliberately read-only, so it is not
 yet the policy-on generation or A4.1 measurement gate.
 
+The next minimal policy-on gate is intentionally scoped to one Qwen layer/KV
+head GQA group during `q_len=1` decode. That group receives no fake-key or
+dense cold fallback and must equal a same-mask dense numerical reference; a
+separate budget-one run requires non-empty pending staging. This is a semantic
+generation gate only. It remains below A4.1 because other heads are dense and
+no repeated timing, allocator, or profiler measurements are collected.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:
