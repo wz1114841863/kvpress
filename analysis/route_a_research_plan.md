@@ -619,6 +619,12 @@ and must prove per-layer original-mask digest equality with the Route-A pass.
 Only after this paired logical baseline is accepted may A4.1 compare repeated
 Full-KV, same-mask dense KVzap, and Route-A measurements.
 
+If independently online dense and Route-A passes do not have identical masks,
+the gate must stop and emit a bounded score/keep diagnostic locating the first
+`(layer, KV head, position)` difference. Do not silently pair such runs as a
+same-mask baseline; explicit mask replay, if later added, must be labelled as
+replay rather than online predictor evidence.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization

@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import torch
 
-from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet
+from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, compare_original_mask_events
 
 
 def fake_model(layer_count=1):
@@ -99,3 +99,16 @@ def test_dense_same_mask_backend_has_no_route_a_pending_or_packed_state():
     assert backend.coverage()["original_mask_decision_count"] == 8
     backend_set = DenseSameMaskAttentionBackendSet(fake_model(2), None, layers=(0, 1), kv_head=None, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
     assert all(isinstance(item, DenseSameMaskAttentionBackend) for item in backend_set.backends.values())
+
+
+def test_online_mask_drift_report_locates_keep_flip_and_event_coverage_gap():
+    dense = {0: {(0, 10): (True, -3.99), (1, 10): (False, -4.01)}, 1: {(0, 11): (True, -3.5)}}
+    route = {0: {(0, 10): (False, -4.001), (1, 10): (False, -4.02), (2, 10): (True, -3.0)}}
+    report = compare_original_mask_events(dense, route, max_examples=4)
+    assert not report["matched"]
+    layer0, layer1 = report["layers"]
+    assert layer0["keep_mismatch_count"] == 1
+    assert layer0["route_a_only_event_count"] == 1
+    assert layer1["dense_only_event_count"] == 1
+    keep_flip = next(row for row in layer0["examples"] if row["kind"] == "keep_mismatch")
+    assert keep_flip == {"kind": "keep_mismatch", "layer": 0, "kv_head": 0, "cache_position": 10, "dense": {"keep": True, "score": -3.99}, "route_a": {"keep": False, "score": -4.001}}

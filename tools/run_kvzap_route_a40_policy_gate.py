@@ -15,7 +15,7 @@ from huggingface_hub import snapshot_download
 from transformers import pipeline
 
 from kvpress import KVzapPress
-from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackendSet, RouteAPolicyAttentionBackendSet
+from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackendSet, RouteAPolicyAttentionBackendSet, compare_original_mask_events
 from tools.export_kvzap_predictor_trace import GATE_A_PREDICTOR_REVISION, GATE_B_MODEL_REVISION, assert_no_runtime_mask_state, file_sha256, get_git_commit, stable_hash, validate_gate_a_evidence
 from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, build_builtin_request, load_jsonl_request, seed_everything
 
@@ -44,6 +44,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--atol", type=float, default=1e-5)
     parser.add_argument("--max-executed-dtype-ulps", type=float, default=16.0, help="Maximum post-cast ULP diagnostic difference. FP32 same-mask rtol/atol remains a mandatory semantic guard.")
     parser.add_argument("--with-same-mask-dense-baseline", action="store_true", help="Run an independent online same-mask dense KVzap control before Route-A and require per-layer original-mask digests to match.")
+    parser.add_argument("--mask-drift-example-limit", type=int, default=32, help="Maximum per-layer mask-drift examples saved when the paired online masks differ.")
     parser.add_argument("--require-pending-nonempty", action="store_true", help="Fail unless at least one policy decode comparison has pending retained cold staging.")
     parser.add_argument("--require-all-selected-heads-pending", action="store_true", help="Optional strict coverage assertion. This can legitimately fail when a selected original-mask head retains no mature cold token; use --require-pending-nonempty for the standard all-head gate.")
     parser.add_argument("--output-dir", type=Path, required=True, help="New output directory only.")
@@ -80,13 +81,37 @@ def mask_summaries(coverage: dict[str, Any]) -> dict[int, tuple[str, int]]:
     }
 
 
+def write_mask_drift_diagnostic(*, args: argparse.Namespace, request: dict[str, Any], full: dict[str, Any], dense: dict[str, Any], fast: dict[str, Any], dense_backend: DenseSameMaskAttentionBackendSet, route_backend: RouteAPolicyAttentionBackendSet, report: dict[str, Any]) -> Path:
+    """Persist a bounded failed-gate report in the requested fresh directory."""
+    config = {key: value for key, value in vars(args).items() if key not in {"output_dir", "gate_a_evidence"}}
+    payload = {
+        "schema_version": "kvzap-route-a40-online-mask-drift-diagnostic-1.0",
+        "status": "failed",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "git_commit": get_git_commit(),
+        "config": config,
+        "config_hash": stable_hash(config),
+        "request_id": request["request_id"],
+        "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}),
+        "answer_sha256": {"full_kv_bypass": answer_hash(full), "online_same_mask_dense_kvzap": answer_hash(dense), "route_a_fast_path": answer_hash(fast)},
+        "dense_mask_summaries": mask_summaries(dense_backend.coverage()),
+        "route_a_mask_summaries": mask_summaries(route_backend.coverage()),
+        "mask_drift": report,
+        "boundaries": ["This is a failed online-mask-pairing diagnostic, not a successful experiment result.", "Examples contain only layer, KV-head, cache position, predictor score, and boolean keep decision; no token text or K/V tensors are serialized.", "It is not a timing, allocator, HBM, throughput, energy, area, or RTL measurement."],
+    }
+    args.output_dir.mkdir(parents=True, exist_ok=False)
+    path = args.output_dir / "a40_online_mask_drift_diagnostic.json"
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return path
+
+
 def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
         raise FileExistsError(f"output directory already exists: {args.output_dir}")
     if args.request_id is not None and args.input_jsonl is None:
         raise ValueError("--request-id requires --input-jsonl")
-    if min(args.context_repetitions, args.page_tokens, args.admission_budget, args.max_new_tokens, args.max_executed_dtype_ulps) <= 0 or args.window_size < 0:
+    if min(args.context_repetitions, args.page_tokens, args.admission_budget, args.max_new_tokens, args.max_executed_dtype_ulps, args.mask_drift_example_limit) <= 0 or args.window_size < 0:
         raise ValueError("invalid Route-A policy-gate dimensions")
     if args.max_new_tokens < 2:
         raise ValueError("max-new-tokens must be at least 2")
@@ -144,8 +169,11 @@ def main() -> None:
         raise AssertionError("required non-empty pending cold staging was not observed")
     coverage = backend.coverage()
     if dense_coverage is not None:
-        if mask_summaries(dense_coverage) != mask_summaries(coverage):
-            raise AssertionError("online same-mask dense KVzap and Route-A fast path produced different per-layer original-mask digests")
+        report = compare_original_mask_events(dense_backend.mask_events(), backend.mask_events(), max_examples=args.mask_drift_example_limit)
+        if mask_summaries(dense_coverage) != mask_summaries(coverage) or not report["matched"]:
+            diagnostic = write_mask_drift_diagnostic(args=args, request=request, full=full, dense=dense, fast=fast, dense_backend=dense_backend, route_backend=backend, report=report)
+            first = next((example for layer in report["layers"] for example in layer["examples"]), None)
+            raise AssertionError(f"online same-mask dense KVzap and Route-A fast path produced different per-layer original-mask decisions; diagnostic={diagnostic}; first_difference={first}")
     for layer_coverage in coverage["layers"]:
         layer = int(layer_coverage["layer"])
         expected = set(layer_coverage["selected_kv_heads"])

@@ -151,6 +151,12 @@ diagnostic was 13 ULP under the declared 16-ULP limit. These are numerical and
 state-coverage diagnostics only; the next step is an independent same-mask
 dense KVzap control, not A4.1 measurement.
 
+Independent online dense and Route-A controls are required to compare their
+per-layer original-mask digests. A mismatch is a useful A4.0 finding: it must
+be diagnosed with the bounded score/keep event report, not hidden by calling
+the two paths same-mask. A future replayed-mask pairing would be a separate,
+explicitly labelled control.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

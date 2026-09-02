@@ -16,6 +16,51 @@ import torch
 from kvpress.route_a_attention import DenseSameMaskAttentionState, RouteAPackedAttentionState, dense_same_mask_attention
 
 
+MaskEvent = tuple[bool, float]
+MaskEventLayers = dict[int, dict[tuple[int, int], MaskEvent]]
+
+
+def compare_original_mask_events(dense_events: MaskEventLayers, route_events: MaskEventLayers, *, max_examples: int = 32) -> dict[str, Any]:
+    """Compare online predictor decisions without serializing full score traces.
+
+    Scores are retained in memory only for a small gate so an unequal digest can
+    be located as concrete ``(layer, KV head, position)`` keep/drop events.
+    The returned report contains a bounded difference sample, never K/V or
+    token text.
+    """
+    report_layers = []
+    for layer in sorted(set(dense_events) | set(route_events)):
+        dense = dense_events.get(layer, {})
+        route = route_events.get(layer, {})
+        dense_keys, route_keys = set(dense), set(route)
+        dense_only = sorted(dense_keys - route_keys)
+        route_only = sorted(route_keys - dense_keys)
+        keep_mismatches = [key for key in sorted(dense_keys & route_keys) if dense[key][0] != route[key][0]]
+        examples = []
+        for head, position in ([("dense_only", key) for key in dense_only] + [("route_only", key) for key in route_only] + [("keep_mismatch", key) for key in keep_mismatches])[:max_examples]:
+            kind = head
+            kv_head, cache_position = position
+            example: dict[str, Any] = {"kind": kind, "layer": layer, "kv_head": kv_head, "cache_position": cache_position}
+            if position in dense:
+                example["dense"] = {"keep": dense[position][0], "score": dense[position][1]}
+            if position in route:
+                example["route_a"] = {"keep": route[position][0], "score": route[position][1]}
+            examples.append(example)
+        score_deltas = [abs(dense[key][1] - route[key][1]) for key in dense_keys & route_keys]
+        report_layers.append({
+            "layer": layer,
+            "dense_decision_count": len(dense),
+            "route_a_decision_count": len(route),
+            "dense_only_event_count": len(dense_only),
+            "route_a_only_event_count": len(route_only),
+            "keep_mismatch_count": len(keep_mismatches),
+            "max_score_abs_difference_on_common_events": max(score_deltas, default=0.0),
+            "examples": examples,
+        })
+    matched = all(row["dense_only_event_count"] == row["route_a_only_event_count"] == row["keep_mismatch_count"] == 0 for row in report_layers)
+    return {"matched": matched, "layers": report_layers}
+
+
 class RouteAPolicyAttentionBackend(AbstractContextManager):
     """Attach selected real policy-on head-groups without fake-key masking.
 
@@ -40,6 +85,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         self._pre_hook = None
         self.comparisons: list[dict[str, float | int]] = []
         self.policy_decode_calls = 0
+        self._mask_events: dict[tuple[int, int], MaskEvent] = {}
 
     def selected_kv_heads(self, kv_head_count: int) -> tuple[int, ...]:
         if self.kv_head is None:
@@ -116,7 +162,18 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         scores = self.predictor.score(module, hidden, None, None, None, kwargs)
         if scores.ndim != 3 or scores.shape[0] != 1 or scores.shape[-1] != hidden.shape[1]:
             raise AssertionError("KVzap predictor returned an incompatible score shape")
+        decisions = scores[0] >= self.threshold
+        for head in range(scores.shape[1]):
+            for offset in range(scores.shape[2]):
+                key = (head, start + offset)
+                if key in self._mask_events:
+                    raise AssertionError("duplicate original-mask event for a layer/KV-head/position")
+                self._mask_events[key] = (bool(decisions[head, offset].item()), float(scores[0, head, offset].item()))
         self._scores, self._score_start = scores.detach(), start
+
+    def mask_events(self) -> dict[tuple[int, int], MaskEvent]:
+        """Return a copy of gate-only predictor decision diagnostics."""
+        return dict(self._mask_events)
 
     def _append_state(self, key: torch.Tensor, value: torch.Tensor) -> None:
         if self._scores is None or self._score_start is None:
@@ -300,6 +357,9 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
 
     def coverage(self) -> dict[str, Any]:
         return {"layers": [{"layer": layer, **backend.coverage()} for layer, backend in self.backends.items()]}
+
+    def mask_events(self) -> MaskEventLayers:
+        return {layer: backend.mask_events() for layer, backend in self.backends.items()}
 
 
 class DenseSameMaskAttentionBackendSet(RouteAPolicyAttentionBackendSet):

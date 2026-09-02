@@ -212,3 +212,9 @@ test ! -e "analysis/experiments/${RUN_ID}"
 
 Return the complete fresh directory. This establishes only the requested
 functional baseline. Do not time the three passes or report it as A4.1.
+
+If the online masks differ, the command intentionally exits nonzero after
+writing `a40_online_mask_drift_diagnostic.json` in that fresh directory. Sync
+that directory rather than rerunning with the same `RUN_ID`. The diagnostic
+identifies bounded examples of the earliest layer/head/position keep/drop
+differences and their two predictor scores; it contains no token text or K/V.

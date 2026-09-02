@@ -786,3 +786,10 @@ per-layer `original_mask_sha256` plus `original_mask_decision_count`. The gate
 fails unless those summaries match exactly. This establishes a paired logical
 same-mask dense KVzap baseline for the declared request; it is not a Full-KV
 equivalence, allocator, or performance measurement.
+
+If those independent online passes drift, the requested fresh output directory
+instead receives `kvzap-route-a40-online-mask-drift-diagnostic-1.0` with
+`status: "failed"`. It stores bounded examples and per-layer counts for only
+`(layer, kv_head, cache_position, score, keep)` events, plus answer digests and
+mask summaries. It must never be interpreted as a successful same-mask
+baseline or as an A4.1 measurement.
