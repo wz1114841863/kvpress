@@ -745,3 +745,12 @@ emits one numerical comparison row per `(policy decode call, KV head)`. It
 must show every selected head's non-empty pending staging at least once. Other
 layers remain dense; this is a layer-complete A4.0 semantic gate, not a
 full-model policy-on or A4.1 measurement result.
+
+For policy-on gates, the backend first compares online-merge and concatenated
+same-mask results in FP32 under the declared `rtol`/`atol`. It then casts both
+to the model execution dtype and permits at most one representable-value ULP,
+recording `max_abs_difference_fp32`, `max_abs_difference`, and
+`max_executed_dtype_ulps` in each comparison row. This prevents a reduction
+order's adjacent fp16/bf16 rounding value from being misreported as a semantic
+mismatch, while still failing any FP32 mismatch or executed-dtype difference
+greater than one ULP.

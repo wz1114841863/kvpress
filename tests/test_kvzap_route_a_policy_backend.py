@@ -44,3 +44,13 @@ def test_all_kv_heads_replace_the_full_layer_without_calling_original_on_decode(
     assert output.shape == (1, 4, 1, 2)
     assert {row["kv_head"] for row in backend.comparisons} == {0, 1}
     assert all(row["pending_tokens"] > 0 for row in backend.comparisons)
+
+
+def test_executed_dtype_guard_accepts_one_ulp_but_rejects_two():
+    dense = torch.tensor([0.015625], dtype=torch.float16)
+    one_ulp = torch.nextafter(dense, torch.full_like(dense, float("inf")))
+    two_ulps = torch.nextafter(one_ulp, torch.full_like(one_ulp, float("inf")))
+    _difference, one_ratio = RouteAPolicyAttentionBackend._cast_difference_in_ulps(one_ulp, dense)
+    _difference, two_ratio = RouteAPolicyAttentionBackend._cast_difference_in_ulps(two_ulps, dense)
+    assert one_ratio == 1.0
+    assert two_ratio == 2.0

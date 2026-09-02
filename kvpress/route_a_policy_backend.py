@@ -111,6 +111,23 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         weights = torch.softmax(logits, dim=-1)
         return (weights[:, None] * value.float()).sum(dim=0).to(dtype=query.dtype)
 
+    @staticmethod
+    def _cast_difference_in_ulps(route: torch.Tensor, dense: torch.Tensor) -> tuple[float, float]:
+        """Return max absolute difference and its maximum number of output ULPs.
+
+        The two paths reduce in a different order. Their FP32 results are the
+        semantic comparison; after casting to the model execution dtype, an
+        adjacent representable value is acceptable but two ULPs is not.
+        """
+        difference = (route - dense).abs()
+        if not route.is_floating_point():
+            return float(difference.max().item()), 0.0
+        positive = torch.full_like(dense, float("inf"))
+        negative = torch.full_like(dense, float("-inf"))
+        ulp = torch.maximum((torch.nextafter(dense, positive) - dense).abs(), (dense - torch.nextafter(dense, negative)).abs())
+        ratio = torch.where(ulp > 0, difference / ulp, torch.where(difference == 0, torch.zeros_like(difference), torch.full_like(difference, float("inf"))))
+        return float(difference.max().item()), float(ratio.max().item())
+
     def attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
         """Called by the global attention wrapper after Qwen updates its cache."""
         self._append_state(key, value)
@@ -125,16 +142,20 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         selected_heads = self.selected_kv_heads(kv_heads)
         scaling = float(kwargs.get("scaling", getattr(module, "scaling", 1.0)))
         output = []
-        per_head: dict[int, list[tuple[torch.Tensor, torch.Tensor, int]]] = {head: [] for head in selected_heads}
+        per_head: dict[int, list[tuple[torch.Tensor, torch.Tensor, int, torch.Tensor, torch.Tensor, float]]] = {head: [] for head in selected_heads}
         for query_head in range(heads):
             mapped_kv_head = query_head // groups
             q = query[0, query_head, 0]
             if mapped_kv_head in selected_heads:
-                route = self.state.attention(q * scaling, head=mapped_kv_head).to(dtype=q.dtype)
-                dense = dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped_kv_head)).to(dtype=q.dtype)
-                torch.testing.assert_close(route, dense, rtol=self.rtol, atol=self.atol)
+                route_fp32 = self.state.attention(q * scaling, head=mapped_kv_head)
+                dense_fp32 = dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped_kv_head))
+                torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol)
+                route, dense = route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)
+                _cast_abs, cast_ulps = self._cast_difference_in_ulps(route, dense)
+                if cast_ulps > 1.0:
+                    raise AssertionError(f"Route-A executed-dtype output differs from same-mask dense reference by {cast_ulps:.3f} ULPs")
                 output.append(route)
-                per_head[mapped_kv_head].append((route, dense, query_head))
+                per_head[mapped_kv_head].append((route, dense, query_head, route_fp32, dense_fp32, cast_ulps))
             else:
                 output.append(self._dense_one(q, key[0, mapped_kv_head], value[0, mapped_kv_head], attention_mask, scaling))
         if any(not rows for rows in per_head.values()):
@@ -145,7 +166,9 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             selected["cache_position"] = key.shape[2] - 1
             selected["kv_head"] = head
             selected["query_head_count"] = len(rows)
-            selected["max_abs_difference"] = max(float((route - dense).abs().max().item()) for route, dense, _query_head in rows)
+            selected["max_abs_difference"] = max(float((route - dense).abs().max().item()) for route, dense, _query_head, _route_fp32, _dense_fp32, _cast_ulps in rows)
+            selected["max_abs_difference_fp32"] = max(float((route_fp32 - dense_fp32).abs().max().item()) for _route, _dense, _query_head, route_fp32, dense_fp32, _cast_ulps in rows)
+            selected["max_executed_dtype_ulps"] = max(cast_ulps for _route, _dense, _query_head, _route_fp32, _dense_fp32, cast_ulps in rows)
             self.comparisons.append(selected)
         self.policy_decode_calls += 1
         return route_output, None
