@@ -106,6 +106,14 @@ not silently to Full KV.
 Start with a named small request and layer/head harness, then connect to
 generation only after those checks pass.
 
+Implementation status (2026-09-02): the no-model, single-layer functional
+harness is implemented as `kvzap-route-a40-packed-attention-reference-1.0`.
+It has unit guards for exact-mask maturity partition, hot-window exclusion,
+oldest-first pending/page conservation, empty/tail/cross-page states,
+different head lengths, online-softmax equivalence, and explicit bypass.
+This is not yet a model-cache hook, generation-equivalence result, or A4.1
+measurement; the next gate is a named small request/layer/head integration.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

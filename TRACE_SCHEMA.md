@@ -690,3 +690,25 @@ Full-KV zero-saving reference for unactivated policies. The observed horizon
 is post-hoc analysis only: this is a no-contract, semantics-safe but
 performance-speculative policy screen, not an online horizon predictor,
 sparse-attention execution, or hardware measurement.
+
+### Route-A4.0 policy-on packed-attention functional reference
+
+`kvpress/route_a_attention.py` defines the no-model schema
+`kvzap-route-a40-packed-attention-reference-1.0`. The Route-A fast path owns
+one state instance per layer and keeps, for each KV head, a regular hot deque,
+an oldest-position pending FIFO, and append-only packed cold pages. K/V input
+is `[KV-head, token, head-dim]`; the caller supplies the already-decided
+original boolean KVzap keep mask `[KV-head, token]` and contiguous positions.
+At maturity, every position is partitioned by that mask into drop or pending;
+global oldest-first service moves at most the declared budget into pages. A
+token in the protected hot window is never pending or packed.
+
+The reference attention path reads exactly `hot + pending + packed` records
+and merges their independently stabilized partial softmax states. Its only
+numerical comparison is against a dense attention concatenation over those
+same retained records. `full_kv_bypass` is an explicit control path requiring
+the caller's Full-KV records and performs no Route-A state construction or
+admission; `route_a_fast_path` reads the three Route-A stores and has no dense
+cold fallback. This schema is a unit-level functional guard only: it does not
+yet define a transformer cache hook, generation result, timing, allocator,
+HBM/DRAM counter, latency, throughput, energy, area, or RTL interface.

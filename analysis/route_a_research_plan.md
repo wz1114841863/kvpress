@@ -567,6 +567,17 @@ profiler, and runtime behavior. A4.2 converts the validated interface into
 FIFO/page/bank/merge/scheduler/bypass resource constraints. RTL remains gated
 on the full A4 criteria in the handoff.
 
+The first A4.0 implementation is the no-model
+`kvzap-route-a40-packed-attention-reference-1.0` semantic harness in
+`kvpress/route_a_attention.py` and `tools/run_kvzap_route_a4_reference.py`.
+It makes the Full-KV bypass and Route-A fast path explicit, preserves original
+per-head keep decisions and positions while moving mature records through a
+shared oldest-first pending FIFO and append-only pages, and compares stable
+three-store online-softmax attention against a same-mask dense concatenation.
+It is deliberately not connected to model generation yet. Passing its unit
+tests permits only the next small model integration gate; it does not start
+A4.1 or establish any measured result.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization
