@@ -126,3 +126,48 @@ per-head retained-cold and pending coverage: a selected head can validly have
 no pending state when the original mask retained no mature cold token. This
 still does not authorize A4.1 timing: it establishes only a layer-complete
 semantic gate.
+
+## Multi-layer policy-on gates
+
+Schema `kvzap-route-a40-policy-on-qwen-gate-1.1` accepts a layer set. Start
+with a separated early/middle/late probe; each listed layer has independent
+Route-A state and its own per-head comparisons while sharing the frozen
+predictor weights:
+
+```bash
+RUN_ID=route_a40_policy_on_qwen_layers_0_18_35_pending_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a40_policy_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers 0 18 35 \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --require-pending-nonempty \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Only after that manifest passes may the all-layer semantic gate run. It can be
+substantially slower because this Python reference replaces every layer's
+decode attention; it remains a semantic gate, not a timing experiment:
+
+```bash
+RUN_ID=route_a40_policy_on_qwen_all_layers_pending_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a40_policy_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --require-pending-nonempty \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+For either manifest, every declared layer must have a positive
+`policy_decode_call_count_by_layer`, and `policy_coverage.layers` must contain
+every declared layer with one comparison row per selected KV head per decode
+call. Do not run these commands with a timing wrapper or treat their elapsed
+time as A4.1 evidence.

@@ -74,20 +74,30 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         }
 
     def __enter__(self):
-        self.predictor.post_init_from_model(self.model)
+        self.attach(initialize_predictor=True)
+        return self
+
+    def attach(self, *, initialize_predictor: bool) -> None:
+        """Install hooks; a layer-set initializes the shared predictor once."""
+        if initialize_predictor:
+            self.predictor.post_init_from_model(self.model)
+        if self._pre_hook is not None:
+            raise RuntimeError("Route-A backend is already attached")
         self._pre_hook = self.module.register_forward_pre_hook(self._capture_scores, with_kwargs=True)
         if hasattr(self.module, "route_a_backend"):
             raise RuntimeError("attention module already has a Route-A backend")
         self.module.route_a_backend = self
-        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
+        self.detach()
+        return None
+
+    def detach(self) -> None:
         if self._pre_hook is not None:
             self._pre_hook.remove()
         self._pre_hook = None
         if getattr(self.module, "route_a_backend", None) is self:
             delattr(self.module, "route_a_backend")
-        return None
 
     def _capture_scores(self, module, _inputs, kwargs) -> None:
         hidden = kwargs.get("hidden_states")
@@ -190,6 +200,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         for head, rows in per_head.items():
             selected = self.state.state_summary(head)
             selected["cache_position"] = key.shape[2] - 1
+            selected["layer"] = self.layer
             selected["kv_head"] = head
             selected["query_head_count"] = len(rows)
             selected["max_abs_difference"] = max(float((route - dense).abs().max().item()) for route, dense, _query_head, _route_fp32, _dense_fp32, _cast_ulps in rows)
@@ -198,3 +209,50 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             self.comparisons.append(selected)
         self.policy_decode_calls += 1
         return route_output, None
+
+
+class RouteAPolicyAttentionBackendSet(AbstractContextManager):
+    """Atomically attach Route-A policy backends to multiple model layers.
+
+    Every member has independent hot/pending/page state but shares the one
+    frozen predictor instance.  This avoids duplicating predictor weights while
+    retaining per-layer original-mask decisions and numerical guards.
+    """
+
+    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float) -> None:
+        if not layers or len(set(layers)) != len(layers) or any(layer < 0 for layer in layers):
+            raise ValueError("layers must be unique non-negative indices")
+        self.model, self.predictor, self.layers = model, predictor, tuple(layers)
+        self.backends = {
+            layer: RouteAPolicyAttentionBackend(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol)
+            for layer in self.layers
+        }
+
+    def __enter__(self):
+        self.predictor.post_init_from_model(self.model)
+        attached: list[RouteAPolicyAttentionBackend] = []
+        try:
+            for backend in self.backends.values():
+                backend.attach(initialize_predictor=False)
+                attached.append(backend)
+        except BaseException:
+            for backend in reversed(attached):
+                backend.detach()
+            raise
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        for backend in reversed(tuple(self.backends.values())):
+            backend.detach()
+        return None
+
+    @property
+    def comparisons(self) -> list[dict[str, float | int]]:
+        return [row for backend in self.backends.values() for row in backend.comparisons]
+
+    @property
+    def policy_decode_calls(self) -> dict[int, int]:
+        return {layer: backend.policy_decode_calls for layer, backend in self.backends.items()}
+
+    def coverage(self) -> dict[str, Any]:
+        return {"layers": [{"layer": layer, **backend.coverage()} for layer, backend in self.backends.items()]}

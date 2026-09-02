@@ -757,3 +757,13 @@ recording `max_abs_difference_fp32`, `max_abs_difference`, and
 order's adjacent fp16/bf16 rounding value from being misreported as a semantic
 mismatch, while still failing any FP32 mismatch or executed-dtype difference
 greater than one ULP.
+
+Schema `kvzap-route-a40-policy-on-qwen-gate-1.1` generalizes the gate from one
+layer to an explicit `resolved_target_layers` set. Every selected layer has an
+independent `RouteAPolicyAttentionBackend` state and every state consumes its
+own original KVzap score stream; the set shares one frozen predictor instance
+only. The manifest replaces the scalar policy-call field with
+`policy_decode_call_count_by_layer`, adds `layer` to every comparison row, and
+nests each layer's selected-head coverage in `policy_coverage.layers`. The
+`target_layers: ["all"]` option denotes all model layers. This remains a
+functional reference whose Python execution time is excluded from A4.1.

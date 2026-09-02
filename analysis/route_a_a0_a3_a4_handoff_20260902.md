@@ -130,6 +130,10 @@ every layer-local KV-head GQA group must replace original attention and must
 exercise pending staging. It is still not a full-model or measured-performance
 claim.
 
+A4.0 now progresses through an early/middle/late `{0,18,35}` shared-predictor
+multi-layer gate before the all-layer gate. Each layer owns independent state
+and numerical guards; neither gate is a timing result.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

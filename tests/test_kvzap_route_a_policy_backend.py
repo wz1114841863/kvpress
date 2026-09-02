@@ -2,11 +2,11 @@ from types import SimpleNamespace
 
 import torch
 
-from kvpress.route_a_policy_backend import RouteAPolicyAttentionBackend
+from kvpress.route_a_policy_backend import RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet
 
 
-def fake_model():
-    return SimpleNamespace(model=SimpleNamespace(layers=[SimpleNamespace(self_attn=SimpleNamespace())]))
+def fake_model(layer_count=1):
+    return SimpleNamespace(model=SimpleNamespace(layers=[SimpleNamespace(self_attn=SimpleNamespace()) for _ in range(layer_count)]))
 
 
 def test_selected_decode_group_uses_route_state_without_calling_original_and_reads_pending():
@@ -55,3 +55,18 @@ def test_executed_dtype_guard_accepts_one_ulp_but_rejects_two():
     _difference, two_ratio = RouteAPolicyAttentionBackend._cast_difference_in_ulps(two_ulps, dense)
     assert one_ratio == 1.0
     assert two_ratio == 2.0
+
+
+def test_backend_set_keeps_independent_layer_state_and_aggregates_coverage():
+    backend_set = RouteAPolicyAttentionBackendSet(fake_model(2), None, layers=(0, 1), kv_head=None, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    keys = torch.arange(16, dtype=torch.float32).reshape(1, 2, 4, 2)
+    for layer, backend in backend_set.backends.items():
+        module = SimpleNamespace(scaling=1.0)
+        backend._scores, backend._score_start = torch.ones(1, 2, 3), 0
+        backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 4, 3, 2), None), module, torch.ones(1, 4, 3, 2), keys[:, :, :3], keys[:, :, :3], None, 0.0, scaling=1.0)
+        backend._scores, backend._score_start = torch.ones(1, 2, 1), 3
+        backend.attention(lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("route layer called original attention")), module, torch.ones(1, 4, 1, 2), keys, keys, None, 0.0, scaling=1.0)
+        assert backend.policy_decode_calls == 1
+    assert backend_set.policy_decode_calls == {0: 1, 1: 1}
+    assert len(backend_set.comparisons) == 4
+    assert [row["layer"] for row in backend_set.coverage()["layers"]] == [0, 1]

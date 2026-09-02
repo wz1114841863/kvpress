@@ -604,6 +604,14 @@ layer-complete gate is reviewed should A4.1 add repeated component timing and
 profiler instrumentation; it must still retain separate Full-KV and same-mask
 dense KVzap baselines.
 
+The multi-layer A4.0 implementation uses one shared frozen predictor plus
+independent per-layer Route-A states. It must first pass a separated
+early/middle/late `{0,18,35}` semantic gate, then `target_layers=all` with all
+KV heads. Each selected layer must retain same-mask FP32 plus executed-dtype
+ULP guards and explicit per-head cold/pending coverage. The all-layer Python
+reference is intentionally excluded from timing claims; it is a prerequisite
+for, not the A4.1 implementation benchmark.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization

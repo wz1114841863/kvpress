@@ -15,7 +15,7 @@ from huggingface_hub import snapshot_download
 from transformers import pipeline
 
 from kvpress import KVzapPress
-from kvpress.route_a_policy_backend import RouteAPolicyAttentionBackend
+from kvpress.route_a_policy_backend import RouteAPolicyAttentionBackendSet
 from tools.export_kvzap_predictor_trace import GATE_A_PREDICTOR_REVISION, GATE_B_MODEL_REVISION, assert_no_runtime_mask_state, file_sha256, get_git_commit, stable_hash, validate_gate_a_evidence
 from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, build_builtin_request, load_jsonl_request, seed_everything
 
@@ -36,7 +36,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--window-size", type=int, default=128)
     parser.add_argument("--page-tokens", type=int, default=64)
     parser.add_argument("--admission-budget", type=int, required=True)
-    parser.add_argument("--target-layer", type=int, default=0)
+    parser.add_argument("--target-layers", nargs="+", default=["0"], help="One or more layer indices, or exactly 'all' for every model layer.")
     parser.add_argument("--target-kv-head", default="0", help="KV-head index, or 'all' to substitute every KV head in the selected layer.")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max-new-tokens", type=int, default=8)
@@ -55,6 +55,20 @@ def answer_hash(output: dict[str, Any]) -> str:
 def generate(pipe, request: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
     seed_everything(args.seed)
     return pipe(str(request["context"]), question=str(request["question"]), max_new_tokens=args.max_new_tokens, enable_thinking=False)
+
+
+def resolve_target_layers(values: list[str], layer_count: int) -> tuple[int, ...]:
+    if values == ["all"]:
+        return tuple(range(layer_count))
+    if "all" in values:
+        raise ValueError("--target-layers all cannot be combined with explicit layers")
+    try:
+        layers = tuple(int(value) for value in values)
+    except ValueError as error:
+        raise ValueError("--target-layers must contain non-negative integers or exactly 'all'") from error
+    if not layers or len(set(layers)) != len(layers) or any(not 0 <= layer < layer_count for layer in layers):
+        raise ValueError(f"--target-layers must be unique indices in [0,{layer_count})")
+    return layers
 
 
 def main() -> None:
@@ -93,35 +107,43 @@ def main() -> None:
     print("Pass 1/2: Full-KV bypass reference (zero Route-A admission)...")
     full = generate(pipe, request, args)
     assert_no_runtime_mask_state(pipe.model)
+    language_model = pipe.model.model.language_model if hasattr(pipe.model.model, "language_model") else pipe.model.model
+    selected_layers = resolve_target_layers(args.target_layers, len(language_model.layers))
+    args.resolved_target_layers = list(selected_layers)
     selected = None if args.target_kv_head == "all" else args.target_kv_head
-    backend = RouteAPolicyAttentionBackend(pipe.model, KVzapPress(model_type="mlp", predictor_revision=args.predictor_revision), layer=args.target_layer, kv_head=selected, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol)
-    print("Pass 2/2: selected Route-A fast path with policy-on decode substitution...")
+    backend = RouteAPolicyAttentionBackendSet(pipe.model, KVzapPress(model_type="mlp", predictor_revision=args.predictor_revision), layers=selected_layers, kv_head=selected, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol)
+    print(f"Pass 2/2: Route-A fast path with policy-on decode substitution in layers {list(selected_layers)}...")
     with torch.no_grad(), backend:
         fast = generate(pipe, request, args)
     assert_no_runtime_mask_state(pipe.model)
-    if not backend.comparisons or backend.policy_decode_calls <= 0:
+    if not backend.comparisons or not all(count > 0 for count in backend.policy_decode_calls.values()):
         raise AssertionError("no complete policy-on decode comparison was observed")
     if args.require_pending_nonempty and not any(int(row["pending_tokens"]) > 0 for row in backend.comparisons):
         raise AssertionError("required non-empty pending cold staging was not observed")
     coverage = backend.coverage()
-    expected = set(coverage["selected_kv_heads"])
-    compared = {int(row["kv_head"]) for row in backend.comparisons}
-    if compared != expected:
-        raise AssertionError(f"not every selected KV head produced a policy comparison: seen={sorted(compared)}, expected={sorted(expected)}")
+    for layer_coverage in coverage["layers"]:
+        layer = int(layer_coverage["layer"])
+        expected = set(layer_coverage["selected_kv_heads"])
+        compared = {int(row["kv_head"]) for row in backend.comparisons if int(row["layer"]) == layer}
+        if compared != expected:
+            raise AssertionError(f"layer {layer}: not every selected KV head produced a policy comparison: seen={sorted(compared)}, expected={sorted(expected)}")
     if args.require_all_selected_heads_pending:
-        seen = {int(row["kv_head"]) for row in backend.comparisons if int(row["pending_tokens"]) > 0}
-        if seen != expected:
-            raise AssertionError(f"strict pending coverage failed: seen={sorted(seen)}, expected={sorted(expected)}; inspect manifest coverage to distinguish no retained cold token from pending absence")
+        for layer_coverage in coverage["layers"]:
+            layer = int(layer_coverage["layer"])
+            expected = set(layer_coverage["selected_kv_heads"])
+            seen = {int(row["kv_head"]) for row in backend.comparisons if int(row["layer"]) == layer and int(row["pending_tokens"]) > 0}
+            if seen != expected:
+                raise AssertionError(f"layer {layer}: strict pending coverage failed: seen={sorted(seen)}, expected={sorted(expected)}; inspect manifest coverage to distinguish no retained cold token from pending absence")
     config = {key: value for key, value in vars(args).items() if key not in {"output_dir", "gate_a_evidence"}}
     manifest = {
-        "schema_version": "kvzap-route-a40-policy-on-qwen-gate-1.0", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(),
+        "schema_version": "kvzap-route-a40-policy-on-qwen-gate-1.1", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(),
         "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}),
         "gate_a_evidence": gate_a, "full_kv_bypass_answer_sha256": answer_hash(full), "route_a_fast_path_answer_sha256": answer_hash(fast), "answers_identical": answer_hash(full) == answer_hash(fast),
-        "policy_decode_call_count": backend.policy_decode_calls, "comparisons": backend.comparisons, "policy_coverage": coverage,
+        "policy_decode_call_count_by_layer": backend.policy_decode_calls, "comparisons": backend.comparisons, "policy_coverage": coverage,
         "source_artifact_sha256": {"gate_a_manifest": file_sha256(args.gate_a_evidence / "manifest.json"), "gate_a_score_mask": file_sha256(args.gate_a_evidence / "score_mask.npz")},
-        "control_plane": {"full_kv_bypass": "Pass 1 uses no Route-A backend or admission.", "route_a_fast_path": "Pass 2 substitutes each selected KV-head's GQA query group at q_len=1; selected groups read hot/pending/packed only."},
+        "control_plane": {"full_kv_bypass": "Pass 1 uses no Route-A backend or admission.", "route_a_fast_path": "Pass 2 substitutes each selected layer/KV-head GQA query group at q_len=1; selected groups read hot/pending/packed only."},
         "observational_guards": {"selected_head_original_attention_called_during_policy_decode": False, "dms_press_used": False, "masked_key_indices_created": False, "fake_key_attention_used": False, "model_cache_mutated_by_backend": False},
-        "boundaries": ["This is a minimal single-layer policy-on generation gate. With --target-kv-head all, every KV-head group in the selected layer is Route-A; other layers remain dense.", "The Full-KV and Route-A answers need not match; numerical equality is required only between each substituted head's packed/pending/hot attention and the same-mask dense reference.", "No field is an allocator/HBM counter, timing, latency, throughput, energy, area, frequency, cross-workload result, or RTL evidence."],
+        "boundaries": ["This is a policy-on generation gate for the declared layers. With --target-kv-head all, every KV-head group in every declared layer is Route-A; undeclared layers remain dense.", "The Full-KV and Route-A answers need not match; numerical equality is required only between each substituted head's packed/pending/hot attention and the same-mask dense reference.", "No field is an allocator/HBM counter, timing, latency, throughput, energy, area, frequency, cross-workload result, or RTL evidence."],
         "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__),
     }
     args.output_dir.mkdir(parents=True, exist_ok=False)
