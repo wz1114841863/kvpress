@@ -738,13 +738,16 @@ explicit dense attention in this minimum generation gate. An optional
 Full-KV/fast-path answer change is permitted; this is neither a Full-KV answer
 equivalence nor an A4.1 timing/allocator/HBM result.
 
-The same schema accepts `target_kv_head: "all"` only together with
-`require_all_selected_heads_pending`. In this mode each KV-head GQA group of
-the declared layer bypasses original attention on `q_len=1`, and the manifest
-emits one numerical comparison row per `(policy decode call, KV head)`. It
-must show every selected head's non-empty pending staging at least once. Other
-layers remain dense; this is a layer-complete A4.0 semantic gate, not a
-full-model policy-on or A4.1 measurement result.
+The same schema accepts `target_kv_head: "all"`. In this mode each KV-head
+GQA group of the declared layer bypasses original attention on `q_len=1`, and
+the manifest emits one numerical comparison row per `(policy decode call, KV
+head)` plus `policy_coverage`. The standard all-head gate requires every
+selected head to be compared and at least one pending-staging read. A selected
+head with no retained mature cold token under the original mask legitimately
+has no pending entry; the optional strict all-head-pending assertion may be
+used only when that stronger coverage is desired. Other layers remain dense;
+this is a layer-complete A4.0 semantic gate, not a full-model policy-on or
+A4.1 measurement result.
 
 For policy-on gates, the backend first compares online-merge and concatenated
 same-mask results in FP32 under the declared `rtol`/`atol`. It then casts both

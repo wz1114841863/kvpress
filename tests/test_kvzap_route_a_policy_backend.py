@@ -44,6 +44,7 @@ def test_all_kv_heads_replace_the_full_layer_without_calling_original_on_decode(
     assert output.shape == (1, 4, 1, 2)
     assert {row["kv_head"] for row in backend.comparisons} == {0, 1}
     assert all(row["pending_tokens"] > 0 for row in backend.comparisons)
+    assert backend.coverage() == {"selected_kv_heads": [0, 1], "heads": [{"kv_head": 0, "comparison_count": 1, "max_packed_tokens": 1, "max_pending_tokens": 2, "ever_retained_cold": True, "ever_pending": True}, {"kv_head": 1, "comparison_count": 1, "max_packed_tokens": 1, "max_pending_tokens": 2, "ever_retained_cold": True, "ever_pending": True}]}
 
 
 def test_executed_dtype_guard_accepts_one_ulp_but_rejects_two():

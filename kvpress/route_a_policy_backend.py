@@ -47,6 +47,32 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             raise ValueError("target KV head is outside the model")
         return (self.kv_head,)
 
+    def coverage(self) -> dict[str, Any]:
+        """Summarize per-head cold/pending coverage without inferring a mask.
+
+        A selected KV head can legitimately have no retained mature cold token
+        under the original mask. It is still substituted and numerically
+        checked, but cannot be required to exercise pending staging.
+        """
+        if self.state is None:
+            return {"selected_kv_heads": [], "heads": []}
+        selected = self.selected_kv_heads(self.state.heads)
+        rows = {head: [row for row in self.comparisons if int(row["kv_head"]) == head] for head in selected}
+        return {
+            "selected_kv_heads": list(selected),
+            "heads": [
+                {
+                    "kv_head": head,
+                    "comparison_count": len(rows[head]),
+                    "max_packed_tokens": max((int(row["packed_tokens"]) for row in rows[head]), default=0),
+                    "max_pending_tokens": max((int(row["pending_tokens"]) for row in rows[head]), default=0),
+                    "ever_retained_cold": any(int(row["packed_tokens"]) + int(row["pending_tokens"]) > 0 for row in rows[head]),
+                    "ever_pending": any(int(row["pending_tokens"]) > 0 for row in rows[head]),
+                }
+                for head in selected
+            ],
+        }
+
     def __enter__(self):
         self.predictor.post_init_from_model(self.model)
         self._pre_hook = self.module.register_forward_pre_hook(self._capture_scores, with_kwargs=True)

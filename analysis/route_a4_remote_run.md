@@ -115,11 +115,14 @@ test ! -e "analysis/experiments/${RUN_ID}"
   --target-layer 0 \
   --target-kv-head all \
   --admission-budget 1 \
-  --require-all-selected-heads-pending \
+  --require-pending-nonempty \
   --output-dir "analysis/experiments/${RUN_ID}"
 ```
 
 Return the complete fresh directory. Review requires a comparison row for each
 selected KV head on every policy decode call, zero original-attention/fake-key
-guards, and a nonzero pending count for every selected head. This still does
-not authorize A4.1 timing: it establishes only a layer-complete semantic gate.
+guards, and at least one nonzero pending count. `policy_coverage` records
+per-head retained-cold and pending coverage: a selected head can validly have
+no pending state when the original mask retained no mature cold token. This
+still does not authorize A4.1 timing: it establishes only a layer-complete
+semantic gate.
