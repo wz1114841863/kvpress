@@ -625,6 +625,12 @@ the gate must stop and emit a bounded score/keep diagnostic locating the first
 same-mask baseline; explicit mask replay, if later added, must be labelled as
 replay rather than online predictor evidence.
 
+The resulting paired baseline uses the dense pass as the sole online mask
+source and replays those events into Route-A with exact-consumption guards.
+It may isolate dense-cold versus pending/packed/hot attention semantics, but
+must remain labelled `replayed-mask paired control`; retain the failed
+independent-online diagnostic as the mask-stability limitation.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization

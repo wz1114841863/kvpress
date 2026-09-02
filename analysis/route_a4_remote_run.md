@@ -218,3 +218,37 @@ writing `a40_online_mask_drift_diagnostic.json` in that fresh directory. Sync
 that directory rather than rerunning with the same `RUN_ID`. The diagnostic
 identifies bounded examples of the earliest layer/head/position keep/drop
 differences and their two predictor scores; it contains no token text or K/V.
+
+## Explicit replayed-mask paired baseline
+
+The diagnostic establishes that independent online predictor passes are not a
+strict same-mask pair for this request. The following separate control makes
+Pass 2 the only online predictor source. Pass 3 replays Pass-2
+`(layer, KV-head, position)` decisions exactly once and does not score its own
+predictor. It therefore isolates the two attention/storage paths under exactly
+the dense pass's original mask; it is not independent online Route-A evidence.
+
+```bash
+RUN_ID=route_a40_policy_on_qwen_all_layers_replayed_mask_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a4_reference.py \
+  tests/test_kvzap_route_a_policy_backend.py
+.venv/bin/python tools/run_kvzap_route_a40_policy_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --max-executed-dtype-ulps 16 \
+  --with-same-mask-dense-baseline \
+  --replay-dense-mask-for-route-a \
+  --require-pending-nonempty \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Review requires `pairing_mode: "replayed_dense_mask"`, exact per-layer mask
+digest equality, and `replay_mask_consumption_complete: true`. Do not compare
+wall-clock time from these Python reference passes or use this result as an
+online mask-stability claim.

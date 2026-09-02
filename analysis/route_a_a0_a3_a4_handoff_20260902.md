@@ -157,6 +157,11 @@ be diagnosed with the bounded score/keep event report, not hidden by calling
 the two paths same-mask. A future replayed-mask pairing would be a separate,
 explicitly labelled control.
 
+The next implementation is that replayed-mask paired control: dense KVzap is
+the sole online predictor source, while Route-A consumes the frozen dense
+events exactly once. It can establish a strict same-mask functional pairing,
+but does not erase the observed independent-online drift and is not A4.1.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

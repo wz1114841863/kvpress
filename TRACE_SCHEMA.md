@@ -793,3 +793,13 @@ instead receives `kvzap-route-a40-online-mask-drift-diagnostic-1.0` with
 `(layer, kv_head, cache_position, score, keep)` events, plus answer digests and
 mask summaries. It must never be interpreted as a successful same-mask
 baseline or as an A4.1 measurement.
+
+Schema `kvzap-route-a40-policy-on-qwen-gate-1.4` adds the explicit
+`replay_dense_mask_for_route_a` control. In this three-pass paired control,
+Pass 2 is the only online predictor source; Pass 3 consumes Pass-2
+`(layer, kv_head, position) -> (score, keep)` events exactly once and does not
+invoke its own predictor. The manifest records `pairing_mode:
+"replayed_dense_mask"`, `route_a_mask_source: "replayed_dense_mask"`, and
+`replay_mask_consumption_complete: true`. This proves an exact replayed-mask
+storage/attention pairing only, not online mask stability or independent
+Route-A predictor behavior.
