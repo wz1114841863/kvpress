@@ -543,6 +543,30 @@ performance-speculative policy analysis; it neither makes actual length known
 online nor establishes sparse-attention execution, HBM, allocator, latency, or
 throughput behavior.
 
+The first dense result is archived in
+`analysis/experiments/route_a320_longoutput_speculative_curve_local_01/`: the
+three long summarization traces are positive at their final observed horizons
+for every `D=0..32`, while `D=16` first dips negative after activation and
+recovers at calls 25--38 depending on the trace. This is deliberately not a
+short-output distribution result; retain the A3.15 high-cap/early-stop
+counterexample and run its dense A3.20 counterpart before drawing a
+no-contract deployment conclusion.
+
+### A4 _ policy-on reference and measurement gate
+
+The A0--A3 closeout and A4 execution contract are in
+`analysis/route_a_a0_a3_a4_handoff_20260902.md`. A4 starts with a minimum,
+semantics-checked packed-attention reference, not RTL and not A3 proxy timing.
+It must read regular hot KV, pending retained cold staging, and sealed packed
+cold pages; merge their partial softmax states; and preserve original KVzap
+mask/position semantics. It exposes an explicit Full-KV bypass and a selected
+Route-A fast path; continuation information remains optional external input.
+
+Only after A4.0 equivalence/state checks pass may A4.1 measure allocator,
+profiler, and runtime behavior. A4.2 converts the validated interface into
+FIFO/page/bank/merge/scheduler/bypass resource constraints. RTL remains gated
+on the full A4 criteria in the handoff.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization

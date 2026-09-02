@@ -59,6 +59,15 @@ Route A 必须依次验证三件事：
 3. **系统收益**：物理 packed capacity 是否在 metadata、admission、scheduler、merge
    成本后仍转化为净 HBM traffic 和 modeled decode-latency 收益。
 
+### 当前阶段交接（2026-09-02）
+
+A0--A3 的证据索引、结论边界和 A4 入口见
+`analysis/route_a_a0_a3_a4_handoff_20260902.md`。当前仅为条件性可行性：Route A
+可以进入 policy-on functional reference 与实际软件测量研究，但不具有 RTL、真实 HBM、
+wall-clock 或通用加速结论。无可信 continuation 信息时，Full-KV bypass 是严格性能安全
+路径；deferred admission 仅为语义安全的投机策略。continuation contract 是可选上游控制
+面接口，不是默认假设存在的长度预测器。
+
 三项的详细可复现实验合同见 `analysis/route_a_research_plan.md`。现有
 predictor-only prefill trace 只能先支持静态 packing 和 scheduler DSE；admission
 break-even 与实测 end-to-end 仍需要后续安全的 decode-lifecycle trace 或独立测量。

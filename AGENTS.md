@@ -452,16 +452,18 @@ results/
 7. **已完成并冻结**：B=4/m=0 与 B=4/m=+0.25 的离线结构、实际 DMS mask gate、9 条
    分层 screening 和 Phase-3 page-layout 筛查；权威记录为
    `analysis/b4_route_b_screening_freeze.json`；
-8. **已完成 A0--A3.19（条件性可行性）**：静态 packed-page replay、scheduler、read-only
+8. **已完成 A0--A3（条件性可行性）**：静态 packed-page replay、scheduler、read-only
    lifecycle、branch-consistent admission/memory DSE、短输出反例、continuation-contract
-   policy、breach sensitivity 和 observed-prefix sufficiency 均已完成。权威阶段归档为
-   `analysis/route_a_stage_archive_20260902.md`；它不是 architecture-spec 或硬件测量冻结。
-9. **下一步 A3.20**：在无可信 continuation contract 的默认现实情形，密集扫描 deferred
-   admission 的实际 prefix 曲线与短/长请求损失分布；Full-KV bypass 是严格性能安全的
-   对照，deferred admission 只能标为语义安全的投机策略。
-10. **下一步 A4**：实现 policy-on、语义校验的 packed-cold + pending-staging attention
-    reference，随后才采集 allocator/HBM/runtime 的实际测量；把 contract 作为可选软件
-    控制面接口，而不是隐含的长度预测器。
-11. **RTL gate**：仅当 A4 同时验证语义、实测趋势、无合同 fallback/control 以及跨模型/
-    长输出 workload 的稳定资源合同后，才冻结 architecture spec 并考虑 RTL。
+   policy、breach sensitivity、observed-prefix sufficiency，以及长输出 A3.20 dense curve
+   均已完成。交接入口为 `analysis/route_a_a0_a3_a4_handoff_20260902.md`，阶段归档为
+   `analysis/route_a_stage_archive_20260902.md`；两者均不是 architecture-spec 或硬件测量冻结。
+9. **A3.20 状态**：短输出亏损机制已有 A3.15 反例与 A3.20 activation-dip/recovery
+   曲线支持；除非目标是估计真实请求分布的风险比例，不再以寻找更多亏损长度为主线。
+   Full-KV bypass 是严格性能安全对照，deferred admission 只能标为语义安全的投机策略。
+10. **当前主线 A4**：先实现 policy-on、语义校验的 packed-cold + pending-staging
+    attention reference（A4.0），再采集 allocator/profiler/runtime 的实际软件测量（A4.1），
+    最后收束 FIFO/page/bank/merge/scheduler/bypass 资源合同（A4.2）。contract 是可选软件
+    控制面接口，而不是隐含长度预测器。
+11. **RTL gate**：仅当 A4 同时验证语义、实测趋势、Full-KV fallback/control 以及跨模型/
+    workload 的稳定资源合同后，才冻结 architecture spec 并考虑 RTL。
 12. 任何会改变 mask 的结构化策略都必须回到独立精度评测，不能由 trace 直接推断准确率。

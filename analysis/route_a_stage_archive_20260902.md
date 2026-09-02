@@ -164,6 +164,28 @@ The next work is split deliberately:
    establishes the no-contract baseline before using contracts as an optional
    extension. The analysis contract is
    `tools/analyze_kvzap_route_a320_speculative_defer_curve.py`.
+
+### A3.20 first dense long-output result (local, 2026-09-02)
+
+`analysis/experiments/route_a320_longoutput_speculative_curve_local_01/`
+contains a dense `D=0..32`, budget-512, single-candidate-hardware replay for
+LongGov-row109 (127 observed calls), MultiNews-row129 (127), and QMSum-row044
+(91). All source hashes and all 33 A3.10 position-conservation rows per
+workload validate.
+
+At this candidate point, every final endpoint in the three long traces is
+positive, and `D=0` is best: LongGov `+40.9644%`, MultiNews `+42.0195%`, and
+QMSum `+46.5624%` modeled cycle saving. The `D=16` prefix curves nevertheless
+show the expected speculative dip immediately after activation: worst prefix
+values are `-10.5890%`, `-2.8957%`, and `-1.8343%`, respectively; they first
+return non-negative at calls 38, 31, and 25. This supports the *shape* of the
+no-contract risk argument, not a no-contract deployment guarantee.
+
+This first dense run contains only naturally long summarization outputs. It
+does not estimate the prevalence of short-output loss and must not replace the
+A3.15 short-Qasper counterexample. A next A3.20 extension needs the same dense
+`D` sweep for high-cap short retrieval and additional naturally short workloads
+before reporting a no-contract loss distribution.
 2. **A4.0: functional packed-attention reference.**  Build a policy-on,
    semantics-checked packed-cold + pending-staging reference with online
    softmax merge.  Compare it with the applicable official KVzap semantics,
