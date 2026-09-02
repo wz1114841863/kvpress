@@ -578,6 +578,14 @@ It is deliberately not connected to model generation yet. Passing its unit
 tests permits only the next small model integration gate; it does not start
 A4.1 or establish any measured result.
 
+`tools/run_kvzap_route_a40_integration_gate.py` is that next remote-capable
+small gate. It remains read-only and targets one declared Qwen3 layer/KV head:
+the dense model answer must be identical with and without the hook, while each
+real decode query's packed/pending/hot result must match dense attention over
+the same mask-selected records. Its fresh manifest must be reviewed before
+introducing an actual policy-on attention substitution. The remote command and
+artifact-return contract are in `analysis/route_a4_remote_run.md`.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization

@@ -712,3 +712,15 @@ admission; `route_a_fast_path` reads the three Route-A stores and has no dense
 cold fallback. This schema is a unit-level functional guard only: it does not
 yet define a transformer cache hook, generation result, timing, allocator,
 HBM/DRAM counter, latency, throughput, energy, area, or RTL interface.
+
+`tools/run_kvzap_route_a40_integration_gate.py` defines the separate,
+non-overwriting `kvzap-route-a40-real-qwen-integration-gate-1.0` manifest. It
+uses an attention post-hook on one declared Qwen3 layer and KV head, reads
+post-RoPE cache K/V and the original score mask, and compares the Route-A
+three-store output against dense concatenation over the exact same records for
+every observed `q_len=1` decode query. A normal dense Full-KV run and this
+read-only hook run must have identical answer hashes. It must record zero use
+of DMS, fake keys, masked indices, cache mutation, or attention replacement.
+It is an A4.0 integration prerequisite, not policy-on generation or A4.1
+measurement; its reported differences are numerical-equivalence diagnostics,
+not timing or memory measurements.

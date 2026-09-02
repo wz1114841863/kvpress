@@ -113,6 +113,10 @@ oldest-first pending/page conservation, empty/tail/cross-page states,
 different head lengths, online-softmax equivalence, and explicit bypass.
 This is not yet a model-cache hook, generation-equivalence result, or A4.1
 measurement; the next gate is a named small request/layer/head integration.
+The remote-capable runner for that gate is
+`tools/run_kvzap_route_a40_integration_gate.py`; its protocol is
+`analysis/route_a4_remote_run.md`. It is deliberately read-only, so it is not
+yet the policy-on generation or A4.1 measurement gate.
 
 ### A4.1 — measured software-system evidence
 
