@@ -803,3 +803,11 @@ invoke its own predictor. The manifest records `pairing_mode:
 `replay_mask_consumption_complete: true`. This proves an exact replayed-mask
 storage/attention pairing only, not online mask stability or independent
 Route-A predictor behavior.
+
+The accepted instance
+`analysis/experiments/route_a40_policy_on_qwen_all_layers_replayed_mask_01/`
+is an A4.0 example of schema 1.4, not a new measurement schema: it has exact
+per-layer mask digest/count equality and complete replay consumption for the
+named request. Its 2,016 Route-A comparison rows, pending/page coverage, and
+numerical fields remain functional diagnostics. They are not A4.1 runtime,
+allocator, profiler, HBM, throughput, energy, or hardware measurements.

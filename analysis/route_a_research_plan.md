@@ -631,6 +631,25 @@ It may isolate dense-cold versus pending/packed/hot attention semantics, but
 must remain labelled `replayed-mask paired control`; retain the failed
 independent-online diagnostic as the mask-stability limitation.
 
+### A4.0 closeout and A4.1 entry (2026-09-02)
+
+`route_a40_policy_on_qwen_all_layers_replayed_mask_01` passed the all-36-layer
+replayed-mask paired functional control for the named Qwen3-8B retrieval
+request. It recorded 2,016 dense and 2,016 Route-A head comparisons (36 layers
+* 8 KV heads * 7 decode calls), exact mask-digest/count equality, and complete
+replay consumption. Route-A exercised pending in 1,696 comparison rows and
+packed pages in 1,383; its maximum FP32 comparison difference was
+`1.52587890625e-05` and its maximum executed-dtype diagnostic was 13/16 ULP.
+All three answer digests happened to match for this request. These are A4.0
+semantic/state facts only. The independent-online diagnostic remains a
+separate limitation (5 keep/drop flips in 268,992 decisions).
+
+A4.1 work is specified in `analysis/route_a41_measurement_plan.md`. It begins
+with a no-model measurement harness, then a one-layer/head component gate, and
+only then a `{0,18,35}` followed by all-layer end-to-end gate. Paired A4.1
+measurements compare Full-KV bypass, same-mask dense replay, and same-mask
+Route-A replay; online controls are not paired performance baselines.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization

@@ -162,6 +162,27 @@ the sole online predictor source, while Route-A consumes the frozen dense
 events exactly once. It can establish a strict same-mask functional pairing,
 but does not erase the observed independent-online drift and is not A4.1.
 
+### A4.0 recorded closeout (2026-09-02)
+
+The replayed-mask control succeeded at
+`analysis/experiments/route_a40_policy_on_qwen_all_layers_replayed_mask_01/`.
+For Qwen3-8B, threshold -4, hot window 128, page size 64, budget 1, and the
+named retrieval request (`max_new_tokens=8`), it replayed dense-source masks
+through all 36 layers and all KV heads. Each side produced 2,016 comparisons;
+all per-layer decision counts/digests matched and replay consumption was
+complete. Route-A comparison rows included 1,696 pending and 1,383 packed-page
+reads. Its maximum FP32 difference was `1.52587890625e-05`; the maximum
+executed-dtype diagnostic was 13 under the declared 16-ULP limit. Full-KV,
+dense, and Route-A answer hashes were equal for this one request.
+
+This closes the A4.0 paired functional gate, not online mask stability: the
+separate `route_a40_policy_on_qwen_all_layers_dense_drift_02` diagnostic found
+5 threshold flips among 268,992 independent online decisions. It also does not
+close A4.1. The measurement plan is
+`analysis/route_a41_measurement_plan.md`; it requires measured Full-KV,
+same-mask dense replay, and same-mask Route-A replay distributions with
+separate component, allocator, profiler, and end-to-end records.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:
