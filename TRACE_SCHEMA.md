@@ -737,3 +737,11 @@ explicit dense attention in this minimum generation gate. An optional
 `require_pending_nonempty` guard requires actual pending-staging reads. A
 Full-KV/fast-path answer change is permitted; this is neither a Full-KV answer
 equivalence nor an A4.1 timing/allocator/HBM result.
+
+The same schema accepts `target_kv_head: "all"` only together with
+`require_all_selected_heads_pending`. In this mode each KV-head GQA group of
+the declared layer bypasses original attention on `q_len=1`, and the manifest
+emits one numerical comparison row per `(policy decode call, KV head)`. It
+must show every selected head's non-empty pending staging at least once. Other
+layers remain dense; this is a layer-complete A4.0 semantic gate, not a
+full-model policy-on or A4.1 measurement result.

@@ -31,3 +31,16 @@ def test_selected_decode_group_uses_route_state_without_calling_original_and_rea
     assert backend.policy_decode_calls == 1
     assert backend.comparisons[0]["pending_tokens"] > 0
     assert backend.comparisons[0]["packed_tokens"] > 0
+
+
+def test_all_kv_heads_replace_the_full_layer_without_calling_original_on_decode():
+    backend = RouteAPolicyAttentionBackend(fake_model(), None, layer=0, kv_head=None, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    module = SimpleNamespace(scaling=1.0)
+    keys = torch.arange(16, dtype=torch.float32).reshape(1, 2, 4, 2)
+    backend._scores, backend._score_start = torch.ones(1, 2, 3), 0
+    backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 4, 3, 2), None), module, torch.ones(1, 4, 3, 2), keys[:, :, :3], keys[:, :, :3], None, 0.0, scaling=1.0)
+    backend._scores, backend._score_start = torch.ones(1, 2, 1), 3
+    output, _weights = backend.attention(lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("all-head fast path called original attention")), module, torch.ones(1, 4, 1, 2), keys, keys, None, 0.0, scaling=1.0)
+    assert output.shape == (1, 4, 1, 2)
+    assert {row["kv_head"] for row in backend.comparisons} == {0, 1}
+    assert all(row["pending_tokens"] > 0 for row in backend.comparisons)

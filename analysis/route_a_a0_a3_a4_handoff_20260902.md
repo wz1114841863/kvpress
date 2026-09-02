@@ -125,6 +125,11 @@ separate budget-one run requires non-empty pending staging. This is a semantic
 generation gate only. It remains below A4.1 because other heads are dense and
 no repeated timing, allocator, or profiler measurements are collected.
 
+The next semantic coverage increment is `target_kv_head=all` within one layer:
+every layer-local KV-head GQA group must replace original attention and must
+exercise pending staging. It is still not a full-model or measured-performance
+claim.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

@@ -91,3 +91,35 @@ Full-KV answer is permitted in this policy-on test; the required semantic guard
 is per-call numerical equality between the substituted Route-A head and its
 same-mask dense reference, plus explicit proof that pending staging was read.
 Do not time this command or describe it as A4.1 measurement.
+
+## Layer-complete policy-on gate
+
+The next gate substitutes **every** KV-head GQA group in one selected layer.
+It keeps other transformer layers dense, but eliminates the selected layer's
+per-head dense fallback. The same intentionally small global admission budget
+forces every selected head to exercise pending staging at least once.
+
+```bash
+RUN_ID=route_a40_policy_on_qwen_layer0_allheads_pending_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a_policy_backend.py \
+  tests/test_kvzap_route_a4_reference.py \
+  tests/test_kvzap_lifecycle.py \
+  tests/test_kvzap_admission_shadow.py \
+  tests/test_simulate_kvzap_packed_pages.py
+.venv/bin/python tools/run_kvzap_route_a40_policy_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --require-all-selected-heads-pending \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Return the complete fresh directory. Review requires a comparison row for each
+selected KV head on every policy decode call, zero original-attention/fake-key
+guards, and a nonzero pending count for every selected head. This still does
+not authorize A4.1 timing: it establishes only a layer-complete semantic gate.

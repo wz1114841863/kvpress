@@ -1,6 +1,6 @@
 """Minimal policy-on Route-A attention substitution for a Qwen decode gate.
 
-The backend is deliberately narrow: batch one, a selected layer/KV head, and
+The backend is deliberately narrow: batch one, a selected layer/KV head set, and
 q_len=1 decode. It never mutates the model cache. Prefill records original
 KVzap decisions while delegating to the model's original dense attention;
 selected decode query heads then read only Route-A hot/pending/packed state.
@@ -17,9 +17,13 @@ from kvpress.route_a_attention import RouteAPackedAttentionState, dense_same_mas
 
 
 class RouteAPolicyAttentionBackend(AbstractContextManager):
-    """Attach one real policy-on head-group without fake-key masking."""
+    """Attach selected real policy-on head-groups without fake-key masking.
 
-    def __init__(self, model, predictor, *, layer: int, kv_head: int, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float) -> None:
+    ``kv_head=None`` selects every KV head in the declared layer.  That is the
+    first layer-complete gate; it leaves no dense attention group in that layer.
+    """
+
+    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float) -> None:
         language_model = model.model.language_model if hasattr(model.model, "language_model") else model.model
         if not 0 <= layer < len(language_model.layers):
             raise ValueError("target layer is outside the model")
@@ -35,6 +39,13 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         self._pre_hook = None
         self.comparisons: list[dict[str, float | int]] = []
         self.policy_decode_calls = 0
+
+    def selected_kv_heads(self, kv_head_count: int) -> tuple[int, ...]:
+        if self.kv_head is None:
+            return tuple(range(kv_head_count))
+        if not 0 <= self.kv_head < kv_head_count:
+            raise ValueError("target KV head is outside the model")
+        return (self.kv_head,)
 
     def __enter__(self):
         self.predictor.post_init_from_model(self.model)
@@ -79,8 +90,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         if key.shape[2] < start + q_len:
             raise AssertionError("cache K/V does not cover newly scored positions")
         if self.state is None:
-            if not 0 <= self.kv_head < key.shape[1]:
-                raise ValueError("target KV head is outside the model")
+            self.selected_kv_heads(key.shape[1])
             self.state = RouteAPackedAttentionState(heads=key.shape[1], head_dim=key.shape[-1], window=self.window, page_tokens=self.page_tokens, admission_budget=self.admission_budget)
         self.state.append(key[0, :, start:start + q_len], value[0, :, start:start + q_len], scores[0] >= self.threshold, start_position=start)
         self._scores = self._score_start = None
@@ -112,27 +122,30 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         if heads % kv_heads:
             raise AssertionError("query heads are not divisible by KV heads")
         groups = heads // kv_heads
-        if self.kv_head >= kv_heads:
-            raise AssertionError("target KV head changed after backend initialization")
+        selected_heads = self.selected_kv_heads(kv_heads)
         scaling = float(kwargs.get("scaling", getattr(module, "scaling", 1.0)))
         output = []
-        route = dense = None
+        per_head: dict[int, list[tuple[torch.Tensor, torch.Tensor, int]]] = {head: [] for head in selected_heads}
         for query_head in range(heads):
             mapped_kv_head = query_head // groups
             q = query[0, query_head, 0]
-            if mapped_kv_head == self.kv_head:
-                route = self.state.attention(q * scaling, head=self.kv_head).to(dtype=q.dtype)
-                dense = dense_same_mask_attention(q * scaling, self.state.same_mask_records(self.kv_head)).to(dtype=q.dtype)
+            if mapped_kv_head in selected_heads:
+                route = self.state.attention(q * scaling, head=mapped_kv_head).to(dtype=q.dtype)
+                dense = dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped_kv_head)).to(dtype=q.dtype)
                 torch.testing.assert_close(route, dense, rtol=self.rtol, atol=self.atol)
                 output.append(route)
+                per_head[mapped_kv_head].append((route, dense, query_head))
             else:
                 output.append(self._dense_one(q, key[0, mapped_kv_head], value[0, mapped_kv_head], attention_mask, scaling))
-        if route is None or dense is None:
+        if any(not rows for rows in per_head.values()):
             raise AssertionError("selected Route-A KV head had no query-head group")
         route_output = torch.stack(output).unsqueeze(0).unsqueeze(2)
-        selected = self.state.state_summary(self.kv_head)
-        selected["cache_position"] = key.shape[2] - 1
-        selected["max_abs_difference"] = float((route - dense).abs().max().item())
-        self.comparisons.append(selected)
+        for head, rows in per_head.items():
+            selected = self.state.state_summary(head)
+            selected["cache_position"] = key.shape[2] - 1
+            selected["kv_head"] = head
+            selected["query_head_count"] = len(rows)
+            selected["max_abs_difference"] = max(float((route - dense).abs().max().item()) for route, dense, _query_head in rows)
+            self.comparisons.append(selected)
         self.policy_decode_calls += 1
         return route_output, None

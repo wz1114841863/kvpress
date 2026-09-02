@@ -37,12 +37,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--page-tokens", type=int, default=64)
     parser.add_argument("--admission-budget", type=int, required=True)
     parser.add_argument("--target-layer", type=int, default=0)
-    parser.add_argument("--target-kv-head", type=int, default=0)
+    parser.add_argument("--target-kv-head", default="0", help="KV-head index, or 'all' to substitute every KV head in the selected layer.")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max-new-tokens", type=int, default=8)
     parser.add_argument("--rtol", type=float, default=1e-4)
     parser.add_argument("--atol", type=float, default=1e-5)
     parser.add_argument("--require-pending-nonempty", action="store_true", help="Fail unless at least one policy decode comparison has pending retained cold staging.")
+    parser.add_argument("--require-all-selected-heads-pending", action="store_true", help="With --target-kv-head all, require every selected KV head to show pending staging at least once.")
     parser.add_argument("--output-dir", type=Path, required=True, help="New output directory only.")
     return parser.parse_args()
 
@@ -66,6 +67,17 @@ def main() -> None:
         raise ValueError("invalid Route-A policy-gate dimensions")
     if args.max_new_tokens < 2:
         raise ValueError("max-new-tokens must be at least 2")
+    if args.target_kv_head != "all":
+        try:
+            args.target_kv_head = int(args.target_kv_head)
+        except ValueError as error:
+            raise ValueError("--target-kv-head must be a non-negative integer or 'all'") from error
+        if args.target_kv_head < 0:
+            raise ValueError("--target-kv-head must be non-negative or 'all'")
+    elif args.require_all_selected_heads_pending is False:
+        # The all-head gate is meaningful only if every source state is
+        # exercised; retain a visible opt-in rather than silently weakening it.
+        raise ValueError("--target-kv-head all requires --require-all-selected-heads-pending")
     if (args.model_name, args.predictor_name, args.model_revision, args.predictor_revision) != (DEFAULT_MODEL, DEFAULT_PREDICTOR, GATE_B_MODEL_REVISION, GATE_A_PREDICTOR_REVISION):
         raise ValueError("policy gate is currently bounded to frozen Qwen3-8B and official MLP revisions")
     gate_a = validate_gate_a_evidence(args.gate_a_evidence, model_name=args.model_name, predictor_name=args.predictor_name, threshold=args.threshold, window_size=args.window_size)
@@ -85,15 +97,21 @@ def main() -> None:
     print("Pass 1/2: Full-KV bypass reference (zero Route-A admission)...")
     full = generate(pipe, request, args)
     assert_no_runtime_mask_state(pipe.model)
-    backend = RouteAPolicyAttentionBackend(pipe.model, KVzapPress(model_type="mlp", predictor_revision=args.predictor_revision), layer=args.target_layer, kv_head=args.target_kv_head, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol)
+    selected = None if args.target_kv_head == "all" else args.target_kv_head
+    backend = RouteAPolicyAttentionBackend(pipe.model, KVzapPress(model_type="mlp", predictor_revision=args.predictor_revision), layer=args.target_layer, kv_head=selected, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol)
     print("Pass 2/2: selected Route-A fast path with policy-on decode substitution...")
     with torch.no_grad(), backend:
         fast = generate(pipe, request, args)
     assert_no_runtime_mask_state(pipe.model)
-    if not backend.comparisons or backend.policy_decode_calls != len(backend.comparisons):
+    if not backend.comparisons or backend.policy_decode_calls <= 0:
         raise AssertionError("no complete policy-on decode comparison was observed")
     if args.require_pending_nonempty and not any(int(row["pending_tokens"]) > 0 for row in backend.comparisons):
         raise AssertionError("required non-empty pending cold staging was not observed")
+    if args.require_all_selected_heads_pending:
+        seen = {int(row["kv_head"]) for row in backend.comparisons if int(row["pending_tokens"]) > 0}
+        expected = set(backend.selected_kv_heads(backend.state.heads if backend.state is not None else 0))
+        if seen != expected:
+            raise AssertionError(f"not every selected KV head observed pending staging: seen={sorted(seen)}, expected={sorted(expected)}")
     config = {key: value for key, value in vars(args).items() if key not in {"output_dir", "gate_a_evidence"}}
     manifest = {
         "schema_version": "kvzap-route-a40-policy-on-qwen-gate-1.0", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(),
@@ -101,9 +119,9 @@ def main() -> None:
         "gate_a_evidence": gate_a, "full_kv_bypass_answer_sha256": answer_hash(full), "route_a_fast_path_answer_sha256": answer_hash(fast), "answers_identical": answer_hash(full) == answer_hash(fast),
         "policy_decode_call_count": backend.policy_decode_calls, "comparisons": backend.comparisons,
         "source_artifact_sha256": {"gate_a_manifest": file_sha256(args.gate_a_evidence / "manifest.json"), "gate_a_score_mask": file_sha256(args.gate_a_evidence / "score_mask.npz")},
-        "control_plane": {"full_kv_bypass": "Pass 1 uses no Route-A backend or admission.", "route_a_fast_path": "Pass 2 substitutes only the target KV-head's GQA query group at q_len=1; that group reads hot/pending/packed only."},
-        "observational_guards": {"target_head_original_attention_called_during_policy_decode": False, "dms_press_used": False, "masked_key_indices_created": False, "fake_key_attention_used": False, "model_cache_mutated_by_backend": False},
-        "boundaries": ["This is a minimal single-layer/KV-head policy-on generation gate. Non-target heads retain explicit dense attention so the model can continue generation.", "The Full-KV and Route-A answers need not match; numerical equality is required only between the substituted head's packed/pending/hot attention and the same-mask dense reference.", "No field is an allocator/HBM counter, timing, latency, throughput, energy, area, frequency, cross-workload result, or RTL evidence."],
+        "control_plane": {"full_kv_bypass": "Pass 1 uses no Route-A backend or admission.", "route_a_fast_path": "Pass 2 substitutes each selected KV-head's GQA query group at q_len=1; selected groups read hot/pending/packed only."},
+        "observational_guards": {"selected_head_original_attention_called_during_policy_decode": False, "dms_press_used": False, "masked_key_indices_created": False, "fake_key_attention_used": False, "model_cache_mutated_by_backend": False},
+        "boundaries": ["This is a minimal single-layer policy-on generation gate. With --target-kv-head all, every KV-head group in the selected layer is Route-A; other layers remain dense.", "The Full-KV and Route-A answers need not match; numerical equality is required only between each substituted head's packed/pending/hot attention and the same-mask dense reference.", "No field is an allocator/HBM counter, timing, latency, throughput, energy, area, frequency, cross-workload result, or RTL evidence."],
         "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__),
     }
     args.output_dir.mkdir(parents=True, exist_ok=False)

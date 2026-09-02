@@ -596,6 +596,14 @@ staging. This remains an A4.0 semantic/generation gate, not a completed
 A4.1 measurement: non-target heads remain dense and the runner records no
 timing or allocator/profiler counter.
 
+The immediate extension is the same runner's `--target-kv-head all` mode with
+`--require-all-selected-heads-pending`: all KV-head GQA groups in one declared
+layer must bypass original attention, each must numerically match its same-mask
+reference, and each must read non-empty pending staging. Only after this
+layer-complete gate is reviewed should A4.1 add repeated component timing and
+profiler instrumentation; it must still retain separate Full-KV and same-mask
+dense KVzap baselines.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization
