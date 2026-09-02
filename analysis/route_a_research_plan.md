@@ -650,6 +650,15 @@ only then a `{0,18,35}` followed by all-layer end-to-end gate. Paired A4.1
 measurements compare Full-KV bypass, same-mask dense replay, and same-mask
 Route-A replay; online controls are not paired performance baselines.
 
+The A4.1.0 implementation is `kvpress/route_a_measurement.py` plus
+`tools/run_kvzap_route_a41_measurement_harness.py`. It rejects CPU timing,
+uses synchronized CUDA-event and host timing, records PyTorch allocator bytes,
+validates raw repetition records, and separates warm-ups from distribution
+summaries. Its no-CUDA dry-run completed locally at
+`analysis/experiments/route_a41_harness_dry_run_01/`; this validates only the
+new-directory/schema lifecycle. The CUDA tensor-add self-check remains a
+remote no-model instrumentation gate, not an A4.1 model measurement.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization

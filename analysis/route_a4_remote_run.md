@@ -252,3 +252,30 @@ Review requires `pairing_mode: "replayed_dense_mask"`, exact per-layer mask
 digest equality, and `replay_mask_consumption_complete: true`. Do not compare
 wall-clock time from these Python reference passes or use this result as an
 online mask-stability claim.
+
+## A4.1.0 no-model CUDA instrumentation self-check
+
+Before loading Qwen for any A4.1 component measurement, synchronize the new
+harness and run its CUDA tensor-add self-check in a fresh directory. It checks
+CUDA event timing, host synchronization, raw-repetition writing, and PyTorch
+allocator snapshots. It is not a KVzap performance run and must not be
+compared with any A4.0/A4.1 model result.
+
+```bash
+RUN_ID=route_a41_harness_cuda_self_check_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s tests/test_kvzap_route_a41_measurement.py
+.venv/bin/python tools/run_kvzap_route_a41_measurement_harness.py \
+  --self-check \
+  --device cuda \
+  --warmup-repetitions 3 \
+  --measured-repetitions 10 \
+  --tensor-elements 1048576 \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Return the complete new directory. Review requires both harness manifests,
+exactly 13 raw records for the command above (3 warm-up plus 10 reported),
+synchronized finite wall/CUDA-event values, and byte-valued allocator fields.
+This gate is successful instrumentation validation only; it does not authorize
+a performance conclusion by itself.

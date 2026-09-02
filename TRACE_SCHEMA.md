@@ -811,3 +811,12 @@ per-layer mask digest/count equality and complete replay consumption for the
 named request. Its 2,016 Route-A comparison rows, pending/page coverage, and
 numerical fields remain functional diagnostics. They are not A4.1 runtime,
 allocator, profiler, HBM, throughput, energy, or hardware measurements.
+
+`kvzap-route-a41-harness-1.0` is the A4.1.0 no-model harness schema. Its
+separate `a41_harness_started.json` and `a41_harness_manifest.json` records
+make status explicit. A CUDA self-check, if run, writes
+`kvzap-route-a41-raw-repetition-1.0` JSONL rows with synchronized host/CUDA
+event milliseconds and before/after PyTorch allocator byte snapshots. A
+`dry_run` writes no timing rows and proves only output/schema construction.
+Neither record is a Qwen, KVzap, Route-A, allocator-under-model, HBM, or
+performance result.

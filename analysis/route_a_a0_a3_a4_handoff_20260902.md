@@ -183,6 +183,18 @@ close A4.1. The measurement plan is
 same-mask dense replay, and same-mask Route-A replay distributions with
 separate component, allocator, profiler, and end-to-end records.
 
+### A4.1.0 harness status (2026-09-02)
+
+`kvpress/route_a_measurement.py` and
+`tools/run_kvzap_route_a41_measurement_harness.py` now provide the no-model
+measurement contract. Unit tests cover CPU rejection, raw-record byte/schema
+validation, warm-up exclusion from summaries, and new-directory-only artifact
+writes. The local dry-run artifact
+`analysis/experiments/route_a41_harness_dry_run_01/` passed without touching
+CUDA or loading Qwen. It is not a model timing, allocator, or profiler result.
+The next remote gate is only the harness's CUDA tensor-add self-check; do not
+start component or decode measurement until that new artifact is reviewed.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:
