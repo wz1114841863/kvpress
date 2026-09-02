@@ -1,6 +1,6 @@
 import torch
 
-from kvpress.route_a_attention import _Record, RouteAPackedAttentionState, RouteAPolicy, dense_same_mask_attention, online_softmax_merge, policy_attention
+from kvpress.route_a_attention import DenseSameMaskAttentionState, _Record, RouteAPackedAttentionState, RouteAPolicy, dense_same_mask_attention, online_softmax_merge, policy_attention
 
 
 def make_state(*, heads=1, window=2, page_tokens=2, budget=1):
@@ -30,6 +30,20 @@ def test_three_store_attention_matches_dense_same_mask_and_online_merge():
     # Fast-path selection has no Full-KV argument and therefore cannot silently
     # substitute dense cold K/V for the three Route-A stores.
     torch.testing.assert_close(policy_attention(RouteAPolicy.ROUTE_A_FAST_PATH, query, state=state, head=0), expected)
+
+
+def test_dense_same_mask_state_preserves_hot_mask_and_dense_cold_without_route_a_stores():
+    state = DenseSameMaskAttentionState(heads=1, head_dim=2, window=2)
+    keys = torch.tensor([[[1.0, 0.0], [0.0, 1.0], [2.0, 0.0], [0.0, 2.0]]])
+    values = keys + 10
+    state.append(keys, values, torch.tensor([[True, False, True, True]]), start_position=0)
+    sources = state.records(0)
+    assert [record.position for record in sources["hot"]] == [2, 3]
+    assert [record.position for record in sources["dense_cold"]] == [0]
+    assert state.state_summary(0) == {"hot_tokens": 2, "dense_cold_tokens": 1}
+    assert state.mask_summary()["original_mask_decision_count"] == 4
+    query = torch.tensor([1.0, 0.0])
+    torch.testing.assert_close(state.attention(query, head=0), dense_same_mask_attention(query, state.same_mask_records(0)))
 
 
 def test_empty_pending_empty_cold_tail_cross_page_and_different_head_lengths():

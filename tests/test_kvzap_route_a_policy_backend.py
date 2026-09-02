@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import torch
 
-from kvpress.route_a_policy_backend import RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet
+from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet
 
 
 def fake_model(layer_count=1):
@@ -44,7 +44,10 @@ def test_all_kv_heads_replace_the_full_layer_without_calling_original_on_decode(
     assert output.shape == (1, 4, 1, 2)
     assert {row["kv_head"] for row in backend.comparisons} == {0, 1}
     assert all(row["pending_tokens"] > 0 for row in backend.comparisons)
-    assert backend.coverage() == {"selected_kv_heads": [0, 1], "heads": [{"kv_head": 0, "comparison_count": 1, "max_packed_tokens": 1, "max_pending_tokens": 2, "ever_retained_cold": True, "ever_pending": True}, {"kv_head": 1, "comparison_count": 1, "max_packed_tokens": 1, "max_pending_tokens": 2, "ever_retained_cold": True, "ever_pending": True}]}
+    coverage = backend.coverage()
+    assert coverage["original_mask_decision_count"] == 8
+    assert len(coverage["original_mask_sha256"]) == 64
+    assert {key: value for key, value in coverage.items() if key not in {"original_mask_decision_count", "original_mask_sha256"}} == {"selected_kv_heads": [0, 1], "heads": [{"kv_head": 0, "comparison_count": 1, "max_packed_tokens": 1, "max_pending_tokens": 2, "ever_retained_cold": True, "ever_pending": True}, {"kv_head": 1, "comparison_count": 1, "max_packed_tokens": 1, "max_pending_tokens": 2, "ever_retained_cold": True, "ever_pending": True}]}
 
 
 def test_executed_dtype_ulp_diagnostic_is_measured_independently_of_fp32_guard():
@@ -81,3 +84,18 @@ def test_backend_set_keeps_independent_layer_state_and_aggregates_coverage():
     assert backend_set.policy_decode_calls == {0: 1, 1: 1}
     assert len(backend_set.comparisons) == 4
     assert [row["layer"] for row in backend_set.coverage()["layers"]] == [0, 1]
+
+
+def test_dense_same_mask_backend_has_no_route_a_pending_or_packed_state():
+    backend = DenseSameMaskAttentionBackend(fake_model(), None, layer=0, kv_head=None, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    keys = torch.arange(16, dtype=torch.float32).reshape(1, 2, 4, 2)
+    module = SimpleNamespace(scaling=1.0)
+    backend._scores, backend._score_start = torch.ones(1, 2, 3), 0
+    backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 4, 3, 2), None), module, torch.ones(1, 4, 3, 2), keys[:, :, :3], keys[:, :, :3], None, 0.0, scaling=1.0)
+    backend._scores, backend._score_start = torch.ones(1, 2, 1), 3
+    backend.attention(lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("dense same-mask path called original attention")), module, torch.ones(1, 4, 1, 2), keys, keys, None, 0.0, scaling=1.0)
+    assert all("dense_cold_tokens" in row for row in backend.comparisons)
+    assert all("pending_tokens" not in row and "packed_tokens" not in row for row in backend.comparisons)
+    assert backend.coverage()["original_mask_decision_count"] == 8
+    backend_set = DenseSameMaskAttentionBackendSet(fake_model(2), None, layers=(0, 1), kv_head=None, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    assert all(isinstance(item, DenseSameMaskAttentionBackend) for item in backend_set.backends.values())

@@ -776,3 +776,13 @@ Schema `kvzap-route-a40-policy-on-qwen-gate-1.2` adds the declared
 same-mask comparisons passed and each recorded post-cast difference was within
 that declared diagnostic limit; it is not a timing or end-to-end answer
 equivalence claim.
+
+Schema `kvzap-route-a40-policy-on-qwen-gate-1.3` optionally adds an independent
+online `same_mask_dense_kvzap` pass. It owns `DenseSameMaskAttentionState` per
+selected layer: hot tokens remain regular, mature retained tokens append to a
+dense cold list, and it has no pending FIFO, admission service, or packed
+page. Both the dense control and Route-A score their masks online and emit a
+per-layer `original_mask_sha256` plus `original_mask_decision_count`. The gate
+fails unless those summaries match exactly. This establishes a paired logical
+same-mask dense KVzap baseline for the declared request; it is not a Full-KV
+equivalence, allocator, or performance measurement.

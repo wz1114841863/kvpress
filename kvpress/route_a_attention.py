@@ -10,6 +10,8 @@ append-only packed pages.  It is not an allocator, kernel, or timing model.
 from __future__ import annotations
 
 import heapq
+import hashlib
+import struct
 from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
@@ -135,6 +137,16 @@ class RouteAPackedAttentionState:
         self._next_position = 0
         self._decided_kept: list[list[int]] = [[] for _ in range(heads)]
         self._decided_dropped: list[list[int]] = [[] for _ in range(heads)]
+        self._mask_digest = hashlib.sha256()
+        self._mask_count = 0
+
+    def _record_mask_decision(self, *, head: int, position: int, keep: bool) -> None:
+        """Hash every original predictor decision, including protected-hot ones."""
+        self._mask_digest.update(struct.pack("<II?", head, position, keep))
+        self._mask_count += 1
+
+    def mask_summary(self) -> dict[str, int | str]:
+        return {"original_mask_sha256": self._mask_digest.hexdigest(), "original_mask_decision_count": self._mask_count}
 
     def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int) -> None:
         """Append contiguous [KV-head, token, head-dim] K/V under the original mask."""
@@ -148,6 +160,7 @@ class RouteAPackedAttentionState:
             position = start_position + offset
             for head in range(self.heads):
                 record = _Record(position, keys[head, offset].detach().clone(), values[head, offset].detach().clone(), bool(keep_mask[head, offset]))
+                self._record_mask_decision(head=head, position=position, keep=record.keep)
                 self._hot[head].append(record)
                 if len(self._hot[head]) > self.window:
                     mature = self._hot[head].popleft()
@@ -196,6 +209,87 @@ class RouteAPackedAttentionState:
                 raise AssertionError("a retained/hot token appears in more than one Route-A store")
             if any(record.position >= self._next_position - self.window for record in sources["pending"] + sources["packed"]):
                 raise AssertionError("hot-window token entered pending or packed cold state")
+            decided = set(self._decided_kept[head]) | set(self._decided_dropped[head])
+            matured = set(range(max(0, self._next_position - self.window)))
+            if decided != matured:
+                raise AssertionError("matured positions are not exactly partitioned by the original mask")
+
+
+class DenseSameMaskAttentionState:
+    """Functional dense KVzap state with the same mask and hot-window contract.
+
+    Mature retained entries append directly to one dense cold list per KV head.
+    It deliberately has no Route-A pending FIFO, admission service, or packed
+    pages, so it is an independent same-mask dense control rather than a view
+    of a Route-A state.
+    """
+
+    def __init__(self, *, heads: int, head_dim: int, window: int) -> None:
+        if min(heads, head_dim) <= 0 or window < 0:
+            raise ValueError("invalid same-mask dense reference dimensions")
+        self.heads, self.head_dim, self.window = heads, head_dim, window
+        self._hot: list[deque[_Record]] = [deque() for _ in range(heads)]
+        self._cold: list[list[_Record]] = [[] for _ in range(heads)]
+        self._next_position = 0
+        self._decided_kept: list[list[int]] = [[] for _ in range(heads)]
+        self._decided_dropped: list[list[int]] = [[] for _ in range(heads)]
+        self._mask_digest = hashlib.sha256()
+        self._mask_count = 0
+
+    def _record_mask_decision(self, *, head: int, position: int, keep: bool) -> None:
+        self._mask_digest.update(struct.pack("<II?", head, position, keep))
+        self._mask_count += 1
+
+    def mask_summary(self) -> dict[str, int | str]:
+        return {"original_mask_sha256": self._mask_digest.hexdigest(), "original_mask_decision_count": self._mask_count}
+
+    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int) -> None:
+        if keys.ndim != 3 or values.shape != keys.shape or keys.shape[:1] != (self.heads,) or keys.shape[2] != self.head_dim:
+            raise ValueError("keys and values must be [KV-head, token, head-dim]")
+        if keep_mask.shape != keys.shape[:2] or keep_mask.dtype != torch.bool:
+            raise ValueError("keep_mask must be bool [KV-head, token]")
+        if start_position != self._next_position:
+            raise AssertionError(f"non-contiguous position: expected {self._next_position}, got {start_position}")
+        for offset in range(keys.shape[1]):
+            position = start_position + offset
+            for head in range(self.heads):
+                record = _Record(position, keys[head, offset].detach().clone(), values[head, offset].detach().clone(), bool(keep_mask[head, offset]))
+                self._record_mask_decision(head=head, position=position, keep=record.keep)
+                self._hot[head].append(record)
+                if len(self._hot[head]) > self.window:
+                    mature = self._hot[head].popleft()
+                    if mature.keep:
+                        self._cold[head].append(mature)
+                        self._decided_kept[head].append(mature.position)
+                    else:
+                        self._decided_dropped[head].append(mature.position)
+        self._next_position += keys.shape[1]
+        self.assert_conservation()
+
+    def records(self, head: int) -> dict[str, list[_Record]]:
+        if not 0 <= head < self.heads:
+            raise ValueError("invalid KV head")
+        return {"hot": list(self._hot[head]), "dense_cold": list(self._cold[head])}
+
+    def same_mask_records(self, head: int) -> list[_Record]:
+        sources = self.records(head)
+        return sources["hot"] + sources["dense_cold"]
+
+    def attention(self, query: torch.Tensor, *, head: int) -> torch.Tensor:
+        return dense_same_mask_attention(query, self.same_mask_records(head))
+
+    def state_summary(self, head: int) -> dict[str, int]:
+        sources = self.records(head)
+        return {"hot_tokens": len(sources["hot"]), "dense_cold_tokens": len(sources["dense_cold"])}
+
+    def assert_conservation(self) -> None:
+        for head in range(self.heads):
+            sources = self.records(head)
+            positions = [item.position for name in ("hot", "dense_cold") for item in sources[name]]
+            if len(positions) != len(set(positions)):
+                raise AssertionError("a retained/hot token appears in more than one same-mask dense store")
+            if any(record.position >= self._next_position - self.window for record in sources["dense_cold"]):
+                raise AssertionError("hot-window token entered dense cold state")
             decided = set(self._decided_kept[head]) | set(self._decided_dropped[head])
             matured = set(range(max(0, self._next_position - self.window)))
             if decided != matured:

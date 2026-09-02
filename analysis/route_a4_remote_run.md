@@ -180,3 +180,35 @@ The default and command above use 16 ULP because an all-layer attempt observed
 in a fresh directory with this declared limit. A FP32 mismatch still fails
 regardless of this setting. Return the complete new directory and do not
 overwrite the interrupted `_01` directory if it exists.
+
+## Paired same-mask dense KVzap control
+
+The accepted all-layer Route-A gate permits the next A4.0 control. The runner
+now performs three untimed passes: Full-KV bypass, independent online
+same-mask dense KVzap, and Route-A packed/pending/hot. The dense control keeps
+the 128-token hot window and original predictor mask, but sends mature retained
+cold K/V directly to dense lists. It has no pending FIFO, admission service, or
+packed page. The run fails unless its per-layer mask digest and decision count
+match Route-A exactly.
+
+```bash
+RUN_ID=route_a40_policy_on_qwen_all_layers_dense_baseline_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a4_reference.py \
+  tests/test_kvzap_route_a_policy_backend.py
+.venv/bin/python tools/run_kvzap_route_a40_policy_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --max-executed-dtype-ulps 16 \
+  --with-same-mask-dense-baseline \
+  --require-pending-nonempty \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Return the complete fresh directory. This establishes only the requested
+functional baseline. Do not time the three passes or report it as A4.1.

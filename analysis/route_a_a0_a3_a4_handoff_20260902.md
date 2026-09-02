@@ -141,6 +141,16 @@ small post-cast values accumulated through prior substituted low-precision
 layers as an attention semantic failure. Any run must preserve the declared
 limit and observed maximum in its fresh manifest.
 
+The all-36-layer manifest
+`analysis/experiments/route_a40_policy_on_qwen_all_layers_pending_02/` passed
+as an A4.0 functional gate: all 36 layers and all eight KV heads were
+substituted for seven decode calls (2,016 comparison rows), with actual
+pending reads in 1,696 rows and packed-page reads in 1,383 rows. Its maximum
+FP32 difference was `1.52587890625e-05`, and its maximum execution-dtype
+diagnostic was 13 ULP under the declared 16-ULP limit. These are numerical and
+state-coverage diagnostics only; the next step is an independent same-mask
+dense KVzap control, not A4.1 measurement.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

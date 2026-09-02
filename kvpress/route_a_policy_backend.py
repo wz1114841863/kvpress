@@ -13,7 +13,7 @@ from typing import Any, Callable
 
 import torch
 
-from kvpress.route_a_attention import RouteAPackedAttentionState, dense_same_mask_attention
+from kvpress.route_a_attention import DenseSameMaskAttentionState, RouteAPackedAttentionState, dense_same_mask_attention
 
 
 class RouteAPolicyAttentionBackend(AbstractContextManager):
@@ -61,6 +61,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         rows = {head: [row for row in self.comparisons if int(row["kv_head"]) == head] for head in selected}
         return {
             "selected_kv_heads": list(selected),
+            **self.state.mask_summary(),
             "heads": [
                 {
                     "kv_head": head,
@@ -128,9 +129,12 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             raise AssertionError("cache K/V does not cover newly scored positions")
         if self.state is None:
             self.selected_kv_heads(key.shape[1])
-            self.state = RouteAPackedAttentionState(heads=key.shape[1], head_dim=key.shape[-1], window=self.window, page_tokens=self.page_tokens, admission_budget=self.admission_budget)
+            self.state = self._new_state(heads=key.shape[1], head_dim=key.shape[-1])
         self.state.append(key[0, :, start:start + q_len], value[0, :, start:start + q_len], scores[0] >= self.threshold, start_position=start)
         self._scores = self._score_start = None
+
+    def _new_state(self, *, heads: int, head_dim: int) -> RouteAPackedAttentionState:
+        return RouteAPackedAttentionState(heads=heads, head_dim=head_dim, window=self.window, page_tokens=self.page_tokens, admission_budget=self.admission_budget)
 
     @staticmethod
     def _dense_one(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, scaling: float) -> torch.Tensor:
@@ -218,6 +222,37 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         return route_output, None
 
 
+class DenseSameMaskAttentionBackend(RouteAPolicyAttentionBackend):
+    """Policy-on dense KVzap control with no pending, admission, or pages.
+
+    It scores the original KVzap mask online, preserves the regular hot window,
+    and performs attention over hot plus all retained mature dense-cold K/V.
+    This is intentionally separate from Route-A's internal debug reference.
+    """
+
+    def _new_state(self, *, heads: int, head_dim: int) -> DenseSameMaskAttentionState:
+        return DenseSameMaskAttentionState(heads=heads, head_dim=head_dim, window=self.window)
+
+    def coverage(self) -> dict[str, Any]:
+        if self.state is None:
+            return {"selected_kv_heads": [], "heads": []}
+        selected = self.selected_kv_heads(self.state.heads)
+        rows = {head: [row for row in self.comparisons if int(row["kv_head"]) == head] for head in selected}
+        return {
+            "selected_kv_heads": list(selected),
+            **self.state.mask_summary(),
+            "heads": [
+                {
+                    "kv_head": head,
+                    "comparison_count": len(rows[head]),
+                    "max_dense_cold_tokens": max((int(row["dense_cold_tokens"]) for row in rows[head]), default=0),
+                    "ever_retained_cold": any(int(row["dense_cold_tokens"]) > 0 for row in rows[head]),
+                }
+                for head in selected
+            ],
+        }
+
+
 class RouteAPolicyAttentionBackendSet(AbstractContextManager):
     """Atomically attach Route-A policy backends to multiple model layers.
 
@@ -226,12 +261,14 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
     retaining per-layer original-mask decisions and numerical guards.
     """
 
+    backend_class = RouteAPolicyAttentionBackend
+
     def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0) -> None:
         if not layers or len(set(layers)) != len(layers) or any(layer < 0 for layer in layers):
             raise ValueError("layers must be unique non-negative indices")
         self.model, self.predictor, self.layers = model, predictor, tuple(layers)
         self.backends = {
-            layer: RouteAPolicyAttentionBackend(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps)
+            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps)
             for layer in self.layers
         }
 
@@ -263,3 +300,9 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
 
     def coverage(self) -> dict[str, Any]:
         return {"layers": [{"layer": layer, **backend.coverage()} for layer, backend in self.backends.items()]}
+
+
+class DenseSameMaskAttentionBackendSet(RouteAPolicyAttentionBackendSet):
+    """Multi-layer set for the independent online same-mask dense control."""
+
+    backend_class = DenseSameMaskAttentionBackend

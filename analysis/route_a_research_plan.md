@@ -613,6 +613,12 @@ explicit per-head cold/pending coverage. The all-layer Python reference is
 intentionally excluded from timing claims; it is a prerequisite for, not the
 A4.1 implementation benchmark.
 
+The next A4.0 control is an independent policy-on same-mask dense KVzap
+backend. It owns dense retained-cold lists rather than Route-A pending/pages,
+and must prove per-layer original-mask digest equality with the Route-A pass.
+Only after this paired logical baseline is accepted may A4.1 compare repeated
+Full-KV, same-mask dense KVzap, and Route-A measurements.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization
