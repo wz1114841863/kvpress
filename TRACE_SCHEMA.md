@@ -662,3 +662,10 @@ same hardware points. Its cross summary separately records all-workload
 nonnegative cycles and whether every *active* workload has strictly positive
 modeled cycles; Full-KV-protected requests correctly contribute zero rather
 than making a selective-policy point appear strictly positive.
+
+`tools/summarize_kvzap_route_a318_contract_breach.py` compares two aligned
+A3.17 outputs: an honest contract assignment and an explicit breach
+counterfactual. It rejects changed source workload provenance and requires the
+named workload's contract audit to change from held to violated. It reports
+the modeled byte/cycle delta caused by the false declaration; observed horizon
+remains audit-only and no result is a hardware measurement.

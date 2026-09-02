@@ -493,6 +493,15 @@ every workload is nonnegative, and every workload admitted by the policy has
 strictly positive modeled cycles. This remains a modeled robustness screen,
 not a measured serving result.
 
+### A3.18 — continuation-contract breach sensitivity
+
+Run an aligned second A3.17 composition in which a known short request is
+counterfactually assigned the long-request continuation contract. Then use
+`tools/summarize_kvzap_route_a318_contract_breach.py` to compare it with the
+honest assignment. This quantifies the cost of a false external declaration;
+the breached audit must be explicitly marked invalid and must never be treated
+as a feasible controller point.
+
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched
 schema-1.4 shadows for separately frozen A2 retrieval and summarization
