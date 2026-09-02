@@ -669,3 +669,24 @@ counterfactual. It rejects changed source workload provenance and requires the
 named workload's contract audit to change from held to violated. It reports
 the modeled byte/cycle delta caused by the false declaration; observed horizon
 remains audit-only and no result is a hardware measurement.
+
+`tools/analyze_kvzap_route_a319_prefix_contract.py` derives an
+observed-prefix continuation requirement from aligned A3.11 step ledgers. A
+lower-bound contract of N permits an endpoint at any observed decode prefix at
+or after N, so the tool selects the earliest N whose entire observed suffix of
+cumulative modeled cycle savings is non-negative. It does not extrapolate past
+the recorded trace or turn that trace-derived threshold into a general length
+predictor or hardware measurement.
+
+### Route-A3.20 no-contract speculative defer curve
+
+`tools/analyze_kvzap_route_a320_speculative_defer_curve.py` consumes one or
+more A3.11 directories that contain the same dense set of deferred-admission
+points for one selected budget. Schema
+`kvzap-route-a320-speculative-defer-curve-1.0` emits final-horizon rows and
+per-`(defer, observed decode prefix)` cumulative byte/cycle rows. It verifies
+the hardware grid and prefix-to-summary conservation, and records an exact
+Full-KV zero-saving reference for unactivated policies. The observed horizon
+is post-hoc analysis only: this is a no-contract, semantics-safe but
+performance-speculative policy screen, not an online horizon predictor,
+sparse-attention execution, or hardware measurement.

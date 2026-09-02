@@ -22,6 +22,23 @@ The key design claim is conditional and must be tested, not assumed: packed
 per-head cold pages may retain KVzap's logical compression while converting it
 into physical capacity, traffic, and decode-performance benefit.
 
+### 2026-09-02 staged status (A0--A3.19)
+
+`analysis/route_a_stage_archive_20260902.md` is the current consolidated
+status archive.  Route A has passed a **conditional research-feasibility**
+gate: static packed capacity is close to the original logical opportunity, and
+the A2--A3 branch-consistent models identify a common positive region for
+three long summarization traces under an external trusted continuation lower
+bound.  It has not passed an RTL or measured-performance gate.
+
+The next work must first establish the no-contract speculative-policy curve,
+then build a semantics-checked policy-on packed-attention reference before
+claiming allocator/HBM/runtime results.  The continuation contract is an
+optional external control-plane interface, not a default assumption or an
+output-length predictor.  When it is absent, Full-KV bypass is the strict
+performance-safe mode; deferred admission remains a semantics-safe but
+performance-speculative policy.
+
 ## What is already supported
 
 The frozen v2 trace shows token-weighted logical removal `66.23%` and logical
@@ -501,6 +518,30 @@ counterfactually assigned the long-request continuation contract. Then use
 honest assignment. This quantifies the cost of a false external declaration;
 the breached audit must be explicitly marked invalid and must never be treated
 as a feasible controller point.
+
+### A3.19 — observed-prefix contract sufficiency
+
+`tools/analyze_kvzap_route_a319_prefix_contract.py` consumes A3.11 per-step
+ledgers to derive, for each policy/hardware point, the earliest observed
+continuation lower bound N for which every later recorded endpoint remains
+non-negative in modeled cycles. This corrects the ambiguity of using a
+91/127-call final result to justify an arbitrary shorter contract. The result
+is an observed-trace sufficiency bound only; it does not prove performance past
+the trace horizon.
+
+### A3.20 _ no-contract speculative deferred-admission curve
+
+The continuation contract is not assumed in ordinary serving. Before using it
+as an optional control-plane enhancement, run a dense branch-consistent
+A3.10/A3.11 sweep of `defer D`, then use
+`tools/analyze_kvzap_route_a320_speculative_defer_curve.py` to report final
+observed-horizon saving and every cumulative observed prefix. Include the
+exact Full-KV/no-admission zero reference, distinguish an unactivated
+`D >= observed_horizon` policy from an activated break-even policy, and retain
+negative short-output endpoints. This is a semantics-safe but
+performance-speculative policy analysis; it neither makes actual length known
+online nor establishes sparse-attention execution, HBM, allocator, latency, or
+throughput behavior.
 
 For the first cross-workload A3.9 screen, select a threshold pair on the
 existing long-horizon GovReport calibration request, then collect matched

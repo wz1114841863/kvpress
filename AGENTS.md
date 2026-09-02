@@ -452,12 +452,16 @@ results/
 7. **已完成并冻结**：B=4/m=0 与 B=4/m=+0.25 的离线结构、实际 DMS mask gate、9 条
    分层 screening 和 Phase-3 page-layout 筛查；权威记录为
    `analysis/b4_route_b_screening_freeze.json`；
-8. **当前 Route-A0**：实现并验证 `PackedKVSimulator` 的静态 packed-page replay；先回答
-   物理 capacity、tail waste、metadata 和 per-head tail 是否接近原始 logical KVzap；
-9. **Route-A1**：基于同一 page replay，模拟 static、length-aware、dynamic page/chunk
-   scheduler，在 batch `{1,2,4,8}`、page/PE 参数 sweep 中量化 utilization 与 overhead；
-10. **Route-A2**：仅在 A0/A1 出现可行 Pareto 区域后，设计 read-only、trace-on/off
-    等价的 decode-lifecycle collector，验证 admission burst、page seal 和 break-even；
-11. **Route-A3**：以 Full KV/ideal packed/static/selected scheduler 基线建立显式 HBM 和
-    cycle 模型。只有净 modeled 收益明确后才冻结架构规格、考虑 RTL；
+8. **已完成 A0--A3.19（条件性可行性）**：静态 packed-page replay、scheduler、read-only
+   lifecycle、branch-consistent admission/memory DSE、短输出反例、continuation-contract
+   policy、breach sensitivity 和 observed-prefix sufficiency 均已完成。权威阶段归档为
+   `analysis/route_a_stage_archive_20260902.md`；它不是 architecture-spec 或硬件测量冻结。
+9. **下一步 A3.20**：在无可信 continuation contract 的默认现实情形，密集扫描 deferred
+   admission 的实际 prefix 曲线与短/长请求损失分布；Full-KV bypass 是严格性能安全的
+   对照，deferred admission 只能标为语义安全的投机策略。
+10. **下一步 A4**：实现 policy-on、语义校验的 packed-cold + pending-staging attention
+    reference，随后才采集 allocator/HBM/runtime 的实际测量；把 contract 作为可选软件
+    控制面接口，而不是隐含的长度预测器。
+11. **RTL gate**：仅当 A4 同时验证语义、实测趋势、无合同 fallback/control 以及跨模型/
+    长输出 workload 的稳定资源合同后，才冻结 architecture spec 并考虑 RTL。
 12. 任何会改变 mask 的结构化策略都必须回到独立精度评测，不能由 trace 直接推断准确率。
