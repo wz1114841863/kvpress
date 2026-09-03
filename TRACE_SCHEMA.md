@@ -844,3 +844,12 @@ synchronizes the device and resets allocator peaks, so these records support
 micro-component attribution only and must not be aggregated as end-to-end
 decode latency.  Allocator fields remain PyTorch allocator observations, not
 HBM traffic, throughput, energy, area, or hardware evidence.
+
+The accepted `route_a411_component_layer0_head0_budget1_02` instance uses the
+matching `route_a41_replay_source_layer0_budget1_01` NPZ and has complete
+replay consumption.  It is specifically a deliberately backlogged
+`admission_budget=1` coverage point: selected layer 0/KV head 0 observed both
+pending staging and a packed record.  Its component timing rows remain scoped
+to the named Python reference callbacks and cannot be generalized to a
+candidate admission point, full model, Full-KV comparison, or end-to-end
+decode measurement.

@@ -19,7 +19,7 @@ from kvpress.route_a_measurement import (
     write_raw_repetitions,
 )
 from kvpress.route_a_replay import load_replay_events, sha256_file, write_replay_events
-from tools.run_kvzap_route_a41_component_gate import manifest_config
+from tools.run_kvzap_route_a41_component_gate import assert_pending_coverage, manifest_config
 
 
 def snapshots():
@@ -111,3 +111,11 @@ def test_component_manifest_config_serializes_path_arguments(tmp_path):
     config = manifest_config(Namespace(replay_source_dir=tmp_path / "source", output_dir=tmp_path / "result", admission_budget=1))
     assert config == {"replay_source_dir": str(tmp_path / "source"), "admission_budget": 1}
     assert json.loads(json.dumps(config)) == config
+
+
+def test_pending_coverage_is_opt_in_for_component_candidate_points():
+    comparisons = [{"pending_tokens": 0}]
+    assert_pending_coverage(comparisons=comparisons, required=False)
+    with pytest.raises(AssertionError, match="required pending"):
+        assert_pending_coverage(comparisons=comparisons, required=True)
+    assert_pending_coverage(comparisons=[{"pending_tokens": 1}], required=True)

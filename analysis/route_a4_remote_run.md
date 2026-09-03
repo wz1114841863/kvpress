@@ -322,6 +322,7 @@ test ! -e "analysis/experiments/${RUN_ID}"
   --target-layer 0 \
   --target-kv-head 0 \
   --admission-budget 1 \
+  --require-pending-nonempty \
   --warmup-repetitions 3 \
   --measured-repetitions 10 \
   --device cuda \
@@ -338,3 +339,25 @@ they do not measure Full-KV, end-to-end decode, HBM traffic, throughput,
 energy, area, or hardware acceleration.  Do not add
 `--include-online-predictor-control` to this first paired gate; it is an
 optional, separately labelled predictor-score control for a later diagnostic.
+
+After the budget-one artifact is reviewed, run the candidate admission point
+in another new directory. Reuse the same replay source: admission does not
+participate in source-mask generation. Do **not** pass
+`--require-pending-nonempty`; an empty pending FIFO is valid at this point.
+
+```bash
+RUN_ID=route_a411_component_layer0_head0_budget512_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a41_component_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 0 \
+  --admission-budget 512 \
+  --warmup-repetitions 3 \
+  --measured-repetitions 10 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```

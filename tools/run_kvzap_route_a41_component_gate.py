@@ -44,6 +44,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rtol", type=float, default=1e-4)
     parser.add_argument("--atol", type=float, default=1e-5)
     parser.add_argument("--max-executed-dtype-ulps", type=float, default=16.0)
+    parser.add_argument("--require-pending-nonempty", action="store_true", help="Fail unless the Route-A replay path reads non-empty pending staging. Use for the deliberately backlogged coverage point only.")
     parser.add_argument("--warmup-repetitions", type=int, default=3)
     parser.add_argument("--measured-repetitions", type=int, default=10)
     parser.add_argument("--device", default="cuda")
@@ -114,6 +115,12 @@ def manifest_config(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def assert_pending_coverage(*, comparisons: list[dict[str, Any]], required: bool) -> None:
+    """Enforce pending coverage only for an explicitly declared coverage point."""
+    if required and not any(int(row["pending_tokens"]) > 0 for row in comparisons):
+        raise AssertionError("Route-A component gate required pending staging but observed none")
+
+
 def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
@@ -152,8 +159,8 @@ def main() -> None:
         backend.assert_replay_complete()
         if not backend.comparisons or backend.policy_decode_calls.get(args.target_layer, 0) <= 0:
             raise AssertionError(f"{path}: no complete target-layer component observation")
-        if path == "same_mask_route_a_replay" and not any(int(row["pending_tokens"]) > 0 for row in backend.comparisons):
-            raise AssertionError("Route-A component gate did not observe pending staging")
+        if path == "same_mask_route_a_replay":
+            assert_pending_coverage(comparisons=backend.comparisons, required=args.require_pending_nonempty)
         raw_records.extend(recorder.records)
         outcomes.append({"path": path, "repetition": repetition, "execution_order": execution_order, "warmup": warmup, "answer_sha256": answer_hash(output), "policy_decode_calls": backend.policy_decode_calls, "policy_coverage": backend.coverage(), "component_record_count": len(recorder.records)})
     raw_path = write_raw_repetitions(args.output_dir, raw_records)
@@ -171,7 +178,7 @@ def main() -> None:
         "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"], "source_answer_sha256": source["answer_sha256"]},
         "summary": summary,
         "source_artifact_sha256": source["source_artifact_sha256"],
-        "observational_guards": {"paired_mask_mode": "replayed_dense_mask", "route_a_predictor_scored_online": False, "online_predictor_control_included": args.include_online_predictor_control, "replay_mask_consumption_complete": True, "fp32_same_mask_guard": {"rtol": args.rtol, "atol": args.atol}, "component_timer_synchronizes_each_component": True, "component_timer_not_end_to_end": True},
+        "observational_guards": {"paired_mask_mode": "replayed_dense_mask", "route_a_predictor_scored_online": False, "online_predictor_control_included": args.include_online_predictor_control, "require_pending_nonempty": args.require_pending_nonempty, "replay_mask_consumption_complete": True, "fp32_same_mask_guard": {"rtol": args.rtol, "atol": args.atol}, "component_timer_synchronizes_each_component": True, "component_timer_not_end_to_end": True},
         "boundaries": ["This is an A4.1.1 single-layer/head component measurement. It excludes Full-KV and end-to-end decode timing; those belong to later gates.", "The two measured paths replay the exact same dense-source mask. Predictor scoring was intentionally excluded from this paired replay timing and must be measured separately as an online control.", "Allocator fields are PyTorch allocator observations, not HBM traffic. No result is throughput, energy, area, frequency, hardware acceleration, or RTL evidence."],
         "torch_version": str(torch.__version__),
         "transformers_version": str(transformers.__version__),

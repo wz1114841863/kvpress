@@ -81,7 +81,14 @@ Each callback synchronizes CUDA and resets PyTorch allocator peak state.
 That makes the callback samples useful for component attribution, but invalid
 as end-to-end decode timing; A4.1.2 must measure the whole decode region
 without per-component synchronization.  A4.1.1 code and no-model unit tests
-are available locally, but no real-Qwen A4.1.1 artifact has yet been accepted.
+are available locally.  The first real-Qwen coverage-point artifact is
+`route_a411_component_layer0_head0_budget1_02`; its results remain limited to
+the named one-layer/head, backlogged replay configuration.
+
+The backlogged coverage point must pass `--require-pending-nonempty`; this is
+an explicit semantic-coverage guard, not a general A4.1.1 invariant.  The
+candidate `admission_budget=512` point omits that flag because immediate
+oldest-first service may validly leave no pending record at a decode query.
 
 ### A4.1.2 — all-layer end-to-end decode gate
 

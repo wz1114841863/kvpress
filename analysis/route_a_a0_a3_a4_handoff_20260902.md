@@ -212,7 +212,22 @@ micro-component attribution gate, not end-to-end decode timing.  The first
 remote run must use `admission_budget=1` and require observed pending staging;
 the separate `admission_budget=512` candidate-point run follows only after the
 budget-one artifact is reviewed.  It must use a fresh replay-source directory
-and a fresh result directory; neither A4.0 output nor frozen trace is edited.
+or an already validated provenance-bound source, plus a fresh result directory;
+neither A4.0 output nor frozen trace is edited.
+
+The first accepted artifact pair is
+`route_a41_replay_source_layer0_budget1_01` and
+`route_a411_component_layer0_head0_budget1_02`.  The replay NPZ SHA-256 agrees
+with both manifests (`1cf570...6151ef5`), and all 26 path repetitions share
+the source answer digest.  Its 3 warm-ups and 10 reported repetitions per
+replayed path have complete mask consumption.  At `budget=1`, selected head 0
+has 7 decode comparisons, `max_pending_tokens=21`, and
+`max_packed_tokens=1`; this is the intended pending-staging coverage point.
+The recorded CUDA-event/host figures are synchronized Python-reference
+micro-component observations only.  They are not an end-to-end decode result,
+Full-KV comparison, HBM measurement, allocator delta, throughput, or hardware
+claim.  The next separate candidate point is `budget=512`; it omits the
+explicit pending-nonempty guard because an empty pending FIFO is then valid.
 
 ### A4.1 — measured software-system evidence
 
