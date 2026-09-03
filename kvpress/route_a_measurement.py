@@ -162,28 +162,74 @@ def summarize_values(values: list[float]) -> dict[str, float | int]:
 
 
 def summarize_reported_repetitions(records: list[dict[str, Any]]) -> dict[str, Any]:
-    """Summarize only non-warmup samples, grouped by path and component."""
+    """Report callback and per-reset-run summaries without conflating them.
+
+    A component can execute multiple times in one reset model run (for example,
+    for several decode positions or GQA query groups).  Callback rows therefore
+    diagnose component behavior, while ``execution_order`` defines the
+    independent reset-run unit.  Component time is summed within that run;
+    allocator peaks are maximized within it, never summed.
+    """
     for record in records:
         validate_raw_repetition(record)
-    groups: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    callback_rows: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    reset_rows: dict[tuple[str, str, int], list[dict[str, Any]]] = {}
     for record in records:
         if not record["warmup"]:
-            groups.setdefault((record["path"], record["component"]), []).append(record)
-    if not groups:
+            key = (record["path"], record["component"])
+            callback_rows.setdefault(key, []).append(record)
+            reset_rows.setdefault((key[0], key[1], record["execution_order"]), []).append(record)
+    if not callback_rows:
         raise ValueError("no reported repetitions are available")
-    return {
-        "schema_version": "kvzap-route-a41-summary-1.0",
-        "groups": [
+
+    callback_groups = [
+        {
+            "path": path,
+            "component": component,
+            "callback_invocations": len(rows),
+            "wall_ms": summarize_values([float(row["wall_ms"]) for row in rows]),
+            "cuda_event_ms": summarize_values([float(row["cuda_event_ms"]) for row in rows]),
+            "peak_allocated_bytes": summarize_values([float(row["memory_after"]["peak_allocated_bytes"]) for row in rows]),
+            "peak_reserved_bytes": summarize_values([float(row["memory_after"]["peak_reserved_bytes"]) for row in rows]),
+        }
+        for (path, component), rows in sorted(callback_rows.items())
+    ]
+    aggregate_rows: dict[tuple[str, str], list[dict[str, float | int]]] = {}
+    for (path, component, execution_order), rows in reset_rows.items():
+        repetitions = {row["repetition"] for row in rows}
+        if len(repetitions) != 1:
+            raise AssertionError("one execution order has multiple repetition identifiers")
+        aggregate_rows.setdefault((path, component), []).append(
             {
-                "path": path,
-                "component": component,
-                "reported_repetitions": len(rows),
-                "wall_ms": summarize_values([float(row["wall_ms"]) for row in rows]),
-                "cuda_event_ms": summarize_values([float(row["cuda_event_ms"]) for row in rows]),
-                "peak_allocated_bytes": summarize_values([float(row["memory_after"]["peak_allocated_bytes"]) for row in rows]),
-                "peak_reserved_bytes": summarize_values([float(row["memory_after"]["peak_reserved_bytes"]) for row in rows]),
+                "execution_order": execution_order,
+                "callback_count": len(rows),
+                "wall_ms_sum": sum(float(row["wall_ms"]) for row in rows),
+                "cuda_event_ms_sum": sum(float(row["cuda_event_ms"]) for row in rows),
+                "peak_allocated_bytes_max": max(float(row["memory_after"]["peak_allocated_bytes"]) for row in rows),
+                "peak_reserved_bytes_max": max(float(row["memory_after"]["peak_reserved_bytes"]) for row in rows),
             }
-            for (path, component), rows in sorted(groups.items())
+        )
+    reset_run_aggregate_groups = [
+        {
+            "path": path,
+            "component": component,
+            "reported_reset_runs": len(rows),
+            "callback_count_per_reset_run": summarize_values([float(row["callback_count"]) for row in rows]),
+            "wall_ms_sum_per_reset_run": summarize_values([float(row["wall_ms_sum"]) for row in rows]),
+            "cuda_event_ms_sum_per_reset_run": summarize_values([float(row["cuda_event_ms_sum"]) for row in rows]),
+            "peak_allocated_bytes_max_per_reset_run": summarize_values([float(row["peak_allocated_bytes_max"]) for row in rows]),
+            "peak_reserved_bytes_max_per_reset_run": summarize_values([float(row["peak_reserved_bytes_max"]) for row in rows]),
+        }
+        for (path, component), rows in sorted(aggregate_rows.items())
+    ]
+    return {
+        "schema_version": "kvzap-route-a41-summary-1.1",
+        "callback_groups": callback_groups,
+        "reset_run_aggregate_groups": reset_run_aggregate_groups,
+        "boundaries": [
+            "Callback groups contain individual synchronized component invocations, not independent request repetitions.",
+            "Reset-run component time sums callbacks within one execution_order; it is component attribution, not end-to-end decode latency.",
+            "Reset-run allocator peaks are run-local maxima of PyTorch allocator counters, not sums or HBM traffic.",
         ],
     }
 

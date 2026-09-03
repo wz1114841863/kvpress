@@ -75,10 +75,27 @@ def test_summary_excludes_warmup_and_reports_distribution():
         make_record(repetition=1, order=2, wall_ms=3.0, cuda_event_ms=4.0),
     ]
     summary = summarize_reported_repetitions(records)
-    group = summary["groups"][0]
-    assert group["reported_repetitions"] == 2
+    group = summary["callback_groups"][0]
+    assert summary["schema_version"] == "kvzap-route-a41-summary-1.1"
+    assert group["callback_invocations"] == 2
     assert group["wall_ms"] == {"count": 2, "min": 1.0, "median": 2.0, "mean": 2.0, "stddev": pytest.approx(2**0.5), "p90": 2.8, "p95": 2.9, "max": 3.0}
     assert group["cuda_event_ms"]["mean"] == 3.0
+
+
+def test_summary_reports_per_reset_run_sums_and_maximum_allocator_peaks():
+    first = make_record(repetition=0, order=1, wall_ms=1.0, cuda_event_ms=2.0)
+    second = make_record(repetition=0, order=1, wall_ms=2.0, cuda_event_ms=3.0)
+    third = make_record(repetition=1, order=2, wall_ms=4.0, cuda_event_ms=5.0)
+    first["memory_after"]["peak_allocated_bytes"] = 35
+    second["memory_after"]["peak_allocated_bytes"] = 45
+    third["memory_after"]["peak_allocated_bytes"] = 55
+    summary = summarize_reported_repetitions([first, second, third])
+    aggregate = summary["reset_run_aggregate_groups"][0]
+    assert aggregate["reported_reset_runs"] == 2
+    assert aggregate["callback_count_per_reset_run"]["mean"] == 1.5
+    assert aggregate["wall_ms_sum_per_reset_run"]["mean"] == 3.5
+    assert aggregate["cuda_event_ms_sum_per_reset_run"]["mean"] == 5.0
+    assert aggregate["peak_allocated_bytes_max_per_reset_run"]["max"] == 55.0
 
 
 def test_output_records_are_new_directory_only_and_raw_file_is_not_overwritten(tmp_path):

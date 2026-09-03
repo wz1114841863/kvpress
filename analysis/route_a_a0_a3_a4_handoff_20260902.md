@@ -229,6 +229,18 @@ Full-KV comparison, HBM measurement, allocator delta, throughput, or hardware
 claim.  The next separate candidate point is `budget=512`; it omits the
 explicit pending-nonempty guard because an empty pending FIFO is then valid.
 
+The rerun `route_a411_component_layer0_head0_budget1_03` records that explicit
+guard.  It and `route_a411_component_layer0_head0_budget512_01` share the
+same replay event SHA-256 and source digest, have one identical answer digest
+over all path runs, and complete every replay.  State coverage changes exactly
+as intended: budget one reaches pending/packed maxima of 21/1, whereas budget
+512 reaches 0/22.  This is a software-state and component-observation result,
+not a speed comparison.  The summary's 70/280 counts are callback invocations
+within 10 reset runs. The next schema-1.1 runner emits both callback and
+per-reset-run aggregate distributions; the latter sums component callback time
+and takes a run-local allocator peak maximum before comparing variance across
+points.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

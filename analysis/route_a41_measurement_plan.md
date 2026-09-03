@@ -90,6 +90,19 @@ an explicit semantic-coverage guard, not a general A4.1.1 invariant.  The
 candidate `admission_budget=512` point omits that flag because immediate
 oldest-first service may validly leave no pending record at a decode query.
 
+The first two accepted component artifacts are the `layer=0`, `KV-head=0`
+backlogged point `route_a411_component_layer0_head0_budget1_03` and candidate
+point `route_a411_component_layer0_head0_budget512_01`.  They share the exact
+same replay NPZ and source answer digest.  The former observed at most 21
+pending and 1 packed token; the latter observed 0 pending and 22 packed
+tokens, as required by the two admission policies.  Both are valid component
+coverage observations only.  Their current summary groups report callback
+invocations (70 or 280), while the independent reset-run count is 10.  Preserve
+the raw rows. Schema-1.1 now adds an explicit per-`execution_order` aggregate
+distribution before using A4.1.1 results to compare variability between
+configurations: time is summed and allocator peak is maximized within each
+reset run, while callback-level groups remain separately reported.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers

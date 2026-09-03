@@ -330,6 +330,48 @@ test ! -e "analysis/experiments/${RUN_ID}"
   --output-dir "analysis/experiments/${RUN_ID}"
 ```
 
+## A4.1.1 schema-1.1 reset-run summary rerun
+
+Synchronize the schema-1.1 update and use the already validated source. These
+are fresh replacements for comparison only; do not modify prior artifacts.
+The manifest must expose both `summary.callback_groups` and
+`summary.reset_run_aggregate_groups`. Each observed component must have ten
+reported reset runs. The latter's time is a component callback sum, and its
+allocator peak is a run-local maximum; neither is end-to-end decode latency.
+
+```bash
+RUN_ID=route_a411_component_layer0_head0_budget1_summary11_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a41_component_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 0 \
+  --admission-budget 1 \
+  --require-pending-nonempty \
+  --warmup-repetitions 3 \
+  --measured-repetitions 10 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+
+RUN_ID=route_a411_component_layer0_head0_budget512_summary11_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a41_component_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 0 \
+  --admission-budget 512 \
+  --warmup-repetitions 3 \
+  --measured-repetitions 10 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

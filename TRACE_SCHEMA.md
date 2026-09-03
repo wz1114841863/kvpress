@@ -853,3 +853,22 @@ pending staging and a packed record.  Its component timing rows remain scoped
 to the named Python reference callbacks and cannot be generalized to a
 candidate admission point, full model, Full-KV comparison, or end-to-end
 decode measurement.
+
+The follow-on `route_a411_component_layer0_head0_budget1_03` and
+`route_a411_component_layer0_head0_budget512_01` artifacts use that identical
+source.  They make the pending coverage condition explicit: budget one has
+nonempty pending staging, while budget 512 legally has none and retains its
+head-0 cold entries in packed storage.  In schema 1.0, a component group's
+`reported_repetitions` is its callback invocation count; its raw rows retain
+`execution_order`, which identifies the 10 independent reset runs.  Do not
+interpret callback rows as independent request repetitions.  A later summary
+revision must report both callback and per-reset-run aggregate distributions.
+
+Schema `kvzap-route-a41-summary-1.1` retains a named `callback_groups` view
+and adds `reset_run_aggregate_groups`. The latter groups reported raw rows by
+`(path, component, execution_order)`, sums synchronized callback wall/CUDA
+durations within that reset run, counts callbacks per run, and uses the
+run-local maximum for each allocator peak. It reports distributions over the
+independent reset runs. These aggregate sums remain component attribution, not
+end-to-end decode latency; allocator maxima remain PyTorch allocator
+observations, not HBM traffic.
