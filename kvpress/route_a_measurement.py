@@ -21,7 +21,7 @@ import torch
 
 A41_RAW_SCHEMA = "kvzap-route-a41-raw-repetition-1.0"
 A41_HARNESS_SCHEMA = "kvzap-route-a41-harness-1.0"
-MEASURED_PATHS = frozenset({"full_kv_bypass", "same_mask_dense_replay", "same_mask_route_a_replay", "harness_self_check"})
+MEASURED_PATHS = frozenset({"full_kv_bypass", "same_mask_dense_replay", "same_mask_route_a_replay", "online_dense_predictor_control", "harness_self_check"})
 
 T = TypeVar("T")
 
@@ -257,3 +257,28 @@ def raw_record(*, path: str, component: str, repetition: int, execution_order: i
     }
     validate_raw_repetition(record)
     return record
+
+
+class CudaComponentRecorder:
+    """Record synchronized component samples for one reset backend instance.
+
+    Each component deliberately synchronizes and resets allocator peaks. This
+    supports component attribution but is unsuitable for end-to-end timing.
+    """
+
+    def __init__(self, *, device: str | torch.device, path: str, repetition: int, execution_order: int, warmup: bool, metadata: dict[str, Any] | None = None) -> None:
+        self.device = require_cuda_device(device)
+        if path not in MEASURED_PATHS - {"harness_self_check"}:
+            raise ValueError("component recorder path must be a declared A4.1 measured path")
+        self.path, self.repetition, self.execution_order, self.warmup = path, repetition, execution_order, warmup
+        self.metadata = {} if metadata is None else dict(metadata)
+        self.records: list[dict[str, Any]] = []
+
+    def measure(self, component: str, operation: Callable[[], T]) -> T:
+        before = reset_cuda_peak_memory(self.device)
+        result, timing = time_cuda_region(operation, device=self.device)
+        after = cuda_memory_snapshot(self.device)
+        record = raw_record(path=self.path, component=component, repetition=self.repetition, execution_order=self.execution_order, warmup=self.warmup, timing=timing, memory_before=before, memory_after=after)
+        record.update(self.metadata)
+        self.records.append(record)
+        return result

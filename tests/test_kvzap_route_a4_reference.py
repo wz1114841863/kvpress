@@ -46,6 +46,27 @@ def test_dense_same_mask_state_preserves_hot_mask_and_dense_cold_without_route_a
     torch.testing.assert_close(state.attention(query, head=0), dense_same_mask_attention(query, state.same_mask_records(0)))
 
 
+def test_component_callbacks_partition_route_a_and_dense_reference_operations():
+    route = make_state(window=1, page_tokens=2, budget=1)
+    dense = DenseSameMaskAttentionState(heads=1, head_dim=2, window=1)
+    keys = torch.arange(6, dtype=torch.float32).reshape(1, 3, 2)
+    keep = torch.ones(1, 3, dtype=torch.bool)
+    route_names, dense_names = [], []
+
+    def record(target):
+        def measure(name, operation):
+            target.append(name)
+            return operation()
+        return measure
+
+    route.append(keys, keys, keep, start_position=0, component_measure=record(route_names))
+    dense.append(keys, keys, keep, start_position=0, component_measure=record(dense_names))
+    route.attention(torch.tensor([1.0, 0.0]), head=0, component_measure=record(route_names))
+    dense.attention(torch.tensor([1.0, 0.0]), head=0, component_measure=record(dense_names))
+    assert route_names == ["route_a_maturity_pending_staging", "route_a_admission_page_append_table", "route_a_attention_hot", "route_a_attention_pending", "route_a_attention_packed", "route_a_online_softmax_merge"]
+    assert dense_names == ["dense_maturity_dense_cold_append", "dense_same_mask_attention"]
+
+
 def test_empty_pending_empty_cold_tail_cross_page_and_different_head_lengths():
     state = make_state(heads=2, window=2, page_tokens=2, budget=8)
     keys = torch.arange(24, dtype=torch.float32).reshape(2, 6, 2)

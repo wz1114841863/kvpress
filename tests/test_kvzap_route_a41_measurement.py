@@ -16,6 +16,7 @@ from kvpress.route_a_measurement import (
     write_completed_manifest,
     write_raw_repetitions,
 )
+from kvpress.route_a_replay import load_replay_events, sha256_file, write_replay_events
 
 
 def snapshots():
@@ -91,3 +92,13 @@ def test_output_records_are_new_directory_only_and_raw_file_is_not_overwritten(t
     assert json.loads(completed.read_text())["status"] == "complete"
     with pytest.raises(FileExistsError, match="output directory"):
         initialize_output_directory(output_dir, config={}, git_commit="def")
+
+
+def test_replay_event_npz_round_trip_is_sorted_hashed_and_rejects_overwrite(tmp_path):
+    events = {1: {(1, 4): (False, -4.25), (0, 4): (True, -3.75)}, 0: {(0, 3): (True, -3.5)}}
+    path = tmp_path / "events.npz"
+    digest = write_replay_events(path, events)
+    assert digest == sha256_file(path)
+    assert load_replay_events(path) == {0: {(0, 3): (True, -3.5)}, 1: {(0, 4): (True, -3.75), (1, 4): (False, -4.25)}}
+    with pytest.raises(FileExistsError, match="already exists"):
+        write_replay_events(path, events)

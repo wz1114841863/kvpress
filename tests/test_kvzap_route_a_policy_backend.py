@@ -125,3 +125,19 @@ def test_replay_mask_bypasses_predictor_and_consumes_every_frozen_event_once():
     backend._append_state(keys, keys)
     assert backend.mask_events() == replay
     backend.assert_replay_complete()
+
+
+def test_online_predictor_component_labels_are_separate_from_replay_components():
+    class Predictor:
+        def score(self, _module, hidden, *_args):
+            return torch.zeros(1, 1, hidden.shape[1])
+
+    names = []
+
+    def measure(name, operation):
+        names.append(name)
+        return operation()
+
+    backend = RouteAPolicyAttentionBackend(fake_model(), Predictor(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6, component_measure=measure)
+    backend._capture_scores(SimpleNamespace(), (), {"hidden_states": torch.zeros(1, 2, 4), "cache_position": torch.arange(2)})
+    assert names == ["prefill_predictor_score", "prefill_predictor_mask_threshold"]

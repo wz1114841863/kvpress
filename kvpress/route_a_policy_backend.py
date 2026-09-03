@@ -68,7 +68,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
     first layer-complete gate; it leaves no dense attention group in that layer.
     """
 
-    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, replay_mask_events: dict[tuple[int, int], MaskEvent] | None = None) -> None:
+    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, replay_mask_events: dict[tuple[int, int], MaskEvent] | None = None, component_measure=None) -> None:
         language_model = model.model.language_model if hasattr(model.model, "language_model") else model.model
         if not 0 <= layer < len(language_model.layers):
             raise ValueError("target layer is outside the model")
@@ -91,6 +91,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         self._replay_mask_events = None if replay_mask_events is None else dict(replay_mask_events)
         self._replay_seen: set[tuple[int, int]] = set()
         self._keep_mask: torch.Tensor | None = None
+        self.component_measure = component_measure
 
     @property
     def uses_mask_replay(self) -> bool:
@@ -169,10 +170,13 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         if not torch.equal(positions, expected):
             raise AssertionError("Route-A backend requires contiguous cache positions")
         if self._replay_mask_events is None:
-            scores = self.predictor.score(module, hidden, None, None, None, kwargs)
+            phase = "prefill" if hidden.shape[1] > 1 else "decode"
+            score_operation = lambda: self.predictor.score(module, hidden, None, None, None, kwargs)
+            scores = score_operation() if self.component_measure is None else self.component_measure(f"{phase}_predictor_score", score_operation)
             if scores.ndim != 3 or scores.shape[0] != 1 or scores.shape[-1] != hidden.shape[1]:
                 raise AssertionError("KVzap predictor returned an incompatible score shape")
-            decisions = scores[0] >= self.threshold
+            decision_operation = lambda: scores[0] >= self.threshold
+            decisions = decision_operation() if self.component_measure is None else self.component_measure(f"{phase}_predictor_mask_threshold", decision_operation)
             for head in range(scores.shape[1]):
                 for offset in range(scores.shape[2]):
                     key = (head, start + offset)
@@ -222,7 +226,9 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         if self.state is None:
             self.selected_kv_heads(key.shape[1])
             self.state = self._new_state(heads=key.shape[1], head_dim=key.shape[-1])
-        self.state.append(key[0, :, start:start + q_len], value[0, :, start:start + q_len], keep_mask[0], start_position=start)
+        phase = "prefill" if q_len > 1 else "decode"
+        measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"{phase}_{name}", operation)
+        self.state.append(key[0, :, start:start + q_len], value[0, :, start:start + q_len], keep_mask[0], start_position=start, component_measure=measure)
         self._keep_mask = self._score_start = None
 
     def _new_state(self, *, heads: int, head_dim: int) -> RouteAPackedAttentionState:
@@ -282,7 +288,8 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             mapped_kv_head = query_head // groups
             q = query[0, query_head, 0]
             if mapped_kv_head in selected_heads:
-                route_fp32 = self.state.attention(q * scaling, head=mapped_kv_head)
+                measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"decode_{name}", operation)
+                route_fp32 = self.state.attention(q * scaling, head=mapped_kv_head, component_measure=measure)
                 dense_fp32 = dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped_kv_head))
                 torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol)
                 route, dense = route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)
@@ -355,14 +362,14 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
 
     backend_class = RouteAPolicyAttentionBackend
 
-    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, replay_mask_events: MaskEventLayers | None = None) -> None:
+    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, replay_mask_events: MaskEventLayers | None = None, component_measure=None) -> None:
         if not layers or len(set(layers)) != len(layers) or any(layer < 0 for layer in layers):
             raise ValueError("layers must be unique non-negative indices")
         if replay_mask_events is not None and set(replay_mask_events) != set(layers):
             raise ValueError("replay mask layers must exactly match selected layers")
         self.model, self.predictor, self.layers = model, predictor, tuple(layers)
         self.backends = {
-            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer])
+            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure)
             for layer in self.layers
         }
 

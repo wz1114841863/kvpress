@@ -820,3 +820,27 @@ event milliseconds and before/after PyTorch allocator byte snapshots. A
 `dry_run` writes no timing rows and proves only output/schema construction.
 Neither record is a Qwen, KVzap, Route-A, allocator-under-model, HBM, or
 performance result.
+
+`kvzap-route-a41-replay-mask-source-1.0` is the separate, untimed source
+artifact required before an A4.1 paired component run.  Its compressed NPZ
+stores only `(layer, kv_head, cache_position, score, keep)` events from one
+online dense-KVzap collection.  The manifest binds the NPZ SHA-256, event
+count, request-content hash, frozen model/predictor revisions, threshold,
+128-token window, page size, decoding configuration, and source answer digest.
+It contains no K/V tensor or token text.  This source establishes the exact
+mask stream to replay; it is neither a timing sample nor evidence that an
+independent Route-A online predictor would make identical decisions.
+
+`kvzap-route-a411-component-gate-1.0` is the one-layer/one-KV-head A4.1.1
+component-measurement manifest.  Its raw JSONL uses
+`kvzap-route-a41-raw-repetition-1.0` rows grouped by declared path and
+component.  The paired paths are exactly `same_mask_dense_replay` and
+`same_mask_route_a_replay`; the latter records named maturity/pending,
+admission/page-table, hot, pending, packed, and merge regions.  The dense
+path records dense maturity/cold append and same-mask dense attention.  An
+optional `online_dense_predictor_control` records predictor score and threshold
+formation separately and is explicitly unpaired.  Every component timer
+synchronizes the device and resets allocator peaks, so these records support
+micro-component attribution only and must not be aggregated as end-to-end
+decode latency.  Allocator fields remain PyTorch allocator observations, not
+HBM traffic, throughput, energy, area, or hardware evidence.

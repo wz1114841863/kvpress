@@ -279,3 +279,62 @@ exactly 13 raw records for the command above (3 warm-up plus 10 reported),
 synchronized finite wall/CUDA-event values, and byte-valued allocator fields.
 This gate is successful instrumentation validation only; it does not authorize
 a performance conclusion by itself.
+
+## A4.1.1 one-layer/head replayed-mask component gate
+
+The following is the first real-Qwen A4.1.1 measurement.  It has two commands
+and two fresh directories.  The first command is intentionally **untimed**:
+it creates the single online dense-KVzap source mask.  The second replays that
+exact source through dense-cold and Route-A storage/attention states and
+records component samples.  Do not use shell `time` around either command.
+
+First run the local/remote unit tests and collect a layer-0 source.  The
+source collector must finish before starting the component runner.
+
+```bash
+SOURCE_ID=route_a41_replay_source_layer0_budget1_01
+test ! -e "analysis/experiments/${SOURCE_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a41_measurement.py \
+  tests/test_kvzap_route_a4_reference.py \
+  tests/test_kvzap_route_a_policy_backend.py
+.venv/bin/python tools/collect_kvzap_route_a41_replay_source.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers 0 \
+  --admission-budget 1 \
+  --output-dir "analysis/experiments/${SOURCE_ID}"
+```
+
+Then run the paired component gate.  The `admission_budget=1` point is a
+semantic-coverage measurement point: it is deliberately backlogged and must
+show a Route-A pending component.  It must never be pooled with the later
+candidate `admission_budget=512` point.
+
+```bash
+RUN_ID=route_a411_component_layer0_head0_budget1_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a41_component_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 0 \
+  --admission-budget 1 \
+  --warmup-repetitions 3 \
+  --measured-repetitions 10 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Return both complete fresh directories.  Review requires a completed source
+manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
+consumption, raw JSONL, three warm-ups and ten reported repetitions for every
+observed component/path, plus at least one Route-A row with nonzero pending
+tokens.  The raw callback timings are synchronized micro-component samples;
+they do not measure Full-KV, end-to-end decode, HBM traffic, throughput,
+energy, area, or hardware acceleration.  Do not add
+`--include-online-predictor-control` to this first paired gate; it is an
+optional, separately labelled predictor-score control for a later diagnostic.

@@ -148,7 +148,7 @@ class RouteAPackedAttentionState:
     def mask_summary(self) -> dict[str, int | str]:
         return {"original_mask_sha256": self._mask_digest.hexdigest(), "original_mask_decision_count": self._mask_count}
 
-    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int) -> None:
+    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int, component_measure=None) -> None:
         """Append contiguous [KV-head, token, head-dim] K/V under the original mask."""
         if keys.ndim != 3 or values.shape != keys.shape or keys.shape[:1] != (self.heads,) or keys.shape[2] != self.head_dim:
             raise ValueError("keys and values must be [KV-head, token, head-dim]")
@@ -156,21 +156,27 @@ class RouteAPackedAttentionState:
             raise ValueError("keep_mask must be bool [KV-head, token]")
         if start_position != self._next_position:
             raise AssertionError(f"non-contiguous position: expected {self._next_position}, got {start_position}")
-        for offset in range(keys.shape[1]):
-            position = start_position + offset
-            for head in range(self.heads):
-                record = _Record(position, keys[head, offset].detach().clone(), values[head, offset].detach().clone(), bool(keep_mask[head, offset]))
-                self._record_mask_decision(head=head, position=position, keep=record.keep)
-                self._hot[head].append(record)
-                if len(self._hot[head]) > self.window:
-                    mature = self._hot[head].popleft()
-                    if mature.keep:
-                        self._pending[head].append(mature)
-                        self._decided_kept[head].append(mature.position)
-                    else:
-                        self._decided_dropped[head].append(mature.position)
-        self._next_position += keys.shape[1]
-        self._service_oldest_first()
+        def mature_to_pending() -> None:
+            for offset in range(keys.shape[1]):
+                position = start_position + offset
+                for head in range(self.heads):
+                    record = _Record(position, keys[head, offset].detach().clone(), values[head, offset].detach().clone(), bool(keep_mask[head, offset]))
+                    self._record_mask_decision(head=head, position=position, keep=record.keep)
+                    self._hot[head].append(record)
+                    if len(self._hot[head]) > self.window:
+                        mature = self._hot[head].popleft()
+                        if mature.keep:
+                            self._pending[head].append(mature)
+                            self._decided_kept[head].append(mature.position)
+                        else:
+                            self._decided_dropped[head].append(mature.position)
+            self._next_position += keys.shape[1]
+
+        def measure(name, operation):
+            return operation() if component_measure is None else component_measure(name, operation)
+
+        measure("route_a_maturity_pending_staging", mature_to_pending)
+        measure("route_a_admission_page_append_table", self._service_oldest_first)
         self.assert_conservation()
 
     def _service_oldest_first(self) -> None:
@@ -189,9 +195,12 @@ class RouteAPackedAttentionState:
             raise ValueError("invalid KV head")
         return {"hot": list(self._hot[head]), "pending": list(self._pending[head]), "packed": self._pages[head].records()}
 
-    def attention(self, query: torch.Tensor, *, head: int) -> torch.Tensor:
+    def attention(self, query: torch.Tensor, *, head: int, component_measure=None) -> torch.Tensor:
         sources = self.records(head)
-        return online_softmax_merge([_attention(query, sources[name]) for name in ("hot", "pending", "packed")])
+        def measure(name, operation):
+            return operation() if component_measure is None else component_measure(name, operation)
+        partials = [measure(f"route_a_attention_{name}", lambda name=name: _attention(query, sources[name])) for name in ("hot", "pending", "packed")]
+        return measure("route_a_online_softmax_merge", lambda: online_softmax_merge(partials))
 
     def same_mask_records(self, head: int) -> list[_Record]:
         sources = self.records(head)
@@ -243,27 +252,33 @@ class DenseSameMaskAttentionState:
     def mask_summary(self) -> dict[str, int | str]:
         return {"original_mask_sha256": self._mask_digest.hexdigest(), "original_mask_decision_count": self._mask_count}
 
-    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int) -> None:
+    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int, component_measure=None) -> None:
         if keys.ndim != 3 or values.shape != keys.shape or keys.shape[:1] != (self.heads,) or keys.shape[2] != self.head_dim:
             raise ValueError("keys and values must be [KV-head, token, head-dim]")
         if keep_mask.shape != keys.shape[:2] or keep_mask.dtype != torch.bool:
             raise ValueError("keep_mask must be bool [KV-head, token]")
         if start_position != self._next_position:
             raise AssertionError(f"non-contiguous position: expected {self._next_position}, got {start_position}")
-        for offset in range(keys.shape[1]):
-            position = start_position + offset
-            for head in range(self.heads):
-                record = _Record(position, keys[head, offset].detach().clone(), values[head, offset].detach().clone(), bool(keep_mask[head, offset]))
-                self._record_mask_decision(head=head, position=position, keep=record.keep)
-                self._hot[head].append(record)
-                if len(self._hot[head]) > self.window:
-                    mature = self._hot[head].popleft()
-                    if mature.keep:
-                        self._cold[head].append(mature)
-                        self._decided_kept[head].append(mature.position)
-                    else:
-                        self._decided_dropped[head].append(mature.position)
-        self._next_position += keys.shape[1]
+        def mature_to_dense_cold() -> None:
+            for offset in range(keys.shape[1]):
+                position = start_position + offset
+                for head in range(self.heads):
+                    record = _Record(position, keys[head, offset].detach().clone(), values[head, offset].detach().clone(), bool(keep_mask[head, offset]))
+                    self._record_mask_decision(head=head, position=position, keep=record.keep)
+                    self._hot[head].append(record)
+                    if len(self._hot[head]) > self.window:
+                        mature = self._hot[head].popleft()
+                        if mature.keep:
+                            self._cold[head].append(mature)
+                            self._decided_kept[head].append(mature.position)
+                        else:
+                            self._decided_dropped[head].append(mature.position)
+            self._next_position += keys.shape[1]
+
+        if component_measure is None:
+            mature_to_dense_cold()
+        else:
+            component_measure("dense_maturity_dense_cold_append", mature_to_dense_cold)
         self.assert_conservation()
 
     def records(self, head: int) -> dict[str, list[_Record]]:
@@ -275,8 +290,9 @@ class DenseSameMaskAttentionState:
         sources = self.records(head)
         return sources["hot"] + sources["dense_cold"]
 
-    def attention(self, query: torch.Tensor, *, head: int) -> torch.Tensor:
-        return dense_same_mask_attention(query, self.same_mask_records(head))
+    def attention(self, query: torch.Tensor, *, head: int, component_measure=None) -> torch.Tensor:
+        operation = lambda: dense_same_mask_attention(query, self.same_mask_records(head))
+        return operation() if component_measure is None else component_measure("dense_same_mask_attention", operation)
 
     def state_summary(self, head: int) -> dict[str, int]:
         sources = self.records(head)

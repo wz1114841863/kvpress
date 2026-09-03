@@ -65,6 +65,24 @@ work, then the model-derived candidate point (`admission_budget=512`) to
 observe a less artificially backlogged state. These are distinct parameter
 points and cannot be pooled.
 
+Implementation is deliberately two-stage.  First,
+`tools/collect_kvzap_route_a41_replay_source.py` runs one **untimed** online
+dense-KVzap collection and writes a hashed, position-keyed replay NPZ for one
+declared layer.  Then
+`tools/run_kvzap_route_a41_component_gate.py` resets model/backend state for
+each warm-up or reported run and measures only the replayed dense and Route-A
+components.  Its Route-A callback names maturity-to-pending, admission/page
+append/table, hot attention, pending attention, packed attention, and merge;
+the dense callback names dense maturity/cold append and same-mask dense
+attention.  The optional online dense predictor control has its own path and
+cannot be pooled with the replayed pair.
+
+Each callback synchronizes CUDA and resets PyTorch allocator peak state.
+That makes the callback samples useful for component attribution, but invalid
+as end-to-end decode timing; A4.1.2 must measure the whole decode region
+without per-component synchronization.  A4.1.1 code and no-model unit tests
+are available locally, but no real-Qwen A4.1.1 artifact has yet been accepted.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers

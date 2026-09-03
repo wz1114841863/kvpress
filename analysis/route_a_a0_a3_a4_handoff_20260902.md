@@ -195,6 +195,25 @@ CUDA or loading Qwen. It is not a model timing, allocator, or profiler result.
 The next remote gate is only the harness's CUDA tensor-add self-check; do not
 start component or decode measurement until that new artifact is reviewed.
 
+### A4.1.1 implementation status (2026-09-03)
+
+The A4.1.1 one-layer/head component-gate code is now staged but has no
+accepted real-Qwen result.  `tools/collect_kvzap_route_a41_replay_source.py`
+collects one untimed online dense-KVzap score/keep event stream, hashes it,
+and records its request/config provenance.  The separate
+`tools/run_kvzap_route_a41_component_gate.py` consumes that source exactly in
+both replayed paths.  It records raw, warm-up-labelled CUDA-event/host samples
+and PyTorch allocator snapshots for dense-cold versus Route-A maturity,
+admission/page-table, hot/pending/packed attention, and merge.  Its optional
+online predictor control is a distinct unpaired path.
+
+The callback timer synchronizes every measured component, so A4.1.1 is a
+micro-component attribution gate, not end-to-end decode timing.  The first
+remote run must use `admission_budget=1` and require observed pending staging;
+the separate `admission_budget=512` candidate-point run follows only after the
+budget-one artifact is reviewed.  It must use a fresh replay-source directory
+and a fresh result directory; neither A4.0 output nor frozen trace is edited.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:
