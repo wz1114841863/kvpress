@@ -934,7 +934,8 @@ operator ranking.
 
 `kvzap-route-a4122-cache-ownership-gate-1.0` is an untimed, single
 `(layer, kv_head)` integration schema. It records the three policy paths and
-requires same-mask dense and Route-A owned-cold answer/token-ID equality. In
+records (but does not require) same-mask dense versus Route-A owned-cold
+answer/token-ID relation. In
 the owned-cold path, after original K/V is appended to Route-A hot/pending/
 packed state, every mature selected-head K/V cell in the native DynamicCache
 view is NaN-poisoned. Each later call verifies the old mature range remains
@@ -943,3 +944,10 @@ coverage and `native_cold_ownership`, including logical dense slot extent and
 guard counts. `native_cold_slots_physically_freed` is required to be false:
 poisoning is a no-silent-dense-read guard, not allocator, physical-memory, HBM,
 or performance evidence.
+
+Schema 1.1 fixes an over-strong 1.0 terminal assertion: the per-head FP32
+same-mask numerical guard and finite selected Route-A decode output remain
+required, while the first generated token-ID difference is stored as a bounded
+diagnostic. Different legal reduction orders can change a later greedy token;
+that drift alone neither proves a native-dense cold read nor invalidates the
+ownership guard.

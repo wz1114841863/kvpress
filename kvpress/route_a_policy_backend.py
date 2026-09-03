@@ -437,6 +437,8 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
             self.native_cold_prior_read_guard_checks += 1
         result = super().attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
         self._poison_selected_native_cold(key, value)
+        if query.shape[2] == 1 and (not isinstance(result, tuple) or not torch.isfinite(result[0]).all()):
+            raise AssertionError("selected ownership Route-A attention produced a non-finite decode output")
         return result
 
 

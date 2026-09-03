@@ -313,8 +313,9 @@ kv_head)`. It uses an ownership-specific Route-A backend that copies original
 K/V into Route-A state and then NaN-poisons the selected mature-cold cells in
 the native DynamicCache view. Every later call verifies those cells remain
 poisoned, so selected policy attention cannot silently recover cold K/V from
-native dense cache. Same-mask dense and owned-cold Route-A answer/token-ID
-equality is required. Native tensor slots remain allocated by design; the
+native dense cache. Schema 1.1 records same-mask dense/owned-cold generated
+token drift but does not reject it: per-head FP32 guards and finite Route-A
+decode output are the semantic checks. Native tensor slots remain allocated by design; the
 manifest must state `native_cold_slots_physically_freed: false`. First run
 layer 0/head 6 at budget one with pending required, then budget 512 with
 multi-page required. Neither run is a timing or storage-saving measurement.

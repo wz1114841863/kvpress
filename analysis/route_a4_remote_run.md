@@ -530,7 +530,7 @@ SOURCE_ID=route_a41_replay_source_layer0_budget1_01
   tests/test_kvzap_route_a_policy_backend.py \
   tests/test_kvzap_route_a4_reference.py
 
-RUN_ID=route_a4122_ownership_layer0_head6_budget1_pending_01
+RUN_ID=route_a4122_ownership_layer0_head6_budget1_pending_schema11_01
 test ! -e "analysis/experiments/${RUN_ID}"
 .venv/bin/python tools/run_kvzap_route_a4122_cache_ownership_gate.py \
   --preset retrieval \
@@ -544,7 +544,7 @@ test ! -e "analysis/experiments/${RUN_ID}"
   --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
   --output-dir "analysis/experiments/${RUN_ID}"
 
-RUN_ID=route_a4122_ownership_layer0_head6_budget512_multipage_01
+RUN_ID=route_a4122_ownership_layer0_head6_budget512_multipage_schema11_01
 test ! -e "analysis/experiments/${RUN_ID}"
 .venv/bin/python tools/run_kvzap_route_a4122_cache_ownership_gate.py \
   --preset retrieval \
@@ -559,10 +559,12 @@ test ! -e "analysis/experiments/${RUN_ID}"
   --output-dir "analysis/experiments/${RUN_ID}"
 ```
 
-Synchronize both complete directories. Each manifest must report complete
-replay, same-mask dense/owned-cold answer and token-ID equality, nonzero
-native-cold poison writes/prior-read checks, and `native_cold_slots_physically_freed:
-false`. The budget-one manifest must show pending coverage; the budget-512
+Synchronize both complete directories. Each schema-1.1 manifest must report
+complete replay, the recorded same-mask dense/owned-cold generated-output
+relation, nonzero native-cold poison writes/prior-read checks, and
+`native_cold_slots_physically_freed: false`. Generated token drift does not
+fail this gate by itself because the per-head FP32 numerical guard remains the
+semantic criterion. The budget-one manifest must show pending coverage; the budget-512
 manifest must show a sealed page plus multi-page coverage.
 
 Return both complete fresh directories.  Review requires a completed source
