@@ -1,8 +1,9 @@
 from types import SimpleNamespace
 
 import torch
+from transformers import DynamicCache
 
-from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, compare_original_mask_events
+from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, compare_original_mask_events
 
 
 def fake_model(layer_count=1):
@@ -31,6 +32,58 @@ def test_selected_decode_group_uses_route_state_without_calling_original_and_rea
     assert backend.policy_decode_calls == 1
     assert backend.comparisons[0]["pending_tokens"] > 0
     assert backend.comparisons[0]["packed_tokens"] > 0
+
+
+def test_cold_ownership_backend_poisoning_prevents_selected_native_cold_read():
+    backend = RouteAColdOwnershipAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    module = SimpleNamespace(scaling=1.0)
+    keys = torch.arange(8, dtype=torch.float32).reshape(1, 1, 4, 2)
+    values = keys + 10
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 3, dtype=torch.bool), 0
+    backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 2, 3, 2), None), module, torch.ones(1, 2, 3, 2), keys[:, :, :3], values[:, :, :3], None, 0.0, scaling=1.0)
+    assert torch.isnan(keys[0, 0, :2]).all()
+    assert torch.isnan(values[0, 0, :2]).all()
+    assert torch.isfinite(keys[0, 0, 2:]).all()
+
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 1, dtype=torch.bool), 3
+    output, _weights = backend.attention(lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("selected owner path called dense attention")), module, torch.tensor([[[[1., 0.]], [[0., 1.]]]]), keys, values, None, 0.0, scaling=1.0)
+    assert torch.isfinite(output).all()
+    assert torch.isnan(keys[0, 0, :3]).all()
+    backend.assert_ownership_guard_complete()
+    summary = backend.ownership_summary()
+    assert summary["native_selected_cold_values_poisoned"]
+    assert summary["native_selected_cold_guard_checks"] >= 2
+    assert summary["native_selected_cold_prior_read_guard_checks"] >= 1
+    assert summary["native_selected_cold_slot_tokens_per_head"] == 3
+    assert summary["native_cold_slots_physically_freed"] is False
+
+
+def test_cold_ownership_backend_requires_one_head():
+    try:
+        RouteAColdOwnershipAttentionBackend(fake_model(), object(), layer=0, kv_head=None, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    except ValueError as error:
+        assert "one explicit KV head" in str(error)
+    else:
+        raise AssertionError("all-head ownership gate unexpectedly accepted")
+
+
+def test_cold_ownership_poison_persists_in_dynamic_cache_between_decode_updates():
+    backend = RouteAColdOwnershipAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    module = SimpleNamespace(scaling=1.0)
+    cache = DynamicCache()
+    keys = torch.arange(6, dtype=torch.float32).reshape(1, 1, 3, 2)
+    values = keys + 10
+    cached_keys, cached_values = cache.update(keys, values, 0)
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 3, dtype=torch.bool), 0
+    backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 2, 3, 2), None), module, torch.ones(1, 2, 3, 2), cached_keys, cached_values, None, 0.0, scaling=1.0)
+    assert torch.isnan(cache.layers[0].keys[0, 0, :2]).all()
+    next_key = torch.tensor([[[[9.0, 10.0]]]])
+    cached_keys, cached_values = cache.update(next_key, next_key + 10, 0)
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 1, dtype=torch.bool), 3
+    output, _weights = backend.attention(lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("selected ownership path called dense attention")), module, torch.tensor([[[[1., 0.]], [[0., 1.]]]]), cached_keys, cached_values, None, 0.0, scaling=1.0)
+    assert torch.isfinite(output).all()
+    assert torch.isnan(cache.layers[0].keys[0, 0, :3]).all()
+    backend.assert_ownership_guard_complete()
 
 
 def test_all_kv_heads_replace_the_full_layer_without_calling_original_on_decode():

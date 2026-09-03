@@ -357,6 +357,89 @@ class DenseSameMaskAttentionBackend(RouteAPolicyAttentionBackend):
         }
 
 
+class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
+    """Route-A gate that poisons selected mature native-cache K/V slots.
+
+    This is a semantic ownership guard, not a physical cache allocator. The
+    native ``DynamicCache`` tensor retains its shape and allocation, but its
+    selected mature-cold cells are overwritten with NaN after their K/V was
+    appended to Route-A state. A later selected-head dense-cache read would
+    therefore be observable as NaN rather than silently supplying cold K/V.
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        if kwargs.get("kv_head") is None:
+            raise ValueError("cold-ownership gate requires one explicit KV head")
+        super().__init__(*args, **kwargs)
+        self.native_cold_guard_checks = 0
+        self.native_cold_prior_read_guard_checks = 0
+        self.native_cold_poison_writes = 0
+
+    def _cold_end(self) -> int:
+        if self.state is None:
+            return 0
+        return max(0, self.state.next_position - self.window)
+
+    def _assert_prior_native_cold_is_poisoned(self, key: torch.Tensor, value: torch.Tensor) -> None:
+        cold_end = self._cold_end()
+        if cold_end == 0:
+            return
+        if key.ndim != 4 or value.shape != key.shape or key.shape[2] < cold_end:
+            raise AssertionError("native cache does not retain the expected selected cold range")
+        if not key.is_floating_point():
+            raise AssertionError("cold-ownership gate requires floating-point K/V")
+        for head in self.selected_kv_heads(key.shape[1]):
+            if not torch.isnan(key[0, head, :cold_end]).all() or not torch.isnan(value[0, head, :cold_end]).all():
+                raise AssertionError("selected mature cold K/V remained readable in the native cache")
+        self.native_cold_guard_checks += 1
+
+    def _poison_selected_native_cold(self, key: torch.Tensor, value: torch.Tensor) -> None:
+        cold_end = self._cold_end()
+        if cold_end == 0:
+            return
+        if key.ndim != 4 or value.shape != key.shape or key.shape[2] < cold_end:
+            raise AssertionError("native cache cannot cover Route-A mature cold positions")
+        for head in self.selected_kv_heads(key.shape[1]):
+            key[0, head, :cold_end].fill_(float("nan"))
+            value[0, head, :cold_end].fill_(float("nan"))
+        self.native_cold_poison_writes += 1
+        self._assert_prior_native_cold_is_poisoned(key, value)
+
+    def ownership_summary(self) -> dict[str, Any]:
+        if self.state is None:
+            return {"selected_kv_heads": [], "native_cold_slots_physically_freed": False}
+        cold_end = self._cold_end()
+        heads = self.selected_kv_heads(self.state.heads)
+        element_bytes = next((record.key.element_size() for head in heads for source in self.state.records(head).values() for record in source), None)
+        if element_bytes is None:
+            element_bytes = 0
+        bytes_per_head = cold_end * self.state.head_dim * 2 * int(element_bytes)
+        return {
+            "selected_kv_heads": list(heads),
+            "native_selected_cold_slot_tokens_per_head": cold_end,
+            "native_selected_cold_slot_logical_bytes_per_head": bytes_per_head,
+            "native_selected_cold_values_poisoned": self.native_cold_poison_writes > 0,
+            "native_selected_cold_guard_checks": self.native_cold_guard_checks,
+            "native_selected_cold_prior_read_guard_checks": self.native_cold_prior_read_guard_checks,
+            "native_cold_slots_physically_freed": False,
+        }
+
+    def assert_ownership_guard_complete(self) -> None:
+        if self.state is None or self._cold_end() == 0:
+            raise AssertionError("cold-ownership gate never reached mature selected cold state")
+        if self.native_cold_poison_writes == 0 or self.native_cold_prior_read_guard_checks == 0:
+            raise AssertionError("cold-ownership gate did not poison and re-check native selected cold K/V")
+
+    def attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
+        had_prior_cold = self._cold_end() > 0
+        self._assert_prior_native_cold_is_poisoned(key, value)
+        if had_prior_cold:
+            self.native_cold_prior_read_guard_checks += 1
+        result = super().attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
+        self._poison_selected_native_cold(key, value)
+        return result
+
+
 class RouteAPolicyAttentionBackendSet(AbstractContextManager):
     """Atomically attach Route-A policy backends to multiple model layers.
 

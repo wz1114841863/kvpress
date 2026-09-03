@@ -511,6 +511,60 @@ read, mask, or attention error. The raw Chrome traces are intentionally large;
 for transfer, create lossless `.gz` copies after the run and keep the original
 JSON or a documented decompression procedure.
 
+## A4.1.2.2 selected-head native-cold ownership gates
+
+These are untimed semantic integration gates. They poison mature selected-head
+native-cache K/V after Route-A retains it, then ensure the selected Route-A
+attention path remains finite and same-mask equivalent without consuming those
+native dense cold values. Native DynamicCache slots remain allocated; do not
+use these runs for latency, allocator, physical-memory, or HBM claims.
+
+Reuse the completed layer-0 replay source. Run head 6 twice in fresh output
+directories: budget one exercises pending staging, while budget 512 exercises
+full-page/tail/multi-page packed state.
+
+```bash
+SOURCE_ID=route_a41_replay_source_layer0_budget1_01
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a4122_cache_ownership.py \
+  tests/test_kvzap_route_a_policy_backend.py \
+  tests/test_kvzap_route_a4_reference.py
+
+RUN_ID=route_a4122_ownership_layer0_head6_budget1_pending_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a4122_cache_ownership_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 6 \
+  --admission-budget 1 \
+  --require-pending-nonempty \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+
+RUN_ID=route_a4122_ownership_layer0_head6_budget512_multipage_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a4122_cache_ownership_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 6 \
+  --admission-budget 512 \
+  --require-multi-page-packed \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize both complete directories. Each manifest must report complete
+replay, same-mask dense/owned-cold answer and token-ID equality, nonzero
+native-cold poison writes/prior-read checks, and `native_cold_slots_physically_freed:
+false`. The budget-one manifest must show pending coverage; the budget-512
+manifest must show a sealed page plus multi-page coverage.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

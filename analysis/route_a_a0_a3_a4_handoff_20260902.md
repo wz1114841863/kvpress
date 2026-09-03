@@ -307,6 +307,18 @@ diagnostic into a new directory to obtain usable GPU operator ranking; retain
 the prior directory as a provenance record. Chrome trace JSON is expected to
 be large and may be losslessly gzip-compressed for transfer.
 
+**A4.1.2.2 implementation (awaiting two fresh remote gates):**
+`tools/run_kvzap_route_a4122_cache_ownership_gate.py` targets one `(layer,
+kv_head)`. It uses an ownership-specific Route-A backend that copies original
+K/V into Route-A state and then NaN-poisons the selected mature-cold cells in
+the native DynamicCache view. Every later call verifies those cells remain
+poisoned, so selected policy attention cannot silently recover cold K/V from
+native dense cache. Same-mask dense and owned-cold Route-A answer/token-ID
+equality is required. Native tensor slots remain allocated by design; the
+manifest must state `native_cold_slots_physically_freed: false`. First run
+layer 0/head 6 at budget one with pending required, then budget 512 with
+multi-page required. Neither run is a timing or storage-saving measurement.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

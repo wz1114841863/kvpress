@@ -931,3 +931,15 @@ CUDA device time. The old 1.0 table used legacy `cuda_time_*` attributes that
 are empty under the accepted PyTorch 2.10 build; its raw Chrome traces remain
 valid, but its zero-valued summary GPU-time columns are not usable for GPU
 operator ranking.
+
+`kvzap-route-a4122-cache-ownership-gate-1.0` is an untimed, single
+`(layer, kv_head)` integration schema. It records the three policy paths and
+requires same-mask dense and Route-A owned-cold answer/token-ID equality. In
+the owned-cold path, after original K/V is appended to Route-A hot/pending/
+packed state, every mature selected-head K/V cell in the native DynamicCache
+view is NaN-poisoned. Each later call verifies the old mature range remains
+poisoned before selected Route-A attention executes. The manifest records
+coverage and `native_cold_ownership`, including logical dense slot extent and
+guard counts. `native_cold_slots_physically_freed` is required to be false:
+poisoning is a no-silent-dense-read guard, not allocator, physical-memory, HBM,
+or performance evidence.

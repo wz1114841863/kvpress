@@ -154,6 +154,21 @@ transfer may use lossless gzip compression; retain the original trace or a
 documented decompression path, and never pool profiler values into timing
 distributions.
 
+### A4.1.2.2 — selected-head native-cold ownership gate
+
+Before replacing cache allocation, establish that selected mature cold K/V is
+not silently supplied by native dense cache during Route-A attention. The
+minimal gate targets one layer and one KV head. It appends original K/V to the
+same replayed-mask Route-A hot/pending/packed state, then NaN-poisons that
+selected head's mature native-cache K/V cells. On every later attention call,
+it verifies the old mature range is still poisoned; selected query heads use
+Route-A attention, while all unselected heads/layers remain native. The same-
+mask dense control and owned-cold Route-A path must generate identical answer
+and token IDs. Run budget one with pending required and budget 512/head 6 with
+multi-page required. This is untimed and explicitly retains native tensor
+allocation, so it is a semantic ownership guard—not cache compaction, allocator
+measurement, physical-memory result, or performance result.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers
