@@ -144,6 +144,16 @@ a repetition benchmark: profiler output is excluded from all A4.1.2 timing
 summaries and can only identify reference overhead to guide a later,
 independent cache-ownership/substitution design.
 
+The first remote 1.0 diagnostic also established that Chrome traces can be
+large because every small Python-reference operation emits CPU, CUDA-runtime,
+kernel, correlation, and memory/shape events. Its raw traces remain valid for
+inspection, but PyTorch 2.10 leaves the legacy `cuda_time_*` aggregate fields
+empty. The 1.1 runner reports generic `device_time_*` fields instead and must
+be rerun in a new directory before ranking GPU-attributed operators. Trace
+transfer may use lossless gzip compression; retain the original trace or a
+documented decompression path, and never pool profiler values into timing
+distributions.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers

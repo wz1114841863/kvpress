@@ -27,7 +27,7 @@ from tools.run_kvzap_route_a412_whole_decode_gate import A412_SCHEMA, answer_has
 from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, build_builtin_request, load_jsonl_request, seed_everything
 
 
-PROFILER_SCHEMA = "kvzap-route-a412-profiler-diagnostic-1.0"
+PROFILER_SCHEMA = "kvzap-route-a412-profiler-diagnostic-1.1"
 
 
 def parse_args() -> argparse.Namespace:
@@ -59,9 +59,14 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _number(event: Any, field: str) -> float:
-    value = getattr(event, field, 0.0)
-    return float(0.0 if value is None else value)
+def _event_number(event: Any, *fields: str) -> float:
+    """Read current generic device fields, with legacy CUDA-field fallback."""
+    missing = object()
+    for field in fields:
+        value = getattr(event, field, missing)
+        if value is not missing and value is not None:
+            return float(value)
+    return 0.0
 
 
 def operator_rows(events: Any, *, top_operators: int) -> list[dict[str, Any]]:
@@ -70,18 +75,18 @@ def operator_rows(events: Any, *, top_operators: int) -> list[dict[str, Any]]:
         {
             "operator": str(getattr(event, "key", "<unknown>")),
             "count": int(getattr(event, "count", 0)),
-            "self_cpu_time_total_us": _number(event, "self_cpu_time_total"),
-            "cpu_time_total_us": _number(event, "cpu_time_total"),
-            "self_cuda_time_total_us": _number(event, "self_cuda_time_total"),
-            "cuda_time_total_us": _number(event, "cuda_time_total"),
-            "self_cpu_memory_usage_bytes": _number(event, "self_cpu_memory_usage"),
-            "cpu_memory_usage_bytes": _number(event, "cpu_memory_usage"),
-            "self_cuda_memory_usage_bytes": _number(event, "self_cuda_memory_usage"),
-            "cuda_memory_usage_bytes": _number(event, "cuda_memory_usage"),
+            "self_cpu_time_total_us": _event_number(event, "self_cpu_time_total"),
+            "cpu_time_total_us": _event_number(event, "cpu_time_total"),
+            "self_device_time_total_us": _event_number(event, "self_device_time_total", "self_cuda_time_total"),
+            "device_time_total_us": _event_number(event, "device_time_total", "cuda_time_total"),
+            "self_cpu_memory_usage_bytes": _event_number(event, "self_cpu_memory_usage"),
+            "cpu_memory_usage_bytes": _event_number(event, "cpu_memory_usage"),
+            "self_device_memory_usage_bytes": _event_number(event, "self_device_memory_usage", "self_cuda_memory_usage"),
+            "device_memory_usage_bytes": _event_number(event, "device_memory_usage", "cuda_memory_usage"),
         }
         for event in events
     ]
-    return sorted(rows, key=lambda row: (row["cuda_time_total_us"], row["cpu_time_total_us"], row["operator"]), reverse=True)[:top_operators]
+    return sorted(rows, key=lambda row: (row["device_time_total_us"], row["cpu_time_total_us"], row["operator"]), reverse=True)[:top_operators]
 
 
 def make_backend(*, path: str, model, layers: tuple[int, ...], events, args: argparse.Namespace):
@@ -171,7 +176,7 @@ def main() -> None:
         results.append(result)
     summary_path = args.output_dir / "a412_profiler_operator_summary.json"
     summary_path.write_text(json.dumps({"schema_version": PROFILER_SCHEMA, "results": results}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    manifest = {"schema_version": PROFILER_SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}), "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"], "source_answer_sha256": source["answer_sha256"]}, "operator_summary": summary_path.name, "source_artifact_sha256": source["source_artifact_sha256"], "observational_guards": {"paired_mask_mode": "replayed_dense_mask", "full_kv_bypass_zero_route_a_admission": True, "route_a_predictor_scored_online": False, "replay_mask_consumption_complete": True, "profiler_is_separate_from_timing_repetitions": True, "profiler_scope": "question_forward_plus_greedy_decode", "context_prefill_profiled": False}, "boundaries": ["torch.profiler alters execution and these operator values must not be compared as latency or throughput measurements.", "This profiles the Python reference after untimed context prefill; it is not a packed-attention kernel profile.", "Allocator counters are PyTorch allocator observations, not HBM traffic, energy, area, frequency, hardware acceleration, or RTL evidence."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
+    manifest = {"schema_version": PROFILER_SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}), "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"], "source_answer_sha256": source["answer_sha256"]}, "operator_summary": summary_path.name, "operator_summary_units": {"device_time_total_us": "generic torch.profiler device time; CUDA in this CUDA-only gate", "device_memory_usage_bytes": "generic torch.profiler device memory accounting; not allocator peak or HBM traffic"}, "source_artifact_sha256": source["source_artifact_sha256"], "observational_guards": {"paired_mask_mode": "replayed_dense_mask", "full_kv_bypass_zero_route_a_admission": True, "route_a_predictor_scored_online": False, "replay_mask_consumption_complete": True, "profiler_is_separate_from_timing_repetitions": True, "profiler_scope": "question_forward_plus_greedy_decode", "context_prefill_profiled": False}, "boundaries": ["torch.profiler alters execution and these operator values must not be compared as latency or throughput measurements.", "This profiles the Python reference after untimed context prefill; it is not a packed-attention kernel profile.", "Allocator counters are PyTorch allocator observations, not HBM traffic, energy, area, frequency, hardware acceleration, or RTL evidence."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
     manifest_path = args.output_dir / "a412_profiler_manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"A4.1.2.1 profiler diagnostic completed: {manifest_path}")

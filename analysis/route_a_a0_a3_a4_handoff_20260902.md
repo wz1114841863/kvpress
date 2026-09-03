@@ -298,6 +298,15 @@ not a timing repetition and must never be merged with A4.1.2 latency
 distributions. Its sole purpose is to identify Python reference overhead
 before separately designing true cache ownership and storage substitution.
 
+The first 1.0 capture is a valid raw-trace diagnostic but its normalized
+operator summary read legacy `cuda_time_*` aggregate attributes that PyTorch
+2.10 leaves empty. It is not a K/V read, mask, replay, or attention-semantic
+failure: replay guards and answer/token digests passed. The runner is now
+schema 1.1 and reads `device_time_*` first, with legacy fallback. Rerun the
+diagnostic into a new directory to obtain usable GPU operator ranking; retain
+the prior directory as a provenance record. Chrome trace JSON is expected to
+be large and may be losslessly gzip-compressed for transfer.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

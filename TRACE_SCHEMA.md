@@ -913,7 +913,7 @@ physical-memory savings. A separate profiler record must state its tool,
 version, command, activities, and scope; it must not be pooled with timing
 repetitions.
 
-`kvzap-route-a412-profiler-diagnostic-1.0` is that separate A4.1.2.1 record.
+`kvzap-route-a412-profiler-diagnostic-1.1` is that separate A4.1.2.1 record.
 It runs one fresh-cache, unprofiled warm-up per named path followed by exactly
 one `torch.profiler` capture of `question_forward_plus_greedy_decode`, after
 an untimed context prefill. It emits one Chrome trace and a normalized
@@ -923,3 +923,11 @@ and PyTorch allocator snapshots. Profiler execution changes the runtime, so
 its operator totals are attribution diagnostics only: they must not be pooled
 with A4.1.2 timing samples or presented as latency, throughput, HBM traffic,
 energy, physical-memory, or hardware evidence.
+
+Schema 1.1 uses `device_time_total_us` and `device_memory_usage_bytes` for
+the normalized operator table, falling back to legacy `cuda_*` attributes only
+when necessary. In this CUDA-only gate, device time denotes profiler-reported
+CUDA device time. The old 1.0 table used legacy `cuda_time_*` attributes that
+are empty under the accepted PyTorch 2.10 build; its raw Chrome traces remain
+valid, but its zero-valued summary GPU-time columns are not usable for GPU
+operator ranking.

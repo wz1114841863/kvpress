@@ -475,7 +475,7 @@ is new.
 
 ```bash
 SOURCE_ID=route_a412_replay_source_layers_0_18_35_01
-RUN_ID=route_a412_profiler_layers_0_18_35_budget512_01
+RUN_ID=route_a412_profiler_layers_0_18_35_budget512_gpu_summary11_01
 test ! -e "analysis/experiments/${RUN_ID}"
 .venv/bin/python -m pytest -q -s \
   tests/test_kvzap_route_a412_whole_decode.py \
@@ -502,6 +502,14 @@ hash, one result for each path, answer/token-ID digests, complete replay for
 both replay paths, and profiler scope/boundaries. The resulting operator table
 only locates current Python-reference overhead before a separate true
 cache-ownership/storage-substitution design.
+
+The original schema-1.0 output directory must remain untouched. Schema 1.1
+uses PyTorch's `device_time_*` aggregate fields (with legacy fallback), because
+the PyTorch 2.10 build leaves its older `cuda_time_*` aggregate fields empty.
+This is a profiler-summary field compatibility correction, not a K/V Cache
+read, mask, or attention error. The raw Chrome traces are intentionally large;
+for transfer, create lossless `.gz` copies after the run and keep the original
+JSON or a documented decompression procedure.
 
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
