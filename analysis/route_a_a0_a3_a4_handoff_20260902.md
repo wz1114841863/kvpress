@@ -241,6 +241,13 @@ per-reset-run aggregate distributions; the latter sums component callback time
 and takes a run-local allocator peak maximum before comparing variance across
 points.
 
+The next A4.1.1 increment is layer 0/KV-head 6. The recorded replay source
+has a head-6 dense-cold maximum of 195 tokens, unlike head 0's 22. The new
+component gate records packed page count, full-page count, and tail occupancy,
+and the head-6 budget-512 run must use `--require-multi-page-packed`. This
+establishes only actual multi-page state coverage in the Python reference; it
+does not establish a page allocator, HBM behavior, or end-to-end performance.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

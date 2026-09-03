@@ -63,6 +63,18 @@ class _PackedPages:
     def page_count(self) -> int:
         return len(self.keys)
 
+    @property
+    def full_page_count(self) -> int:
+        """Number of immutable full pages; a full append-only page is sealed."""
+        return sum(len(page) == self.page_tokens for page in self.keys)
+
+    @property
+    def tail_tokens(self) -> int:
+        """Occupancy of the sole mutable tail page, or zero when absent/full."""
+        if not self.keys or len(self.keys[-1]) == self.page_tokens:
+            return 0
+        return len(self.keys[-1])
+
 
 def _attention(query: torch.Tensor, records: list[_Record]) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """Return stable partial attention as ``(max_logit, exp_sum, weighted_v)``."""
@@ -208,7 +220,15 @@ class RouteAPackedAttentionState:
 
     def state_summary(self, head: int) -> dict[str, int]:
         sources = self.records(head)
-        return {"hot_tokens": len(sources["hot"]), "pending_tokens": len(sources["pending"]), "packed_tokens": len(sources["packed"]), "packed_page_count": self._pages[head].page_count}
+        pages = self._pages[head]
+        return {
+            "hot_tokens": len(sources["hot"]),
+            "pending_tokens": len(sources["pending"]),
+            "packed_tokens": len(sources["packed"]),
+            "packed_page_count": pages.page_count,
+            "packed_full_page_count": pages.full_page_count,
+            "packed_tail_tokens": pages.tail_tokens,
+        }
 
     def assert_conservation(self) -> None:
         for head in range(self.heads):

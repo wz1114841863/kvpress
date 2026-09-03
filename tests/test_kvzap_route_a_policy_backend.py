@@ -47,7 +47,7 @@ def test_all_kv_heads_replace_the_full_layer_without_calling_original_on_decode(
     coverage = backend.coverage()
     assert coverage["original_mask_decision_count"] == 8
     assert len(coverage["original_mask_sha256"]) == 64
-    assert {key: value for key, value in coverage.items() if key not in {"original_mask_decision_count", "original_mask_sha256"}} == {"selected_kv_heads": [0, 1], "heads": [{"kv_head": 0, "comparison_count": 1, "max_packed_tokens": 1, "max_pending_tokens": 2, "ever_retained_cold": True, "ever_pending": True}, {"kv_head": 1, "comparison_count": 1, "max_packed_tokens": 1, "max_pending_tokens": 2, "ever_retained_cold": True, "ever_pending": True}]}
+    assert {key: value for key, value in coverage.items() if key not in {"original_mask_decision_count", "original_mask_sha256"}} == {"selected_kv_heads": [0, 1], "heads": [{"kv_head": 0, "comparison_count": 1, "max_packed_tokens": 1, "max_pending_tokens": 2, "max_packed_page_count": 1, "max_packed_full_page_count": 0, "max_packed_tail_tokens": 1, "ever_retained_cold": True, "ever_pending": True, "ever_multi_page_packed": False, "ever_sealed_packed_page": False}, {"kv_head": 1, "comparison_count": 1, "max_packed_tokens": 1, "max_pending_tokens": 2, "max_packed_page_count": 1, "max_packed_full_page_count": 0, "max_packed_tail_tokens": 1, "ever_retained_cold": True, "ever_pending": True, "ever_multi_page_packed": False, "ever_sealed_packed_page": False}]}
 
 
 def test_executed_dtype_ulp_diagnostic_is_measured_independently_of_fp32_guard():

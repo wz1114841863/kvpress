@@ -124,8 +124,13 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
                     "comparison_count": len(rows[head]),
                     "max_packed_tokens": max((int(row["packed_tokens"]) for row in rows[head]), default=0),
                     "max_pending_tokens": max((int(row["pending_tokens"]) for row in rows[head]), default=0),
+                    "max_packed_page_count": max((int(row["packed_page_count"]) for row in rows[head]), default=0),
+                    "max_packed_full_page_count": max((int(row["packed_full_page_count"]) for row in rows[head]), default=0),
+                    "max_packed_tail_tokens": max((int(row["packed_tail_tokens"]) for row in rows[head]), default=0),
                     "ever_retained_cold": any(int(row["packed_tokens"]) + int(row["pending_tokens"]) > 0 for row in rows[head]),
                     "ever_pending": any(int(row["pending_tokens"]) > 0 for row in rows[head]),
+                    "ever_multi_page_packed": any(int(row["packed_page_count"]) >= 2 for row in rows[head]),
+                    "ever_sealed_packed_page": any(int(row["packed_full_page_count"]) >= 1 for row in rows[head]),
                 }
                 for head in selected
             ],

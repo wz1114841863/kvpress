@@ -372,6 +372,48 @@ test ! -e "analysis/experiments/${RUN_ID}"
   --output-dir "analysis/experiments/${RUN_ID}"
 ```
 
+## A4.1.1 layer-0 KV-head-6 multi-page coverage
+
+After the two head-0 schema-1.1 artifacts pass review, reuse the same source
+for head 6. It contains up to 195 mature dense-cold tokens for that head. The
+budget-one run proves pending coverage; the budget-512 run must prove actual
+multi-page state, including one sealed full page. Neither command is an
+end-to-end timing or allocator/HBM experiment.
+
+```bash
+RUN_ID=route_a411_component_layer0_head6_budget1_summary11_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a41_component_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 6 \
+  --admission-budget 1 \
+  --require-pending-nonempty \
+  --warmup-repetitions 3 \
+  --measured-repetitions 10 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+
+RUN_ID=route_a411_component_layer0_head6_budget512_multipage_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a41_component_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 6 \
+  --admission-budget 512 \
+  --require-multi-page-packed \
+  --warmup-repetitions 3 \
+  --measured-repetitions 10 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

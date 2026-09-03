@@ -19,7 +19,7 @@ from kvpress.route_a_measurement import (
     write_raw_repetitions,
 )
 from kvpress.route_a_replay import load_replay_events, sha256_file, write_replay_events
-from tools.run_kvzap_route_a41_component_gate import assert_pending_coverage, manifest_config
+from tools.run_kvzap_route_a41_component_gate import assert_multi_page_coverage, assert_pending_coverage, manifest_config
 
 
 def snapshots():
@@ -136,3 +136,11 @@ def test_pending_coverage_is_opt_in_for_component_candidate_points():
     with pytest.raises(AssertionError, match="required pending"):
         assert_pending_coverage(comparisons=comparisons, required=True)
     assert_pending_coverage(comparisons=[{"pending_tokens": 1}], required=True)
+
+
+def test_multi_page_packed_coverage_requires_a_sealed_full_page():
+    comparisons = [{"packed_page_count": 1, "packed_full_page_count": 1}]
+    assert_multi_page_coverage(comparisons=comparisons, required=False)
+    with pytest.raises(AssertionError, match="multi-page"):
+        assert_multi_page_coverage(comparisons=comparisons, required=True)
+    assert_multi_page_coverage(comparisons=[{"packed_page_count": 2, "packed_full_page_count": 1}], required=True)

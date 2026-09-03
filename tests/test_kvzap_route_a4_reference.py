@@ -16,7 +16,7 @@ def test_fast_path_preserves_mask_positions_hot_window_fifo_and_page_order():
     assert [item.position for item in sources["packed"]] == [0]
     assert [item.position for item in sources["pending"]] == [2, 3]
     assert [item.position for item in sources["hot"]] == [4, 5]
-    assert state.state_summary(0) == {"hot_tokens": 2, "pending_tokens": 2, "packed_tokens": 1, "packed_page_count": 1}
+    assert state.state_summary(0) == {"hot_tokens": 2, "pending_tokens": 2, "packed_tokens": 1, "packed_page_count": 1, "packed_full_page_count": 0, "packed_tail_tokens": 1}
     state.assert_conservation()
 
 
@@ -71,8 +71,8 @@ def test_empty_pending_empty_cold_tail_cross_page_and_different_head_lengths():
     state = make_state(heads=2, window=2, page_tokens=2, budget=8)
     keys = torch.arange(24, dtype=torch.float32).reshape(2, 6, 2)
     state.append(keys, keys, torch.tensor([[False, False, False, False, True, True], [True, True, True, True, True, True]]), start_position=0)
-    assert state.state_summary(0) == {"hot_tokens": 2, "pending_tokens": 0, "packed_tokens": 0, "packed_page_count": 0}
-    assert state.state_summary(1) == {"hot_tokens": 2, "pending_tokens": 0, "packed_tokens": 4, "packed_page_count": 2}
+    assert state.state_summary(0) == {"hot_tokens": 2, "pending_tokens": 0, "packed_tokens": 0, "packed_page_count": 0, "packed_full_page_count": 0, "packed_tail_tokens": 0}
+    assert state.state_summary(1) == {"hot_tokens": 2, "pending_tokens": 0, "packed_tokens": 4, "packed_page_count": 2, "packed_full_page_count": 2, "packed_tail_tokens": 0}
     for head in range(2):
         query = torch.tensor([1.0, -1.0])
         torch.testing.assert_close(state.attention(query, head=head), dense_same_mask_attention(query, state.same_mask_records(head)))
@@ -89,7 +89,7 @@ def test_full_kv_bypass_is_explicit_and_does_not_construct_route_a_state():
     query = torch.tensor([1.0, 0.0])
     full = [_Record(0, torch.tensor([1.0, 0.0]), torch.tensor([7.0, 8.0]))]
     torch.testing.assert_close(policy_attention(RouteAPolicy.FULL_KV_BYPASS, query, full_kv_records=full), torch.tensor([7.0, 8.0]))
-    assert state.state_summary(0) == {"hot_tokens": 0, "pending_tokens": 0, "packed_tokens": 0, "packed_page_count": 0}
+    assert state.state_summary(0) == {"hot_tokens": 0, "pending_tokens": 0, "packed_tokens": 0, "packed_page_count": 0, "packed_full_page_count": 0, "packed_tail_tokens": 0}
 
 
 def test_rejects_noncontiguous_positions_and_wrong_mask_shape():

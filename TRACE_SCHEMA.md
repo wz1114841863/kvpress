@@ -872,3 +872,12 @@ run-local maximum for each allocator peak. It reports distributions over the
 independent reset runs. These aggregate sums remain component attribution, not
 end-to-end decode latency; allocator maxima remain PyTorch allocator
 observations, not HBM traffic.
+
+The component gate now records `packed_page_count`, `packed_full_page_count`,
+and `packed_tail_tokens` in every Route-A comparison state. Coverage summaries
+expose their maxima plus `ever_multi_page_packed` and
+`ever_sealed_packed_page`. The explicit
+`require_multi_page_packed` guard passes only when a selected head has at
+least two packed pages and at least one full sealed page. It is a real-state
+coverage guard for an append-only reference, not an allocator/page-fault/HBM
+measurement.

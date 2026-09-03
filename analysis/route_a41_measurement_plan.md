@@ -103,6 +103,14 @@ distribution before using A4.1.1 results to compare variability between
 configurations: time is summed and allocator peak is maximized within each
 reset run, while callback-level groups remain separately reported.
 
+The next layer-0 head-6 point reuses the validated source stream. Its source
+coverage reaches 195 mature dense-cold tokens, so with 64-token pages the
+`admission_budget=512` candidate run must pass the explicit multi-page guard:
+at least two packed pages and one sealed full page must be observed in the
+actual Route-A state. Record full-page count and tail occupancy; do not infer
+page behavior from token count alone. Run the budget-one counterpart with the
+pending guard first; it is pending coverage, not multi-page coverage.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers
