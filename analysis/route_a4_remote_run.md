@@ -414,6 +414,54 @@ test ! -e "analysis/experiments/${RUN_ID}"
   --output-dir "analysis/experiments/${RUN_ID}"
 ```
 
+## A4.1.2 `{0,18,35}` whole-decode gate
+
+Synchronize the A4.1.2 runner, then create a new replay source covering all
+three selected layers. Source collection is untimed. The following runner
+measures only question-forward plus greedy decode after an untimed context
+prefill; it is not full-request latency and must not be wrapped in shell
+`time`.
+
+```bash
+SOURCE_ID=route_a412_replay_source_layers_0_18_35_01
+test ! -e "analysis/experiments/${SOURCE_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a41_measurement.py \
+  tests/test_kvzap_route_a412_whole_decode.py \
+  tests/test_kvzap_route_a4_reference.py \
+  tests/test_kvzap_route_a_policy_backend.py
+.venv/bin/python tools/collect_kvzap_route_a41_replay_source.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers 0 18 35 \
+  --admission-budget 512 \
+  --output-dir "analysis/experiments/${SOURCE_ID}"
+
+RUN_ID=route_a412_whole_decode_layers_0_18_35_budget512_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a412_whole_decode_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers 0 18 35 \
+  --target-kv-head all \
+  --admission-budget 512 \
+  --warmup-repetitions 3 \
+  --measured-repetitions 10 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Return both new directories. Review requires the source's exact three-layer
+coverage and SHA-256, 39 raw rows (3 paths x (3 warm-ups + 10 reported)), one
+whole-decode record per path/reset run, ten reported reset runs for each path,
+complete replay consumption in both replay paths, and explicit Full-KV bypass
+with zero Route-A admission. Generated length and answer/token digests are
+recorded rather than required to match Full-KV. A profiler, if needed, is a
+separate later run.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

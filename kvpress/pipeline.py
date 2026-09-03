@@ -261,8 +261,8 @@ class KVPressTextGenerationPipeline(Pipeline):
                 ]
 
     def generate_answer(
-        self, question_ids: torch.Tensor, cache: Cache, context_length: int, max_new_tokens: int
-    ) -> str:
+        self, question_ids: torch.Tensor, cache: Cache, context_length: int, max_new_tokens: int, return_token_ids: bool = False
+    ) -> str | tuple[str, list[int]]:
         """
         Generate an answer to a question using greedy decoding.
 
@@ -311,7 +311,10 @@ class KVPressTextGenerationPipeline(Pipeline):
             generated_ids.append(new_id)
             if new_id.item() in should_stop_token_ids:
                 break
-        answer = str(self.tokenizer.decode(torch.stack(generated_ids), skip_special_tokens=True))
+        generated = torch.stack(generated_ids)
+        answer = str(self.tokenizer.decode(generated, skip_special_tokens=True))
+        if return_token_ids:
+            return answer, [int(token) for token in generated.detach().to(device="cpu").tolist()]
         return answer
 
     def postprocess(self, model_outputs, single_question):

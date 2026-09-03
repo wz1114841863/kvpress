@@ -197,8 +197,8 @@ start component or decode measurement until that new artifact is reviewed.
 
 ### A4.1.1 implementation status (2026-09-03)
 
-The A4.1.1 one-layer/head component-gate code is now staged but has no
-accepted real-Qwen result.  `tools/collect_kvzap_route_a41_replay_source.py`
+The A4.1.1 one-layer/head component-gate code is now staged.
+`tools/collect_kvzap_route_a41_replay_source.py`
 collects one untimed online dense-KVzap score/keep event stream, hashes it,
 and records its request/config provenance.  The separate
 `tools/run_kvzap_route_a41_component_gate.py` consumes that source exactly in
@@ -247,6 +247,30 @@ component gate records packed page count, full-page count, and tail occupancy,
 and the head-6 budget-512 run must use `--require-multi-page-packed`. This
 establishes only actual multi-page state coverage in the Python reference; it
 does not establish a page allocator, HBM behavior, or end-to-end performance.
+
+The accepted head-6 artifacts are
+`route_a411_component_layer0_head6_budget1_summary11_01` and
+`route_a411_component_layer0_head6_budget512_multipage_01`. Both use the
+validated layer-0 replay source, complete replay consumption, and have ten
+reported reset runs per component aggregate. Budget one has pending/packed
+maxima of 191/5 and no full page; budget 512 has pending zero, packed 195,
+four packed pages, three full sealed pages, and a separately observed tail
+occupancy watermark of 63. The maxima need not occur in the same decode call.
+This closes A4.1.1 state/component coverage for the named layer/head and two
+admission points. It authorizes A4.1.2 **infrastructure** work only: a
+whole-decode region must be timed once per reset run with no per-component
+synchronization, first for replayed dense/Route-A at `{0,18,35}`, and only
+then broadened. It does not authorize an A4.1.2 performance conclusion yet.
+
+The A4.1.2 runner is now implemented as
+`tools/run_kvzap_route_a412_whole_decode_gate.py`, but has no accepted
+real-Qwen output. It uses a fresh cache/state per run, leaves context prefill
+outside timing, and measures exactly one question-forward plus greedy-decode
+region. It emits separate Full-KV bypass, same-mask dense replay, and
+same-mask Route-A replay rows in seeded shuffled order. The first real gate
+requires a newly collected `{0,18,35}` replay source and all selected KV heads.
+Its timings characterize this Python reference only, not prefill, HBM,
+throughput, energy, hardware acceleration, or RTL.
 
 ### A4.1 — measured software-system evidence
 

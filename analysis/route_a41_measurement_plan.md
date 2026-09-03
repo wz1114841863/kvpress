@@ -111,6 +111,15 @@ actual Route-A state. Record full-page count and tail occupancy; do not infer
 page behavior from token count alone. Run the budget-one counterpart with the
 pending guard first; it is pending coverage, not multi-page coverage.
 
+The head-6 budget-one and budget-512 multi-page artifacts have now passed.
+The candidate state reached four pages with three full pages; tail occupancy
+was also observed. Because those coverage fields are maxima across decode
+calls, they must not be combined into a reconstructed single-call state.
+Together with the schema-1.1 reset-run reports, this closes A4.1.1 for the
+named request/layer/head. A4.1.2 may now build its no-component-sync
+whole-decode runner, but no A4.1.2 result exists until that runner separately
+passes replay, timing, reset, and baseline gates.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers
@@ -119,6 +128,15 @@ the request, seed, decoding settings, page size, threshold, window, dtype,
 model revision, predictor revision, device, and replay mask source fixed per
 comparison. Record generated length and answer digest, but do not require
 Full-KV answer equivalence.
+
+`tools/run_kvzap_route_a412_whole_decode_gate.py` is the first implementation
+of this gate. It creates a new `DynamicCache` and policy state per path/reset
+run, constructs context state outside the timer, then measures one
+question-forward plus greedy-decode region. It records Full-KV bypass,
+replayed dense, and replayed Route-A in seeded shuffled order. It does not
+install the A4.1.1 component recorder. The first source/runner pair must cover
+layers `{0,18,35}` and all KV heads; no A4.1.2 real-Qwen result exists until
+that new source and runner output pass review.
 
 ## Repetition and timing protocol
 

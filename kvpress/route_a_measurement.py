@@ -20,6 +20,7 @@ import torch
 
 
 A41_RAW_SCHEMA = "kvzap-route-a41-raw-repetition-1.0"
+A412_RAW_SCHEMA = "kvzap-route-a412-whole-decode-raw-repetition-1.0"
 A41_HARNESS_SCHEMA = "kvzap-route-a41-harness-1.0"
 MEASURED_PATHS = frozenset({"full_kv_bypass", "same_mask_dense_replay", "same_mask_route_a_replay", "online_dense_predictor_control", "harness_self_check"})
 
@@ -110,7 +111,7 @@ def validate_raw_repetition(record: dict[str, Any]) -> None:
     missing = required - set(record)
     if missing:
         raise ValueError(f"raw repetition is missing fields: {sorted(missing)}")
-    if record["schema_version"] != A41_RAW_SCHEMA:
+    if record["schema_version"] not in {A41_RAW_SCHEMA, A412_RAW_SCHEMA}:
         raise ValueError("unexpected raw repetition schema")
     if record["path"] not in MEASURED_PATHS:
         raise ValueError("unknown measured path")
@@ -234,18 +235,18 @@ def summarize_reported_repetitions(records: list[dict[str, Any]]) -> dict[str, A
     }
 
 
-def initialize_output_directory(output_dir: Path, *, config: dict[str, Any], git_commit: str) -> Path:
-    """Create a fresh A4.1 directory and immutable-before-run start record."""
+def initialize_output_directory(output_dir: Path, *, config: dict[str, Any], git_commit: str, record_name: str = "a41_harness_started.json", schema_version: str = A41_HARNESS_SCHEMA, boundaries: list[str] | None = None) -> Path:
+    """Create a fresh measurement directory and immutable-before-run record."""
     if output_dir.exists():
         raise FileExistsError(f"output directory already exists: {output_dir}")
     output_dir.mkdir(parents=True, exist_ok=False)
-    path = output_dir / "a41_harness_started.json"
+    path = output_dir / record_name
     payload = {
-        "schema_version": A41_HARNESS_SCHEMA,
+        "schema_version": schema_version,
         "status": "started",
         "git_commit": git_commit,
         "config": config,
-        "boundaries": [
+        "boundaries": boundaries or [
             "This is A4.1.0 harness infrastructure, not a model measurement.",
             "Allocator counters are PyTorch allocator bytes, not HBM traffic.",
         ],
@@ -288,9 +289,9 @@ def write_completed_manifest(output_dir: Path, *, config: dict[str, Any], git_co
     return path
 
 
-def raw_record(*, path: str, component: str, repetition: int, execution_order: int, warmup: bool, timing: TimingSample, memory_before: CudaMemorySnapshot, memory_after: CudaMemorySnapshot) -> dict[str, Any]:
+def raw_record(*, path: str, component: str, repetition: int, execution_order: int, warmup: bool, timing: TimingSample, memory_before: CudaMemorySnapshot, memory_after: CudaMemorySnapshot, schema_version: str = A41_RAW_SCHEMA) -> dict[str, Any]:
     record = {
-        "schema_version": A41_RAW_SCHEMA,
+        "schema_version": schema_version,
         "path": path,
         "component": component,
         "repetition": repetition,

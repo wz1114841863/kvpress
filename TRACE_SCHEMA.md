@@ -881,3 +881,24 @@ expose their maxima plus `ever_multi_page_packed` and
 least two packed pages and at least one full sealed page. It is a real-state
 coverage guard for an append-only reference, not an allocator/page-fault/HBM
 measurement.
+
+The accepted head-6 `budget=512` multi-page artifact records four packed
+pages and three full pages under the explicit guard; its independent
+budget-one companion records nonempty pending staging. These are maxima over
+the named decode comparisons, so a tail-token watermark and a page-count
+watermark must not be combined as if they came from one instant. They close
+A4.1.1 reference-state coverage only. A4.1.2 must use a distinct whole-decode
+timing schema with exactly one timing region per reset run and no component
+callback synchronization.
+
+`kvzap-route-a412-whole-decode-gate-1.0` is the A4.1.2 replayed-mask
+whole-decode schema. Each `kvzap-route-a412-whole-decode-raw-repetition-1.0`
+row has exactly one `question_forward_plus_greedy_decode` timing region after
+an untimed context prefill into a fresh cache. It records CUDA-event and host
+time, PyTorch allocator snapshots, generated-token count, and digests of the
+answer and generated token IDs. `full_kv_bypass` installs no Route-A backend;
+`same_mask_dense_replay` and `same_mask_route_a_replay` consume the exact same
+hashed replay source. The generic summary exposes one callback and one
+reset-run aggregate per raw row. Context prefill is deliberately excluded, so
+this is a decode-stage software observation, not full-request latency,
+throughput, HBM traffic, energy, or hardware evidence.
