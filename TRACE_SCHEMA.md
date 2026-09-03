@@ -902,3 +902,24 @@ hashed replay source. The generic summary exposes one callback and one
 reset-run aggregate per raw row. Context prefill is deliberately excluded, so
 this is a decode-stage software observation, not full-request latency,
 throughput, HBM traffic, energy, or hardware evidence.
+
+The accepted `{0,18,35}` instance uses 39 raw rows: three paths with three
+warm-ups and ten reported reset runs each. Its same-mask dense and Route-A
+paths retain the model's native dense DynamicCache while adding reference
+state, so allocator peak equality between those paths is not a physical-cache
+comparison. The observed decode-region runtime is therefore a valid measured
+Python-reference result but cannot establish Route-A speedup, HBM traffic, or
+physical-memory savings. A separate profiler record must state its tool,
+version, command, activities, and scope; it must not be pooled with timing
+repetitions.
+
+`kvzap-route-a412-profiler-diagnostic-1.0` is that separate A4.1.2.1 record.
+It runs one fresh-cache, unprofiled warm-up per named path followed by exactly
+one `torch.profiler` capture of `question_forward_plus_greedy_decode`, after
+an untimed context prefill. It emits one Chrome trace and a normalized
+top-operator table for each of `full_kv_bypass`, `same_mask_dense_replay`, and
+`same_mask_route_a_replay`, along with answer/token-ID digests, replay guards,
+and PyTorch allocator snapshots. Profiler execution changes the runtime, so
+its operator totals are attribution diagnostics only: they must not be pooled
+with A4.1.2 timing samples or presented as latency, throughput, HBM traffic,
+energy, physical-memory, or hardware evidence.

@@ -120,6 +120,30 @@ named request/layer/head. A4.1.2 may now build its no-component-sync
 whole-decode runner, but no A4.1.2 result exists until that runner separately
 passes replay, timing, reset, and baseline gates.
 
+The first A4.1.2 `{0,18,35}` artifact
+`route_a412_whole_decode_layers_0_18_35_budget512_01` passes those protocol
+gates: its three-layer source has 22,416 events, all three paths have ten
+reported reset runs and identical 8-token answer/token-ID digests, and replay
+is complete. Its measured decode-stage CUDA-event means are 290.50 ms
+(Full-KV bypass), 1347.80 ms (same-mask dense replay), and 1608.48 ms
+(same-mask Route-A replay), with Route-A 19.3% above dense replay on this
+single configuration. These timings characterize the Python reference only.
+Its native DynamicCache remains dense and Route-A owns an additional copied
+state, so the equal dense/Route-A PyTorch allocator peaks cannot be used as a
+physical-memory result. Do not broaden layers or workloads yet; first run a
+separate profiler diagnostic to localize Python/list/stack/merge and cache
+overheads, then design any true cache-storage substitution independently.
+
+A4.1.2.1 implements that diagnostic in
+`tools/run_kvzap_route_a412_profiler.py`. It uses the exact A4.1.2 replay
+source and runs the three paired paths with a separate `torch.profiler` capture
+after unprofiled fresh-cache warm-up(s). Its artifacts are a Chrome trace and
+normalized top-operator table per path, plus replay/answer/token-ID guards and
+PyTorch allocator snapshots. It is intentionally one diagnostic capture, not
+a repetition benchmark: profiler output is excluded from all A4.1.2 timing
+summaries and can only identify reference overhead to guide a later,
+independent cache-ownership/substitution design.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers

@@ -462,6 +462,47 @@ with zero Route-A admission. Generated length and answer/token digests are
 recorded rather than required to match Full-KV. A profiler, if needed, is a
 separate later run.
 
+## A4.1.2.1 separate profiler diagnostic
+
+This is one attribution capture per paired path, not a timing benchmark. It
+profiles only question-forward plus greedy decode after an untimed context
+prefill. Do not wrap it in shell `time`, do not compare its wall duration with
+A4.1.2 repetitions, and do not interpret its allocator or operator values as
+HBM traffic, physical memory, throughput, or hardware results.
+
+Reuse the reviewed A4.1.2 source exactly; only the profiler output directory
+is new.
+
+```bash
+SOURCE_ID=route_a412_replay_source_layers_0_18_35_01
+RUN_ID=route_a412_profiler_layers_0_18_35_budget512_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a412_whole_decode.py \
+  tests/test_kvzap_route_a412_profiler.py \
+  tests/test_kvzap_route_a4_reference.py \
+  tests/test_kvzap_route_a_policy_backend.py
+.venv/bin/python tools/run_kvzap_route_a412_profiler.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers 0 18 35 \
+  --admission-budget 512 \
+  --warmup-repetitions 1 \
+  --top-operators 30 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the whole fresh profiler directory, including
+`a412_profiler_manifest.json`, `a412_profiler_operator_summary.json`, and all
+three `a412_profiler_*.json` Chrome traces. Review checks the exact source
+hash, one result for each path, answer/token-ID digests, complete replay for
+both replay paths, and profiler scope/boundaries. The resulting operator table
+only locates current Python-reference overhead before a separate true
+cache-ownership/storage-substitution design.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

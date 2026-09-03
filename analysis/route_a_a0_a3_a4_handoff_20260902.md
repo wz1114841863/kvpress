@@ -272,6 +272,32 @@ requires a newly collected `{0,18,35}` replay source and all selected KV heads.
 Its timings characterize this Python reference only, not prefill, HBM,
 throughput, energy, hardware acceleration, or RTL.
 
+The first accepted A4.1.2 artifact is
+`route_a412_whole_decode_layers_0_18_35_budget512_01`, with source
+`route_a412_replay_source_layers_0_18_35_01`. It has 39 raw rows (9 warm-up,
+30 reported), one timed question-forward-plus-greedy-decode region per path
+run, and complete replay for 3 layers × 8 KV heads × 7 decode calls. All
+paths happened to generate the same eight token IDs on this request. Measured
+CUDA-event means are 290.50 ms Full-KV, 1347.80 ms replayed dense, and 1608.48
+ms replayed Route-A; Route-A is 19.3% above dense replay here. This is a
+negative performance observation for the current Python reference, not for
+the Route-A architecture: native dense DynamicCache is still retained while
+the reference copies K/V into dense/packed shadow state. Dense and Route-A
+allocator peaks are equal, so no storage-saving conclusion is available.
+Before an all-layer or cross-workload run, add one documented profiler
+diagnostic per path and use it to scope a separate true cache-ownership/
+storage-substitution design.
+
+**A4.1.2.1 implementation (awaiting a fresh remote capture):**
+`tools/run_kvzap_route_a412_profiler.py` runs one separately labelled
+`torch.profiler` diagnostic for each paired A4.1.2 path after untimed context
+prefill and fresh-cache warm-up. It requires the hashed replay source and
+exports per-path Chrome traces, normalized operator tables, answer/token-ID
+digests, replay coverage, and PyTorch allocator snapshots. Profiler output is
+not a timing repetition and must never be merged with A4.1.2 latency
+distributions. Its sole purpose is to identify Python reference overhead
+before separately designing true cache ownership and storage substitution.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:
