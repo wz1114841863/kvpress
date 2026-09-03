@@ -1,4 +1,6 @@
 import json
+from argparse import Namespace
+from pathlib import Path
 
 import pytest
 
@@ -17,6 +19,7 @@ from kvpress.route_a_measurement import (
     write_raw_repetitions,
 )
 from kvpress.route_a_replay import load_replay_events, sha256_file, write_replay_events
+from tools.run_kvzap_route_a41_component_gate import manifest_config
 
 
 def snapshots():
@@ -102,3 +105,9 @@ def test_replay_event_npz_round_trip_is_sorted_hashed_and_rejects_overwrite(tmp_
     assert load_replay_events(path) == {0: {(0, 3): (True, -3.5)}, 1: {(0, 4): (True, -3.75), (1, 4): (False, -4.25)}}
     with pytest.raises(FileExistsError, match="already exists"):
         write_replay_events(path, events)
+
+
+def test_component_manifest_config_serializes_path_arguments(tmp_path):
+    config = manifest_config(Namespace(replay_source_dir=tmp_path / "source", output_dir=tmp_path / "result", admission_budget=1))
+    assert config == {"replay_source_dir": str(tmp_path / "source"), "admission_budget": 1}
+    assert json.loads(json.dumps(config)) == config

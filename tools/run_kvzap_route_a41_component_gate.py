@@ -105,6 +105,15 @@ def schedule_runs(*, warmups: int, measured: int, seed: int, include_online_pred
     return schedule
 
 
+def manifest_config(args: argparse.Namespace) -> dict[str, Any]:
+    """Return an explicitly JSON-safe configuration without the output target."""
+    return {
+        key: str(value) if isinstance(value, Path) else value
+        for key, value in vars(args).items()
+        if key != "output_dir"
+    }
+
+
 def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
@@ -118,7 +127,7 @@ def main() -> None:
         raise ValueError("component gate is currently bounded to frozen Qwen3-8B and official MLP revisions")
     events, source, event_sha256 = read_source(args.replay_source_dir, args=args)
     request = load_jsonl_request(args.input_jsonl, args.request_id) if args.input_jsonl else build_builtin_request(args.preset, args.context_repetitions)
-    config = {key: value for key, value in vars(args).items() if key != "output_dir"}
+    config = manifest_config(args)
     config["replay_event_file_sha256"] = event_sha256
     initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit())
     print(f"Loading base model: {args.model_name}")
