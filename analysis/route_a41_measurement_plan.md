@@ -431,6 +431,32 @@ same-mask numerical error; then choose an explicit tolerance policy or fix the
 reference reduction. The failed output directory remains immutable; rerun only
 into a fresh directory after the diagnostic code is synchronized.
 
+**Observed A4.1.2.10 numerical hold (2026-09-04):** the first all-36
+budget-one forced continuation stopped at layer 8/head 3/query head 15/position
+916 with BF16 component 20 at 26 ULP over the 16-ULP limit. Its recorded cast
+difference was only `3.0268e-09`, at values near `-1.5e-08`; local BF16 spacing
+was `1.1642e-10`. The paired vector maximum FP32 difference was `1.7136e-07`,
+well below the mandatory `atol=1e-5`. Therefore this is a near-zero ULP
+amplification diagnosis, not evidence of mask drift, native-cold reread, or an
+FP32 packed-attention semantic failure. It is nevertheless a hold: no all-36
+continuation/token relation or budget-512 result exists. Next implement a
+bounded record-only ULP distribution diagnostic that retains the hard FP32
+guard, counts/samples all ULP breaches, and does not call them accepted.
+
+### A4.1.2.11 — all-layer execution-dtype ULP distribution diagnostic
+
+`tools/run_kvzap_route_a4131_alllayer_ulp_distribution_diagnostic.py` is a
+strictly diagnostic continuation of the A4130 hold. It uses the all-layer
+replayed masks and retains the FP32 same-mask, replay, bridge, and ownership
+guards, but changes only the response to a post-cast ULP breach from abort to
+bounded scalar recording. Per layer it reports breach count, maximum ULP,
+maximum scalar FP32 and executed-dtype differences, and no more than the
+declared sample limit. It is not a relaxed acceptance criterion: a passing
+completion means only that the distribution was collected without an FP32 or
+state-semantic violation. Do not start all-layer budget-512, timing, allocator,
+or profiler experiments from this result until the distribution is reviewed and
+an explicit numerical policy is recorded.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

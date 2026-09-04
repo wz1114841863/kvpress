@@ -83,18 +83,28 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
     first layer-complete gate; it leaves no dense attention group in that layer.
     """
 
-    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, replay_mask_events: dict[tuple[int, int], MaskEvent] | None = None, component_measure=None) -> None:
+    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", ulp_breach_sample_limit: int = 32, replay_mask_events: dict[tuple[int, int], MaskEvent] | None = None, component_measure=None) -> None:
         language_model = model.model.language_model if hasattr(model.model, "language_model") else model.model
         if not 0 <= layer < len(language_model.layers):
             raise ValueError("target layer is outside the model")
-        if min(page_tokens, admission_budget) <= 0 or window < 0 or max_executed_dtype_ulps <= 0:
+        if min(page_tokens, admission_budget, ulp_breach_sample_limit) <= 0 or window < 0 or max_executed_dtype_ulps <= 0:
             raise ValueError("invalid Route-A policy dimensions")
+        if execution_dtype_ulp_mode not in {"enforce", "record_only"}:
+            raise ValueError("execution_dtype_ulp_mode must be 'enforce' or 'record_only'")
         if predictor is None and replay_mask_events is None:
             raise ValueError("an online predictor or explicit replay mask is required")
         self.model, self.predictor, self.layer, self.kv_head = model, predictor, layer, kv_head
         self.threshold, self.window, self.page_tokens, self.admission_budget = threshold, window, page_tokens, admission_budget
         self.rtol, self.atol = rtol, atol
         self.max_executed_dtype_ulps = max_executed_dtype_ulps
+        self.execution_dtype_ulp_mode = execution_dtype_ulp_mode
+        self.ulp_breach_sample_limit = ulp_breach_sample_limit
+        self._ulp_breach_count = 0
+        self._ulp_breach_max_observed: float | None = None
+        self._ulp_breach_max_is_infinite = False
+        self._ulp_breach_max_execution_abs_difference = 0.0
+        self._ulp_breach_max_fp32_abs_difference = 0.0
+        self._ulp_breach_samples: list[dict[str, Any]] = []
         self.module = language_model.layers[layer].self_attn
         self.state: RouteAPackedAttentionState | None = None
         self._scores: torch.Tensor | None = None
@@ -165,6 +175,21 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             "max_attn_output_abs_difference_fp32": max((float(row["max_abs_difference_fp32"]) for row in rows), default=0.0),
             "max_executed_dtype_ulps": max((float(row["max_executed_dtype_ulps"]) for row in rows), default=0.0),
             "executed_dtype_ulp_limit": self.max_executed_dtype_ulps,
+        }
+
+    def execution_dtype_ulp_breach_summary(self) -> dict[str, Any]:
+        """Summarize bounded diagnostic-only ULP breaches for this layer."""
+        return {
+            "mode": self.execution_dtype_ulp_mode,
+            "executed_dtype_ulp_limit": self.max_executed_dtype_ulps,
+            "breach_count": self._ulp_breach_count,
+            "sample_count": len(self._ulp_breach_samples),
+            "sample_limit": self.ulp_breach_sample_limit,
+            "max_observed_ulps": self._ulp_breach_max_observed,
+            "max_observed_ulps_is_infinite": self._ulp_breach_max_is_infinite,
+            "max_execution_dtype_abs_difference": self._ulp_breach_max_execution_abs_difference,
+            "max_fp32_abs_difference": self._ulp_breach_max_fp32_abs_difference,
+            "samples": self._ulp_breach_samples,
         }
 
     def __enter__(self):
@@ -363,6 +388,22 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             "dense_fp32_value_at_max_ulp": self._finite_or_none(float(dense_fp32[index].item())),
         }
 
+    def _handle_executed_dtype_ulp_breach(self, details: dict[str, Any]) -> None:
+        """Either enforce the guard or retain scalar evidence in diagnostic mode."""
+        self._ulp_breach_count += 1
+        observed = details["max_executed_dtype_ulps"]
+        if observed is None:
+            self._ulp_breach_max_is_infinite = True
+            self._ulp_breach_max_observed = None
+        elif not self._ulp_breach_max_is_infinite and (self._ulp_breach_max_observed is None or observed > self._ulp_breach_max_observed):
+            self._ulp_breach_max_observed = observed
+        self._ulp_breach_max_execution_abs_difference = max(self._ulp_breach_max_execution_abs_difference, float(details["executed_dtype_abs_difference_at_max_ulp"] or 0.0))
+        self._ulp_breach_max_fp32_abs_difference = max(self._ulp_breach_max_fp32_abs_difference, float(details["max_fp32_abs_difference"] or 0.0))
+        if len(self._ulp_breach_samples) < self.ulp_breach_sample_limit:
+            self._ulp_breach_samples.append(details)
+        if self.execution_dtype_ulp_mode == "enforce":
+            raise RouteANumericalGuardError(details)
+
     def attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
         """Called by the global attention wrapper after Qwen updates its cache."""
         self._append_state(key, value)
@@ -389,7 +430,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
                 route, dense = route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)
                 _cast_abs, cast_ulps = self._cast_difference_in_ulps(route, dense)
                 if cast_ulps > self.max_executed_dtype_ulps:
-                    raise RouteANumericalGuardError(
+                    self._handle_executed_dtype_ulp_breach(
                         self._executed_dtype_failure_details(
                             route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32,
                             kv_head=mapped_kv_head, query_head=query_head,
@@ -661,7 +702,7 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
                 route, dense = route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)
                 _cast_abs, cast_ulps = self._cast_difference_in_ulps(route, dense)
                 if cast_ulps > self.max_executed_dtype_ulps:
-                    raise RouteANumericalGuardError(
+                    self._handle_executed_dtype_ulp_breach(
                         self._executed_dtype_failure_details(
                             route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32,
                             kv_head=mapped, query_head=query_head, cache_position=position,
@@ -721,14 +762,14 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
 
     backend_class = RouteAPolicyAttentionBackend
 
-    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, replay_mask_events: MaskEventLayers | None = None, component_measure=None) -> None:
+    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", ulp_breach_sample_limit: int = 32, replay_mask_events: MaskEventLayers | None = None, component_measure=None) -> None:
         if not layers or len(set(layers)) != len(layers) or any(layer < 0 for layer in layers):
             raise ValueError("layers must be unique non-negative indices")
         if replay_mask_events is not None and set(replay_mask_events) != set(layers):
             raise ValueError("replay mask layers must exactly match selected layers")
         self.model, self.predictor, self.layers = model, predictor, tuple(layers)
         self.backends = {
-            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure)
+            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, execution_dtype_ulp_mode=execution_dtype_ulp_mode, ulp_breach_sample_limit=ulp_breach_sample_limit, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure)
             for layer in self.layers
         }
 
@@ -768,6 +809,9 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
     def assert_replay_complete(self) -> None:
         for backend in self.backends.values():
             backend.assert_replay_complete()
+
+    def execution_dtype_ulp_breach_summary(self) -> dict[str, Any]:
+        return {"layers": [{"layer": layer, **backend.execution_dtype_ulp_breach_summary()} for layer, backend in self.backends.items()]}
 
 
 class DenseSameMaskAttentionBackendSet(RouteAPolicyAttentionBackendSet):

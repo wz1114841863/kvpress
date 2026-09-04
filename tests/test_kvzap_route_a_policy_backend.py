@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import torch
 from transformers import DynamicCache
 
-from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, compare_original_mask_events
+from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, compare_original_mask_events
 
 
 def fake_model(layer_count=1):
@@ -220,6 +220,33 @@ def test_executed_dtype_failure_details_are_scalar_and_locate_the_component():
     assert details["max_executed_dtype_ulps"] == 17.0
     assert details["max_executed_dtype_ulps_is_infinite"] is False
     assert details["max_fp32_abs_difference"] > 0
+
+
+def test_record_only_ulp_mode_retains_bounded_scalar_breaches_without_weakening_strict_mode():
+    record_only = RouteAPolicyAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6, max_executed_dtype_ulps=16.0, execution_dtype_ulp_mode="record_only", ulp_breach_sample_limit=1)
+    details = {
+        "layer": 0, "kv_head": 0, "query_head": 0, "cache_position": 7,
+        "max_executed_dtype_ulps": 26.0,
+        "executed_dtype_ulp_limit": 16.0,
+        "executed_dtype_abs_difference_at_max_ulp": 3.0e-9,
+        "max_fp32_abs_difference": 1.7e-7,
+    }
+    record_only._handle_executed_dtype_ulp_breach(details)
+    record_only._handle_executed_dtype_ulp_breach({**details, "max_executed_dtype_ulps": 27.0})
+    summary = record_only.execution_dtype_ulp_breach_summary()
+    assert summary["mode"] == "record_only"
+    assert summary["breach_count"] == 2
+    assert summary["sample_count"] == 1
+    assert summary["max_observed_ulps"] == 27.0
+    assert summary["samples"] == [details]
+
+    strict = RouteAPolicyAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    try:
+        strict._handle_executed_dtype_ulp_breach(details)
+    except RouteANumericalGuardError as error:
+        assert error.details == details
+    else:
+        raise AssertionError("enforce mode accepted an execution-dtype ULP breach")
 
 
 def test_backend_set_keeps_independent_layer_state_and_aggregates_coverage():

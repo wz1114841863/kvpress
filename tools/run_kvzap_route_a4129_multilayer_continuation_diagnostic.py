@@ -26,7 +26,7 @@ from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, bui
 A4129_SCHEMA = "kvzap-route-a4129-multilayer-continuation-diagnostic-1.0"
 
 
-def parse_args(*, phase: str, default_target_layers: list[str], target_layer_help: str) -> argparse.Namespace:
+def parse_args(*, phase: str, default_target_layers: list[str], target_layer_help: str, default_execution_dtype_ulp_mode: str) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=f"{phase} untimed all-head multi-layer forced/independent continuation diagnostic; not a benchmark.")
     request = parser.add_mutually_exclusive_group()
     request.add_argument("--preset", choices=PRESETS, default="retrieval")
@@ -49,6 +49,18 @@ def parse_args(*, phase: str, default_target_layers: list[str], target_layer_hel
     parser.add_argument("--rtol", type=float, default=1e-4)
     parser.add_argument("--atol", type=float, default=1e-5)
     parser.add_argument("--max-executed-dtype-ulps", type=float, default=16.0)
+    parser.add_argument(
+        "--execution-dtype-ulp-mode",
+        choices=("enforce", "record_only"),
+        default=default_execution_dtype_ulp_mode,
+        help="enforce fails on an execution-dtype ULP breach; record_only retains bounded scalar breach evidence while the FP32 same-mask guard remains enforced.",
+    )
+    parser.add_argument(
+        "--ulp-breach-sample-limit",
+        type=int,
+        default=8,
+        help="Maximum scalar ULP-breach examples retained per selected layer; no tensors are saved.",
+    )
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--require-any-pending", action="store_true", help="Require pending staging in at least one Route-A selected-layer/head state.")
     parser.add_argument("--require-any-multi-page-packed", action="store_true", help="Require at least one Route-A selected-layer/head state with two packed pages.")
@@ -142,6 +154,7 @@ def backend_summary(backend_set, *, expected_heads: dict[int, tuple[int, ...]], 
             for layer, backend in backend_set.backends.items()
         },
         "native_cold_ownership": backend_set.ownership_summary() if require_ownership else None,
+        "execution_dtype_ulp_breaches": backend_set.execution_dtype_ulp_breach_summary(),
     }
 
 
@@ -167,20 +180,27 @@ def run_or_write_numerical_failure(*, stage: str, pipe, context_ids: torch.Tenso
         raise AssertionError(f"{error}; diagnostic={path}") from error
 
 
-def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: str = "three_layer", artifact_stem: str = "a4129_multilayer_continuation") -> None:
+def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: str = "three_layer", artifact_stem: str = "a4129_multilayer_continuation", execution_dtype_ulp_mode: str = "enforce") -> None:
     if scope == "three_layer":
         default_target_layers, target_layer_help = ["0", "18", "35"], "Initial multi-layer gate is exactly: 0 18 35."
     elif scope == "all_layers":
-        default_target_layers, target_layer_help = ["all"], "A4.1.2.10 requires exactly 'all' (all model layers)."
+        default_target_layers, target_layer_help = ["all"], f"{phase} requires exactly 'all' (all model layers)."
     else:
         raise ValueError(f"unknown multi-layer diagnostic scope: {scope}")
-    args = parse_args(phase=phase, default_target_layers=default_target_layers, target_layer_help=target_layer_help)
+    args = parse_args(
+        phase=phase,
+        default_target_layers=default_target_layers,
+        target_layer_help=target_layer_help,
+        default_execution_dtype_ulp_mode=execution_dtype_ulp_mode,
+    )
+    if args.execution_dtype_ulp_mode != execution_dtype_ulp_mode:
+        raise ValueError(f"this entrypoint requires --execution-dtype-ulp-mode {execution_dtype_ulp_mode}")
     assert_scope_selector(args.target_layers, scope=scope)
     if args.output_dir.exists():
         raise FileExistsError(f"output directory already exists: {args.output_dir}")
     if args.request_id and not args.input_jsonl:
         raise ValueError("--request-id requires --input-jsonl")
-    if min(args.context_repetitions, args.page_tokens, args.admission_budget, args.max_new_tokens, args.max_executed_dtype_ulps, args.top_k) <= 0 or args.window_size < 0:
+    if min(args.context_repetitions, args.page_tokens, args.admission_budget, args.max_new_tokens, args.max_executed_dtype_ulps, args.top_k, args.ulp_breach_sample_limit) <= 0 or args.window_size < 0:
         raise ValueError("invalid multi-layer continuation dimensions")
     require_cuda_device(args.device)
     if (args.model_name, args.predictor_name, args.model_revision, args.predictor_revision) != (DEFAULT_MODEL, DEFAULT_PREDICTOR, GATE_B_MODEL_REVISION, GATE_A_PREDICTOR_REVISION):
@@ -204,9 +224,12 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
         raise ValueError("requires protected context and multi-token question")
     config = {key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items() if key != "output_dir"}
     config["replay_event_file_sha256"] = digest
-    initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit(), record_name=f"{artifact_stem}_started.json", schema_version=schema_version, boundaries=["Untimed fixed-length paired continuation; no timing or profiler data.", "Forced continuation uses dense generated token IDs as common inputs; independent greedy continuation can diverge after its first mismatch.", "No quality, allocator, HBM, physical-memory, throughput, energy, area, hardware, or RTL claim."])
+    boundaries = ["Untimed fixed-length paired continuation; no timing or profiler data.", "Forced continuation uses dense generated token IDs as common inputs; independent greedy continuation can diverge after its first mismatch.", "No quality, allocator, HBM, physical-memory, throughput, energy, area, hardware, or RTL claim."]
+    if args.execution_dtype_ulp_mode == "record_only":
+        boundaries.append("Execution-dtype ULP breaches are scalar-recorded rather than enforced; the FP32 same-mask guard remains enforced. This diagnostic is not a semantic acceptance gate.")
+    initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit(), record_name=f"{artifact_stem}_started.json", schema_version=schema_version, boundaries=boundaries)
     replay_provenance = {"directory": str(args.replay_source_dir), "event_file_sha256": digest, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"]}
-    common = dict(layers=layers, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, replay_mask_events=events)
+    common = dict(layers=layers, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, execution_dtype_ulp_mode=args.execution_dtype_ulp_mode, ulp_breach_sample_limit=args.ulp_breach_sample_limit, replay_mask_events=events)
     print(f"Pass 1/3: all-head causal same-mask dense greedy reference in layers {list(layers)}...")
     dense_backend = DenseSameMaskAttentionBackendSet(pipe.model, None, **common)
     dense = run_or_write_numerical_failure(stage="same_mask_dense_greedy_reference", pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=dense_backend, args=args, forced_token_ids=None, output_dir=args.output_dir, artifact_stem=artifact_stem, schema_version=schema_version, config=config, replay_source=replay_provenance)
@@ -255,9 +278,23 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
             "route_a_independent_greedy_continuation": {"generated_token_ids": independent["generated_token_ids"], "generated_token_ids_sha256": token_ids_digest(independent["generated_token_ids"]), "generated_tokens_equal_dense": independent["generated_token_ids"] == dense["generated_token_ids"], "first_generated_token_mismatch": first_token_mismatch(dense["generated_token_ids"], independent["generated_token_ids"]), **independent_summary},
             "independent_greedy_logit_steps": independent_steps,
         },
-        "observational_guards": {"all_selected_layers_and_kv_heads_bridge_covered": True, "finite_forced_and_independent_logits": True, "forced_common_input_replay_consumption_complete": True, "independent_replay_consumption_complete": True, "native_dense_cold_slots_physically_freed": False},
+        "observational_guards": {
+            "all_selected_layers_and_kv_heads_bridge_covered": True,
+            "finite_forced_and_independent_logits": True,
+            "forced_common_input_replay_consumption_complete": True,
+            "independent_replay_consumption_complete": True,
+            "fp32_same_mask_guard_enforced": True,
+            "execution_dtype_ulp_mode": args.execution_dtype_ulp_mode,
+            "execution_dtype_ulp_breaches_enforced": args.execution_dtype_ulp_mode == "enforce",
+            "native_dense_cold_slots_physically_freed": False,
+        },
         "guard_requirements": requirements,
-        "boundaries": ["Untimed fixed-length semantic continuation diagnostic, not a performance result.", "Forced common-token logits are paired while inputs remain identical; independent rows after a mismatch are output-impact diagnostics, not same-input numerical comparisons.", "This does not measure quality, Full-KV equivalence, allocator memory, HBM traffic, throughput, energy, area, hardware acceleration, or RTL."],
+        "boundaries": [
+            "Untimed fixed-length semantic continuation diagnostic, not a performance result.",
+            "Forced common-token logits are paired while inputs remain identical; independent rows after a mismatch are output-impact diagnostics, not same-input numerical comparisons.",
+            "This does not measure quality, Full-KV equivalence, allocator memory, HBM traffic, throughput, energy, area, hardware acceleration, or RTL.",
+            *( ["Execution-dtype ULP breaches were record-only. The FP32 same-mask guard remained hard, but this run is diagnostic evidence rather than an acceptance gate."] if args.execution_dtype_ulp_mode == "record_only" else [] ),
+        ],
         "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__),
     }
     path = args.output_dir / f"{artifact_stem}_manifest.json"

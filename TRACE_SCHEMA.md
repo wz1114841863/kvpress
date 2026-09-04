@@ -1125,6 +1125,30 @@ guard has already passed at that point. This diagnostic is for locating a
 numerical tolerance breach; it neither loosens the guard nor serializes K/V,
 attention, activation, or full-logits tensors.
 
+The first A4130 budget-one attempt stopped in its forced common-token pass at
+layer 8, KV head 3, query head 15, cache position 916, output component 20.
+It recorded BF16 values `-1.6531e-08` and `-1.3504e-08`: their absolute cast
+difference was `3.0268e-09`, but local BF16 ULP spacing was `1.1642e-10`, or
+26 ULP. The vector's maximum paired FP32 difference was only `1.7136e-07`,
+which passed the declared FP32 `rtol=1e-4` / `atol=1e-5` guard. This localizes
+the stop to a near-zero execution-dtype ULP amplification during the question
+bridge, not to a replay/mask or ownership-read failure. The gate did not finish,
+so it establishes neither all-36 output equivalence nor a relaxed acceptance
+policy; budget 512 remains blocked pending a bounded all-layer ULP-distribution
+diagnostic.
+
+`kvzap-route-a4131-alllayer-ulp-distribution-diagnostic-1.0` is that bounded
+diagnostic. It accepts only the literal `--target-layers all`, reuses the
+immutable all-layer replay source, and retains the hard FP32 same-mask
+`rtol`/`atol` guard, replay-consumption checks, causal bridge checks, and
+native-cold ownership checks. Its fixed `record_only` execution-dtype mode does
+not turn a ULP breach into a pass: for every selected layer it records only the
+breach count, maximum finite/infinite ULP status, maximum scalar FP32/cast
+difference, and at most `--ulp-breach-sample-limit` scalar examples. It never
+serializes K/V, attention, activation, or full-logit tensors. An A4131
+manifest is diagnostic evidence of the distribution and not an all-36 semantic
+acceptance, quality, memory, timing, or hardware result.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35

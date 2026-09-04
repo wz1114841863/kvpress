@@ -962,6 +962,44 @@ After updating to the failure-diagnostic code, rerun the identical command with
 a new `RUN_ID` ending in `_02`; the scalar record is the required input for the
 next numerical-policy decision.
 
+## A4.1.2.11 — record-only all-layer ULP distribution (not acceptance)
+
+The A4130 `_02` failure identified a near-zero BF16 ULP amplification while
+the hard FP32 same-mask guard passed. Do not increase the ULP limit and do not
+run budget 512. First collect the bounded scalar distribution below, using the
+already synchronized immutable all-layer source. This entrypoint retains FP32
+same-mask/replay/bridge/ownership guards; it changes only the post-cast ULP
+response to scalar recording.
+
+```bash
+SOURCE_ID=route_a4130_replay_source_all_layers_01
+RUN_ID=route_a4131_all_layers_budget1_ulp_distribution_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a_policy_backend.py \
+  tests/test_kvzap_route_a4129_multilayer_continuation.py
+.venv/bin/python tools/run_kvzap_route_a4131_alllayer_ulp_distribution_diagnostic.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --max-executed-dtype-ulps 16 \
+  --ulp-breach-sample-limit 8 \
+  --require-any-pending \
+  --top-k 8 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize only the fresh A4131 directory. Review its three per-path
+`execution_dtype_ulp_breaches` summaries alongside replay/bridge/ownership
+guards. The samples are bounded scalar metadata, not tensors. A completed
+manifest reports a distribution only; it does not establish an accepted
+all-layer numerical tolerance or permit budget-512 or timing work.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

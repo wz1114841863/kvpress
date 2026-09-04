@@ -523,6 +523,27 @@ without reviewing its layer/head/position and paired FP32 evidence. Preserve the
 failed fresh directory and rerun the same immutable replay source only into a
 new directory after synchronization.
 
+**A4.1.2.10 budget-one numerical hold (2026-09-04):** the all-36 forced path
+stopped at layer 8/head 3/query head 15/cache position 916 because a near-zero
+BF16 component had 26 local ULPs over the 16-ULP diagnostic limit. Its absolute
+cast difference was `3.0268e-09` and the vector maximum FP32 difference was
+`1.7136e-07`, below the hard `atol=1e-5` guard. This does not implicate replay
+masking or native-cold ownership, but it prevents an all-36 completion claim.
+Do not run budget 512 or raise the limit. First add a bounded record-only
+all-layer ULP distribution diagnostic, retaining the FP32 guard.
+
+### A4.1.2.11 implementation — bounded all-layer ULP distribution
+
+`tools/run_kvzap_route_a4131_alllayer_ulp_distribution_diagnostic.py` now
+provides that next diagnostic. It is pinned to all 36 layers and `record_only`
+for the executed-dtype ULP response; users cannot silently select a partial
+layer set or change it back to an enforcing run through this entrypoint. It
+still hard-enforces FP32 same-mask attention, immutable replay consumption,
+causal bridge coverage, and native-cold ownership. Each selected layer emits
+only bounded scalar ULP-breach fields (count, maxima, and sample-limited
+locations/differences). Its completion is not all-layer acceptance and does not
+authorize budget-512, timing, allocator, HBM, quality, hardware, or RTL claims.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:
