@@ -1120,6 +1120,27 @@ The manifest must retain `native_selected_cold_slots_physically_freed: false`.
 Do not run this on the remote model host or interpret it as allocator/HBM/timing
 evidence.
 
+## A4.1.3.1 — no-model external cold-storage adapter
+
+Run this locally before any remote Qwen integration. The gate stores selected-
+head hot K/V in a bounded external tensor and retains logical positions
+separately; it is deliberately not passed to stock `DynamicCache`.
+
+```bash
+RUN_ID=route_a4136_external_storage_adapter_local_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s tests/test_kvzap_route_a_external_cold_storage.py
+.venv/bin/python tools/run_kvzap_route_a4136_external_cold_storage_adapter_gate.py \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Expected: a fresh manifest reports pending budget-1 and packed budget-512
+cases, with same-mask attention error within gate tolerance. It must report
+`transformers_dynamic_cache_substitution: false` and
+`native_selected_cold_slots_physically_freed: false`. This is functional
+adapter evidence only; it is not allocator, HBM, latency, throughput, energy,
+hardware, or RTL evidence.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

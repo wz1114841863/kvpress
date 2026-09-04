@@ -518,6 +518,21 @@ local synthetic gate passed budget-one pending and budget-512
 multi-page/full-page/tail cases. It records `physically_freed: false`; next is
 an adapter design/gate, not allocator or decode timing.
 
+### A4.1.3.1 — external selected-head storage adapter (no model)
+
+`kvpress/route_a_external_cold_storage.py` and
+`tools/run_kvzap_route_a4136_external_cold_storage_adapter_gate.py` implement
+the narrow next step. Stock `DynamicCache` derives logical length from its
+physical K/V tensor length, so slicing a mature prefix would break cache
+positions and masks. The adapter instead keeps explicit logical-length
+metadata, physically retains only selected-head hot K/V, and makes Route-A
+pending/packed state the sole selected mature-retained store. Its no-model
+gate requires pending budget-1 and full-page/tail/multi-page budget-512
+coverage with same-mask packed-attention equality.
+
+This is functional storage-semantics evidence only. It does not attach to
+Qwen, free native-cache slots, or authorize allocator/timing/HBM claims.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

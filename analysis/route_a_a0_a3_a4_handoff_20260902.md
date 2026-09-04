@@ -598,6 +598,19 @@ slots as not physically freed, so it neither replaces `DynamicCache` nor
 authorizes allocator/timing claims. The next implementation must use this
 contract to build a real adapter, first at minimal layer/head scope.
 
+### A4.1.3.1 implementation — external selected-head cold-storage adapter
+
+`kvpress/route_a_external_cold_storage.py` implements that first no-model
+adapter without falsely presenting it as a drop-in `DynamicCache`. For an
+explicit selected-head set it retains a bounded physical hot K/V tensor,
+tracks logical cache length separately, and assigns every mature retained
+record to Route-A pending/packed storage. A dedicated unit regression shows
+why a stock DynamicCache cannot be physically truncated in place: its reported
+sequence length becomes the new physical length. A4136 exercises two append
+segments, selected-head same-mask attention, pending budget-1, and packed
+budget-512 multi-page/full-page/tail state. It still neither attaches to Qwen
+nor frees native DynamicCache slots; no measurement conclusion is authorized.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

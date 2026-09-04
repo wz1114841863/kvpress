@@ -1208,6 +1208,18 @@ the contract neither mutates `DynamicCache` nor measures allocator/HBM/timing.
 Its local `route_a4135_storage_contract_local_01` gate passed pending budget-1
 and packed budget-512 synthetic cases, including multi-page/full-page/tail.
 
+`kvzap-route-a4136-external-cold-storage-adapter-gate-1.0` is the A4.1.3.1
+no-model follow-up. It keeps a bounded physical K/V tensor only for explicitly
+selected KV-head hot tokens, stores logical cache length separately, and uses
+Route-A pending/packed state as the sole selected mature-retained source. It
+also proves that truncating stock `transformers.DynamicCache` changes that
+cache's reported logical length, so the adapter must not masquerade as a
+drop-in DynamicCache. The gate checks pending budget-1 and multi-page/full-
+page/tail budget-512 cases plus same-mask attention equality. It is not model-
+attached; `transformers_dynamic_cache_substitution` and
+`native_selected_cold_slots_physically_freed` remain false. It provides no
+allocator, HBM, runtime, throughput, energy, hardware, or RTL result.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35
