@@ -14,7 +14,7 @@ import torch
 import transformers
 from transformers import DynamicCache, pipeline
 
-from kvpress.route_a_continuation_diagnostic import first_token_mismatch, prefix_equal_before_step
+from kvpress.route_a_continuation_diagnostic import apply_route_a_state_guard, first_token_mismatch, prefix_equal_before_step
 from kvpress.route_a_measurement import initialize_output_directory, require_cuda_device
 from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, RouteAColdOwnershipAttentionBackend
 from kvpress.route_a_replay import sha256_file
@@ -110,13 +110,13 @@ def backend_summary(backend, *, expected_heads: tuple[int, ...], token_count: in
         backend.assert_ownership_guard_complete()
     coverage = backend.coverage()
     assert_all_head_multitoken_bridge(backend, coverage, expected_heads=expected_heads, token_count=token_count, label="Route-A" if require_ownership else "same-mask dense")
-    if args.require_any_pending:
+    if apply_route_a_state_guard(is_route_a_path=require_ownership, requested=args.require_any_pending):
         assert_any_head_coverage(coverage, field="ever_pending", label="pending staging")
-    if args.require_any_multi_page_packed:
+    if apply_route_a_state_guard(is_route_a_path=require_ownership, requested=args.require_any_multi_page_packed):
         assert_any_head_coverage(coverage, field="ever_multi_page_packed", label="multi-page packed coverage")
-    if args.require_any_full_packed_page:
+    if apply_route_a_state_guard(is_route_a_path=require_ownership, requested=args.require_any_full_packed_page):
         assert_any_head_coverage(coverage, field="ever_sealed_packed_page", label="sealed full packed-page coverage")
-    if args.require_any_tail_packed_page:
+    if apply_route_a_state_guard(is_route_a_path=require_ownership, requested=args.require_any_tail_packed_page):
         assert_any_head_coverage(coverage, field="max_packed_tail_tokens", label="nonempty packed-tail coverage")
     backend.assert_replay_complete()
     return {

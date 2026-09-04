@@ -1,4 +1,4 @@
-from kvpress.route_a_continuation_diagnostic import first_token_mismatch, prefix_equal_before_step
+from kvpress.route_a_continuation_diagnostic import apply_route_a_state_guard, first_token_mismatch, prefix_equal_before_step
 
 
 def test_first_token_mismatch_is_bounded_and_none_for_equal_sequences():
@@ -10,3 +10,9 @@ def test_prefix_equal_before_step_stops_after_the_first_divergent_input():
     assert prefix_equal_before_step([1, 2, 3], [1, 9, 3], 0) is True
     assert prefix_equal_before_step([1, 2, 3], [1, 9, 3], 1) is True
     assert prefix_equal_before_step([1, 2, 3], [1, 9, 3], 2) is False
+
+
+def test_route_a_state_coverage_guard_does_not_apply_to_dense_control():
+    assert apply_route_a_state_guard(is_route_a_path=False, requested=True) is False
+    assert apply_route_a_state_guard(is_route_a_path=True, requested=False) is False
+    assert apply_route_a_state_guard(is_route_a_path=True, requested=True) is True

@@ -16,3 +16,8 @@ def first_token_mismatch(reference: list[int], candidate: list[int]) -> dict[str
 def prefix_equal_before_step(reference: list[int], candidate: list[int], step: int) -> bool:
     """Whether both paths received equal generated-token inputs before a logit."""
     return reference[:step] == candidate[:step]
+
+
+def apply_route_a_state_guard(*, is_route_a_path: bool, requested: bool) -> bool:
+    """Route-A pending/page coverage is meaningless for the dense control."""
+    return is_route_a_path and requested

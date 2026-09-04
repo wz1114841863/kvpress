@@ -1065,3 +1065,6 @@ consumption for all three paths. It stores token IDs/digests and bounded top-k
 metadata only, never a full logits tensor. This is an untimed same-mask
 semantic diagnostic; it is not a quality, Full-KV-equivalence, allocator,
 physical-memory, HBM, throughput, energy, area, hardware, or RTL result.
+Requested pending/page-state guards apply only to the Route-A paths: the dense
+same-mask control intentionally has no Route-A pending FIFO or packed-page
+state and is not required to exercise either.
