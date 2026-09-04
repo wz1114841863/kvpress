@@ -1038,3 +1038,30 @@ descriptor; captured tensors are transient and must not be written. Its
 when unrequested), replacing schema 1.3's vacuous-true encoding. Hooked output
 is a semantic diagnostic, never a timing, allocator, HBM, physical-memory, or
 hardware measurement.
+
+The first A4127 budget-one artifact found its first nonzero activation relation
+at selected layer 0 and a later-layer growth pattern, with all captured values
+finite. That is a narrow localization result consistent with numerical
+propagation after all-head replacement. It does not establish that the behavior
+is independent of packed page state until the matching budget-512 artifact is
+reviewed.
+
+The matching A4127 budget-512 artifact exercised the requested multi-page,
+full-page, and tail-page state and produced the same first-difference layer and
+same 36-layer scalar relation table as budget one. For this replay prefix, that
+controls the admission-layout variable: the recorded drift is downstream
+numerical propagation rather than a pending-versus-packed storage effect.
+
+`kvzap-route-a4128-allhead-continuation-diagnostic-1.0` is the next untimed
+output-impact locator. It runs one all-head same-mask dense greedy reference,
+then (1) a Route-A continuation forced with exactly those dense token IDs and
+(2) an independent Route-A greedy continuation. The forced path records
+bounded paired-logit summaries at every fixed token offset, while the
+independent path records its first generated-token mismatch, if any. An
+independent row after that mismatch no longer has the same generated input
+prefix and therefore must not be read as a same-input numerical comparison.
+The runner uses a fixed declared token count and requires complete replay
+consumption for all three paths. It stores token IDs/digests and bounded top-k
+metadata only, never a full logits tensor. This is an untimed same-mask
+semantic diagnostic; it is not a quality, Full-KV-equivalence, allocator,
+physical-memory, HBM, throughput, energy, area, hardware, or RTL result.

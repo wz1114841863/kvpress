@@ -417,6 +417,39 @@ relations. It also replaces vacuous guard booleans with explicit requested /
 satisfied metadata. Run budget one pending coverage before budget 512 multi-
 page coverage; inspect this localization before any multi-layer ownership work.
 
+**A4.1.2.7 budget-one result:**
+`route_a4127_allheads_layer0_budget1_pending_activation_01` captured all 36
+question-forward decoder layers without serializing activations. Its first
+paired dense/Route-A difference occurs at selected layer 0, then grows through
+later unchanged layers (relative L2 from `0.0002011` at layer 0 to `0.01665` at
+layer 35); all values are finite and the first argmax remains equal. This
+supports downstream numerical propagation rather than a pre-target or
+ownership-bypass error. The budget-512 multi-page counterpart remains required
+to test whether this behavior is invariant to pending-versus-packed page state.
+
+**A4.1.2.7 budget-512 result:** the synchronized multipage artifact (directory
+suffix `_0`) has the same first-difference layer and the same 36-layer scalar
+propagation table as budget one, while exercising head 6's three-page/two-full-
+page/63-tail packed state. Thus, for this fixed layer-0 all-head replay prefix,
+the observed final-logit drift is invariant to pending versus packed-page
+admission state and is localized to downstream numerical propagation. This is
+not yet a quality, complete-decode, timing, memory, or multi-layer result.
+
+### A4.1.2.8 next gate — bounded continuation consequence of the all-head drift
+
+The `0.44921875` final-logit maximum in A4.1.2.6/7 is not itself an answer
+error or an error percentage. It was recorded with equal first argmax, but a
+later greedy decision can change if a later margin is sufficiently small.
+`tools/run_kvzap_route_a4128_allhead_continuation_diagnostic.py` therefore
+runs an untimed 8-token same-mask continuation in three forms: dense greedy;
+Route-A forced to consume the dense token IDs (a same-input paired logit check
+at every offset); and independent Route-A greedy (a first-token-mismatch
+observation). Its fixed count must exhaust the replay source. Rows after an
+independent mismatch have different inputs and are explicitly not numerical
+paired comparisons. Run first with budget-one pending coverage, then with
+budget-512 aggregate multi-page/full-page/tail coverage. Do not interpret this
+as quality, Full-KV equivalence, timing, allocator/HBM, or multi-layer evidence.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

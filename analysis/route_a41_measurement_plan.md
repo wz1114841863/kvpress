@@ -289,6 +289,63 @@ requested state is a semantic failure requiring diagnosis before multi-layer
 ownership. First-argmax equality is recorded, not made a precondition, so a
 finite drift remains inspectable.
 
+**Observed A4.1.2.7 budget-one result (2026-09-04):**
+`route_a4127_allheads_layer0_budget1_pending_activation_01` completed with all
+36 layer summaries, every requested all-head bridge guard, and explicit
+`any_pending: {requested: true, satisfied: true}` metadata. The first nonzero
+paired activation relation is layer 0 (maximum `0.001953125`, relative L2
+`0.0002011`), not a preceding layer. Differences then grow through unchanged
+layers, reaching layer-35 maximum `16.0` and relative L2 `0.01665`, while all
+activations remain finite and the paired final-logit maximum is `0.44921875`
+with equal first argmax. This localizes the drift to post-replacement layer-0
+activation propagation, consistent with accumulation of the per-head one-ULP
+differences; it does not by itself prove page-layout independence. Run the
+budget-512 page-state counterpart before deciding whether multi-layer ownership
+is safe to pursue.
+
+**Observed A4.1.2.7 budget-512 result (2026-09-04):**
+the synchronized multipage artifact (directory suffix `_0`) completed with
+explicit requested/satisfied multi-page, full-page, and tail-page guards. Its
+activation relation is identical to the budget-one table at every reported
+layer: first difference layer 0, layer-0 maximum `0.001953125` and relative L2
+`0.0002011`, layer-35 maximum `16.0` and relative L2 `0.01665`, and paired
+final-logit maximum `0.44921875` with equal first argmax. It simultaneously
+observed head 6 with three packed pages, two full pages, and a 63-token tail.
+This controls the pending-versus-packed page-state variable for this request:
+the drift is attributable to all-head numerical propagation, not the admission
+layout. It remains one layer/request prefix result; an explicit numerical
+acceptance policy is required before multi-layer ownership expansion.
+
+### A4.1.2.8 — fixed-horizon all-head continuation output-impact diagnostic
+
+The A4.1.2.7 `0.44921875` maximum final-logit difference is a raw logit-space
+maximum, not an answer-error rate. The observed first argmax is unchanged, but
+any later greedy choice could in principle change if its decision margin is
+smaller than the local paired-logit perturbation. Conversely, unchanged argmax
+at one prefix does not prove the whole trajectory is unchanged. Before any
+multi-layer expansion, run an untimed fixed-horizon diagnostic that separates
+these cases.
+
+`tools/run_kvzap_route_a4128_allhead_continuation_diagnostic.py` first makes a
+same-mask dense 8-token greedy reference. It then runs Route-A twice: a
+**forced** route using those dense token IDs, which retains an identical input
+history and reports paired logit/argmax relations at every token offset; and
+an **independent** Route-A greedy route, which reports the first generated
+token mismatch and the token-ID digest. After an independent mismatch, later
+rows are not paired numerical evidence because the model inputs differ. The
+gate is fixed-length deliberately so all replay decisions are consumed and
+checked. It stores only scalar/top-k metadata and token IDs, and includes no
+timing region or profiler collection.
+
+Run budget one with pending coverage first, then budget 512 with aggregate
+multi-page/full-page/tail coverage. If all forced argmax values and all
+independent IDs match over the declared horizon, the current one-layer/all-head
+drift has no observed greedy-token consequence over that bounded replayed
+continuation. A forced argmax change identifies a direct same-input decision
+effect; an independent first mismatch identifies the earliest observed
+trajectory difference. Neither outcome measures task quality or validates
+multi-layer ownership, and neither is a performance result.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers
