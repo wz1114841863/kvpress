@@ -980,3 +980,20 @@ attention, K/V, or hidden-state tensors. A final-logit comparison in this
 schema is therefore a same-mask comparison; it still has no universal
 elementwise-equality requirement because the packed online merge and dense
 reference use legal different reduction orders.
+
+The first schema-1.1 artifact,
+`route_a4124_multitoken_bridge_layer0_head6_budget1_densebridge_01`, is a
+narrow successful instance: the paired final logits were equal and Route-A's
+largest selected-head discrepancy was one execution-dtype ULP. Its separate
+Full-KV-to-same-mask-dense delta was `0.55078125`; that number is recorded as
+mask-semantic behavior for this one prefix, not as a Route-A numerical error,
+performance result, or quality result.
+
+`kvzap-route-a4124-multitoken-bridge-gate-1.2` adds optional observed-state
+guards for a selected-head Route-A bridge: `require_multi_page_packed`,
+`require_full_packed_page`, and `require_tail_packed_page`. A requested guard
+must be true for every selected head in the recorded coverage; a large
+admission budget alone is not evidence. These guards complement, rather than
+replace, the budget-one pending-staging artifact. They remain untimed prefix
+semantics and do not establish allocator page allocation, HBM traffic, or
+physical memory.

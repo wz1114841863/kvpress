@@ -201,6 +201,29 @@ deltas. Do not require bitwise-equal logits: the declared equivalence contract
 is the per-head FP32 `rtol`/`atol` guard plus the recorded execution-dtype ULP
 limit; any downstream logit effect is diagnostic until characterized.
 
+**Observed schema-1.1 narrow result (2026-09-04):**
+`route_a4124_multitoken_bridge_layer0_head6_budget1_densebridge_01` consumed
+the matching replay prefix for layer 0/head 6 and bridged all 22 question
+tokens in both controls. Route-A's largest selected-head discrepancy was
+`5.21540641784668e-08` in FP32 and `9.5367431640625e-07` after cast (one ULP,
+below the configured 16-ULP limit); the resulting same-mask dense versus
+Route-A final logits were bitwise equal in this run. The earlier `0.55078125`
+delta is instead exactly the Full-KV versus valid same-mask-dense delta. This
+localizes that value to intended mask semantics for this selected layer/head,
+not packed online-softmax numerical error. It is one prefix diagnostic only,
+not an accuracy, full-decode, timing, memory, or hardware conclusion.
+
+### A4.1.2.5 — valid same-mask bridge under full-page/tail/multi-page coverage
+
+Reuse the identical replay source, layer, head, model, and request from the
+schema-1.1 budget-one gate, but set the Route-A admission budget to 512 and
+require observed multi-page, sealed-page, and nonempty-tail coverage. Pending
+staging need not be nonempty at this budget; it was separately covered at
+budget one. The dense control remains the causal same-mask multi-token bridge.
+Require finite paired logits, equal first argmax, per-token bridge coverage,
+ownership poisoning, and all three observed page guards. This tests packed
+page-boundary semantics, not timing, allocation, HBM, or throughput.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers

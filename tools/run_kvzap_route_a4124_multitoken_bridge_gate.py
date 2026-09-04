@@ -13,7 +13,34 @@ from tools.run_kvzap_route_a4123_first_decode_logits_diagnostic import first_que
 from tools.run_kvzap_route_a412_whole_decode_gate import read_source
 from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, build_builtin_request, load_jsonl_request
 
-A4124_SCHEMA = "kvzap-route-a4124-multitoken-bridge-gate-1.1"
+A4124_SCHEMA = "kvzap-route-a4124-multitoken-bridge-gate-1.2"
+
+
+def assert_required_packed_page_coverage(
+    coverage: dict,
+    *,
+    require_multi_page_packed: bool,
+    require_full_packed_page: bool,
+    require_tail_packed_page: bool,
+) -> None:
+    """Require observed Route-A page states without inferring them from budget.
+
+    A large admission budget is only a candidate configuration.  The manifest
+    must prove that the replayed request actually exercised the requested page
+    states during a selected-head multi-token bridge.
+    """
+    heads = coverage.get("heads", [])
+    if not heads:
+        raise AssertionError("Route-A bridge produced no selected-head coverage")
+    checks = (
+        (require_multi_page_packed, "ever_multi_page_packed", "multi-page packed coverage"),
+        (require_full_packed_page, "ever_sealed_packed_page", "sealed full packed-page coverage"),
+        (require_tail_packed_page, "max_packed_tail_tokens", "nonempty packed-tail coverage"),
+    )
+    for required, field, label in checks:
+        if required and not all(bool(head.get(field, 0)) for head in heads):
+            observed = [{"kv_head": head.get("kv_head"), field: head.get(field, 0)} for head in heads]
+            raise AssertionError(f"required {label} was not observed: {observed}")
 
 def parse_args():
     p=argparse.ArgumentParser(description="A4.1.2.4 untimed causal multi-token Route-A bridge gate; not a benchmark.")
@@ -24,6 +51,9 @@ def parse_args():
     p.add_argument("--threshold",type=float,default=-4.0); p.add_argument("--window-size",type=int,default=128); p.add_argument("--page-tokens",type=int,default=64); p.add_argument("--admission-budget",type=int,required=True)
     p.add_argument("--target-layer",type=int,required=True); p.add_argument("--target-kv-head",type=int,required=True); p.add_argument("--max-new-tokens",type=int,default=8); p.add_argument("--top-k",type=int,default=8)
     p.add_argument("--seed",type=int,default=42); p.add_argument("--rtol",type=float,default=1e-4); p.add_argument("--atol",type=float,default=1e-5); p.add_argument("--max-executed-dtype-ulps",type=float,default=16.0); p.add_argument("--device",default="cuda")
+    p.add_argument("--require-multi-page-packed",action="store_true",help="Require every selected KV head to observe at least two packed pages.")
+    p.add_argument("--require-full-packed-page",action="store_true",help="Require every selected KV head to observe at least one sealed full packed page.")
+    p.add_argument("--require-tail-packed-page",action="store_true",help="Require every selected KV head to observe a nonempty packed tail page.")
     p.add_argument("--replay-source-dir",type=Path,required=True); p.add_argument("--output-dir",type=Path,required=True); return p.parse_args()
 
 def main():
@@ -47,11 +77,12 @@ def main():
     print("Pass 1/3: Full-KV logits..."); full=first_question_forward(pipe=pipe,context_ids=context_ids,question_ids=question_ids,backend=None,args=a); assert_no_runtime_mask_state(pipe.model)
     print("Pass 2/3: causal same-mask dense bridge logits..."); dense_backend=DenseSameMaskAttentionBackend(pipe.model,None,layer=a.target_layer,kv_head=a.target_kv_head,threshold=a.threshold,window=a.window_size,page_tokens=a.page_tokens,admission_budget=a.admission_budget,rtol=a.rtol,atol=a.atol,max_executed_dtype_ulps=a.max_executed_dtype_ulps,replay_mask_events=events[a.target_layer]); dense=first_question_forward(pipe=pipe,context_ids=context_ids,question_ids=question_ids,backend=dense_backend,args=a); assert_no_runtime_mask_state(pipe.model)
     print("Pass 3/3: Route-A causal multi-token bridge logits..."); route_backend=RouteAColdOwnershipAttentionBackend(pipe.model,None,layer=a.target_layer,kv_head=a.target_kv_head,threshold=a.threshold,window=a.window_size,page_tokens=a.page_tokens,admission_budget=a.admission_budget,rtol=a.rtol,atol=a.atol,max_executed_dtype_ulps=a.max_executed_dtype_ulps,replay_mask_events=events[a.target_layer]); route=first_question_forward(pipe=pipe,context_ids=context_ids,question_ids=question_ids,backend=route_backend,args=a); assert_no_runtime_mask_state(pipe.model)
-    relation=paired_logit_relation(dense,route); route_backend.assert_ownership_guard_complete()
+    relation=paired_logit_relation(dense,route); route_backend.assert_ownership_guard_complete(); route_coverage=route_backend.coverage()
     if dense_backend.policy_multi_token_calls!=1 or dense_backend.policy_multi_token_tokens!=question_ids.shape[1] or dense_backend.policy_decode_calls!=0: raise AssertionError("same-mask dense control did not bridge every question token causally")
     if route_backend.policy_multi_token_calls!=1 or route_backend.policy_multi_token_tokens!=question_ids.shape[1] or route_backend.policy_decode_calls!=0: raise AssertionError("Route-A did not bridge every question token causally")
+    assert_required_packed_page_coverage(route_coverage,require_multi_page_packed=a.require_multi_page_packed,require_full_packed_page=a.require_full_packed_page,require_tail_packed_page=a.require_tail_packed_page)
     if not relation["both_all_finite"] or not relation["argmax_token_id_equal"]: raise AssertionError("multi-token bridge produced nonfinite logits or changed first argmax")
-    diagnostic={"context_token_count":int(context_ids.shape[1]),"question_token_count":int(question_ids.shape[1]),"full_kv_bypass":logit_summary(full,top_k=a.top_k),"same_mask_dense_replay":{"control_path":"causal_multi_token_same_mask_dense_bridge","logits":logit_summary(dense,top_k=a.top_k),"policy_decode_calls":dense_backend.policy_decode_calls,"policy_multi_token_calls":dense_backend.policy_multi_token_calls,"policy_multi_token_tokens":dense_backend.policy_multi_token_tokens,"multi_token_attention_comparison":dense_backend.multi_token_comparison_summary(),"replay_consumption":dense_backend.replay_consumption_summary()},"same_mask_route_a_owned_cold_replay":{"logits":logit_summary(route,top_k=a.top_k),"policy_decode_calls":route_backend.policy_decode_calls,"policy_multi_token_calls":route_backend.policy_multi_token_calls,"policy_multi_token_tokens":route_backend.policy_multi_token_tokens,"multi_token_attention_comparison":route_backend.multi_token_comparison_summary(),"replay_consumption":route_backend.replay_consumption_summary(),"coverage":route_backend.coverage(),"native_cold_ownership":route_backend.ownership_summary()},"full_vs_dense":paired_logit_relation(full,dense),"dense_vs_route":relation}
-    m={"schema_version":A4124_SCHEMA,"status":"complete","created_at":datetime.now(timezone.utc).isoformat(),"git_commit":get_git_commit(),"config":config,"config_hash":stable_hash(config),"request_id":req["request_id"],"request_content_hash":stable_hash({"context":req["context"],"question":req["question"]}),"replay_source":{"directory":str(a.replay_source_dir),"event_file_sha256":digest,"source_manifest_sha256":sha256_file(a.replay_source_dir/"a41_replay_mask_source_manifest.json"),"event_count":source["event_count"]},"diagnostic":diagnostic,"observational_guards":{"prefix_replay_only":True,"causal_multitoken_same_mask_dense_bridge_complete":True,"causal_multitoken_route_a_bridge_complete":True,"finite_same_mask_dense_and_route_logits":True,"same_mask_dense_route_first_argmax_equal":True,"native_dense_cold_slots_physically_freed":False},"boundaries":["Semantic prefix gate only; not timing or physical storage evidence.","The dense control and Route-A both replace selected heads causally from the same replayed original mask.","Safe native placeholders protect selected head values only while native attention computes unselected heads.","No greedy decode or complete replay claim."],"torch_version":str(torch.__version__),"transformers_version":str(transformers.__version__)}
+    diagnostic={"context_token_count":int(context_ids.shape[1]),"question_token_count":int(question_ids.shape[1]),"full_kv_bypass":logit_summary(full,top_k=a.top_k),"same_mask_dense_replay":{"control_path":"causal_multi_token_same_mask_dense_bridge","logits":logit_summary(dense,top_k=a.top_k),"policy_decode_calls":dense_backend.policy_decode_calls,"policy_multi_token_calls":dense_backend.policy_multi_token_calls,"policy_multi_token_tokens":dense_backend.policy_multi_token_tokens,"multi_token_attention_comparison":dense_backend.multi_token_comparison_summary(),"replay_consumption":dense_backend.replay_consumption_summary()},"same_mask_route_a_owned_cold_replay":{"logits":logit_summary(route,top_k=a.top_k),"policy_decode_calls":route_backend.policy_decode_calls,"policy_multi_token_calls":route_backend.policy_multi_token_calls,"policy_multi_token_tokens":route_backend.policy_multi_token_tokens,"multi_token_attention_comparison":route_backend.multi_token_comparison_summary(),"replay_consumption":route_backend.replay_consumption_summary(),"coverage":route_coverage,"native_cold_ownership":route_backend.ownership_summary()},"full_vs_dense":paired_logit_relation(full,dense),"dense_vs_route":relation}
+    m={"schema_version":A4124_SCHEMA,"status":"complete","created_at":datetime.now(timezone.utc).isoformat(),"git_commit":get_git_commit(),"config":config,"config_hash":stable_hash(config),"request_id":req["request_id"],"request_content_hash":stable_hash({"context":req["context"],"question":req["question"]}),"replay_source":{"directory":str(a.replay_source_dir),"event_file_sha256":digest,"source_manifest_sha256":sha256_file(a.replay_source_dir/"a41_replay_mask_source_manifest.json"),"event_count":source["event_count"]},"diagnostic":diagnostic,"observational_guards":{"prefix_replay_only":True,"causal_multitoken_same_mask_dense_bridge_complete":True,"causal_multitoken_route_a_bridge_complete":True,"required_multi_page_packed_coverage":not a.require_multi_page_packed or all(bool(head["ever_multi_page_packed"]) for head in route_coverage["heads"]),"required_full_packed_page_coverage":not a.require_full_packed_page or all(bool(head["ever_sealed_packed_page"]) for head in route_coverage["heads"]),"required_tail_packed_page_coverage":not a.require_tail_packed_page or all(bool(head["max_packed_tail_tokens"]) for head in route_coverage["heads"]),"finite_same_mask_dense_and_route_logits":True,"same_mask_dense_route_first_argmax_equal":True,"native_dense_cold_slots_physically_freed":False},"boundaries":["Semantic prefix gate only; not timing or physical storage evidence.","The dense control and Route-A both replace selected heads causally from the same replayed original mask.","Safe native placeholders protect selected head values only while native attention computes unselected heads.","No greedy decode or complete replay claim."],"torch_version":str(torch.__version__),"transformers_version":str(transformers.__version__)}
     path=a.output_dir/"a4124_multitoken_bridge_manifest.json"; path.write_text(json.dumps(m,indent=2,sort_keys=True)+"\n",encoding="utf-8"); print(f"A4.1.2.4 multi-token bridge gate passed: {path}")
 if __name__=="__main__": main()

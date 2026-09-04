@@ -623,6 +623,42 @@ and no physical-slot-freeing claim. The old `layoutfix_01` artifact establishes
 the output-layout repair only; its dense q_len>1 path was native Full-KV and is
 not a valid numerical same-mask baseline.
 
+## A4.1.2.5 full-page/tail/multi-page semantic gate
+
+This is a new output directory and reuses the already frozen replay source;
+changing admission budget must not change the source mask. Do not require
+pending staging here: the budget-one gate already covered it and high admission
+can drain it before the question bridge.
+
+```bash
+SOURCE_ID=route_a41_replay_source_layer0_budget1_01
+RUN_ID=route_a4125_multitoken_bridge_layer0_head6_budget512_multipage_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a4124_multitoken_bridge_gate.py \
+  tests/test_kvzap_route_a_policy_backend.py \
+  tests/test_kvzap_route_a4123_first_decode_logits.py
+.venv/bin/python tools/run_kvzap_route_a4124_multitoken_bridge_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 6 \
+  --admission-budget 512 \
+  --require-multi-page-packed \
+  --require-full-packed-page \
+  --require-tail-packed-page \
+  --top-k 8 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the fresh directory. Review the schema-1.2 observed page guards,
+packed-page/full-page/tail counts, causal bridge coverage, ownership guards,
+and same-mask dense versus Route-A diagnostics. This run is not a performance,
+allocator, HBM, or physical-memory measurement.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

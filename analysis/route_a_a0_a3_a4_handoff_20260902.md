@@ -344,6 +344,27 @@ heads fell back to native Full-KV. The new manifest records bounded per-token
 attention-error summaries for the valid paired comparison; it remains a
 single-layer/head, prefix-only semantic diagnostic.
 
+**A4.1.2.4 schema-1.1 result:**
+`analysis/experiments/route_a4124_multitoken_bridge_layer0_head6_budget1_densebridge_01/`
+completed with the immutable layer-0 replay source hash
+`1cf570185922d76d8924eaa193aa9831537b9523c0c6b0871765218096151ef5`. Both
+same-mask dense and owned-cold Route-A bridged all 22 question tokens; the
+Route-A per-head guard observed `5.21540641784668e-08` maximum FP32 difference
+and one executed-dtype ULP, while their final logits had zero maximum absolute
+difference. Full-KV versus same-mask dense was `0.55078125`, so the former
+schema-1.0 `0.55078125` Route-A delta is attributable to comparing against the
+native Full-KV fallback rather than a same-mask dense control. This validates
+only the narrow single-layer/head prefix numerical path; it does not establish
+KVzap quality, answer equivalence, full decode, timing, allocator memory, HBM,
+or hardware benefit.
+
+**Next A4.1.2.5 gate:** run the same valid paired bridge with head 6 and
+`admission_budget=512`, requiring actual multi-page, sealed full-page, and tail
+page coverage. This is deliberately complementary to the budget-one pending
+gate: it validates page-boundary semantics under a high admission configuration
+without asserting that pending staging must remain nonempty. The current runner
+implements these as explicit observed-state guards in schema 1.2.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:
