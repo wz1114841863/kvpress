@@ -517,6 +517,12 @@ inspect it before the budget-512 page-state companion. This is still an
 untimed same-mask semantic check, not the true storage-substitution or A4.1
 performance phase.
 
+The A4130 runner also persists a bounded scalar numerical-guard failure record
+before aborting on an execution-dtype ULP breach. Do not raise the ULP limit
+without reviewing its layer/head/position and paired FP32 evidence. Preserve the
+failed fresh directory and rerun the same immutable replay source only into a
+new directory after synchronization.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

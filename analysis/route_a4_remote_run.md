@@ -955,6 +955,13 @@ all-head bridge coverage, forced common-token diagnostics, and independent
 greedy diagnostics. Review this artifact before its separately fresh budget-512
 page-state companion; it remains untimed.
 
+If the runner reports an execution-dtype ULP failure, do not reuse its output
+directory or increase `--max-executed-dtype-ulps`. Synchronize the fresh
+directory containing `a4130_alllayer_continuation_numerical_guard_failure.json`.
+After updating to the failure-diagnostic code, rerun the identical command with
+a new `RUN_ID` ending in `_02`; the scalar record is the required input for the
+next numerical-policy decision.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

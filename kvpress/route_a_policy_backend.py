@@ -9,6 +9,7 @@ selected decode query heads then read only Route-A hot/pending/packed state.
 from __future__ import annotations
 
 from contextlib import AbstractContextManager
+import math
 from typing import Any, Callable
 
 import torch
@@ -18,6 +19,20 @@ from kvpress.route_a_attention import DenseSameMaskAttentionState, RouteAPackedA
 
 MaskEvent = tuple[bool, float]
 MaskEventLayers = dict[int, dict[tuple[int, int], MaskEvent]]
+
+
+class RouteANumericalGuardError(AssertionError):
+    """A bounded, serializable execution-dtype numerical-guard failure."""
+
+    def __init__(self, details: dict[str, Any]) -> None:
+        self.details = details
+        super().__init__(
+            "Route-A executed-dtype output exceeds configured ULP limit: "
+            f"layer={details['layer']}, kv_head={details['kv_head']}, "
+            f"query_head={details['query_head']}, cache_position={details['cache_position']}, "
+            f"observed_ulps={details['max_executed_dtype_ulps']}, "
+            f"limit={details['executed_dtype_ulp_limit']}"
+        )
 
 
 def compare_original_mask_events(dense_events: MaskEventLayers, route_events: MaskEventLayers, *, max_examples: int = 32) -> dict[str, Any]:
@@ -313,6 +328,41 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         ratio = torch.where(ulp > 0, difference / ulp, torch.where(difference == 0, torch.zeros_like(difference), torch.full_like(difference, float("inf"))))
         return float(difference.max().item()), float(ratio.max().item())
 
+    @staticmethod
+    def _finite_or_none(value: float) -> float | None:
+        return value if math.isfinite(value) else None
+
+    def _executed_dtype_failure_details(self, *, route: torch.Tensor, dense: torch.Tensor, route_fp32: torch.Tensor, dense_fp32: torch.Tensor, kv_head: int, query_head: int, cache_position: int) -> dict[str, Any]:
+        """Capture scalar-only evidence for an execution-dtype ULP breach."""
+        difference = (route - dense).abs()
+        positive = torch.full_like(dense, float("inf"))
+        negative = torch.full_like(dense, float("-inf"))
+        ulp = torch.maximum((torch.nextafter(dense, positive) - dense).abs(), (dense - torch.nextafter(dense, negative)).abs())
+        ratio = torch.where(ulp > 0, difference / ulp, torch.where(difference == 0, torch.zeros_like(difference), torch.full_like(difference, float("inf"))))
+        flat_index = int(ratio.reshape(-1).argmax().item())
+        component_index = list(torch.unravel_index(torch.tensor(flat_index, device=ratio.device), ratio.shape))
+        index = tuple(int(item.item()) for item in component_index)
+        observed_ulps = float(ratio[index].item())
+        return {
+            "layer": self.layer,
+            "kv_head": kv_head,
+            "query_head": query_head,
+            "cache_position": cache_position,
+            "execution_dtype": str(route.dtype),
+            "output_shape": list(route.shape),
+            "component_index": list(index),
+            "max_executed_dtype_ulps": self._finite_or_none(observed_ulps),
+            "max_executed_dtype_ulps_is_infinite": not math.isfinite(observed_ulps),
+            "executed_dtype_ulp_limit": self.max_executed_dtype_ulps,
+            "executed_dtype_abs_difference_at_max_ulp": self._finite_or_none(float(difference[index].item())),
+            "executed_dtype_ulp_at_max": self._finite_or_none(float(ulp[index].item())),
+            "route_value_at_max_ulp": self._finite_or_none(float(route[index].item())),
+            "dense_value_at_max_ulp": self._finite_or_none(float(dense[index].item())),
+            "max_fp32_abs_difference": self._finite_or_none(float((route_fp32 - dense_fp32).abs().max().item())),
+            "route_fp32_value_at_max_ulp": self._finite_or_none(float(route_fp32[index].item())),
+            "dense_fp32_value_at_max_ulp": self._finite_or_none(float(dense_fp32[index].item())),
+        }
+
     def attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
         """Called by the global attention wrapper after Qwen updates its cache."""
         self._append_state(key, value)
@@ -339,9 +389,12 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
                 route, dense = route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)
                 _cast_abs, cast_ulps = self._cast_difference_in_ulps(route, dense)
                 if cast_ulps > self.max_executed_dtype_ulps:
-                    raise AssertionError(
-                        "Route-A executed-dtype output differs from same-mask dense reference by "
-                        f"{cast_ulps:.3f} ULPs, exceeding configured limit {self.max_executed_dtype_ulps:.3f}"
+                    raise RouteANumericalGuardError(
+                        self._executed_dtype_failure_details(
+                            route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32,
+                            kv_head=mapped_kv_head, query_head=query_head,
+                            cache_position=int(key.shape[2] - 1),
+                        )
                     )
                 output.append(route)
                 per_head[mapped_kv_head].append((route, dense, query_head, route_fp32, dense_fp32, cast_ulps))
@@ -608,7 +661,12 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
                 route, dense = route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)
                 _cast_abs, cast_ulps = self._cast_difference_in_ulps(route, dense)
                 if cast_ulps > self.max_executed_dtype_ulps:
-                    raise AssertionError("multi-token Route-A executed-dtype output exceeds configured ULP limit")
+                    raise RouteANumericalGuardError(
+                        self._executed_dtype_failure_details(
+                            route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32,
+                            kv_head=mapped, query_head=query_head, cache_position=position,
+                        )
+                    )
                 # Qwen attention-interface outputs use [B, T, H, D], whereas
                 # its query input is [B, H, T, D].  Keeping this conversion
                 # explicit prevents a multi-token selected-head result from

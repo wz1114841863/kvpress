@@ -14,7 +14,7 @@ from transformers import pipeline
 
 from kvpress.route_a_continuation_diagnostic import apply_route_a_state_guard, first_token_mismatch, prefix_equal_before_step
 from kvpress.route_a_measurement import initialize_output_directory, require_cuda_device
-from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackendSet
+from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackendSet, RouteANumericalGuardError
 from kvpress.route_a_replay import sha256_file
 from tools.export_kvzap_predictor_trace import GATE_A_PREDICTOR_REVISION, GATE_B_MODEL_REVISION, assert_no_runtime_mask_state, get_git_commit, stable_hash
 from tools.run_kvzap_route_a4123_first_decode_logits_diagnostic import logit_summary, paired_logit_relation
@@ -145,6 +145,28 @@ def backend_summary(backend_set, *, expected_heads: dict[int, tuple[int, ...]], 
     }
 
 
+def run_or_write_numerical_failure(*, stage: str, pipe, context_ids: torch.Tensor, question_ids: torch.Tensor, backend, args: argparse.Namespace, forced_token_ids: list[int] | None, output_dir: Path, artifact_stem: str, schema_version: str, config: dict[str, Any], replay_source: dict[str, Any]):
+    """Persist scalar-only ULP-breach context before ending a fresh gate."""
+    try:
+        return run_continuation(pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=backend, args=args, forced_token_ids=forced_token_ids)
+    except RouteANumericalGuardError as error:
+        path = output_dir / f"{artifact_stem}_numerical_guard_failure.json"
+        payload = {
+            "schema_version": "kvzap-route-a-executed-dtype-guard-failure-1.0",
+            "status": "failed_numerical_guard",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "gate_schema_version": schema_version,
+            "stage": stage,
+            "git_commit": get_git_commit(),
+            "config": config,
+            "replay_source": replay_source,
+            "error": error.details,
+            "boundaries": ["Scalar-only numerical-guard failure diagnostic; no K/V, attention, activation, or full logits tensors are serialized.", "The FP32 same-mask guard ran before this execution-dtype ULP failure.", "This is not timing, allocator, HBM, quality, performance, or hardware evidence."],
+        }
+        path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        raise AssertionError(f"{error}; diagnostic={path}") from error
+
+
 def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: str = "three_layer", artifact_stem: str = "a4129_multilayer_continuation") -> None:
     if scope == "three_layer":
         default_target_layers, target_layer_help = ["0", "18", "35"], "Initial multi-layer gate is exactly: 0 18 35."
@@ -183,20 +205,21 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
     config = {key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items() if key != "output_dir"}
     config["replay_event_file_sha256"] = digest
     initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit(), record_name=f"{artifact_stem}_started.json", schema_version=schema_version, boundaries=["Untimed fixed-length paired continuation; no timing or profiler data.", "Forced continuation uses dense generated token IDs as common inputs; independent greedy continuation can diverge after its first mismatch.", "No quality, allocator, HBM, physical-memory, throughput, energy, area, hardware, or RTL claim."])
+    replay_provenance = {"directory": str(args.replay_source_dir), "event_file_sha256": digest, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"]}
     common = dict(layers=layers, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, replay_mask_events=events)
     print(f"Pass 1/3: all-head causal same-mask dense greedy reference in layers {list(layers)}...")
     dense_backend = DenseSameMaskAttentionBackendSet(pipe.model, None, **common)
-    dense = run_continuation(pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=dense_backend, args=args, forced_token_ids=None)
+    dense = run_or_write_numerical_failure(stage="same_mask_dense_greedy_reference", pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=dense_backend, args=args, forced_token_ids=None, output_dir=args.output_dir, artifact_stem=artifact_stem, schema_version=schema_version, config=config, replay_source=replay_provenance)
     assert_no_runtime_mask_state(pipe.model)
     dense_summary = backend_summary(dense_backend, expected_heads=expected_heads, token_count=int(question_ids.shape[1]), args=args, require_ownership=False)
     print(f"Pass 2/3: all-head Route-A forced common-token continuation in layers {list(layers)}...")
     forced_backend = RouteAColdOwnershipAttentionBackendSet(pipe.model, None, **common)
-    forced = run_continuation(pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=forced_backend, args=args, forced_token_ids=dense["generated_token_ids"])
+    forced = run_or_write_numerical_failure(stage="route_a_forced_dense_token_continuation", pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=forced_backend, args=args, forced_token_ids=dense["generated_token_ids"], output_dir=args.output_dir, artifact_stem=artifact_stem, schema_version=schema_version, config=config, replay_source=replay_provenance)
     assert_no_runtime_mask_state(pipe.model)
     forced_summary = backend_summary(forced_backend, expected_heads=expected_heads, token_count=int(question_ids.shape[1]), args=args, require_ownership=True)
     print(f"Pass 3/3: all-head Route-A independent greedy continuation in layers {list(layers)}...")
     independent_backend = RouteAColdOwnershipAttentionBackendSet(pipe.model, None, **common)
-    independent = run_continuation(pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=independent_backend, args=args, forced_token_ids=None)
+    independent = run_or_write_numerical_failure(stage="route_a_independent_greedy_continuation", pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=independent_backend, args=args, forced_token_ids=None, output_dir=args.output_dir, artifact_stem=artifact_stem, schema_version=schema_version, config=config, replay_source=replay_provenance)
     assert_no_runtime_mask_state(pipe.model)
     independent_summary = backend_summary(independent_backend, expected_heads=expected_heads, token_count=int(question_ids.shape[1]), args=args, require_ownership=True)
     forced_steps = [
@@ -223,7 +246,7 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
         "config_hash": stable_hash(config),
         "request_id": request["request_id"],
         "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}),
-        "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": digest, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"]},
+        "replay_source": replay_provenance,
         "diagnostic": {
             "context_token_count": int(context_ids.shape[1]), "question_token_count": int(question_ids.shape[1]), "max_new_tokens": args.max_new_tokens,
             "same_mask_dense_greedy_reference": {"generated_token_ids": dense["generated_token_ids"], "generated_token_ids_sha256": token_ids_digest(dense["generated_token_ids"]), **dense_summary},

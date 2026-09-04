@@ -422,6 +422,15 @@ relations before the budget-512 page-state counterpart. This remains untimed;
 its only purpose is to close the all-layer semantic gap before a true storage-
 substitution measurement implementation.
 
+An all-layer execution-dtype ULP breach must not be handled by increasing the
+limit blindly. The runner persists a scalar-only failure diagnostic naming the
+layer, KV/query head, cache position, dtype, maximum-ULP component, its local
+ULP spacing, and the paired FP32 difference. First determine whether the breach
+is a near-zero ULP amplification with a small FP32 difference or a material
+same-mask numerical error; then choose an explicit tolerance policy or fix the
+reference reduction. The failed output directory remains immutable; rerun only
+into a fresh directory after the diagnostic code is synchronized.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

@@ -1116,6 +1116,15 @@ scope and the current 8-token request, a complete source is expected to contain
 source. It remains an untimed semantic diagnostic, not a timing, memory,
 quality, or hardware measurement.
 
+If a Route-A execution-dtype ULP guard fails, the multi-layer runners write
+`kvzap-route-a-executed-dtype-guard-failure-1.0` to the fresh output directory
+before re-raising. It stores only the stage plus scalar layer/KV-head/query-head
+/cache-position context, execution dtype, worst-component index, FP32 and
+executed-dtype differences, ULP size, and configured limit. The FP32 same-mask
+guard has already passed at that point. This diagnostic is for locating a
+numerical tolerance breach; it neither loosens the guard nor serializes K/V,
+attention, activation, or full-logits tensors.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35

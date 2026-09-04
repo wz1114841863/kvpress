@@ -205,6 +205,23 @@ def test_executed_dtype_ulp_limit_is_explicit_and_validated():
         raise AssertionError("non-positive execution-dtype ULP limit was accepted")
 
 
+def test_executed_dtype_failure_details_are_scalar_and_locate_the_component():
+    backend = RouteAPolicyAttentionBackend(fake_model(2), object(), layer=1, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6, max_executed_dtype_ulps=16.0)
+    dense = torch.tensor([0.015625, 1.0], dtype=torch.float16)
+    route = dense.clone()
+    for _ in range(17):
+        route[0] = torch.nextafter(route[0], torch.tensor(float("inf"), dtype=route.dtype))
+    details = backend._executed_dtype_failure_details(route=route, dense=dense, route_fp32=route.float(), dense_fp32=dense.float(), kv_head=3, query_head=12, cache_position=999)
+    assert details["layer"] == 1
+    assert details["kv_head"] == 3
+    assert details["query_head"] == 12
+    assert details["cache_position"] == 999
+    assert details["component_index"] == [0]
+    assert details["max_executed_dtype_ulps"] == 17.0
+    assert details["max_executed_dtype_ulps_is_infinite"] is False
+    assert details["max_fp32_abs_difference"] > 0
+
+
 def test_backend_set_keeps_independent_layer_state_and_aggregates_coverage():
     backend_set = RouteAPolicyAttentionBackendSet(fake_model(2), object(), layers=(0, 1), kv_head=None, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
     keys = torch.arange(16, dtype=torch.float32).reshape(1, 2, 4, 2)
