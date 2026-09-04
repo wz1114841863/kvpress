@@ -1103,6 +1103,23 @@ Synchronize the fresh A4134 directory after completion or its scalar failure
 artifact after a stop. Review per-layer/head page counts and all numerical/state
 guards before any timing experiment.
 
+## A4.1.3.0 — no-model storage-ownership contract
+
+This gate is local and requires no Qwen model. It is a prerequisite for a
+future real `DynamicCache` adapter, not a memory measurement.
+
+```bash
+RUN_ID=route_a4135_storage_contract_local_02
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s tests/test_kvzap_route_a_storage_contract.py
+.venv/bin/python tools/run_kvzap_route_a4135_storage_contract_gate.py \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+The manifest must retain `native_selected_cold_slots_physically_freed: false`.
+Do not run this on the remote model host or interpret it as allocator/HBM/timing
+evidence.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

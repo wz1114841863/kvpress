@@ -587,6 +587,17 @@ it does not require pending. It retains the all-layer replayed-mask,
 quantization-aware, ownership, forced, and independent contracts. Do not treat
 its result as timing, allocator, HBM, quality, hardware, or RTL evidence.
 
+### A4.1.3.0 implementation — logical storage-ownership contract
+
+`kvpress/route_a_storage_contract.py` now formalizes the future cache-adapter
+precondition: preserve logical cache length and native hot positions while
+Route-A owns every mature retained record in pending/packed state and drops the
+rest under the original mask. The no-model A4135 gate passed both pending and
+multi-page/full-page/tail synthetic cases. It explicitly reports native cold
+slots as not physically freed, so it neither replaces `DynamicCache` nor
+authorizes allocator/timing claims. The next implementation must use this
+contract to build a real adapter, first at minimal layer/head scope.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

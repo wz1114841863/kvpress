@@ -506,6 +506,18 @@ quantization-aware cast guards, forced common-token and independent greedy
 relations, and bounded ULP recording. Pending is intentionally not required.
 Completion remains functional evidence only.
 
+### A4.1.3.0 — no-model true-storage ownership contract
+
+`kvpress/route_a_storage_contract.py` and
+`tools/run_kvzap_route_a4135_storage_contract_gate.py` establish the narrow
+precondition for a later adapter without pretending to free memory. They prove
+per selected head that logical cache length is preserved, native retention can
+be limited to the hot interval, and mature positions are exactly partitioned
+between Route-A pending/packed retained records and original-mask drops. The
+local synthetic gate passed budget-one pending and budget-512
+multi-page/full-page/tail cases. It records `physically_freed: false`; next is
+an adapter design/gate, not allocator or decode timing.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

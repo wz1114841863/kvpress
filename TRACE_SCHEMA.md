@@ -1197,6 +1197,17 @@ sealed full packed page, and nonempty tail page. It deliberately does not
 require pending staging, which can legitimately drain at this admission budget.
 It remains an untimed same-mask semantic gate.
 
+`kvzap-route-a4135-storage-ownership-contract-gate-1.0` is an A4.1.3.0
+no-model prerequisite for a future true cache adapter. For each selected KV
+head it verifies that native logical cache length equals Route-A
+`next_position`, native storage retains precisely the hot interval, and every
+mature position is partitioned into Route-A pending/packed retained storage or
+an intentional original-mask drop. It records releasable mature-cold logical
+token counts only. `native_selected_cold_slots_physically_freed` remains false:
+the contract neither mutates `DynamicCache` nor measures allocator/HBM/timing.
+Its local `route_a4135_storage_contract_local_01` gate passed pending budget-1
+and packed budget-512 synthetic cases, including multi-page/full-page/tail.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35
