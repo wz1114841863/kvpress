@@ -92,7 +92,9 @@ def test_cold_ownership_multi_token_bridge_replaces_selected_heads_causally_with
     keys = torch.arange(10, dtype=torch.float32).reshape(1, 1, 5, 2)
     values = keys + 10
     backend._keep_mask, backend._score_start = torch.ones(1, 1, 3, dtype=torch.bool), 0
-    backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 2, 3, 2), None), module, torch.ones(1, 2, 3, 2), keys[:, :, :3], values[:, :, :3], None, 0.0, scaling=1.0)
+    # Native Qwen output is [B,T,H,D].  Use H=4 and T=2 below so a mistaken
+    # [B,H,T,D] write cannot be hidden by equal dimensions.
+    backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 3, 4, 2), None), module, torch.ones(1, 4, 3, 2), keys[:, :, :3], values[:, :, :3], None, 0.0, scaling=1.0)
     assert torch.isnan(keys[0, 0, :2]).all()
     backend._keep_mask, backend._score_start = torch.ones(1, 1, 2, dtype=torch.bool), 3
     seen_safe_placeholder = []
@@ -101,11 +103,12 @@ def test_cold_ownership_multi_token_bridge_replaces_selected_heads_causally_with
         seen_safe_placeholder.append(True)
         assert torch.isfinite(safe_key).all() and torch.isfinite(safe_value).all()
         assert torch.equal(safe_key[0, 0], torch.zeros_like(safe_key[0, 0]))
-        return torch.full((1, 2, 2, 2), 7.0), None
+        return torch.full((1, 2, 4, 2), 7.0), None
 
-    query = torch.tensor([[[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]]])
+    query = torch.tensor([[[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]], [[1., 1.], [1., -1.]], [[-1., 1.], [1., 1.]]]])
     output, _weights = backend.attention(original, module, query, keys, values, None, 0.0, scaling=1.0)
     assert seen_safe_placeholder == [True]
+    assert output.shape == (1, 2, 4, 2)
     assert torch.isfinite(output).all()
     assert not torch.equal(output, torch.full_like(output, 7.0))
     assert backend.policy_multi_token_calls == 1

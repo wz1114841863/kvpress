@@ -486,6 +486,12 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
         native_output, native_weights = original(module, query, safe_key, safe_value, attention_mask, dropout, **kwargs)
         if not torch.isfinite(native_output).all():
             raise AssertionError("safe native multi-token attention produced a non-finite output")
+        expected_output_shape = (query.shape[0], q_len, heads, query.shape[-1])
+        if tuple(native_output.shape) != expected_output_shape:
+            raise AssertionError(
+                "safe native multi-token attention returned unexpected layout: "
+                f"got={tuple(native_output.shape)}, expected [B,T,H,D]={expected_output_shape}"
+            )
         route_output = native_output.clone()
         per_position_rows: dict[int, dict[int, list[tuple[torch.Tensor, torch.Tensor, int, torch.Tensor, torch.Tensor, float]]]] = {}
 
@@ -505,7 +511,11 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
                 _cast_abs, cast_ulps = self._cast_difference_in_ulps(route, dense)
                 if cast_ulps > self.max_executed_dtype_ulps:
                     raise AssertionError("multi-token Route-A executed-dtype output exceeds configured ULP limit")
-                route_output[0, query_head, offset] = route
+                # Qwen attention-interface outputs use [B, T, H, D], whereas
+                # its query input is [B, H, T, D].  Keeping this conversion
+                # explicit prevents a multi-token selected-head result from
+                # being written into the wrong token/head location.
+                route_output[0, offset, query_head] = route
                 per_head[mapped].append((route, dense, query_head, route_fp32, dense_fp32, cast_ulps))
             if any(not rows for rows in per_head.values()):
                 raise AssertionError("selected Route-A KV head had no multi-token query-head group")

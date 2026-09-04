@@ -605,7 +605,8 @@ softmax-tolerance conclusion.
 
 ```bash
 SOURCE_ID=route_a41_replay_source_layer0_budget1_01
-RUN_ID=route_a4124_multitoken_bridge_layer0_head6_budget1_01
+# Use a fresh ID: the earlier run stopped before emitting an accepted manifest.
+RUN_ID=route_a4124_multitoken_bridge_layer0_head6_budget1_layoutfix_01
 test ! -e "analysis/experiments/${RUN_ID}"
 .venv/bin/python -m pytest -q -s tests/test_kvzap_route_a_policy_backend.py tests/test_kvzap_route_a4123_first_decode_logits.py
 .venv/bin/python tools/run_kvzap_route_a4124_multitoken_bridge_gate.py \
