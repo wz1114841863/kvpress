@@ -488,6 +488,24 @@ hard FP32 same-mask check, and rejects any cast difference outside that explicit
 envelope with scalar-only context. Run budget one first; completion is not a
 budget-512, timing, allocator, quality, HBM, or hardware result.
 
+**Observed A4.1.2.13 budget-one result (2026-09-04):** the complete all-36
+budget-one gate passed with the immutable 268,992-event source. All 288
+layer/head selections consumed replay and bridged the question forward; FP32
+and quantization-aware cast guards, ownership, pending coverage, forced IDs,
+and independent greedy IDs passed. The seven formerly failing >16-ULP events
+remain recorded, not hidden. This authorizes the bounded multi-page state gate,
+not timing or allocator work.
+
+### A4.1.2.14 — all-layer budget-512 page-state gate
+
+`tools/run_kvzap_route_a4134_alllayer_quantization_aware_page_state_gate.py`
+is a separate schema/entrypoint that pins `admission_budget=512` and requires
+aggregate multi-page, full sealed page, and tail-page coverage before it loads
+the model. It retains all-layer replay/bridge/ownership, hard FP32 and
+quantization-aware cast guards, forced common-token and independent greedy
+relations, and bounded ULP recording. Pending is intentionally not required.
+Completion remains functional evidence only.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

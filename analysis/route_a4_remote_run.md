@@ -1068,6 +1068,41 @@ test ! -e "analysis/experiments/${RUN_ID}"
 If it fails, synchronize the fresh scalar failure artifact only. If it
 completes, synchronize the manifest before considering all-layer budget-512.
 
+## A4.1.2.14 — all-layer budget-512 quantization-aware page-state gate
+
+Use the same immutable all-layer source. The dedicated A4134 runner rejects
+any budget other than 512 and requires multi-page, full sealed page, and tail
+page flags; do not request pending staging here.
+
+```bash
+SOURCE_ID=route_a4130_replay_source_all_layers_01
+RUN_ID=route_a4134_all_layers_budget512_quantization_aware_page_state_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a_policy_backend.py \
+  tests/test_kvzap_route_a4129_multilayer_continuation.py
+.venv/bin/python tools/run_kvzap_route_a4134_alllayer_quantization_aware_page_state_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 512 \
+  --max-executed-dtype-ulps 16 \
+  --ulp-breach-sample-limit 8 \
+  --require-any-multi-page-packed \
+  --require-any-full-packed-page \
+  --require-any-tail-packed-page \
+  --top-k 8 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the fresh A4134 directory after completion or its scalar failure
+artifact after a stop. Review per-layer/head page counts and all numerical/state
+guards before any timing experiment.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

@@ -571,6 +571,22 @@ the independently rounded adjacent-BF16 case while still rejecting a cast error
 outside the FP32-plus-rounding envelope. It remains an all-layer, replayed-mask,
 budget-one semantic gate; do not begin budget-512 or timing before review.
 
+**A4.1.2.13 observed result (2026-09-04):** the all-36 budget-one gate
+completed against the 268,992-event source with full replay, bridge, ownership,
+pending, FP32, and quantization-aware hard-guard coverage. Forced and
+independent eight-token outputs matched same-mask dense. The seven >16-ULP
+events remained serialized as observations. This clears only the next page-state
+semantic scope.
+
+### A4.1.2.14 implementation — all-layer budget-512 page state
+
+`tools/run_kvzap_route_a4134_alllayer_quantization_aware_page_state_gate.py`
+is the separate budget-512 entrypoint. It hard-pins admission budget 512 and
+requires multi-page, sealed-full-page, and tail-page flags at CLI validation;
+it does not require pending. It retains the all-layer replayed-mask,
+quantization-aware, ownership, forced, and independent contracts. Do not treat
+its result as timing, allocator, HBM, quality, hardware, or RTL evidence.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

@@ -1181,6 +1181,22 @@ FP32 allowance, both local ULPs, and worst ratio. A pass is only a fixed-source
 /fixed-horizon numerical gate, not quality, timing, allocator, HBM, or hardware
 evidence.
 
+The completed A4133 budget-one artifact
+`route_a4133_all_layers_budget1_quantization_aware_continuation_01` matched the
+immutable 268,992-event source hash. All 36 layers and 288 KV heads consumed
+their 7,472-event streams, bridged 176 selected-head comparisons per layer, and
+passed FP32 plus quantization-aware hard guards and native-cold ownership. The
+forced and independent eight-token sequences matched same-mask dense. The
+recorded seven >16-ULP events remain observations under this hard envelope.
+
+`kvzap-route-a4134-alllayer-quantization-aware-page-state-gate-1.0` is the
+fresh budget-512 counterpart. It fixes all layers, all heads, admission budget
+512, ULP `record_only`, and quantization-aware hard casting. Before model
+loading it requires three aggregate Route-A state flags: multi-page packed,
+sealed full packed page, and nonempty tail page. It deliberately does not
+require pending staging, which can legitimately drain at this admission budget.
+It remains an untimed same-mask semantic gate.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35

@@ -2,7 +2,7 @@ from argparse import Namespace
 
 import pytest
 
-from tools.run_kvzap_route_a4129_multilayer_continuation_diagnostic import any_route_a_state, assert_scope, assert_scope_selector, require_state_coverage, resolve_diagnostic_layers
+from tools.run_kvzap_route_a4129_multilayer_continuation_diagnostic import any_route_a_state, assert_entrypoint_contract, assert_scope, assert_scope_selector, require_state_coverage, resolve_diagnostic_layers
 
 
 def coverage(*, pending: bool, multi_page: bool, full_page: bool, tail: int):
@@ -40,3 +40,12 @@ def test_layer_scope_resolves_all_and_rejects_non_all_a4130_scope():
     assert_scope_selector(["all"], scope="all_layers")
     with pytest.raises(ValueError, match="literal"):
         assert_scope_selector(["0", "1", "2", "3"], scope="all_layers")
+
+
+def test_entrypoint_contract_pins_budget_and_required_page_state_flags():
+    args = Namespace(admission_budget=512, require_any_multi_page_packed=True, require_any_full_packed_page=True, require_any_tail_packed_page=True)
+    assert_entrypoint_contract(args=args, phase="A4.1.2.14", required_admission_budget=512, required_state_flags=("require_any_multi_page_packed", "require_any_full_packed_page", "require_any_tail_packed_page"))
+    with pytest.raises(ValueError, match="admission-budget 512"):
+        assert_entrypoint_contract(args=Namespace(**{**vars(args), "admission_budget": 1}), phase="A4.1.2.14", required_admission_budget=512, required_state_flags=())
+    with pytest.raises(ValueError, match="require-any-tail-packed-page"):
+        assert_entrypoint_contract(args=Namespace(**{**vars(args), "require_any_tail_packed_page": False}), phase="A4.1.2.14", required_admission_budget=512, required_state_flags=("require_any_tail_packed_page",))

@@ -144,6 +144,15 @@ def requirement(*, requested: bool, satisfied: bool) -> dict[str, bool | None]:
     return {"requested": requested, "satisfied": satisfied if requested else None}
 
 
+def assert_entrypoint_contract(*, args: argparse.Namespace, phase: str, required_admission_budget: int | None, required_state_flags: tuple[str, ...]) -> None:
+    """Pin a narrow stage's budget and state coverage before model loading."""
+    if required_admission_budget is not None and args.admission_budget != required_admission_budget:
+        raise ValueError(f"{phase} requires --admission-budget {required_admission_budget}")
+    for flag in required_state_flags:
+        if not getattr(args, flag):
+            raise ValueError(f"{phase} requires --{flag.replace('_', '-')}")
+
+
 def backend_summary(backend_set, *, expected_heads: dict[int, tuple[int, ...]], token_count: int, args: argparse.Namespace, require_ownership: bool) -> dict[str, Any]:
     if require_ownership:
         backend_set.assert_ownership_guard_complete()
@@ -186,7 +195,7 @@ def run_or_write_numerical_failure(*, stage: str, pipe, context_ids: torch.Tenso
         raise AssertionError(f"{error}; diagnostic={path}") from error
 
 
-def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: str = "three_layer", artifact_stem: str = "a4129_multilayer_continuation", execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off") -> None:
+def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: str = "three_layer", artifact_stem: str = "a4129_multilayer_continuation", execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", required_admission_budget: int | None = None, required_state_flags: tuple[str, ...] = ()) -> None:
     if scope == "three_layer":
         default_target_layers, target_layer_help = ["0", "18", "35"], "Initial multi-layer gate is exactly: 0 18 35."
     elif scope == "all_layers":
@@ -204,6 +213,7 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
         raise ValueError(f"this entrypoint requires --execution-dtype-ulp-mode {execution_dtype_ulp_mode}")
     if args.execution_dtype_close_mode != execution_dtype_close_mode:
         raise ValueError(f"this entrypoint requires --execution-dtype-close-mode {execution_dtype_close_mode}")
+    assert_entrypoint_contract(args=args, phase=phase, required_admission_budget=required_admission_budget, required_state_flags=required_state_flags)
     assert_scope_selector(args.target_layers, scope=scope, phase=phase)
     if args.output_dir.exists():
         raise FileExistsError(f"output directory already exists: {args.output_dir}")
