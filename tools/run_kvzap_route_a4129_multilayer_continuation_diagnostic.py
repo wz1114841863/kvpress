@@ -14,7 +14,7 @@ from transformers import pipeline
 
 from kvpress.route_a_continuation_diagnostic import apply_route_a_state_guard, first_token_mismatch, prefix_equal_before_step
 from kvpress.route_a_measurement import initialize_output_directory, require_cuda_device
-from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackendSet, RouteANumericalGuardError
+from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeGuardError
 from kvpress.route_a_replay import sha256_file
 from tools.export_kvzap_predictor_trace import GATE_A_PREDICTOR_REVISION, GATE_B_MODEL_REVISION, assert_no_runtime_mask_state, get_git_commit, stable_hash
 from tools.run_kvzap_route_a4123_first_decode_logits_diagnostic import logit_summary, paired_logit_relation
@@ -26,7 +26,7 @@ from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, bui
 A4129_SCHEMA = "kvzap-route-a4129-multilayer-continuation-diagnostic-1.0"
 
 
-def parse_args(*, phase: str, default_target_layers: list[str], target_layer_help: str, default_execution_dtype_ulp_mode: str) -> argparse.Namespace:
+def parse_args(*, phase: str, default_target_layers: list[str], target_layer_help: str, default_execution_dtype_ulp_mode: str, default_execution_dtype_close_mode: str) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=f"{phase} untimed all-head multi-layer forced/independent continuation diagnostic; not a benchmark.")
     request = parser.add_mutually_exclusive_group()
     request.add_argument("--preset", choices=PRESETS, default="retrieval")
@@ -56,6 +56,12 @@ def parse_args(*, phase: str, default_target_layers: list[str], target_layer_hel
         help="enforce fails on an execution-dtype ULP breach; record_only retains bounded scalar breach evidence while the FP32 same-mask guard remains enforced.",
     )
     parser.add_argument(
+        "--execution-dtype-close-mode",
+        choices=("off", "enforce"),
+        default=default_execution_dtype_close_mode,
+        help="off preserves legacy ULP-only behavior; enforce hard-checks the cast output with the declared rtol/atol before injecting it into Qwen.",
+    )
+    parser.add_argument(
         "--ulp-breach-sample-limit",
         type=int,
         default=8,
@@ -80,17 +86,17 @@ def resolve_diagnostic_layers(values: list[str], layer_count: int) -> tuple[int,
     return resolve_target_layers(values, layer_count)
 
 
-def assert_scope(layers: tuple[int, ...], *, layer_count: int, scope: str) -> None:
+def assert_scope(layers: tuple[int, ...], *, layer_count: int, scope: str, phase: str = "A4.1.2.10") -> None:
     if scope == "three_layer" and layers != (0, 18, 35):
         raise ValueError("A4.1.2.9 initial scope is exactly --target-layers 0 18 35")
     if scope == "all_layers" and layers != tuple(range(layer_count)):
-        raise ValueError("A4.1.2.10 scope requires --target-layers all")
+        raise ValueError(f"{phase} scope requires --target-layers all")
 
 
-def assert_scope_selector(values: list[str], *, scope: str) -> None:
+def assert_scope_selector(values: list[str], *, scope: str, phase: str = "A4.1.2.10") -> None:
     """Keep the all-layer gate auditable: no hand-enumerated substitute."""
     if scope == "all_layers" and values != ["all"]:
-        raise ValueError("A4.1.2.10 scope requires the literal --target-layers all")
+        raise ValueError(f"{phase} scope requires the literal --target-layers all")
 
 
 def expected_heads_by_layer(language_model, layers: tuple[int, ...]) -> dict[int, tuple[int, ...]]:
@@ -162,7 +168,7 @@ def run_or_write_numerical_failure(*, stage: str, pipe, context_ids: torch.Tenso
     """Persist scalar-only ULP-breach context before ending a fresh gate."""
     try:
         return run_continuation(pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=backend, args=args, forced_token_ids=forced_token_ids)
-    except RouteANumericalGuardError as error:
+    except RouteAExecutionDtypeGuardError as error:
         path = output_dir / f"{artifact_stem}_numerical_guard_failure.json"
         payload = {
             "schema_version": "kvzap-route-a-executed-dtype-guard-failure-1.0",
@@ -174,13 +180,13 @@ def run_or_write_numerical_failure(*, stage: str, pipe, context_ids: torch.Tenso
             "config": config,
             "replay_source": replay_source,
             "error": error.details,
-            "boundaries": ["Scalar-only numerical-guard failure diagnostic; no K/V, attention, activation, or full logits tensors are serialized.", "The FP32 same-mask guard ran before this execution-dtype ULP failure.", "This is not timing, allocator, HBM, quality, performance, or hardware evidence."],
+            "boundaries": ["Scalar-only numerical-guard failure diagnostic; no K/V, attention, activation, or full logits tensors are serialized.", "The FP32 same-mask guard ran before this execution-dtype failure.", "This is not timing, allocator, HBM, quality, performance, or hardware evidence."],
         }
         path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         raise AssertionError(f"{error}; diagnostic={path}") from error
 
 
-def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: str = "three_layer", artifact_stem: str = "a4129_multilayer_continuation", execution_dtype_ulp_mode: str = "enforce") -> None:
+def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: str = "three_layer", artifact_stem: str = "a4129_multilayer_continuation", execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off") -> None:
     if scope == "three_layer":
         default_target_layers, target_layer_help = ["0", "18", "35"], "Initial multi-layer gate is exactly: 0 18 35."
     elif scope == "all_layers":
@@ -192,10 +198,13 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
         default_target_layers=default_target_layers,
         target_layer_help=target_layer_help,
         default_execution_dtype_ulp_mode=execution_dtype_ulp_mode,
+        default_execution_dtype_close_mode=execution_dtype_close_mode,
     )
     if args.execution_dtype_ulp_mode != execution_dtype_ulp_mode:
         raise ValueError(f"this entrypoint requires --execution-dtype-ulp-mode {execution_dtype_ulp_mode}")
-    assert_scope_selector(args.target_layers, scope=scope)
+    if args.execution_dtype_close_mode != execution_dtype_close_mode:
+        raise ValueError(f"this entrypoint requires --execution-dtype-close-mode {execution_dtype_close_mode}")
+    assert_scope_selector(args.target_layers, scope=scope, phase=phase)
     if args.output_dir.exists():
         raise FileExistsError(f"output directory already exists: {args.output_dir}")
     if args.request_id and not args.input_jsonl:
@@ -212,7 +221,7 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
         raise ValueError("loaded model revision differs from frozen revision")
     language_model = pipe.model.model.language_model if hasattr(pipe.model.model, "language_model") else pipe.model.model
     layers = resolve_diagnostic_layers(args.target_layers, len(language_model.layers))
-    assert_scope(layers, layer_count=len(language_model.layers), scope=scope)
+    assert_scope(layers, layer_count=len(language_model.layers), scope=scope, phase=phase)
     args.resolved_target_layers = list(layers)
     expected_heads = expected_heads_by_layer(language_model, layers)
     args.resolved_target_kv_heads_by_layer = {str(layer): list(heads) for layer, heads in expected_heads.items()}
@@ -226,10 +235,17 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
     config["replay_event_file_sha256"] = digest
     boundaries = ["Untimed fixed-length paired continuation; no timing or profiler data.", "Forced continuation uses dense generated token IDs as common inputs; independent greedy continuation can diverge after its first mismatch.", "No quality, allocator, HBM, physical-memory, throughput, energy, area, hardware, or RTL claim."]
     if args.execution_dtype_ulp_mode == "record_only":
-        boundaries.append("Execution-dtype ULP breaches are scalar-recorded rather than enforced; the FP32 same-mask guard remains enforced. This diagnostic is not a semantic acceptance gate.")
+        boundaries.append(
+            "Execution-dtype ULP breaches are scalar-recorded rather than enforced. "
+            + (
+                "The FP32 same-mask and scale-aware executed-dtype rtol/atol guards remain hard."
+                if args.execution_dtype_close_mode == "enforce"
+                else "The FP32 same-mask guard remains hard; this diagnostic is not a semantic acceptance gate."
+            )
+        )
     initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit(), record_name=f"{artifact_stem}_started.json", schema_version=schema_version, boundaries=boundaries)
     replay_provenance = {"directory": str(args.replay_source_dir), "event_file_sha256": digest, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"]}
-    common = dict(layers=layers, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, execution_dtype_ulp_mode=args.execution_dtype_ulp_mode, ulp_breach_sample_limit=args.ulp_breach_sample_limit, replay_mask_events=events)
+    common = dict(layers=layers, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, execution_dtype_ulp_mode=args.execution_dtype_ulp_mode, execution_dtype_close_mode=args.execution_dtype_close_mode, ulp_breach_sample_limit=args.ulp_breach_sample_limit, replay_mask_events=events)
     print(f"Pass 1/3: all-head causal same-mask dense greedy reference in layers {list(layers)}...")
     dense_backend = DenseSameMaskAttentionBackendSet(pipe.model, None, **common)
     dense = run_or_write_numerical_failure(stage="same_mask_dense_greedy_reference", pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=dense_backend, args=args, forced_token_ids=None, output_dir=args.output_dir, artifact_stem=artifact_stem, schema_version=schema_version, config=config, replay_source=replay_provenance)
@@ -260,6 +276,20 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
         "any_full_packed_page": requirement(requested=args.require_any_full_packed_page, satisfied=any_route_a_state(forced_coverage, "ever_sealed_packed_page")),
         "any_tail_packed_page": requirement(requested=args.require_any_tail_packed_page, satisfied=any_route_a_state(forced_coverage, "max_packed_tail_tokens")),
     }
+    manifest_boundaries = [
+        "Untimed fixed-length semantic continuation diagnostic, not a performance result.",
+        "Forced common-token logits are paired while inputs remain identical; independent rows after a mismatch are output-impact diagnostics, not same-input numerical comparisons.",
+        "This does not measure quality, Full-KV equivalence, allocator memory, HBM traffic, throughput, energy, area, hardware acceleration, or RTL.",
+    ]
+    if args.execution_dtype_ulp_mode == "record_only":
+        manifest_boundaries.append(
+            "Execution-dtype ULP breaches were record-only. "
+            + (
+                "The FP32 same-mask and scale-aware executed-dtype rtol/atol guards remained hard."
+                if args.execution_dtype_close_mode == "enforce"
+                else "The FP32 same-mask guard remained hard, but this run is diagnostic evidence rather than an acceptance gate."
+            )
+        )
     manifest = {
         "schema_version": schema_version,
         "status": "complete",
@@ -286,15 +316,12 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
             "fp32_same_mask_guard_enforced": True,
             "execution_dtype_ulp_mode": args.execution_dtype_ulp_mode,
             "execution_dtype_ulp_breaches_enforced": args.execution_dtype_ulp_mode == "enforce",
+            "execution_dtype_scale_aware_close_mode": args.execution_dtype_close_mode,
+            "execution_dtype_scale_aware_close_enforced": args.execution_dtype_close_mode == "enforce",
             "native_dense_cold_slots_physically_freed": False,
         },
         "guard_requirements": requirements,
-        "boundaries": [
-            "Untimed fixed-length semantic continuation diagnostic, not a performance result.",
-            "Forced common-token logits are paired while inputs remain identical; independent rows after a mismatch are output-impact diagnostics, not same-input numerical comparisons.",
-            "This does not measure quality, Full-KV equivalence, allocator memory, HBM traffic, throughput, energy, area, hardware acceleration, or RTL.",
-            *( ["Execution-dtype ULP breaches were record-only. The FP32 same-mask guard remained hard, but this run is diagnostic evidence rather than an acceptance gate."] if args.execution_dtype_ulp_mode == "record_only" else [] ),
-        ],
+        "boundaries": manifest_boundaries,
         "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__),
     }
     path = args.output_dir / f"{artifact_stem}_manifest.json"

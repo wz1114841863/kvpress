@@ -1149,6 +1149,19 @@ serializes K/V, attention, activation, or full-logit tensors. An A4131
 manifest is diagnostic evidence of the distribution and not an all-36 semantic
 acceptance, quality, memory, timing, or hardware result.
 
+`kvzap-route-a4132-alllayer-scale-aware-continuation-gate-1.0` is the strict
+follow-up. It fixes `--execution-dtype-ulp-mode record_only` so ULP remains a
+reported locality diagnostic, but fixes `--execution-dtype-close-mode enforce`.
+For every selected output vector actually cast and injected into Qwen, it hard
+executes `torch.testing.assert_close(route_cast, dense_cast, rtol, atol)` after
+the existing FP32 same-mask guard. A failure writes the existing scalar-only
+`kvzap-route-a-executed-dtype-guard-failure-1.0` artifact with
+`guard_kind: scale_aware_executed_dtype_close`, tolerance ratio, allowed and
+observed cast differences, plus location; it does not serialize tensors. A
+completed A4132 run establishes only this fixed-source/fixed-horizon all-layer
+scale-aware execution-dtype guard, not quality or a timing/memory/hardware
+result.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35

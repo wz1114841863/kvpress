@@ -544,6 +544,19 @@ only bounded scalar ULP-breach fields (count, maxima, and sample-limited
 locations/differences). Its completion is not all-layer acceptance and does not
 authorize budget-512, timing, allocator, HBM, quality, hardware, or RTL claims.
 
+### A4.1.2.12 implementation — hard scale-aware cast guard
+
+`tools/run_kvzap_route_a4132_alllayer_scale_aware_continuation_gate.py` is the
+next strict rerun, using the immutable all-layer source and budget one. It
+retains A4131's scalar ULP distribution but makes a second guard hard: after
+casting Route-A and same-mask dense outputs to the execution dtype, the actual
+vectors injected into Qwen must pass the declared `torch.testing.assert_close`
+`rtol`/`atol`. A failure is scalar-only and identifies the greatest
+observed/allowed tolerance ratio. This is a principled replacement for using a
+fixed local-ULP count near zero as the sole hard criterion; it is not a relaxed
+tolerance, a quality result, or permission for budget-512/timing work until its
+fresh output is reviewed.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

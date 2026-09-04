@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import torch
 from transformers import DynamicCache
 
-from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, compare_original_mask_events
+from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, compare_original_mask_events
 
 
 def fake_model(layer_count=1):
@@ -247,6 +247,23 @@ def test_record_only_ulp_mode_retains_bounded_scalar_breaches_without_weakening_
         assert error.details == details
     else:
         raise AssertionError("enforce mode accepted an execution-dtype ULP breach")
+
+
+def test_scale_aware_executed_dtype_guard_is_optional_by_default_and_hard_when_enabled():
+    backend = RouteAPolicyAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-4, atol=1e-6, execution_dtype_close_mode="enforce")
+    dense = torch.tensor([1.0], dtype=torch.float16)
+    route = torch.tensor([1.125], dtype=torch.float16)
+    try:
+        backend._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route.float(), dense_fp32=dense.float(), kv_head=0, query_head=1, cache_position=2)
+    except RouteAExecutionDtypeCloseGuardError as error:
+        assert error.details["guard_kind"] == "scale_aware_executed_dtype_close"
+        assert error.details["max_tolerance_ratio"] > 1.0
+        assert error.details["executed_dtype_abs_difference_at_max_ratio"] > error.details["executed_dtype_allowed_difference_at_max_ratio"]
+    else:
+        raise AssertionError("scale-aware executed-dtype guard accepted a material cast mismatch")
+
+    legacy = RouteAPolicyAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-4, atol=1e-6)
+    legacy._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route.float(), dense_fp32=dense.float(), kv_head=0, query_head=1, cache_position=2)
 
 
 def test_backend_set_keeps_independent_layer_state_and_aggregates_coverage():

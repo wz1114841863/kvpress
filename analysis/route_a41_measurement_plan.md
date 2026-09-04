@@ -457,6 +457,21 @@ state-semantic violation. Do not start all-layer budget-512, timing, allocator,
 or profiler experiments from this result until the distribution is reviewed and
 an explicit numerical policy is recorded.
 
+### A4.1.2.12 — all-layer hard scale-aware executed-dtype guard
+
+`tools/run_kvzap_route_a4132_alllayer_scale_aware_continuation_gate.py` turns
+the A4131 evidence into a strict, scale-aware policy: FP32 same-mask remains
+hard; BF16/FP16 ULP counts remain bounded observations; and the cast vector
+that is actually inserted into the model must independently pass
+`torch.testing.assert_close` under the same declared `rtol`/`atol`. The
+entrypoint fixes all layers, ULP `record_only`, and cast-close `enforce`; users
+cannot turn either selection into a partial/all-ULP-only gate through CLI
+overrides. A cast-close failure writes scalar-only location, observed/allowed
+difference, and tolerance-ratio context. Run budget one first. Only if it
+completes with replay, bridge, ownership, pending, forced, and independent
+guards may the separately scoped all-layer budget-512 page-state gate be
+considered; it still does not authorize timing or profiler work by itself.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new
