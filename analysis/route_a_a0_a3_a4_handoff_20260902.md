@@ -408,6 +408,15 @@ replaced layer-0 attention and propagates through unchanged layers, or exposes
 a cross-head/state error. Only after that localization passes may simultaneous
 ownership expand to `{0,18,35}`.
 
+**A4.1.2.7 implementation:**
+`tools/run_kvzap_route_a4127_allhead_activation_diagnostic.py` is the bounded
+all-head downstream locator. It runs paired same-mask dense and Route-A layer-0
+all-head question forwards, captures transient output activations for all 36
+decoder layers, and serializes only per-layer/per-question-token scalar
+relations. It also replaces vacuous guard booleans with explicit requested /
+satisfied metadata. Run budget one pending coverage before budget 512 multi-
+page coverage; inspect this localization before any multi-layer ownership work.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

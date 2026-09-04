@@ -1026,3 +1026,15 @@ Moreover, schema 1.3 records an unrequested guard as true through the formula
 `not requested or satisfied`; consumers must inspect its config request flags
 and coverage rows. A later schema must record request and satisfaction as
 separate fields; completed artifact contents remain immutable.
+
+`kvzap-route-a4127-allhead-activation-diagnostic-1.0` is the follow-on
+untimed locator for that all-head final-logit drift. It requires
+`target_kv_head=all`, captures every decoder layer only during the question
+forward, and serializes bounded scalar dense/Route-A activation relations per
+layer and question-token offset. Each relation records shape, finite state,
+max/mean absolute difference, relative L2 difference, and one maximum-location
+descriptor; captured tensors are transient and must not be written. Its
+`guard_requirements` records `requested` separately from `satisfied` (or null
+when unrequested), replacing schema 1.3's vacuous-true encoding. Hooked output
+is a semantic diagnostic, never a timing, allocator, HBM, physical-memory, or
+hardware measurement.

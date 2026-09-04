@@ -716,6 +716,63 @@ pass its explicit aggregate state guard. These are semantic prefix gates only;
 they are not all-layer, full-decode, timing, allocator, HBM, or hardware
 measurements.
 
+## A4.1.2.7 all-head downstream-activation diagnostic
+
+This tool registers temporary layer hooks and is therefore intentionally
+untimed. It saves scalar summaries only, never activation tensors. Run the
+pending configuration first; synchronize and inspect it before the page-boundary
+configuration.
+
+```bash
+SOURCE_ID=route_a41_replay_source_layer0_budget1_01
+RUN_ID=route_a4127_allheads_layer0_budget1_pending_activation_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a_activation_diagnostic.py \
+  tests/test_kvzap_route_a_policy_backend.py \
+  tests/test_kvzap_route_a4124_multitoken_bridge_gate.py \
+  tests/test_kvzap_route_a4123_first_decode_logits.py
+.venv/bin/python tools/run_kvzap_route_a4127_allhead_activation_diagnostic.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --require-any-pending \
+  --top-k 8 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+After reviewing the budget-one artifact, use a fresh ID for the page-boundary
+configuration:
+
+```bash
+RUN_ID=route_a4127_allheads_layer0_budget512_multipage_activation_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a4127_allhead_activation_diagnostic.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head all \
+  --admission-budget 512 \
+  --require-any-multi-page-packed \
+  --require-any-full-packed-page \
+  --require-any-tail-packed-page \
+  --top-k 8 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+The manifest must have a 36-layer scalar relation table, no serialized
+activation tensors, explicit guard request/satisfaction metadata, all eight
+heads with 22 comparisons each, and the requested aggregate state. It is not a
+timing, memory, HBM, quality, full-decode, or hardware experiment.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

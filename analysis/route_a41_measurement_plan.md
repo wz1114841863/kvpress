@@ -277,6 +277,18 @@ unchanged layers, or indicates an unintended cross-head/state mismatch. First
 repair the guard-request metadata in the new diagnostic schema. This remains
 untimed and is not a quality or performance experiment.
 
+**A4.1.2.7 implementation:**
+`tools/run_kvzap_route_a4127_allhead_activation_diagnostic.py` captures the
+36 decoder-layer outputs only for each paired question forward and writes no
+activation tensor. The result must first be run at budget one with aggregate
+pending coverage, then at budget 512 with aggregate multi-page/full-page/tail
+coverage. Review whether the first nonzero activation relation is layer 0 and
+whether later-layer growth is a continuous downstream propagation. An earlier
+layer difference, a nonfinite relation, missing layer capture, or missing
+requested state is a semantic failure requiring diagnosis before multi-layer
+ownership. First-argmax equality is recorded, not made a precondition, so a
+finite drift remains inspectable.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers
