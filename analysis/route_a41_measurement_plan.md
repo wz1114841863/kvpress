@@ -249,6 +249,34 @@ require every head to have every page state. This closes the same-layer
 cross-head interaction gap before expanding ownership semantics to multiple
 layers. Both runs remain untimed prefix diagnostics.
 
+**Observed A4.1.2.6 result (2026-09-04):** both
+`route_a4126_allheads_layer0_budget1_pending_01` and
+`route_a4126_allheads_layer0_budget512_multipage_01` completed with all eight
+heads and 22 bridge comparisons per head (176 per bridge). Budget one observed
+pending on heads 0, 1, 3, 5, and 6; budget 512 drained pending and observed
+head 6 with three packed pages, two full pages, and a 63-token tail. Native
+cold ownership and per-head numerical guards passed in both cases (maximum one
+execution-dtype ULP). However, valid same-mask dense versus Route-A final
+logits differed by `0.44921875` while retaining the first argmax. Do not expand
+ownership to multiple layers yet: this requires a downstream all-head
+accumulation diagnostic first. Also, schema 1.3's non-requested guard booleans
+are vacuously true (`not requested or satisfied`); use the config flags and
+coverage rows to interpret these two artifacts, and revise future schema output
+to record requested and satisfied separately without editing them.
+
+### Next semantic objective — all-head downstream-logit accumulation diagnostic
+
+With the same request, replay source, layer-0 all-head selection, and both
+admission budgets, capture bounded per-layer/per-question-token activation
+relations for the paired dense and Route-A forwards. Store scalar summaries
+only (shape, finite state, max/mean absolute difference, relative L2, and a
+bounded maximum-location descriptor); never serialize hidden-state tensors.
+The purpose is to determine whether the 0.449 final-logit delta originates at
+the layer-0 post-attention output and predictably propagates through later
+unchanged layers, or indicates an unintended cross-head/state mismatch. First
+repair the guard-request metadata in the new diagnostic schema. This remains
+untimed and is not a quality or performance experiment.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers

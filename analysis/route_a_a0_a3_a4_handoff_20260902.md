@@ -385,6 +385,29 @@ requirements are necessary because replay evidence shows that not every head
 retains enough mature cold tokens for a full page. Do not proceed to multi-layer
 ownership or timing until both same-layer all-head semantic gates pass.
 
+**A4.1.2.6 result and hold:**
+`route_a4126_allheads_layer0_budget1_pending_01` and
+`route_a4126_allheads_layer0_budget512_multipage_01` each resolved all eight
+layer-0 KV heads and produced 22 comparisons per head. The first observed
+pending on five heads; the second observed head 6 with three packed pages, two
+full pages, and a 63-token tail. Ownership poisoning and the per-attention
+same-mask contract passed (at most one execution-dtype ULP). But the paired
+same-mask dense/Route-A final logits differed by `0.44921875`, although first
+argmax remained equal. This is compatible with downstream amplification of
+many one-ULP replacements but is not yet localized; do not extend to multi-
+layer ownership. The schema-1.3 manifest also encodes unrequested page guards
+as vacuous true values; read requested state from config and observed state from
+coverage, and correct this metadata in the next diagnostic schema without
+editing the completed artifacts.
+
+**Next implementation boundary:** add an untimed all-head downstream
+accumulation diagnostic that captures only bounded activation-difference
+summaries per question token and transformer layer for paired same-mask dense
+and Route-A forwards. It must establish whether the delta starts after the
+replaced layer-0 attention and propagates through unchanged layers, or exposes
+a cross-head/state error. Only after that localization passes may simultaneous
+ownership expand to `{0,18,35}`.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

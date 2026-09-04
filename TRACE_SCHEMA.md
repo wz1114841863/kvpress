@@ -1017,3 +1017,12 @@ the named state. This is intentionally different from the existing
 every-selected-head page flags: low-retention heads may correctly have no cold
 page. All-head native K/V poisoning remains an observation guard, not physical
 cache deallocation or a performance measurement.
+
+The first all-head schema-1.3 artifacts passed ownership and per-attention
+guards but reported a `0.44921875` paired final-logit delta, despite at most one
+execution-dtype ULP at each selected attention output and an unchanged first
+argmax. This is a diagnostic hold, not a failure proof or a multi-layer pass.
+Moreover, schema 1.3 records an unrequested guard as true through the formula
+`not requested or satisfied`; consumers must inspect its config request flags
+and coverage rows. A later schema must record request and satisfaction as
+separate fields; completed artifact contents remain immutable.
