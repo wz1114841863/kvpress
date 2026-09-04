@@ -601,6 +601,24 @@ the dense-vs-Route-A logit relation. A nonfinite Route-A result with no policy
 decode calls is a native fallback/ownership-scope failure, not a performance or
 softmax-tolerance conclusion.
 
+## A4.1.2.4 causal multi-token bridge gate
+
+```bash
+SOURCE_ID=route_a41_replay_source_layer0_budget1_01
+RUN_ID=route_a4124_multitoken_bridge_layer0_head6_budget1_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s tests/test_kvzap_route_a_policy_backend.py tests/test_kvzap_route_a4123_first_decode_logits.py
+.venv/bin/python tools/run_kvzap_route_a4124_multitoken_bridge_gate.py \
+  --preset retrieval --context-repetitions 12 --max-new-tokens 8 \
+  --target-layer 0 --target-kv-head 6 --admission-budget 1 --top-k 8 --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the fresh directory. It must show question-token bridge coverage,
+finite dense/Route-A logits, equal first argmax, prefix replay accounting, and
+no physical-slot-freeing claim.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

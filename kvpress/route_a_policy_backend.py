@@ -230,7 +230,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             "complete": self._replay_seen == set(self._replay_mask_events),
         }
 
-    def _append_state(self, key: torch.Tensor, value: torch.Tensor) -> None:
+    def _append_state(self, key: torch.Tensor, value: torch.Tensor, *, token_by_token: bool = False, after_token_append: Callable[[int, int], None] | None = None) -> None:
         if self._keep_mask is None or self._score_start is None:
             raise AssertionError("Route-A attention was called without a matching score capture")
         keep_mask, start = self._keep_mask, self._score_start
@@ -244,7 +244,19 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             self.state = self._new_state(heads=key.shape[1], head_dim=key.shape[-1])
         phase = "prefill" if q_len > 1 else "decode"
         measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"{phase}_{name}", operation)
-        self.state.append(key[0, :, start:start + q_len], value[0, :, start:start + q_len], keep_mask[0], start_position=start, component_measure=measure)
+        if token_by_token:
+            for offset in range(q_len):
+                self.state.append(
+                    key[0, :, start + offset:start + offset + 1],
+                    value[0, :, start + offset:start + offset + 1],
+                    keep_mask[0, :, offset:offset + 1],
+                    start_position=start + offset,
+                    component_measure=measure,
+                )
+                if after_token_append is not None:
+                    after_token_append(offset, start + offset)
+        else:
+            self.state.append(key[0, :, start:start + q_len], value[0, :, start:start + q_len], keep_mask[0], start_position=start, component_measure=measure)
         self._keep_mask = self._score_start = None
 
     def _new_state(self, *, heads: int, head_dim: int) -> RouteAPackedAttentionState:
@@ -385,6 +397,8 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
         self.native_cold_guard_checks = 0
         self.native_cold_prior_read_guard_checks = 0
         self.native_cold_poison_writes = 0
+        self.policy_multi_token_calls = 0
+        self.policy_multi_token_tokens = 0
 
     def _cold_end(self) -> int:
         if self.state is None:
@@ -432,6 +446,8 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
             "native_selected_cold_values_poisoned": self.native_cold_poison_writes > 0,
             "native_selected_cold_guard_checks": self.native_cold_guard_checks,
             "native_selected_cold_prior_read_guard_checks": self.native_cold_prior_read_guard_checks,
+            "policy_multi_token_calls": self.policy_multi_token_calls,
+            "policy_multi_token_tokens": self.policy_multi_token_tokens,
             "native_cold_slots_physically_freed": False,
         }
 
@@ -441,12 +457,88 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
         if self.native_cold_poison_writes == 0 or self.native_cold_prior_read_guard_checks == 0:
             raise AssertionError("cold-ownership gate did not poison and re-check native selected cold K/V")
 
+    def _multi_token_bridge(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
+        """Replace selected heads causally while native attention serves others.
+
+        ``key`` already contains the whole multi-token query chunk.  Route-A
+        state is therefore advanced one token at a time before each selected
+        query is evaluated, preventing a query from seeing future K/V. Native
+        attention receives zero placeholders for every selected KV head and its
+        selected outputs are overwritten, so it cannot consume poisoned cold
+        values while still computing unselected heads efficiently.
+        """
+        if self.state is None or self._keep_mask is None or self._score_start is None:
+            raise AssertionError("multi-token ownership bridge requires captured Route-A state")
+        if query.shape[0] != 1 or key.ndim != 4 or value.shape != key.shape:
+            raise AssertionError("multi-token ownership bridge requires batch-one [B,H,T,D] K/V")
+        heads, kv_heads, q_len = query.shape[1], key.shape[1], query.shape[2]
+        if q_len <= 1 or heads % kv_heads:
+            raise AssertionError("invalid multi-token Route-A GQA shape")
+        if self._keep_mask.shape[-1] != q_len:
+            raise AssertionError("captured mask length differs from multi-token query length")
+        selected_heads = self.selected_kv_heads(kv_heads)
+        groups = heads // kv_heads
+        scaling = float(kwargs.get("scaling", getattr(module, "scaling", 1.0)))
+        safe_key, safe_value = key.clone(), value.clone()
+        for head in selected_heads:
+            safe_key[0, head].zero_()
+            safe_value[0, head].zero_()
+        native_output, native_weights = original(module, query, safe_key, safe_value, attention_mask, dropout, **kwargs)
+        if not torch.isfinite(native_output).all():
+            raise AssertionError("safe native multi-token attention produced a non-finite output")
+        route_output = native_output.clone()
+        per_position_rows: dict[int, dict[int, list[tuple[torch.Tensor, torch.Tensor, int, torch.Tensor, torch.Tensor, float]]]] = {}
+
+        def append_and_replace(offset: int, position: int) -> None:
+            if self.state is None:
+                raise AssertionError("Route-A state disappeared during multi-token bridge")
+            per_head: dict[int, list[tuple[torch.Tensor, torch.Tensor, int, torch.Tensor, torch.Tensor, float]]] = {head: [] for head in selected_heads}
+            for query_head in range(heads):
+                mapped = query_head // groups
+                if mapped not in selected_heads:
+                    continue
+                q = query[0, query_head, offset]
+                route_fp32 = self.state.attention(q * scaling, head=mapped)
+                dense_fp32 = dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped))
+                torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol)
+                route, dense = route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)
+                _cast_abs, cast_ulps = self._cast_difference_in_ulps(route, dense)
+                if cast_ulps > self.max_executed_dtype_ulps:
+                    raise AssertionError("multi-token Route-A executed-dtype output exceeds configured ULP limit")
+                route_output[0, query_head, offset] = route
+                per_head[mapped].append((route, dense, query_head, route_fp32, dense_fp32, cast_ulps))
+            if any(not rows for rows in per_head.values()):
+                raise AssertionError("selected Route-A KV head had no multi-token query-head group")
+            per_position_rows[position] = per_head
+
+        self._append_state(key, value, token_by_token=True, after_token_append=append_and_replace)
+        for position, by_head in sorted(per_position_rows.items()):
+            for head, rows in by_head.items():
+                selected = self.state.state_summary(head)
+                selected.update({
+                    "cache_position": position,
+                    "layer": self.layer,
+                    "kv_head": head,
+                    "query_head_count": len(rows),
+                    "max_abs_difference": max(float((route - dense).abs().max().item()) for route, dense, _query_head, _route_fp32, _dense_fp32, _cast_ulps in rows),
+                    "max_abs_difference_fp32": max(float((route_fp32 - dense_fp32).abs().max().item()) for _route, _dense, _query_head, route_fp32, dense_fp32, _cast_ulps in rows),
+                    "max_executed_dtype_ulps": max(cast_ulps for _route, _dense, _query_head, _route_fp32, _dense_fp32, cast_ulps in rows),
+                    "executed_dtype_ulp_limit": self.max_executed_dtype_ulps,
+                    "multi_token_bridge": True,
+                })
+                self.comparisons.append(selected)
+        self.policy_multi_token_calls += 1
+        self.policy_multi_token_tokens += q_len
+        if not torch.isfinite(route_output).all():
+            raise AssertionError("multi-token Route-A bridge produced a non-finite output")
+        return route_output, native_weights
+
     def attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
         had_prior_cold = self._cold_end() > 0
         self._assert_prior_native_cold_is_poisoned(key, value)
         if had_prior_cold:
             self.native_cold_prior_read_guard_checks += 1
-        result = super().attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
+        result = self._multi_token_bridge(original, module, query, key, value, attention_mask, dropout, **kwargs) if query.shape[2] > 1 and had_prior_cold else super().attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
         self._poison_selected_native_cold(key, value)
         if query.shape[2] == 1 and (not isinstance(result, tuple) or not torch.isfinite(result[0]).all()):
             raise AssertionError("selected ownership Route-A attention produced a non-finite decode output")

@@ -183,6 +183,15 @@ failure mode in which a multi-token question forward falls back to native dense
 attention after ownership poisoning. Do not broaden ownership coverage or take
 timing measurements until this diagnostic is reviewed.
 
+### A4.1.2.4 — causal multi-token bridge gate
+
+Repair the discovered q_len>1 fallback before further ownership work. The
+bridge appends question K/V one token at a time and replaces each selected-head
+output from its causal Route-A prefix. Native attention receives zero selected-
+head placeholders and supplies only unselected outputs. Require finite logits,
+equal dense/Route-A first argmax, complete bridge token coverage, and poison
+prior-read coverage. This is still a semantic prefix gate, not measurement.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers

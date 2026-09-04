@@ -961,3 +961,10 @@ It must not assert full replay consumption. A nonfinite owned-cold route logit
 with zero q_len=1 policy calls identifies that a multi-token native attention
 fallback consumed NaN-poisoned selected cold K/V; it is a semantic integration
 finding, not a timing or memory result.
+
+`kvzap-route-a4124-multitoken-bridge-gate-1.0` repairs that scope for one
+selected head: it appends each question token causally to Route-A state,
+replaces selected-head outputs token by token, and gives native attention zero
+placeholders for selected heads while it computes unselected heads. It requires
+finite paired logits and equal first argmax, but remains an untimed replay
+prefix and does not claim physical cache-slot removal.

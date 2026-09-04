@@ -329,6 +329,13 @@ question token length and Route-A q_len=1 call count: a nonfinite Route-A
 logit with zero policy calls establishes that a multi-token native fallback
 consumed poisoned native cold K/V, rather than a benign online-softmax drift.
 
+**A4.1.2.4 implementation:** `tools/run_kvzap_route_a4124_multitoken_bridge_gate.py`
+adds a causal selected-head question-forward bridge. It advances Route-A state
+one question token at a time and replaces selected outputs, while native
+attention sees zero placeholders for selected heads. The next remote gate must
+require finite logits, equal first argmax, full bridge-token count, and prior
+poison-read coverage; it remains untimed and prefix-only.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

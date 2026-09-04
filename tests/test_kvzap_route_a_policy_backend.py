@@ -86,6 +86,36 @@ def test_cold_ownership_poison_persists_in_dynamic_cache_between_decode_updates(
     backend.assert_ownership_guard_complete()
 
 
+def test_cold_ownership_multi_token_bridge_replaces_selected_heads_causally_with_safe_native_placeholders():
+    backend = RouteAColdOwnershipAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    module = SimpleNamespace(scaling=1.0)
+    keys = torch.arange(10, dtype=torch.float32).reshape(1, 1, 5, 2)
+    values = keys + 10
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 3, dtype=torch.bool), 0
+    backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 2, 3, 2), None), module, torch.ones(1, 2, 3, 2), keys[:, :, :3], values[:, :, :3], None, 0.0, scaling=1.0)
+    assert torch.isnan(keys[0, 0, :2]).all()
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 2, dtype=torch.bool), 3
+    seen_safe_placeholder = []
+
+    def original(_module, _query, safe_key, safe_value, _mask, _dropout, **_kwargs):
+        seen_safe_placeholder.append(True)
+        assert torch.isfinite(safe_key).all() and torch.isfinite(safe_value).all()
+        assert torch.equal(safe_key[0, 0], torch.zeros_like(safe_key[0, 0]))
+        return torch.full((1, 2, 2, 2), 7.0), None
+
+    query = torch.tensor([[[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]]])
+    output, _weights = backend.attention(original, module, query, keys, values, None, 0.0, scaling=1.0)
+    assert seen_safe_placeholder == [True]
+    assert torch.isfinite(output).all()
+    assert not torch.equal(output, torch.full_like(output, 7.0))
+    assert backend.policy_multi_token_calls == 1
+    assert backend.policy_multi_token_tokens == 2
+    rows = [row for row in backend.comparisons if row.get("multi_token_bridge")]
+    assert [row["cache_position"] for row in rows] == [3, 4]
+    assert torch.isnan(keys[0, 0, :4]).all()
+    backend.assert_ownership_guard_complete()
+
+
 def test_all_kv_heads_replace_the_full_layer_without_calling_original_on_decode():
     backend = RouteAPolicyAttentionBackend(fake_model(), object(), layer=0, kv_head=None, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
     module = SimpleNamespace(scaling=1.0)
