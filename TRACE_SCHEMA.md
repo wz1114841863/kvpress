@@ -951,3 +951,13 @@ required, while the first generated token-ID difference is stored as a bounded
 diagnostic. Different legal reduction orders can change a later greedy token;
 that drift alone neither proves a native-dense cold read nor invalidates the
 ownership guard.
+
+`kvzap-route-a4123-first-decode-logits-diagnostic-1.0` is an untimed replay
+prefix diagnostic: it runs context prefill and exactly one multi-token question
+forward, records only bounded final-position logits metadata (finite/NaN/Inf
+counts, argmax, top-k, margin), and does not run greedy decode. It records the
+question token count, policy-decode call count, and prefix replay consumption.
+It must not assert full replay consumption. A nonfinite owned-cold route logit
+with zero q_len=1 policy calls identifies that a multi-token native attention
+fallback consumed NaN-poisoned selected cold K/V; it is a semantic integration
+finding, not a timing or memory result.

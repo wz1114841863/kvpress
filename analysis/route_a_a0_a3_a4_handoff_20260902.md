@@ -320,6 +320,15 @@ manifest must state `native_cold_slots_physically_freed: false`. First run
 layer 0/head 6 at budget one with pending required, then budget 512 with
 multi-page required. Neither run is a timing or storage-saving measurement.
 
+**A4.1.2.3 implementation (awaiting a fresh remote prefix diagnostic):**
+`tools/run_kvzap_route_a4123_first_decode_logits_diagnostic.py` runs context
+prefill plus only the question forward and emits bounded first-generation
+logit diagnostics for Full-KV, same-mask dense, and owned-cold Route-A. It
+does not greedily generate or require full replay consumption. Record the
+question token length and Route-A q_len=1 call count: a nonfinite Route-A
+logit with zero policy calls establishes that a multi-token native fallback
+consumed poisoned native cold K/V, rather than a benign online-softmax drift.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

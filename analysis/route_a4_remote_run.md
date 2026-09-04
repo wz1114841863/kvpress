@@ -567,6 +567,40 @@ fail this gate by itself because the per-head FP32 numerical guard remains the
 semantic criterion. The budget-one manifest must show pending coverage; the budget-512
 manifest must show a sealed page plus multi-page coverage.
 
+## A4.1.2.3 first-generation-logit prefix diagnostic
+
+Run this before interpreting the token-0 drift from A4.1.2.2. It does not
+generate tokens, measure time, or consume the full replay source. It captures
+whether the first-generation logits are finite and whether the multi-token
+question forward actually reached q_len=1 Route-A policy attention.
+
+```bash
+SOURCE_ID=route_a41_replay_source_layer0_budget1_01
+RUN_ID=route_a4123_first_logits_layer0_head6_budget1_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a4123_first_decode_logits.py \
+  tests/test_kvzap_route_a4122_cache_ownership.py \
+  tests/test_kvzap_route_a_policy_backend.py
+.venv/bin/python tools/run_kvzap_route_a4123_first_decode_logits_diagnostic.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 6 \
+  --admission-budget 1 \
+  --top-k 8 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the fresh directory. Review `question_token_count`,
+`policy_decode_calls`, prefix replay consumption, finite/NaN/Inf fields, and
+the dense-vs-Route-A logit relation. A nonfinite Route-A result with no policy
+decode calls is a native fallback/ownership-scope failure, not a performance or
+softmax-tolerance conclusion.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

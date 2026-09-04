@@ -219,6 +219,17 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         if missing or unexpected:
             raise AssertionError(f"replay mask consumption mismatch: missing={len(missing)}, unexpected={len(unexpected)}")
 
+    def replay_consumption_summary(self) -> dict[str, int | bool]:
+        """Expose prefix consumption without weakening the complete-replay guard."""
+        if self._replay_mask_events is None:
+            return {"uses_replay": False, "events_consumed": 0, "events_total": 0, "complete": False}
+        return {
+            "uses_replay": True,
+            "events_consumed": len(self._replay_seen),
+            "events_total": len(self._replay_mask_events),
+            "complete": self._replay_seen == set(self._replay_mask_events),
+        }
+
     def _append_state(self, key: torch.Tensor, value: torch.Tensor) -> None:
         if self._keep_mask is None or self._score_start is None:
             raise AssertionError("Route-A attention was called without a matching score capture")

@@ -171,6 +171,18 @@ multi-page required. This is untimed and explicitly retains native tensor
 allocation, so it is a semantic ownership guard—not cache compaction, allocator
 measurement, physical-memory result, or performance result.
 
+### A4.1.2.3 — first-generation-logit prefix diagnostic
+
+The first ownership runs showed a token-0 drift. Before attributing it to
+legal online-softmax reduction order, run one untimed context-prefill plus
+question-forward diagnostic. It records finite status, NaN/Inf count, argmax,
+top-k/margin, and dense/Route-A logit relation, as well as question query
+length and q_len=1 policy call count. It intentionally consumes only a replay
+prefix. This distinguishes a finite close-logit/top-1 flip from the more basic
+failure mode in which a multi-token question forward falls back to native dense
+attention after ownership poisoning. Do not broaden ownership coverage or take
+timing measurements until this diagnostic is reviewed.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers
