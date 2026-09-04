@@ -659,6 +659,63 @@ packed-page/full-page/tail counts, causal bridge coverage, ownership guards,
 and same-mask dense versus Route-A diagnostics. This run is not a performance,
 allocator, HBM, or physical-memory measurement.
 
+## A4.1.2.6 simultaneous all-KV-head ownership gates
+
+The runner now accepts `--target-kv-head all`. Every layer-0 KV head must have
+one bridge comparison for each question token; aggregate state flags require a
+state on at least one head, not every low-retention head. Run the pending gate
+first, then synchronize and review it before the multipage gate.
+
+```bash
+SOURCE_ID=route_a41_replay_source_layer0_budget1_01
+RUN_ID=route_a4126_allheads_layer0_budget1_pending_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a4124_multitoken_bridge_gate.py \
+  tests/test_kvzap_route_a_policy_backend.py \
+  tests/test_kvzap_route_a4123_first_decode_logits.py
+.venv/bin/python tools/run_kvzap_route_a4124_multitoken_bridge_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --require-any-pending \
+  --top-k 8 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+After the pending artifact is reviewed, use a different fresh directory for
+the all-head page-boundary gate:
+
+```bash
+RUN_ID=route_a4126_allheads_layer0_budget512_multipage_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a4124_multitoken_bridge_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head all \
+  --admission-budget 512 \
+  --require-any-multi-page-packed \
+  --require-any-full-packed-page \
+  --require-any-tail-packed-page \
+  --top-k 8 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Each manifest must resolve all eight KV heads, record 22 comparisons per head
+for both dense and Route-A bridges, preserve native cold ownership guards, and
+pass its explicit aggregate state guard. These are semantic prefix gates only;
+they are not all-layer, full-decode, timing, allocator, HBM, or hardware
+measurements.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

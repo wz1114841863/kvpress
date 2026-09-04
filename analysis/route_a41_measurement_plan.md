@@ -224,6 +224,31 @@ Require finite paired logits, equal first argmax, per-token bridge coverage,
 ownership poisoning, and all three observed page guards. This tests packed
 page-boundary semantics, not timing, allocation, HBM, or throughput.
 
+**Observed A4.1.2.5 result (2026-09-04):**
+`route_a4125_multitoken_bridge_layer0_head6_budget512_multipage_01` completed
+against the same immutable replay NPZ hash. It observed 191 packed retained
+tokens for head 6: three pages total, two sealed full pages, and a 63-token
+tail; pending was zero as expected at this high admission budget. All requested
+page guards, both 22-token bridges, cold-ownership guards, finite-logit guard,
+and paired first-argmax guard passed. Same-mask dense and Route-A final logits
+were equal; Route-A's maximum selected attention difference was
+`3.818422555923462e-08` FP32 and one execution-dtype ULP. This is one
+layer/head prefix semantic result, not a physical-page allocation, performance,
+or quality result.
+
+### Next semantic objective — simultaneous all-KV-head ownership in layer 0
+
+Schema 1.3 implements this objective: the ownership backend now replaces and
+poisons every selected GQA group simultaneously when `target_kv_head=all`.
+It preserves per-head diagnostics, while requiring every selected head to have
+one bridge comparison per question token. Heads with no retained mature cold
+state, short packed tails, pending staging, and head 6's multi-page state are
+all valid cases. Run a budget-one gate with aggregate pending coverage, then a
+budget-512 gate with aggregate multi-page/full-page/tail coverage; do not
+require every head to have every page state. This closes the same-layer
+cross-head interaction gap before expanding ownership semantics to multiple
+layers. Both runs remain untimed prefix diagnostics.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers

@@ -487,11 +487,10 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
     selected mature-cold cells are overwritten with NaN after their K/V was
     appended to Route-A state. A later selected-head dense-cache read would
     therefore be observable as NaN rather than silently supplying cold K/V.
+    ``kv_head=None`` selects and protects every KV head in this layer.
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        if kwargs.get("kv_head") is None:
-            raise ValueError("cold-ownership gate requires one explicit KV head")
         super().__init__(*args, **kwargs)
         self.native_cold_guard_checks = 0
         self.native_cold_prior_read_guard_checks = 0

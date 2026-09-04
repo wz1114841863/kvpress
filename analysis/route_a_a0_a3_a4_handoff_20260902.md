@@ -365,6 +365,26 @@ gate: it validates page-boundary semantics under a high admission configuration
 without asserting that pending staging must remain nonempty. The current runner
 implements these as explicit observed-state guards in schema 1.2.
 
+**A4.1.2.5 result:**
+`analysis/experiments/route_a4125_multitoken_bridge_layer0_head6_budget512_multipage_01/`
+completed with all requested observed page guards. At the bridge, layer 0/head
+6 had 191 packed retained tokens, three pages, two sealed full pages, and a
+63-token tail; no pending token remained under budget 512. Both same-mask
+bridges covered all 22 question tokens, ownership poisoning was rechecked, and
+same-mask dense/Route-A final logits were equal with one maximum execution
+dtype ULP at selected attention. This is valid multi-page functional evidence
+for one head only.
+
+**A4.1.2.6 implementation boundary:** schema 1.3 generalizes native-cold
+ownership from one explicit KV head to all KV heads of layer 0 simultaneously,
+retaining per-head GQA mapping and coverage records. The runner now requires
+every selected head to bridge every question token, and supports aggregate
+pending/page-state guards. Initial all-head gates separately cover budget-one
+pending and budget-512 head-6 multi-page conditions. Aggregate page-state
+requirements are necessary because replay evidence shows that not every head
+retains enough mature cold tokens for a full page. Do not proceed to multi-layer
+ownership or timing until both same-layer all-head semantic gates pass.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

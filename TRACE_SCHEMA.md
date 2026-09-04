@@ -997,3 +997,23 @@ admission budget alone is not evidence. These guards complement, rather than
 replace, the budget-one pending-staging artifact. They remain untimed prefix
 semantics and do not establish allocator page allocation, HBM traffic, or
 physical memory.
+
+The first requested schema-1.2 multipage artifact,
+`route_a4125_multitoken_bridge_layer0_head6_budget512_multipage_01`, observed
+three packed pages for head 6 (two full and one 63-token tail) and passed all
+requested guards with equal paired final logits. Its zero pending count is an
+expected admission-policy state at budget 512, not missing coverage; pending
+was established separately by the budget-one artifact. This remains a
+single-head prefix semantic observation only.
+
+`kvzap-route-a4124-multitoken-bridge-gate-1.3` permits
+`target_kv_head=all` for simultaneous ownership substitution of every KV head
+in one layer. It requires the dense control and Route-A coverage rows to name
+exactly the resolved selected KV-head set and to contain one comparison per
+question token for each head. Aggregate guards (`require_any_pending`,
+`require_any_multi_page_packed`, `require_any_full_packed_page`, and
+`require_any_tail_packed_page`) require at least one selected head to exercise
+the named state. This is intentionally different from the existing
+every-selected-head page flags: low-retention heads may correctly have no cold
+page. All-head native K/V poisoning remains an observation guard, not physical
+cache deallocation or a performance measurement.

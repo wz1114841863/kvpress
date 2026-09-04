@@ -58,13 +58,34 @@ def test_cold_ownership_backend_poisoning_prevents_selected_native_cold_read():
     assert summary["native_cold_slots_physically_freed"] is False
 
 
-def test_cold_ownership_backend_requires_one_head():
-    try:
-        RouteAColdOwnershipAttentionBackend(fake_model(), object(), layer=0, kv_head=None, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
-    except ValueError as error:
-        assert "one explicit KV head" in str(error)
-    else:
-        raise AssertionError("all-head ownership gate unexpectedly accepted")
+def test_cold_ownership_backend_all_heads_replaces_every_gqa_group_with_safe_native_placeholders():
+    backend = RouteAColdOwnershipAttentionBackend(fake_model(), object(), layer=0, kv_head=None, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    module = SimpleNamespace(scaling=1.0)
+    keys = torch.arange(20, dtype=torch.float32).reshape(1, 2, 5, 2)
+    values = keys + 10
+    backend._keep_mask, backend._score_start = torch.ones(1, 2, 3, dtype=torch.bool), 0
+    backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 3, 4, 2), None), module, torch.ones(1, 4, 3, 2), keys[:, :, :3], values[:, :, :3], None, 0.0, scaling=1.0)
+    assert torch.isnan(keys[0, :, :2]).all()
+    backend._keep_mask, backend._score_start = torch.ones(1, 2, 2, dtype=torch.bool), 3
+    seen_safe_placeholder = []
+
+    def original(_module, _query, safe_key, safe_value, _mask, _dropout, **_kwargs):
+        seen_safe_placeholder.append(True)
+        assert torch.equal(safe_key[0], torch.zeros_like(safe_key[0]))
+        assert torch.equal(safe_value[0], torch.zeros_like(safe_value[0]))
+        return torch.full((1, 2, 4, 2), 7.0), None
+
+    query = torch.tensor([[[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]], [[1., 1.], [1., -1.]], [[-1., 1.], [1., 1.]]]])
+    output, _weights = backend.attention(original, module, query, keys, values, None, 0.0, scaling=1.0)
+    assert seen_safe_placeholder == [True]
+    assert output.shape == (1, 2, 4, 2)
+    assert torch.isfinite(output).all()
+    assert not torch.equal(output, torch.full_like(output, 7.0))
+    rows = [row for row in backend.comparisons if row.get("multi_token_bridge")]
+    assert {(row["kv_head"], row["cache_position"]) for row in rows} == {(head, position) for head in (0, 1) for position in (3, 4)}
+    assert torch.isnan(keys[0, :, :4]).all()
+    assert backend.ownership_summary()["selected_kv_heads"] == [0, 1]
+    backend.assert_ownership_guard_complete()
 
 
 def test_cold_ownership_poison_persists_in_dynamic_cache_between_decode_updates():
