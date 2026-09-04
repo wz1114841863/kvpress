@@ -464,13 +464,29 @@ the A4131 evidence into a strict, scale-aware policy: FP32 same-mask remains
 hard; BF16/FP16 ULP counts remain bounded observations; and the cast vector
 that is actually inserted into the model must independently pass
 `torch.testing.assert_close` under the same declared `rtol`/`atol`. The
-entrypoint fixes all layers, ULP `record_only`, and cast-close `enforce`; users
+entrypoint fixes all layers, ULP `record_only`, and cast-close
+`scale_aware_enforce`; users
 cannot turn either selection into a partial/all-ULP-only gate through CLI
 overrides. A cast-close failure writes scalar-only location, observed/allowed
 difference, and tolerance-ratio context. Run budget one first. Only if it
 completes with replay, bridge, ownership, pending, forced, and independent
 guards may the separately scoped all-layer budget-512 page-state gate be
 considered; it still does not authorize timing or profiler work by itself.
+
+**Observed A4.1.2.12 hold (2026-09-04):** layer 1/head 7/query head 31/position
+915 differed by exactly one BF16 ULP (`6.1035e-05`) near `0.0093`; FP32 maximum
+was only `1.1176e-07`. The direct post-cast tolerance was `1.0908e-05`, so it
+rejected an explainable adjacent-BF16 rounding result at ratio `5.59375`. This
+invalidates the A4132 guard formulation, not Route-A state semantics.
+
+### A4.1.2.13 — all-layer hard quantization-aware cast guard
+
+`tools/run_kvzap_route_a4133_alllayer_quantization_aware_continuation_gate.py`
+hard-enforces the FP32 allowance plus one local execution-dtype spacing from
+each separately cast output. It accepts adjacent BF16 rounding only after the
+hard FP32 same-mask check, and rejects any cast difference outside that explicit
+envelope with scalar-only context. Run budget one first; completion is not a
+budget-512, timing, allocator, quality, HBM, or hardware result.
 
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every

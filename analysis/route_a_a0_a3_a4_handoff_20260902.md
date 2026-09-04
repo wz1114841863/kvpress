@@ -557,6 +557,20 @@ fixed local-ULP count near zero as the sole hard criterion; it is not a relaxed
 tolerance, a quality result, or permission for budget-512/timing work until its
 fresh output is reviewed.
 
+**A4.1.2.12 observed hold (2026-09-04):** layer 1/head 7/query head 31/position
+915 produced adjacent BF16 values near `0.0093`: one ULP (`6.1035e-05`) apart,
+but with only `1.1176e-07` maximum FP32 difference. The direct post-cast
+FP32-derived allowance `1.0908e-05` is therefore not quantization-aware.
+
+### A4.1.2.13 implementation — hard quantization-aware cast envelope
+
+`tools/run_kvzap_route_a4133_alllayer_quantization_aware_continuation_gate.py`
+keeps A4132's hard FP32 guard and ULP observations, but makes the cast bound
+the FP32 allowance plus Route-A and dense local execution-dtype ULPs. It permits
+the independently rounded adjacent-BF16 case while still rejecting a cast error
+outside the FP32-plus-rounding envelope. It remains an all-layer, replayed-mask,
+budget-one semantic gate; do not begin budget-512 or timing before review.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

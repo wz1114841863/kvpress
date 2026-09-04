@@ -45,13 +45,13 @@ class RouteANumericalGuardError(RouteAExecutionDtypeGuardError):
 
 
 class RouteAExecutionDtypeCloseGuardError(RouteAExecutionDtypeGuardError):
-    """The cast output exceeds the hard scale-aware executed-dtype guard."""
+    """The cast output exceeds a hard executed-dtype numerical guard."""
 
     def __init__(self, details: dict[str, Any]) -> None:
         self.details = details
         AssertionError.__init__(
             self,
-            "Route-A executed-dtype output exceeds scale-aware tolerance: "
+            "Route-A executed-dtype output exceeds configured tolerance envelope: "
             f"layer={details['layer']}, kv_head={details['kv_head']}, "
             f"query_head={details['query_head']}, cache_position={details['cache_position']}, "
             f"observed_ratio={details['max_tolerance_ratio']}",
@@ -114,8 +114,8 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             raise ValueError("invalid Route-A policy dimensions")
         if execution_dtype_ulp_mode not in {"enforce", "record_only"}:
             raise ValueError("execution_dtype_ulp_mode must be 'enforce' or 'record_only'")
-        if execution_dtype_close_mode not in {"off", "enforce"}:
-            raise ValueError("execution_dtype_close_mode must be 'off' or 'enforce'")
+        if execution_dtype_close_mode not in {"off", "scale_aware_enforce", "quantization_aware_enforce"}:
+            raise ValueError("execution_dtype_close_mode must be 'off', 'scale_aware_enforce', or 'quantization_aware_enforce'")
         if predictor is None and replay_mask_events is None:
             raise ValueError("an online predictor or explicit replay mask is required")
         self.model, self.predictor, self.layer, self.kv_head = model, predictor, layer, kv_head
@@ -207,7 +207,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         """Summarize bounded diagnostic-only ULP breaches for this layer."""
         return {
             "mode": self.execution_dtype_ulp_mode,
-            "scale_aware_close_mode": self.execution_dtype_close_mode,
+            "execution_dtype_close_mode": self.execution_dtype_close_mode,
             "executed_dtype_ulp_limit": self.max_executed_dtype_ulps,
             "breach_count": self._ulp_breach_count,
             "sample_count": len(self._ulp_breach_samples),
@@ -463,15 +463,79 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         """Hard scale-aware guard for the value actually injected into Qwen."""
         if self.execution_dtype_close_mode == "off":
             return
-        try:
-            torch.testing.assert_close(route, dense, rtol=self.rtol, atol=self.atol)
-        except AssertionError as error:
-            raise RouteAExecutionDtypeCloseGuardError(
-                self._executed_dtype_close_failure_details(
-                    route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32,
-                    kv_head=kv_head, query_head=query_head, cache_position=cache_position,
-                )
-            ) from error
+        if self.execution_dtype_close_mode == "scale_aware_enforce":
+            try:
+                torch.testing.assert_close(route, dense, rtol=self.rtol, atol=self.atol)
+            except AssertionError as error:
+                raise RouteAExecutionDtypeCloseGuardError(
+                    self._executed_dtype_close_failure_details(
+                        route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32,
+                        kv_head=kv_head, query_head=query_head, cache_position=cache_position,
+                    )
+                ) from error
+            return
+        if self.execution_dtype_close_mode != "quantization_aware_enforce":
+            raise AssertionError("unreachable execution-dtype close mode")
+        details = self._quantization_aware_executed_dtype_details(
+            route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32,
+            kv_head=kv_head, query_head=query_head, cache_position=cache_position,
+        )
+        if bool(details["all_components_within_envelope"]):
+            return
+        raise RouteAExecutionDtypeCloseGuardError(details)
+
+    @staticmethod
+    def _local_execution_dtype_ulp(values: torch.Tensor) -> torch.Tensor:
+        """Conservative local spacing for a finite execution-dtype value."""
+        positive = torch.full_like(values, float("inf"))
+        negative = torch.full_like(values, float("-inf"))
+        return torch.maximum(
+            (torch.nextafter(values, positive) - values).abs(),
+            (values - torch.nextafter(values, negative)).abs(),
+        )
+
+    def _quantization_aware_executed_dtype_details(self, *, route: torch.Tensor, dense: torch.Tensor, route_fp32: torch.Tensor, dense_fp32: torch.Tensor, kv_head: int, query_head: int, cache_position: int) -> dict[str, Any]:
+        """Bound cast error by FP32 tolerance plus both local rounding steps.
+
+        Route and dense FP32 paths are already hard-checked.  Casting each can
+        round toward opposite neighboring execution-dtype values, so adding the
+        two local ULP spacings is a conservative, explicit rounding envelope.
+        """
+        route_f32, dense_f32 = route.float(), dense.float()
+        difference = (route_f32 - dense_f32).abs()
+        route_ulp = self._local_execution_dtype_ulp(route).float()
+        dense_ulp = self._local_execution_dtype_ulp(dense).float()
+        fp32_tolerance = self.atol + self.rtol * dense_fp32.float().abs()
+        allowed = fp32_tolerance + route_ulp + dense_ulp
+        finite = torch.isfinite(route_f32) & torch.isfinite(dense_f32) & torch.isfinite(allowed)
+        ratio = torch.where(finite, difference / allowed, torch.full_like(difference, float("inf")))
+        flat_index = int(ratio.reshape(-1).argmax().item())
+        component_index = list(torch.unravel_index(torch.tensor(flat_index, device=ratio.device), ratio.shape))
+        index = tuple(int(item.item()) for item in component_index)
+        observed_ratio = float(ratio[index].item())
+        return {
+            "guard_kind": "quantization_aware_executed_dtype_close",
+            "layer": self.layer,
+            "kv_head": kv_head,
+            "query_head": query_head,
+            "cache_position": cache_position,
+            "execution_dtype": str(route.dtype),
+            "output_shape": list(route.shape),
+            "component_index": list(index),
+            "rtol": self.rtol,
+            "atol": self.atol,
+            "max_tolerance_ratio": self._finite_or_none(observed_ratio),
+            "max_tolerance_ratio_is_infinite": not math.isfinite(observed_ratio),
+            "all_components_within_envelope": bool(torch.all(finite & (difference <= allowed)).item()),
+            "executed_dtype_abs_difference_at_max_ratio": self._finite_or_none(float(difference[index].item())),
+            "fp32_tolerance_at_max_ratio": self._finite_or_none(float(fp32_tolerance[index].item())),
+            "route_local_ulp_at_max_ratio": self._finite_or_none(float(route_ulp[index].item())),
+            "dense_local_ulp_at_max_ratio": self._finite_or_none(float(dense_ulp[index].item())),
+            "executed_dtype_allowed_difference_at_max_ratio": self._finite_or_none(float(allowed[index].item())),
+            "route_value_at_max_ratio": self._finite_or_none(float(route[index].item())),
+            "dense_value_at_max_ratio": self._finite_or_none(float(dense[index].item())),
+            "max_fp32_abs_difference": self._finite_or_none(float((route_fp32 - dense_fp32).abs().max().item())),
+        }
 
     def attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
         """Called by the global attention wrapper after Qwen updates its cache."""

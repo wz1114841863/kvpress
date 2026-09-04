@@ -250,7 +250,7 @@ def test_record_only_ulp_mode_retains_bounded_scalar_breaches_without_weakening_
 
 
 def test_scale_aware_executed_dtype_guard_is_optional_by_default_and_hard_when_enabled():
-    backend = RouteAPolicyAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-4, atol=1e-6, execution_dtype_close_mode="enforce")
+    backend = RouteAPolicyAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-4, atol=1e-6, execution_dtype_close_mode="scale_aware_enforce")
     dense = torch.tensor([1.0], dtype=torch.float16)
     route = torch.tensor([1.125], dtype=torch.float16)
     try:
@@ -264,6 +264,26 @@ def test_scale_aware_executed_dtype_guard_is_optional_by_default_and_hard_when_e
 
     legacy = RouteAPolicyAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-4, atol=1e-6)
     legacy._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route.float(), dense_fp32=dense.float(), kv_head=0, query_head=1, cache_position=2)
+
+
+def test_quantization_aware_guard_accepts_adjacent_bfloat16_rounding_but_rejects_unexplained_error():
+    backend = RouteAPolicyAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-4, atol=1e-5, execution_dtype_close_mode="quantization_aware_enforce")
+    midpoint = (0.00933837890625 + 0.0093994140625) / 2
+    dense_fp32 = torch.tensor([midpoint - 5e-8], dtype=torch.float32)
+    route_fp32 = torch.tensor([midpoint + 5e-8], dtype=torch.float32)
+    dense, route = dense_fp32.to(torch.bfloat16), route_fp32.to(torch.bfloat16)
+    assert not torch.equal(route, dense)
+    backend._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=0, query_head=1, cache_position=2)
+
+    bad_route = torch.tensor([0.02], dtype=torch.bfloat16)
+    try:
+        backend._assert_executed_dtype_close(route=bad_route, dense=dense, route_fp32=dense_fp32, dense_fp32=dense_fp32, kv_head=0, query_head=1, cache_position=2)
+    except RouteAExecutionDtypeCloseGuardError as error:
+        assert error.details["guard_kind"] == "quantization_aware_executed_dtype_close"
+        assert error.details["all_components_within_envelope"] is False
+        assert error.details["max_tolerance_ratio"] > 1.0
+    else:
+        raise AssertionError("quantization-aware guard accepted an unexplained execution-dtype mismatch")
 
 
 def test_backend_set_keeps_independent_layer_state_and_aggregates_coverage():

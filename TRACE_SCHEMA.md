@@ -1151,7 +1151,8 @@ acceptance, quality, memory, timing, or hardware result.
 
 `kvzap-route-a4132-alllayer-scale-aware-continuation-gate-1.0` is the strict
 follow-up. It fixes `--execution-dtype-ulp-mode record_only` so ULP remains a
-reported locality diagnostic, but fixes `--execution-dtype-close-mode enforce`.
+reported locality diagnostic, but fixes
+`--execution-dtype-close-mode scale_aware_enforce`.
 For every selected output vector actually cast and injected into Qwen, it hard
 executes `torch.testing.assert_close(route_cast, dense_cast, rtol, atol)` after
 the existing FP32 same-mask guard. A failure writes the existing scalar-only
@@ -1161,6 +1162,24 @@ observed cast differences, plus location; it does not serialize tensors. A
 completed A4132 run establishes only this fixed-source/fixed-horizon all-layer
 scale-aware execution-dtype guard, not quality or a timing/memory/hardware
 result.
+
+The first A4132 run stopped at layer 1, KV head 7, query head 31, cache
+position 915, component 77. Route-A and dense were adjacent BF16 values
+(`0.0093994140625` and `0.00933837890625`), one local ULP apart
+(`6.103515625e-05`), while their FP32 vector maximum was only
+`1.1175870895385742e-07`. The direct post-cast FP32 tolerance was
+`1.0907649993896484e-05` (ratio `5.59375`), so this is a rounding-boundary
+counterexample to direct FP32-tolerance reuse, not a mask/replay/ownership
+failure.
+
+`kvzap-route-a4133-alllayer-quantization-aware-continuation-gate-1.0` keeps
+the FP32 guard and ULP recording but hard-enforces, per component:
+`atol + rtol * abs(dense_fp32) + local_ulp(route_cast) + local_ulp(dense_cast)`.
+The two local spacings conservatively bound independently rounded execution
+dtype values. Its scalar-only failure record includes observed/allowed error,
+FP32 allowance, both local ULPs, and worst ratio. A pass is only a fixed-source
+/fixed-horizon numerical gate, not quality, timing, allocator, HBM, or hardware
+evidence.
 
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with

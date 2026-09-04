@@ -1036,6 +1036,38 @@ scale-aware guard, ULP distribution, replay/bridge/ownership, and paired token
 relations before deciding whether a fresh all-layer budget-512 page-state gate
 is justified.
 
+## A4.1.2.13 — hard quantization-aware all-layer continuation gate
+
+A4132 showed that direct reuse of FP32 `rtol`/`atol` after BF16 casting rejects
+an ordinary adjacent-BF16 rounding result. A4133 retains the hard FP32 guard,
+records ULPs, and hard-checks FP32 allowance plus both local BF16 spacings.
+
+```bash
+SOURCE_ID=route_a4130_replay_source_all_layers_01
+RUN_ID=route_a4133_all_layers_budget1_quantization_aware_continuation_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a_policy_backend.py \
+  tests/test_kvzap_route_a4129_multilayer_continuation.py
+.venv/bin/python tools/run_kvzap_route_a4133_alllayer_quantization_aware_continuation_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --max-executed-dtype-ulps 16 \
+  --ulp-breach-sample-limit 8 \
+  --require-any-pending \
+  --top-k 8 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+If it fails, synchronize the fresh scalar failure artifact only. If it
+completes, synchronize the manifest before considering all-layer budget-512.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

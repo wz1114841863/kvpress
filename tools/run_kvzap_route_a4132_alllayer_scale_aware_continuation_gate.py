@@ -13,5 +13,5 @@ if __name__ == "__main__":
         scope="all_layers",
         artifact_stem="a4132_alllayer_scale_aware_continuation",
         execution_dtype_ulp_mode="record_only",
-        execution_dtype_close_mode="enforce",
+        execution_dtype_close_mode="scale_aware_enforce",
     )

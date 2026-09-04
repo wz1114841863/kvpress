@@ -57,9 +57,9 @@ def parse_args(*, phase: str, default_target_layers: list[str], target_layer_hel
     )
     parser.add_argument(
         "--execution-dtype-close-mode",
-        choices=("off", "enforce"),
+        choices=("off", "scale_aware_enforce", "quantization_aware_enforce"),
         default=default_execution_dtype_close_mode,
-        help="off preserves legacy ULP-only behavior; enforce hard-checks the cast output with the declared rtol/atol before injecting it into Qwen.",
+        help="off preserves legacy ULP-only behavior; scale_aware_enforce applies rtol/atol after cast; quantization_aware_enforce adds route/dense local dtype-ULP rounding envelopes to the FP32 tolerance.",
     )
     parser.add_argument(
         "--ulp-breach-sample-limit",
@@ -238,8 +238,8 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
         boundaries.append(
             "Execution-dtype ULP breaches are scalar-recorded rather than enforced. "
             + (
-                "The FP32 same-mask and scale-aware executed-dtype rtol/atol guards remain hard."
-                if args.execution_dtype_close_mode == "enforce"
+                "The FP32 same-mask and configured executed-dtype tolerance envelope remain hard."
+                if args.execution_dtype_close_mode != "off"
                 else "The FP32 same-mask guard remains hard; this diagnostic is not a semantic acceptance gate."
             )
         )
@@ -285,8 +285,8 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
         manifest_boundaries.append(
             "Execution-dtype ULP breaches were record-only. "
             + (
-                "The FP32 same-mask and scale-aware executed-dtype rtol/atol guards remained hard."
-                if args.execution_dtype_close_mode == "enforce"
+                "The FP32 same-mask and configured executed-dtype tolerance envelope remained hard."
+                if args.execution_dtype_close_mode != "off"
                 else "The FP32 same-mask guard remained hard, but this run is diagnostic evidence rather than an acceptance gate."
             )
         )
@@ -316,8 +316,8 @@ def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: 
             "fp32_same_mask_guard_enforced": True,
             "execution_dtype_ulp_mode": args.execution_dtype_ulp_mode,
             "execution_dtype_ulp_breaches_enforced": args.execution_dtype_ulp_mode == "enforce",
-            "execution_dtype_scale_aware_close_mode": args.execution_dtype_close_mode,
-            "execution_dtype_scale_aware_close_enforced": args.execution_dtype_close_mode == "enforce",
+            "execution_dtype_close_mode": args.execution_dtype_close_mode,
+            "execution_dtype_close_enforced": args.execution_dtype_close_mode != "off",
             "native_dense_cold_slots_physically_freed": False,
         },
         "guard_requirements": requirements,
