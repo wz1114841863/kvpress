@@ -394,6 +394,48 @@ that must be localized before all-36 expansion. Even a clean result remains a
 single request/fixed-horizon semantic diagnostic, not timing, quality, memory,
 HBM, or hardware evidence.
 
+**Observed A4.1.2.9 budget-512 result (2026-09-04):**
+`route_a4129_layers_0_18_35_budget512_multipage_continuation_01` passed all
+three requested page-state guards with the identical three-layer source. It
+observed no pending state, as expected, but observed layer-0 head 6 with four
+pages/three full pages/63-tail and layer-18 head 3 with seven pages/six full
+pages/62-tail. Every layer again completed replay, bridge, finite, and
+ownership checks. Forced argmax and independent eight-token greedy IDs matched
+dense throughout. The budget-512 per-step logit-difference table is not
+bitwise identical to budget one (maximum `0.75` versus `0.5`), but its minimum
+dense top-1/top-2 margin remains `20.0` and no decision changed. This controls
+the two admission layouts for the three-layer scope. Next, collect an immutable
+all-36-layer source and repeat the same fixed-horizon gate at budget one before
+its budget-512 page-state counterpart; do not move to timing yet.
+
+### A4.1.2.10 — all-36-layer simultaneous ownership continuation diagnostic
+
+`tools/run_kvzap_route_a4130_alllayer_continuation_diagnostic.py` is now the
+strict all-layer entrypoint. It shares the tested A4129 implementation but
+accepts only the full decoder layer set, writes schema
+`kvzap-route-a4130-alllayer-continuation-diagnostic-1.0`, and uses a separate
+manifest name. First collect a new all-layer source with
+`tools/collect_kvzap_route_a41_replay_source.py --target-layers all`; do not
+reuse a `{0,18,35}` source. Then run budget one with aggregate pending coverage
+and review all 36 layer/head bridge, replay, ownership, forced, and independent
+relations before the budget-512 page-state counterpart. This remains untimed;
+its only purpose is to close the all-layer semantic gap before a true storage-
+substitution measurement implementation.
+
+**Observed A4.1.2.9 budget-one result (2026-09-04):**
+`route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
+three-layer replay, bridge, finite-output, and ownership guard using the new
+22,416-event source. Each selected layer consumed 7,472 events; all 24
+layer/head selections bridged the 22-token question forward. Pending staging
+was observed, and each selected layer had 17 native-cold poison/read checks
+with eight prior-cold-read checks. Per-layer FP32 selected-attention maxima
+were `5.2154e-08`, `1.5199e-06`, and `5.7220e-06` for layers 0, 18, and 35,
+respectively; each was one execution-dtype ULP. Forced argmax and independent
+eight-token greedy IDs matched same-mask dense; the largest final-logit
+maximum was `0.5` versus a minimum dense decision margin of `20.0`. Proceed to
+the budget-512 multi-page/full-page/tail counterpart, retaining this exact
+source and fixed horizon. Do not infer quality or performance.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers

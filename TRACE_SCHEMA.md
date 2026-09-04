@@ -1105,3 +1105,39 @@ native-cold ownership poisoning/read guards. State requirements are aggregate
 across selected layer/head states, but coverage is serialized per layer and
 head. The gate is strictly fixed-horizon and untimed; it is neither a quality,
 Full-KV, allocator/HBM, throughput, nor hardware result.
+
+`kvzap-route-a4130-alllayer-continuation-diagnostic-1.0` is the all-36-layer
+counterpart. Its CLI accepts only `--target-layers all` (or its default all
+scope) and rejects any partial layer selection. It reuses the same three-path
+continuation contract as A4129, but requires an immutable replay source whose
+resolved layer set is exactly every loaded decoder layer. In the frozen Qwen3-8B
+scope and the current 8-token request, a complete source is expected to contain
+36 independent layer streams; it must not be replaced with a three-layer
+source. It remains an untimed semantic diagnostic, not a timing, memory,
+quality, or hardware measurement.
+
+The first A4129 artifact,
+`route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
+the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35
+consumed its own 7,472 events completely, bridged all eight KV heads across 22
+question tokens, and independently passed native-cold poison/read ownership
+guards. Aggregate pending coverage was observed. Across the declared
+eight-token horizon, forced Route-A argmax and independent Route-A generated
+IDs both matched same-mask dense. The largest final-logit maximum was `0.5`,
+while the smallest recorded dense top-1/top-2 margin was `20.0`. This permits
+the matching budget-512 page-state diagnostic, but remains a single-request,
+fixed-horizon, three-layer semantic result only.
+
+The matching A4129 budget-512 artifact,
+`route_a4129_layers_0_18_35_budget512_multipage_continuation_01`, completed
+aggregate multi-page/full-page/tail guards using the same 22,416-event source.
+Multi-page states occurred in layers 0 and 18 (for example, layer-0 head 6 had
+four pages, three full pages, and a 63-token tail; layer-18 head 3 had seven
+pages, six full pages, and a 62-token tail). All replay, bridge, finite, and
+per-layer ownership guards passed. The eight forced argmax values and the
+independent greedy IDs again matched same-mask dense. Its largest final-logit
+maximum was `0.75`, still below the smallest dense top-1/top-2 margin `20.0`.
+The exact scalar logit-difference table is not identical to budget one, which
+is expected for legal reduction layouts; no observed decision changed. This
+closes the pending-versus-packed layout check for this fixed three-layer
+horizon, not all-36-layer, quality, or performance behavior.

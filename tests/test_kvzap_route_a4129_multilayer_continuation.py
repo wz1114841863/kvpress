@@ -2,7 +2,7 @@ from argparse import Namespace
 
 import pytest
 
-from tools.run_kvzap_route_a4129_multilayer_continuation_diagnostic import any_route_a_state, require_state_coverage
+from tools.run_kvzap_route_a4129_multilayer_continuation_diagnostic import any_route_a_state, assert_scope, assert_scope_selector, require_state_coverage, resolve_diagnostic_layers
 
 
 def coverage(*, pending: bool, multi_page: bool, full_page: bool, tail: int):
@@ -27,3 +27,16 @@ def test_requested_multilayer_state_guard_rejects_missing_pending_only():
     with pytest.raises(AssertionError, match="pending staging"):
         require_state_coverage(coverage=coverage(pending=False, multi_page=False, full_page=False, tail=0), args=args)
     require_state_coverage(coverage=coverage(pending=True, multi_page=False, full_page=False, tail=0), args=args)
+
+
+def test_layer_scope_resolves_all_and_rejects_non_all_a4130_scope():
+    assert resolve_diagnostic_layers(["all"], 4) == (0, 1, 2, 3)
+    assert resolve_diagnostic_layers(["0", "2"], 4) == (0, 2)
+    with pytest.raises(ValueError, match="cannot be combined"):
+        resolve_diagnostic_layers(["all", "0"], 4)
+    assert_scope((0, 1, 2, 3), layer_count=4, scope="all_layers")
+    with pytest.raises(ValueError, match="requires --target-layers all"):
+        assert_scope((0, 2), layer_count=4, scope="all_layers")
+    assert_scope_selector(["all"], scope="all_layers")
+    with pytest.raises(ValueError, match="literal"):
+        assert_scope_selector(["0", "1", "2", "3"], scope="all_layers")

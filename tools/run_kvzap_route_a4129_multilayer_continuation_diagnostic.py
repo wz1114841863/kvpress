@@ -26,8 +26,8 @@ from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, bui
 A4129_SCHEMA = "kvzap-route-a4129-multilayer-continuation-diagnostic-1.0"
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="A4.1.2.9 untimed all-head multi-layer forced/independent continuation diagnostic; not a benchmark.")
+def parse_args(*, phase: str, default_target_layers: list[str], target_layer_help: str) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=f"{phase} untimed all-head multi-layer forced/independent continuation diagnostic; not a benchmark.")
     request = parser.add_mutually_exclusive_group()
     request.add_argument("--preset", choices=PRESETS, default="retrieval")
     request.add_argument("--input-jsonl", type=Path)
@@ -41,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--window-size", type=int, default=128)
     parser.add_argument("--page-tokens", type=int, default=64)
     parser.add_argument("--admission-budget", type=int, required=True)
-    parser.add_argument("--target-layers", nargs="+", default=["0", "18", "35"], help="Initial multi-layer gate is exactly: 0 18 35.")
+    parser.add_argument("--target-layers", nargs="+", default=default_target_layers, help=target_layer_help)
     parser.add_argument("--target-kv-head", default="all", choices=["all"], help="Every KV head is substituted in every selected layer.")
     parser.add_argument("--max-new-tokens", type=int, default=8, help="Fixed token count; must match replay-source coverage.")
     parser.add_argument("--top-k", type=int, default=8)
@@ -57,6 +57,28 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--replay-source-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True, help="New output directory only.")
     return parser.parse_args()
+
+
+def resolve_diagnostic_layers(values: list[str], layer_count: int) -> tuple[int, ...]:
+    """Resolve explicit indices or the literal ``all`` without ambiguity."""
+    if values == ["all"]:
+        return tuple(range(layer_count))
+    if "all" in values:
+        raise ValueError("--target-layers all cannot be combined with explicit layer indices")
+    return resolve_target_layers(values, layer_count)
+
+
+def assert_scope(layers: tuple[int, ...], *, layer_count: int, scope: str) -> None:
+    if scope == "three_layer" and layers != (0, 18, 35):
+        raise ValueError("A4.1.2.9 initial scope is exactly --target-layers 0 18 35")
+    if scope == "all_layers" and layers != tuple(range(layer_count)):
+        raise ValueError("A4.1.2.10 scope requires --target-layers all")
+
+
+def assert_scope_selector(values: list[str], *, scope: str) -> None:
+    """Keep the all-layer gate auditable: no hand-enumerated substitute."""
+    if scope == "all_layers" and values != ["all"]:
+        raise ValueError("A4.1.2.10 scope requires the literal --target-layers all")
 
 
 def expected_heads_by_layer(language_model, layers: tuple[int, ...]) -> dict[int, tuple[int, ...]]:
@@ -123,8 +145,15 @@ def backend_summary(backend_set, *, expected_heads: dict[int, tuple[int, ...]], 
     }
 
 
-def main() -> None:
-    args = parse_args()
+def main(*, schema_version: str = A4129_SCHEMA, phase: str = "A4.1.2.9", scope: str = "three_layer", artifact_stem: str = "a4129_multilayer_continuation") -> None:
+    if scope == "three_layer":
+        default_target_layers, target_layer_help = ["0", "18", "35"], "Initial multi-layer gate is exactly: 0 18 35."
+    elif scope == "all_layers":
+        default_target_layers, target_layer_help = ["all"], "A4.1.2.10 requires exactly 'all' (all model layers)."
+    else:
+        raise ValueError(f"unknown multi-layer diagnostic scope: {scope}")
+    args = parse_args(phase=phase, default_target_layers=default_target_layers, target_layer_help=target_layer_help)
+    assert_scope_selector(args.target_layers, scope=scope)
     if args.output_dir.exists():
         raise FileExistsError(f"output directory already exists: {args.output_dir}")
     if args.request_id and not args.input_jsonl:
@@ -140,9 +169,8 @@ def main() -> None:
     if getattr(pipe.model.config, "_commit_hash", None) != args.model_revision:
         raise ValueError("loaded model revision differs from frozen revision")
     language_model = pipe.model.model.language_model if hasattr(pipe.model.model, "language_model") else pipe.model.model
-    layers = resolve_target_layers(args.target_layers, len(language_model.layers))
-    if layers != (0, 18, 35):
-        raise ValueError("A4.1.2.9 initial scope is exactly --target-layers 0 18 35")
+    layers = resolve_diagnostic_layers(args.target_layers, len(language_model.layers))
+    assert_scope(layers, layer_count=len(language_model.layers), scope=scope)
     args.resolved_target_layers = list(layers)
     expected_heads = expected_heads_by_layer(language_model, layers)
     args.resolved_target_kv_heads_by_layer = {str(layer): list(heads) for layer, heads in expected_heads.items()}
@@ -154,7 +182,7 @@ def main() -> None:
         raise ValueError("requires protected context and multi-token question")
     config = {key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items() if key != "output_dir"}
     config["replay_event_file_sha256"] = digest
-    initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit(), record_name="a4129_multilayer_continuation_started.json", schema_version=A4129_SCHEMA, boundaries=["Untimed fixed-length paired continuation; no timing or profiler data.", "Forced continuation uses dense generated token IDs as common inputs; independent greedy continuation can diverge after its first mismatch.", "No quality, allocator, HBM, physical-memory, throughput, energy, area, hardware, or RTL claim."])
+    initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit(), record_name=f"{artifact_stem}_started.json", schema_version=schema_version, boundaries=["Untimed fixed-length paired continuation; no timing or profiler data.", "Forced continuation uses dense generated token IDs as common inputs; independent greedy continuation can diverge after its first mismatch.", "No quality, allocator, HBM, physical-memory, throughput, energy, area, hardware, or RTL claim."])
     common = dict(layers=layers, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, replay_mask_events=events)
     print(f"Pass 1/3: all-head causal same-mask dense greedy reference in layers {list(layers)}...")
     dense_backend = DenseSameMaskAttentionBackendSet(pipe.model, None, **common)
@@ -187,7 +215,7 @@ def main() -> None:
         "any_tail_packed_page": requirement(requested=args.require_any_tail_packed_page, satisfied=any_route_a_state(forced_coverage, "max_packed_tail_tokens")),
     }
     manifest = {
-        "schema_version": A4129_SCHEMA,
+        "schema_version": schema_version,
         "status": "complete",
         "created_at": datetime.now(timezone.utc).isoformat(),
         "git_commit": get_git_commit(),
@@ -209,9 +237,9 @@ def main() -> None:
         "boundaries": ["Untimed fixed-length semantic continuation diagnostic, not a performance result.", "Forced common-token logits are paired while inputs remain identical; independent rows after a mismatch are output-impact diagnostics, not same-input numerical comparisons.", "This does not measure quality, Full-KV equivalence, allocator memory, HBM traffic, throughput, energy, area, hardware acceleration, or RTL."],
         "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__),
     }
-    path = args.output_dir / "a4129_multilayer_continuation_manifest.json"
+    path = args.output_dir / f"{artifact_stem}_manifest.json"
     path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"A4.1.2.9 multi-layer continuation diagnostic completed: {path}")
+    print(f"{phase} multi-layer continuation diagnostic completed: {path}")
 
 
 if __name__ == "__main__":

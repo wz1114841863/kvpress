@@ -486,6 +486,37 @@ budget 512. Do not expand to all 36 layers or timing unless the multi-layer
 gate remains finite and has no forced/independent greedy divergence; this is
 still no quality, Full-KV, allocator/HBM, or performance result.
 
+**Observed A4.1.2.9 budget-one result (2026-09-04):**
+`route_a4129_layers_0_18_35_budget1_pending_continuation_01` completed all
+three per-layer replay/bridge/ownership audits, with aggregate pending staging
+coverage. Forced and independent Route-A both matched the same-mask dense
+eight-token greedy sequence. The maximum final-logit delta was `0.5`, while
+the minimum dense top-1/top-2 margin was `20.0`. This is sufficient to run the
+same-source budget-512 page-state counterpart; it does not authorize an
+all-36, quality, timing, allocator/HBM, or hardware claim.
+
+**Observed A4.1.2.9 budget-512 result (2026-09-04):**
+the three-layer page-state companion passed aggregate multi-page/full-page/tail
+coverage, all per-layer replay/bridge/ownership audits, and both continuation
+relations. Its largest final-logit difference was `0.75`, compared with a
+minimum dense decision margin of `20.0`; no forced argmax or independent token
+changed. The scalar logit relation is not bitwise identical to budget one,
+which is valid numerical-layout variation rather than evidence of a read
+error. The pending-versus-packed variable is now controlled for `{0,18,35}`.
+Next create an all-36-layer immutable source and repeat budget-one semantic
+continuation before its page-state counterpart; do not begin timing yet.
+
+### A4.1.2.10 implementation — all 36 layers
+
+`tools/run_kvzap_route_a4130_alllayer_continuation_diagnostic.py` now wraps the
+validated multi-layer continuation core with a strict all-layer scope. It
+rejects partial `--target-layers`, uses a distinct schema/manifest, and retains
+separate replay state and ownership guards per decoder layer. First produce a
+new immutable all-layer source, then run only the budget-one pending gate and
+inspect it before the budget-512 page-state companion. This is still an
+untimed same-mask semantic check, not the true storage-substitution or A4.1
+performance phase.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

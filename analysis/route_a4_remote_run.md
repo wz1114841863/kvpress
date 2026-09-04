@@ -879,6 +879,82 @@ the forced/independent token relations. It is not an all-36, timing, quality,
 allocator/HBM, or hardware experiment. Review this pending artifact before the
 separate budget-512 page-state counterpart.
 
+After the budget-one manifest has passed review, reuse its immutable source in
+a fresh multi-page page-state gate:
+
+```bash
+SOURCE_ID=route_a4129_replay_source_layers_0_18_35_01
+RUN_ID=route_a4129_layers_0_18_35_budget512_multipage_continuation_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a4129_multilayer_continuation_diagnostic.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers 0 18 35 \
+  --target-kv-head all \
+  --admission-budget 512 \
+  --require-any-multi-page-packed \
+  --require-any-full-packed-page \
+  --require-any-tail-packed-page \
+  --top-k 8 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+The review must separately confirm all three layers' replay and ownership
+guards, page-state coverage, and forced/independent greedy relations. It stays
+an untimed semantic gate.
+
+## Next A4.1.2.10 scope — all 36 layers, all KV heads
+
+The `{0,18,35}` pending and page-state gates are complete. The next semantic
+scope is all 36 layers simultaneously, but it begins with a fresh all-layer
+replay source and a budget-one pending gate. Do not substitute an all-36 timing
+runner or reuse the three-layer source.
+
+```bash
+SOURCE_ID=route_a4130_replay_source_all_layers_01
+test ! -e "analysis/experiments/${SOURCE_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a_policy_backend.py \
+  tests/test_kvzap_route_a4129_multilayer_continuation.py \
+  tests/test_kvzap_route_a_continuation_diagnostic.py
+.venv/bin/python tools/collect_kvzap_route_a41_replay_source.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --admission-budget 1 \
+  --output-dir "analysis/experiments/${SOURCE_ID}"
+```
+
+Synchronize and review the complete source before the all-layer pending gate.
+The source must resolve exactly all 36 layers; for this request/horizon, expect
+268,992 events if each layer reproduces the 7,472-event stream.
+
+```bash
+RUN_ID=route_a4130_all_layers_budget1_pending_continuation_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a4130_alllayer_continuation_diagnostic.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --require-any-pending \
+  --top-k 8 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+The required contract is independent per-layer replay and ownership guards,
+all-head bridge coverage, forced common-token diagnostics, and independent
+greedy diagnostics. Review this artifact before its separately fresh budget-512
+page-state companion; it remains untimed.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every
