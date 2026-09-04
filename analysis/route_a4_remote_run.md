@@ -605,8 +605,8 @@ softmax-tolerance conclusion.
 
 ```bash
 SOURCE_ID=route_a41_replay_source_layer0_budget1_01
-# Use a fresh ID: the earlier run stopped before emitting an accepted manifest.
-RUN_ID=route_a4124_multitoken_bridge_layer0_head6_budget1_layoutfix_01
+# Schema 1.1: both Route-A and the same-mask dense control bridge q_len>1.
+RUN_ID=route_a4124_multitoken_bridge_layer0_head6_budget1_densebridge_01
 test ! -e "analysis/experiments/${RUN_ID}"
 .venv/bin/python -m pytest -q -s tests/test_kvzap_route_a_policy_backend.py tests/test_kvzap_route_a4123_first_decode_logits.py
 .venv/bin/python tools/run_kvzap_route_a4124_multitoken_bridge_gate.py \
@@ -616,9 +616,12 @@ test ! -e "analysis/experiments/${RUN_ID}"
   --output-dir "analysis/experiments/${RUN_ID}"
 ```
 
-Synchronize the fresh directory. It must show question-token bridge coverage,
-finite dense/Route-A logits, equal first argmax, prefix replay accounting, and
-no physical-slot-freeing claim.
+Synchronize the fresh directory. It must show bridge coverage for both the
+same-mask dense control and Route-A, their bounded per-token attention-summary
+diagnostics, finite paired logits, equal first argmax, prefix replay accounting,
+and no physical-slot-freeing claim. The old `layoutfix_01` artifact establishes
+the output-layout repair only; its dense q_len>1 path was native Full-KV and is
+not a valid numerical same-mask baseline.
 
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay

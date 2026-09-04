@@ -119,6 +119,33 @@ def test_cold_ownership_multi_token_bridge_replaces_selected_heads_causally_with
     backend.assert_ownership_guard_complete()
 
 
+def test_dense_same_mask_multi_token_bridge_does_not_fall_back_to_full_kv_selected_heads():
+    backend = DenseSameMaskAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    module = SimpleNamespace(scaling=1.0)
+    keys = torch.arange(10, dtype=torch.float32).reshape(1, 1, 5, 2)
+    values = keys + 10
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 3, dtype=torch.bool), 0
+    backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 3, 4, 2), None), module, torch.ones(1, 4, 3, 2), keys[:, :, :3], values[:, :, :3], None, 0.0, scaling=1.0)
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 2, dtype=torch.bool), 3
+    native_calls = []
+
+    def original(_module, _query, safe_key, safe_value, _mask, _dropout, **_kwargs):
+        native_calls.append(True)
+        assert torch.equal(safe_key[0, 0], torch.zeros_like(safe_key[0, 0]))
+        assert torch.equal(safe_value[0, 0], torch.zeros_like(safe_value[0, 0]))
+        return torch.full((1, 2, 4, 2), 7.0), None
+
+    query = torch.tensor([[[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]], [[1., 1.], [1., -1.]], [[-1., 1.], [1., 1.]]]])
+    output, _weights = backend.attention(original, module, query, keys, values, None, 0.0, scaling=1.0)
+    assert native_calls == [True]
+    assert output.shape == (1, 2, 4, 2)
+    assert not torch.equal(output, torch.full_like(output, 7.0))
+    assert backend.policy_multi_token_calls == 1
+    assert backend.policy_multi_token_tokens == 2
+    assert backend.multi_token_comparison_summary()["comparison_count"] == 2
+    assert backend.multi_token_comparison_summary()["max_attn_output_abs_difference"] == 0.0
+
+
 def test_all_kv_heads_replace_the_full_layer_without_calling_original_on_decode():
     backend = RouteAPolicyAttentionBackend(fake_model(), object(), layer=0, kv_head=None, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
     module = SimpleNamespace(scaling=1.0)

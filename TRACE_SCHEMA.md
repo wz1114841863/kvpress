@@ -968,3 +968,15 @@ replaces selected-head outputs token by token, and gives native attention zero
 placeholders for selected heads while it computes unselected heads. It requires
 finite paired logits and equal first argmax, but remains an untimed replay
 prefix and does not claim physical cache-slot removal.
+
+`kvzap-route-a4124-multitoken-bridge-gate-1.1` additionally requires the
+independent same-mask dense control to use the same causal multi-token bridge.
+Version 1.0 delegated its q_len>1 selected heads to native Full-KV attention,
+so a final-logit delta against Route-A conflated KVzap masking with numerical
+reduction error. Version 1.1 records bounded per-question-token selected-head
+attention summaries (`max_attn_output_abs_difference`, FP32 counterpart, and
+executed-dtype ULP count) for both control and Route-A. It stores no full
+attention, K/V, or hidden-state tensors. A final-logit comparison in this
+schema is therefore a same-mask comparison; it still has no universal
+elementwise-equality requirement because the packed online merge and dense
+reference use legal different reduction orders.

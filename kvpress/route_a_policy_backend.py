@@ -136,6 +136,22 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             ],
         }
 
+    def multi_token_comparison_summary(self) -> dict[str, Any]:
+        """Return bounded selected-head diagnostics for a causal bridge.
+
+        The rows contain scalar error summaries only.  Never serialize Q/K/V,
+        attention matrices, or hidden-state tensors into a gate artifact.
+        """
+        rows = [row for row in self.comparisons if bool(row.get("multi_token_bridge", False))]
+        return {
+            "comparison_count": len(rows),
+            "cache_positions": [int(row["cache_position"]) for row in rows],
+            "max_attn_output_abs_difference": max((float(row["max_abs_difference"]) for row in rows), default=0.0),
+            "max_attn_output_abs_difference_fp32": max((float(row["max_abs_difference_fp32"]) for row in rows), default=0.0),
+            "max_executed_dtype_ulps": max((float(row["max_executed_dtype_ulps"]) for row in rows), default=0.0),
+            "executed_dtype_ulp_limit": self.max_executed_dtype_ulps,
+        }
+
     def __enter__(self):
         self.attach(initialize_predictor=True)
         return self
@@ -359,6 +375,89 @@ class DenseSameMaskAttentionBackend(RouteAPolicyAttentionBackend):
 
     def _new_state(self, *, heads: int, head_dim: int) -> DenseSameMaskAttentionState:
         return DenseSameMaskAttentionState(heads=heads, head_dim=head_dim, window=self.window)
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.policy_multi_token_calls = 0
+        self.policy_multi_token_tokens = 0
+
+    def _has_prior_cold(self) -> bool:
+        return self.state is not None and self.state.next_position > self.window
+
+    def _multi_token_bridge(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
+        """Causally substitute selected heads with the dense same-mask control.
+
+        This is deliberately independent of packed Route-A storage.  It closes
+        the former q_len>1 fallback, where this control delegated selected
+        heads to native Full-KV attention and therefore was not a valid
+        same-mask baseline for a multi-token question forward.
+        """
+        if self.state is None or self._keep_mask is None or self._score_start is None:
+            raise AssertionError("multi-token same-mask bridge requires captured state")
+        if query.shape[0] != 1 or key.ndim != 4 or value.shape != key.shape:
+            raise AssertionError("multi-token same-mask bridge requires batch-one [B,H,T,D] K/V")
+        heads, kv_heads, q_len = query.shape[1], key.shape[1], query.shape[2]
+        if q_len <= 1 or heads % kv_heads:
+            raise AssertionError("invalid multi-token same-mask GQA shape")
+        if self._keep_mask.shape[-1] != q_len:
+            raise AssertionError("captured mask length differs from multi-token query length")
+        selected_heads = self.selected_kv_heads(kv_heads)
+        groups = heads // kv_heads
+        scaling = float(kwargs.get("scaling", getattr(module, "scaling", 1.0)))
+        safe_key, safe_value = key.clone(), value.clone()
+        for head in selected_heads:
+            safe_key[0, head].zero_()
+            safe_value[0, head].zero_()
+        native_output, native_weights = original(module, query, safe_key, safe_value, attention_mask, dropout, **kwargs)
+        expected_output_shape = (query.shape[0], q_len, heads, query.shape[-1])
+        if tuple(native_output.shape) != expected_output_shape or not torch.isfinite(native_output).all():
+            raise AssertionError("safe native same-mask multi-token attention returned an invalid output")
+        dense_output = native_output.clone()
+        per_position_rows: dict[int, dict[int, list[tuple[torch.Tensor, int]]]] = {}
+
+        def append_and_replace(offset: int, position: int) -> None:
+            if self.state is None:
+                raise AssertionError("same-mask state disappeared during multi-token bridge")
+            per_head: dict[int, list[tuple[torch.Tensor, int]]] = {head: [] for head in selected_heads}
+            for query_head in range(heads):
+                mapped = query_head // groups
+                if mapped not in selected_heads:
+                    continue
+                q = query[0, query_head, offset]
+                dense_fp32 = self.state.attention(q * scaling, head=mapped)
+                reference_fp32 = dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped))
+                torch.testing.assert_close(dense_fp32, reference_fp32, rtol=self.rtol, atol=self.atol)
+                dense = dense_fp32.to(dtype=q.dtype)
+                dense_output[0, offset, query_head] = dense
+                per_head[mapped].append((dense, query_head))
+            if any(not rows for rows in per_head.values()):
+                raise AssertionError("selected same-mask KV head had no multi-token query-head group")
+            per_position_rows[position] = per_head
+
+        self._append_state(key, value, token_by_token=True, after_token_append=append_and_replace)
+        for position, by_head in sorted(per_position_rows.items()):
+            for head, rows in by_head.items():
+                selected = self.state.state_summary(head)
+                selected.update({
+                    "cache_position": position,
+                    "layer": self.layer,
+                    "kv_head": head,
+                    "query_head_count": len(rows),
+                    "max_abs_difference": 0.0,
+                    "max_abs_difference_fp32": 0.0,
+                    "max_executed_dtype_ulps": 0.0,
+                    "executed_dtype_ulp_limit": self.max_executed_dtype_ulps,
+                    "multi_token_bridge": True,
+                })
+                self.comparisons.append(selected)
+        self.policy_multi_token_calls += 1
+        self.policy_multi_token_tokens += q_len
+        return dense_output, native_weights
+
+    def attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
+        if query.shape[2] > 1 and self._has_prior_cold():
+            return self._multi_token_bridge(original, module, query, key, value, attention_mask, dropout, **kwargs)
+        return super().attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
 
     def coverage(self) -> dict[str, Any]:
         if self.state is None:

@@ -336,6 +336,14 @@ attention sees zero placeholders for selected heads. The next remote gate must
 require finite logits, equal first argmax, full bridge-token count, and prior
 poison-read coverage; it remains untimed and prefix-only.
 
+**A4.1.2.4 schema 1.1 correction:** the same-mask dense control now also uses
+a causal selected-head bridge for q_len>1. The preceding 1.0 artifact is useful
+for proving the Route-A bridge no longer produces NaNs, but it is not a valid
+numeric Route-A-versus-same-mask-dense comparison because its dense selected
+heads fell back to native Full-KV. The new manifest records bounded per-token
+attention-error summaries for the valid paired comparison; it remains a
+single-layer/head, prefix-only semantic diagnostic.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

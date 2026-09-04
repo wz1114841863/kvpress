@@ -277,6 +277,11 @@ class DenseSameMaskAttentionState:
     def mask_summary(self) -> dict[str, int | str]:
         return {"original_mask_sha256": self._mask_digest.hexdigest(), "original_mask_decision_count": self._mask_count}
 
+    @property
+    def next_position(self) -> int:
+        """Exclusive next cache position, used by multi-token control gates."""
+        return self._next_position
+
     def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int, component_measure=None) -> None:
         if keys.ndim != 3 or values.shape != keys.shape or keys.shape[:1] != (self.heads,) or keys.shape[2] != self.head_dim:
             raise ValueError("keys and values must be [KV-head, token, head-dim]")

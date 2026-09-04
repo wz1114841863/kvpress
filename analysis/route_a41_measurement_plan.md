@@ -192,6 +192,15 @@ head placeholders and supplies only unselected outputs. Require finite logits,
 equal dense/Route-A first argmax, complete bridge token coverage, and poison
 prior-read coverage. This is still a semantic prefix gate, not measurement.
 
+Schema 1.1 corrects the paired baseline: the dense control must itself replace
+selected q_len>1 outputs with a causal same-mask dense bridge. The 1.0 dense
+control delegated that case to native Full-KV attention, so its Route-A logit
+delta mixed intended pruning behavior with numeric error. Report the bounded
+per-token selected-head attention summaries before interpreting final-logit
+deltas. Do not require bitwise-equal logits: the declared equivalence contract
+is the per-head FP32 `rtol`/`atol` guard plus the recorded execution-dtype ULP
+limit; any downstream logit effect is diagnostic until characterized.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers
