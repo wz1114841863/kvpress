@@ -15,6 +15,7 @@ from typing import Any, Callable
 import torch
 
 from kvpress.route_a_attention import DenseSameMaskAttentionState, RouteAPackedAttentionState, dense_same_mask_attention
+from kvpress.route_a_external_cold_storage import RouteAExternalColdStorageAdapter
 
 
 MaskEvent = tuple[bool, float]
@@ -885,6 +886,99 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
         if query.shape[2] == 1 and (not isinstance(result, tuple) or not torch.isfinite(result[0]).all()):
             raise AssertionError("selected ownership Route-A attention produced a non-finite decode output")
         return result
+
+
+class RouteAQwenExternalColdStorageAttentionBackend(RouteAColdOwnershipAttentionBackend):
+    """Qwen-hook integration of the explicit external selected-head store.
+
+    This is intentionally *not* a ``DynamicCache`` subclass.  Qwen continues
+    to provide the normal logical ``cache_position`` and its native cache is
+    poisoned as an ownership guard; the selected mature K/V read path is the
+    external adapter's pending/packed state.  It is the narrow bridge needed
+    before a future cache-interface replacement, not physical cache release.
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.external_cold_storage: RouteAExternalColdStorageAdapter | None = None
+        self.external_storage_append_calls = 0
+
+    def _append_state(self, key: torch.Tensor, value: torch.Tensor, *, token_by_token: bool = False, after_token_append: Callable[[int, int], None] | None = None) -> None:
+        """Append only newly created K/V into an external logical-position store."""
+        if self._keep_mask is None or self._score_start is None:
+            raise AssertionError("Route-A attention was called without a matching score capture")
+        keep_mask, start = self._keep_mask, self._score_start
+        q_len = keep_mask.shape[-1]
+        if key.ndim != 4 or value.shape != key.shape or key.shape[0] != 1 or key.shape[1] != keep_mask.shape[1]:
+            raise AssertionError("cache K/V does not match the captured KVzap score shape")
+        if key.shape[2] < start + q_len:
+            raise AssertionError("Qwen cache K/V does not cover newly scored positions")
+        if self.external_cold_storage is None:
+            selected = self.selected_kv_heads(key.shape[1])
+            self.external_cold_storage = RouteAExternalColdStorageAdapter(
+                heads=key.shape[1], head_dim=key.shape[-1], window=self.window,
+                page_tokens=self.page_tokens, admission_budget=self.admission_budget,
+                selected_kv_heads=selected,
+            )
+            self.state = self.external_cold_storage.state
+        elif self.state is not self.external_cold_storage.state:
+            raise AssertionError("external cold-storage adapter lost Route-A state ownership")
+
+        def append_one(offset: int) -> None:
+            if self.external_cold_storage is None:
+                raise AssertionError("external cold-storage adapter disappeared")
+            position = start + offset
+            self.external_cold_storage.append(
+                key[0, :, position:position + 1], value[0, :, position:position + 1],
+                keep_mask[0, :, offset:offset + 1], start_position=position,
+            )
+            self.external_storage_append_calls += 1
+            if after_token_append is not None:
+                after_token_append(offset, position)
+
+        if token_by_token:
+            for offset in range(q_len):
+                append_one(offset)
+        else:
+            # The adapter is intentionally appended token-wise even on prefill:
+            # this makes physical hot eviction and logical positions identical
+            # to Qwen's later multi-token causal bridge.
+            for offset in range(q_len):
+                append_one(offset)
+        self._keep_mask = self._score_start = None
+
+    def external_storage_summary(self) -> dict[str, Any]:
+        if self.external_cold_storage is None:
+            return {
+                "qwen_external_cold_storage_interface_active": False,
+                "transformers_dynamic_cache_substitution": False,
+                "adapter_append_calls": 0,
+            }
+        summary = self.external_cold_storage.ownership_summary()
+        summary.update({
+            "qwen_external_cold_storage_interface_active": True,
+            "adapter_append_calls": self.external_storage_append_calls,
+            "qwen_logical_cache_position_tokens": self.external_cold_storage.logical_cache_tokens,
+        })
+        return summary
+
+    def ownership_summary(self) -> dict[str, Any]:
+        summary = super().ownership_summary()
+        summary["external_cold_storage"] = self.external_storage_summary()
+        return summary
+
+    def assert_external_storage_interface_complete(self) -> None:
+        self.assert_ownership_guard_complete()
+        if self.external_cold_storage is None:
+            raise AssertionError("Qwen external cold-storage interface was never initialized")
+        self.external_cold_storage.assert_storage_contract()
+        summary = self.external_storage_summary()
+        if not summary["qwen_external_cold_storage_interface_active"]:
+            raise AssertionError("Qwen external cold-storage interface was not active")
+        if summary["adapter_selected_native_cold_tensor_tokens"] != 0:
+            raise AssertionError("Qwen external adapter retained selected mature cold tensors")
+        if summary["qwen_logical_cache_position_tokens"] != self.state.next_position:
+            raise AssertionError("Qwen logical cache position differs from external Route-A state")
 
 
 class RouteAPolicyAttentionBackendSet(AbstractContextManager):

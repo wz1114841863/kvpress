@@ -533,6 +533,21 @@ coverage with same-mask packed-attention equality.
 This is functional storage-semantics evidence only. It does not attach to
 Qwen, free native-cache slots, or authorize allocator/timing/HBM claims.
 
+### A4.1.3.2 — Qwen external-cold interface semantic gate
+
+`RouteAQwenExternalColdStorageAttentionBackend` and
+`tools/run_kvzap_route_a4137_qwen_external_cold_storage_gate.py` attach the
+external adapter at one replayed Qwen layer/head. The hook accepts newly
+created K/V at their Qwen logical cache positions, maintains bounded selected
+native-hot adapter tensors, and replaces selected attention through Route-A
+state. Existing NaN poisoning stays active solely to reject an accidental
+native mature-cold read. The gate is paired against same-mask dense replay and
+records, rather than requires, later greedy-token equality.
+
+This remains untimed and leaves native DynamicCache allocated. A passing result
+is necessary before designing a real Qwen cache interface, but it is not a
+physical storage or allocator result.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

@@ -1141,6 +1141,37 @@ cases, with same-mask attention error within gate tolerance. It must report
 adapter evidence only; it is not allocator, HBM, latency, throughput, energy,
 hardware, or RTL evidence.
 
+## A4.1.3.2 — Qwen external-cold storage interface
+
+Run this remote CUDA semantic gate only after synchronizing the new adapter and
+backend code. It is deliberately a single layer/head integration; it does not
+yet replace or shrink `DynamicCache`.
+
+```bash
+RUN_ID=route_a4137_qwen_external_layer0_head6_budget1_pending_01
+SOURCE_ID=route_a41_replay_source_layer0_budget1_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4137_qwen_external_cold_storage_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 6 \
+  --admission-budget 1 \
+  --require-pending-nonempty \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the complete fresh directory. A valid manifest must show complete
+replay, selected pending coverage, a true external-interface flag, zero
+adapter selected-cold tensor tokens, and both
+`transformers_dynamic_cache_substitution: false` and
+`native_dense_cold_slots_physically_freed: false`. The dense/Route generated
+token relation is recorded only. This is not a timing, allocator, physical
+memory, HBM, throughput, energy, hardware, or RTL experiment.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

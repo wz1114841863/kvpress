@@ -611,6 +611,18 @@ segments, selected-head same-mask attention, pending budget-1, and packed
 budget-512 multi-page/full-page/tail state. It still neither attaches to Qwen
 nor frees native DynamicCache slots; no measurement conclusion is authorized.
 
+### A4.1.3.2 implementation — Qwen external-cold interface gate
+
+`RouteAQwenExternalColdStorageAttentionBackend` is the minimal Qwen-specific
+bridge. It consumes Qwen's normal post-cache-update K/V only for the newly
+scored positions, feeds those into the external adapter under replayed original
+mask decisions, and substitutes selected attention from Route-A state. The
+existing native-cold poison/read check remains a negative guard, not an
+allocator mechanism. A4137 is single layer/head, untimed, and pairs a Full-KV
+bypass, same-mask dense control, and external-cold Route-A path. It must retain
+both `transformers_dynamic_cache_substitution: false` and
+`native_dense_cold_slots_physically_freed: false`.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

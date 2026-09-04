@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import torch
 from transformers import DynamicCache
 
-from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, compare_original_mask_events
+from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackend, compare_original_mask_events
 
 
 def fake_model(layer_count=1):
@@ -105,6 +105,28 @@ def test_cold_ownership_poison_persists_in_dynamic_cache_between_decode_updates(
     assert torch.isfinite(output).all()
     assert torch.isnan(cache.layers[0].keys[0, 0, :3]).all()
     backend.assert_ownership_guard_complete()
+
+
+def test_qwen_external_cold_storage_backend_keeps_logical_position_with_only_selected_hot_tensor():
+    backend = RouteAQwenExternalColdStorageAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    module = SimpleNamespace(scaling=1.0)
+    cache = DynamicCache()
+    keys = torch.arange(6, dtype=torch.float32).reshape(1, 1, 3, 2)
+    cached_keys, cached_values = cache.update(keys, keys + 10, 0)
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 3, dtype=torch.bool), 0
+    backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 3, 2, 2), None), module, torch.ones(1, 2, 3, 2), cached_keys, cached_values, None, 0.0, scaling=1.0)
+    next_key = torch.tensor([[[[9.0, 10.0]]]])
+    cached_keys, cached_values = cache.update(next_key, next_key + 10, 0)
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 1, dtype=torch.bool), 3
+    output, _weights = backend.attention(lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("external selected owner path called dense attention")), module, torch.tensor([[[[1., 0.]], [[0., 1.]]]]), cached_keys, cached_values, None, 0.0, scaling=1.0)
+    assert torch.isfinite(output).all()
+    backend.assert_external_storage_interface_complete()
+    external = backend.ownership_summary()["external_cold_storage"]
+    assert external["qwen_external_cold_storage_interface_active"]
+    assert external["qwen_logical_cache_position_tokens"] == 4
+    assert external["adapter_selected_native_hot_tensor_tokens"] == 1
+    assert external["adapter_selected_native_cold_tensor_tokens"] == 0
+    assert external["transformers_dynamic_cache_substitution"] is False
 
 
 def test_cold_ownership_multi_token_bridge_replaces_selected_heads_causally_with_safe_native_placeholders():

@@ -1220,6 +1220,19 @@ attached; `transformers_dynamic_cache_substitution` and
 `native_selected_cold_slots_physically_freed` remain false. It provides no
 allocator, HBM, runtime, throughput, energy, hardware, or RTL result.
 
+`kvzap-route-a4137-qwen-external-cold-storage-gate-1.0` is A4.1.3.2, the
+first model-attached Qwen gate for that adapter. It is limited to one replayed
+layer/KV head. Qwen supplies normal logical cache positions, while the hook
+appends newly created K/V into the external adapter and selected attention
+reads mature retained K/V only through its hot/pending/packed state. Native
+selected cold K/V remains NaN-poisoned to detect a fallback. The artifact
+records complete replay consumption, selected coverage, adapter logical versus
+physical-hot counts, and the recorded same-mask dense generation relation.
+`transformers_dynamic_cache_substitution` and
+`native_dense_cold_slots_physically_freed` must be false: this is a semantic
+integration gate, not a physical storage, allocator, HBM, timing, throughput,
+energy, hardware, or RTL measurement.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35

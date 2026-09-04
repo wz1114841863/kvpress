@@ -32,8 +32,8 @@ from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, bui
 A4122_SCHEMA = "kvzap-route-a4122-cache-ownership-gate-1.1"
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="A4.1.2.2 untimed selected-head native-cold ownership gate; not a storage or performance benchmark.")
+def parse_args(*, description: str = "A4.1.2.2 untimed selected-head native-cold ownership gate; not a storage or performance benchmark.") -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=description)
     request = parser.add_mutually_exclusive_group()
     request.add_argument("--preset", choices=PRESETS, default="retrieval")
     request.add_argument("--input-jsonl", type=Path)
