@@ -831,6 +831,54 @@ all eight heads' multi-token bridge coverage, native-cold ownership coverage,
 the forced paired per-step relations, and the independent token-ID relation.
 It is not timing, quality, Full-KV, allocator/HBM, or hardware evidence.
 
+## A4.1.2.9 `{0,18,35}` all-head multi-layer continuation diagnostic
+
+This next gate needs a **new** replay source because original KVzap mask events
+are layer-addressed. It is untimed. First collect the source; its online dense
+KVzap run records mask events only and is not a performance measurement.
+
+```bash
+SOURCE_ID=route_a4129_replay_source_layers_0_18_35_01
+test ! -e "analysis/experiments/${SOURCE_ID}"
+.venv/bin/python -m pytest -q -s \
+  tests/test_kvzap_route_a_policy_backend.py \
+  tests/test_kvzap_route_a4129_multilayer_continuation.py \
+  tests/test_kvzap_route_a_continuation_diagnostic.py
+.venv/bin/python tools/collect_kvzap_route_a41_replay_source.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers 0 18 35 \
+  --admission-budget 1 \
+  --output-dir "analysis/experiments/${SOURCE_ID}"
+```
+
+Synchronize and review the completed source manifest before running the pending
+continuation gate. Then use a different new output directory:
+
+```bash
+RUN_ID=route_a4129_layers_0_18_35_budget1_pending_continuation_01
+test ! -e "analysis/experiments/${RUN_ID}"
+.venv/bin/python tools/run_kvzap_route_a4129_multilayer_continuation_diagnostic.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers 0 18 35 \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --require-any-pending \
+  --top-k 8 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+The output must show each of layers 0, 18, and 35 with all KV heads bridged,
+complete replay consumption, independent ownership poisoning/read guards, and
+the forced/independent token relations. It is not an all-36, timing, quality,
+allocator/HBM, or hardware experiment. Review this pending artifact before the
+separate budget-512 page-state counterpart.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

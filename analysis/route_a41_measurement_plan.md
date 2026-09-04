@@ -346,6 +346,54 @@ effect; an independent first mismatch identifies the earliest observed
 trajectory difference. Neither outcome measures task quality or validates
 multi-layer ownership, and neither is a performance result.
 
+**Observed A4.1.2.8 budget-one result (2026-09-04):**
+`route_a4128_allheads_layer0_budget1_pending_continuation_02` completed with
+the explicit pending guard, all eight selected heads, native-cold ownership,
+and complete consumption of the shared 7,472-event replay source in dense,
+forced Route-A, and independent Route-A paths. Dense token IDs and independent
+Route-A token IDs were identical for all eight generated offsets; forced Route-A
+also retained equal paired argmax at every offset. The largest paired-logit
+maximum was `0.640625`; the smallest dense top-1/top-2 margin was `21.5`.
+Thus no greedy-token consequence of the layer-0 all-head drift was observed in
+this fixed pending-state horizon. Run the budget-512 page-state companion next;
+this remains neither a quality nor a performance conclusion.
+
+**Observed A4.1.2.8 budget-512 result (2026-09-04):**
+`route_a4128_allheads_layer0_budget512_multipage_continuation_01` passed its
+explicit multi-page/full-page/tail-page guards. Head 6 reached four packed
+pages, three full pages, and a 63-token tail with no pending state. All paths
+again consumed the same 7,472 replay events; forced Route-A argmax and
+independent Route-A token IDs matched dense for all eight offsets. The forced
+and independent per-step paired-logit relation tables are exactly identical to
+the budget-one artifact. The only recorded numerical change is the bounded
+per-attention FP32 maximum (`5.2154e-08` versus `4.4703e-08`), with both
+remaining one executed-dtype ULP. This controls pending versus packed page
+layout for this one-layer horizon. The next semantic expansion is not all 36
+layers: create a new immutable replay source for layers `{0,18,35}` and run the
+same all-head forced/independent continuation diagnostic for that layer set,
+pending before page-state coverage.
+
+### A4.1.2.9 — `{0,18,35}` simultaneous all-head continuation diagnostic
+
+`tools/collect_kvzap_route_a41_replay_source.py` already supports a layer set;
+collect a fresh immutable online dense-KVzap source for exactly `{0,18,35}`
+before installing the new gate. `tools/run_kvzap_route_a4129_multilayer_continuation_diagnostic.py`
+then consumes that source in three untimed paths: all-layer same-mask dense
+greedy, all-layer ownership Route-A forced with dense IDs, and all-layer
+ownership Route-A independent greedy. The new
+`RouteAColdOwnershipAttentionBackendSet` creates independent hot/pending/page
+state and poison/read audits for every selected layer; it does not free native
+cache allocation.
+
+Run budget one with aggregate pending coverage first, then a separately sourced
+or identically compatible budget-512 run with aggregate multi-page/full-page/
+tail coverage. Require all three layers' replay consumption, every selected
+layer/head causal bridge, finite outputs, and per-layer ownership guards. A
+forced argmax change or independent first mismatch is an output-impact finding
+that must be localized before all-36 expansion. Even a clean result remains a
+single request/fixed-horizon semantic diagnostic, not timing, quality, memory,
+HBM, or hardware evidence.
+
 ### A4.1.2 — all-layer end-to-end decode gate
 
 After component timing is internally consistent, measure all selected layers

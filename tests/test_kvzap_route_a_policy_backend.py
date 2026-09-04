@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import torch
 from transformers import DynamicCache
 
-from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, compare_original_mask_events
+from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, compare_original_mask_events
 
 
 def fake_model(layer_count=1):
@@ -218,6 +218,13 @@ def test_backend_set_keeps_independent_layer_state_and_aggregates_coverage():
     assert backend_set.policy_decode_calls == {0: 1, 1: 1}
     assert len(backend_set.comparisons) == 4
     assert [row["layer"] for row in backend_set.coverage()["layers"]] == [0, 1]
+
+
+def test_cold_ownership_backend_set_builds_one_guarded_backend_per_layer():
+    backend_set = RouteAColdOwnershipAttentionBackendSet(fake_model(2), object(), layers=(0, 1), kv_head=None, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6)
+    assert list(backend_set.backends) == [0, 1]
+    assert all(isinstance(item, RouteAColdOwnershipAttentionBackend) for item in backend_set.backends.values())
+    assert [row["layer"] for row in backend_set.ownership_summary()["layers"]] == [0, 1]
 
 
 def test_dense_same_mask_backend_has_no_route_a_pending_or_packed_state():

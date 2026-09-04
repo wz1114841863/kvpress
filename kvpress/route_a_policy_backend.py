@@ -716,3 +716,26 @@ class DenseSameMaskAttentionBackendSet(RouteAPolicyAttentionBackendSet):
     """Multi-layer set for the independent online same-mask dense control."""
 
     backend_class = DenseSameMaskAttentionBackend
+
+
+class RouteAColdOwnershipAttentionBackendSet(RouteAPolicyAttentionBackendSet):
+    """Multi-layer Route-A set with per-layer native-cold ownership guards.
+
+    The set deliberately retains an independent ownership state and poison/read
+    audit for every selected layer.  It does not free native cache allocation;
+    callers must report that boundary explicitly.
+    """
+
+    backend_class = RouteAColdOwnershipAttentionBackend
+
+    def assert_ownership_guard_complete(self) -> None:
+        for backend in self.backends.values():
+            backend.assert_ownership_guard_complete()
+
+    def ownership_summary(self) -> dict[str, Any]:
+        return {
+            "layers": [
+                {"layer": layer, **backend.ownership_summary()}
+                for layer, backend in self.backends.items()
+            ]
+        }

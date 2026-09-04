@@ -1068,3 +1068,40 @@ physical-memory, HBM, throughput, energy, area, hardware, or RTL result.
 Requested pending/page-state guards apply only to the Route-A paths: the dense
 same-mask control intentionally has no Route-A pending FIFO or packed-page
 state and is not required to exercise either.
+
+The first A4128 artifact,
+`route_a4128_allheads_layer0_budget1_pending_continuation_02`, completed its
+pending requirement and exhausted the shared 7,472-event replay source in all
+three paths. Across its declared eight generated tokens, forced Route-A had
+equal paired argmax at every offset and independent Route-A emitted the same
+eight token IDs as dense. The largest per-offset logit maximum was `0.640625`,
+whereas the smallest recorded dense top-1/top-2 margin was `21.5`. This is a
+bounded greedy-decision observation for this layer-0, all-head, pending-state
+request only; it does not quantify answer quality or establish behavior for
+longer continuations, other layers, or page states.
+
+The matching page-state artifact,
+`route_a4128_allheads_layer0_budget512_multipage_continuation_01`, completed
+the requested multi-page, full-page, and tail-page guards. Head 6 reached four
+packed pages, three full pages, and a 63-token tail, with zero pending tokens.
+It also exhausted the same replay source, had equal forced argmax at all eight
+offsets, and had no independent greedy token mismatch. Its bounded per-step
+logit relation table is exactly equal to the budget-one table; only the
+per-attention FP32 maximum changed insignificantly (`5.2154e-08` to
+`4.4703e-08`), while both remain one execution-dtype ULP. Thus, for this fixed
+single-layer request and horizon, no greedy-token consequence is observed from
+either pending or packed page layout. This does not establish multi-layer,
+longer-continuation, quality, or performance behavior.
+
+`kvzap-route-a4129-multilayer-continuation-diagnostic-1.0` is the next
+untimed semantic expansion. Its initial scope is exactly layers `{0,18,35}`
+with every KV head selected in each layer. It consumes a distinct immutable
+multi-layer A4.1 replay source: each source event remains addressed by its
+original `(layer, KV head, cache position)`. Its three paths are same-mask dense
+greedy, Route-A forced with the dense IDs, and independent Route-A greedy.
+Every selected layer must have complete replay consumption, all selected heads
+must bridge each question token, and each Route-A layer must independently pass
+native-cold ownership poisoning/read guards. State requirements are aggregate
+across selected layer/head states, but coverage is serialized per layer and
+head. The gate is strictly fixed-horizon and untimed; it is neither a quality,
+Full-KV, allocator/HBM, throughput, nor hardware result.

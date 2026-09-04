@@ -450,6 +450,42 @@ paired comparisons. Run first with budget-one pending coverage, then with
 budget-512 aggregate multi-page/full-page/tail coverage. Do not interpret this
 as quality, Full-KV equivalence, timing, allocator/HBM, or multi-layer evidence.
 
+**Observed A4.1.2.8 budget-one result (2026-09-04):**
+`route_a4128_allheads_layer0_budget1_pending_continuation_02` completed with
+pending-state coverage and complete shared replay consumption for all three
+paths. Over the declared eight-token horizon, forced Route-A had equal paired
+argmax at every offset and independent Route-A generated exactly the same token
+IDs as dense. Its largest per-offset logits maximum was `0.640625`, while the
+smallest dense top-1/top-2 margin was `21.5`. No token-level greedy consequence
+was observed for this fixed layer-0/all-head/pending replay, but page-state,
+longer-horizon, multi-layer, quality, and performance questions remain open.
+
+**Observed A4.1.2.8 budget-512 result (2026-09-04):**
+`route_a4128_allheads_layer0_budget512_multipage_continuation_01` additionally
+passed aggregate multi-page/full-page/tail coverage: head 6 reached four
+packed pages, three full pages, and a 63-token tail, while pending correctly
+drained to zero. The shared replay was again complete; forced argmax and the
+independent eight-token greedy sequence matched dense exactly. Its per-step
+paired-logit relation table is exactly the budget-one table, controlling the
+pending-versus-packed layout variable for this fixed layer-0 all-head horizon.
+Next create a fresh replay source for layers `{0,18,35}` and repeat this
+forced/independent all-head continuation diagnostic there before any all-36
+layer or timing expansion.
+
+### A4.1.2.9 next gate — `{0,18,35}` simultaneous ownership
+
+First collect a new immutable replay source for precisely layers `{0,18,35}`;
+the old layer-0 source cannot be reused because each selected layer needs its
+own original-mask events. The new
+`tools/run_kvzap_route_a4129_multilayer_continuation_diagnostic.py` attaches
+all-head same-mask dense or native-cold ownership Route-A backends to the three
+layers simultaneously. It preserves the A4128 forced common-token and
+independent greedy distinction, but requires bridge/replay/ownership coverage
+per layer. Run pending coverage at budget one before page-boundary coverage at
+budget 512. Do not expand to all 36 layers or timing unless the multi-layer
+gate remains finite and has no forced/independent greedy divergence; this is
+still no quality, Full-KV, allocator/HBM, or performance result.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:
