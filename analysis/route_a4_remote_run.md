@@ -1446,6 +1446,37 @@ breaches while hard-enforcing the FP32 same-mask and quantization-aware
 executed-dtype close guards. It is not a timing, allocator, HBM, quality, or
 hardware result.
 
+## A4.1.4 — all-layer external-storage repeated whole-decode measurement
+
+Run only after A4146's matching source and semantic gate are complete. This
+uses a fresh output directory and performs three unreported warm-ups plus ten
+reported reset runs per path. Context prefill is outside every timed region.
+
+```bash
+SOURCE_ID=route_a4146_replay_source_all_layers_budget512_01
+RUN_ID=route_a4147_qwen_all_layers_allheads_budget512_external_storage_measurement_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4147_qwen_external_storage_whole_decode_measurement.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 512 \
+  --warmup-repetitions 3 \
+  --measured-repetitions 10 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the entire fresh directory, including raw JSONL. Review three
+distinct paths, recorded shuffled execution order, count/min/median/mean/
+standard deviation/P90/P95/max distributions, generated token/digest values,
+and PyTorch allocator fields. The external-storage path is still a Python
+reference with transient Qwen attention views; do not call its timing a sparse
+kernel benchmark or its allocator counters HBM traffic.
+
 ## A4.1.3.9 — all-layer all-KV-head native-storage replacement
 
 Reuse the completed all-layer, budget-one replay source. The runner accepts

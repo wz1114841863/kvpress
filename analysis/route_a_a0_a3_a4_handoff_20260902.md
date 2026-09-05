@@ -721,6 +721,20 @@ guards, records bounded scalar ULP breaches, and requires one aggregate
 full-page/multi-page/nonempty-tail witness. Pending staging is intentionally
 not required. This remains untimed semantic evidence only.
 
+### A4.1.4 implementation — repeated external-storage whole-decode measurement
+
+A4147 is the first repeated software measurement that uses the real A4.1.3
+external-cache interface rather than a `DynamicCache` Route-A reference. It
+holds the A4146 all-layer/all-head/budget-512 replay source fixed and compares
+Full-KV bypass, same-mask dense replay, and same-mask external-storage Route-A
+in seeded shuffled reset runs. Context prefill/cache construction is outside
+the timed region; question forward plus greedy decode is timed with CUDA events
+and wall clock, and PyTorch allocator snapshots are recorded before/after it.
+Every Route-A reset run reasserts replay, ownership, page coverage, FP32, and
+quantization-aware numerical guards. It is measured Python-reference software
+evidence only; profiler, traffic counters, and hardware conclusions remain
+separate.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

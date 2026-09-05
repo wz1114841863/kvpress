@@ -21,8 +21,9 @@ import torch
 
 A41_RAW_SCHEMA = "kvzap-route-a41-raw-repetition-1.0"
 A412_RAW_SCHEMA = "kvzap-route-a412-whole-decode-raw-repetition-1.0"
+A4147_RAW_SCHEMA = "kvzap-route-a4147-external-storage-whole-decode-raw-repetition-1.0"
 A41_HARNESS_SCHEMA = "kvzap-route-a41-harness-1.0"
-MEASURED_PATHS = frozenset({"full_kv_bypass", "same_mask_dense_replay", "same_mask_route_a_replay", "online_dense_predictor_control", "harness_self_check"})
+MEASURED_PATHS = frozenset({"full_kv_bypass", "same_mask_dense_replay", "same_mask_route_a_replay", "same_mask_route_a_external_storage_replay", "online_dense_predictor_control", "harness_self_check"})
 
 T = TypeVar("T")
 
@@ -111,7 +112,7 @@ def validate_raw_repetition(record: dict[str, Any]) -> None:
     missing = required - set(record)
     if missing:
         raise ValueError(f"raw repetition is missing fields: {sorted(missing)}")
-    if record["schema_version"] not in {A41_RAW_SCHEMA, A412_RAW_SCHEMA}:
+    if record["schema_version"] not in {A41_RAW_SCHEMA, A412_RAW_SCHEMA, A4147_RAW_SCHEMA}:
         raise ValueError("unexpected raw repetition schema")
     if record["path"] not in MEASURED_PATHS:
         raise ValueError("unknown measured path")

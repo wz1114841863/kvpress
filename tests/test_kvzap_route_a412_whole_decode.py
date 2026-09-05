@@ -1,5 +1,6 @@
-from kvpress.route_a_measurement import A412_RAW_SCHEMA, CudaMemorySnapshot, TimingSample, raw_record
+from kvpress.route_a_measurement import A412_RAW_SCHEMA, A4147_RAW_SCHEMA, CudaMemorySnapshot, TimingSample, raw_record, validate_raw_repetition
 from tools.run_kvzap_route_a412_whole_decode_gate import WHOLE_DECODE_COMPONENT, schedule_runs, token_ids_hash, whole_decode_summary
+from tools.run_kvzap_route_a4147_qwen_external_storage_whole_decode_measurement import EXTERNAL_STORAGE_PATH, MEASUREMENT_PATHS, compact_route_state
 
 
 def snapshot():
@@ -38,3 +39,24 @@ def test_whole_decode_summary_keeps_one_timed_record_per_reset_run():
     assert full_group["callback_count_per_reset_run"]["mean"] == 1.0
     full_tokens = next(group for group in summary["whole_decode_generated_tokens"] if group["path"] == "full_kv_bypass")
     assert full_tokens["generated_token_count"]["mean"] == 3.5
+
+
+def test_external_storage_measurement_schedule_keeps_three_distinct_controls():
+    schedule = schedule_runs(warmups=1, measured=1, seed=42, paths=MEASUREMENT_PATHS)
+    assert len(schedule) == 6
+    assert {path for path, _repetition, _warmup in schedule} == set(MEASUREMENT_PATHS)
+    record = make_whole_record(path=EXTERNAL_STORAGE_PATH, repetition=0, order=0, warmup=False, tokens=8)
+    record["schema_version"] = A4147_RAW_SCHEMA
+    validate_raw_repetition(record)
+
+
+def test_external_storage_measurement_outcome_is_bounded_scalar_summary():
+    coverage = {"layers": [{"layer": 0, "heads": [{"kv_head": 0, "ever_pending": False, "max_packed_page_count": 2, "max_packed_full_page_count": 1, "max_packed_tail_tokens": 3}]}]}
+    page = {"witnesses": [{"layer": 0, "kv_head": 0}]}
+    ulp = {"layers": [{"layer": 0, "breach_count": 2, "max_observed_ulps": 17.0}]}
+    assert compact_route_state(coverage=coverage, page_coverage=page, ulp=ulp) == {
+        "selected_layer_count": 1, "selected_kv_head_count": 1, "pending_head_count": 0,
+        "page_witness_count": 1, "max_packed_page_count": 2, "max_packed_full_page_count": 1,
+        "max_packed_tail_tokens": 3, "execution_dtype_ulp_breach_count": 2,
+        "execution_dtype_ulp_max": 17.0,
+    }

@@ -72,14 +72,16 @@ def resolve_target_layers(values: list[str], layer_count: int) -> tuple[int, ...
     return layers
 
 
-def schedule_runs(*, warmups: int, measured: int, seed: int) -> list[tuple[str, int, bool]]:
+def schedule_runs(*, warmups: int, measured: int, seed: int, paths: tuple[str, ...] = ("full_kv_bypass", "same_mask_dense_replay", "same_mask_route_a_replay")) -> list[tuple[str, int, bool]]:
+    if not paths or len(set(paths)) != len(paths):
+        raise ValueError("whole-decode schedule paths must be nonempty and unique")
     rng = random.Random(seed)
     schedule: list[tuple[str, int, bool]] = []
     for warmup in (True, False):
         for repetition in range(warmups if warmup else measured):
-            paths = ["full_kv_bypass", "same_mask_dense_replay", "same_mask_route_a_replay"]
-            rng.shuffle(paths)
-            schedule.extend((path, repetition, warmup) for path in paths)
+            shuffled_paths = list(paths)
+            rng.shuffle(shuffled_paths)
+            schedule.extend((path, repetition, warmup) for path in shuffled_paths)
     return schedule
 
 

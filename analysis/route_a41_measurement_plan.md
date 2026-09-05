@@ -630,6 +630,27 @@ persistent selected mature-cold K/V and zero unselected heads at every layer,
 and aggregate pending coverage. It remains an untimed semantic interface gate;
 the all-layer budget-512 page-state counterpart follows only after this passes.
 
+### A4.1.4 — external-storage repeated whole-decode measurement
+
+After A4145/A4146 establish all-layer external-cache ownership and page-state
+semantics, `tools/run_kvzap_route_a4147_qwen_external_storage_whole_decode_measurement.py`
+measures the first bounded software-system configuration: Qwen3-8B,
+all layers/all KV heads, budget 512, and the matching immutable replay source.
+Each reset run constructs its cache and performs context prefill outside the
+timer, then records one synchronized question-forward plus greedy-decode
+region. It shuffles Full-KV bypass, same-mask dense replay, and same-mask
+Route-A external-storage replay across warm-ups and reported repetitions.
+
+The Route-A path must retain A4146's complete replay, external ownership,
+zero persistent selected native-cold state, full/multi/tail page witness,
+FP32 same-mask guard, and quantization-aware executed-dtype hard envelope on
+every reset run. Raw records and summary distributions report wall/CUDA-event
+milliseconds and PyTorch allocator allocated/reserved observations separately.
+The route path's manifest carries only bounded scalar state summaries. This is
+not a profiler run; profiler instrumentation must remain a separate later
+experiment. It is measured Python-reference software evidence only, not HBM,
+kernel, throughput, energy, area, hardware, or RTL evidence.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

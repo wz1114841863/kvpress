@@ -17,6 +17,19 @@ positive page witness identifies one layer/KV-head with at least one sealed
 full page, multiple packed pages, and a nonempty packed tail; it is aggregate
 coverage, not a requirement that every head retain cold K/V.
 
+## A4.1.4 external-storage whole-decode measurement
+
+`kvzap-route-a4147-external-storage-whole-decode-raw-repetition-1.0` records
+one synchronized `question_forward_plus_greedy_decode` region per reset run.
+The timed region begins only after that path's context prefill and cache setup;
+its `memory_before` and `memory_after` are PyTorch allocator snapshots in
+bytes. Path names are `full_kv_bypass`, `same_mask_dense_replay`, and
+`same_mask_route_a_external_storage_replay`. The Route-A outcome may include
+only bounded scalar ownership/page/ULP summaries, never adapter K/V, attention,
+activation, or full logits tensors. Timing and allocator fields are measured
+software observations, not HBM traffic, throughput, energy, area, or hardware
+metrics.
+
 ## 1. 目标
 
 Trace 用于离线分析 KVzap 的 predictor score、最终 mask、物理布局和 decoding 时间演化。Trace 必须可分片、可压缩、可复现，并且开启后不能改变模型输出。
