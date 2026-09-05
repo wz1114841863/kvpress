@@ -650,6 +650,17 @@ mature-cold absence while packed pages include at least one sealed page, a
 second page, and a nonempty tail. It deliberately does not require pending at
 this budget and remains a no-timing semantic test.
 
+### A4.1.3.5 implementation — layer-0 all-head replacement
+
+A4140 generalizes the Qwen cache prototype from one selected head to an
+explicit selected-head set, initially all eight layer-zero KV heads. Persistent
+dense target-layer storage therefore has no KV-head tensor at all; the Route-A
+external adapter owns each head's hot/pending/packed state. The gate checks all
+GQA groups, cache/adapter logical length, zero persistent selected mature cold,
+and aggregate pending coverage. Heads with zero original-mask retained cold are
+still substituted and must be recorded rather than silently omitted. This is
+not timing or physical-memory evidence.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

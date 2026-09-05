@@ -1247,6 +1247,37 @@ cold tensor count, and a non-persistent transient view. It is an untimed
 semantic gate, not allocator, HBM, runtime, throughput, energy, hardware, or
 RTL evidence.
 
+## A4.1.3.5 — layer-0 all-KV-head native-storage replacement
+
+Reuse the completed layer-0 budget-one replay source. This is the first gate
+where the persistent target cache contains no dense KV-head tensor: every
+layer-zero head is selected. Pending is required for at least one head, not
+every head, because the original mask may retain no mature cold token in some
+heads.
+
+```bash
+RUN_ID=route_a4140_qwen_allheads_layer0_budget1_pending_01
+SOURCE_ID=route_a41_replay_source_layer0_budget1_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4140_qwen_allhead_native_storage_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --require-any-pending \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the complete fresh directory. It must show all eight heads in
+coverage and external ownership, zero persistent unselected heads, zero
+persistent selected mature-cold tensor tokens, and a non-persistent transient
+view. This remains an untimed semantic gate, not allocator, HBM, runtime,
+throughput, energy, hardware, or RTL evidence.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

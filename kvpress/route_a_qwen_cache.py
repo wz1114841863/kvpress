@@ -27,9 +27,11 @@ class RouteAQwenSelectedHeadCacheLayer(CacheLayerMixin):
 
     is_sliding = False
 
-    def __init__(self, *, selected_kv_head: int) -> None:
+    def __init__(self, *, selected_kv_heads: tuple[int, ...]) -> None:
         super().__init__()
-        self.selected_kv_head = selected_kv_head
+        if not selected_kv_heads or len(set(selected_kv_heads)) != len(selected_kv_heads):
+            raise ValueError("selected KV heads must be unique and nonempty")
+        self.selected_kv_heads = tuple(selected_kv_heads)
         self.unselected_keys: torch.Tensor | None = None
         self.unselected_values: torch.Tensor | None = None
         self.logical_length = 0
@@ -43,11 +45,11 @@ class RouteAQwenSelectedHeadCacheLayer(CacheLayerMixin):
     def lazy_initialization(self, key_states: torch.Tensor) -> None:
         if key_states.ndim != 4 or key_states.shape[0] != 1:
             raise ValueError("Route-A Qwen cache prototype requires batch-one [B,H,T,D] K/V")
-        if not 0 <= self.selected_kv_head < key_states.shape[1]:
+        if any(not 0 <= head < key_states.shape[1] for head in self.selected_kv_heads):
             raise ValueError("selected KV head is outside cache K/V shape")
         self.batch_size, self.head_count, _tokens, self.head_dim = key_states.shape
         self.dtype, self.device = key_states.dtype, key_states.device
-        unselected = [head for head in range(self.head_count) if head != self.selected_kv_head]
+        unselected = [head for head in range(self.head_count) if head not in self.selected_kv_heads]
         self.unselected_keys = key_states[:, unselected, :0].detach().clone()
         self.unselected_values = key_states[:, unselected, :0].detach().clone()
         # CacheLayerMixin helpers expect ``keys``/``values``.  They expose only
@@ -74,7 +76,7 @@ class RouteAQwenSelectedHeadCacheLayer(CacheLayerMixin):
         if self.unselected_keys is None or self.unselected_values is None or self.head_count is None:
             raise AssertionError("Route-A Qwen cache layer failed initialization")
         old_length, new_tokens = self.logical_length, key_states.shape[-2]
-        unselected = [head for head in range(self.head_count) if head != self.selected_kv_head]
+        unselected = [head for head in range(self.head_count) if head not in self.selected_kv_heads]
         self.unselected_keys = torch.cat((self.unselected_keys, key_states[:, unselected].detach().clone()), dim=-2)
         self.unselected_values = torch.cat((self.unselected_values, value_states[:, unselected].detach().clone()), dim=-2)
         self.keys, self.values = self.unselected_keys, self.unselected_values
@@ -88,11 +90,15 @@ class RouteAQwenSelectedHeadCacheLayer(CacheLayerMixin):
         attention_values = torch.zeros_like(attention_keys)
         attention_keys[:, unselected] = self.unselected_keys
         attention_values[:, unselected] = self.unselected_values
+        selected = list(self.selected_kv_heads)
         if old_length:
-            attention_keys[:, self.selected_kv_head, :old_length].fill_(float("nan"))
-            attention_values[:, self.selected_kv_head, :old_length].fill_(float("nan"))
-        attention_keys[:, self.selected_kv_head, old_length:] = key_states[:, self.selected_kv_head]
-        attention_values[:, self.selected_kv_head, old_length:] = value_states[:, self.selected_kv_head]
+            # Advanced-indexing reads can be copies; use assignment rather
+            # than ``fill_`` so the unreadable selected history reaches the
+            # returned Qwen attention view.
+            attention_keys[:, selected, :old_length] = float("nan")
+            attention_values[:, selected, :old_length] = float("nan")
+        attention_keys[:, selected, old_length:] = key_states[:, selected]
+        attention_values[:, selected, old_length:] = value_states[:, selected]
         self.transient_attention_view_count += 1
         return attention_keys, attention_values
 
@@ -110,7 +116,8 @@ class RouteAQwenSelectedHeadCacheLayer(CacheLayerMixin):
         return {
             "cache_kind": "route_a_qwen_selected_head_external_cold_cache",
             "logical_cache_tokens": self.logical_length,
-            "persistent_unselected_kv_heads": 0 if self.head_count is None else self.head_count - 1,
+            "selected_kv_heads": list(self.selected_kv_heads),
+            "persistent_unselected_kv_heads": 0 if self.head_count is None else self.head_count - len(self.selected_kv_heads),
             "persistent_unselected_kv_tokens": 0 if self.unselected_keys is None else int(self.unselected_keys.shape[-2]),
             "persistent_selected_native_hot_tokens": hot_tokens,
             "persistent_selected_native_cold_tensor_tokens": 0,
@@ -123,18 +130,24 @@ class RouteAQwenSelectedHeadCacheLayer(CacheLayerMixin):
 class RouteAQwenSingleLayerExternalColdCache(Cache):
     """Qwen Cache interface with one Route-A target layer/head and native others."""
 
-    def __init__(self, *, target_layer: int, selected_kv_head: int) -> None:
+    def __init__(self, *, target_layer: int, selected_kv_head: int | None = None, selected_kv_heads: tuple[int, ...] | None = None) -> None:
         if target_layer != 0:
             raise ValueError("A4.1.3.3 prototype is intentionally restricted to target layer 0")
+        if selected_kv_heads is None:
+            if selected_kv_head is None:
+                raise ValueError("one or more selected KV heads are required")
+            selected_kv_heads = (selected_kv_head,)
+        if selected_kv_head is not None and selected_kv_heads != (selected_kv_head,):
+            raise ValueError("pass selected_kv_head or selected_kv_heads, not conflicting values")
         super().__init__(layer_class_to_replicate=DynamicLayer)
         self.target_layer = target_layer
-        self.selected_kv_head = selected_kv_head
+        self.selected_kv_heads = tuple(selected_kv_heads)
 
     def _ensure_target_layer(self) -> RouteAQwenSelectedHeadCacheLayer:
         while len(self.layers) <= self.target_layer:
             self.layers.append(DynamicLayer())
         if not isinstance(self.layers[self.target_layer], RouteAQwenSelectedHeadCacheLayer):
-            self.layers[self.target_layer] = RouteAQwenSelectedHeadCacheLayer(selected_kv_head=self.selected_kv_head)
+            self.layers[self.target_layer] = RouteAQwenSelectedHeadCacheLayer(selected_kv_heads=self.selected_kv_heads)
         return self.layers[self.target_layer]
 
     def update(self, key_states: torch.Tensor, value_states: torch.Tensor, layer_idx: int, cache_kwargs: dict[str, Any] | None = None) -> tuple[torch.Tensor, torch.Tensor]:

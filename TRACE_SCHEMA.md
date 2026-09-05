@@ -1258,6 +1258,17 @@ It remains an untimed semantic representation gate; transient view allocation,
 allocator/HBM traffic, runtime, throughput, energy, hardware, and RTL are all
 out of scope.
 
+`kvzap-route-a4140-qwen-allhead-native-storage-gate-1.0` is A4.1.3.5, the
+layer-0 all-KV-head budget-one counterpart. It selects every layer-zero KV
+head, requires all their Qwen GQA groups to be substituted, and records each
+head even when its original mask yields zero retained mature cold tokens. The
+persistent target cache has zero unselected heads and zero selected mature-cold
+tensor tokens; Route-A external hot/pending/packed state is the only selected
+K/V owner. It may require pending coverage in at least one retained head, not
+every head. As with A4138/A4139, transient full-shaped views are non-persistent
+and this is not allocator, HBM, timing, throughput, energy, hardware, or RTL
+evidence.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35

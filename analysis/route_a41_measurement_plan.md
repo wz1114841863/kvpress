@@ -579,6 +579,17 @@ interchangeable merely because dense mask decisions may coincide. Pending is
 not required because this admission point may drain it. This remains untimed
 functional storage/attention evidence only.
 
+### A4.1.3.5 — layer-0 all-KV-head native-storage gate
+
+`tools/run_kvzap_route_a4140_qwen_allhead_native_storage_gate.py` extends the
+custom cache interface to every layer-zero KV head at budget one. The persistent
+target cache must then contain zero unselected heads as well as zero selected
+mature-cold tensor tokens. It requires all selected GQA groups to execute the
+Route-A path; a head with no retained mature cold is reported explicitly and
+must not be treated as a skipped head or dense fallback. Pending is an
+aggregate requirement because some original-mask heads can legitimately retain
+nothing. The gate remains untimed functional evidence only.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new
