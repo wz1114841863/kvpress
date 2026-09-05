@@ -1,5 +1,18 @@
 # TRACE_SCHEMA.md
 
+## A4.1.5 external-storage profiler attribution
+
+`kvzap-route-a4148-qwen-external-storage-profiler-1.0` records one separate
+`torch.profiler` diagnostic capture for each of `full_kv_bypass`,
+`same_mask_dense_replay`, and
+`same_mask_route_a_external_storage_replay`. Context prefill/cache setup is
+outside profiler scope. The operator summary is bounded to `top_operators` and
+contains generic profiler CPU/device time and memory accounting; optional Chrome
+traces are named only when `export_chrome_traces` is enabled. The Route-A record
+contains only bounded ownership/page/ULP scalar guards. Profiler values must not
+be pooled with A4.1.4 timing distributions or described as HBM traffic,
+latency, throughput, energy, area, hardware, or RTL evidence.
+
 ## A4 untimed semantic-gate scalar diagnostics
 
 For an A4 native-storage gate using `execution_dtype_ulp_mode=record_only`,

@@ -1479,6 +1479,36 @@ kernel benchmark or its allocator counters HBM traffic.
 
 ## A4.1.3.9 — all-layer all-KV-head native-storage replacement
 
+## A4.1.5 — all-layer external-storage profiler attribution
+
+Run this only after the A4147 distribution has been synchronized and reviewed.
+It is one profiler capture per paired path, not another timing repetition. The
+default avoids Chrome traces; add `--export-chrome-traces` only if the
+potentially large raw profiler JSON is needed.
+
+```bash
+SOURCE_ID=route_a4146_replay_source_all_layers_budget512_01
+RUN_ID=route_a4148_qwen_all_layers_allheads_budget512_external_storage_profiler_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4148_qwen_external_storage_profiler.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 512 \
+  --warmup-repetitions 1 \
+  --top-operators 30 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the fresh manifest and bounded operator summary (and explicitly
+requested Chrome traces). Review source hashes, three paths, external ownership
+and page guards, and profiler scope. These are diagnostic software observations,
+not latency distributions, HBM traffic, throughput, energy, hardware, or RTL.
+
 Reuse the completed all-layer, budget-one replay source. The runner accepts
 only the literal `all`, preventing an accidental hand-enumerated layer subset.
 

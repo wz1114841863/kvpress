@@ -698,6 +698,19 @@ the timing repetitions because profiler instrumentation changes execution.
 
 ## Memory and profiler protocol
 
+### A4.1.5 — external-storage profiler attribution
+
+After the A4.1.4 repeated distribution is complete, run one separately labelled
+profiler diagnostic per paired path with the identical all-layer/all-head,
+budget-512 replay source. `tools/run_kvzap_route_a4148_qwen_external_storage_profiler.py`
+profiles only question-forward plus greedy decode after an untimed fresh context
+prefill. It preserves A4146 ownership/page/replay and numerical guards, but
+does not emit timing repetitions. Its default artifact is a bounded top-operator
+summary; Chrome traces are opt-in because they may be large. Use the result
+only to attribute Python-reference overhead and allocator/operator activity;
+never pool it with A4147 timing statistics or call it HBM traffic, kernel
+performance, throughput, energy, area, hardware, or RTL evidence.
+
 For every reported repetition capture CUDA allocator snapshots in bytes:
 
 - allocated and reserved immediately before the timed region;

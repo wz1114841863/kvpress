@@ -735,6 +735,17 @@ quantization-aware numerical guards. It is measured Python-reference software
 evidence only; profiler, traffic counters, and hardware conclusions remain
 separate.
 
+### A4.1.5 implementation — external-storage profiler attribution
+
+A4148 is the separate profiler follow-up to A4147. It uses the identical
+all-layer/all-head, budget-512 immutable replay source and captures exactly one
+post-prefill question-forward plus greedy-decode profiler region for Full-KV
+bypass, same-mask dense replay, and Route-A external storage. It preserves
+external-cache ownership, replay, page-state, FP32 and quantization-aware
+guards. Its default output is a bounded top-operator summary; Chrome traces
+are opt-in because they can be large. It is an overhead-attribution diagnostic,
+not a timing repetition or any HBM/kernel/throughput/hardware conclusion.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

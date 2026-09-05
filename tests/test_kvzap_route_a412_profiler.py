@@ -1,4 +1,5 @@
 from tools.run_kvzap_route_a412_profiler import operator_rows
+from tools.run_kvzap_route_a4148_qwen_external_storage_profiler import PROFILER_PATHS
 
 
 class Event:
@@ -31,3 +32,11 @@ def test_operator_rows_falls_back_to_legacy_cuda_field_names():
     event.cuda_memory_usage = 8
     event.self_cuda_memory_usage = 7
     assert operator_rows([event], top_operators=1)[0]["device_time_total_us"] == 9.0
+
+
+def test_external_storage_profiler_has_three_distinct_paired_paths():
+    assert PROFILER_PATHS == (
+        "full_kv_bypass",
+        "same_mask_dense_replay",
+        "same_mask_route_a_external_storage_replay",
+    )
