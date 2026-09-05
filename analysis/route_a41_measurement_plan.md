@@ -611,6 +611,15 @@ mature-cold tensors at every target layer. It is an untimed semantic interface
 gate, not memory or performance evidence. Only after it passes should the
 matching three-layer budget-512 page-state gate be added.
 
+### A4.1.3.8 — three-layer all-KV-head budget-512 page-state gate
+
+`tools/run_kvzap_route_a4143_qwen_multilayer_allhead_native_storage_page_state_gate.py`
+reuses the A4142 interface at budget 512. It requires a fresh matching
+three-layer replay source and one aggregate layer/head full-page + multi-page +
+tail witness, while keeping every target layer's persistent selected
+mature-cold tensor count at zero. It deliberately does not require pending
+staging. This remains untimed semantic evidence only.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

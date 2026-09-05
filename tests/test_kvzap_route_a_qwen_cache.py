@@ -5,6 +5,7 @@ import torch
 from kvpress.route_a_external_cold_storage import RouteAExternalColdStorageAdapter
 from kvpress.route_a_qwen_cache import RouteAQwenMultiLayerExternalColdCache, RouteAQwenSingleLayerExternalColdCache
 from kvpress.route_a_policy_backend import RouteAQwenExternalColdStorageAttentionBackend, RouteAQwenExternalColdStorageAttentionBackendSet
+from tools.run_kvzap_route_a4142_qwen_multilayer_allhead_native_storage_gate import aggregate_full_multi_tail_page_coverage
 
 
 def test_qwen_external_cold_cache_keeps_only_unselected_persistent_kv_and_logical_length():
@@ -137,3 +138,15 @@ def test_qwen_multilayer_backend_set_has_independent_external_adapter_slots():
     )
     assert set(backend_set.backends) == {0, 18, 35}
     assert backend_set.external_adapters_by_layer() == {0: None, 18: None, 35: None}
+
+
+def test_qwen_multilayer_page_state_needs_one_complete_layer_head_witness():
+    coverage = {"layers": [
+        {"layer": 0, "heads": [{"kv_head": 6, "ever_sealed_packed_page": True, "ever_multi_page_packed": True, "max_packed_tail_tokens": 63}]},
+        {"layer": 18, "heads": [{"kv_head": 3, "ever_sealed_packed_page": True, "ever_multi_page_packed": True, "max_packed_tail_tokens": 0}]},
+    ]}
+    assert aggregate_full_multi_tail_page_coverage(coverage) == {
+        "requires_single_layer_head_full_multi_tail": True,
+        "witnesses": [{"layer": 0, "kv_head": 6}],
+        "covered": True,
+    }

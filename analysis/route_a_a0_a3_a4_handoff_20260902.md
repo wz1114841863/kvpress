@@ -681,6 +681,16 @@ selected mature-cold K/V; non-target layers remain native Qwen cache state.
 This is an untimed semantic interface gate only and precedes the matching
 three-layer budget-512 page-state counterpart.
 
+### A4.1.3.8 implementation — three-layer all-head budget-512 page state
+
+A4143 fixes the A4142 multi-layer interface at admission budget 512. It first
+requires a separately collected three-layer/budget-512 replay source, then
+requires one aggregate layer/head witness with a sealed full page, multi-page
+state, and a nonempty tail. Zero-retained heads remain valid substitutions;
+every target layer must nevertheless retain zero persistent selected
+mature-cold K/V. Pending is intentionally not required. This is no-timing
+semantic evidence only.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

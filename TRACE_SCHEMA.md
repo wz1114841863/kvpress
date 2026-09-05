@@ -1291,6 +1291,17 @@ layers retain native Qwen cache state. This is an untimed semantic interface
 gate; transient views, allocator/HBM, runtime, throughput, energy, hardware,
 and RTL remain out of scope.
 
+`kvzap-route-a4143-qwen-multilayer-allhead-native-storage-page-state-gate-1.0`
+is A4.1.3.8, the three-layer `{0,18,35}` all-KV-head, budget-512 counterpart.
+It requires a separately collected three-layer/budget-512 replay source and
+one target-layer/head witness with a sealed full page, multi-page packed state,
+and a nonempty tail. The condition is aggregate because many original-mask
+heads may validly retain too little, or no, mature cold K/V. Every target layer
+must still substitute all KV heads and retain zero persistent selected
+mature-cold tensors. This remains an untimed semantic interface gate; transient
+views, allocator/HBM, runtime, throughput, energy, hardware, and RTL are out
+of scope.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35

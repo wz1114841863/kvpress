@@ -1337,6 +1337,48 @@ lengths, zero persistent selected native mature-cold K/V at each target layer,
 and aggregate pending coverage. It remains an untimed semantic gate, not
 allocator, HBM, runtime, throughput, energy, hardware, or RTL evidence.
 
+## A4.1.3.8 — three-layer all-KV-head budget-512 page-state replacement
+
+First collect a new source with three-layer, budget-512 provenance. Although
+the dense original-mask events can coincide with budget one, the source's
+control-plane configuration is part of this gate's provenance and must match.
+
+```bash
+SOURCE_ID=route_a4143_replay_source_layers_0_18_35_budget512_01
+test ! -e "analysis/experiments/${SOURCE_ID}"
+python tools/collect_kvzap_route_a41_replay_source.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers 0 18 35 \
+  --admission-budget 512 \
+  --output-dir "analysis/experiments/${SOURCE_ID}"
+```
+
+After the source completes, run the semantic gate in a separate new directory:
+
+```bash
+RUN_ID=route_a4143_qwen_layers_0_18_35_allheads_budget512_pages_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4143_qwen_multilayer_allhead_native_storage_page_state_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers 0 18 35 \
+  --target-kv-head all \
+  --admission-budget 512 \
+  --require-any-full-multi-tail-packed \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize both complete fresh directories. The A4143 manifest must show all
+three target layers/all KV heads, zero persistent selected native mature-cold
+K/V at each target layer, and a nonempty aggregate page witness list. It is
+untimed semantic evidence, not allocator, HBM, runtime, throughput, energy,
+hardware, or RTL evidence.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every
