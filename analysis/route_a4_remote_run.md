@@ -1408,6 +1408,44 @@ the hard FP32 and quantization-aware close guards.  This remains an untimed
 semantic cache-interface gate, not an allocator, traffic, runtime, quality,
 or hardware result.
 
+## A4.1.3.11 — all-layer all-head budget-512 native-storage page-state gate
+
+First collect a separate all-layer/budget-512 replay source. Admission is part
+of the Route-A state-machine contract, so do not reuse the budget-one source.
+Both steps are untimed semantic gates.
+
+```bash
+SOURCE_ID=route_a4146_replay_source_all_layers_budget512_01
+RUN_ID=route_a4146_qwen_all_layers_allheads_budget512_quantization_aware_pages_01
+test ! -e "analysis/experiments/${SOURCE_ID}"
+python tools/collect_kvzap_route_a41_replay_source.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --admission-budget 512 \
+  --output-dir "analysis/experiments/${SOURCE_ID}"
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4146_qwen_alllayer_allhead_quantization_aware_native_storage_page_state_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 512 \
+  --require-any-full-multi-tail-packed \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+The gate requires a matching source budget, complete replay, all layer/head
+native substitution, zero persistent selected native cold state, and one
+aggregate full-page/multi-page/tail witness. It records bounded scalar ULP
+breaches while hard-enforcing the FP32 same-mask and quantization-aware
+executed-dtype close guards. It is not a timing, allocator, HBM, quality, or
+hardware result.
+
 ## A4.1.3.9 — all-layer all-KV-head native-storage replacement
 
 Reuse the completed all-layer, budget-one replay source. The runner accepts

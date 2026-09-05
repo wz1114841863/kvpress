@@ -11,6 +11,12 @@ tensors. `record_only` does not disable the FP32 same-mask guard. If
 cast-aware envelope remains a hard gate. These fields are semantic numerical
 diagnostics, not timing, allocator, HBM-traffic, quality, or hardware metrics.
 
+For a budget-512 native-storage page-state gate, the manifest must additionally
+record the replay-source admission budget and `aggregate_page_coverage`. A
+positive page witness identifies one layer/KV-head with at least one sealed
+full page, multiple packed pages, and a nonempty packed tail; it is aggregate
+coverage, not a requirement that every head retain cold K/V.
+
 ## 1. 目标
 
 Trace 用于离线分析 KVzap 的 predictor score、最终 mask、物理布局和 decoding 时间演化。Trace 必须可分片、可压缩、可复现，并且开启后不能改变模型输出。

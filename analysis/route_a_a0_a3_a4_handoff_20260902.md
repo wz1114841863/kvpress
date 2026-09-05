@@ -711,6 +711,16 @@ rounding from unexplained error. All layer/head replay, external ownership,
 and persistent-cache-absence conditions remain hard. The result is still
 untimed semantic evidence only.
 
+### A4.1.3.11 implementation — all-layer all-head budget-512 page state
+
+A4146 adds the matching all-layer/all-head native-storage page-state gate. It
+requires an independently collected all-layer budget-512 replay source, so
+admission epochs and packed-page state cannot be borrowed from the budget-one
+run. It retains the A4145 FP32, quantization-aware cast, replay, and ownership
+guards, records bounded scalar ULP breaches, and requires one aggregate
+full-page/multi-page/nonempty-tail witness. Pending staging is intentionally
+not required. This remains untimed semantic evidence only.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:
