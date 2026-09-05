@@ -623,6 +623,11 @@ bypass, same-mask dense control, and external-cold Route-A path. It must retain
 both `transformers_dynamic_cache_substitution: false` and
 `native_dense_cold_slots_physically_freed: false`.
 
+The adapter preserves admission epochs: a normal Qwen prefill chunk is one
+Route-A append/service event, while causal multi-token bridge tokens append
+separately. Applying token-level admission to prefill would spend budget one
+once per token and falsely erase pending staging.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

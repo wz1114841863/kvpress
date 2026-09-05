@@ -1172,6 +1172,11 @@ adapter selected-cold tensor tokens, and both
 token relation is recorded only. This is not a timing, allocator, physical
 memory, HBM, throughput, energy, hardware, or RTL experiment.
 
+If an earlier A4137 run stopped with “selected KV head never observed pending”,
+do not reuse that output directory. Synchronize the prefill-admission-epoch
+fix, choose a new `RUN_ID`, and rerun. The corrected adapter services budget
+one once per ordinary prefill chunk, rather than once per prefill token.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

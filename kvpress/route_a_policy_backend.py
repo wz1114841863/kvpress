@@ -937,14 +937,22 @@ class RouteAQwenExternalColdStorageAttentionBackend(RouteAColdOwnershipAttention
                 after_token_append(offset, position)
 
         if token_by_token:
+            # The causal bridge must expose each newly appended token to its
+            # corresponding query, exactly as the existing ownership backend.
             for offset in range(q_len):
                 append_one(offset)
         else:
-            # The adapter is intentionally appended token-wise even on prefill:
-            # this makes physical hot eviction and logical positions identical
-            # to Qwen's later multi-token causal bridge.
-            for offset in range(q_len):
-                append_one(offset)
+            # A normal Qwen prefill is one admission epoch.  Splitting it into
+            # token calls would incorrectly spend ``admission_budget`` once per
+            # token and silently drain pending staging, changing Route-A policy
+            # semantics relative to the same-mask control.
+            if after_token_append is not None:
+                raise AssertionError("non-causal external adapter append cannot have per-token callback")
+            self.external_cold_storage.append(
+                key[0, :, start:start + q_len], value[0, :, start:start + q_len],
+                keep_mask[0], start_position=start,
+            )
+            self.external_storage_append_calls += 1
         self._keep_mask = self._score_start = None
 
     def external_storage_summary(self) -> dict[str, Any]:

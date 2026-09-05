@@ -1228,6 +1228,10 @@ reads mature retained K/V only through its hot/pending/packed state. Native
 selected cold K/V remains NaN-poisoned to detect a fallback. The artifact
 records complete replay consumption, selected coverage, adapter logical versus
 physical-hot counts, and the recorded same-mask dense generation relation.
+Ordinary multi-token prefill remains one Route-A admission epoch: it appends as
+one chunk and services the global admission budget once. Only the causal
+multi-token bridge appends token-by-token; doing that for prefill would
+incorrectly over-drain pending staging and change policy semantics.
 `transformers_dynamic_cache_substitution` and
 `native_dense_cold_slots_physically_freed` must be false: this is a semantic
 integration gate, not a physical storage, allocator, HBM, timing, throughput,

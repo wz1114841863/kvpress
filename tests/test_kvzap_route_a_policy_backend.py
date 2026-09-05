@@ -127,6 +127,9 @@ def test_qwen_external_cold_storage_backend_keeps_logical_position_with_only_sel
     assert external["adapter_selected_native_hot_tensor_tokens"] == 1
     assert external["adapter_selected_native_cold_tensor_tokens"] == 0
     assert external["transformers_dynamic_cache_substitution"] is False
+    # The 3-token prefill must consume the global admission budget once, not
+    # once per token; otherwise this budget-one state would be over-drained.
+    assert backend.coverage()["heads"][0]["ever_pending"]
 
 
 def test_cold_ownership_multi_token_bridge_replaces_selected_heads_causally_with_safe_native_placeholders():

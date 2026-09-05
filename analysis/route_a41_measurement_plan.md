@@ -544,6 +544,11 @@ state. Existing NaN poisoning stays active solely to reject an accidental
 native mature-cold read. The gate is paired against same-mask dense replay and
 records, rather than requires, later greedy-token equality.
 
+Ordinary Qwen prefill is passed to the adapter as a single Route-A append and
+one global admission service. Only the causal multi-token bridge appends one
+token at a time. Splitting prefill would over-drain pending staging and would
+not constitute same-policy evidence.
+
 This remains untimed and leaves native DynamicCache allocated. A passing result
 is necessary before designing a real Qwen cache interface, but it is not a
 physical storage or allocator result.
