@@ -1280,6 +1280,17 @@ coverage and the aggregate witness list are recorded. It is an untimed semantic
 representation gate; transient views, allocator/HBM, runtime, throughput,
 energy, hardware, and RTL remain out of scope.
 
+`kvzap-route-a4142-qwen-multilayer-allhead-native-storage-gate-1.0` is
+A4.1.3.7, the initial three-layer `{0,18,35}` all-KV-head, budget-one
+counterpart. It requires each target layer to have an independent external
+Route-A adapter and all its KV heads to be substituted while the custom cache
+retains neither unselected nor selected mature-cold K/V at those target layers.
+The matching three-layer replay source must have budget-one provenance, and
+pending staging is required in at least one target-layer/head state. Non-target
+layers retain native Qwen cache state. This is an untimed semantic interface
+gate; transient views, allocator/HBM, runtime, throughput, energy, hardware,
+and RTL remain out of scope.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35

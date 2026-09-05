@@ -671,6 +671,16 @@ must be reported, rather than forcing an invalid per-head page condition.
 Persistent selected mature-cold K/V remains absent from the custom cache. The
 gate is no-timing semantic evidence only.
 
+### A4.1.3.7 implementation — three-layer all-head replacement
+
+A4142 extends the custom cache interface from layer zero to `{0,18,35}` while
+keeping independent Route-A external adapters and all KV heads at each selected
+layer. The budget-one gate requires a matching three-layer replay source and
+aggregate pending coverage. Each target layer must retain zero persistent
+selected mature-cold K/V; non-target layers remain native Qwen cache state.
+This is an untimed semantic interface gate only and precedes the matching
+three-layer budget-512 page-state counterpart.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

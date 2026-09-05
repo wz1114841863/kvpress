@@ -1078,3 +1078,19 @@ class RouteAColdOwnershipAttentionBackendSet(RouteAPolicyAttentionBackendSet):
                 for layer, backend in self.backends.items()
             ]
         }
+
+
+class RouteAQwenExternalColdStorageAttentionBackendSet(RouteAColdOwnershipAttentionBackendSet):
+    """Multi-layer Qwen external-cold interface with one Route-A state per layer."""
+
+    backend_class = RouteAQwenExternalColdStorageAttentionBackend
+
+    def assert_external_storage_interface_complete(self) -> None:
+        for backend in self.backends.values():
+            backend.assert_external_storage_interface_complete()
+
+    def external_adapters_by_layer(self) -> dict[int, RouteAExternalColdStorageAdapter | None]:
+        return {
+            layer: backend.external_cold_storage
+            for layer, backend in self.backends.items()
+        }

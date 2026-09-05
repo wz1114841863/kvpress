@@ -3,8 +3,8 @@ from types import SimpleNamespace
 import torch
 
 from kvpress.route_a_external_cold_storage import RouteAExternalColdStorageAdapter
-from kvpress.route_a_qwen_cache import RouteAQwenSingleLayerExternalColdCache
-from kvpress.route_a_policy_backend import RouteAQwenExternalColdStorageAttentionBackend
+from kvpress.route_a_qwen_cache import RouteAQwenMultiLayerExternalColdCache, RouteAQwenSingleLayerExternalColdCache
+from kvpress.route_a_policy_backend import RouteAQwenExternalColdStorageAttentionBackend, RouteAQwenExternalColdStorageAttentionBackendSet
 
 
 def test_qwen_external_cold_cache_keeps_only_unselected_persistent_kv_and_logical_length():
@@ -107,3 +107,33 @@ def test_qwen_cache_all_head_view_drives_all_gqa_groups_without_persistent_dense
     backend.assert_external_storage_interface_complete()
     cache.assert_target_storage_contract(adapter=backend.external_cold_storage)
     assert cache.target_storage_summary(adapter=backend.external_cold_storage)["persistent_unselected_kv_heads"] == 0
+
+
+def test_qwen_multilayer_cache_keeps_independent_all_head_contracts():
+    layers = (0, 18, 35)
+    cache = RouteAQwenMultiLayerExternalColdCache(selected_kv_heads_by_layer={layer: (0, 1) for layer in layers})
+    adapters = {
+        layer: RouteAExternalColdStorageAdapter(heads=2, head_dim=2, window=2, page_tokens=2, admission_budget=1, selected_kv_heads=(0, 1))
+        for layer in layers
+    }
+    key = torch.arange(20, dtype=torch.float32).reshape(2, 5, 2)
+    keep = torch.ones(2, 5, dtype=torch.bool)
+    for layer in layers:
+        view_key, _view_value = cache.update(key.unsqueeze(0), (key + 100).unsqueeze(0), layer, {"cache_position": torch.arange(5)})
+        adapters[layer].append(key, key + 100, keep, start_position=0)
+        assert torch.equal(view_key, key.unsqueeze(0))
+    cache.assert_target_storage_contracts(adapters_by_layer=adapters)
+    summaries = cache.target_storage_summaries(adapters_by_layer=adapters)
+    assert [row["layer"] for row in summaries["layers"]] == list(layers)
+    assert all(row["persistent_unselected_kv_heads"] == 0 for row in summaries["layers"])
+    assert all(row["persistent_selected_native_cold_tensor_tokens"] == 0 for row in summaries["layers"])
+
+
+def test_qwen_multilayer_backend_set_has_independent_external_adapter_slots():
+    model = SimpleNamespace(model=SimpleNamespace(layers=[SimpleNamespace(self_attn=SimpleNamespace()) for _ in range(36)]))
+    backend_set = RouteAQwenExternalColdStorageAttentionBackendSet(
+        model, object(), layers=(0, 18, 35), kv_head=None, threshold=0.0,
+        window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6,
+    )
+    assert set(backend_set.backends) == {0, 18, 35}
+    assert backend_set.external_adapters_by_layer() == {0: None, 18: None, 35: None}

@@ -600,6 +600,17 @@ a head with zero original-mask retained mature cold is valid and is reported
 explicitly. The gate must retain zero persistent selected native mature-cold
 tensor tokens and remains untimed functional evidence only.
 
+### A4.1.3.7 — three-layer all-KV-head native-storage gate
+
+`tools/run_kvzap_route_a4142_qwen_multilayer_allhead_native_storage_gate.py`
+extends the custom Qwen cache interface to layers `{0,18,35}`. Each selected
+layer has an independent Route-A external adapter and all eight of its KV heads
+are selected; non-target layers retain native Qwen cache storage. The initial
+budget-one gate requires aggregate pending coverage and zero persistent selected
+mature-cold tensors at every target layer. It is an untimed semantic interface
+gate, not memory or performance evidence. Only after it passes should the
+matching three-layer budget-512 page-state gate be added.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

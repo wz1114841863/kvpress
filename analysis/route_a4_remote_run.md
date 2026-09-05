@@ -1307,6 +1307,36 @@ coverage/external ownership, zero persistent selected native cold, and a
 nonempty aggregate page witness list. This remains an untimed semantic gate,
 not allocator, HBM, runtime, throughput, energy, hardware, or RTL evidence.
 
+## A4.1.3.7 — three-layer all-KV-head native-storage replacement
+
+This first multi-layer custom-cache gate is deliberately fixed to layers
+`{0,18,35}` and budget one. Use the matching three-layer budget-one replay
+source; it checks independent external state and persistent cache ownership at
+every target layer, with aggregate pending coverage.
+
+```bash
+RUN_ID=route_a4142_qwen_layers_0_18_35_allheads_budget1_pending_01
+SOURCE_ID=route_a4129_replay_source_layers_0_18_35_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4142_qwen_multilayer_allhead_native_storage_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers 0 18 35 \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --require-any-pending \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the complete fresh directory. It must show complete replay and
+all-head coverage for every target layer, independent adapter/cache logical
+lengths, zero persistent selected native mature-cold K/V at each target layer,
+and aggregate pending coverage. It remains an untimed semantic gate, not
+allocator, HBM, runtime, throughput, energy, hardware, or RTL evidence.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

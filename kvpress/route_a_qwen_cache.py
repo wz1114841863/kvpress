@@ -1,4 +1,4 @@
-"""A4.1.3.3 Qwen-compatible single-layer/head Route-A cache prototype.
+"""A4.1.3 Qwen-compatible Route-A external-cold cache prototypes.
 
 The target layer persistently stores only unselected-head dense K/V.  Selected
 head mature cold K/V belongs to the Route-A external adapter; selected hot K/V
@@ -8,13 +8,14 @@ by the cache and marks prior selected positions unreadable.  The policy-on
 attention backend overwrites selected-head outputs from Route-A state.
 
 This is a functional semantic prototype, not an allocator or performance
-implementation.  It is deliberately restricted to batch one, layer zero, and
-one selected KV head.
+implementation.  It is deliberately restricted to batch one.  The first
+prototype used one target layer; the multi-layer wrapper keeps a separately
+auditable selected-head ownership contract for every explicitly selected layer.
 """
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Mapping
 
 import torch
 from transformers.cache_utils import Cache, CacheLayerMixin, DynamicLayer
@@ -127,8 +128,73 @@ class RouteAQwenSelectedHeadCacheLayer(CacheLayerMixin):
         }
 
 
-class RouteAQwenSingleLayerExternalColdCache(Cache):
-    """Qwen Cache interface with one Route-A target layer/head and native others."""
+class RouteAQwenMultiLayerExternalColdCache(Cache):
+    """Qwen Cache with independent Route-A selected-head storage per target layer."""
+
+    def __init__(self, *, selected_kv_heads_by_layer: Mapping[int, tuple[int, ...]]) -> None:
+        if not selected_kv_heads_by_layer:
+            raise ValueError("one or more target layers are required")
+        if any(layer < 0 for layer in selected_kv_heads_by_layer):
+            raise ValueError("target layers must be non-negative")
+        if any(not heads or len(set(heads)) != len(heads) or any(head < 0 for head in heads) for heads in selected_kv_heads_by_layer.values()):
+            raise ValueError("every target layer needs unique non-negative selected KV heads")
+        super().__init__(layer_class_to_replicate=DynamicLayer)
+        self.selected_kv_heads_by_layer = {
+            int(layer): tuple(heads)
+            for layer, heads in selected_kv_heads_by_layer.items()
+        }
+
+    def _ensure_target_layer(self, layer_idx: int) -> RouteAQwenSelectedHeadCacheLayer:
+        if layer_idx not in self.selected_kv_heads_by_layer:
+            raise AssertionError("requested Route-A cache layer is not selected")
+        while len(self.layers) <= layer_idx:
+            self.layers.append(DynamicLayer())
+        if not isinstance(self.layers[layer_idx], RouteAQwenSelectedHeadCacheLayer):
+            self.layers[layer_idx] = RouteAQwenSelectedHeadCacheLayer(selected_kv_heads=self.selected_kv_heads_by_layer[layer_idx])
+        return self.layers[layer_idx]
+
+    def update(self, key_states: torch.Tensor, value_states: torch.Tensor, layer_idx: int, cache_kwargs: dict[str, Any] | None = None) -> tuple[torch.Tensor, torch.Tensor]:
+        if layer_idx in self.selected_kv_heads_by_layer:
+            return self._ensure_target_layer(layer_idx).update(key_states, value_states, cache_kwargs)
+        return super().update(key_states, value_states, layer_idx, cache_kwargs)
+
+    def target_storage_summary(self, *, layer_idx: int, adapter: RouteAExternalColdStorageAdapter | None) -> dict[str, Any]:
+        layer = self._ensure_target_layer(layer_idx)
+        return layer.persistent_storage_summary(adapter=adapter)
+
+    def assert_target_storage_contract(self, *, layer_idx: int, adapter: RouteAExternalColdStorageAdapter | None) -> None:
+        if adapter is None:
+            raise AssertionError("Route-A external adapter was not initialized")
+        # Call the multi-layer implementation directly: the backward-compatible
+        # single-layer wrapper intentionally preserves the old no-``layer_idx``
+        # public signature.
+        summary = RouteAQwenMultiLayerExternalColdCache.target_storage_summary(self, layer_idx=layer_idx, adapter=adapter)
+        if summary["logical_cache_tokens"] != adapter.logical_cache_tokens:
+            raise AssertionError("Qwen cache logical length differs from Route-A external adapter")
+        if summary["persistent_selected_native_cold_tensor_tokens"] != 0 or not summary["persistent_selected_mature_cold_absent"]:
+            raise AssertionError("Qwen cache persistently retained selected mature cold K/V")
+        if summary["persistent_selected_native_hot_tokens"] != min(adapter.window, adapter.logical_cache_tokens):
+            raise AssertionError("Qwen cache selected hot ownership differs from Route-A adapter")
+
+    def target_storage_summaries(self, *, adapters_by_layer: Mapping[int, RouteAExternalColdStorageAdapter | None]) -> dict[str, Any]:
+        if set(adapters_by_layer) != set(self.selected_kv_heads_by_layer):
+            raise AssertionError("Route-A adapter layers differ from Qwen target cache layers")
+        return {
+            "layers": [
+                {"layer": layer, **self.target_storage_summary(layer_idx=layer, adapter=adapters_by_layer[layer])}
+                for layer in self.selected_kv_heads_by_layer
+            ]
+        }
+
+    def assert_target_storage_contracts(self, *, adapters_by_layer: Mapping[int, RouteAExternalColdStorageAdapter | None]) -> None:
+        if set(adapters_by_layer) != set(self.selected_kv_heads_by_layer):
+            raise AssertionError("Route-A adapter layers differ from Qwen target cache layers")
+        for layer in self.selected_kv_heads_by_layer:
+            self.assert_target_storage_contract(layer_idx=layer, adapter=adapters_by_layer[layer])
+
+
+class RouteAQwenSingleLayerExternalColdCache(RouteAQwenMultiLayerExternalColdCache):
+    """Backward-compatible one-target-layer wrapper used by A4138--A4141."""
 
     def __init__(self, *, target_layer: int, selected_kv_head: int | None = None, selected_kv_heads: tuple[int, ...] | None = None) -> None:
         if target_layer != 0:
@@ -139,33 +205,12 @@ class RouteAQwenSingleLayerExternalColdCache(Cache):
             selected_kv_heads = (selected_kv_head,)
         if selected_kv_head is not None and selected_kv_heads != (selected_kv_head,):
             raise ValueError("pass selected_kv_head or selected_kv_heads, not conflicting values")
-        super().__init__(layer_class_to_replicate=DynamicLayer)
+        super().__init__(selected_kv_heads_by_layer={target_layer: tuple(selected_kv_heads)})
         self.target_layer = target_layer
         self.selected_kv_heads = tuple(selected_kv_heads)
 
-    def _ensure_target_layer(self) -> RouteAQwenSelectedHeadCacheLayer:
-        while len(self.layers) <= self.target_layer:
-            self.layers.append(DynamicLayer())
-        if not isinstance(self.layers[self.target_layer], RouteAQwenSelectedHeadCacheLayer):
-            self.layers[self.target_layer] = RouteAQwenSelectedHeadCacheLayer(selected_kv_heads=self.selected_kv_heads)
-        return self.layers[self.target_layer]
+    def target_storage_summary(self, *, adapter: RouteAExternalColdStorageAdapter | None) -> dict[str, Any]:  # type: ignore[override]
+        return super().target_storage_summary(layer_idx=self.target_layer, adapter=adapter)
 
-    def update(self, key_states: torch.Tensor, value_states: torch.Tensor, layer_idx: int, cache_kwargs: dict[str, Any] | None = None) -> tuple[torch.Tensor, torch.Tensor]:
-        if layer_idx == self.target_layer:
-            return self._ensure_target_layer().update(key_states, value_states, cache_kwargs)
-        return super().update(key_states, value_states, layer_idx, cache_kwargs)
-
-    def target_storage_summary(self, *, adapter: RouteAExternalColdStorageAdapter | None) -> dict[str, Any]:
-        layer = self._ensure_target_layer()
-        return layer.persistent_storage_summary(adapter=adapter)
-
-    def assert_target_storage_contract(self, *, adapter: RouteAExternalColdStorageAdapter | None) -> None:
-        if adapter is None:
-            raise AssertionError("Route-A external adapter was not initialized")
-        summary = self.target_storage_summary(adapter=adapter)
-        if summary["logical_cache_tokens"] != adapter.logical_cache_tokens:
-            raise AssertionError("Qwen cache logical length differs from Route-A external adapter")
-        if summary["persistent_selected_native_cold_tensor_tokens"] != 0 or not summary["persistent_selected_mature_cold_absent"]:
-            raise AssertionError("Qwen cache persistently retained selected mature cold K/V")
-        if summary["persistent_selected_native_hot_tokens"] != min(adapter.window, adapter.logical_cache_tokens):
-            raise AssertionError("Qwen cache selected hot ownership differs from Route-A adapter")
+    def assert_target_storage_contract(self, *, adapter: RouteAExternalColdStorageAdapter | None) -> None:  # type: ignore[override]
+        super().assert_target_storage_contract(layer_idx=self.target_layer, adapter=adapter)
