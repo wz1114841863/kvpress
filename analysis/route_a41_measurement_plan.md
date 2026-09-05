@@ -711,6 +711,18 @@ only to attribute Python-reference overhead and allocator/operator activity;
 never pool it with A4147 timing statistics or call it HBM traffic, kernel
 performance, throughput, energy, area, hardware, or RTL evidence.
 
+### A4.1.6 — phase-attributed external-storage profiler
+
+If A4.1.5's generic operators indicate reference overhead but cannot assign it
+to Route-A mechanisms, run `tools/run_kvzap_route_a4149_qwen_external_storage_phase_profiler.py` on the same immutable source. It adds optional
+`torch.profiler.record_function` ranges only around existing operations: cache
+append/materialization, maturity/admission/page service, the three partial
+attention sources, online merge, dense reference, numerical guards, and scalar
+summaries. Run one capture each for dense and Route-A external storage. Ranges
+may nest, so do not sum their inclusive values; use them only to locate the
+dominant Python-reference phase before considering a separately labelled
+guard-ablation diagnostic. It remains outside all timing distributions.
+
 For every reported repetition capture CUDA allocator snapshots in bytes:
 
 - allocated and reserved immediately before the timed region;

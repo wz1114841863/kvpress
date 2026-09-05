@@ -145,6 +145,10 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         self._keep_mask: torch.Tensor | None = None
         self.component_measure = component_measure
 
+    def _measure_component(self, name: str, operation):
+        """Optionally label an operation without changing Route-A semantics."""
+        return operation() if self.component_measure is None else self.component_measure(name, operation)
+
     @property
     def uses_mask_replay(self) -> bool:
         return self._replay_mask_events is not None
@@ -559,19 +563,19 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             if mapped_kv_head in selected_heads:
                 measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"decode_{name}", operation)
                 route_fp32 = self.state.attention(q * scaling, head=mapped_kv_head, component_measure=measure)
-                dense_fp32 = dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped_kv_head))
-                torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol)
-                route, dense = route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)
-                self._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=mapped_kv_head, query_head=query_head, cache_position=int(key.shape[2] - 1))
-                _cast_abs, cast_ulps = self._cast_difference_in_ulps(route, dense)
+                dense_fp32 = self._measure_component("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped_kv_head)))
+                self._measure_component("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))
+                route, dense = self._measure_component("decode_execution_dtype_cast", lambda: (route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)))
+                self._measure_component("decode_execution_dtype_close_guard", lambda: self._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=mapped_kv_head, query_head=query_head, cache_position=int(key.shape[2] - 1)))
+                _cast_abs, cast_ulps = self._measure_component("decode_execution_dtype_ulp_diagnostic", lambda: self._cast_difference_in_ulps(route, dense))
                 if cast_ulps > self.max_executed_dtype_ulps:
-                    self._handle_executed_dtype_ulp_breach(
+                    self._measure_component("decode_execution_dtype_ulp_breach_record", lambda: self._handle_executed_dtype_ulp_breach(
                         self._executed_dtype_failure_details(
                             route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32,
                             kv_head=mapped_kv_head, query_head=query_head,
                             cache_position=int(key.shape[2] - 1),
                         )
-                    )
+                    ))
                 output.append(route)
                 per_head[mapped_kv_head].append((route, dense, query_head, route_fp32, dense_fp32, cast_ulps))
             else:
@@ -585,9 +589,9 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             selected["layer"] = self.layer
             selected["kv_head"] = head
             selected["query_head_count"] = len(rows)
-            selected["max_abs_difference"] = max(float((route - dense).abs().max().item()) for route, dense, _query_head, _route_fp32, _dense_fp32, _cast_ulps in rows)
-            selected["max_abs_difference_fp32"] = max(float((route_fp32 - dense_fp32).abs().max().item()) for _route, _dense, _query_head, route_fp32, dense_fp32, _cast_ulps in rows)
-            selected["max_executed_dtype_ulps"] = max(cast_ulps for _route, _dense, _query_head, _route_fp32, _dense_fp32, cast_ulps in rows)
+            selected["max_abs_difference"] = self._measure_component("decode_scalar_comparison_summary", lambda: max(float((route - dense).abs().max().item()) for route, dense, _query_head, _route_fp32, _dense_fp32, _cast_ulps in rows))
+            selected["max_abs_difference_fp32"] = self._measure_component("decode_scalar_comparison_summary", lambda: max(float((route_fp32 - dense_fp32).abs().max().item()) for _route, _dense, _query_head, route_fp32, dense_fp32, _cast_ulps in rows))
+            selected["max_executed_dtype_ulps"] = self._measure_component("decode_scalar_comparison_summary", lambda: max(cast_ulps for _route, _dense, _query_head, _route_fp32, _dense_fp32, cast_ulps in rows))
             selected["executed_dtype_ulp_limit"] = self.max_executed_dtype_ulps
             self.comparisons.append(selected)
         self.policy_decode_calls += 1
@@ -831,19 +835,20 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
                 if mapped not in selected_heads:
                     continue
                 q = query[0, query_head, offset]
-                route_fp32 = self.state.attention(q * scaling, head=mapped)
-                dense_fp32 = dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped))
-                torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol)
-                route, dense = route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)
-                self._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=mapped, query_head=query_head, cache_position=position)
-                _cast_abs, cast_ulps = self._cast_difference_in_ulps(route, dense)
+                measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"decode_{name}", operation)
+                route_fp32 = self.state.attention(q * scaling, head=mapped, component_measure=measure)
+                dense_fp32 = self._measure_component("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped)))
+                self._measure_component("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))
+                route, dense = self._measure_component("decode_execution_dtype_cast", lambda: (route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)))
+                self._measure_component("decode_execution_dtype_close_guard", lambda: self._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=mapped, query_head=query_head, cache_position=position))
+                _cast_abs, cast_ulps = self._measure_component("decode_execution_dtype_ulp_diagnostic", lambda: self._cast_difference_in_ulps(route, dense))
                 if cast_ulps > self.max_executed_dtype_ulps:
-                    self._handle_executed_dtype_ulp_breach(
+                    self._measure_component("decode_execution_dtype_ulp_breach_record", lambda: self._handle_executed_dtype_ulp_breach(
                         self._executed_dtype_failure_details(
                             route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32,
                             kv_head=mapped, query_head=query_head, cache_position=position,
                         )
-                    )
+                    ))
                 # Qwen attention-interface outputs use [B, T, H, D], whereas
                 # its query input is [B, H, T, D].  Keeping this conversion
                 # explicit prevents a multi-token selected-head result from
@@ -863,9 +868,9 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
                     "layer": self.layer,
                     "kv_head": head,
                     "query_head_count": len(rows),
-                    "max_abs_difference": max(float((route - dense).abs().max().item()) for route, dense, _query_head, _route_fp32, _dense_fp32, _cast_ulps in rows),
-                    "max_abs_difference_fp32": max(float((route_fp32 - dense_fp32).abs().max().item()) for _route, _dense, _query_head, route_fp32, dense_fp32, _cast_ulps in rows),
-                    "max_executed_dtype_ulps": max(cast_ulps for _route, _dense, _query_head, _route_fp32, _dense_fp32, cast_ulps in rows),
+                    "max_abs_difference": self._measure_component("decode_scalar_comparison_summary", lambda: max(float((route - dense).abs().max().item()) for route, dense, _query_head, _route_fp32, _dense_fp32, _cast_ulps in rows)),
+                    "max_abs_difference_fp32": self._measure_component("decode_scalar_comparison_summary", lambda: max(float((route_fp32 - dense_fp32).abs().max().item()) for _route, _dense, _query_head, route_fp32, dense_fp32, _cast_ulps in rows)),
+                    "max_executed_dtype_ulps": self._measure_component("decode_scalar_comparison_summary", lambda: max(cast_ulps for _route, _dense, _query_head, _route_fp32, _dense_fp32, cast_ulps in rows)),
                     "executed_dtype_ulp_limit": self.max_executed_dtype_ulps,
                     "multi_token_bridge": True,
                 })
@@ -928,10 +933,11 @@ class RouteAQwenExternalColdStorageAttentionBackend(RouteAColdOwnershipAttention
             if self.external_cold_storage is None:
                 raise AssertionError("external cold-storage adapter disappeared")
             position = start + offset
-            self.external_cold_storage.append(
+            self._measure_component("route_a_external_cache_append", lambda: self.external_cold_storage.append(
                 key[0, :, position:position + 1], value[0, :, position:position + 1],
                 keep_mask[0, :, offset:offset + 1], start_position=position,
-            )
+                component_measure=self.component_measure,
+            ))
             self.external_storage_append_calls += 1
             if after_token_append is not None:
                 after_token_append(offset, position)
@@ -948,10 +954,11 @@ class RouteAQwenExternalColdStorageAttentionBackend(RouteAColdOwnershipAttention
             # semantics relative to the same-mask control.
             if after_token_append is not None:
                 raise AssertionError("non-causal external adapter append cannot have per-token callback")
-            self.external_cold_storage.append(
+            self._measure_component("route_a_external_cache_append", lambda: self.external_cold_storage.append(
                 key[0, :, start:start + q_len], value[0, :, start:start + q_len],
                 keep_mask[0], start_position=start,
-            )
+                component_measure=self.component_measure,
+            ))
             self.external_storage_append_calls += 1
         self._keep_mask = self._score_start = None
 

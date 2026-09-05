@@ -1,5 +1,6 @@
 from tools.run_kvzap_route_a412_profiler import operator_rows
 from tools.run_kvzap_route_a4148_qwen_external_storage_profiler import PROFILER_PATHS
+from tools.run_kvzap_route_a4149_qwen_external_storage_phase_profiler import PHASE_PATHS, PHASE_PREFIX, phase_rows
 
 
 class Event:
@@ -40,3 +41,10 @@ def test_external_storage_profiler_has_three_distinct_paired_paths():
         "same_mask_dense_replay",
         "same_mask_route_a_external_storage_replay",
     )
+
+
+def test_phase_profiler_filters_only_explicit_phase_ranges():
+    phase = Event(f"{PHASE_PREFIX}decode_route_a_online_softmax_merge", 1, 2.0, 3.0)
+    generic = Event("aten::stack", 1, 9.0, 9.0)
+    assert [row["operator"] for row in phase_rows([generic, phase])] == [phase.key]
+    assert PHASE_PATHS == ("same_mask_dense_replay", "same_mask_route_a_external_storage_replay")

@@ -13,6 +13,18 @@ contains only bounded ownership/page/ULP scalar guards. Profiler values must not
 be pooled with A4.1.4 timing distributions or described as HBM traffic,
 latency, throughput, energy, area, hardware, or RTL evidence.
 
+## A4.1.6 phase-attributed external-storage profiler
+
+`kvzap-route-a4149-qwen-external-storage-phase-profiler-1.0` is a separate
+one-capture diagnostic for the replayed dense and external-storage Route-A
+references. `route_a_phase::` profiler ranges label existing reference
+operations: external cache append/materialization, maturity/admission/page
+work, hot/pending/packed partial attention, online merge, same-mask dense
+reference, FP32 guard, execution-dtype guard/diagnostic, and scalar summary.
+The labels are nested and may be inclusive, so their times cannot be summed or
+treated as latency data. They do not change mask replay, state ownership,
+attention, or numerical-guard semantics.
+
 ## A4 untimed semantic-gate scalar diagnostics
 
 For an A4 native-storage gate using `execution_dtype_ulp_mode=record_only`,

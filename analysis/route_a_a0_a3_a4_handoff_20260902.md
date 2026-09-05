@@ -746,6 +746,16 @@ guards. Its default output is a bounded top-operator summary; Chrome traces
 are opt-in because they can be large. It is an overhead-attribution diagnostic,
 not a timing repetition or any HBM/kernel/throughput/hardware conclusion.
 
+### A4.1.6 implementation — phase-attributed profiler
+
+A4149 follows A4148 only to localize its generic profiler operators. It uses
+the same all-layer/all-head/budget-512 replay source but tags existing reference
+operations with optional nested `route_a_phase::` profiler ranges. The tags
+cover external-cache materialization, admission/page work, hot/pending/packed
+partials, online merge, same-mask dense reference, numerical guards and scalar
+summaries. They make no semantic or policy change, are not timing repetitions,
+and must not be summed because profiler ranges are inclusive.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

@@ -49,7 +49,7 @@ class RouteAExternalColdStorageAdapter:
     def selected_native_hot_values(self) -> torch.Tensor | None:
         return self._selected_hot_values
 
-    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int) -> None:
+    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int, component_measure=None) -> None:
         """Append a contiguous segment, evicting selected mature native K/V."""
         if keys.ndim != 3 or values.shape != keys.shape or keys.shape[0] != self.heads or keys.shape[2] != self.head_dim:
             raise ValueError("keys and values must be [KV-head, token, head-dim]")
@@ -59,17 +59,24 @@ class RouteAExternalColdStorageAdapter:
             raise AssertionError("adapter append position must equal its logical cache position")
 
         # Route-A becomes the sole selected-head mature-cold owner first.
-        self.state.append(keys, values, keep_mask, start_position=start_position)
-        selected_keys = keys[list(self.selected_kv_heads)].detach().clone()
-        selected_values = values[list(self.selected_kv_heads)].detach().clone()
-        if self._selected_hot_keys is None:
-            joined_keys, joined_values = selected_keys, selected_values
+        self.state.append(keys, values, keep_mask, start_position=start_position, component_measure=component_measure)
+
+        def materialize_selected_hot() -> None:
+            selected_keys = keys[list(self.selected_kv_heads)].detach().clone()
+            selected_values = values[list(self.selected_kv_heads)].detach().clone()
+            if self._selected_hot_keys is None:
+                joined_keys, joined_values = selected_keys, selected_values
+            else:
+                joined_keys = torch.cat((self._selected_hot_keys, selected_keys), dim=1)
+                joined_values = torch.cat((self._selected_hot_values, selected_values), dim=1)
+            retained = min(self.window, self.logical_cache_tokens)
+            self._selected_hot_keys = joined_keys[:, -retained:].clone() if retained else joined_keys[:, :0].clone()
+            self._selected_hot_values = joined_values[:, -retained:].clone() if retained else joined_values[:, :0].clone()
+
+        if component_measure is None:
+            materialize_selected_hot()
         else:
-            joined_keys = torch.cat((self._selected_hot_keys, selected_keys), dim=1)
-            joined_values = torch.cat((self._selected_hot_values, selected_values), dim=1)
-        retained = min(self.window, self.logical_cache_tokens)
-        self._selected_hot_keys = joined_keys[:, -retained:].clone() if retained else joined_keys[:, :0].clone()
-        self._selected_hot_values = joined_values[:, -retained:].clone() if retained else joined_values[:, :0].clone()
+            component_measure("route_a_external_selected_hot_materialize", materialize_selected_hot)
         self.assert_storage_contract()
 
     def ownership_summary(self) -> dict[str, Any]:

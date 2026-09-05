@@ -67,10 +67,10 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def make_backend_and_cache(*, path: str, pipe, layers: tuple[int, ...], expected_heads: dict[int, tuple[int, ...]], events, args: argparse.Namespace):
+def make_backend_and_cache(*, path: str, pipe, layers: tuple[int, ...], expected_heads: dict[int, tuple[int, ...]], events, args: argparse.Namespace, component_measure=None):
     if path == "full_kv_bypass":
         return None, DynamicCache()
-    common = dict(model=pipe.model, predictor=None, layers=layers, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, execution_dtype_ulp_mode="record_only", execution_dtype_close_mode="quantization_aware_enforce", ulp_breach_sample_limit=args.ulp_breach_sample_limit, replay_mask_events=events)
+    common = dict(model=pipe.model, predictor=None, layers=layers, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, execution_dtype_ulp_mode="record_only", execution_dtype_close_mode="quantization_aware_enforce", ulp_breach_sample_limit=args.ulp_breach_sample_limit, replay_mask_events=events, component_measure=component_measure)
     if path == "same_mask_dense_replay":
         return DenseSameMaskAttentionBackendSet(**common), DynamicCache()
     if path == EXTERNAL_STORAGE_PATH:

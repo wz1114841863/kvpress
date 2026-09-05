@@ -60,3 +60,20 @@ def test_external_adapter_rejects_noncontiguous_append():
     keys = torch.zeros(2, 1, 2)
     with pytest.raises(AssertionError, match="position"):
         result.append(keys, keys, torch.ones(2, 1, dtype=torch.bool), start_position=1)
+
+
+def test_external_adapter_passes_component_labels_to_state_and_hot_materialization():
+    result = adapter(budget=1)
+    seen = []
+
+    def measure(name, operation):
+        seen.append(name)
+        return operation()
+
+    keys = torch.zeros(2, 1, 2)
+    result.append(keys, keys, torch.ones(2, 1, dtype=torch.bool), start_position=0, component_measure=measure)
+    assert seen == [
+        "route_a_maturity_pending_staging",
+        "route_a_admission_page_append_table",
+        "route_a_external_selected_hot_materialize",
+    ]
