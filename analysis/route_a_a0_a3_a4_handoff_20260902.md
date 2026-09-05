@@ -628,6 +628,19 @@ Route-A append/service event, while causal multi-token bridge tokens append
 separately. Applying token-level admission to prefill would spend budget one
 once per token and falsely erase pending staging.
 
+### A4.1.3.3 implementation — Qwen native-storage replacement prototype
+
+`kvpress/route_a_qwen_cache.py` is the first genuine Qwen `Cache`-interface
+prototype, intentionally constrained to layer 0 and one KV head. Persistent
+target-layer dense tensors exclude the selected head entirely; Route-A external
+state owns that head's hot/pending/packed retained positions and mask drops are
+absent. To satisfy Qwen's existing dense attention function, each `update`
+returns a transient full-shaped attention view with unreadable selected history
+and the current selected K/V segment. The policy backend overwrites selected
+attention outputs. A4138 must prove both cache/adapter logical-position
+agreement and zero persistent selected mature-cold tokens. It is an untimed
+semantic gate, not a physical-memory or performance result.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

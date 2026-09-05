@@ -1177,6 +1177,37 @@ do not reuse that output directory. Synchronize the prefill-admission-epoch
 fix, choose a new `RUN_ID`, and rerun. The corrected adapter services budget
 one once per ordinary prefill chunk, rather than once per prefill token.
 
+## A4.1.3.3 — Qwen native-storage replacement prototype
+
+This is the first remote semantic gate that passes a custom `Cache` object to
+Qwen. It is restricted to layer 0 and one selected KV head. The target cache
+persists only unselected-head dense K/V; Qwen receives a transient full-shaped
+attention view for API compatibility. Do not time it.
+
+```bash
+RUN_ID=route_a4138_qwen_native_storage_layer0_head6_budget1_pending_01
+SOURCE_ID=route_a41_replay_source_layer0_budget1_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4138_qwen_native_storage_replacement_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 6 \
+  --admission-budget 1 \
+  --require-pending-nonempty \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the entire fresh directory. A valid manifest must show complete
+replay, selected pending coverage, zero
+`persistent_selected_native_cold_tensor_tokens`, true
+`persistent_selected_mature_cold_absent`, and true
+`transient_attention_view_is_not_persistent_cache`. It is not allocator, HBM,
+latency, throughput, energy, hardware, or RTL evidence.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

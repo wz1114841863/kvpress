@@ -553,6 +553,22 @@ This remains untimed and leaves native DynamicCache allocated. A passing result
 is necessary before designing a real Qwen cache interface, but it is not a
 physical storage or allocator result.
 
+### A4.1.3.3 — Qwen single-layer native-storage replacement prototype
+
+`kvpress/route_a_qwen_cache.py` implements the first actual Qwen `Cache`
+interface prototype for layer zero and one selected KV head. Its persistent
+target-layer state contains dense K/V only for unselected heads. Selected hot
+K/V is owned by the Route-A external adapter, selected retained mature cold is
+pending/packed there, and selected dropped mature positions are absent. A
+transient dense-shaped Qwen attention input is constructed per update because
+the current Qwen attention interface still requires all KV-head slots; it is
+not stored in the cache. A4138 validates this representation together with
+same-mask policy attention and native-cold no-fallback guards.
+
+The prototype remains batch-one/layer-zero/single-head and untimed. Its
+transient view means no allocator, HBM, runtime, or throughput conclusion may
+be drawn; those require a later measured implementation without this view.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

@@ -1237,6 +1237,17 @@ incorrectly over-drain pending staging and change policy semantics.
 integration gate, not a physical storage, allocator, HBM, timing, throughput,
 energy, hardware, or RTL measurement.
 
+`kvzap-route-a4138-qwen-native-storage-replacement-gate-1.0` is A4.1.3.3, the
+single-layer/head Qwen cache-interface prototype. At layer zero it persistently
+stores dense K/V only for unselected heads; selected mature cold K/V is absent
+from that cache and retained selected cold reads remain in Route-A external
+pending/packed state. Qwen's current attention API still receives a transient
+full-shaped K/V view: historical selected cells are unreadable and only newly
+created selected K/V is present for the current Route-A append. The manifest
+must separately report persistent cache storage and mark that transient view
+as non-persistent. This is functional evidence only; it does not measure
+allocated/reserved memory, HBM, timing, throughput, energy, hardware, or RTL.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35
