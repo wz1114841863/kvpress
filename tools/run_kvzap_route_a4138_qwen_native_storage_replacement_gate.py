@@ -48,6 +48,8 @@ def require_replacement_contract(*, backend: RouteAQwenExternalColdStorageAttent
         raise AssertionError("selected KV head never observed pending retained cold staging")
     if args.require_multi_page_packed and not (selected["ever_multi_page_packed"] and selected["ever_sealed_packed_page"]):
         raise AssertionError("selected KV head never observed a full sealed page plus a second packed page")
+    if args.require_tail_packed and not bool(selected["max_packed_tail_tokens"]):
+        raise AssertionError("selected KV head never observed a nonempty packed tail page")
     ownership = backend.ownership_summary()
     storage = cache.target_storage_summary(adapter=backend.external_cold_storage)
     if storage["persistent_selected_native_cold_tensor_tokens"] != 0 or not storage["persistent_selected_mature_cold_absent"]:
@@ -55,16 +57,21 @@ def require_replacement_contract(*, backend: RouteAQwenExternalColdStorageAttent
     return coverage, ownership, storage
 
 
-def main() -> None:
-    args = parse_args(description="A4.1.3.3 untimed Qwen single layer/head native-storage replacement semantic gate; not a performance benchmark.")
+def main(*, schema_version: str = A4138_SCHEMA, phase: str = "A4.1.3.3", artifact_stem: str = "a4138_qwen_native_storage_replacement", required_admission_budget: int | None = None, required_state_flags: tuple[str, ...] = ()) -> None:
+    args = parse_args(description=f"{phase} untimed Qwen single layer/head native-storage replacement semantic gate; not a performance benchmark.")
     if args.output_dir.exists():
         raise FileExistsError(f"output directory already exists: {args.output_dir}")
     if args.request_id is not None and args.input_jsonl is None:
         raise ValueError("--request-id requires --input-jsonl")
     if args.target_layer != 0:
-        raise ValueError("A4.1.3.3 prototype requires --target-layer 0")
+        raise ValueError(f"{phase} prototype requires --target-layer 0")
     if args.target_kv_head < 0 or min(args.context_repetitions, args.page_tokens, args.admission_budget, args.max_new_tokens, args.max_executed_dtype_ulps) <= 0 or args.window_size < 0:
         raise ValueError("invalid A4.1.3.3 dimensions")
+    if required_admission_budget is not None and args.admission_budget != required_admission_budget:
+        raise ValueError(f"{phase} requires --admission-budget {required_admission_budget}")
+    for flag in required_state_flags:
+        if not getattr(args, flag):
+            raise ValueError(f"{phase} requires --{flag.replace('_', '-')}")
     require_cuda_device(args.device)
     if (args.model_name, args.predictor_name, args.model_revision, args.predictor_revision) != (DEFAULT_MODEL, DEFAULT_PREDICTOR, GATE_B_MODEL_REVISION, GATE_A_PREDICTOR_REVISION):
         raise ValueError("A4.1.3.3 is bounded to frozen Qwen3-8B and official MLP revisions")
@@ -87,8 +94,8 @@ def main() -> None:
         raise ValueError("request does not exercise protected hot-window decode state")
     config = manifest_config(args)
     config["replay_event_file_sha256"] = event_sha256
-    initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit(), record_name="a4138_qwen_native_storage_replacement_started.json", schema_version=A4138_SCHEMA, boundaries=[
-        "A4.1.3.3 is an untimed Qwen cache-interface semantic gate, not a latency or allocator measurement.",
+    initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit(), record_name=f"{artifact_stem}_started.json", schema_version=schema_version, boundaries=[
+        f"{phase} is an untimed Qwen cache-interface semantic gate, not a latency or allocator measurement.",
         "At target layer zero, persistent cache storage has dense K/V only for unselected heads; selected mature cold K/V is absent and Route-A external state owns retained cold reads.",
         "Qwen attention receives a transient dense-shaped view solely to satisfy its current interface. That view is not persistent cache storage and does not establish allocator, HBM, or performance benefit.",
     ])
@@ -111,7 +118,7 @@ def main() -> None:
     route_coverage, ownership, storage = require_replacement_contract(backend=route_backend, cache=route_cache, args=args)
     relation = generated_output_relation(dense_answer, dense_tokens, route_answer, route_tokens)
     manifest = {
-        "schema_version": A4138_SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config),
+        "schema_version": schema_version, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config),
         "request_id": request["request_id"], "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}),
         "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"], "source_answer_sha256": source["answer_sha256"]},
         "outcomes": {
@@ -125,6 +132,8 @@ def main() -> None:
             "fp32_same_mask_guard": {"rtol": args.rtol, "atol": args.atol}, "selected_native_cold_read_guard_complete": True,
             "persistent_selected_mature_cold_absent": True, "persistent_selected_native_cold_tensor_tokens": 0,
             "transient_attention_view_is_not_persistent_cache": True,
+            "required_selected_multi_page_packed_coverage": not args.require_multi_page_packed or (route_coverage["heads"][0]["ever_multi_page_packed"] and route_coverage["heads"][0]["ever_sealed_packed_page"]),
+            "required_selected_tail_packed_coverage": not args.require_tail_packed or bool(route_coverage["heads"][0]["max_packed_tail_tokens"]),
         },
         "boundaries": [
             "Untimed single-layer/head Qwen semantic cache-interface gate only; it is not timing, throughput, allocator, HBM traffic, energy, area, frequency, hardware acceleration, or RTL evidence.",
@@ -132,9 +141,9 @@ def main() -> None:
             "Same-mask dense/Route-A generated output relation is recorded, not required; guarded reductions may alter later greedy tokens.",
         ], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__),
     }
-    path = args.output_dir / "a4138_qwen_native_storage_replacement_manifest.json"
+    path = args.output_dir / f"{artifact_stem}_manifest.json"
     path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"A4.1.3.3 Qwen native-storage replacement gate passed: {path}")
+    print(f"{phase} Qwen native-storage replacement gate passed: {path}")
 
 
 if __name__ == "__main__":

@@ -569,6 +569,16 @@ The prototype remains batch-one/layer-zero/single-head and untimed. Its
 transient view means no allocator, HBM, runtime, or throughput conclusion may
 be drawn; those require a later measured implementation without this view.
 
+### A4.1.3.4 — budget-512 native-storage page-state gate
+
+`tools/run_kvzap_route_a4139_qwen_native_storage_page_state_gate.py` pins the
+A4138 cache interface to admission budget 512 and requires selected-head
+multi-page, sealed-full-page, and tail-page coverage. Its replay source must
+be newly collected with layer 0 and the same budget; replay provenance is not
+interchangeable merely because dense mask decisions may coincide. Pending is
+not required because this admission point may drain it. This remains untimed
+functional storage/attention evidence only.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

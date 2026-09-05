@@ -641,6 +641,15 @@ attention outputs. A4138 must prove both cache/adapter logical-position
 agreement and zero persistent selected mature-cold tokens. It is an untimed
 semantic gate, not a physical-memory or performance result.
 
+### A4.1.3.4 implementation — budget-512 page-state counterpart
+
+A4139 wraps the same Qwen cache interface with a fixed budget of 512 and
+pre-model checks for multi-page plus tail coverage. The gate requires a newly
+collected layer-0/budget-512 replay source and verifies selected persistent
+mature-cold absence while packed pages include at least one sealed page, a
+second page, and a nonempty tail. It deliberately does not require pending at
+this budget and remains a no-timing semantic test.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

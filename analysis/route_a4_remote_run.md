@@ -1208,6 +1208,45 @@ replay, selected pending coverage, zero
 `transient_attention_view_is_not_persistent_cache`. It is not allocator, HBM,
 latency, throughput, energy, hardware, or RTL evidence.
 
+## A4.1.3.4 — budget-512 native-storage page-state counterpart
+
+Collect a separate layer-0 replay source first. Although this is a dense source
+collector, its recorded admission budget is part of paired provenance; do not
+reuse the budget-one source.
+
+```bash
+SOURCE_ID=route_a4139_replay_source_layer0_budget512_01
+test ! -e "analysis/experiments/${SOURCE_ID}"
+python tools/collect_kvzap_route_a41_replay_source.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers 0 \
+  --admission-budget 512 \
+  --output-dir "analysis/experiments/${SOURCE_ID}"
+
+RUN_ID=route_a4139_qwen_native_storage_layer0_head6_budget512_pages_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4139_qwen_native_storage_page_state_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head 6 \
+  --admission-budget 512 \
+  --require-multi-page-packed \
+  --require-tail-packed \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize both complete fresh directories. A4139 must show complete replay,
+selected-head full/multi/tail page coverage, a zero persistent selected mature-
+cold tensor count, and a non-persistent transient view. It is an untimed
+semantic gate, not allocator, HBM, runtime, throughput, energy, hardware, or
+RTL evidence.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

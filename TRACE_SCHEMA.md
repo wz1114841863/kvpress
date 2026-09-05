@@ -1248,6 +1248,16 @@ must separately report persistent cache storage and mark that transient view
 as non-persistent. This is functional evidence only; it does not measure
 allocated/reserved memory, HBM, timing, throughput, energy, hardware, or RTL.
 
+`kvzap-route-a4139-qwen-native-storage-page-state-gate-1.0` is A4.1.3.4, the
+budget-512 counterpart of A4138. It requires a separately collected layer-0
+replay source with matching budget provenance, then requires the selected head
+to exhibit a sealed full packed page, a second packed page, and a nonempty tail
+page while the cache's persistent selected mature-cold tensor count remains
+zero. Pending staging is intentionally not required at this admission budget.
+It remains an untimed semantic representation gate; transient view allocation,
+allocator/HBM traffic, runtime, throughput, energy, hardware, and RTL are all
+out of scope.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35

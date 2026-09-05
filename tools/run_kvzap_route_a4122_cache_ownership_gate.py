@@ -56,6 +56,7 @@ def parse_args(*, description: str = "A4.1.2.2 untimed selected-head native-cold
     parser.add_argument("--max-executed-dtype-ulps", type=float, default=16.0)
     parser.add_argument("--require-pending-nonempty", action="store_true")
     parser.add_argument("--require-multi-page-packed", action="store_true")
+    parser.add_argument("--require-tail-packed", action="store_true", help="Require the selected Route-A head to observe a nonempty packed tail page.")
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--replay-source-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True, help="New output directory only.")
