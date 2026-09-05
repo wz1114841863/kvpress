@@ -1269,6 +1269,17 @@ every head. As with A4138/A4139, transient full-shaped views are non-persistent
 and this is not allocator, HBM, timing, throughput, energy, hardware, or RTL
 evidence.
 
+`kvzap-route-a4141-qwen-allhead-native-storage-page-state-gate-1.0` is
+A4.1.3.6, the all-head, budget-512 counterpart. It requires all layer-zero KV
+heads to use the external Route-A ownership interface while persistent selected
+native mature-cold tensors remain absent. Its aggregate page guard requires one
+witness head (not every head) to simultaneously observe a sealed full page, a
+second packed page, and a nonempty tail. This distinction is required because
+an original-mask head may validly retain zero mature cold tokens. Per-head
+coverage and the aggregate witness list are recorded. It is an untimed semantic
+representation gate; transient views, allocator/HBM, runtime, throughput,
+energy, hardware, and RTL remain out of scope.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35

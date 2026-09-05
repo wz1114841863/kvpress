@@ -661,6 +661,16 @@ and aggregate pending coverage. Heads with zero original-mask retained cold are
 still substituted and must be recorded rather than silently omitted. This is
 not timing or physical-memory evidence.
 
+### A4.1.3.6 implementation — all-head budget-512 page-state replacement
+
+A4141 fixes the A4140 all-head interface at admission budget 512 and requires
+one witness head to cover a sealed full packed page, multi-page state, and a
+nonempty tail. The requirement is intentionally aggregate: any head with zero
+retained mature cold under the replayed original mask remains substituted and
+must be reported, rather than forcing an invalid per-head page condition.
+Persistent selected mature-cold K/V remains absent from the custom cache. The
+gate is no-timing semantic evidence only.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

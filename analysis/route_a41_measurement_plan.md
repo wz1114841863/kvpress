@@ -590,6 +590,16 @@ must not be treated as a skipped head or dense fallback. Pending is an
 aggregate requirement because some original-mask heads can legitimately retain
 nothing. The gate remains untimed functional evidence only.
 
+### A4.1.3.6 — layer-0 all-KV-head budget-512 page-state gate
+
+`tools/run_kvzap_route_a4141_qwen_allhead_native_storage_page_state_gate.py`
+reuses the all-head custom cache interface at admission budget 512. It requires
+every layer-zero KV head and GQA group to follow Route-A ownership, but requires
+full-page/multi-page/tail coverage from one witness head rather than every head:
+a head with zero original-mask retained mature cold is valid and is reported
+explicitly. The gate must retain zero persistent selected native mature-cold
+tensor tokens and remains untimed functional evidence only.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

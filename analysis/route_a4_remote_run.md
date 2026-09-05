@@ -1278,6 +1278,35 @@ persistent selected mature-cold tensor tokens, and a non-persistent transient
 view. This remains an untimed semantic gate, not allocator, HBM, runtime,
 throughput, energy, hardware, or RTL evidence.
 
+## A4.1.3.6 — layer-0 all-KV-head budget-512 page-state replacement
+
+Use the existing layer-zero, budget-512 replay source. The page-state
+requirement is aggregate: one retained head must simultaneously cover a sealed
+full page, another packed page, and a nonempty tail; zero-retained heads remain
+valid substitutions and must still appear in per-head coverage.
+
+```bash
+RUN_ID=route_a4141_qwen_allheads_layer0_budget512_pages_01
+SOURCE_ID=route_a4139_replay_source_layer0_budget512_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4141_qwen_allhead_native_storage_page_state_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layer 0 \
+  --target-kv-head all \
+  --admission-budget 512 \
+  --require-any-full-multi-tail-packed \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the complete fresh directory. It must show all eight heads in
+coverage/external ownership, zero persistent selected native cold, and a
+nonempty aggregate page witness list. This remains an untimed semantic gate,
+not allocator, HBM, runtime, throughput, energy, hardware, or RTL evidence.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every
