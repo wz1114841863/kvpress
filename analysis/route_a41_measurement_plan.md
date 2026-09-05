@@ -620,6 +620,16 @@ tail witness, while keeping every target layer's persistent selected
 mature-cold tensor count at zero. It deliberately does not require pending
 staging. This remains untimed semantic evidence only.
 
+### A4.1.3.9 — all-layer all-KV-head native-storage gate
+
+`tools/run_kvzap_route_a4144_qwen_alllayer_allhead_native_storage_gate.py`
+extends the custom cache interface to every Qwen layer and every KV head at
+budget one. It requires a completed all-layer/budget-one source, literal
+`--target-layers all`, independent external adapter state per layer, zero
+persistent selected mature-cold K/V and zero unselected heads at every layer,
+and aggregate pending coverage. It remains an untimed semantic interface gate;
+the all-layer budget-512 page-state counterpart follows only after this passes.
+
 **Observed A4.1.2.9 budget-one result (2026-09-04):**
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01` passed every
 three-layer replay, bridge, finite-output, and ownership guard using the new

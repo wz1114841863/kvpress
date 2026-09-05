@@ -27,7 +27,7 @@ A4142_SCHEMA = "kvzap-route-a4142-qwen-multilayer-allhead-native-storage-gate-1.
 TARGET_LAYERS = (0, 18, 35)
 
 
-def parse_args(*, description: str = "A4.1.3.7 untimed Qwen layers {0,18,35} all-KV-head native-storage replacement semantic gate; not a performance benchmark.") -> argparse.Namespace:
+def parse_args(*, description: str = "A4.1.3.7 untimed Qwen layers {0,18,35} all-KV-head native-storage replacement semantic gate; not a performance benchmark.", default_target_layers: list[str] | None = None, target_layer_help: str = "Must be exactly: 0 18 35.") -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=description)
     request = parser.add_mutually_exclusive_group()
     request.add_argument("--preset", choices=PRESETS, default="retrieval")
@@ -42,7 +42,7 @@ def parse_args(*, description: str = "A4.1.3.7 untimed Qwen layers {0,18,35} all
     parser.add_argument("--window-size", type=int, default=128)
     parser.add_argument("--page-tokens", type=int, default=64)
     parser.add_argument("--admission-budget", type=int, required=True)
-    parser.add_argument("--target-layers", nargs="+", default=[str(layer) for layer in TARGET_LAYERS], help="Must be exactly: 0 18 35.")
+    parser.add_argument("--target-layers", nargs="+", default=default_target_layers or [str(layer) for layer in TARGET_LAYERS], help=target_layer_help)
     parser.add_argument("--target-kv-head", choices=("all",), default="all", help="Every KV head in every target layer is persistently replaced.")
     parser.add_argument("--max-new-tokens", type=int, default=8)
     parser.add_argument("--seed", type=int, default=42)
@@ -59,6 +59,18 @@ def parse_args(*, description: str = "A4.1.3.7 untimed Qwen layers {0,18,35} all
 
 def config(args: argparse.Namespace) -> dict[str, Any]:
     return {key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items() if key != "output_dir"}
+
+
+def resolve_scope_layers(values: list[str], *, scope: str, layer_count: int) -> tuple[int, ...]:
+    if scope == "three_layer":
+        if tuple(values) != tuple(str(layer) for layer in TARGET_LAYERS):
+            raise ValueError("three-layer scope requires --target-layers 0 18 35")
+        return TARGET_LAYERS
+    if scope == "all_layers":
+        if values != ["all"]:
+            raise ValueError("all-layer scope requires the literal --target-layers all")
+        return tuple(range(layer_count))
+    raise ValueError(f"unknown A4.1.3 scope: {scope}")
 
 
 def run_path(*, pipe, context_ids: torch.Tensor, question_ids: torch.Tensor, backend, cache, args: argparse.Namespace) -> tuple[str, list[int]]:
@@ -131,14 +143,21 @@ def main(
     artifact_stem: str = "a4142_qwen_multilayer_allhead_native_storage",
     required_admission_budget: int | None = 1,
     required_state_flags: tuple[str, ...] = ("require_any_pending",),
+    scope: str = "three_layer",
 ) -> None:
-    args = parse_args(description=f"{phase} untimed Qwen layers {{0,18,35}} all-KV-head native-storage replacement semantic gate; not a performance benchmark.")
+    if scope == "three_layer":
+        default_layers, target_help, layer_label = [str(layer) for layer in TARGET_LAYERS], "Must be exactly: 0 18 35.", "{0,18,35}"
+    elif scope == "all_layers":
+        default_layers, target_help, layer_label = ["all"], "Must be the literal: all.", "all model layers"
+    else:
+        raise ValueError(f"unknown A4.1.3 scope: {scope}")
+    args = parse_args(description=f"{phase} untimed Qwen {layer_label} all-KV-head native-storage replacement semantic gate; not a performance benchmark.", default_target_layers=default_layers, target_layer_help=target_help)
     if args.output_dir.exists():
         raise FileExistsError(f"output directory already exists: {args.output_dir}")
     if args.request_id is not None and args.input_jsonl is None:
         raise ValueError("--request-id requires --input-jsonl")
-    if tuple(args.target_layers) != tuple(str(layer) for layer in TARGET_LAYERS) or args.target_kv_head != "all":
-        raise ValueError(f"{phase} requires --target-layers 0 18 35 --target-kv-head all")
+    if args.target_kv_head != "all":
+        raise ValueError(f"{phase} requires --target-kv-head all")
     if required_admission_budget is not None and args.admission_budget != required_admission_budget:
         raise ValueError(f"{phase} requires --admission-budget {required_admission_budget}")
     for flag in required_state_flags:
@@ -149,20 +168,19 @@ def main(
     if (args.model_name, args.predictor_name, args.model_revision, args.predictor_revision) != (DEFAULT_MODEL, DEFAULT_PREDICTOR, GATE_B_MODEL_REVISION, GATE_A_PREDICTOR_REVISION):
         raise ValueError(f"{phase} is bounded to frozen Qwen3-8B and official MLP revisions")
     request = load_jsonl_request(args.input_jsonl, args.request_id) if args.input_jsonl else build_builtin_request(args.preset, args.context_repetitions)
-    events, source, event_sha256 = read_source(args.replay_source_dir, args=args, layers=TARGET_LAYERS)
-    if source["config"].get("admission_budget") != args.admission_budget:
-        raise ValueError("replay source admission budget differs from multi-layer native-storage configuration")
     require_cuda_device(args.device)
     print(f"Loading base model: {args.model_name}")
     pipe = pipeline("kv-press-text-generation", model=args.model_name, revision=args.model_revision, device_map="auto", dtype="auto")
     if getattr(pipe.model.config, "_commit_hash", None) != args.model_revision:
         raise ValueError("loaded model revision differs from frozen revision")
     language_model = pipe.model.model.language_model if hasattr(pipe.model.model, "language_model") else pipe.model.model
-    if max(TARGET_LAYERS) >= len(language_model.layers):
-        raise ValueError(f"Qwen model has fewer layers than the {phase} target set")
-    expected_heads = {layer: tuple(range(int(language_model.layers[layer].self_attn.config.num_key_value_heads))) for layer in TARGET_LAYERS}
-    args.resolved_target_layers = list(TARGET_LAYERS)
+    layers = resolve_scope_layers(args.target_layers, scope=scope, layer_count=len(language_model.layers))
+    expected_heads = {layer: tuple(range(int(language_model.layers[layer].self_attn.config.num_key_value_heads))) for layer in layers}
+    args.resolved_target_layers = list(layers)
     args.resolved_target_kv_heads_by_layer = {str(layer): list(heads) for layer, heads in expected_heads.items()}
+    events, source, event_sha256 = read_source(args.replay_source_dir, args=args, layers=layers)
+    if source["config"].get("admission_budget") != args.admission_budget:
+        raise ValueError("replay source admission budget differs from multi-layer native-storage configuration")
     tokenized = pipe.preprocess(str(request["context"]), [str(request["question"])], answer_prefix="", max_context_length=pipe.tokenizer.model_max_length, enable_thinking=False)
     context_ids = tokenized["context_ids"].to(pipe.model.device)
     question_ids = tokenized["questions_ids"][0].to(pipe.model.device)
@@ -171,20 +189,20 @@ def main(
     resolved = config(args)
     resolved["replay_event_file_sha256"] = event_sha256
     initialize_output_directory(args.output_dir, config=resolved, git_commit=get_git_commit(), record_name=f"{artifact_stem}_started.json", schema_version=schema_version, boundaries=[
-        f"{phase} is an untimed three-layer all-KV-head Qwen semantic cache-interface gate, not a latency or allocator measurement.",
-        "At layers 0, 18, and 35, persistent cache storage omits every selected KV head; retained hot/pending/packed state belongs to independent Route-A external adapters.",
+        f"{phase} is an untimed {layer_label} all-KV-head Qwen semantic cache-interface gate, not a latency or allocator measurement.",
+        "At every target layer, persistent cache storage omits every selected KV head; retained hot/pending/packed state belongs to independent Route-A external adapters.",
         "Qwen receives transient full-shaped attention views only for current API compatibility. They are not persistent cache storage and establish no allocator, HBM, or performance result.",
     ])
-    common = dict(layers=TARGET_LAYERS, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, replay_mask_events=events)
+    common = dict(layers=layers, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, replay_mask_events=events)
     print("Pass 1/3: Full-KV bypass (zero Route-A admission)...")
     full_answer, full_tokens = run_path(pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=None, cache=DynamicCache(), args=args)
     assert_no_runtime_mask_state(pipe.model)
-    print(f"Pass 2/3: three-layer all-head same-mask dense KVzap control in layers {list(TARGET_LAYERS)}...")
+    print(f"Pass 2/3: {layer_label} all-head same-mask dense KVzap control in layers {list(layers)}...")
     dense_backend = DenseSameMaskAttentionBackendSet(pipe.model, None, **common)
     dense_answer, dense_tokens = run_path(pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=dense_backend, cache=DynamicCache(), args=args)
     assert_no_runtime_mask_state(pipe.model)
     dense_backend.assert_replay_complete()
-    print(f"Pass 3/3: three-layer all-head Qwen native-storage replacement in layers {list(TARGET_LAYERS)}...")
+    print(f"Pass 3/3: {layer_label} all-head Qwen native-storage replacement in layers {list(layers)}...")
     route_backend = RouteAQwenExternalColdStorageAttentionBackendSet(pipe.model, None, **common)
     route_cache = RouteAQwenMultiLayerExternalColdCache(selected_kv_heads_by_layer=expected_heads)
     route_answer, route_tokens = run_path(pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=route_backend, cache=route_cache, args=args)
@@ -211,8 +229,8 @@ def main(
             "required_any_full_multi_tail_packed_coverage": not args.require_any_full_multi_tail_packed or page_coverage["covered"],
         },
         "boundaries": [
-            "Untimed layers {0,18,35} all-KV-head Qwen semantic cache-interface gate only; not timing, throughput, allocator, HBM traffic, energy, area, frequency, hardware acceleration, or RTL evidence.",
-            "All persistent selected KV tensors are absent only at the three target layers; non-target Qwen layers retain native cache state. Transient dense-shaped attention views do not establish physical allocation or traffic results.",
+            f"Untimed {layer_label} all-KV-head Qwen semantic cache-interface gate only; not timing, throughput, allocator, HBM traffic, energy, area, frequency, hardware acceleration, or RTL evidence.",
+            "All persistent selected KV tensors are absent only at the declared target layers. Transient dense-shaped attention views do not establish physical allocation or traffic results.",
             "Same-mask dense/Route-A generated output relation is recorded, not required; only the applicable same-mask numerical guards are hard gates.",
         ], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__),
     }

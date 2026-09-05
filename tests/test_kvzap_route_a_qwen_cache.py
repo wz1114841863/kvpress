@@ -5,7 +5,7 @@ import torch
 from kvpress.route_a_external_cold_storage import RouteAExternalColdStorageAdapter
 from kvpress.route_a_qwen_cache import RouteAQwenMultiLayerExternalColdCache, RouteAQwenSingleLayerExternalColdCache
 from kvpress.route_a_policy_backend import RouteAQwenExternalColdStorageAttentionBackend, RouteAQwenExternalColdStorageAttentionBackendSet
-from tools.run_kvzap_route_a4142_qwen_multilayer_allhead_native_storage_gate import aggregate_full_multi_tail_page_coverage
+from tools.run_kvzap_route_a4142_qwen_multilayer_allhead_native_storage_gate import aggregate_full_multi_tail_page_coverage, resolve_scope_layers
 
 
 def test_qwen_external_cold_cache_keeps_only_unselected_persistent_kv_and_logical_length():
@@ -150,3 +150,13 @@ def test_qwen_multilayer_page_state_needs_one_complete_layer_head_witness():
         "witnesses": [{"layer": 0, "kv_head": 6}],
         "covered": True,
     }
+
+
+def test_qwen_alllayer_scope_requires_literal_all_and_resolves_every_layer():
+    assert resolve_scope_layers(["all"], scope="all_layers", layer_count=36) == tuple(range(36))
+    try:
+        resolve_scope_layers(["0", "18", "35"], scope="all_layers", layer_count=36)
+    except ValueError as error:
+        assert "literal" in str(error)
+    else:
+        raise AssertionError("all-layer scope accepted an explicit subset")

@@ -1379,6 +1379,35 @@ K/V at each target layer, and a nonempty aggregate page witness list. It is
 untimed semantic evidence, not allocator, HBM, runtime, throughput, energy,
 hardware, or RTL evidence.
 
+## A4.1.3.9 — all-layer all-KV-head native-storage replacement
+
+Reuse the completed all-layer, budget-one replay source. The runner accepts
+only the literal `all`, preventing an accidental hand-enumerated layer subset.
+
+```bash
+RUN_ID=route_a4144_qwen_all_layers_allheads_budget1_pending_01
+SOURCE_ID=route_a4130_replay_source_all_layers_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4144_qwen_alllayer_allhead_native_storage_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --require-any-pending \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the complete fresh directory. It must show complete replay and
+all-head coverage at every model layer, one independent external adapter/cache
+summary per layer, zero persistent selected native mature-cold K/V and zero
+unselected heads at every layer, and aggregate pending coverage. It remains
+untimed semantic evidence, not allocator, HBM, runtime, throughput, energy,
+hardware, or RTL evidence.
+
 Return both complete fresh directories.  Review requires a completed source
 manifest with a matching NPZ SHA-256, an A4.1.1 manifest with complete replay
 consumption, raw JSONL, three warm-ups and ten reported repetitions for every

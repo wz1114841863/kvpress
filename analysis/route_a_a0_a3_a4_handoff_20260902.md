@@ -691,6 +691,16 @@ every target layer must nevertheless retain zero persistent selected
 mature-cold K/V. Pending is intentionally not required. This is no-timing
 semantic evidence only.
 
+### A4.1.3.9 implementation — all-layer all-head replacement
+
+A4144 generalizes the custom cache interface to every Qwen layer and every KV
+head under budget one. It requires the literal all-layer selector and the
+matching all-layer/budget-one replay source. Each layer has an independent
+external Route-A adapter and must expose zero persistent selected mature-cold
+K/V plus zero unselected heads; pending is an aggregate required state. This
+is untimed semantic evidence only, before any all-layer budget-512 page-state
+counterpart.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

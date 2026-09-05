@@ -1302,6 +1302,16 @@ mature-cold tensors. This remains an untimed semantic interface gate; transient
 views, allocator/HBM, runtime, throughput, energy, hardware, and RTL are out
 of scope.
 
+`kvzap-route-a4144-qwen-alllayer-allhead-native-storage-gate-1.0` is
+A4.1.3.9, the all-model-layer/all-KV-head, budget-one counterpart. It requires
+the literal `--target-layers all` and a completed all-layer/budget-one replay
+source. Every model layer has an independent external Route-A adapter and must
+substitute all its KV heads; each target-layer persistent cache summary must
+have zero selected native mature-cold tensors and zero unselected heads.
+Aggregate pending coverage is required. This is an untimed semantic interface
+gate; transient views, allocator/HBM, runtime, throughput, energy, hardware,
+and RTL are out of scope.
+
 The first A4129 artifact,
 `route_a4129_layers_0_18_35_budget1_pending_continuation_01`, completed with
 the three-layer source hash `0ceb54ab^d6cea`. Each of layers 0, 18, and 35
