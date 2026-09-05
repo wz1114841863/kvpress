@@ -701,6 +701,16 @@ K/V plus zero unselected heads; pending is an aggregate required state. This
 is untimed semantic evidence only, before any all-layer budget-512 page-state
 counterpart.
 
+### A4.1.3.10 implementation — all-layer all-head quantization-aware replacement
+
+A4145 is the explicit follow-up when A4144 encounters an execution-dtype ULP
+outlier. It does not relax the FP32 same-mask guard. Instead, it retains
+bounded scalar ULP records while enforcing the existing quantization-aware
+executed-dtype close envelope, which distinguishes expected local cast
+rounding from unexplained error. All layer/head replay, external ownership,
+and persistent-cache-absence conditions remain hard. The result is still
+untimed semantic evidence only.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

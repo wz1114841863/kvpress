@@ -1,5 +1,16 @@
 # TRACE_SCHEMA.md
 
+## A4 untimed semantic-gate scalar diagnostics
+
+For an A4 native-storage gate using `execution_dtype_ulp_mode=record_only`,
+the manifest may include `execution_dtype_ulp_breaches` below each paired
+path. It contains only mode, limit, count, maxima and a bounded list of scalar
+samples; it must never serialize K/V, attention, activation, or full-logit
+tensors. `record_only` does not disable the FP32 same-mask guard. If
+`execution_dtype_close_mode=quantization_aware_enforce`, that configured
+cast-aware envelope remains a hard gate. These fields are semantic numerical
+diagnostics, not timing, allocator, HBM-traffic, quality, or hardware metrics.
+
 ## 1. 目标
 
 Trace 用于离线分析 KVzap 的 predictor score、最终 mask、物理布局和 decoding 时间演化。Trace 必须可分片、可压缩、可复现，并且开启后不能改变模型输出。

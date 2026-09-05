@@ -27,7 +27,7 @@ A4142_SCHEMA = "kvzap-route-a4142-qwen-multilayer-allhead-native-storage-gate-1.
 TARGET_LAYERS = (0, 18, 35)
 
 
-def parse_args(*, description: str = "A4.1.3.7 untimed Qwen layers {0,18,35} all-KV-head native-storage replacement semantic gate; not a performance benchmark.", default_target_layers: list[str] | None = None, target_layer_help: str = "Must be exactly: 0 18 35.") -> argparse.Namespace:
+def parse_args(*, description: str = "A4.1.3.7 untimed Qwen layers {0,18,35} all-KV-head native-storage replacement semantic gate; not a performance benchmark.", default_target_layers: list[str] | None = None, target_layer_help: str = "Must be exactly: 0 18 35.", default_execution_dtype_ulp_mode: str = "enforce", default_execution_dtype_close_mode: str = "off") -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=description)
     request = parser.add_mutually_exclusive_group()
     request.add_argument("--preset", choices=PRESETS, default="retrieval")
@@ -49,6 +49,9 @@ def parse_args(*, description: str = "A4.1.3.7 untimed Qwen layers {0,18,35} all
     parser.add_argument("--rtol", type=float, default=1e-4)
     parser.add_argument("--atol", type=float, default=1e-5)
     parser.add_argument("--max-executed-dtype-ulps", type=float, default=16.0)
+    parser.add_argument("--execution-dtype-ulp-mode", choices=("enforce", "record_only"), default=default_execution_dtype_ulp_mode, help="enforce fails on an execution-dtype ULP breach; record_only preserves bounded scalar breach evidence while retaining the FP32 same-mask guard.")
+    parser.add_argument("--execution-dtype-close-mode", choices=("off", "scale_aware_enforce", "quantization_aware_enforce"), default=default_execution_dtype_close_mode, help="Hard executed-dtype tolerance envelope. quantization_aware_enforce accounts for local route/dense dtype rounding envelopes after the FP32 same-mask guard.")
+    parser.add_argument("--ulp-breach-sample-limit", type=int, default=32, help="Maximum scalar-only execution-dtype ULP breach samples retained when record_only is selected.")
     parser.add_argument("--require-any-pending", action="store_true", help="Require pending staging in at least one target-layer/KV-head state.")
     parser.add_argument("--require-any-full-multi-tail-packed", action="store_true", help="Require one target-layer/KV-head state to cover a sealed full page, multi-page state, and a nonempty tail.")
     parser.add_argument("--device", default="cuda")
@@ -144,6 +147,8 @@ def main(
     required_admission_budget: int | None = 1,
     required_state_flags: tuple[str, ...] = ("require_any_pending",),
     scope: str = "three_layer",
+    execution_dtype_ulp_mode: str = "enforce",
+    execution_dtype_close_mode: str = "off",
 ) -> None:
     if scope == "three_layer":
         default_layers, target_help, layer_label = [str(layer) for layer in TARGET_LAYERS], "Must be exactly: 0 18 35.", "{0,18,35}"
@@ -151,7 +156,7 @@ def main(
         default_layers, target_help, layer_label = ["all"], "Must be the literal: all.", "all model layers"
     else:
         raise ValueError(f"unknown A4.1.3 scope: {scope}")
-    args = parse_args(description=f"{phase} untimed Qwen {layer_label} all-KV-head native-storage replacement semantic gate; not a performance benchmark.", default_target_layers=default_layers, target_layer_help=target_help)
+    args = parse_args(description=f"{phase} untimed Qwen {layer_label} all-KV-head native-storage replacement semantic gate; not a performance benchmark.", default_target_layers=default_layers, target_layer_help=target_help, default_execution_dtype_ulp_mode=execution_dtype_ulp_mode, default_execution_dtype_close_mode=execution_dtype_close_mode)
     if args.output_dir.exists():
         raise FileExistsError(f"output directory already exists: {args.output_dir}")
     if args.request_id is not None and args.input_jsonl is None:
@@ -163,7 +168,11 @@ def main(
     for flag in required_state_flags:
         if not getattr(args, flag):
             raise ValueError(f"{phase} requires --{flag.replace('_', '-')}")
-    if min(args.context_repetitions, args.page_tokens, args.max_new_tokens, args.max_executed_dtype_ulps) <= 0 or args.window_size < 0:
+    if args.execution_dtype_ulp_mode != execution_dtype_ulp_mode:
+        raise ValueError(f"{phase} requires --execution-dtype-ulp-mode {execution_dtype_ulp_mode}")
+    if args.execution_dtype_close_mode != execution_dtype_close_mode:
+        raise ValueError(f"{phase} requires --execution-dtype-close-mode {execution_dtype_close_mode}")
+    if min(args.context_repetitions, args.page_tokens, args.max_new_tokens, args.max_executed_dtype_ulps, args.ulp_breach_sample_limit) <= 0 or args.window_size < 0:
         raise ValueError(f"invalid {phase} dimensions")
     if (args.model_name, args.predictor_name, args.model_revision, args.predictor_revision) != (DEFAULT_MODEL, DEFAULT_PREDICTOR, GATE_B_MODEL_REVISION, GATE_A_PREDICTOR_REVISION):
         raise ValueError(f"{phase} is bounded to frozen Qwen3-8B and official MLP revisions")
@@ -193,7 +202,7 @@ def main(
         "At every target layer, persistent cache storage omits every selected KV head; retained hot/pending/packed state belongs to independent Route-A external adapters.",
         "Qwen receives transient full-shaped attention views only for current API compatibility. They are not persistent cache storage and establish no allocator, HBM, or performance result.",
     ])
-    common = dict(layers=layers, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, replay_mask_events=events)
+    common = dict(layers=layers, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, execution_dtype_ulp_mode=args.execution_dtype_ulp_mode, execution_dtype_close_mode=args.execution_dtype_close_mode, ulp_breach_sample_limit=args.ulp_breach_sample_limit, replay_mask_events=events)
     print("Pass 1/3: Full-KV bypass (zero Route-A admission)...")
     full_answer, full_tokens = run_path(pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=None, cache=DynamicCache(), args=args)
     assert_no_runtime_mask_state(pipe.model)
@@ -215,13 +224,15 @@ def main(
         "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"], "source_answer_sha256": source["answer_sha256"]},
         "outcomes": {
             "full_kv_bypass": {"answer_sha256": answer_hash(full_answer), "generated_token_count": len(full_tokens), "generated_token_ids_sha256": token_ids_hash(full_tokens), "zero_route_a_admission": True},
-            "same_mask_dense_replay": {"answer_sha256": answer_hash(dense_answer), "generated_token_count": len(dense_tokens), "generated_token_ids_sha256": token_ids_hash(dense_tokens), "policy_decode_calls_by_layer": dense_backend.policy_decode_calls, "coverage": dense_backend.coverage()},
-            "same_mask_route_a_qwen_multilayer_allhead_native_storage_replacement": {"answer_sha256": answer_hash(route_answer), "generated_token_count": len(route_tokens), "generated_token_ids_sha256": token_ids_hash(route_tokens), "policy_decode_calls_by_layer": route_backend.policy_decode_calls, "coverage": route_coverage, "aggregate_page_coverage": page_coverage, "native_cold_ownership": route_backend.ownership_summary(), "persistent_cache_storage": storage},
+            "same_mask_dense_replay": {"answer_sha256": answer_hash(dense_answer), "generated_token_count": len(dense_tokens), "generated_token_ids_sha256": token_ids_hash(dense_tokens), "policy_decode_calls_by_layer": dense_backend.policy_decode_calls, "coverage": dense_backend.coverage(), "execution_dtype_ulp_breaches": dense_backend.execution_dtype_ulp_breach_summary()},
+            "same_mask_route_a_qwen_multilayer_allhead_native_storage_replacement": {"answer_sha256": answer_hash(route_answer), "generated_token_count": len(route_tokens), "generated_token_ids_sha256": token_ids_hash(route_tokens), "policy_decode_calls_by_layer": route_backend.policy_decode_calls, "coverage": route_coverage, "aggregate_page_coverage": page_coverage, "native_cold_ownership": route_backend.ownership_summary(), "persistent_cache_storage": storage, "execution_dtype_ulp_breaches": route_backend.execution_dtype_ulp_breach_summary()},
         },
         "same_mask_dense_route_generated_output_relation": relation,
         "observational_guards": {
             "paired_mask_mode": "replayed_dense_mask", "full_kv_bypass_zero_route_a_admission": True, "route_a_predictor_scored_online": False, "replay_mask_consumption_complete": True,
             "fp32_same_mask_guard": {"rtol": args.rtol, "atol": args.atol}, "all_selected_layers_and_kv_heads_substituted": True,
+            "execution_dtype_ulp_mode": args.execution_dtype_ulp_mode, "execution_dtype_ulp_breaches_enforced": args.execution_dtype_ulp_mode == "enforce",
+            "execution_dtype_close_mode": args.execution_dtype_close_mode, "execution_dtype_close_enforced": args.execution_dtype_close_mode != "off",
             "all_selected_native_cold_read_guard_complete": True, "persistent_unselected_kv_heads_by_target_layer": 0,
             "persistent_selected_mature_cold_absent": True, "persistent_selected_native_cold_tensor_tokens": 0,
             "transient_attention_view_is_not_persistent_cache": True,
@@ -232,6 +243,7 @@ def main(
             f"Untimed {layer_label} all-KV-head Qwen semantic cache-interface gate only; not timing, throughput, allocator, HBM traffic, energy, area, frequency, hardware acceleration, or RTL evidence.",
             "All persistent selected KV tensors are absent only at the declared target layers. Transient dense-shaped attention views do not establish physical allocation or traffic results.",
             "Same-mask dense/Route-A generated output relation is recorded, not required; only the applicable same-mask numerical guards are hard gates.",
+            "When record_only is selected, execution-dtype ULP breaches are bounded scalar diagnostics; the FP32 same-mask and configured executed-dtype close envelope remain hard guards.",
         ], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__),
     }
     path = args.output_dir / f"{artifact_stem}_manifest.json"

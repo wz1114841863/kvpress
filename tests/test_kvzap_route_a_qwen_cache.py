@@ -1,3 +1,4 @@
+import sys
 from types import SimpleNamespace
 
 import torch
@@ -5,7 +6,7 @@ import torch
 from kvpress.route_a_external_cold_storage import RouteAExternalColdStorageAdapter
 from kvpress.route_a_qwen_cache import RouteAQwenMultiLayerExternalColdCache, RouteAQwenSingleLayerExternalColdCache
 from kvpress.route_a_policy_backend import RouteAQwenExternalColdStorageAttentionBackend, RouteAQwenExternalColdStorageAttentionBackendSet
-from tools.run_kvzap_route_a4142_qwen_multilayer_allhead_native_storage_gate import aggregate_full_multi_tail_page_coverage, resolve_scope_layers
+from tools.run_kvzap_route_a4142_qwen_multilayer_allhead_native_storage_gate import aggregate_full_multi_tail_page_coverage, parse_args, resolve_scope_layers
 
 
 def test_qwen_external_cold_cache_keeps_only_unselected_persistent_kv_and_logical_length():
@@ -160,3 +161,13 @@ def test_qwen_alllayer_scope_requires_literal_all_and_resolves_every_layer():
         assert "literal" in str(error)
     else:
         raise AssertionError("all-layer scope accepted an explicit subset")
+
+
+def test_qwen_multilayer_runner_exposes_record_only_quantization_aware_contract(monkeypatch):
+    monkeypatch.setattr(sys, "argv", [
+        "gate.py", "--admission-budget", "1", "--replay-source-dir", "source", "--output-dir", "fresh",
+    ])
+    args = parse_args(default_execution_dtype_ulp_mode="record_only", default_execution_dtype_close_mode="quantization_aware_enforce")
+    assert args.execution_dtype_ulp_mode == "record_only"
+    assert args.execution_dtype_close_mode == "quantization_aware_enforce"
+    assert args.ulp_breach_sample_limit == 32

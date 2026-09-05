@@ -1379,6 +1379,35 @@ K/V at each target layer, and a nonempty aggregate page witness list. It is
 untimed semantic evidence, not allocator, HBM, runtime, throughput, energy,
 hardware, or RTL evidence.
 
+## A4.1.3.10 — all-layer all-head native-storage gate with hard cast envelope
+
+If A4144 stops solely on the legacy 16-ULP execution-dtype guard, retain that
+failed fresh directory and run this separate gate.  It keeps the FP32
+same-mask guard hard and adds the hard quantization-aware executed-dtype
+envelope; scalar ULP excursions are bounded records, not silently accepted.
+
+```bash
+RUN_ID=route_a4145_qwen_all_layers_allheads_budget1_quantization_aware_01
+SOURCE_ID=route_a4130_replay_source_all_layers_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4145_qwen_alllayer_allhead_quantization_aware_native_storage_gate.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 1 \
+  --require-any-pending \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Review the scalar-only `execution_dtype_ulp_breaches` summaries together with
+the hard FP32 and quantization-aware close guards.  This remains an untimed
+semantic cache-interface gate, not an allocator, traffic, runtime, quality,
+or hardware result.
+
 ## A4.1.3.9 — all-layer all-KV-head native-storage replacement
 
 Reuse the completed all-layer, budget-one replay source. The runner accepts
