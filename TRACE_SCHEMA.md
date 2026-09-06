@@ -35,6 +35,16 @@ requires labelled selected-head attention evaluations to equal the backend's
 decode plus multi-token policy evaluations. Coalesced phase rows remain nested,
 inclusive profiler diagnostics and cannot be summed or treated as timing data.
 
+## A4.1.7.0 guard-elided execution semantic certification
+
+`kvzap-route-a4151-guard-elided-execution-semantic-gate-1.0` is untimed. It
+compares guarded Route-A external storage with an `execution_only` variant that
+retains replay, Route-A state, external ownership, page and poison guards but
+does not run per-query same-mask dense reference/FP32/dtype/ULP checks. It
+stores only scalar paired full-model-logit relations and token digests, never
+full logits. Passing certifies this fixed replay/request only; it is neither a
+performance nor quality claim.
+
 ## A4 untimed semantic-gate scalar diagnostics
 
 For an A4 native-storage gate using `execution_dtype_ulp_mode=record_only`,

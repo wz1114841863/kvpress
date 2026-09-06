@@ -1565,6 +1565,25 @@ Review the coalesced phase rows and required phase-label coverage; do not add
 their nested values or interpret them as timing, HBM, throughput, hardware, or
 RTL evidence.
 
+## A4.1.7.0 — guard-elided execution semantic certification
+
+This is untimed and must pass before any guard-elided repeated measurement.
+
+```bash
+SOURCE_ID=route_a4146_replay_source_all_layers_budget512_01
+RUN_ID=route_a4151_qwen_all_layers_allheads_budget512_guard_elided_semantic_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4151_guard_elided_execution_semantic_gate.py \
+  --preset retrieval --context-repetitions 12 --max-new-tokens 8 \
+  --target-layers all --target-kv-head all --admission-budget 512 --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Synchronize the manifest. It must report forced full-model logits close and
+independent greedy tokens equal; do not call it a timing, HBM, quality, or
+hardware result.
+
 Reuse the completed all-layer, budget-one replay source. The runner accepts
 only the literal `all`, preventing an accidental hand-enumerated layer subset.
 

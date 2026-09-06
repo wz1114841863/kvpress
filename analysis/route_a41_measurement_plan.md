@@ -733,6 +733,17 @@ doubling invocation counts, and rejects incomplete phase coverage against the
 backend's policy call counts. Do not begin guard ablation until this repaired
 paired attribution is complete and reviewed.
 
+### A4.1.7.0 — guard-elided execution semantic certification
+
+After corrected attribution, certify the proposed execution-only reference
+before timing it. The A4151 gate holds the all-layer/budget-512 replay source
+fixed and compares guarded external Route-A to the same state/ownership path
+with only its per-query numerical reference checks elided. It requires paired
+full-model forced-token logits within the declared tolerance and equal
+independent greedy tokens. This permits only a later separately labelled
+execution-mode measurement; it does not weaken the guarded A4.0/A4.1 semantic
+evidence or establish performance/quality.
+
 For every reported repetition capture CUDA allocator snapshots in bytes:
 
 - allocated and reserved immediately before the timed region;

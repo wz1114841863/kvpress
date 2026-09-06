@@ -765,6 +765,14 @@ check binds tagged selected-head attention calls to backend decode plus
 multi-token policy execution. It repeats only the paired profiler diagnostic;
 its ranges remain nested reference-overhead evidence, not timing results.
 
+### A4.1.7.0 implementation — guard-elided execution certification
+
+A4151 retains the all-layer external storage policy/state/ownership path while
+turning off only its per-query numerical-reference checks. It first certifies
+that fixed-request forced full-model logits and independent greedy tokens match
+the guarded Route-A reference. It is untimed, scalar-only and prerequisite
+evidence for a later execution-mode measurement, not a replacement for guards.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

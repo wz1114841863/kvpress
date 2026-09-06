@@ -107,7 +107,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
     first layer-complete gate; it leaves no dense attention group in that layer.
     """
 
-    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", ulp_breach_sample_limit: int = 32, replay_mask_events: dict[tuple[int, int], MaskEvent] | None = None, component_measure=None) -> None:
+    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", ulp_breach_sample_limit: int = 32, replay_mask_events: dict[tuple[int, int], MaskEvent] | None = None, component_measure=None) -> None:
         language_model = model.model.language_model if hasattr(model.model, "language_model") else model.model
         if not 0 <= layer < len(language_model.layers):
             raise ValueError("target layer is outside the model")
@@ -117,6 +117,8 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             raise ValueError("execution_dtype_ulp_mode must be 'enforce' or 'record_only'")
         if execution_dtype_close_mode not in {"off", "scale_aware_enforce", "quantization_aware_enforce"}:
             raise ValueError("execution_dtype_close_mode must be 'off', 'scale_aware_enforce', or 'quantization_aware_enforce'")
+        if same_mask_numerical_guard_mode not in {"enforce", "execution_only"}:
+            raise ValueError("same_mask_numerical_guard_mode must be 'enforce' or 'execution_only'")
         if predictor is None and replay_mask_events is None:
             raise ValueError("an online predictor or explicit replay mask is required")
         self.model, self.predictor, self.layer, self.kv_head = model, predictor, layer, kv_head
@@ -125,6 +127,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         self.max_executed_dtype_ulps = max_executed_dtype_ulps
         self.execution_dtype_ulp_mode = execution_dtype_ulp_mode
         self.execution_dtype_close_mode = execution_dtype_close_mode
+        self.same_mask_numerical_guard_mode = same_mask_numerical_guard_mode
         self.ulp_breach_sample_limit = ulp_breach_sample_limit
         self._ulp_breach_count = 0
         self._ulp_breach_max_observed: float | None = None
@@ -148,6 +151,10 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
     def _measure_component(self, name: str, operation):
         """Optionally label an operation without changing Route-A semantics."""
         return operation() if self.component_measure is None else self.component_measure(name, operation)
+
+    @property
+    def same_mask_numerical_guard_enforced(self) -> bool:
+        return self.same_mask_numerical_guard_mode == "enforce"
 
     @property
     def uses_mask_replay(self) -> bool:
@@ -563,12 +570,15 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             if mapped_kv_head in selected_heads:
                 measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"decode_{name}", operation)
                 route_fp32 = self.state.attention(q * scaling, head=mapped_kv_head, component_measure=measure)
-                dense_fp32 = self._measure_component("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped_kv_head)))
-                self._measure_component("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))
-                route, dense = self._measure_component("decode_execution_dtype_cast", lambda: (route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)))
-                self._measure_component("decode_execution_dtype_close_guard", lambda: self._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=mapped_kv_head, query_head=query_head, cache_position=int(key.shape[2] - 1)))
-                _cast_abs, cast_ulps = self._measure_component("decode_execution_dtype_ulp_diagnostic", lambda: self._cast_difference_in_ulps(route, dense))
-                if cast_ulps > self.max_executed_dtype_ulps:
+                if self.same_mask_numerical_guard_enforced:
+                    dense_fp32 = self._measure_component("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped_kv_head)))
+                    self._measure_component("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))
+                    route, dense = self._measure_component("decode_execution_dtype_cast", lambda: (route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)))
+                    self._measure_component("decode_execution_dtype_close_guard", lambda: self._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=mapped_kv_head, query_head=query_head, cache_position=int(key.shape[2] - 1)))
+                    _cast_abs, cast_ulps = self._measure_component("decode_execution_dtype_ulp_diagnostic", lambda: self._cast_difference_in_ulps(route, dense))
+                else:
+                    route, dense, dense_fp32, cast_ulps = route_fp32.to(dtype=q.dtype), route_fp32.to(dtype=q.dtype), route_fp32, 0.0
+                if self.same_mask_numerical_guard_enforced and cast_ulps > self.max_executed_dtype_ulps:
                     self._measure_component("decode_execution_dtype_ulp_breach_record", lambda: self._handle_executed_dtype_ulp_breach(
                         self._executed_dtype_failure_details(
                             route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32,
@@ -589,9 +599,10 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             selected["layer"] = self.layer
             selected["kv_head"] = head
             selected["query_head_count"] = len(rows)
-            selected["max_abs_difference"] = self._measure_component("decode_scalar_comparison_summary", lambda: max(float((route - dense).abs().max().item()) for route, dense, _query_head, _route_fp32, _dense_fp32, _cast_ulps in rows))
-            selected["max_abs_difference_fp32"] = self._measure_component("decode_scalar_comparison_summary", lambda: max(float((route_fp32 - dense_fp32).abs().max().item()) for _route, _dense, _query_head, route_fp32, dense_fp32, _cast_ulps in rows))
-            selected["max_executed_dtype_ulps"] = self._measure_component("decode_scalar_comparison_summary", lambda: max(cast_ulps for _route, _dense, _query_head, _route_fp32, _dense_fp32, cast_ulps in rows))
+            selected["max_abs_difference"] = self._measure_component("decode_scalar_comparison_summary", lambda: max(float((route - dense).abs().max().item()) for route, dense, _query_head, _route_fp32, _dense_fp32, _cast_ulps in rows)) if self.same_mask_numerical_guard_enforced else None
+            selected["max_abs_difference_fp32"] = self._measure_component("decode_scalar_comparison_summary", lambda: max(float((route_fp32 - dense_fp32).abs().max().item()) for _route, _dense, _query_head, route_fp32, dense_fp32, _cast_ulps in rows)) if self.same_mask_numerical_guard_enforced else None
+            selected["max_executed_dtype_ulps"] = self._measure_component("decode_scalar_comparison_summary", lambda: max(cast_ulps for _route, _dense, _query_head, _route_fp32, _dense_fp32, cast_ulps in rows)) if self.same_mask_numerical_guard_enforced else None
+            selected["same_mask_numerical_guard_enforced"] = self.same_mask_numerical_guard_enforced
             selected["executed_dtype_ulp_limit"] = self.max_executed_dtype_ulps
             self.comparisons.append(selected)
         self.policy_decode_calls += 1
@@ -838,12 +849,15 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
                 q = query[0, query_head, offset]
                 measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"multi_token_{name}", operation)
                 route_fp32 = self.state.attention(q * scaling, head=mapped, component_measure=measure)
-                dense_fp32 = self._measure_component("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped)))
-                self._measure_component("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))
-                route, dense = self._measure_component("decode_execution_dtype_cast", lambda: (route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)))
-                self._measure_component("decode_execution_dtype_close_guard", lambda: self._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=mapped, query_head=query_head, cache_position=position))
-                _cast_abs, cast_ulps = self._measure_component("decode_execution_dtype_ulp_diagnostic", lambda: self._cast_difference_in_ulps(route, dense))
-                if cast_ulps > self.max_executed_dtype_ulps:
+                if self.same_mask_numerical_guard_enforced:
+                    dense_fp32 = self._measure_component("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped)))
+                    self._measure_component("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))
+                    route, dense = self._measure_component("decode_execution_dtype_cast", lambda: (route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)))
+                    self._measure_component("decode_execution_dtype_close_guard", lambda: self._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=mapped, query_head=query_head, cache_position=position))
+                    _cast_abs, cast_ulps = self._measure_component("decode_execution_dtype_ulp_diagnostic", lambda: self._cast_difference_in_ulps(route, dense))
+                else:
+                    route, dense, dense_fp32, cast_ulps = route_fp32.to(dtype=q.dtype), route_fp32.to(dtype=q.dtype), route_fp32, 0.0
+                if self.same_mask_numerical_guard_enforced and cast_ulps > self.max_executed_dtype_ulps:
                     self._measure_component("decode_execution_dtype_ulp_breach_record", lambda: self._handle_executed_dtype_ulp_breach(
                         self._executed_dtype_failure_details(
                             route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32,
@@ -869,10 +883,11 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
                     "layer": self.layer,
                     "kv_head": head,
                     "query_head_count": len(rows),
-                    "max_abs_difference": self._measure_component("decode_scalar_comparison_summary", lambda: max(float((route - dense).abs().max().item()) for route, dense, _query_head, _route_fp32, _dense_fp32, _cast_ulps in rows)),
-                    "max_abs_difference_fp32": self._measure_component("decode_scalar_comparison_summary", lambda: max(float((route_fp32 - dense_fp32).abs().max().item()) for _route, _dense, _query_head, route_fp32, dense_fp32, _cast_ulps in rows)),
-                    "max_executed_dtype_ulps": self._measure_component("decode_scalar_comparison_summary", lambda: max(cast_ulps for _route, _dense, _query_head, _route_fp32, _dense_fp32, cast_ulps in rows)),
+                    "max_abs_difference": self._measure_component("decode_scalar_comparison_summary", lambda: max(float((route - dense).abs().max().item()) for route, dense, _query_head, _route_fp32, _dense_fp32, _cast_ulps in rows)) if self.same_mask_numerical_guard_enforced else None,
+                    "max_abs_difference_fp32": self._measure_component("decode_scalar_comparison_summary", lambda: max(float((route_fp32 - dense_fp32).abs().max().item()) for _route, _dense, _query_head, route_fp32, dense_fp32, _cast_ulps in rows)) if self.same_mask_numerical_guard_enforced else None,
+                    "max_executed_dtype_ulps": self._measure_component("decode_scalar_comparison_summary", lambda: max(cast_ulps for _route, _dense, _query_head, _route_fp32, _dense_fp32, cast_ulps in rows)) if self.same_mask_numerical_guard_enforced else None,
                     "executed_dtype_ulp_limit": self.max_executed_dtype_ulps,
+                    "same_mask_numerical_guard_enforced": self.same_mask_numerical_guard_enforced,
                     "multi_token_bridge": True,
                 })
                 self.comparisons.append(selected)
@@ -1007,14 +1022,14 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
 
     backend_class = RouteAPolicyAttentionBackend
 
-    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", ulp_breach_sample_limit: int = 32, replay_mask_events: MaskEventLayers | None = None, component_measure=None) -> None:
+    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", ulp_breach_sample_limit: int = 32, replay_mask_events: MaskEventLayers | None = None, component_measure=None) -> None:
         if not layers or len(set(layers)) != len(layers) or any(layer < 0 for layer in layers):
             raise ValueError("layers must be unique non-negative indices")
         if replay_mask_events is not None and set(replay_mask_events) != set(layers):
             raise ValueError("replay mask layers must exactly match selected layers")
         self.model, self.predictor, self.layers = model, predictor, tuple(layers)
         self.backends = {
-            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, execution_dtype_ulp_mode=execution_dtype_ulp_mode, execution_dtype_close_mode=execution_dtype_close_mode, ulp_breach_sample_limit=ulp_breach_sample_limit, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure)
+            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, execution_dtype_ulp_mode=execution_dtype_ulp_mode, execution_dtype_close_mode=execution_dtype_close_mode, same_mask_numerical_guard_mode=same_mask_numerical_guard_mode, ulp_breach_sample_limit=ulp_breach_sample_limit, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure)
             for layer in self.layers
         }
 
