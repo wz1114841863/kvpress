@@ -330,7 +330,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         if self.state is None:
             self.selected_kv_heads(key.shape[1])
             self.state = self._new_state(heads=key.shape[1], head_dim=key.shape[-1])
-        phase = "prefill" if q_len > 1 else "decode"
+        phase = "multi_token" if q_len > 1 else "decode"
         measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"{phase}_{name}", operation)
         if token_by_token:
             for offset in range(q_len):
@@ -657,10 +657,11 @@ class DenseSameMaskAttentionBackend(RouteAPolicyAttentionBackend):
                 if mapped not in selected_heads:
                     continue
                 q = query[0, query_head, offset]
-                dense_fp32 = self.state.attention(q * scaling, head=mapped)
-                reference_fp32 = dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped))
-                torch.testing.assert_close(dense_fp32, reference_fp32, rtol=self.rtol, atol=self.atol)
-                dense = dense_fp32.to(dtype=q.dtype)
+                measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"multi_token_{name}", operation)
+                dense_fp32 = self.state.attention(q * scaling, head=mapped, component_measure=measure)
+                reference_fp32 = self._measure_component("multi_token_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped)))
+                self._measure_component("multi_token_fp32_same_mask_guard", lambda: torch.testing.assert_close(dense_fp32, reference_fp32, rtol=self.rtol, atol=self.atol))
+                dense = self._measure_component("multi_token_execution_dtype_cast", lambda: dense_fp32.to(dtype=q.dtype))
                 dense_output[0, offset, query_head] = dense
                 per_head[mapped].append((dense, query_head))
             if any(not rows for rows in per_head.values()):
@@ -835,7 +836,7 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
                 if mapped not in selected_heads:
                     continue
                 q = query[0, query_head, offset]
-                measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"decode_{name}", operation)
+                measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"multi_token_{name}", operation)
                 route_fp32 = self.state.attention(q * scaling, head=mapped, component_measure=measure)
                 dense_fp32 = self._measure_component("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped)))
                 self._measure_component("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))

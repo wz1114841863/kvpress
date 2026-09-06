@@ -756,6 +756,15 @@ partials, online merge, same-mask dense reference, numerical guards and scalar
 summaries. They make no semantic or policy change, are not timing repetitions,
 and must not be summed because profiler ranges are inclusive.
 
+### A4.1.6.1 implementation — paired phase coverage repair
+
+A4150 repairs an A4149 attribution reporting gap without changing Route-A:
+the dense multi-token bridge is now phase-labelled, CPU/CUDA split profiler
+views are coalesced without doubling invocation counts, and a hard coverage
+check binds tagged selected-head attention calls to backend decode plus
+multi-token policy execution. It repeats only the paired profiler diagnostic;
+its ranges remain nested reference-overhead evidence, not timing results.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

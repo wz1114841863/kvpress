@@ -723,6 +723,16 @@ may nest, so do not sum their inclusive values; use them only to locate the
 dominant Python-reference phase before considering a separately labelled
 guard-ablation diagnostic. It remains outside all timing distributions.
 
+### A4.1.6.1 — paired phase-profiler coverage repair
+
+A4150 repeats the A4149 diagnostic only because A4149 did not label the dense
+multi-token bridge and serialized separate CPU/CUDA aggregate rows for one
+range. It adds no policy/state/numerical change. The runner labels both paths'
+decode and multi-token operations, coalesces split profiler views without
+doubling invocation counts, and rejects incomplete phase coverage against the
+backend's policy call counts. Do not begin guard ablation until this repaired
+paired attribution is complete and reviewed.
+
 For every reported repetition capture CUDA allocator snapshots in bytes:
 
 - allocated and reserved immediately before the timed region;

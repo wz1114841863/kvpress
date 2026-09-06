@@ -1538,6 +1538,33 @@ nested/inclusive diagnostic counters: review them by phase, but never sum them
 or report them as timing, HBM traffic, throughput, energy, hardware, or RTL
 results.
 
+## A4.1.6.1 — paired phase-profiler coverage repair
+
+Run this fresh diagnostic because A4149 lacked dense multi-token label coverage.
+It is still a profiler-only run, not a timing repetition.
+
+```bash
+SOURCE_ID=route_a4146_replay_source_all_layers_budget512_01
+RUN_ID=route_a4150_qwen_all_layers_allheads_budget512_external_storage_paired_phase_profiler_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4150_qwen_external_storage_paired_phase_profiler.py \
+  --preset retrieval \
+  --context-repetitions 12 \
+  --max-new-tokens 8 \
+  --target-layers all \
+  --target-kv-head all \
+  --admission-budget 512 \
+  --warmup-repetitions 1 \
+  --top-operators 30 \
+  --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Review the coalesced phase rows and required phase-label coverage; do not add
+their nested values or interpret them as timing, HBM, throughput, hardware, or
+RTL evidence.
+
 Reuse the completed all-layer, budget-one replay source. The runner accepts
 only the literal `all`, preventing an accidental hand-enumerated layer subset.
 

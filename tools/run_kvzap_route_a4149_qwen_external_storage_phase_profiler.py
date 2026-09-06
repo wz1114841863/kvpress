@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -71,24 +72,77 @@ def phase_measure(name: str, operation):
         return operation()
 
 
+class PhaseRecorder:
+    """Count labels at their semantic call site while emitting profiler ranges."""
+
+    def __init__(self) -> None:
+        self.calls: Counter[str] = Counter()
+
+    def measure(self, name: str, operation):
+        self.calls[name] += 1
+        return phase_measure(name, operation)
+
+
 def phase_rows(events: Any) -> list[dict[str, Any]]:
     tagged = [event for event in events if str(getattr(event, "key", "")).startswith(PHASE_PREFIX)]
     return operator_rows(tagged, top_operators=max(1, len(tagged)))
 
 
-def main() -> None:
+def coalesced_phase_rows(events: Any) -> list[dict[str, Any]]:
+    """Coalesce profiler CPU/CUDA split rows without double-counting calls.
+
+    PyTorch may emit one CPU aggregate and one CUDA aggregate for one range.
+    They are alternate accounting views, not two semantic invocations.  Keep
+    the maximum count and each metric's maximal available accounting field.
+    """
+    groups: dict[str, list[dict[str, Any]]] = {}
+    for row in phase_rows(events):
+        groups.setdefault(str(row["operator"]), []).append(row)
+    numeric = ("count", "self_cpu_time_total_us", "cpu_time_total_us", "self_device_time_total_us", "device_time_total_us", "self_cpu_memory_usage_bytes", "cpu_memory_usage_bytes", "self_device_memory_usage_bytes", "device_memory_usage_bytes")
+    result = []
+    for operator, rows in groups.items():
+        merged = {"operator": operator}
+        for field in numeric:
+            merged[field] = max(float(row[field]) for row in rows)
+        merged["count"] = int(merged["count"])
+        result.append(merged)
+    return sorted(result, key=lambda row: (row["device_time_total_us"], row["cpu_time_total_us"], row["operator"]), reverse=True)
+
+
+def phase_coverage(*, backend, language_model, recorder: PhaseRecorder, path: str) -> dict[str, Any]:
+    """Require tagged Route-A attention calls to cover every policy execution."""
+    query_heads = int(language_model.config.num_attention_heads)
+    decode_calls = sum(int(item.policy_decode_calls) for item in backend.backends.values())
+    multi_token_count = sum(int(getattr(item, "policy_multi_token_tokens", 0)) for item in backend.backends.values())
+    expected = (decode_calls + multi_token_count) * query_heads
+    if path == "same_mask_dense_replay":
+        observed = int(recorder.calls["decode_dense_same_mask_attention"] + recorder.calls["multi_token_dense_same_mask_attention"])
+    elif path == EXTERNAL_STORAGE_PATH:
+        names = ("hot", "pending", "packed")
+        observed_by_source = {source: int(recorder.calls[f"decode_route_a_attention_{source}"] + recorder.calls[f"multi_token_route_a_attention_{source}"]) for source in names}
+        if any(value != expected for value in observed_by_source.values()):
+            raise AssertionError(f"external Route-A phase labels do not cover policy attention: expected={expected}, observed={observed_by_source}")
+        observed = observed_by_source["hot"]
+    else:
+        raise ValueError(f"unknown phase-coverage path: {path}")
+    if observed != expected:
+        raise AssertionError(f"{path} phase labels do not cover policy attention: expected={expected}, observed={observed}")
+    return {"query_head_count": query_heads, "policy_decode_calls": decode_calls, "policy_multi_token_tokens": multi_token_count, "expected_attention_evaluations": expected, "tagged_attention_evaluations": observed, "label_call_counts": dict(sorted(recorder.calls.items()))}
+
+
+def main(*, schema_version: str = A4149_SCHEMA, phase: str = "A4.1.6", artifact_stem: str = "a4149_external_storage_phase_profiler", coalesce_rows: bool = False, require_phase_coverage: bool = False) -> None:
     args = parse_args()
     if args.output_dir.exists():
         raise FileExistsError(f"output directory already exists: {args.output_dir}")
     if args.request_id is not None and args.input_jsonl is None:
         raise ValueError("--request-id requires --input-jsonl")
     if args.target_layers != ["all"] or args.target_kv_head != "all" or args.admission_budget != 512:
-        raise ValueError("A4.1.6 requires --target-layers all --target-kv-head all --admission-budget 512")
+        raise ValueError(f"{phase} requires --target-layers all --target-kv-head all --admission-budget 512")
     if min(args.context_repetitions, args.page_tokens, args.max_new_tokens, args.max_executed_dtype_ulps, args.ulp_breach_sample_limit, args.warmup_repetitions, args.top_operators) <= 0 or args.window_size < 0:
-        raise ValueError("invalid A4.1.6 dimensions")
+        raise ValueError(f"invalid {phase} dimensions")
     require_cuda_device(args.device)
     if (args.model_name, args.predictor_name, args.model_revision, args.predictor_revision) != (DEFAULT_MODEL, DEFAULT_PREDICTOR, GATE_B_MODEL_REVISION, GATE_A_PREDICTOR_REVISION):
-        raise ValueError("A4.1.6 is bounded to frozen Qwen3-8B and official MLP revisions")
+        raise ValueError(f"{phase} is bounded to frozen Qwen3-8B and official MLP revisions")
     request = load_jsonl_request(args.input_jsonl, args.request_id) if args.input_jsonl else build_builtin_request(args.preset, args.context_repetitions)
     print(f"Loading base model: {args.model_name}")
     pipe = pipeline("kv-press-text-generation", model=args.model_name, revision=args.model_revision, device_map="auto", dtype="auto")
@@ -111,39 +165,44 @@ def main() -> None:
         raise ValueError("request does not exercise protected hot-window decode state")
     config = {key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items() if key != "output_dir"}
     config.update({"replay_event_file_sha256": event_sha256, "execution_dtype_ulp_mode": "record_only", "execution_dtype_close_mode": "quantization_aware_enforce", "phase_prefix": PHASE_PREFIX, "profiler_scope": "question_forward_plus_greedy_decode_after_untimed_context_prefill"})
-    initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit(), record_name="a4149_external_storage_phase_profiler_started.json", schema_version=A4149_SCHEMA, boundaries=["A4.1.6 adds profiler labels only; it does not alter mask replay, state ownership, attention, or numerical guards.", "One diagnostic capture per reference path is separate from timing repetitions and cannot establish latency or throughput.", "Profiler time/memory values are software diagnostic observations, not HBM traffic, energy, area, hardware acceleration, or RTL evidence."])
+    initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit(), record_name=f"{artifact_stem}_started.json", schema_version=schema_version, boundaries=[f"{phase} adds profiler labels only; it does not alter mask replay, state ownership, attention, or numerical guards.", "One diagnostic capture per reference path is separate from timing repetitions and cannot establish latency or throughput.", "Profiler time/memory values are software diagnostic observations, not HBM traffic, energy, area, hardware acceleration, or RTL evidence."])
     results: list[dict[str, Any]] = []
     for path in PHASE_PATHS:
         for warmup in range(args.warmup_repetitions):
             print(f"Unprofiled warm-up {warmup + 1}/{args.warmup_repetitions}: {path}")
-            backend, cache = make_backend_and_cache(path=path, pipe=pipe, layers=layers, expected_heads=expected_heads, events=events, args=args, component_measure=phase_measure)
+            recorder = PhaseRecorder()
+            backend, cache = make_backend_and_cache(path=path, pipe=pipe, layers=layers, expected_heads=expected_heads, events=events, args=args, component_measure=recorder.measure)
             run_decode(pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=backend, cache=cache, args=args)
             assert_no_runtime_mask_state(pipe.model)
             backend.assert_replay_complete()
             if path == EXTERNAL_STORAGE_PATH:
                 route_guard_summary(backend=backend, cache=cache, expected_heads=expected_heads, args=args)
         print(f"Phase-profiled diagnostic: {path}")
-        backend, cache = make_backend_and_cache(path=path, pipe=pipe, layers=layers, expected_heads=expected_heads, events=events, args=args, component_measure=phase_measure)
+        recorder = PhaseRecorder()
+        backend, cache = make_backend_and_cache(path=path, pipe=pipe, layers=layers, expected_heads=expected_heads, events=events, args=args, component_measure=recorder.measure)
         profiler = profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True, profile_memory=True, with_stack=False)
         answer, token_ids, memory_before, memory_after = run_decode(pipe=pipe, context_ids=context_ids, question_ids=question_ids, backend=backend, cache=cache, args=args, profiler=profiler)
         torch.cuda.synchronize(require_cuda_device(args.device))
         assert_no_runtime_mask_state(pipe.model)
         backend.assert_replay_complete()
-        result: dict[str, Any] = {"path": path, "answer_sha256": answer_hash(answer), "generated_token_count": len(token_ids), "generated_token_ids_sha256": token_ids_hash(token_ids), "memory_before": memory_before, "memory_after": memory_after, "phase_operators": phase_rows(profiler.key_averages()), "generic_top_operators": operator_rows(profiler.key_averages(), top_operators=args.top_operators)}
+        rows = coalesced_phase_rows(profiler.key_averages()) if coalesce_rows else phase_rows(profiler.key_averages())
+        result: dict[str, Any] = {"path": path, "answer_sha256": answer_hash(answer), "generated_token_count": len(token_ids), "generated_token_ids_sha256": token_ids_hash(token_ids), "memory_before": memory_before, "memory_after": memory_after, "phase_operators": rows, "phase_operator_row_mode": "coalesced_cpu_cuda_views" if coalesce_rows else "raw_profiler_rows", "generic_top_operators": operator_rows(profiler.key_averages(), top_operators=args.top_operators)}
         if any(count <= 0 for count in backend.policy_decode_calls.values()):
             raise AssertionError(f"{path} did not execute policy attention in every selected layer")
         result["policy_decode_call_count_by_layer"] = backend.policy_decode_calls
+        if require_phase_coverage:
+            result["phase_label_coverage"] = phase_coverage(backend=backend, language_model=language_model, recorder=recorder, path=path)
         if path == EXTERNAL_STORAGE_PATH:
             result["external_storage_guard"] = route_guard_summary(backend=backend, cache=cache, expected_heads=expected_heads, args=args)
         else:
             result["execution_dtype_ulp_breach_count"] = sum(int(row["breach_count"]) for row in backend.execution_dtype_ulp_breach_summary()["layers"])
         results.append(result)
-    summary_path = args.output_dir / "a4149_external_storage_phase_profiler_summary.json"
-    summary_path.write_text(json.dumps({"schema_version": A4149_SCHEMA, "phase_prefix": PHASE_PREFIX, "results": results}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    manifest = {"schema_version": A4149_SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}), "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"], "source_answer_sha256": source["answer_sha256"]}, "phase_summary": summary_path.name, "phase_summary_units": {"device_time_total_us": "generic torch.profiler device time; CUDA in this CUDA-only gate", "device_memory_usage_bytes": "generic torch.profiler device memory accounting; not allocator peak or HBM traffic"}, "source_artifact_sha256": source["source_artifact_sha256"], "observational_guards": {"paired_mask_mode": "replayed_dense_mask", "route_a_predictor_scored_online": False, "replay_mask_consumption_complete": True, "all_layers_all_kv_heads_external_storage_substituted": True, "persistent_selected_native_cold_absent": True, "required_any_full_multi_tail_packed_coverage": True, "fp32_same_mask_guard": {"rtol": args.rtol, "atol": args.atol}, "execution_dtype_ulp_mode": "record_only", "execution_dtype_close_mode": "quantization_aware_enforce", "execution_dtype_close_enforced": True, "phase_labels_only": True, "profiler_is_separate_from_timing_repetitions": True, "context_prefill_profiled": False}, "boundaries": ["Profiler labels are nested reference-phase ranges and may be inclusive; their times must not be summed or interpreted as timing data.", "This is a Python-reference diagnostic after untimed context prefill, not a packed-attention kernel profile.", "Profiler time/memory values are not HBM traffic, energy, area, frequency, hardware acceleration, or RTL evidence."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
-    manifest_path = args.output_dir / "a4149_external_storage_phase_profiler_manifest.json"
+    summary_path = args.output_dir / f"{artifact_stem}_summary.json"
+    summary_path.write_text(json.dumps({"schema_version": schema_version, "phase_prefix": PHASE_PREFIX, "phase_operator_row_mode": "coalesced_cpu_cuda_views" if coalesce_rows else "raw_profiler_rows", "results": results}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    manifest = {"schema_version": schema_version, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}), "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"], "source_answer_sha256": source["answer_sha256"]}, "phase_summary": summary_path.name, "phase_summary_units": {"device_time_total_us": "generic torch.profiler device time; CUDA in this CUDA-only gate", "device_memory_usage_bytes": "generic torch.profiler device memory accounting; not allocator peak or HBM traffic"}, "source_artifact_sha256": source["source_artifact_sha256"], "observational_guards": {"paired_mask_mode": "replayed_dense_mask", "route_a_predictor_scored_online": False, "replay_mask_consumption_complete": True, "all_layers_all_kv_heads_external_storage_substituted": True, "persistent_selected_native_cold_absent": True, "required_any_full_multi_tail_packed_coverage": True, "fp32_same_mask_guard": {"rtol": args.rtol, "atol": args.atol}, "execution_dtype_ulp_mode": "record_only", "execution_dtype_close_mode": "quantization_aware_enforce", "execution_dtype_close_enforced": True, "phase_labels_only": True, "phase_rows_coalesced": coalesce_rows, "phase_label_coverage_enforced": require_phase_coverage, "profiler_is_separate_from_timing_repetitions": True, "context_prefill_profiled": False}, "boundaries": ["Profiler labels are nested reference-phase ranges and may be inclusive; their times must not be summed or interpreted as timing data.", "This is a Python-reference diagnostic after untimed context prefill, not a packed-attention kernel profile.", "Profiler time/memory values are not HBM traffic, energy, area, frequency, hardware acceleration, or RTL evidence."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
+    manifest_path = args.output_dir / f"{artifact_stem}_manifest.json"
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"A4.1.6 external-storage phase profiler completed: {manifest_path}")
+    print(f"{phase} external-storage phase profiler completed: {manifest_path}")
 
 
 if __name__ == "__main__":

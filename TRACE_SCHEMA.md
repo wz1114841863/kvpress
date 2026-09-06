@@ -25,6 +25,16 @@ The labels are nested and may be inclusive, so their times cannot be summed or
 treated as latency data. They do not change mask replay, state ownership,
 attention, or numerical-guard semantics.
 
+## A4.1.6.1 paired phase-profiler coverage repair
+
+`kvzap-route-a4150-qwen-external-storage-paired-phase-profiler-1.0` repairs
+the A4149 reporting coverage: dense multi-token bridge operations receive
+explicit `multi_token_*` ranges; same-name CPU/CUDA profiler views are coalesced
+without doubling semantic invocation counts; and a phase-label coverage guard
+requires labelled selected-head attention evaluations to equal the backend's
+decode plus multi-token policy evaluations. Coalesced phase rows remain nested,
+inclusive profiler diagnostics and cannot be summed or treated as timing data.
+
 ## A4 untimed semantic-gate scalar diagnostics
 
 For an A4 native-storage gate using `execution_dtype_ulp_mode=record_only`,
