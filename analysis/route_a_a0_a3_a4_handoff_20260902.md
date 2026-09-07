@@ -784,6 +784,12 @@ guards, and are rejected if their per-path token digest drifts from the
 certificate or another reset run. Its timing/allocator distributions are
 explicitly separate from guarded A4.1.4 and profiler observations.
 
+The initial A4152/A4153 execution-only attempt is not accepted as a paired
+measurement: profiler labels revealed that the dense multi-token bridge still
+performed numerical reference work. The repair adds an actual per-layer guard
+work counter and makes zero work a hard execution-only invariant; rerun under
+a new output directory before interpreting dense/Route-A comparison numbers.
+
 ### A4.1.7.2 implementation — execution-only paired profiler
 
 A4153 captures one coalesced phase-profiler diagnostic each for same-mask dense

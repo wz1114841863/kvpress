@@ -79,18 +79,32 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def _require_execution_only(backend) -> None:
+def _require_execution_only(backend) -> dict[str, Any]:
     if any(item.same_mask_numerical_guard_enforced for item in backend.backends.values()):
         raise AssertionError("execution-only backend retained a per-query same-mask numerical guard")
+    summary = backend.same_mask_numerical_guard_work_summary()
+    if any(int(row["work_count"]) != 0 for row in summary["layers"]):
+        raise AssertionError(f"execution-only backend executed same-mask numerical guard work: {summary}")
+    return summary
+
+
+def _numerical_guard_work_totals(backend) -> dict[str, Any]:
+    summary = backend.same_mask_numerical_guard_work_summary()
+    return {
+        "layer_count": len(summary["layers"]),
+        "total_work_count": sum(int(row["work_count"]) for row in summary["layers"]),
+        "max_layer_work_count": max((int(row["work_count"]) for row in summary["layers"]), default=0),
+    }
 
 
 def verify_backend(*, path: str, backend, cache, expected_heads: dict[int, tuple[int, ...]], args: argparse.Namespace) -> dict[str, Any]:
     backend.assert_replay_complete()
     if any(count <= 0 for count in backend.policy_decode_calls.values()):
         raise AssertionError(f"{path} did not execute policy attention in every selected layer")
-    _require_execution_only(backend)
+    numerical_guard_work = _require_execution_only(backend)
     result: dict[str, Any] = {
         "same_mask_numerical_guard_mode": "execution_only",
+        "same_mask_numerical_guard_work": numerical_guard_work,
         "policy_decode_call_count_by_layer": backend.policy_decode_calls,
     }
     if path == EXTERNAL_STORAGE_PATH:
@@ -142,7 +156,7 @@ def certify_dense_execution_only(*, pipe, context_ids, question_ids, layers, exp
             raise AssertionError("dense certification did not execute policy attention in every selected layer")
         if mode == "execution_only":
             _require_execution_only(backend)
-        runs[label] = run
+        runs[label] = {**run, "same_mask_numerical_guard_work": _numerical_guard_work_totals(backend)}
     relations = [paired_logit_relation(a, b) for a, b in zip(runs["guarded_reference"]["logits"], runs["execution_only_forced"]["logits"], strict=True)]
     for guarded, execution in zip(runs["guarded_reference"]["logits"], runs["execution_only_forced"]["logits"], strict=True):
         torch.testing.assert_close(execution, guarded, rtol=args.rtol, atol=args.atol)
@@ -151,6 +165,9 @@ def certify_dense_execution_only(*, pipe, context_ids, question_ids, layers, exp
     return {
         "guarded_reference_token_ids_sha256": token_ids_digest(runs["guarded_reference"]["generated_token_ids"]),
         "execution_only_token_ids_sha256": token_ids_digest(runs["execution_only_independent"]["generated_token_ids"]),
+        "guarded_reference_numerical_guard_work": runs["guarded_reference"]["same_mask_numerical_guard_work"],
+        "execution_only_forced_numerical_guard_work": runs["execution_only_forced"]["same_mask_numerical_guard_work"],
+        "execution_only_independent_numerical_guard_work": runs["execution_only_independent"]["same_mask_numerical_guard_work"],
         "guarded_vs_execution_only_forced_logit_steps": relations,
         "guards": {"guarded_reference_fp32_same_mask_enforced": True, "execution_only_per_query_same_mask_numerical_guards_absent": True, "forced_full_model_logits_close": True, "independent_greedy_tokens_equal_guarded": True},
     }

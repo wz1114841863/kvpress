@@ -60,6 +60,10 @@ same-mask dense execution-only, and Route-A external-storage execution-only.
 This is separate from guarded A4.1.4 timings and profiler captures; allocator
 fields remain PyTorch observations rather than HBM traffic.
 
+Execution-only artifacts additionally record actual same-mask numerical-guard
+work counts. A requested `execution_only` mode is valid only when every
+selected layer reports zero work; a mode flag alone is insufficient.
+
 ## A4.1.7.2 execution-only paired phase-profiler
 
 `kvzap-route-a4153-execution-mode-paired-phase-profiler-1.0` is one diagnostic

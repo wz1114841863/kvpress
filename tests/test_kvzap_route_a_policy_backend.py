@@ -197,6 +197,28 @@ def test_dense_same_mask_multi_token_bridge_does_not_fall_back_to_full_kv_select
     assert backend.multi_token_comparison_summary()["comparison_count"] == 2
     assert backend.multi_token_comparison_summary()["max_attn_output_abs_difference"] == 0.0
     assert {"multi_token_dense_same_mask_attention", "multi_token_same_mask_dense_reference", "multi_token_fp32_same_mask_guard", "multi_token_execution_dtype_cast"} <= set(phase_labels)
+    assert backend.same_mask_numerical_guard_work_summary()["work_count"] > 0
+
+
+def test_dense_same_mask_execution_only_multi_token_bridge_elides_actual_numerical_guard_work():
+    phase_labels = []
+
+    def measure(name, operation):
+        phase_labels.append(name)
+        return operation()
+
+    backend = DenseSameMaskAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6, same_mask_numerical_guard_mode="execution_only", component_measure=measure)
+    module = SimpleNamespace(scaling=1.0)
+    keys = torch.arange(10, dtype=torch.float32).reshape(1, 1, 5, 2)
+    values = keys + 10
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 3, dtype=torch.bool), 0
+    backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 3, 4, 2), None), module, torch.ones(1, 4, 3, 2), keys[:, :, :3], values[:, :, :3], None, 0.0, scaling=1.0)
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 2, dtype=torch.bool), 3
+    query = torch.tensor([[[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]], [[1., 1.], [1., -1.]], [[-1., 1.], [1., 1.]]]])
+    output, _weights = backend.attention(lambda *_args, **_kwargs: (torch.zeros(1, 2, 4, 2), None), module, query, keys, values, None, 0.0, scaling=1.0)
+    assert torch.isfinite(output).all()
+    assert backend.same_mask_numerical_guard_work_summary() == {"mode": "execution_only", "enforced": False, "work_count": 0}
+    assert not {"multi_token_same_mask_dense_reference", "multi_token_fp32_same_mask_guard"} & set(phase_labels)
 
 
 def test_all_kv_heads_replace_the_full_layer_without_calling_original_on_decode():

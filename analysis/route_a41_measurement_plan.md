@@ -759,6 +759,13 @@ timed region. Report this distribution separately from guarded A4.1.4 and all
 profilers. It measures the present Python implementation, not a packed kernel,
 HBM traffic, throughput, quality, or hardware benefit.
 
+The first A4152/A4153 attempt exposed a dense multi-token bridge omission: it
+reported execution-only mode while still executing same-mask reference/FP32
+guard work. Treat that attempt as an invalid paired execution-only comparison.
+The repaired backend records actual numerical-guard work per layer, and every
+execution-only gate now requires a zero count before any timing or profiler
+result is accepted.
+
 ### A4.1.7.2 — execution-only paired phase-profiler
 
 After A4152 establishes the repeated execution-only distribution, A4153 takes

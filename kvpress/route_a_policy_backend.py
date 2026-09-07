@@ -128,6 +128,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         self.execution_dtype_ulp_mode = execution_dtype_ulp_mode
         self.execution_dtype_close_mode = execution_dtype_close_mode
         self.same_mask_numerical_guard_mode = same_mask_numerical_guard_mode
+        self._same_mask_numerical_guard_work_count = 0
         self.ulp_breach_sample_limit = ulp_breach_sample_limit
         self._ulp_breach_count = 0
         self._ulp_breach_max_observed: float | None = None
@@ -152,9 +153,22 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         """Optionally label an operation without changing Route-A semantics."""
         return operation() if self.component_measure is None else self.component_measure(name, operation)
 
+    def _measure_same_mask_numerical_guard(self, name: str, operation):
+        """Record actual numerical-reference work, not merely the requested mode."""
+        self._same_mask_numerical_guard_work_count += 1
+        return self._measure_component(name, operation)
+
     @property
     def same_mask_numerical_guard_enforced(self) -> bool:
         return self.same_mask_numerical_guard_mode == "enforce"
+
+    def same_mask_numerical_guard_work_summary(self) -> dict[str, Any]:
+        """Audit whether this backend actually executed numerical guard work."""
+        return {
+            "mode": self.same_mask_numerical_guard_mode,
+            "enforced": self.same_mask_numerical_guard_enforced,
+            "work_count": self._same_mask_numerical_guard_work_count,
+        }
 
     @property
     def uses_mask_replay(self) -> bool:
@@ -571,11 +585,11 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
                 measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"decode_{name}", operation)
                 route_fp32 = self.state.attention(q * scaling, head=mapped_kv_head, component_measure=measure)
                 if self.same_mask_numerical_guard_enforced:
-                    dense_fp32 = self._measure_component("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped_kv_head)))
-                    self._measure_component("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))
-                    route, dense = self._measure_component("decode_execution_dtype_cast", lambda: (route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)))
-                    self._measure_component("decode_execution_dtype_close_guard", lambda: self._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=mapped_kv_head, query_head=query_head, cache_position=int(key.shape[2] - 1)))
-                    _cast_abs, cast_ulps = self._measure_component("decode_execution_dtype_ulp_diagnostic", lambda: self._cast_difference_in_ulps(route, dense))
+                    dense_fp32 = self._measure_same_mask_numerical_guard("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped_kv_head)))
+                    self._measure_same_mask_numerical_guard("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))
+                    route, dense = self._measure_same_mask_numerical_guard("decode_execution_dtype_cast", lambda: (route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)))
+                    self._measure_same_mask_numerical_guard("decode_execution_dtype_close_guard", lambda: self._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=mapped_kv_head, query_head=query_head, cache_position=int(key.shape[2] - 1)))
+                    _cast_abs, cast_ulps = self._measure_same_mask_numerical_guard("decode_execution_dtype_ulp_diagnostic", lambda: self._cast_difference_in_ulps(route, dense))
                 else:
                     route, dense, dense_fp32, cast_ulps = route_fp32.to(dtype=q.dtype), route_fp32.to(dtype=q.dtype), route_fp32, 0.0
                 if self.same_mask_numerical_guard_enforced and cast_ulps > self.max_executed_dtype_ulps:
@@ -670,8 +684,9 @@ class DenseSameMaskAttentionBackend(RouteAPolicyAttentionBackend):
                 q = query[0, query_head, offset]
                 measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"multi_token_{name}", operation)
                 dense_fp32 = self.state.attention(q * scaling, head=mapped, component_measure=measure)
-                reference_fp32 = self._measure_component("multi_token_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped)))
-                self._measure_component("multi_token_fp32_same_mask_guard", lambda: torch.testing.assert_close(dense_fp32, reference_fp32, rtol=self.rtol, atol=self.atol))
+                if self.same_mask_numerical_guard_enforced:
+                    reference_fp32 = self._measure_same_mask_numerical_guard("multi_token_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped)))
+                    self._measure_same_mask_numerical_guard("multi_token_fp32_same_mask_guard", lambda: torch.testing.assert_close(dense_fp32, reference_fp32, rtol=self.rtol, atol=self.atol))
                 dense = self._measure_component("multi_token_execution_dtype_cast", lambda: dense_fp32.to(dtype=q.dtype))
                 dense_output[0, offset, query_head] = dense
                 per_head[mapped].append((dense, query_head))
@@ -850,11 +865,11 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
                 measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"multi_token_{name}", operation)
                 route_fp32 = self.state.attention(q * scaling, head=mapped, component_measure=measure)
                 if self.same_mask_numerical_guard_enforced:
-                    dense_fp32 = self._measure_component("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped)))
-                    self._measure_component("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))
-                    route, dense = self._measure_component("decode_execution_dtype_cast", lambda: (route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)))
-                    self._measure_component("decode_execution_dtype_close_guard", lambda: self._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=mapped, query_head=query_head, cache_position=position))
-                    _cast_abs, cast_ulps = self._measure_component("decode_execution_dtype_ulp_diagnostic", lambda: self._cast_difference_in_ulps(route, dense))
+                    dense_fp32 = self._measure_same_mask_numerical_guard("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped)))
+                    self._measure_same_mask_numerical_guard("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))
+                    route, dense = self._measure_same_mask_numerical_guard("decode_execution_dtype_cast", lambda: (route_fp32.to(dtype=q.dtype), dense_fp32.to(dtype=q.dtype)))
+                    self._measure_same_mask_numerical_guard("decode_execution_dtype_close_guard", lambda: self._assert_executed_dtype_close(route=route, dense=dense, route_fp32=route_fp32, dense_fp32=dense_fp32, kv_head=mapped, query_head=query_head, cache_position=position))
+                    _cast_abs, cast_ulps = self._measure_same_mask_numerical_guard("decode_execution_dtype_ulp_diagnostic", lambda: self._cast_difference_in_ulps(route, dense))
                 else:
                     route, dense, dense_fp32, cast_ulps = route_fp32.to(dtype=q.dtype), route_fp32.to(dtype=q.dtype), route_fp32, 0.0
                 if self.same_mask_numerical_guard_enforced and cast_ulps > self.max_executed_dtype_ulps:
@@ -1072,6 +1087,9 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
 
     def execution_dtype_ulp_breach_summary(self) -> dict[str, Any]:
         return {"layers": [{"layer": layer, **backend.execution_dtype_ulp_breach_summary()} for layer, backend in self.backends.items()]}
+
+    def same_mask_numerical_guard_work_summary(self) -> dict[str, Any]:
+        return {"layers": [{"layer": layer, **backend.same_mask_numerical_guard_work_summary()} for layer, backend in self.backends.items()]}
 
 
 class DenseSameMaskAttentionBackendSet(RouteAPolicyAttentionBackendSet):
