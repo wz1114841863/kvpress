@@ -790,6 +790,15 @@ performed numerical reference work. The repair adds an actual per-layer guard
 work counter and makes zero work a hard execution-only invariant; rerun under
 a new output directory before interpreting dense/Route-A comparison numbers.
 
+### A4.1.7.3 implementation — empty-source elision
+
+A4154 tests a semantics-preserving candidate that omits only empty Route-A
+source partials. It compares forced logits and independent greedy tokens to an
+unelided execution-only baseline while retaining replay, external ownership,
+page and numerical-work guards. The named budget-512 request must demonstrate
+an empty-pending skip while still reading hot and packed sources; it remains
+untimed.
+
 ### A4.1.7.2 implementation — execution-only paired profiler
 
 A4153 captures one coalesced phase-profiler diagnostic each for same-mask dense

@@ -64,6 +64,15 @@ Execution-only artifacts additionally record actual same-mask numerical-guard
 work counts. A requested `execution_only` mode is valid only when every
 selected layer reports zero work; a mode flag alone is insufficient.
 
+## A4.1.7.3 empty-source-elision semantic gate
+
+`kvzap-route-a4154-empty-source-elision-semantic-gate-1.0` compares external
+Route-A execution-only baseline with a candidate that skips only empty
+hot/pending/packed partials. It records scalar paired logits/tokens, per-layer
+skip counts and component-call counts. The named budget-512 gate requires an
+empty pending skip, no pending partial attention, and still-observed hot and
+packed attention. It is untimed semantic evidence only.
+
 ## A4.1.7.2 execution-only paired phase-profiler
 
 `kvzap-route-a4153-execution-mode-paired-phase-profiler-1.0` is one diagnostic

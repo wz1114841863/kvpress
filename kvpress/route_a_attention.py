@@ -138,11 +138,13 @@ class RouteAPackedAttentionState:
     pending positions first.  The caller may use a distinct instance per layer.
     """
 
-    def __init__(self, *, heads: int, head_dim: int, window: int, page_tokens: int, admission_budget: int) -> None:
+    def __init__(self, *, heads: int, head_dim: int, window: int, page_tokens: int, admission_budget: int, elide_empty_sources: bool = False) -> None:
         if min(heads, head_dim, page_tokens, admission_budget) <= 0 or window < 0:
             raise ValueError("invalid Route-A reference dimensions")
         self.heads, self.head_dim, self.window = heads, head_dim, window
         self.admission_budget = admission_budget
+        self.elide_empty_sources = elide_empty_sources
+        self._empty_source_skip_counts = {name: 0 for name in ("hot", "pending", "packed")}
         self._hot: list[deque[_Record]] = [deque() for _ in range(heads)]
         self._pending: list[deque[_Record]] = [deque() for _ in range(heads)]
         self._pages = [_PackedPages(page_tokens) for _ in range(heads)]
@@ -216,8 +218,19 @@ class RouteAPackedAttentionState:
         sources = self.records(head)
         def measure(name, operation):
             return operation() if component_measure is None else component_measure(name, operation)
-        partials = [measure(f"route_a_attention_{name}", lambda name=name: _attention(query, sources[name])) for name in ("hot", "pending", "packed")]
+        partials = []
+        for name in ("hot", "pending", "packed"):
+            if self.elide_empty_sources and not sources[name]:
+                self._empty_source_skip_counts[name] += 1
+                measure(f"route_a_empty_source_skip_{name}", lambda: None)
+                continue
+            partials.append(measure(f"route_a_attention_{name}", lambda name=name: _attention(query, sources[name])))
+        if not partials:
+            raise AssertionError("Route-A attention has no source partials")
         return measure("route_a_online_softmax_merge", lambda: online_softmax_merge(partials))
+
+    def empty_source_elision_summary(self) -> dict[str, int | bool]:
+        return {"enabled": self.elide_empty_sources, **{f"{name}_skip_count": count for name, count in self._empty_source_skip_counts.items()}}
 
     def same_mask_records(self, head: int) -> list[_Record]:
         sources = self.records(head)

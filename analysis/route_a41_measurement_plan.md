@@ -766,6 +766,16 @@ The repaired backend records actual numerical-guard work per layer, and every
 execution-only gate now requires a zero count before any timing or profiler
 result is accepted.
 
+### A4.1.7.3 — empty-source-elision semantic gate
+
+The repaired execution-only profiler shows calls to an empty pending source on
+the named budget-512 replay. Before treating that as an optimization target,
+A4154 compares unelided Route-A with a candidate that skips only empty source
+partials. It requires paired logits/tokens plus replay/ownership/page guards,
+an empty pending skip witness, no pending partial attention, and retained hot
+and packed reads. No timing result may be inferred until this semantic gate
+passes.
+
 ### A4.1.7.2 — execution-only paired phase-profiler
 
 After A4152 establishes the repeated execution-only distribution, A4153 takes

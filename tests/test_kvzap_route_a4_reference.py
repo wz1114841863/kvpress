@@ -78,6 +78,20 @@ def test_empty_pending_empty_cold_tail_cross_page_and_different_head_lengths():
         torch.testing.assert_close(state.attention(query, head=head), dense_same_mask_attention(query, state.same_mask_records(head)))
 
 
+def test_empty_source_elision_skips_empty_partials_without_changing_attention():
+    baseline = RouteAPackedAttentionState(heads=1, head_dim=2, window=2, page_tokens=2, admission_budget=8)
+    elided = RouteAPackedAttentionState(heads=1, head_dim=2, window=2, page_tokens=2, admission_budget=8, elide_empty_sources=True)
+    keys = torch.arange(12, dtype=torch.float32).reshape(1, 6, 2)
+    keep = torch.tensor([[False, False, False, False, True, True]])
+    for state in (baseline, elided):
+        state.append(keys, keys + 10, keep, start_position=0)
+    labels = []
+    query = torch.tensor([1.0, -1.0])
+    torch.testing.assert_close(elided.attention(query, head=0, component_measure=lambda name, operation: (labels.append(name), operation())[1]), baseline.attention(query, head=0))
+    assert elided.empty_source_elision_summary() == {"enabled": True, "hot_skip_count": 0, "pending_skip_count": 1, "packed_skip_count": 1}
+    assert labels == ["route_a_attention_hot", "route_a_empty_source_skip_pending", "route_a_empty_source_skip_packed", "route_a_online_softmax_merge"]
+
+
 def test_online_merge_handles_empty_sources_and_matches_concatenation():
     zero = torch.zeros(2)
     assert torch.equal(online_softmax_merge([(torch.tensor(float("-inf")), torch.tensor(0.), zero)]), zero)

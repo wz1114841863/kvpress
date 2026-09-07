@@ -25,14 +25,14 @@ class RouteAExternalColdStorageAdapter:
     allocator measurement, or performance implementation.
     """
 
-    def __init__(self, *, heads: int, head_dim: int, window: int, page_tokens: int, admission_budget: int, selected_kv_heads: tuple[int, ...]) -> None:
+    def __init__(self, *, heads: int, head_dim: int, window: int, page_tokens: int, admission_budget: int, selected_kv_heads: tuple[int, ...], elide_empty_sources: bool = False) -> None:
         if not selected_kv_heads or len(set(selected_kv_heads)) != len(selected_kv_heads):
             raise ValueError("selected KV heads must be unique and nonempty")
         if any(head < 0 or head >= heads for head in selected_kv_heads):
             raise ValueError("selected KV head is outside the declared head count")
         self.heads, self.head_dim, self.window = heads, head_dim, window
         self.selected_kv_heads = tuple(selected_kv_heads)
-        self.state = RouteAPackedAttentionState(heads=heads, head_dim=head_dim, window=window, page_tokens=page_tokens, admission_budget=admission_budget)
+        self.state = RouteAPackedAttentionState(heads=heads, head_dim=head_dim, window=window, page_tokens=page_tokens, admission_budget=admission_budget, elide_empty_sources=elide_empty_sources)
         self._selected_hot_keys: torch.Tensor | None = None
         self._selected_hot_values: torch.Tensor | None = None
 

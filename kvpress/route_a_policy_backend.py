@@ -107,7 +107,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
     first layer-complete gate; it leaves no dense attention group in that layer.
     """
 
-    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", ulp_breach_sample_limit: int = 32, replay_mask_events: dict[tuple[int, int], MaskEvent] | None = None, component_measure=None) -> None:
+    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", elide_empty_sources: bool = False, ulp_breach_sample_limit: int = 32, replay_mask_events: dict[tuple[int, int], MaskEvent] | None = None, component_measure=None) -> None:
         language_model = model.model.language_model if hasattr(model.model, "language_model") else model.model
         if not 0 <= layer < len(language_model.layers):
             raise ValueError("target layer is outside the model")
@@ -119,6 +119,8 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             raise ValueError("execution_dtype_close_mode must be 'off', 'scale_aware_enforce', or 'quantization_aware_enforce'")
         if same_mask_numerical_guard_mode not in {"enforce", "execution_only"}:
             raise ValueError("same_mask_numerical_guard_mode must be 'enforce' or 'execution_only'")
+        if not isinstance(elide_empty_sources, bool):
+            raise ValueError("elide_empty_sources must be boolean")
         if predictor is None and replay_mask_events is None:
             raise ValueError("an online predictor or explicit replay mask is required")
         self.model, self.predictor, self.layer, self.kv_head = model, predictor, layer, kv_head
@@ -128,6 +130,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         self.execution_dtype_ulp_mode = execution_dtype_ulp_mode
         self.execution_dtype_close_mode = execution_dtype_close_mode
         self.same_mask_numerical_guard_mode = same_mask_numerical_guard_mode
+        self.elide_empty_sources = elide_empty_sources
         self._same_mask_numerical_guard_work_count = 0
         self.ulp_breach_sample_limit = ulp_breach_sample_limit
         self._ulp_breach_count = 0
@@ -169,6 +172,9 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             "enforced": self.same_mask_numerical_guard_enforced,
             "work_count": self._same_mask_numerical_guard_work_count,
         }
+
+    def empty_source_elision_summary(self) -> dict[str, Any]:
+        return {"enabled": self.elide_empty_sources, **({} if self.state is None else self.state.empty_source_elision_summary())}
 
     @property
     def uses_mask_replay(self) -> bool:
@@ -369,7 +375,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         self._keep_mask = self._score_start = None
 
     def _new_state(self, *, heads: int, head_dim: int) -> RouteAPackedAttentionState:
-        return RouteAPackedAttentionState(heads=heads, head_dim=head_dim, window=self.window, page_tokens=self.page_tokens, admission_budget=self.admission_budget)
+        return RouteAPackedAttentionState(heads=heads, head_dim=head_dim, window=self.window, page_tokens=self.page_tokens, admission_budget=self.admission_budget, elide_empty_sources=self.elide_empty_sources)
 
     @staticmethod
     def _dense_one(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, scaling: float) -> torch.Tensor:
@@ -954,7 +960,7 @@ class RouteAQwenExternalColdStorageAttentionBackend(RouteAColdOwnershipAttention
             self.external_cold_storage = RouteAExternalColdStorageAdapter(
                 heads=key.shape[1], head_dim=key.shape[-1], window=self.window,
                 page_tokens=self.page_tokens, admission_budget=self.admission_budget,
-                selected_kv_heads=selected,
+                selected_kv_heads=selected, elide_empty_sources=self.elide_empty_sources,
             )
             self.state = self.external_cold_storage.state
         elif self.state is not self.external_cold_storage.state:
@@ -1037,14 +1043,14 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
 
     backend_class = RouteAPolicyAttentionBackend
 
-    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", ulp_breach_sample_limit: int = 32, replay_mask_events: MaskEventLayers | None = None, component_measure=None) -> None:
+    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", elide_empty_sources: bool = False, ulp_breach_sample_limit: int = 32, replay_mask_events: MaskEventLayers | None = None, component_measure=None) -> None:
         if not layers or len(set(layers)) != len(layers) or any(layer < 0 for layer in layers):
             raise ValueError("layers must be unique non-negative indices")
         if replay_mask_events is not None and set(replay_mask_events) != set(layers):
             raise ValueError("replay mask layers must exactly match selected layers")
         self.model, self.predictor, self.layers = model, predictor, tuple(layers)
         self.backends = {
-            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, execution_dtype_ulp_mode=execution_dtype_ulp_mode, execution_dtype_close_mode=execution_dtype_close_mode, same_mask_numerical_guard_mode=same_mask_numerical_guard_mode, ulp_breach_sample_limit=ulp_breach_sample_limit, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure)
+            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, execution_dtype_ulp_mode=execution_dtype_ulp_mode, execution_dtype_close_mode=execution_dtype_close_mode, same_mask_numerical_guard_mode=same_mask_numerical_guard_mode, elide_empty_sources=elide_empty_sources, ulp_breach_sample_limit=ulp_breach_sample_limit, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure)
             for layer in self.layers
         }
 
@@ -1090,6 +1096,9 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
 
     def same_mask_numerical_guard_work_summary(self) -> dict[str, Any]:
         return {"layers": [{"layer": layer, **backend.same_mask_numerical_guard_work_summary()} for layer, backend in self.backends.items()]}
+
+    def empty_source_elision_summary(self) -> dict[str, Any]:
+        return {"layers": [{"layer": layer, **backend.empty_source_elision_summary()} for layer, backend in self.backends.items()]}
 
 
 class DenseSameMaskAttentionBackendSet(RouteAPolicyAttentionBackendSet):
