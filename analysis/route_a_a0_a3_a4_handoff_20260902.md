@@ -773,6 +773,17 @@ that fixed-request forced full-model logits and independent greedy tokens match
 the guarded Route-A reference. It is untimed, scalar-only and prerequisite
 evidence for a later execution-mode measurement, not a replacement for guards.
 
+### A4.1.7.1 implementation — certified execution-mode measurement
+
+A4152 requires the matching completed A4151 Route-A certificate and separately
+repeats a guarded versus execution-only semantic certificate for same-mask
+dense KVzap. It then measures fresh-cache whole decode after untimed context
+prefill for Full-KV bypass, same-mask dense execution-only, and Route-A
+external-storage execution-only. Timed runs retain replay and cache-ownership
+guards, and are rejected if their per-path token digest drifts from the
+certificate or another reset run. Its timing/allocator distributions are
+explicitly separate from guarded A4.1.4 and profiler observations.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

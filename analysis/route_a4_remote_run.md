@@ -1584,6 +1584,32 @@ Synchronize the manifest. It must report forced full-model logits close and
 independent greedy tokens equal; do not call it a timing, HBM, quality, or
 hardware result.
 
+## A4.1.7.1 — certified execution-mode whole-decode measurement
+
+This runner uses A4151 as the Route-A prerequisite and performs a fresh,
+untimed same-mask dense certification before its repeated execution-only
+measurements. It leaves replay, external ownership, native-cold poison and
+page guards enabled in every Route-A reset run.
+
+```bash
+SOURCE_ID=route_a4146_replay_source_all_layers_budget512_01
+CERT_ID=route_a4151_qwen_all_layers_allheads_budget512_guard_elided_semantic_01
+RUN_ID=route_a4152_qwen_all_layers_allheads_budget512_execution_only_measurement_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4152_certified_execution_mode_whole_decode_measurement.py \
+  --preset retrieval --context-repetitions 12 --max-new-tokens 8 \
+  --target-layers all --target-kv-head all --admission-budget 512 \
+  --warmup-repetitions 3 --measured-repetitions 10 --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --route-a-execution-certification "analysis/experiments/${CERT_ID}/a4151_guard_elided_execution_manifest.json" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Return the fresh complete directory, including the raw JSONL and manifest.
+Interpret wall/CUDA-event values only as distributions for this Python
+execution-only reference; compare neither them nor PyTorch allocator bytes to
+HBM traffic, throughput, energy, or hardware performance.
+
 Reuse the completed all-layer, budget-one replay source. The runner accepts
 only the literal `all`, preventing an accidental hand-enumerated layer subset.
 

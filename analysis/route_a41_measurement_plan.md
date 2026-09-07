@@ -744,6 +744,21 @@ independent greedy tokens. This permits only a later separately labelled
 execution-mode measurement; it does not weaken the guarded A4.0/A4.1 semantic
 evidence or establish performance/quality.
 
+### A4.1.7.1 — certified execution-mode whole-decode measurement
+
+A4152 first verifies the completed matching A4151 Route-A certificate, then
+freshly certifies same-mask dense guard-on versus execution-only full-model
+logits and greedy tokens on the exact replay/request. Only after both pass
+does it collect shuffled fresh-cache warm-up and reported reset-run
+measurements for Full-KV bypass, same-mask dense execution-only, and Route-A
+external-storage execution-only. Every Route-A timed run still verifies replay
+consumption, all-layer/head external ownership, native-cold exclusion, and
+full/multi/tail page coverage; every dense/Route-A timed run must retain its
+certified token digest. The numerical reference checks are not run inside the
+timed region. Report this distribution separately from guarded A4.1.4 and all
+profilers. It measures the present Python implementation, not a packed kernel,
+HBM traffic, throughput, quality, or hardware benefit.
+
 For every reported repetition capture CUDA allocator snapshots in bytes:
 
 - allocated and reserved immediately before the timed region;

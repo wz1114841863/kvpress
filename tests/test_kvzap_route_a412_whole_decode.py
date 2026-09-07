@@ -1,6 +1,12 @@
-from kvpress.route_a_measurement import A412_RAW_SCHEMA, A4147_RAW_SCHEMA, CudaMemorySnapshot, TimingSample, raw_record, validate_raw_repetition
+import hashlib
+import json
+from argparse import Namespace
+
+from kvpress.route_a_measurement import A412_RAW_SCHEMA, A4147_RAW_SCHEMA, A4152_RAW_SCHEMA, CudaMemorySnapshot, TimingSample, raw_record, validate_raw_repetition
 from tools.run_kvzap_route_a412_whole_decode_gate import WHOLE_DECODE_COMPONENT, schedule_runs, token_ids_hash, whole_decode_summary
 from tools.run_kvzap_route_a4147_qwen_external_storage_whole_decode_measurement import EXTERNAL_STORAGE_PATH, MEASUREMENT_PATHS, compact_route_state
+from tools.run_kvzap_route_a4151_guard_elided_execution_semantic_gate import A4151_SCHEMA
+from tools.run_kvzap_route_a4152_certified_execution_mode_whole_decode_measurement import ROUTE_CERTIFICATE_GUARDS, validate_route_certificate
 
 
 def snapshot():
@@ -60,3 +66,20 @@ def test_external_storage_measurement_outcome_is_bounded_scalar_summary():
         "max_packed_tail_tokens": 3, "execution_dtype_ulp_breach_count": 2,
         "execution_dtype_ulp_max": 17.0,
     }
+
+
+def test_a4152_raw_schema_and_route_certificate_are_explicit(tmp_path):
+    record = make_whole_record(path=EXTERNAL_STORAGE_PATH, repetition=0, order=0, warmup=False, tokens=8)
+    record["schema_version"] = A4152_RAW_SCHEMA
+    validate_raw_repetition(record)
+    args = Namespace(model_name="model", model_revision="model-rev", predictor_name="predictor", predictor_revision="predictor-rev", threshold=-4.0, window_size=128, page_tokens=64, admission_budget=512, max_new_tokens=8, seed=42)
+    event_sha256 = "event-sha"
+    certificate = {
+        "schema_version": A4151_SCHEMA, "status": "complete",
+        "config": {"model_name": args.model_name, "model_revision": args.model_revision, "predictor_name": args.predictor_name, "predictor_revision": args.predictor_revision, "threshold": args.threshold, "window_size": args.window_size, "page_tokens": args.page_tokens, "admission_budget": args.admission_budget, "max_new_tokens": args.max_new_tokens, "seed": args.seed, "replay_event_file_sha256": event_sha256},
+        "observational_guards": {name: True for name in ROUTE_CERTIFICATE_GUARDS},
+        "diagnostic": {"execution_only_independent": {"generated_token_ids_sha256": "token-sha"}},
+    }
+    path = tmp_path / "certificate.json"
+    path.write_text(json.dumps(certificate), encoding="utf-8")
+    assert validate_route_certificate(path=path, args=args, event_sha256=event_sha256) == {"manifest": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "execution_only_token_ids_sha256": "token-sha"}

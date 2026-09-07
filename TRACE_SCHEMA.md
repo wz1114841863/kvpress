@@ -45,6 +45,21 @@ stores only scalar paired full-model-logit relations and token digests, never
 full logits. Passing certifies this fixed replay/request only; it is neither a
 performance nor quality claim.
 
+## A4.1.7.1 certified execution-mode whole-decode measurement
+
+`kvzap-route-a4152-certified-execution-mode-whole-decode-measurement-1.0`
+records repeated synchronized software measurements only after two separate
+semantic prerequisites: a matching completed A4.1.7.0 Route-A certificate and
+a fresh guard-on versus execution-only same-mask dense certificate. Raw rows
+use `kvzap-route-a4152-certified-execution-mode-whole-decode-raw-repetition-1.0`.
+They retain the A4.1 whole-decode timing/allocator fields plus only scalar
+token/answer digests. Timed Route-A runs still require replay completion,
+external ownership/native-cold exclusion and page coverage; they elide only
+per-query numerical reference work. The three paths remain Full-KV bypass,
+same-mask dense execution-only, and Route-A external-storage execution-only.
+This is separate from guarded A4.1.4 timings and profiler captures; allocator
+fields remain PyTorch observations rather than HBM traffic.
+
 ## A4 untimed semantic-gate scalar diagnostics
 
 For an A4 native-storage gate using `execution_dtype_ulp_mode=record_only`,
