@@ -23,8 +23,9 @@ A41_RAW_SCHEMA = "kvzap-route-a41-raw-repetition-1.0"
 A412_RAW_SCHEMA = "kvzap-route-a412-whole-decode-raw-repetition-1.0"
 A4147_RAW_SCHEMA = "kvzap-route-a4147-external-storage-whole-decode-raw-repetition-1.0"
 A4152_RAW_SCHEMA = "kvzap-route-a4152-certified-execution-mode-whole-decode-raw-repetition-1.0"
+A4155_RAW_SCHEMA = "kvzap-route-a4155-empty-source-elision-paired-whole-decode-raw-repetition-1.0"
 A41_HARNESS_SCHEMA = "kvzap-route-a41-harness-1.0"
-MEASURED_PATHS = frozenset({"full_kv_bypass", "same_mask_dense_replay", "same_mask_route_a_replay", "same_mask_route_a_external_storage_replay", "online_dense_predictor_control", "harness_self_check"})
+MEASURED_PATHS = frozenset({"full_kv_bypass", "same_mask_dense_replay", "same_mask_route_a_replay", "same_mask_route_a_external_storage_replay", "same_mask_route_a_external_storage_unelided", "same_mask_route_a_external_storage_empty_source_elision", "online_dense_predictor_control", "harness_self_check"})
 
 T = TypeVar("T")
 
@@ -113,7 +114,7 @@ def validate_raw_repetition(record: dict[str, Any]) -> None:
     missing = required - set(record)
     if missing:
         raise ValueError(f"raw repetition is missing fields: {sorted(missing)}")
-    if record["schema_version"] not in {A41_RAW_SCHEMA, A412_RAW_SCHEMA, A4147_RAW_SCHEMA, A4152_RAW_SCHEMA}:
+    if record["schema_version"] not in {A41_RAW_SCHEMA, A412_RAW_SCHEMA, A4147_RAW_SCHEMA, A4152_RAW_SCHEMA, A4155_RAW_SCHEMA}:
         raise ValueError("unexpected raw repetition schema")
     if record["path"] not in MEASURED_PATHS:
         raise ValueError("unknown measured path")
@@ -138,11 +139,11 @@ def validate_raw_repetition(record: dict[str, Any]) -> None:
                 raise ValueError(f"{snapshot_name}.{field} must be a non-negative integer byte count")
 
 
-def summarize_values(values: list[float]) -> dict[str, float | int]:
+def summarize_values(values: list[float], *, minimum: float | None = 0.0) -> dict[str, float | int]:
     """Return distribution statistics without dropping raw measurements."""
     if not values:
         raise ValueError("cannot summarize an empty measurement series")
-    checked = [_require_finite_number(value, "measurement", minimum=0.0) for value in values]
+    checked = [_require_finite_number(value, "measurement", minimum=minimum) for value in values]
     ordered = sorted(checked)
 
     def percentile(percent: float) -> float:
@@ -233,6 +234,71 @@ def summarize_reported_repetitions(records: list[dict[str, Any]]) -> dict[str, A
             "Callback groups contain individual synchronized component invocations, not independent request repetitions.",
             "Reset-run component time sums callbacks within one execution_order; it is component attribution, not end-to-end decode latency.",
             "Reset-run allocator peaks are run-local maxima of PyTorch allocator counters, not sums or HBM traffic.",
+        ],
+    }
+
+
+def summarize_paired_reset_records(
+    records: list[dict[str, Any]], *,
+    baseline_path: str,
+    candidate_path: str,
+) -> dict[str, Any]:
+    """Summarize fixed-request baseline/candidate pairs without hiding raw rows.
+
+    The caller must place a shared nonnegative integer ``pair_id`` on every
+    raw record.  A pair is intentionally two fresh reset runs executed
+    adjacent to one another, with the within-pair order recorded separately.
+    This is still an observed Python-software comparison, not a hardware
+    latency model.
+    """
+    for record in records:
+        validate_raw_repetition(record)
+    pairs: dict[int, dict[str, dict[str, Any]]] = {}
+    for record in records:
+        if record["warmup"]:
+            continue
+        pair_id = record.get("pair_id")
+        if not isinstance(pair_id, int) or isinstance(pair_id, bool) or pair_id < 0:
+            raise ValueError("paired raw repetition requires a non-negative integer pair_id")
+        if record["path"] not in {baseline_path, candidate_path}:
+            raise ValueError("paired raw repetition has an unexpected path")
+        bucket = pairs.setdefault(pair_id, {})
+        if record["path"] in bucket:
+            raise ValueError("paired raw repetition has duplicate path within pair_id")
+        bucket[record["path"]] = record
+    if not pairs:
+        raise ValueError("no measured paired reset runs are available")
+    deltas: dict[str, list[float]] = {
+        "wall_ms_candidate_minus_baseline": [],
+        "cuda_event_ms_candidate_minus_baseline": [],
+        "peak_allocated_bytes_candidate_minus_baseline": [],
+        "peak_reserved_bytes_candidate_minus_baseline": [],
+    }
+    pair_rows: list[dict[str, Any]] = []
+    for pair_id, bucket in sorted(pairs.items()):
+        if set(bucket) != {baseline_path, candidate_path}:
+            raise ValueError(f"pair_id {pair_id} lacks exactly one baseline and candidate run")
+        baseline, candidate = bucket[baseline_path], bucket[candidate_path]
+        row = {
+            "pair_id": pair_id,
+            "baseline_execution_order": baseline["execution_order"],
+            "candidate_execution_order": candidate["execution_order"],
+            "wall_ms_candidate_minus_baseline": float(candidate["wall_ms"]) - float(baseline["wall_ms"]),
+            "cuda_event_ms_candidate_minus_baseline": float(candidate["cuda_event_ms"]) - float(baseline["cuda_event_ms"]),
+            "peak_allocated_bytes_candidate_minus_baseline": float(candidate["memory_after"]["peak_allocated_bytes"]) - float(baseline["memory_after"]["peak_allocated_bytes"]),
+            "peak_reserved_bytes_candidate_minus_baseline": float(candidate["memory_after"]["peak_reserved_bytes"]) - float(baseline["memory_after"]["peak_reserved_bytes"]),
+        }
+        for key in deltas:
+            deltas[key].append(row[key])
+        pair_rows.append(row)
+    return {
+        "paired_reset_run_count": len(pair_rows),
+        "pair_rows": pair_rows,
+        "candidate_minus_baseline_distributions": {key: summarize_values(values, minimum=None) for key, values in deltas.items()},
+        "boundaries": [
+            "Each pair contains two adjacent fresh reset runs; paired deltas retain raw per-pair values and do not erase CUDA/Python variability.",
+            "Negative candidate-minus-baseline time is an observed software value only, not hardware latency, throughput, or HBM evidence.",
+            "Allocator deltas compare PyTorch run-local peak counters, not physical HBM capacity or traffic.",
         ],
     }
 

@@ -13,6 +13,7 @@ from kvpress.route_a_measurement import (
     raw_record,
     reset_cuda_peak_memory,
     summarize_reported_repetitions,
+    summarize_paired_reset_records,
     time_cuda_region,
     validate_raw_repetition,
     write_completed_manifest,
@@ -96,6 +97,39 @@ def test_summary_reports_per_reset_run_sums_and_maximum_allocator_peaks():
     assert aggregate["wall_ms_sum_per_reset_run"]["mean"] == 3.5
     assert aggregate["cuda_event_ms_sum_per_reset_run"]["mean"] == 5.0
     assert aggregate["peak_allocated_bytes_max_per_reset_run"]["max"] == 55.0
+
+
+def test_paired_reset_summary_requires_complete_pairs_and_reports_candidate_deltas():
+    baseline = make_record(repetition=0, order=3, wall_ms=10.0, cuda_event_ms=8.0)
+    baseline["path"] = "same_mask_route_a_external_storage_unelided"
+    baseline["pair_id"] = 7
+    baseline["memory_after"]["peak_allocated_bytes"] = 100
+    candidate = make_record(repetition=0, order=4, wall_ms=7.0, cuda_event_ms=6.0)
+    candidate["path"] = "same_mask_route_a_external_storage_empty_source_elision"
+    candidate["pair_id"] = 7
+    candidate["memory_after"]["peak_allocated_bytes"] = 80
+    summary = summarize_paired_reset_records(
+        [baseline, candidate],
+        baseline_path="same_mask_route_a_external_storage_unelided",
+        candidate_path="same_mask_route_a_external_storage_empty_source_elision",
+    )
+    assert summary["paired_reset_run_count"] == 1
+    assert summary["pair_rows"] == [{
+        "pair_id": 7,
+        "baseline_execution_order": 3,
+        "candidate_execution_order": 4,
+        "wall_ms_candidate_minus_baseline": -3.0,
+        "cuda_event_ms_candidate_minus_baseline": -2.0,
+        "peak_allocated_bytes_candidate_minus_baseline": -20.0,
+        "peak_reserved_bytes_candidate_minus_baseline": 0.0,
+    }]
+    assert summary["candidate_minus_baseline_distributions"]["wall_ms_candidate_minus_baseline"]["mean"] == -3.0
+    with pytest.raises(ValueError, match="lacks exactly one"):
+        summarize_paired_reset_records(
+            [baseline],
+            baseline_path="same_mask_route_a_external_storage_unelided",
+            candidate_path="same_mask_route_a_external_storage_empty_source_elision",
+        )
 
 
 def test_output_records_are_new_directory_only_and_raw_file_is_not_overwritten(tmp_path):

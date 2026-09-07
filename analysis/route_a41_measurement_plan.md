@@ -776,6 +776,20 @@ an empty pending skip witness, complete per-source partial-or-skip accounting,
 and retained hot and packed reads. No timing result may be inferred until this semantic gate
 passes.
 
+### A4.1.7.4 — paired empty-source-elision software measurement
+
+A4155 starts only from a completed matching A4154 manifest. It measures two
+Route-A external-storage variants in adjacent, fresh-reset pairs whose
+within-pair order is randomized: unelided reference and empty-source elision.
+Each run preserves execution-only numerical-work absence, replay consumption,
+all-layer/head ownership, native-cold exclusion, page coverage, and the A4154
+token digest. Report raw records, callback/reset-run distributions, run-local
+allocator peaks, component call counters, and per-pair candidate-minus-baseline
+distributions. This pair attributes only the elision change; Full-KV bypass and
+same-mask dense remain distinct controls in A4152 and must not be folded into
+this comparison. It is Python-reference software evidence, never HBM, kernel,
+throughput, energy, hardware, or RTL evidence.
+
 ### A4.1.7.2 — execution-only paired phase-profiler
 
 After A4152 establishes the repeated execution-only distribution, A4153 takes

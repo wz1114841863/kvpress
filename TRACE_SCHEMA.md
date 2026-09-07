@@ -1452,3 +1452,15 @@ The exact scalar logit-difference table is not identical to budget one, which
 is expected for legal reduction layouts; no observed decision changed. This
 closes the pending-versus-packed layout check for this fixed three-layer
 horizon, not all-36-layer, quality, or performance behavior.
+
+`kvzap-route-a4155-empty-source-elision-paired-measurement-1.0` is the A4.1.7.4
+fixed-request repeated software-measurement schema. It requires a completed
+matching A4154 semantic certificate, then executes adjacent fresh-reset pairs:
+unelided all-layer/all-head Route-A external storage and the same path with
+only empty hot/pending/packed source partials elided. Each raw row includes a
+pair ID, execution order, synchronized wall/CUDA-event values, PyTorch
+allocator snapshots, token digest, and scalar empty-source skip counts. The
+summary contains callback/reset-run distributions and raw per-pair
+candidate-minus-baseline deltas. It does not replace separate Full-KV and
+same-mask-dense controls; timing/allocator values are not HBM, throughput,
+energy, hardware, or RTL evidence.

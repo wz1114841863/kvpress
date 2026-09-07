@@ -799,6 +799,17 @@ page and numerical-work guards. The named budget-512 request must demonstrate
 an empty-pending skip while still reading hot and packed sources; it remains
 untimed.
 
+### A4.1.7.4 implementation — paired empty-source-elision measurement
+
+A4155 consumes the completed A4154 semantic manifest before timing two
+all-layer/all-head external Route-A variants: unelided reference and the
+empty-source-elided candidate. It uses adjacent fresh-reset pairs with random
+within-pair order, captures PyTorch allocator peaks and execution-only source
+call counters, and keeps raw per-pair deltas alongside callback/reset-run
+distributions. It is an attribution measurement for the one elision change;
+it neither supersedes the distinct Full-KV/same-mask-dense A4152 controls nor
+constitutes a packed-kernel, HBM, hardware, or RTL result.
+
 ### A4.1.7.2 implementation — execution-only paired profiler
 
 A4153 captures one coalesced phase-profiler diagnostic each for same-mask dense
