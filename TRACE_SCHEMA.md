@@ -70,8 +70,9 @@ selected layer reports zero work; a mode flag alone is insufficient.
 Route-A execution-only baseline with a candidate that skips only empty
 hot/pending/packed partials. It records scalar paired logits/tokens, per-layer
 skip counts and component-call counts. The named budget-512 gate requires an
-empty pending skip, no pending partial attention, and still-observed hot and
-packed attention. It is untimed semantic evidence only.
+empty pending skip and source accounting in which each merge evaluation has
+exactly one partial or one skip per source; hot and packed attention must still
+be observed. It is untimed semantic evidence only.
 
 ## A4.1.7.2 execution-only paired phase-profiler
 
