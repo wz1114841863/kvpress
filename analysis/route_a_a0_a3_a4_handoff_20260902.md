@@ -784,6 +784,15 @@ guards, and are rejected if their per-path token digest drifts from the
 certificate or another reset run. Its timing/allocator distributions are
 explicitly separate from guarded A4.1.4 and profiler observations.
 
+### A4.1.7.2 implementation — execution-only paired profiler
+
+A4153 captures one coalesced phase-profiler diagnostic each for same-mask dense
+execution-only and Route-A external-storage execution-only after validating the
+A4151 certificate and freshly certifying dense. It retains replay, page and
+ownership guards plus exact phase-label coverage. Its nested profiler ranges
+localize remaining Python-reference work only; they are not a timing result or
+hardware cost estimate.
+
 ### A4.1 — measured software-system evidence
 
 After A4.0 passes, collect repeated, explicitly warmed measurements separately:

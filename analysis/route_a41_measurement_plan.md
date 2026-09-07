@@ -759,6 +759,17 @@ timed region. Report this distribution separately from guarded A4.1.4 and all
 profilers. It measures the present Python implementation, not a packed kernel,
 HBM traffic, throughput, quality, or hardware benefit.
 
+### A4.1.7.2 — execution-only paired phase-profiler
+
+After A4152 establishes the repeated execution-only distribution, A4153 takes
+one separate profiler capture per same-mask dense and Route-A external-storage
+path. It rechecks the A4151 Route-A certificate and freshly certifies dense
+execution-only before profiling. Coalesced phase rows and strict phase-label
+coverage identify which reference operations remain after numerical checks are
+elided. These profiler ranges are nested diagnostic attribution, never a
+replacement for A4152 timing distributions and never latency, throughput,
+HBM, or hardware evidence.
+
 For every reported repetition capture CUDA allocator snapshots in bytes:
 
 - allocated and reserved immediately before the timed region;

@@ -1,6 +1,7 @@
 from tools.run_kvzap_route_a412_profiler import operator_rows
 from tools.run_kvzap_route_a4148_qwen_external_storage_profiler import PROFILER_PATHS
 from tools.run_kvzap_route_a4149_qwen_external_storage_phase_profiler import PHASE_PATHS, PHASE_PREFIX, coalesced_phase_rows, phase_rows
+from tools.run_kvzap_route_a4153_execution_mode_paired_phase_profiler import PHASE_PATHS as EXECUTION_ONLY_PHASE_PATHS
 
 
 class Event:
@@ -55,3 +56,7 @@ def test_phase_profiler_coalesces_cpu_cuda_split_without_double_counting_calls()
     cpu_view = Event(cuda_view.key, 7, 3.0, 30.0)
     rows = coalesced_phase_rows([cuda_view, cpu_view])
     assert rows == [{"operator": cuda_view.key, "count": 7, "self_cpu_time_total_us": 15.0, "cpu_time_total_us": 30.0, "self_device_time_total_us": 10.0, "device_time_total_us": 20.0, "self_cpu_memory_usage_bytes": 1.0, "cpu_memory_usage_bytes": 2.0, "self_device_memory_usage_bytes": 3.0, "device_memory_usage_bytes": 4.0}]
+
+
+def test_execution_only_phase_profiler_keeps_the_paired_dense_route_paths():
+    assert EXECUTION_ONLY_PHASE_PATHS == PHASE_PATHS

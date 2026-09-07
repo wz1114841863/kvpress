@@ -60,6 +60,17 @@ same-mask dense execution-only, and Route-A external-storage execution-only.
 This is separate from guarded A4.1.4 timings and profiler captures; allocator
 fields remain PyTorch observations rather than HBM traffic.
 
+## A4.1.7.2 execution-only paired phase-profiler
+
+`kvzap-route-a4153-execution-mode-paired-phase-profiler-1.0` is one diagnostic
+capture each for certified same-mask dense execution-only and certified Route-A
+external-storage execution-only. It inherits the matching A4151 certificate
+and records a fresh dense certificate before profiling. The summary stores
+coalesced CPU/CUDA profiler rows, scalar token digests, phase-label coverage,
+and external ownership/page guards. Phase ranges are nested and may be
+inclusive, so no phase value may be summed or treated as latency; all profiler
+memory fields remain software diagnostics, not HBM traffic.
+
 ## A4 untimed semantic-gate scalar diagnostics
 
 For an A4 native-storage gate using `execution_dtype_ulp_mode=record_only`,

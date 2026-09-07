@@ -1610,6 +1610,30 @@ Interpret wall/CUDA-event values only as distributions for this Python
 execution-only reference; compare neither them nor PyTorch allocator bytes to
 HBM traffic, throughput, energy, or hardware performance.
 
+## A4.1.7.2 — execution-only paired phase-profiler
+
+This is a separate one-capture diagnostic after A4152, not another timing
+distribution. It revalidates the A4151 Route-A certificate and freshly
+certifies same-mask dense execution-only before profiling.
+
+```bash
+SOURCE_ID=route_a4146_replay_source_all_layers_budget512_01
+CERT_ID=route_a4151_qwen_all_layers_allheads_budget512_guard_elided_semantic_01
+RUN_ID=route_a4153_qwen_all_layers_allheads_budget512_execution_only_phase_profiler_01
+test ! -e "analysis/experiments/${RUN_ID}"
+python tools/run_kvzap_route_a4153_execution_mode_paired_phase_profiler.py \
+  --preset retrieval --context-repetitions 12 --max-new-tokens 8 \
+  --target-layers all --target-kv-head all --admission-budget 512 \
+  --warmup-repetitions 1 --top-operators 30 --device cuda \
+  --replay-source-dir "analysis/experiments/${SOURCE_ID}" \
+  --route-a-execution-certification "analysis/experiments/${CERT_ID}/a4151_guard_elided_execution_manifest.json" \
+  --output-dir "analysis/experiments/${RUN_ID}"
+```
+
+Return the manifest and phase summary. Coalesced profiler rows may diagnose
+remaining reference work but are nested/inclusive and must not be summed or
+reported as measured latency, HBM traffic, throughput, or hardware cost.
+
 Reuse the completed all-layer, budget-one replay source. The runner accepts
 only the literal `all`, preventing an accidental hand-enumerated layer subset.
 
