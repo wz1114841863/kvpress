@@ -1473,3 +1473,11 @@ source to account for every merge as either a partial attention call or an
 empty-source skip. The profiler is separate from timing repetitions; nested
 profiler ranges and memory values are not latency, HBM, throughput, energy,
 hardware, or RTL evidence.
+
+`kvzap-route-a4157-empty-source-elision-reproducibility-gate-1.0` is the
+A4.1.7.6 multi-batch extension of A4155. It retains raw fresh-reset pair rows
+across batches, reports per-batch and aggregate signed-delta distributions
+plus median absolute deviation, and records device-global nvidia-smi state
+before/after each timed region without inspecting processes. Telemetry is
+context only: it is not per-process attribution, HBM traffic, throughput,
+energy, hardware, or RTL evidence.

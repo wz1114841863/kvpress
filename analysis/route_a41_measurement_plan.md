@@ -800,6 +800,17 @@ merge evaluation. Coalesced phase rows may localize the observed A4155 trend,
 but are nested diagnostic ranges and cannot be summed, pooled with timing, or
 used as latency, HBM, throughput, energy, hardware, or RTL evidence.
 
+### A4.1.7.6 — multi-batch reproducibility and environment-context gate
+
+A4157 repeats the completed A4155 Route-A pair in independent batches, retains
+all raw signed deltas rather than trimming outliers, and separately reports
+per-batch and aggregate medians/MAD. It reads device-global nvidia-smi
+temperature, P-state, clocks, utilization, power and memory state before and
+after timed regions, without process inspection or timing the query. These
+fields only contextualize variability; they cannot attribute interference or
+substitute for hardware traffic/performance counters. All A4155 semantic,
+ownership, page and token guards remain hard requirements.
+
 ### A4.1.7.2 — execution-only paired phase-profiler
 
 After A4152 establishes the repeated execution-only distribution, A4153 takes

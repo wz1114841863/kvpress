@@ -819,6 +819,15 @@ guards plus complete per-source partial-or-skip accounting. Its purpose is
 attribution of the A4155 software observation; profiler ranges are nested and
 must not be treated as timing, HBM, hardware, or RTL evidence.
 
+### A4.1.7.6 implementation — multi-batch reproducibility gate
+
+A4157 repeats the semantically certified A4155 pair across independent
+batches, preserving every signed pair delta and reporting batch/aggregate
+median absolute deviation. Device-global nvidia-smi telemetry is sampled
+outside timed work solely to contextualize variance; no process inspection or
+hardware-counter claim is made. It retains all replay/ownership/page/token
+guards and does not turn the Python-reference result into hardware evidence.
+
 ### A4.1.7.2 implementation — execution-only paired profiler
 
 A4153 captures one coalesced phase-profiler diagnostic each for same-mask dense

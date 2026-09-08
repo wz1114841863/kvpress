@@ -21,6 +21,7 @@ from kvpress.route_a_measurement import (
 )
 from kvpress.route_a_replay import load_replay_events, sha256_file, write_replay_events
 from tools.run_kvzap_route_a41_component_gate import assert_multi_page_coverage, assert_pending_coverage, manifest_config
+from tools.run_kvzap_route_a4157_empty_source_elision_reproducibility_gate import TELEMETRY_FIELDS, parse_gpu_telemetry, robust_delta_summary
 
 
 def snapshots():
@@ -130,6 +131,22 @@ def test_paired_reset_summary_requires_complete_pairs_and_reports_candidate_delt
             baseline_path="same_mask_route_a_external_storage_unelided",
             candidate_path="same_mask_route_a_external_storage_empty_source_elision",
         )
+
+
+def test_gpu_telemetry_parser_is_fixed_schema_and_robust_delta_summary_retains_signed_values():
+    text = "0, NVIDIA Test, 555.1, P0, 50, 20, 10, 1800, 9000, 200.0, 1024, 24576\n"
+    telemetry = parse_gpu_telemetry(text)
+    assert tuple(telemetry) == TELEMETRY_FIELDS
+    assert telemetry["pstate"] == "P0"
+    with pytest.raises(ValueError, match="exactly one"):
+        parse_gpu_telemetry(text + text)
+    summary = robust_delta_summary({"pair_rows": [
+        {"wall_ms_candidate_minus_baseline": -3.0, "cuda_event_ms_candidate_minus_baseline": -2.0},
+        {"wall_ms_candidate_minus_baseline": -1.0, "cuda_event_ms_candidate_minus_baseline": -4.0},
+        {"wall_ms_candidate_minus_baseline": -2.0, "cuda_event_ms_candidate_minus_baseline": -3.0},
+    ]})
+    assert summary["pair_count"] == 3
+    assert summary["metrics"]["wall_ms_candidate_minus_baseline"] == {"median": -2.0, "median_absolute_deviation": 1.0, "raw_values": [-3.0, -1.0, -2.0]}
 
 
 def test_output_records_are_new_directory_only_and_raw_file_is_not_overwritten(tmp_path):
