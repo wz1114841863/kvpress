@@ -921,6 +921,14 @@ It binds their source identity and reports page/state plus source
 partial/skip/merge structure. It is deliberately untimed; repeated three-path
 measurement follows only if this semantic pipeline completes.
 
+### A4.1.7.15 implementation — long-horizon three-path measurement
+
+A4166 accepts only a completed A4165 long-horizon pipeline, then invokes the
+existing certified A4162 three-path runner in a child directory. The parent
+binds the fresh source SHA to the child manifest. It is the first long-horizon
+repeated software distribution after semantic acceptance; it remains neither
+HBM nor hardware/RTL evidence.
+
 ### A4.1.7.11 implementation — second-workload three-path measurement
 
 A4162 closes the immediate cross-workload baseline gap with repeated fresh

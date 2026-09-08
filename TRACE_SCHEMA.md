@@ -1520,6 +1520,12 @@ request. The final manifest binds all child paths, replay SHA, state/page
 guards, and source partial/skip/merge accounting. It is untimed semantic/state
 evidence only.
 
+`kvzap-route-a4166-long-horizon-three-path-measurement-1.0` is A4.1.7.15. It
+accepts a completed A4165 pipeline, requires its all-layer/budget-512 horizon
+configuration, and runs the A4162 three-path runner under a child output
+directory. Its parent manifest binds the A4165 replay SHA to the child
+measurement. It is repeated Python-reference software measurement only.
+
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
 and keep counts, retained-event count at/after the hot-window boundary, and

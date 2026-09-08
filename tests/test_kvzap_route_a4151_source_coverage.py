@@ -8,6 +8,7 @@ from tools.run_kvzap_route_a4162_cross_workload_three_path_measurement import PA
 from tools.run_kvzap_route_a4163_cross_workload_three_path_profiler import REQUIRED_A4162_GUARDS
 from tools.summarize_kvzap_route_a4164_component_accounting import build_report
 from tools.run_kvzap_route_a4165_long_horizon_semantic_pipeline import A4165_SCHEMA
+from tools.run_kvzap_route_a4166_long_horizon_three_path_measurement import A4166_SCHEMA
 
 
 def source_with_coverage(rows):
@@ -71,3 +72,4 @@ def test_component_accounting_rejects_mismatched_replay_sources():
 
 def test_long_horizon_pipeline_schema_is_explicit():
     assert A4165_SCHEMA.endswith("semantic-pipeline-1.0")
+    assert A4166_SCHEMA.endswith("three-path-measurement-1.0")
