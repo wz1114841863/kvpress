@@ -1526,6 +1526,15 @@ configuration, and runs the A4162 three-path runner under a child output
 directory. Its parent manifest binds the A4165 replay SHA to the child
 measurement. It is repeated Python-reference software measurement only.
 
+`kvzap-route-a4167-long-horizon-three-path-profiler-1.0` is A4.1.7.16. It
+accepts only a completed A4166 parent whose bound A4165 configuration is the
+all-layer/all-head, budget-512, `max_new_tokens >= 32` semantic pipeline. It
+runs the existing A4163 three-path profiler under a child directory with
+offline cached model resolution, and requires the child to bind the same replay
+event SHA-256 plus its token-digest, source partial-or-skip/merge, and
+coalesced-phase guards. It is one separate profiler diagnostic per path, not a
+timing distribution or any HBM, throughput, hardware, or RTL measurement.
+
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
 and keep counts, retained-event count at/after the hot-window boundary, and

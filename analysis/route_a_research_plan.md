@@ -672,6 +672,15 @@ Route-A source-partial-or-skip versus merge accounting. Its purpose is to bind
 future A4.2 page/gather/merge contracts to observed software phase structure,
 not to derive hardware timing.
 
+For the accepted 32-token long-horizon semantic and three-path chain, repeat
+that profiler step only through a provenance-bound wrapper: bind the fresh
+A4165 source SHA through A4166, profile one warm-up-separated capture per
+path, and retain the profiler’s coalesced phase/source accounting independently
+from the repeated timing distribution. Cached offline model resolution is
+permitted to avoid transient metadata fetches; it changes neither weights nor
+the source replay. The output remains a Python-reference diagnostic, not a
+hardware timing or traffic estimate.
+
 Before extracting an A4.2 resource contract, make one no-model accounting
 report that binds the accepted measurement and profiler artifacts to the same
 source SHA-256 and exposes source partial/skip/merge counts per reported token.

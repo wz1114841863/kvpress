@@ -929,6 +929,18 @@ binds the fresh source SHA to the child manifest. It is the first long-horizon
 repeated software distribution after semantic acceptance; it remains neither
 HBM nor hardware/RTL evidence.
 
+### A4.1.7.16 implementation — long-horizon three-path profiler
+
+A4167 accepts only a completed A4166 parent and its bound all-layer/all-head,
+budget-512, 32-token-or-longer A4165 semantic pipeline. It invokes A4163 in a
+new child directory, with cached-model offline resolution, for one separated
+profiler capture after the child’s own fresh warm-up per Full-KV bypass,
+same-mask dense replay, and empty-source-elided Route-A path. The parent binds
+the source SHA and requires the child’s token-digest, source partial-or-skip
+versus merge, and coalesced-phase guards. Its output is diagnostic attribution
+only and must not be interpreted as a timing distribution, HBM/traffic,
+throughput, hardware, or RTL result.
+
 ### A4.1.7.11 implementation — second-workload three-path measurement
 
 A4162 closes the immediate cross-workload baseline gap with repeated fresh
