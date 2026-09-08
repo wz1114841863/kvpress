@@ -19,7 +19,7 @@ import torch
 import transformers
 from transformers import pipeline
 
-from kvpress.route_a_measurement import cuda_memory_snapshot, initialize_output_directory, raw_record, require_cuda_device, reset_cuda_peak_memory, time_cuda_region, write_raw_repetitions
+from kvpress.route_a_measurement import A4162_RAW_SCHEMA, cuda_memory_snapshot, initialize_output_directory, raw_record, require_cuda_device, reset_cuda_peak_memory, time_cuda_region, write_raw_repetitions
 from kvpress.route_a_replay import sha256_file
 from tools.export_kvzap_predictor_trace import GATE_A_PREDICTOR_REVISION, GATE_B_MODEL_REVISION, assert_no_runtime_mask_state, get_git_commit, stable_hash
 from tools.run_kvzap_route_a412_whole_decode_gate import WHOLE_DECODE_COMPONENT, answer_hash, read_source, schedule_runs, token_ids_hash, whole_decode_summary
@@ -32,7 +32,6 @@ from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, bui
 
 
 A4162_SCHEMA = "kvzap-route-a4162-cross-workload-three-path-measurement-1.0"
-A4162_RAW_SCHEMA = "kvzap-route-a4162-cross-workload-three-path-raw-1.0"
 ROUTE_ELIDED_PATH = "same_mask_route_a_external_storage_empty_source_elision"
 PATHS = ("full_kv_bypass", "same_mask_dense_replay", ROUTE_ELIDED_PATH)
 

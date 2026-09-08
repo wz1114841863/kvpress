@@ -2,7 +2,7 @@ import hashlib
 import json
 from argparse import Namespace
 
-from kvpress.route_a_measurement import A412_RAW_SCHEMA, A4147_RAW_SCHEMA, A4152_RAW_SCHEMA, CudaMemorySnapshot, TimingSample, raw_record, validate_raw_repetition
+from kvpress.route_a_measurement import A412_RAW_SCHEMA, A4147_RAW_SCHEMA, A4152_RAW_SCHEMA, A4162_RAW_SCHEMA, CudaMemorySnapshot, TimingSample, raw_record, validate_raw_repetition
 from tools.run_kvzap_route_a412_whole_decode_gate import WHOLE_DECODE_COMPONENT, schedule_runs, token_ids_hash, whole_decode_summary
 from tools.run_kvzap_route_a4147_qwen_external_storage_whole_decode_measurement import EXTERNAL_STORAGE_PATH, MEASUREMENT_PATHS, compact_route_state
 from tools.run_kvzap_route_a4151_guard_elided_execution_semantic_gate import A4151_SCHEMA
@@ -83,3 +83,9 @@ def test_a4152_raw_schema_and_route_certificate_are_explicit(tmp_path):
     path = tmp_path / "certificate.json"
     path.write_text(json.dumps(certificate), encoding="utf-8")
     assert validate_route_certificate(path=path, args=args, event_sha256=event_sha256) == {"manifest": str(path), "sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "execution_only_token_ids_sha256": "token-sha"}
+
+
+def test_a4162_raw_schema_is_accepted_by_shared_measurement_contract():
+    record = make_whole_record(path="same_mask_route_a_external_storage_empty_source_elision", repetition=0, order=0, warmup=False, tokens=8)
+    record["schema_version"] = A4162_RAW_SCHEMA
+    validate_raw_repetition(record)

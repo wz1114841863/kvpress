@@ -1492,6 +1492,9 @@ The dense and Route-A token digests are checked against their separate
 certificates and their relation is recorded; Full-KV equality is not required.
 CUDA/wall distributions and PyTorch allocator maxima remain software
 observations, not HBM, throughput, energy, hardware, or RTL evidence.
+Its raw repetitions use
+`kvzap-route-a4162-cross-workload-three-path-raw-1.0`, validated by the shared
+A4.1 raw-record contract before inclusion in any distribution.
 
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
