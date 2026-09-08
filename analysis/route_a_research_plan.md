@@ -678,6 +678,12 @@ source SHA-256 and exposes source partial/skip/merge counts per reported token.
 Keep the counts trace/profiler-derived and the reset-run medians measured;
 neither is an HBM or hardware-operation estimate.
 
+Before any longer-horizon timing repetition, collect a fresh online source and
+run the all-layer A4151/A4154 semantic chain at `max_new_tokens >= 32`. Do not
+reuse the 16-token source by parameter substitution. This long-horizon gate is
+state/semantic evidence only; it must pass before a new three-path measurement
+is authorized.
+
 The A4.1.0 implementation is `kvpress/route_a_measurement.py` plus
 `tools/run_kvzap_route_a41_measurement_harness.py`. It rejects CPU timing,
 uses synchronized CUDA-event and host timing, records PyTorch allocator bytes,

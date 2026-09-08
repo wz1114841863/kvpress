@@ -7,6 +7,7 @@ from tools.run_kvzap_route_a4155_empty_source_elision_paired_measurement import 
 from tools.run_kvzap_route_a4162_cross_workload_three_path_measurement import PATHS, ROUTE_ELIDED_PATH
 from tools.run_kvzap_route_a4163_cross_workload_three_path_profiler import REQUIRED_A4162_GUARDS
 from tools.summarize_kvzap_route_a4164_component_accounting import build_report
+from tools.run_kvzap_route_a4165_long_horizon_semantic_pipeline import A4165_SCHEMA
 
 
 def source_with_coverage(rows):
@@ -66,3 +67,7 @@ def test_three_path_profiler_requires_the_completed_three_path_guards():
 def test_component_accounting_rejects_mismatched_replay_sources():
     with pytest.raises(ValueError, match="replay sources differ"):
         build_report(paired={"replay_source": {"event_file_sha256": "a", "event_count": 1}}, three_path={"replay_source": {"event_file_sha256": "b", "event_count": 1}}, profiler={"replay_source": {"event_file_sha256": "a", "event_count": 1}}, profiler_summary={})
+
+
+def test_long_horizon_pipeline_schema_is_explicit():
+    assert A4165_SCHEMA.endswith("semantic-pipeline-1.0")

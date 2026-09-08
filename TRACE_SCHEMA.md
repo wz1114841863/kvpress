@@ -1512,6 +1512,14 @@ guards before normalizing source partial/skip/merge call counts by the fixed
 request's reported generated-token count. It does not add timings, aggregate
 profiler range time, or claim hardware operations, traffic, or latency.
 
+`kvzap-route-a4165-long-horizon-semantic-pipeline-1.0` is A4.1.7.14. It owns
+a new output root and runs a fresh online-dense replay-source collection,
+A4151 execution-only semantic certification, then A4154 empty-source-elision
+semantic certification for one all-layer/all-head `max_new_tokens >= 32`
+request. The final manifest binds all child paths, replay SHA, state/page
+guards, and source partial/skip/merge accounting. It is untimed semantic/state
+evidence only.
+
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
 and keep counts, retained-event count at/after the hot-window boundary, and

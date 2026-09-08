@@ -912,6 +912,15 @@ generated tokens alongside the already measured reset-run medians. It never
 sums profiler ranges and does not convert software calls into hardware traffic
 or latency.
 
+### A4.1.7.14 implementation — fresh long-horizon semantic pipeline
+
+A4165 creates one new output root and executes a new online dense replay
+source, A4151 execution-only semantic certification, and A4154 elision
+semantic certification at an all-layer/all-head horizon of at least 32 tokens.
+It binds their source identity and reports page/state plus source
+partial/skip/merge structure. It is deliberately untimed; repeated three-path
+measurement follows only if this semantic pipeline completes.
+
 ### A4.1.7.11 implementation — second-workload three-path measurement
 
 A4162 closes the immediate cross-workload baseline gap with repeated fresh
