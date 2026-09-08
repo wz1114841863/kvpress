@@ -903,6 +903,15 @@ hot/pending/packed source to be either a partial call or an empty skip for
 every merge. Nested profiler ranges can localize Python-reference work but are
 not latency, HBM, throughput, hardware, or RTL evidence.
 
+### A4.1.7.13 implementation — component-accounting report
+
+A4164 is a no-model provenance-bound report over A4161/A4162/A4163. It checks
+their common replay event identity and prerequisite guards, then reports the
+fixed-request source partial/skip/merge structure normalized by reported
+generated tokens alongside the already measured reset-run medians. It never
+sums profiler ranges and does not convert software calls into hardware traffic
+or latency.
+
 ### A4.1.7.11 implementation — second-workload three-path measurement
 
 A4162 closes the immediate cross-workload baseline gap with repeated fresh

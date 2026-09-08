@@ -1505,6 +1505,13 @@ partial-or-skip and merge accounting must cover every attention evaluation.
 Profiler ranges are nested diagnostic views, never timing distributions or
 HBM, throughput, energy, hardware, or RTL evidence.
 
+`kvzap-route-a4164-component-accounting-report-1.0` is the A4.1.7.13
+no-model report schema. It accepts only completed A4161/A4162/A4163 artifacts
+with one exact replay event SHA-256 and validates their semantic/execution
+guards before normalizing source partial/skip/merge call counts by the fixed
+request's reported generated-token count. It does not add timings, aggregate
+profiler range time, or claim hardware operations, traffic, or latency.
+
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
 and keep counts, retained-event count at/after the hot-window boundary, and

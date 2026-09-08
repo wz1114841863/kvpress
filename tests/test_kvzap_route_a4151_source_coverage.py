@@ -6,6 +6,7 @@ from tools.run_kvzap_route_a4154_empty_source_elision_semantic_gate import valid
 from tools.run_kvzap_route_a4155_empty_source_elision_paired_measurement import validate_cross_workload_a4154_coverage
 from tools.run_kvzap_route_a4162_cross_workload_three_path_measurement import PATHS, ROUTE_ELIDED_PATH
 from tools.run_kvzap_route_a4163_cross_workload_three_path_profiler import REQUIRED_A4162_GUARDS
+from tools.summarize_kvzap_route_a4164_component_accounting import build_report
 
 
 def source_with_coverage(rows):
@@ -60,3 +61,8 @@ def test_three_path_measurement_declares_distinct_controls():
 def test_three_path_profiler_requires_the_completed_three_path_guards():
     assert "a4154_empty_source_elision_semantics_certified" in REQUIRED_A4162_GUARDS
     assert "full_kv_bypass_zero_route_a_admission_each_reset_run" in REQUIRED_A4162_GUARDS
+
+
+def test_component_accounting_rejects_mismatched_replay_sources():
+    with pytest.raises(ValueError, match="replay sources differ"):
+        build_report(paired={"replay_source": {"event_file_sha256": "a", "event_count": 1}}, three_path={"replay_source": {"event_file_sha256": "b", "event_count": 1}}, profiler={"replay_source": {"event_file_sha256": "a", "event_count": 1}}, profiler_summary={})

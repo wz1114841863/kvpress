@@ -672,6 +672,12 @@ Route-A source-partial-or-skip versus merge accounting. Its purpose is to bind
 future A4.2 page/gather/merge contracts to observed software phase structure,
 not to derive hardware timing.
 
+Before extracting an A4.2 resource contract, make one no-model accounting
+report that binds the accepted measurement and profiler artifacts to the same
+source SHA-256 and exposes source partial/skip/merge counts per reported token.
+Keep the counts trace/profiler-derived and the reset-run medians measured;
+neither is an HBM or hardware-operation estimate.
+
 The A4.1.0 implementation is `kvpress/route_a_measurement.py` plus
 `tools/run_kvzap_route_a41_measurement_harness.py`. It rejects CPU timing,
 uses synchronized CUDA-event and host timing, records PyTorch allocator bytes,
