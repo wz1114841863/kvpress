@@ -36,6 +36,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--threshold", type=float, default=-4.0); parser.add_argument("--window-size", type=int, default=128); parser.add_argument("--page-tokens", type=int, default=64)
     parser.add_argument("--admission-budget", type=int, required=True); parser.add_argument("--target-layers", nargs="+", default=["all"]); parser.add_argument("--target-kv-head", choices=("all",), default="all")
     parser.add_argument("--max-new-tokens", type=int, default=8); parser.add_argument("--seed", type=int, default=42); parser.add_argument("--rtol", type=float, default=1e-4); parser.add_argument("--atol", type=float, default=1e-5); parser.add_argument("--max-executed-dtype-ulps", type=float, default=16.0); parser.add_argument("--ulp-breach-sample-limit", type=int, default=32)
+    parser.add_argument("--require-replay-event-coverage", action="store_true", help="Require collector-recorded exact all-layer/KV-head event coverage before semantic execution.")
     parser.add_argument("--device", default="cuda"); parser.add_argument("--replay-source-dir", type=Path, required=True); parser.add_argument("--output-dir", type=Path, required=True, help="New output directory only.")
     return parser.parse_args()
 
@@ -53,6 +54,26 @@ def continuation(*, pipe, context_ids, question_ids, backend, cache, args, force
             output = pipe.model(input_ids=torch.tensor([[token]], dtype=question_ids.dtype, device=pipe.model.device), past_key_values=cache, position_ids=torch.tensor([[int(context_ids.shape[1]) + int(question_ids.shape[1]) + step]], device=pipe.model.device), num_logits_to_keep=1); logits.append(output.logits[0, -1].detach())
     if len(logits) != args.max_new_tokens: raise AssertionError("declared continuation horizon was not reached")
     return {"logits": logits, "generated_token_ids": generated}
+
+
+def validate_replay_event_coverage(*, source: dict[str, Any], expected_heads: dict[int, tuple[int, ...]]) -> dict[str, Any]:
+    """Bind a cross-workload execution gate to explicit collector coverage."""
+    coverage = source.get("replay_event_coverage")
+    if not isinstance(coverage, dict) or not isinstance(coverage.get("layers"), list):
+        raise ValueError("replay source lacks collector-recorded replay_event_coverage")
+    rows = {row.get("layer"): row for row in coverage["layers"] if isinstance(row, dict)}
+    failures = []
+    for layer, heads in expected_heads.items():
+        row = rows.get(layer)
+        if row is None:
+            failures.append({"layer": layer, "reason": "missing_layer"})
+            continue
+        observed = tuple(row.get("observed_kv_heads", []))
+        if tuple(row.get("expected_kv_heads", [])) != heads or observed != heads or row.get("missing_kv_heads") or row.get("unexpected_kv_heads") or int(row.get("event_count", 0)) <= 0:
+            failures.append({"layer": layer, "expected": list(heads), "observed": list(observed), "missing": row.get("missing_kv_heads"), "unexpected": row.get("unexpected_kv_heads"), "event_count": row.get("event_count")})
+    if failures:
+        raise AssertionError(f"replay event coverage does not bind every selected layer/KV head: {failures}")
+    return {"layer_count": len(expected_heads), "all_layers_exact_all_kv_heads": True, "event_count": sum(int(rows[layer]["event_count"]) for layer in expected_heads)}
 
 
 def verify_backend(*, backend, cache, expected_heads, args, guard_mode: str) -> dict[str, Any]:
@@ -77,6 +98,7 @@ def main() -> None:
     args.resolved_target_layers = list(layers); args.resolved_target_kv_heads_by_layer = {str(layer): list(heads) for layer, heads in expected_heads.items()}; args.require_any_pending = False; args.require_any_full_multi_tail_packed = True
     events, source, event_sha256 = read_source(args.replay_source_dir, args=args, layers=layers)
     if source["config"].get("admission_budget") != 512: raise ValueError("replay source budget differs")
+    source_event_coverage = validate_replay_event_coverage(source=source, expected_heads=expected_heads) if args.require_replay_event_coverage else None
     tokenized = pipe.preprocess(str(request["context"]), [str(request["question"])], answer_prefix="", max_context_length=pipe.tokenizer.model_max_length, enable_thinking=False); context_ids = tokenized["context_ids"].to(pipe.model.device); question_ids = tokenized["questions_ids"][0].to(pipe.model.device)
     config = {key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items() if key != "output_dir"}; config.update({"replay_event_file_sha256": event_sha256, "guarded_reference_mode": "enforce", "execution_mode": "execution_only"})
     initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit(), record_name="a4151_guard_elided_execution_started.json", schema_version=A4151_SCHEMA, boundaries=["Untimed A4.1.7.0 semantic certification; no timing, allocator, profiler, HBM, throughput, or hardware claim.", "The execution-only path removes per-query same-mask dense/numerical checks but retains replay, Route-A state, external ownership and native-cold poison guards.", "Paired full-model logits are a fixed-request certification check, not a general quality result."])
@@ -90,7 +112,7 @@ def main() -> None:
     forced_relations = [paired_logit_relation(a, b) for a, b in zip(runs["guarded_reference"]["logits"], runs["execution_only_forced"]["logits"], strict=True)]
     for guarded, execution in zip(runs["guarded_reference"]["logits"], runs["execution_only_forced"]["logits"], strict=True): torch.testing.assert_close(execution, guarded, rtol=args.rtol, atol=args.atol)
     if runs["execution_only_independent"]["generated_token_ids"] != runs["guarded_reference"]["generated_token_ids"]: raise AssertionError("guard-elided independent greedy tokens differ from guarded Route-A reference")
-    manifest = {"schema_version": A4151_SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"]}, "diagnostic": {label: {key: value for key, value in row.items() if key != "logits"} | {"generated_token_ids_sha256": token_ids_digest(row["generated_token_ids"])} for label, row in runs.items()} | {"guarded_vs_execution_only_forced_logit_steps": forced_relations}, "observational_guards": {"guarded_reference_fp32_same_mask_enforced": True, "execution_only_per_query_same_mask_numerical_guards_absent": True, "replay_consumption_complete": True, "all_layers_all_kv_heads_external_storage_substituted": True, "persistent_selected_native_cold_absent": True, "required_any_full_multi_tail_packed_coverage": True, "forced_full_model_logits_close": True, "independent_greedy_tokens_equal_guarded": True}, "boundaries": ["This is a fixed-request guard-elided semantic certification, not timing or quality evidence.", "A4.1.4/A4.1.6 timing and profiler observations remain separate.", "No HBM, allocator, throughput, energy, hardware, or RTL conclusion."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
+    manifest = {"schema_version": A4151_SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"], "event_coverage": source_event_coverage}, "diagnostic": {label: {key: value for key, value in row.items() if key != "logits"} | {"generated_token_ids_sha256": token_ids_digest(row["generated_token_ids"])} for label, row in runs.items()} | {"guarded_vs_execution_only_forced_logit_steps": forced_relations}, "observational_guards": {"guarded_reference_fp32_same_mask_enforced": True, "execution_only_per_query_same_mask_numerical_guards_absent": True, "replay_consumption_complete": True, "all_layers_all_kv_heads_external_storage_substituted": True, "persistent_selected_native_cold_absent": True, "required_any_full_multi_tail_packed_coverage": True, "forced_full_model_logits_close": True, "independent_greedy_tokens_equal_guarded": True, "required_replay_event_coverage_verified": bool(args.require_replay_event_coverage)}, "boundaries": ["This is a fixed-request guard-elided semantic certification, not timing or quality evidence.", "A4.1.4/A4.1.6 timing and profiler observations remain separate.", "No HBM, allocator, throughput, energy, hardware, or RTL conclusion."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
     path = args.output_dir / "a4151_guard_elided_execution_manifest.json"; path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"); print(f"A4.1.7.0 guard-elided execution semantic gate completed: {path}")
 
 

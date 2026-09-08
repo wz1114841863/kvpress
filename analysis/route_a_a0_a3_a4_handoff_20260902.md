@@ -874,3 +874,7 @@ coverage and can require exact configured KV-head IDs. A new summarization
 source must be collected independently before any A4151/A4154/A4157 reuse;
 this is source provenance only and not a state, timing, HBM, hardware, or RTL
 result.
+
+A4151 may now require and record the collector's exact all-layer/KV-head event
+coverage before cross-workload execution semantics. This provenance guard does
+not change Route-A policy/state/attention or create a timing/hardware claim.

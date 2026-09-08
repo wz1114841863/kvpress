@@ -858,3 +858,8 @@ KV-head event coverage and may require exact configured head coverage. This
 only proves that a new replay source exists and is structurally suitable for a
 subsequent semantic gate; it does not carry retrieval timing, empty-source
 ratios, pending/packed state, or performance conclusions across workloads.
+
+For this new source, invoke A4151 with `--require-replay-event-coverage`.
+The guarded/execution-only semantic certificate then explicitly records exact
+collector layer/KV-head coverage before later A4154/A4155 work; this is a
+provenance guard, not a performance result.
