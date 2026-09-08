@@ -810,6 +810,15 @@ distributions. It is an attribution measurement for the one elision change;
 it neither supersedes the distinct Full-KV/same-mask-dense A4152 controls nor
 constitutes a packed-kernel, HBM, hardware, or RTL result.
 
+### A4.1.7.5 implementation — paired empty-source-elision phase profiler
+
+A4156 is a separate profiler-only diagnostic that consumes a completed A4155
+manifest. It captures one coalesced phase profile each for unelided and
+empty-source-elided Route-A, while requiring replay/ownership/page/token
+guards plus complete per-source partial-or-skip accounting. Its purpose is
+attribution of the A4155 software observation; profiler ranges are nested and
+must not be treated as timing, HBM, hardware, or RTL evidence.
+
 ### A4.1.7.2 implementation — execution-only paired profiler
 
 A4153 captures one coalesced phase-profiler diagnostic each for same-mask dense

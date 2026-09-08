@@ -790,6 +790,16 @@ same-mask dense remain distinct controls in A4152 and must not be folded into
 this comparison. It is Python-reference software evidence, never HBM, kernel,
 throughput, energy, hardware, or RTL evidence.
 
+### A4.1.7.5 — paired empty-source-elision phase profiler
+
+A4156 consumes the completed A4155 measurement manifest, then takes exactly
+one profiler diagnostic per unelided/elided Route-A path after its own
+unprofiled warm-up. It verifies the same token digest and Route-A ownership
+guards, then requires source partial-or-skip accounting to partition each
+merge evaluation. Coalesced phase rows may localize the observed A4155 trend,
+but are nested diagnostic ranges and cannot be summed, pooled with timing, or
+used as latency, HBM, throughput, energy, hardware, or RTL evidence.
+
 ### A4.1.7.2 — execution-only paired phase-profiler
 
 After A4152 establishes the repeated execution-only distribution, A4153 takes

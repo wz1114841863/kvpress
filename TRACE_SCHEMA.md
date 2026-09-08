@@ -1464,3 +1464,12 @@ summary contains callback/reset-run distributions and raw per-pair
 candidate-minus-baseline deltas. It does not replace separate Full-KV and
 same-mask-dense controls; timing/allocator values are not HBM, throughput,
 energy, hardware, or RTL evidence.
+
+`kvzap-route-a4156-empty-source-elision-phase-profiler-1.0` is the A4.1.7.5
+profiler-only counterpart to A4155. It requires a completed matching A4155
+manifest, performs one unprofiled warm-up plus one coalesced profiler capture
+per unelided/elided Route-A variant, and requires each hot/pending/packed
+source to account for every merge as either a partial attention call or an
+empty-source skip. The profiler is separate from timing repetitions; nested
+profiler ranges and memory values are not latency, HBM, throughput, energy,
+hardware, or RTL evidence.

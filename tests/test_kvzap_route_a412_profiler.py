@@ -2,6 +2,7 @@ from tools.run_kvzap_route_a412_profiler import operator_rows
 from tools.run_kvzap_route_a4148_qwen_external_storage_profiler import PROFILER_PATHS
 from tools.run_kvzap_route_a4149_qwen_external_storage_phase_profiler import PHASE_PATHS, PHASE_PREFIX, coalesced_phase_rows, phase_rows
 from tools.run_kvzap_route_a4153_execution_mode_paired_phase_profiler import PHASE_PATHS as EXECUTION_ONLY_PHASE_PATHS
+from tools.run_kvzap_route_a4156_empty_source_elision_phase_profiler import source_phase_accounting
 
 
 class Event:
@@ -60,3 +61,30 @@ def test_phase_profiler_coalesces_cpu_cuda_split_without_double_counting_calls()
 
 def test_execution_only_phase_profiler_keeps_the_paired_dense_route_paths():
     assert EXECUTION_ONLY_PHASE_PATHS == PHASE_PATHS
+
+
+def test_empty_source_elision_phase_accounting_requires_each_source_to_partition_merges():
+    baseline = source_phase_accounting(
+        calls={
+            "decode_route_a_attention_hot": 4,
+            "decode_route_a_attention_pending": 4,
+            "decode_route_a_attention_packed": 4,
+            "decode_route_a_online_softmax_merge": 4,
+        },
+        expected_attention_evaluations=4,
+        elide_empty_sources=False,
+    )
+    assert baseline["by_source"]["pending"] == {"partial_attention_calls": 4, "empty_source_skip_calls": 0, "total_source_decisions": 4}
+    candidate = source_phase_accounting(
+        calls={
+            "decode_route_a_attention_hot": 4,
+            "decode_route_a_attention_pending": 1,
+            "decode_route_a_empty_source_skip_pending": 3,
+            "decode_route_a_attention_packed": 2,
+            "decode_route_a_empty_source_skip_packed": 2,
+            "decode_route_a_online_softmax_merge": 4,
+        },
+        expected_attention_evaluations=4,
+        elide_empty_sources=True,
+    )
+    assert candidate["by_source"]["pending"] == {"partial_attention_calls": 1, "empty_source_skip_calls": 3, "total_source_decisions": 4}
