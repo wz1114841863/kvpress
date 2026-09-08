@@ -4,6 +4,7 @@ import json
 from tools.run_kvzap_route_a4151_guard_elided_execution_semantic_gate import validate_replay_event_coverage
 from tools.run_kvzap_route_a4154_empty_source_elision_semantic_gate import validate_cross_workload_route_certificate
 from tools.run_kvzap_route_a4155_empty_source_elision_paired_measurement import validate_cross_workload_a4154_coverage
+from tools.run_kvzap_route_a4162_cross_workload_three_path_measurement import PATHS, ROUTE_ELIDED_PATH
 
 
 def source_with_coverage(rows):
@@ -48,3 +49,8 @@ def test_paired_measurement_requires_a4154_provenance_relay():
     assert validate_cross_workload_a4154_coverage(certificate, expected_event_sha256="event-sha") == {"all_layers_exact_all_kv_heads": True, "layer_count": 36, "event_count": 271008}
     with pytest.raises(ValueError, match="does not match"):
         validate_cross_workload_a4154_coverage(certificate, expected_event_sha256="other")
+
+
+def test_three_path_measurement_declares_distinct_controls():
+    assert PATHS == ("full_kv_bypass", "same_mask_dense_replay", ROUTE_ELIDED_PATH)
+    assert ROUTE_ELIDED_PATH not in PATHS[:2]

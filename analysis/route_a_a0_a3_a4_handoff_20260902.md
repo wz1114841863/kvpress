@@ -892,3 +892,15 @@ all-layer/KV-head coverage and event count certified through A4151. The result
 remains a repeated, fixed-request Python-reference attribution between
 unelided and empty-source-elided Route-A only; it is not a Full-KV comparison,
 same-mask-dense comparison, HBM result, throughput result, or hardware claim.
+
+### A4.1.7.11 implementation — second-workload three-path measurement
+
+A4162 closes the immediate cross-workload baseline gap with repeated fresh
+reset runs of Full-KV bypass, same-mask dense replay, and A4154-certified
+empty-source-elided Route-A external storage. It verifies the current A4151
+and A4154 certificates and their source-coverage relay before timing. Dense
+and Route-A each require their certified token digest; their equality is
+recorded rather than assumed, while Full-KV equality is neither a mask nor a
+generation requirement. The resulting CUDA/wall and allocator distributions
+are fixed-request Python-reference measurements only, never HBM, throughput,
+hardware, or RTL evidence.

@@ -1482,6 +1482,17 @@ its A4151 provenance. The A4155 manifest records that relay explicitly. This
 is provenance validation only, not a timing, memory, HBM, hardware, or RTL
 claim.
 
+`kvzap-route-a4162-cross-workload-three-path-measurement-1.0` is the A4.1.7.11
+second-workload repeated measurement schema.  Every fresh reset run is one of
+Full-KV bypass, same-mask dense replay, or A4154-certified empty-source-elided
+Route-A external storage; order is randomized within each repetition.  It
+requires the current A4151 execution certificate, current A4154 elision
+certificate, and (when requested) their cross-workload source-coverage relay.
+The dense and Route-A token digests are checked against their separate
+certificates and their relation is recorded; Full-KV equality is not required.
+CUDA/wall distributions and PyTorch allocator maxima remain software
+observations, not HBM, throughput, energy, hardware, or RTL evidence.
+
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
 and keep counts, retained-event count at/after the hot-window boundary, and

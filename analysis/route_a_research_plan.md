@@ -657,6 +657,14 @@ all-layer/KV-head coverage, and event count through A4151. This is a source
 identity guard for the repeated software measurement, not a performance or
 hardware result.
 
+The next cross-workload baseline step is a repeated three-path run: Full-KV
+bypass, same-mask dense replay, and A4154-certified empty-source-elided
+Route-A. It must keep the two same-mask paths bound to the current source and
+their separate execution-only certificates, while recording rather than
+requiring their token-digest relation. Full-KV remains the bypass control and
+is not an answer-equivalence requirement. These are software distributions
+only and do not establish HBM, throughput, hardware, or RTL behavior.
+
 The A4.1.0 implementation is `kvpress/route_a_measurement.py` plus
 `tools/run_kvzap_route_a41_measurement_harness.py`. It rejects CPU timing,
 uses synchronized CUDA-event and host timing, records PyTorch allocator bytes,
