@@ -866,3 +866,11 @@ cross-workload resource stability all hold.
 3. Label every proposed result trace-derived, modeled, or measured.
 4. Propose A4.0 state/interface plus tests before editing model code.
 5. Do not run a model or long benchmark without a small gate and new output dir.
+
+### A4.1.7.7 implementation — second-workload source provenance
+
+The replay-source collector now records selected-layer/per-head mask-event
+coverage and can require exact configured KV-head IDs. A new summarization
+source must be collected independently before any A4151/A4154/A4157 reuse;
+this is source provenance only and not a state, timing, HBM, hardware, or RTL
+result.

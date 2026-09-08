@@ -1474,6 +1474,14 @@ empty-source skip. The profiler is separate from timing repetitions; nested
 profiler ranges and memory values are not latency, HBM, throughput, energy,
 hardware, or RTL evidence.
 
+For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
+may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
+and keep counts, retained-event count at/after the hot-window boundary, and
+maximum cache position. `--require-all-kv-heads` rejects missing or unexpected
+event-head IDs. This remains predictor-mask source provenance only; it does
+not establish pending/packed state, physical capacity, timing, HBM traffic,
+hardware, or RTL behavior.
+
 `kvzap-route-a4157-empty-source-elision-reproducibility-gate-1.0` is the
 A4.1.7.6 multi-batch extension of A4155. It retains raw fresh-reset pair rows
 across batches, reports per-batch and aggregate signed-delta distributions

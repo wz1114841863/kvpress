@@ -849,3 +849,12 @@ replay digest, reset invariant, or timing/memory schema check fails. A4.1 may
 produce measured software observations only. It does not validate modeled A3
 cycle/byte claims, physical HBM traffic, hardware acceleration, energy, area,
 frequency, or RTL readiness.
+
+### A4.1.7.7 — independent second-workload replay-source precondition
+
+Before reusing A4154--A4157 on a second workload or decode horizon, collect a
+new immutable online dense KVzap replay source. The collector records per-layer
+KV-head event coverage and may require exact configured head coverage. This
+only proves that a new replay source exists and is structurally suitable for a
+subsequent semantic gate; it does not carry retrieval timing, empty-source
+ratios, pending/packed state, or performance conclusions across workloads.
