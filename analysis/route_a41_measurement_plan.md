@@ -863,3 +863,7 @@ For this new source, invoke A4151 with `--require-replay-event-coverage`.
 The guarded/execution-only semantic certificate then explicitly records exact
 collector layer/KV-head coverage before later A4154/A4155 work; this is a
 provenance guard, not a performance result.
+
+The matching cross-workload A4154 invocation must require both source and
+A4151 certificate coverage. Only after its logits/tokens/source-accounting
+guards pass may this new workload enter repeated A4155/A4157 measurement.

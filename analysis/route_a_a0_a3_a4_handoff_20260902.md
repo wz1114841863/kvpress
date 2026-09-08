@@ -878,3 +878,7 @@ result.
 A4151 may now require and record the collector's exact all-layer/KV-head event
 coverage before cross-workload execution semantics. This provenance guard does
 not change Route-A policy/state/attention or create a timing/hardware claim.
+
+A4154 can additionally bind the same collector/A4151 cross-workload coverage
+before elision semantics. This prevents reuse of a merely parameter-matching
+certificate with a different source and remains provenance-only.

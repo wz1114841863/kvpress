@@ -22,6 +22,7 @@ from tools.run_kvzap_route_a4147_qwen_external_storage_whole_decode_measurement 
 from tools.run_kvzap_route_a4148_qwen_external_storage_profiler import make_backend_and_cache
 from tools.run_kvzap_route_a4151_guard_elided_execution_semantic_gate import continuation
 from tools.run_kvzap_route_a4152_certified_execution_mode_whole_decode_measurement import validate_route_certificate, verify_backend
+from tools.run_kvzap_route_a4151_guard_elided_execution_semantic_gate import validate_replay_event_coverage
 from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, build_builtin_request, load_jsonl_request
 
 
@@ -38,6 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--admission-budget", type=int, required=True); parser.add_argument("--target-layers", nargs="+", default=["all"]); parser.add_argument("--target-kv-head", choices=("all",), default="all")
     parser.add_argument("--max-new-tokens", type=int, default=8); parser.add_argument("--seed", type=int, default=42); parser.add_argument("--rtol", type=float, default=1e-4); parser.add_argument("--atol", type=float, default=1e-5); parser.add_argument("--max-executed-dtype-ulps", type=float, default=16.0); parser.add_argument("--ulp-breach-sample-limit", type=int, default=32)
     parser.add_argument("--device", default="cuda"); parser.add_argument("--replay-source-dir", type=Path, required=True); parser.add_argument("--route-a-execution-certification", type=Path, required=True); parser.add_argument("--output-dir", type=Path, required=True, help="New output directory only.")
+    parser.add_argument("--require-cross-workload-source-coverage", action="store_true", help="Bind this semantic gate to exact collector coverage and an A4151 certificate that required it.")
     return parser.parse_args()
 
 
@@ -49,6 +51,17 @@ def run_route(*, pipe, context_ids, question_ids, layers, expected_heads, events
     assert_no_runtime_mask_state(pipe.model)
     guard = verify_backend(path=EXTERNAL_STORAGE_PATH, backend=backend, cache=cache, expected_heads=expected_heads, args=args)
     return {**run, "guard": guard, "component_call_counts": dict(sorted(calls.items())), "empty_source_elision": backend.empty_source_elision_summary()}
+
+
+def validate_cross_workload_route_certificate(*, path: Path, expected_event_count: int) -> dict:
+    """Require that the supplied A4151 certificate bound its new replay source."""
+    certificate = json.loads(path.read_text(encoding="utf-8"))
+    if certificate.get("observational_guards", {}).get("required_replay_event_coverage_verified") is not True:
+        raise ValueError("Route-A execution certificate did not require replay event coverage")
+    coverage = certificate.get("replay_source", {}).get("event_coverage")
+    if not isinstance(coverage, dict) or coverage.get("all_layers_exact_all_kv_heads") is not True or int(coverage.get("event_count", -1)) != expected_event_count:
+        raise ValueError("Route-A execution certificate replay event coverage differs from current source")
+    return {"required_by_certificate": True, "layer_count": coverage.get("layer_count"), "event_count": coverage.get("event_count")}
 
 
 def main() -> None:
@@ -66,7 +79,9 @@ def main() -> None:
     args.resolved_target_layers = list(layers); args.resolved_target_kv_heads_by_layer = {str(layer): list(heads) for layer, heads in expected_heads.items()}; args.require_any_pending = False; args.require_any_full_multi_tail_packed = True
     events, source, event_sha256 = read_source(args.replay_source_dir, args=args, layers=layers)
     if source["config"].get("admission_budget") != args.admission_budget: raise ValueError("replay source admission budget differs")
+    source_event_coverage = validate_replay_event_coverage(source=source, expected_heads=expected_heads) if args.require_cross_workload_source_coverage else None
     route_certificate = validate_route_certificate(path=args.route_a_execution_certification, args=args, event_sha256=event_sha256)
+    certificate_event_coverage = validate_cross_workload_route_certificate(path=args.route_a_execution_certification, expected_event_count=source["event_count"]) if args.require_cross_workload_source_coverage else None
     tokenized = pipe.preprocess(str(request["context"]), [str(request["question"])], answer_prefix="", max_context_length=pipe.tokenizer.model_max_length, enable_thinking=False); context_ids = tokenized["context_ids"].to(pipe.model.device); question_ids = tokenized["questions_ids"][0].to(pipe.model.device)
     config = {key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items() if key != "output_dir"}; config.update({"replay_event_file_sha256": event_sha256, "same_mask_numerical_guard_mode": "execution_only", "baseline_elide_empty_sources": False, "candidate_elide_empty_sources": True})
     initialize_output_directory(args.output_dir, config=config, git_commit=get_git_commit(), record_name="a4154_empty_source_elision_started.json", schema_version=A4154_SCHEMA, boundaries=["Untimed A4.1.7.3 semantic gate; no timing, allocator, profiler, HBM, throughput, or hardware claim.", "Candidate elides only empty Route-A source partials and retains replay, external ownership, page, native-cold poison and execution-only guards.", "Paired logits/tokens certify one fixed replay/request only."])
@@ -86,7 +101,7 @@ def main() -> None:
         if partials + skips != merge_evaluations:
             raise AssertionError(f"{source_name} source accounting differs from merge evaluations: partials={partials}, skips={skips}, merges={merge_evaluations}")
     if total(elided_forced, "route_a_attention_hot") <= 0 or total(elided_forced, "route_a_attention_packed") <= 0: raise AssertionError("candidate failed to read nonempty hot or packed Route-A sources")
-    manifest = {"schema_version": A4154_SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"]}, "route_a_execution_certificate": route_certificate, "diagnostic": {label: {key: value for key, value in run.items() if key != "logits"} | {"generated_token_ids_sha256": token_ids_digest(run["generated_token_ids"])} for label, run in {"baseline": baseline, "elided_forced": elided_forced, "elided_independent": elided_independent}.items()} | {"baseline_vs_elided_forced_logit_steps": relations, "candidate_source_accounting": {source_name: {"partial_attention_calls": total(elided_forced, f"route_a_attention_{source_name}"), "empty_source_skip_calls": total(elided_forced, f"route_a_empty_source_skip_{source_name}"), "merge_evaluations": merge_evaluations} for source_name in ("hot", "pending", "packed")}}, "observational_guards": {"execution_only_actual_numerical_guard_work_absent": True, "replay_consumption_complete": True, "all_layers_all_kv_heads_external_storage_substituted": True, "persistent_selected_native_cold_absent": True, "required_any_full_multi_tail_packed_coverage": True, "forced_full_model_logits_close": True, "independent_greedy_tokens_equal_baseline": True, "empty_pending_source_skip_observed": True, "source_partial_or_skip_accounting_matches_merge": True, "nonempty_hot_and_packed_attention_observed": True}, "boundaries": ["This is fixed-request empty-source-elision semantic evidence only.", "It does not measure runtime, HBM traffic, allocator memory, throughput, energy, hardware, or RTL benefit."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
+    manifest = {"schema_version": A4154_SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"], "event_coverage": source_event_coverage, "certificate_event_coverage": certificate_event_coverage}, "route_a_execution_certificate": route_certificate, "diagnostic": {label: {key: value for key, value in run.items() if key != "logits"} | {"generated_token_ids_sha256": token_ids_digest(run["generated_token_ids"])} for label, run in {"baseline": baseline, "elided_forced": elided_forced, "elided_independent": elided_independent}.items()} | {"baseline_vs_elided_forced_logit_steps": relations, "candidate_source_accounting": {source_name: {"partial_attention_calls": total(elided_forced, f"route_a_attention_{source_name}"), "empty_source_skip_calls": total(elided_forced, f"route_a_empty_source_skip_{source_name}"), "merge_evaluations": merge_evaluations} for source_name in ("hot", "pending", "packed")}}, "observational_guards": {"execution_only_actual_numerical_guard_work_absent": True, "replay_consumption_complete": True, "all_layers_all_kv_heads_external_storage_substituted": True, "persistent_selected_native_cold_absent": True, "required_any_full_multi_tail_packed_coverage": True, "forced_full_model_logits_close": True, "independent_greedy_tokens_equal_baseline": True, "empty_pending_source_skip_observed": True, "source_partial_or_skip_accounting_matches_merge": True, "nonempty_hot_and_packed_attention_observed": True, "required_cross_workload_source_coverage_verified": bool(args.require_cross_workload_source_coverage)}, "boundaries": ["This is fixed-request empty-source-elision semantic evidence only.", "It does not measure runtime, HBM traffic, allocator memory, throughput, energy, hardware, or RTL benefit."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
     path = args.output_dir / "a4154_empty_source_elision_manifest.json"; path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"); print(f"A4.1.7.3 empty-source-elision semantic gate completed: {path}")
 
 

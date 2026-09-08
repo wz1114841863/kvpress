@@ -1488,6 +1488,11 @@ every selected layer before guarded/execution-only comparison. This binds the
 semantic result to the new source provenance; it does not alter the mask,
 attention, state, timing, or claim boundaries.
 
+For cross-workload A4154 use `--require-cross-workload-source-coverage`. It
+requires both the current collector source and supplied A4151 certificate to
+bind the same all-layer/KV-head event coverage and event count. This is source
+provenance protection only; it does not establish elision performance.
+
 `kvzap-route-a4157-empty-source-elision-reproducibility-gate-1.0` is the
 A4.1.7.6 multi-batch extension of A4155. It retains raw fresh-reset pair rows
 across batches, reports per-batch and aggregate signed-delta distributions
