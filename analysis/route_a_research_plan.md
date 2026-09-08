@@ -650,6 +650,13 @@ only then a `{0,18,35}` followed by all-layer end-to-end gate. Paired A4.1
 measurements compare Full-KV bypass, same-mask dense replay, and same-mask
 Route-A replay; online controls are not paired performance baselines.
 
+For a second workload, do not reuse a retrieval A4154 certificate merely
+because its parameters match. A paired A4155 run must require the A4154
+cross-workload provenance relay to bind the current collector event SHA-256,
+all-layer/KV-head coverage, and event count through A4151. This is a source
+identity guard for the repeated software measurement, not a performance or
+hardware result.
+
 The A4.1.0 implementation is `kvpress/route_a_measurement.py` plus
 `tools/run_kvzap_route_a41_measurement_harness.py`. It rejects CPU timing,
 uses synchronized CUDA-event and host timing, records PyTorch allocator bytes,

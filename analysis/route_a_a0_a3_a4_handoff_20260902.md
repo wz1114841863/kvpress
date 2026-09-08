@@ -882,3 +882,13 @@ not change Route-A policy/state/attention or create a timing/hardware claim.
 A4154 can additionally bind the same collector/A4151 cross-workload coverage
 before elision semantics. This prevents reuse of a merely parameter-matching
 certificate with a different source and remains provenance-only.
+
+### A4.1.7.10 implementation — second-workload paired elision measurement
+
+The second-workload A4155 paired measurement requires
+`--require-cross-workload-source-coverage`. It rejects an A4154 certificate
+unless its relay binds the exact current event-file SHA-256 and the exact
+all-layer/KV-head coverage and event count certified through A4151. The result
+remains a repeated, fixed-request Python-reference attribution between
+unelided and empty-source-elided Route-A only; it is not a Full-KV comparison,
+same-mask-dense comparison, HBM result, throughput result, or hardware claim.

@@ -3,6 +3,7 @@ import json
 
 from tools.run_kvzap_route_a4151_guard_elided_execution_semantic_gate import validate_replay_event_coverage
 from tools.run_kvzap_route_a4154_empty_source_elision_semantic_gate import validate_cross_workload_route_certificate
+from tools.run_kvzap_route_a4155_empty_source_elision_paired_measurement import validate_cross_workload_a4154_coverage
 
 
 def source_with_coverage(rows):
@@ -33,3 +34,17 @@ def test_elision_gate_requires_the_a4151_certificate_to_bind_current_source_cove
     assert validate_cross_workload_route_certificate(path=path, expected_event_count=271008) == {"required_by_certificate": True, "layer_count": 36, "event_count": 271008}
     with pytest.raises(ValueError, match="differs"):
         validate_cross_workload_route_certificate(path=path, expected_event_count=1)
+
+
+def test_paired_measurement_requires_a4154_provenance_relay():
+    certificate = {
+        "observational_guards": {"required_cross_workload_source_coverage_verified": True},
+        "replay_source": {
+            "event_file_sha256": "event-sha",
+            "event_coverage": {"all_layers_exact_all_kv_heads": True, "layer_count": 36, "event_count": 271008},
+            "certificate_event_coverage": {"required_by_certificate": True, "layer_count": 36, "event_count": 271008},
+        },
+    }
+    assert validate_cross_workload_a4154_coverage(certificate, expected_event_sha256="event-sha") == {"all_layers_exact_all_kv_heads": True, "layer_count": 36, "event_count": 271008}
+    with pytest.raises(ValueError, match="does not match"):
+        validate_cross_workload_a4154_coverage(certificate, expected_event_sha256="other")

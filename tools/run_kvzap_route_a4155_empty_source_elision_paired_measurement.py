@@ -87,8 +87,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--replay-source-dir", type=Path, required=True)
     parser.add_argument("--empty-source-elision-certification", type=Path, required=True, help="Completed matching A4.1.7.3 manifest.")
+    parser.add_argument("--require-cross-workload-source-coverage", action="store_true", help="Require the supplied A4154 certificate to bind current cross-workload source coverage.")
     parser.add_argument("--output-dir", type=Path, required=True, help="New output directory only.")
     return parser.parse_args()
+
+
+def validate_cross_workload_a4154_coverage(certificate: dict[str, Any], *, expected_event_sha256: str) -> dict[str, Any]:
+    """Verify the provenance relay from collector through A4151 into A4154."""
+    if certificate.get("observational_guards", {}).get("required_cross_workload_source_coverage_verified") is not True:
+        raise ValueError("A4154 certificate did not require cross-workload source coverage")
+    source = certificate.get("replay_source", {})
+    coverage, certificate_coverage = source.get("event_coverage"), source.get("certificate_event_coverage")
+    if not isinstance(coverage, dict) or not isinstance(certificate_coverage, dict) or coverage.get("all_layers_exact_all_kv_heads") is not True or certificate_coverage.get("required_by_certificate") is not True or source.get("event_file_sha256") != expected_event_sha256 or coverage.get("event_count") != certificate_coverage.get("event_count"):
+        raise ValueError("A4154 cross-workload source coverage does not match its certificate/source")
+    return {"all_layers_exact_all_kv_heads": True, "event_count": coverage.get("event_count"), "layer_count": coverage.get("layer_count")}
 
 
 def validate_a4154_certificate(*, path: Path, args: argparse.Namespace, event_sha256: str) -> dict[str, Any]:
@@ -117,7 +129,8 @@ def validate_a4154_certificate(*, path: Path, args: argparse.Namespace, event_sh
     candidate_digest = diagnostic.get("elided_independent", {}).get("generated_token_ids_sha256")
     if not isinstance(baseline_digest, str) or baseline_digest != candidate_digest:
         raise ValueError("A4.1.7.3 certificate does not establish a shared stable Route-A token digest")
-    return {"manifest": str(path), "sha256": sha256_file(path), "route_a_execution_certificate": certificate.get("route_a_execution_certificate"), "token_ids_sha256": baseline_digest}
+    cross_workload_coverage = validate_cross_workload_a4154_coverage(certificate, expected_event_sha256=event_sha256) if args.require_cross_workload_source_coverage else None
+    return {"manifest": str(path), "sha256": sha256_file(path), "route_a_execution_certificate": certificate.get("route_a_execution_certificate"), "token_ids_sha256": baseline_digest, "cross_workload_source_coverage": cross_workload_coverage}
 
 
 def _counter_measure(counter: Counter[str]):
@@ -219,7 +232,7 @@ def main() -> None:
     raw_path = write_raw_repetitions(args.output_dir, records)
     summary = summarize_reported_repetitions(records)
     summary.update({"raw_path": raw_path.name, "paired_reset_run_summary": summarize_paired_reset_records(records, baseline_path=BASELINE_PATH, candidate_path=CANDIDATE_PATH)})
-    manifest = {"schema_version": A4155_SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}), "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"]}, "empty_source_elision_certificate": certificate, "summary": summary, "outcomes": outcomes, "observational_guards": {"a4154_empty_source_elision_semantics_certified": True, "execution_only_actual_numerical_guard_work_absent": True, "replay_mask_consumption_complete_each_reset_run": True, "all_layers_all_kv_heads_external_storage_substituted_each_reset_run": True, "persistent_selected_native_cold_absent_each_reset_run": True, "required_any_full_multi_tail_packed_coverage_each_reset_run": True, "fresh_reset_run_token_digests_match_a4154_certificate": True, "adjacent_paired_fresh_reset_runs": True, "allocator_peaks_are_run_local_maxima": True}, "boundaries": ["This is a fixed-request repeated Python-reference software measurement; its paired timing deltas cannot establish hardware latency, throughput, or acceleration.", "Full-KV bypass and same-mask dense KVzap are distinct baselines retained in cited A4.1.7.1 artifacts, not paths in this Route-A-to-Route-A attribution pair.", "Allocator values are PyTorch allocated/reserved counters, not HBM capacity or traffic; component call counts are software counters, not hardware operations."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
+    manifest = {"schema_version": A4155_SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}), "replay_source": {"directory": str(args.replay_source_dir), "event_file_sha256": event_sha256, "source_manifest_sha256": sha256_file(args.replay_source_dir / "a41_replay_mask_source_manifest.json"), "event_count": source["event_count"]}, "empty_source_elision_certificate": certificate, "summary": summary, "outcomes": outcomes, "observational_guards": {"a4154_empty_source_elision_semantics_certified": True, "execution_only_actual_numerical_guard_work_absent": True, "replay_mask_consumption_complete_each_reset_run": True, "all_layers_all_kv_heads_external_storage_substituted_each_reset_run": True, "persistent_selected_native_cold_absent_each_reset_run": True, "required_any_full_multi_tail_packed_coverage_each_reset_run": True, "fresh_reset_run_token_digests_match_a4154_certificate": True, "adjacent_paired_fresh_reset_runs": True, "allocator_peaks_are_run_local_maxima": True, "required_cross_workload_source_coverage_verified": bool(args.require_cross_workload_source_coverage)}, "boundaries": ["This is a fixed-request repeated Python-reference software measurement; its paired timing deltas cannot establish hardware latency, throughput, or acceleration.", "Full-KV bypass and same-mask dense KVzap are distinct baselines retained in cited A4.1.7.1 artifacts, not paths in this Route-A-to-Route-A attribution pair.", "Allocator values are PyTorch allocated/reserved counters, not HBM capacity or traffic; component call counts are software counters, not hardware operations."], "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__)}
     path = args.output_dir / "a4155_empty_source_elision_paired_measurement_manifest.json"
     path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"A4.1.7.4 empty-source-elision paired measurement completed: {path}")

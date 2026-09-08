@@ -1474,6 +1474,14 @@ empty-source skip. The profiler is separate from timing repetitions; nested
 profiler ranges and memory values are not latency, HBM, throughput, energy,
 hardware, or RTL evidence.
 
+For its second-workload use, A4155 accepts
+`--require-cross-workload-source-coverage`. The supplied A4154 certificate
+must have required cross-workload coverage and must relay the current replay
+event-file SHA-256, exact all-layer/KV-head coverage, and event count through
+its A4151 provenance. The A4155 manifest records that relay explicitly. This
+is provenance validation only, not a timing, memory, HBM, hardware, or RTL
+claim.
+
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
 and keep counts, retained-event count at/after the hot-window boundary, and
