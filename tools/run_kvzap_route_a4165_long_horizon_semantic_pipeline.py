@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -19,7 +20,8 @@ def parse_args():
 
 def child(script: str, args: list[str]):
     print("Running:", script, flush=True)
-    subprocess.run([sys.executable, script, *args], check=True)
+    environment = {**os.environ, "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1"}
+    subprocess.run([sys.executable, script, *args], check=True, env=environment)
 
 def complete(path: Path, schema: str):
     d=json.loads(path.read_text(encoding="utf-8"))
@@ -38,7 +40,7 @@ def main():
     child("tools/run_kvzap_route_a4151_guard_elided_execution_semantic_gate.py",[ *common,"--require-replay-event-coverage","--device",a.device,"--replay-source-dir",str(source),"--output-dir",str(execution)])
     child("tools/run_kvzap_route_a4154_empty_source_elision_semantic_gate.py",[ *common,"--require-cross-workload-source-coverage","--device",a.device,"--replay-source-dir",str(source),"--route-a-execution-certification",str(execution/"a4151_guard_elided_execution_manifest.json"),"--output-dir",str(elision)])
     s=complete(source/"a41_replay_mask_source_manifest.json","kvzap-route-a41-replay-mask-source-1.0"); e=complete(execution/"a4151_guard_elided_execution_manifest.json","kvzap-route-a4151-guard-elided-execution-semantic-gate-1.0"); x=complete(elision/"a4154_empty_source_elision_manifest.json","kvzap-route-a4154-empty-source-elision-semantic-gate-1.0")
-    config={k:str(v) if isinstance(v,Path) else v for k,v in vars(a).items() if k!="output_dir"}
+    config={k:str(v) if isinstance(v,Path) else v for k,v in vars(a).items() if k!="output_dir"}; config["offline_child_model_load"] = True
     summary={"replay_event_file_sha256":s["event_file_sha256"],"event_count":s["event_count"],"replay_event_coverage":s["replay_event_coverage"],"route_a_execution_token_ids_sha256":e["diagnostic"]["execution_only_independent"]["generated_token_ids_sha256"],"elision_token_ids_sha256":x["diagnostic"]["elided_independent"]["generated_token_ids_sha256"],"source_accounting":x["diagnostic"]["candidate_source_accounting"],"route_page_guard":x["diagnostic"]["elided_independent"]["guard"]["external_storage_guard"]}
     if summary["route_a_execution_token_ids_sha256"]!=summary["elision_token_ids_sha256"]: raise AssertionError("long-horizon execution and elision token digests differ")
     out={"schema_version":A4165_SCHEMA,"status":"complete","created_at":datetime.now(timezone.utc).isoformat(),"git_commit":get_git_commit(),"config":config,"config_hash":stable_hash(config),"children":{"source":"source/a41_replay_mask_source_manifest.json","execution":"execution_semantic/a4151_guard_elided_execution_manifest.json","elision":"elision_semantic/a4154_empty_source_elision_manifest.json"},"summary":summary,"observational_guards":{"fresh_online_dense_source_collected":True,"all_layers_all_kv_heads_source_coverage":True,"execution_only_semantics_certified":True,"empty_source_elision_semantics_certified":True,"long_horizon_execution_elision_token_digests_equal":True,"source_partial_or_skip_accounting_matches_merge":True,"nonempty_hot_and_packed_attention_observed":True},"boundaries":["This is an untimed fixed-request semantic/state pipeline, not a runtime, allocator, HBM, throughput, hardware, or RTL experiment.","The source is newly collected online dense KVzap; Route-A replays it for paired semantics only."]}
