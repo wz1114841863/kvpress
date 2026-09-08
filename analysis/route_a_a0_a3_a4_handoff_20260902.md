@@ -893,6 +893,16 @@ remains a repeated, fixed-request Python-reference attribution between
 unelided and empty-source-elided Route-A only; it is not a Full-KV comparison,
 same-mask-dense comparison, HBM result, throughput result, or hardware claim.
 
+### A4.1.7.12 implementation — second-workload three-path profiler
+
+A4163 is deliberately not another timing run. It binds the completed A4162
+three-path measurement and A4151/A4154 provenance, then captures one separate
+profile per Full-KV bypass, same-mask dense replay, and empty-source-elided
+Route-A path after a fresh unprofiled warm-up. Its Route-A labels require each
+hot/pending/packed source to be either a partial call or an empty skip for
+every merge. Nested profiler ranges can localize Python-reference work but are
+not latency, HBM, throughput, hardware, or RTL evidence.
+
 ### A4.1.7.11 implementation — second-workload three-path measurement
 
 A4162 closes the immediate cross-workload baseline gap with repeated fresh

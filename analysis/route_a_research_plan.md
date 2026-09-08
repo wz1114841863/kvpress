@@ -665,6 +665,13 @@ requiring their token-digest relation. Full-KV remains the bypass control and
 is not an answer-equivalence requirement. These are software distributions
 only and do not establish HBM, throughput, hardware, or RTL behavior.
 
+After the cross-workload three-path distribution is accepted, use one
+separate profiler diagnostic per path to localize reference overhead. Keep
+that profiler capture outside the timing distribution and require complete
+Route-A source-partial-or-skip versus merge accounting. Its purpose is to bind
+future A4.2 page/gather/merge contracts to observed software phase structure,
+not to derive hardware timing.
+
 The A4.1.0 implementation is `kvpress/route_a_measurement.py` plus
 `tools/run_kvzap_route_a41_measurement_harness.py`. It rejects CPU timing,
 uses synchronized CUDA-event and host timing, records PyTorch allocator bytes,

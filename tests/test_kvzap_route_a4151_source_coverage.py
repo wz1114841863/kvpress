@@ -5,6 +5,7 @@ from tools.run_kvzap_route_a4151_guard_elided_execution_semantic_gate import val
 from tools.run_kvzap_route_a4154_empty_source_elision_semantic_gate import validate_cross_workload_route_certificate
 from tools.run_kvzap_route_a4155_empty_source_elision_paired_measurement import validate_cross_workload_a4154_coverage
 from tools.run_kvzap_route_a4162_cross_workload_three_path_measurement import PATHS, ROUTE_ELIDED_PATH
+from tools.run_kvzap_route_a4163_cross_workload_three_path_profiler import REQUIRED_A4162_GUARDS
 
 
 def source_with_coverage(rows):
@@ -54,3 +55,8 @@ def test_paired_measurement_requires_a4154_provenance_relay():
 def test_three_path_measurement_declares_distinct_controls():
     assert PATHS == ("full_kv_bypass", "same_mask_dense_replay", ROUTE_ELIDED_PATH)
     assert ROUTE_ELIDED_PATH not in PATHS[:2]
+
+
+def test_three_path_profiler_requires_the_completed_three_path_guards():
+    assert "a4154_empty_source_elision_semantics_certified" in REQUIRED_A4162_GUARDS
+    assert "full_kv_bypass_zero_route_a_admission_each_reset_run" in REQUIRED_A4162_GUARDS

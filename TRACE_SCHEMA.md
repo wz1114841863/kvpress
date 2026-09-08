@@ -1496,6 +1496,15 @@ Its raw repetitions use
 `kvzap-route-a4162-cross-workload-three-path-raw-1.0`, validated by the shared
 A4.1 raw-record contract before inclusion in any distribution.
 
+`kvzap-route-a4163-cross-workload-three-path-profiler-1.0` is the A4.1.7.12
+profiler-only counterpart. It consumes the completed A4162 measurement plus
+the A4151/A4154 certificates, then takes one separate profile capture for
+Full-KV bypass, same-mask dense replay, and empty-source-elided Route-A after
+an unprofiled fresh-cache warm-up per path. Tagged Route-A source
+partial-or-skip and merge accounting must cover every attention evaluation.
+Profiler ranges are nested diagnostic views, never timing distributions or
+HBM, throughput, energy, hardware, or RTL evidence.
+
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
 and keep counts, retained-event count at/after the hot-window boundary, and
