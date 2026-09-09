@@ -964,6 +964,18 @@ bank/burst/gather, merge precision/scheduler, and switching/service parameters.
 It is a contract input for later sensitivity work, not an architecture spec,
 hardware sizing decision, or RTL authorization.
 
+### A4.2.1 implementation — contract sensitivity matrix
+
+A4201 binds each unresolved A4200 field to its A4 observed interface statement
+and to the corresponding declared A3.6/A3-edge sensitivity range when one
+exists. FIFO capacity/overflow, metadata, pending gather/burst, merge state,
+and admission-engine/control ranges remain candidate model axes only. In
+particular, A3-edge keeps a KV head-group on one engine and models no
+cross-engine merge, while A4 validates a logical three-source online merge;
+the matrix records this as a reconciliation obligation rather than pretending
+that either source chooses the final scheduler. It is no-model contract
+bookkeeping and neither hardware sizing nor RTL authorization.
+
 ### A4.1.7.11 implementation — second-workload three-path measurement
 
 A4162 closes the immediate cross-workload baseline gap with repeated fresh

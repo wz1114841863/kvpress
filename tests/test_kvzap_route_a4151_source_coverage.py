@@ -12,6 +12,7 @@ from tools.run_kvzap_route_a4166_long_horizon_three_path_measurement import A416
 from tools.run_kvzap_route_a4167_long_horizon_three_path_profiler import A4167_SCHEMA
 from tools.summarize_kvzap_route_a4168_cross_horizon_accounting import A4168_SCHEMA, normalise_accounting
 from tools.build_kvzap_route_a4200_observed_resource_contract import A4200_SCHEMA, extract_horizons
+from tools.build_kvzap_route_a4201_contract_sensitivity_matrix import A4201_SCHEMA, build_matrix
 
 
 def source_with_coverage(rows):
@@ -94,3 +95,13 @@ def test_a4200_requires_both_ordered_horizons_and_complete_page_witnesses():
     assert set(extract_horizons({"horizons": [{"label": "h16", **row}, {"label": "h32", **row}]})) == {"h16", "h32"}
     with pytest.raises(ValueError, match="exactly h16 and h32"):
         extract_horizons({"horizons": [{"label": "h16", **row}]})
+
+
+def test_a4201_rejects_a3_sensitivity_without_the_observed_page_point():
+    unresolved = [{"name": x} for x in ("pending_FIFO_depth_and_overflow_policy", "page_table_entry_bits_and_allocator_seal_policy", "bank_mapping_burst_gather_format", "merge_state_precision_and_PE_scheduler_interface", "bypass_switch_timing_and_admission_service_rate")]
+    contract = {"contract": {"contract_scope": {"page_tokens": 64}, "unresolved_hardware_contract_parameters": unresolved}}
+    hybrid = {"assumptions": {"page_tokens": 64, "pending_staging_capacity_tokens_per_layer_points": [0], "pending_overflow_policy": "fallback", "metadata_lookup_bytes_per_page": 16, "metadata_lookup_cycles_per_page": 1, "pending_gather_bytes_per_token_points": [512], "bandwidth_bytes_per_cycle": [512], "hybrid_merge_state_bytes_per_head_points": [16], "hybrid_merge_cycles_per_head_points": [1], "schedulers": ["static"]}}
+    edge = {"assumptions": {"page_tokens": [128], "admission_memory_burst_bytes": 64, "admission_pack_bytes_per_cycle_points": [512], "attention_engine_counts": [4], "admission_engine_counts": [1], "admission_page_setup_cycles": 1, "deferred_admission_decode_steps": [0]}}
+    with pytest.raises(ValueError, match="lacks A4200"):
+        build_matrix(contract=contract, hybrid=hybrid, edge=edge)
+    assert A4201_SCHEMA.endswith("contract-sensitivity-matrix-1.0")

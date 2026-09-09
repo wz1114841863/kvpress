@@ -1554,6 +1554,15 @@ depth, PTE width, allocator/seal policy, bank/burst/gather format, merge state
 precision, PE scheduler, and switching/service timing remain explicitly
 unresolved. It executes no model and derives no hardware sizing or timing.
 
+`kvzap-route-a4201-contract-sensitivity-matrix-1.0` is A4.2.1. It accepts a
+completed A4200 contract plus declared A3.6 hybrid and A3-edge DSE manifests.
+It maps every explicitly unresolved A4200 parameter to an observed interface
+requirement and, where available, an explicitly labeled modeled candidate
+range. The 64-token observed page point must be represented by both DSE inputs.
+No candidate range is selected as a hardware value; cross-engine merge versus
+scheduler placement is retained as an explicit reconciliation item. It runs no
+model and does not transform modeled bytes/cycles into measurement.
+
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
 and keep counts, retained-event count at/after the hot-window boundary, and

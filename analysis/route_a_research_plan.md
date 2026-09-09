@@ -575,6 +575,13 @@ precision/scheduler/service parameters explicitly unresolved rather than
 inventing a hardware size or timing from Python observations. Later A4.2 work
 may bind those fields only to an explicit sensitivity range or new measurement.
 
+A4.2.1 maps every unresolved A4.2.0 field to a declared A3 sensitivity range
+only when the observed 64-token page point is included. The report must state
+whether the link is A4-observed interface semantics or A3-modeled candidate
+range, and must retain incompatibilities such as cross-engine merge versus
+head-group placement as open contract decisions. It must not select a hardware
+parameter from the range.
+
 The first A4.0 implementation is the no-model
 `kvzap-route-a40-packed-attention-reference-1.0` semantic harness in
 `kvpress/route_a_attention.py` and `tools/run_kvzap_route_a4_reference.py`.
