@@ -582,6 +582,17 @@ range, and must retain incompatibilities such as cross-engine merge versus
 head-group placement as open contract decisions. It must not select a hardware
 parameter from the range.
 
+### A4 status handoff — 2026-09-09
+
+A4.0 semantic/state gates, A4.1 fixed-request software measurements and
+profiler attribution, A4.2.0 observed resource contract, and A4.2.1 candidate
+sensitivity mapping are complete for the stated Qwen3-8B policy point. The
+next task is A4.2.2: resolve the scheduler/merge placement contract as an
+explicit modeled comparison of co-located `(layer, KV head-group)` source+merge
+execution versus a split-source execution that pays an explicit reduction
+interface. It must use new output, consume A4200/A4201 hashes, keep all result
+classes labeled, and must not enter RTL or claim hardware calibration.
+
 The first A4.0 implementation is the no-model
 `kvzap-route-a40-packed-attention-reference-1.0` semantic harness in
 `kvpress/route_a_attention.py` and `tools/run_kvzap_route_a4_reference.py`.

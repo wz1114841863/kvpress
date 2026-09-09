@@ -976,6 +976,28 @@ the matrix records this as a reconciliation obligation rather than pretending
 that either source chooses the final scheduler. It is no-model contract
 bookkeeping and neither hardware sizing nor RTL authorization.
 
+## Current A4 handoff — 2026-09-09
+
+The completed state is: A4.0 same-mask packed/pending/hot semantic guards;
+A4.1 all-layer/all-head Qwen3-8B fixed-request software functional and
+profiler evidence; A4168 h16/h32 source/page accounting; A4200 observed
+resource/interface contract; and A4201 mapping of all unresolved fields to
+declared A3 sensitivity axes. A4201 did not choose any hardware value.
+
+The next bounded task is **A4.2.2 scheduler/merge placement reconciliation**.
+It must compare, as a new explicitly modeled contract study, at least:
+
+- co-located `(layer, KV head-group)` hot/pending/packed source service and
+  merge, preserving the A3-edge no-cross-engine-merge placement; and
+- split-source service with an explicitly represented partial-softmax reduction
+  state/interface.
+
+Inputs must include A4200/A4201 by hash and retain their policy point
+(`threshold=-4`, hot window 128, page 64, budget 512). The output must not
+claim a selected PE count, bandwidth, latency, HBM traffic, energy, area,
+hardware acceleration, RTL readiness, or cross-model result. The new-conversation
+brief is `analysis/route_a_a4_discussion_brief_20260909.md`.
+
 ### A4.1.7.11 implementation — second-workload three-path measurement
 
 A4162 closes the immediate cross-workload baseline gap with repeated fresh

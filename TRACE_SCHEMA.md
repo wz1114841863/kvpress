@@ -1563,6 +1563,15 @@ No candidate range is selected as a hardware value; cross-engine merge versus
 scheduler placement is retained as an explicit reconciliation item. It runs no
 model and does not transform modeled bytes/cycles into measurement.
 
+#### A4.2 status boundary (2026-09-09)
+
+Completed A4200/A4201 artifacts establish an observed software interface and
+a mapping to declared A3 model ranges only. They do not freeze an architecture
+specification, select an engine count, FIFO depth, PTE width, bank/burst map,
+merge precision, scheduler, admission overlap, or control timing. Any later
+contract refinement must preserve this observed-versus-modeled separation and
+bind a new result to the exact A4200/A4201 input hashes.
+
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
 and keep counts, retained-event count at/after the hot-window boundary, and
