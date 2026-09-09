@@ -1535,6 +1535,15 @@ event SHA-256 plus its token-digest, source partial-or-skip/merge, and
 coalesced-phase guards. It is one separate profiler diagnostic per path, not a
 timing distribution or any HBM, throughput, hardware, or RTL measurement.
 
+`kvzap-route-a4168-cross-horizon-accounting-report-1.0` is A4.1.7.17. It is
+an offline report over a completed 16-token A4164 component-accounting artifact
+and a completed 32-token A4167 profiler parent. It revalidates each horizon's
+own internal source/semantic/profiler chain, then reports generated-token
+normalized hot/packed/pending partial-or-skip/merge accounting and page/tail
+witnesses. The two freshly collected horizon sources are explicitly *not*
+required to have equal SHA-256 values. It runs no model and does not aggregate
+or compare profiler range times as latency.
+
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
 and keep counts, retained-event count at/after the hot-window boundary, and

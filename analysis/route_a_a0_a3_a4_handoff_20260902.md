@@ -941,6 +941,17 @@ versus merge, and coalesced-phase guards. Its output is diagnostic attribution
 only and must not be interpreted as a timing distribution, HBM/traffic,
 throughput, hardware, or RTL result.
 
+### A4.1.7.17 implementation — cross-horizon accounting report
+
+A4168 is a no-model report over the completed 16-token A4164 report and the
+32-token A4167 profiler parent. It first validates each horizon's own internal
+source/semantic/execution/profiler relation, then normalizes hot, packed and
+pending partial-or-skip calls plus merge calls by the recorded generated-token
+count and includes the independent page/tail witnesses. Fresh source SHA-256
+identity is intentionally not required across horizons and is reported, rather
+than concealed. It does not carry forward or compare profiler range time as
+latency and does not make a hardware, HBM, traffic, or RTL claim.
+
 ### A4.1.7.11 implementation — second-workload three-path measurement
 
 A4162 closes the immediate cross-workload baseline gap with repeated fresh

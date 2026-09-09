@@ -681,6 +681,13 @@ permitted to avoid transient metadata fetches; it changes neither weights nor
 the source replay. The output remains a Python-reference diagnostic, not a
 hardware timing or traffic estimate.
 
+Before extracting a resource contract from the accepted 16-token and 32-token
+chains, produce one no-model cross-horizon accounting report. It must validate
+each horizon internally but must not falsely require the independently collected
+online replay sources to share a mask SHA-256. Compare only normalized
+source-partial/skip/merge and page/tail witness structure, and leave profiler
+range time out of the comparison.
+
 Before extracting an A4.2 resource contract, make one no-model accounting
 report that binds the accepted measurement and profiler artifacts to the same
 source SHA-256 and exposes source partial/skip/merge counts per reported token.

@@ -10,6 +10,7 @@ from tools.summarize_kvzap_route_a4164_component_accounting import build_report
 from tools.run_kvzap_route_a4165_long_horizon_semantic_pipeline import A4165_SCHEMA
 from tools.run_kvzap_route_a4166_long_horizon_three_path_measurement import A4166_SCHEMA
 from tools.run_kvzap_route_a4167_long_horizon_three_path_profiler import A4167_SCHEMA
+from tools.summarize_kvzap_route_a4168_cross_horizon_accounting import A4168_SCHEMA, normalise_accounting
 
 
 def source_with_coverage(rows):
@@ -75,3 +76,11 @@ def test_long_horizon_pipeline_schema_is_explicit():
     assert A4165_SCHEMA.endswith("semantic-pipeline-1.0")
     assert A4166_SCHEMA.endswith("three-path-measurement-1.0")
     assert A4167_SCHEMA.endswith("three-path-profiler-1.0")
+    assert A4168_SCHEMA.endswith("cross-horizon-accounting-report-1.0")
+
+
+def test_cross_horizon_accounting_rejects_incomplete_source_decisions():
+    accounting = {"merge_calls": 1, "expected_attention_evaluations": 1, "by_source": {"hot": {"partial_attention_calls": 1, "empty_source_skip_calls": 0, "total_source_decisions": 1}, "packed": {"partial_attention_calls": 1, "empty_source_skip_calls": 0, "total_source_decisions": 1}, "pending": {"partial_attention_calls": 1, "empty_source_skip_calls": 0, "total_source_decisions": 2}}}
+    page = {"selected_layer_count": 1, "selected_kv_head_count": 1, "max_packed_page_count": 1, "max_packed_full_page_count": 1, "max_packed_tail_tokens": 1, "page_witness_count": 1}
+    with pytest.raises(ValueError, match="invalid pending"):
+        normalise_accounting(generated=1, accounting=accounting, page_guard=page, source={"event_file_sha256": "x", "event_count": 1})
