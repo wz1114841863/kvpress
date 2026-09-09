@@ -567,6 +567,14 @@ profiler, and runtime behavior. A4.2 converts the validated interface into
 FIFO/page/bank/merge/scheduler/bypass resource constraints. RTL remains gated
 on the full A4 criteria in the handoff.
 
+A4.2.0 first records only an observed software resource/interface contract.
+It binds the explicit Full-KV bypass and Route-A fast-path behavior, three
+ordered source interfaces, one merge per evaluation, and page/tail witnesses
+to accepted A4.1 artifacts. It must make FIFO/PTE/allocator/bank/gather/merge
+precision/scheduler/service parameters explicitly unresolved rather than
+inventing a hardware size or timing from Python observations. Later A4.2 work
+may bind those fields only to an explicit sensitivity range or new measurement.
+
 The first A4.0 implementation is the no-model
 `kvzap-route-a40-packed-attention-reference-1.0` semantic harness in
 `kvpress/route_a_attention.py` and `tools/run_kvzap_route_a4_reference.py`.

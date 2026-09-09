@@ -1544,6 +1544,16 @@ witnesses. The two freshly collected horizon sources are explicitly *not*
 required to have equal SHA-256 values. It runs no model and does not aggregate
 or compare profiler range times as latency.
 
+`kvzap-route-a4200-observed-resource-contract-1.0` is A4.2.0. It accepts the
+completed A4168 cross-horizon report and its bound A4167 parent, revalidates
+the all-layer/all-head external-storage and native-cold-absence guards, and
+records a software-observed contract for the explicit bypass control, three
+ordered sources, one merge per evaluation, page/tail witnesses, and unresolved
+hardware parameters. It is not an architecture-specification freeze: FIFO
+depth, PTE width, allocator/seal policy, bank/burst/gather format, merge state
+precision, PE scheduler, and switching/service timing remain explicitly
+unresolved. It executes no model and derives no hardware sizing or timing.
+
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
 and keep counts, retained-event count at/after the hot-window boundary, and

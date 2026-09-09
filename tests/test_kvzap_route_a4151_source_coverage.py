@@ -11,6 +11,7 @@ from tools.run_kvzap_route_a4165_long_horizon_semantic_pipeline import A4165_SCH
 from tools.run_kvzap_route_a4166_long_horizon_three_path_measurement import A4166_SCHEMA
 from tools.run_kvzap_route_a4167_long_horizon_three_path_profiler import A4167_SCHEMA
 from tools.summarize_kvzap_route_a4168_cross_horizon_accounting import A4168_SCHEMA, normalise_accounting
+from tools.build_kvzap_route_a4200_observed_resource_contract import A4200_SCHEMA, extract_horizons
 
 
 def source_with_coverage(rows):
@@ -84,3 +85,12 @@ def test_cross_horizon_accounting_rejects_incomplete_source_decisions():
     page = {"selected_layer_count": 1, "selected_kv_head_count": 1, "max_packed_page_count": 1, "max_packed_full_page_count": 1, "max_packed_tail_tokens": 1, "page_witness_count": 1}
     with pytest.raises(ValueError, match="invalid pending"):
         normalise_accounting(generated=1, accounting=accounting, page_guard=page, source={"event_file_sha256": "x", "event_count": 1})
+
+
+def test_a4200_requires_both_ordered_horizons_and_complete_page_witnesses():
+    page = {"selected_layer_count": 36, "selected_kv_head_count": 288, "max_packed_page_count": 13, "max_packed_full_page_count": 12, "max_packed_tail_tokens": 63, "page_witness_count": 108}
+    row = {"generated_token_count": 1, "merge_calls": 1, "partial_call_reduction_fraction_from_three_source_unelided": 0.0, "page_tail_coverage": page}
+    assert A4200_SCHEMA.endswith("observed-resource-contract-1.0")
+    assert set(extract_horizons({"horizons": [{"label": "h16", **row}, {"label": "h32", **row}]})) == {"h16", "h32"}
+    with pytest.raises(ValueError, match="exactly h16 and h32"):
+        extract_horizons({"horizons": [{"label": "h16", **row}]})

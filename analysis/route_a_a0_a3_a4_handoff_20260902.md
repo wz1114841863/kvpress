@@ -952,6 +952,18 @@ identity is intentionally not required across horizons and is reported, rather
 than concealed. It does not carry forward or compare profiler range time as
 latency and does not make a hardware, HBM, traffic, or RTL claim.
 
+### A4.2.0 implementation — observed resource/interface contract
+
+A4200 consumes A4168 and its bound A4167 parent, rechecks all-layer/all-head
+external storage, replay consumption, native-cold absence, pending-skip and
+page/tail evidence, then records the software-observed control/data-plane
+interface: bypass versus fast-path selection; ordered hot, pending and sealed
+packed sources; and exactly one online-softmax merge decision per attention
+evaluation. It explicitly lists unresolved FIFO/overflow, page-table/allocator,
+bank/burst/gather, merge precision/scheduler, and switching/service parameters.
+It is a contract input for later sensitivity work, not an architecture spec,
+hardware sizing decision, or RTL authorization.
+
 ### A4.1.7.11 implementation — second-workload three-path measurement
 
 A4162 closes the immediate cross-workload baseline gap with repeated fresh
