@@ -14,7 +14,7 @@ from typing import Any, Callable
 
 import torch
 
-from kvpress.route_a_attention import DenseSameMaskAttentionState, RouteAPackedAttentionState, dense_same_mask_attention
+from kvpress.route_a_attention import DenseSameMaskAttentionState, RouteALogicalEventRecorder, RouteAPackedAttentionState, dense_same_mask_attention
 from kvpress.route_a_external_cold_storage import RouteAExternalColdStorageAdapter
 
 
@@ -107,7 +107,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
     first layer-complete gate; it leaves no dense attention group in that layer.
     """
 
-    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", elide_empty_sources: bool = False, ulp_breach_sample_limit: int = 32, replay_mask_events: dict[tuple[int, int], MaskEvent] | None = None, component_measure=None) -> None:
+    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", elide_empty_sources: bool = False, ulp_breach_sample_limit: int = 32, replay_mask_events: dict[tuple[int, int], MaskEvent] | None = None, component_measure=None, logical_event_recorder: RouteALogicalEventRecorder | None = None) -> None:
         language_model = model.model.language_model if hasattr(model.model, "language_model") else model.model
         if not 0 <= layer < len(language_model.layers):
             raise ValueError("target layer is outside the model")
@@ -151,6 +151,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         self._replay_seen: set[tuple[int, int]] = set()
         self._keep_mask: torch.Tensor | None = None
         self.component_measure = component_measure
+        self.logical_event_recorder = logical_event_recorder
 
     def _measure_component(self, name: str, operation):
         """Optionally label an operation without changing Route-A semantics."""
@@ -375,7 +376,14 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         self._keep_mask = self._score_start = None
 
     def _new_state(self, *, heads: int, head_dim: int) -> RouteAPackedAttentionState:
-        return RouteAPackedAttentionState(heads=heads, head_dim=head_dim, window=self.window, page_tokens=self.page_tokens, admission_budget=self.admission_budget, elide_empty_sources=self.elide_empty_sources)
+        return RouteAPackedAttentionState(heads=heads, head_dim=head_dim, window=self.window, page_tokens=self.page_tokens, admission_budget=self.admission_budget, elide_empty_sources=self.elide_empty_sources, logical_event_recorder=self.logical_event_recorder, logical_layer=self.layer)
+
+    def _state_attention(self, query: torch.Tensor, *, head: int, component_measure, query_head: int, cache_position: int, phase: str) -> torch.Tensor:
+        if self.state is None:
+            raise AssertionError("Route-A state is unavailable")
+        if self.logical_event_recorder is not None and isinstance(self.state, RouteAPackedAttentionState):
+            return self.state.attention(query, head=head, component_measure=component_measure, logical_query_head=query_head, logical_cache_position=cache_position, logical_phase=phase)
+        return self.state.attention(query, head=head, component_measure=component_measure)
 
     @staticmethod
     def _dense_one(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, scaling: float) -> torch.Tensor:
@@ -589,7 +597,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             q = query[0, query_head, 0]
             if mapped_kv_head in selected_heads:
                 measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"decode_{name}", operation)
-                route_fp32 = self.state.attention(q * scaling, head=mapped_kv_head, component_measure=measure)
+                route_fp32 = self._state_attention(q * scaling, head=mapped_kv_head, component_measure=measure, query_head=query_head, cache_position=int(key.shape[2] - 1), phase="decode")
                 if self.same_mask_numerical_guard_enforced:
                     dense_fp32 = self._measure_same_mask_numerical_guard("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped_kv_head)))
                     self._measure_same_mask_numerical_guard("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))
@@ -869,7 +877,7 @@ class RouteAColdOwnershipAttentionBackend(RouteAPolicyAttentionBackend):
                     continue
                 q = query[0, query_head, offset]
                 measure = None if self.component_measure is None else lambda name, operation: self.component_measure(f"multi_token_{name}", operation)
-                route_fp32 = self.state.attention(q * scaling, head=mapped, component_measure=measure)
+                route_fp32 = self._state_attention(q * scaling, head=mapped, component_measure=measure, query_head=query_head, cache_position=position, phase="multi_token")
                 if self.same_mask_numerical_guard_enforced:
                     dense_fp32 = self._measure_same_mask_numerical_guard("decode_same_mask_dense_reference", lambda: dense_same_mask_attention(q * scaling, self.state.same_mask_records(mapped)))
                     self._measure_same_mask_numerical_guard("decode_fp32_same_mask_guard", lambda: torch.testing.assert_close(route_fp32, dense_fp32, rtol=self.rtol, atol=self.atol))
@@ -961,6 +969,7 @@ class RouteAQwenExternalColdStorageAttentionBackend(RouteAColdOwnershipAttention
                 heads=key.shape[1], head_dim=key.shape[-1], window=self.window,
                 page_tokens=self.page_tokens, admission_budget=self.admission_budget,
                 selected_kv_heads=selected, elide_empty_sources=self.elide_empty_sources,
+                logical_event_recorder=self.logical_event_recorder, logical_layer=self.layer,
             )
             self.state = self.external_cold_storage.state
         elif self.state is not self.external_cold_storage.state:
@@ -1043,14 +1052,14 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
 
     backend_class = RouteAPolicyAttentionBackend
 
-    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", elide_empty_sources: bool = False, ulp_breach_sample_limit: int = 32, replay_mask_events: MaskEventLayers | None = None, component_measure=None) -> None:
+    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", elide_empty_sources: bool = False, ulp_breach_sample_limit: int = 32, replay_mask_events: MaskEventLayers | None = None, component_measure=None, logical_event_recorder: RouteALogicalEventRecorder | None = None, execution_dtype_ulp_mode: str = "enforce") -> None:
         if not layers or len(set(layers)) != len(layers) or any(layer < 0 for layer in layers):
             raise ValueError("layers must be unique non-negative indices")
         if replay_mask_events is not None and set(replay_mask_events) != set(layers):
             raise ValueError("replay mask layers must exactly match selected layers")
         self.model, self.predictor, self.layers = model, predictor, tuple(layers)
         self.backends = {
-            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, execution_dtype_ulp_mode=execution_dtype_ulp_mode, execution_dtype_close_mode=execution_dtype_close_mode, same_mask_numerical_guard_mode=same_mask_numerical_guard_mode, elide_empty_sources=elide_empty_sources, ulp_breach_sample_limit=ulp_breach_sample_limit, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure)
+            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, execution_dtype_ulp_mode=execution_dtype_ulp_mode, execution_dtype_close_mode=execution_dtype_close_mode, same_mask_numerical_guard_mode=same_mask_numerical_guard_mode, elide_empty_sources=elide_empty_sources, ulp_breach_sample_limit=ulp_breach_sample_limit, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure, logical_event_recorder=logical_event_recorder)
             for layer in self.layers
         }
 

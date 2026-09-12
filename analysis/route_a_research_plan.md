@@ -582,6 +582,48 @@ range, and must retain incompatibilities such as cross-engine merge versus
 head-group placement as open contract decisions. It must not select a hardware
 parameter from the range.
 
+### A4.2.2 — scheduler/merge placement reconciliation
+
+`tools/analyze_kvzap_route_a422_scheduler_merge_placement.py` is a no-model,
+**modeled** contract study. It binds a new report to exact A4168/A4200/A4201
+SHA-256 inputs and requires their source-decision/merge and policy-point
+guards. It compares co-located `(layer, KV head-group)` source+merge service,
+which retains A3-edge's no-cross-engine merge placement, with split-source
+service. The latter exports one explicit online-softmax partial state per
+non-empty hot/pending/packed source to a reduction interface and reports
+declared state-payload, dispatch, transfer-work, and in-flight-state sensitivity
+axes. Those axes are abstract modeled interface terms; A4168 call accounting
+does not provide a service timeline, so it cannot choose a FIFO depth, PE
+count, scheduler, precision, controller timing, or any hardware parameter.
+The result is neither trace-derived hardware traffic nor measured runtime, and
+must not claim latency, throughput, energy, area, frequency, acceleration, or
+RTL readiness.
+
+### A4.2.3 — marginal fan-in/service sensitivity
+
+`tools/analyze_kvzap_route_a423_scheduler_merge_service_sensitivity.py`
+extends A4.2.2 without pretending that aggregate profiler accounting is an
+execution trace. It binds A4168/A422 SHA-256 values, proves per-source decision
+conservation, and derives bounds on 1/2/3-source fan-in using only the recorded
+hot/packed/pending marginals. It then compares an abstract co-located
+serial-service sum with a split-source barrier-service sum over explicitly
+declared work and per-logical-evaluation state-capacity axes. No source or
+reducer timing, order, queue occupancy, physical FIFO, engine count, or
+hardware latency is inferred. A next refinement needs a separately collected
+ordered event artifact before making any queue or scheduling-placement claim.
+
+### A4.2.4 — ordered logical source/merge event gate
+
+`tools/run_kvzap_route_a424_ordered_logical_event_gate.py` adds an optional
+recorder to the policy-on external-cold state. It is disabled by default and
+cannot alter the KVzap mask or source/merge calculation. Its new gzip JSONL
+artifact captures ordered logical invocations and source decisions, not service
+times. A trace-off baseline, trace-on forced-token run, and trace-on independent
+run bind trace enablement to same-mask semantic/ownership/replay guards. The
+event order may later be paired with a separately declared service model, but
+must never be read as source completion, reducer arrival, physical queue
+occupancy, latency, HBM behavior, or hardware scheduling evidence.
+
 ### A4 status handoff — 2026-09-09
 
 A4.0 semantic/state gates, A4.1 fixed-request software measurements and
@@ -759,3 +801,136 @@ labels distinct:
 
 Do not call a proxy a measurement, do not claim physical speedup from logical
 compression, and do not change original KVzap pruning semantics in Route A.
+
+### A4.2.5 — ordered logical dependency schedule sensitivity
+
+`tools/analyze_kvzap_route_a425_ordered_logical_schedule.py` consumes A424's
+semantically guarded, timestamp-free logical event stream and binds A422/A423
+by SHA-256. It validates continuous invocation sequence, the ordered three
+source decisions, and one merge marker per event before applying a separately
+declared virtual-work model. Co-located logical ownership serializes active
+sources and merge per `(layer, KV head)`; split-source logical ownership exports
+the explicit partial-softmax interface to a reduction dependency. Submission
+spacing, source work, transfer work, dispatch work, and merge work are only
+sensitivity axes. The report never maps its virtual work positions or waits to
+hardware cycles, service/completion/arrival times, queues, FIFO depth, engine
+count, PE count, controller timing, latency, throughput, HBM traffic, energy,
+area, frequency, a selected placement, or RTL readiness.
+
+### A4.2.6 — exact logical fan-in accounting
+
+`tools/analyze_kvzap_route_a426_exact_fanin_distribution.py` closes the A423
+marginal-fan-in ambiguity for the one A424 fixed request without inventing a
+service timeline. It validates A424 gzip event accounting against its accepted
+independent-run summary, derives exact 1/2/3-active-source combinations and
+per-`(layer, KV head)` rows, and verifies those counts remain inside A423's
+inclusion-exclusion bounds. This is no-model, timestamp-free event-structure
+accounting. Exact fan-in does not establish source completion/arrival order,
+queue or FIFO occupancy, engine utilization, cycles, latency, throughput, HBM
+traffic, energy, area, a selected scheduler, hardware sizing, or RTL
+readiness; cross-workload stability requires a separately accepted second
+ordered-event source.
+
+### A4.2.7 — cross-workload logical-event stability pipeline
+
+`tools/run_kvzap_route_a427_cross_workload_logical_stability.py` creates that
+separate source for one named retrieval request at the retained Qwen3-8B
+policy point. It runs a fresh source collector, A4151, A4154, and A424 in new
+child directories before comparing the accepted retrieval event stream with
+the accepted summarization A424 reference. The report exposes source
+partial/skip, exact fan-in, and source-combination fraction deltas without
+declaring any threshold as stable or unstable. A caller cap is not treated as
+the retrieval horizon: a long-cap probe chooses the child `max_new_tokens`
+cap, while the semantic source records its own actual `q_len=1`
+policy-decode-call count. These can differ for a multi-token question or EOS.
+A4151/A4154/A424 replay-complete gates—not the wrapper—then prove exact event
+consumption. This validates only fixed-
+request semantic/event structure. It neither supplies source completion or
+arrival time nor validates buffer occupancy, backpressure, FIFO sizing,
+cycles, latency, throughput, HBM behavior, hardware selection, or RTL
+readiness.
+
+### A4.2.11 — partitioned modeled scheduler/backpressure sensitivity
+
+`tools/analyze_kvzap_route_a4211_partitioned_backpressure_sensitivity.py`
+binds A428/A429 events and compares declared global, per-layer, and per-layer/
+KV-head merge placement; sequential versus cache-position logical bursts; flat
+versus tree-depth fan-in work; and abstract reducer parallelism/capacity axes.
+All arrivals and results are virtual-work assumptions, not observed timing or
+physical queue/FIFO evidence.
+
+### A4.2.12 — dependency-preserving source-ready/dispatch reconstruction
+
+`tools/analyze_kvzap_route_a4212_dispatch_epoch_evidence.py` consumes the
+accepted A428 event streams without loading a model or modifying Route-A.
+It records the trace-derived Python-reference invocation sequence and
+reconstructs forward and layer-dispatch epochs from layer resets and contiguous
+`(layer, phase, cache_position)` regions. Within a layer epoch it verifies the
+same KV head-group's query-head events share one source snapshot; this permits
+a later model to treat them as semantically eligible for overlap after append,
+but does not claim that Python or hardware actually ran them concurrently.
+Layer order remains a dependency barrier. A4211 schema v2 may bind this report
+and use the resulting `trace_dispatch_epoch` arrival label alongside its older
+purely virtual sequential and cache-position-burst sensitivity labels. Neither
+artifact selects a scheduler, reducer, FIFO, precision, PE count, or hardware
+parameter, nor reports HBM, timing, latency, throughput, energy, area, or RTL
+evidence.
+
+### A4.2.13 — same-layer KV head-group sharing boundary
+
+`tools/analyze_kvzap_route_a4213_same_layer_group_contract.py` binds A428 and
+A4212 to distinguish shareable source/page-descriptor dispatch control from
+non-shareable Attention state. For each same `(forward epoch, layer dispatch
+epoch, KV head)` source snapshot, its distinct query heads may use one logical
+dispatch description per active source; their Q-dependent source partials,
+partial-softmax states, and online merges remain separate. This is a
+functional/trace-derived interface boundary and accounting comparison, not a
+claim of fused execution, saved traffic, cycles, latency, throughput, FIFO
+occupancy, hardware selection, or RTL readiness.
+
+### A4.2.14 — Qwen anchor core-contract closure
+
+`tools/close_kvzap_route_a4214_core_contract.py` is the A4.2 stopping point
+for the current Qwen3-8B/KVzap anchor. It hash-binds the observed A4200
+interface, A4201 unresolved-range matrix, matched three-workload A428 events,
+and A4211–A4213 dependency studies. The output archives a portable semantic
+contract, a separately labelled Qwen-specific descriptor, and explicit
+portability preconditions. It intentionally selects no hardware dimension and
+does not establish cross-model/cross-algorithm portability. Later work should
+use M0–M3 minimal portability gates and an envelope comparison rather than
+repeat Qwen A0–A4 wholesale.
+
+### A4.2.9 — matched split-source interface-demand accounting
+
+`tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed
+A428 and A422 reports by SHA-256, revalidates all three A424 event hashes, and
+counts modeled split-source partial-state exports and additional reduction
+inputs per workload and per `(layer, KV head)`. It also reports partial record
+and page/tail witness distributions. Exports are abstract interface units, not
+bytes or cycles; A424 has no completion/arrival timestamps, so this cannot
+select FIFO depth, scheduler, precision, hardware parameters, or RTL.
+
+### A4.2.10 — modeled backpressure envelope
+
+`tools/analyze_kvzap_route_a4210_modeled_backpressure_envelope.py` binds A428,
+A429, and A425 by SHA-256 and sweeps declared source/reducer virtual-work
+profiles with abstract state-capacity axes. It compares split-source modeled
+exports, peak in-flight states, blocked exports, and virtual wait against the
+explicitly zero co-located cross-engine export. These are not observed arrival
+or completion times, queue occupancy, FIFO sizing, cycles, or hardware data.
+The v2 contract aggregates all nonempty source partials from one logical
+invocation into one fan-in merge task; its capacity axis is merge tasks, not
+partial states. The v1 serial-per-partial result remains preserved but is not a
+FIFO-sizing result.
+
+### A4.2.8 — matched-horizon three-workload logical-event stability
+
+`tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects
+fresh summarization, retrieval, and reasoning sources at one declared cap and
+requires their actual all-layer `q_len=1` policy-decode-call count to match
+before running A4151, A4154, and A424 for every workload. Its no-model report
+compares source combinations, fan-in, partial record-count distributions, and
+packed page/tail witnesses. It records source/A424 SHA-256 values. This removes
+the specific declared/observed horizon mismatch from A427, but three fixed
+requests do not establish a workload distribution. No timing, queue, FIFO,
+backpressure, HBM, hardware, scheduler-selection, or RTL claim is permitted.

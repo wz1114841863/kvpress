@@ -998,6 +998,50 @@ claim a selected PE count, bandwidth, latency, HBM traffic, energy, area,
 hardware acceleration, RTL readiness, or cross-model result. The new-conversation
 brief is `analysis/route_a_a4_discussion_brief_20260909.md`.
 
+### A4.2.2 implementation — scheduler/merge placement reconciliation
+
+A422 is a fresh, no-model **modeled** contract comparison bound by SHA-256 to
+A4168 source partial/skip/merge accounting, A4200's observed interface, and
+A4201's declared candidate ranges. It retains the Qwen3-8B observation point
+(`threshold=-4`, window `128`, page `64`, budget `512`) and requires per-source
+decision conservation. Co-located service keeps hot, pending, packed, and the
+one logical online merge inside a single `(layer, KV head-group)` engine,
+preserving the A3-edge no-cross-engine-merge assumption. Split-source service
+instead exports `{partial max, normalization state, value accumulator,
+valid/empty}` from every non-empty source to an explicit reduction interface.
+Its transfer/dispatch/state-capacity grid is abstract modeled interface work,
+not a timing schedule; without service timing it cannot infer a reduction FIFO
+occupancy or select any implementation parameter. A422 does not establish HBM
+traffic, hardware latency/throughput/energy/area/frequency, acceleration, RTL
+readiness, or a final placement choice.
+
+### A4.2.3 implementation — marginal fan-in/service sensitivity
+
+A423 binds A4168 and A422 by SHA-256 and keeps its result explicitly
+**modeled**. The accepted accounting has source marginals but no source-service
+or reduction-arrival timeline. A423 therefore uses inclusion-exclusion to bound
+the number of evaluations with 1/2/3 active sources, then sweeps abstract
+co-located serial service versus split-source barrier service. Its capacity
+axis is only a per-logical-evaluation state sensitivity label, not measured
+queue occupancy, a physical FIFO depth, a reducer count, or timing. The report
+does not select a placement or hardware parameter and establishes neither HBM
+traffic nor latency/throughput/energy/area/frequency, acceleration, or RTL
+readiness. Ordered source/reduction events are required before a later study
+can make queue or placement-performance claims.
+
+### A4.2.4 implementation — ordered logical source/merge event gate
+
+A424 adds an explicit-off-by-default logical recorder to the policy-on
+external-cold state. Its event records global invocation order, layer, KV/query
+head, cache position, ordered hot/pending/packed partial-or-skip outcomes,
+scalar source position ranges, page/tail witnesses, and the merge marker. It
+records no Python/CUDA/hardware timestamps or source/reducer completion events.
+Trace-off versus trace-on forced/independent runs retain the original mask,
+replay, external ownership, native-cold-absence, source-decision, token and
+logit checks. The resulting gzip JSONL enables a later declared-work schedule
+model but is neither an observed queue/backpressure trace nor hardware timing,
+HBM, throughput, energy, area, acceleration, or RTL evidence.
+
 ### A4.1.7.11 implementation — second-workload three-path measurement
 
 A4162 closes the immediate cross-workload baseline gap with repeated fresh
@@ -1009,3 +1053,131 @@ recorded rather than assumed, while Full-KV equality is neither a mask nor a
 generation requirement. The resulting CUDA/wall and allocator distributions
 are fixed-request Python-reference measurements only, never HBM, throughput,
 hardware, or RTL evidence.
+
+### A4.2.5 implementation — ordered logical dependency schedule sensitivity
+
+A425 consumes the completed A424 timestamp-free logical event stream and
+completed A422/A423 reports by SHA-256, while retaining the same Qwen3-8B
+policy point. It verifies a contiguous global invocation sequence, ordered
+hot/pending/packed partial-or-skip outcomes, and exactly one merge marker per
+event. It then evaluates declared virtual-work sensitivity rows for co-located
+logical `(layer, KV head)` source-plus-merge ownership and split-source
+partial-state exports to a local reduction dependency. Logical submission
+spacing, source, transfer, dispatch, and merge work are assumptions, and its
+work positions/dependency waits are not timestamps, cycles, latency, queue
+occupancy, FIFO depth, service/completion order, controller timing, HBM
+traffic, throughput, energy, area, hardware sizing, a final placement, or RTL
+evidence.
+
+### A4.2.6 implementation — exact logical fan-in accounting
+
+A426 consumes A424's accepted timestamp-free gzip event stream and A423 by
+SHA-256. It verifies A424's independent-run source accounting before deriving
+exact 1/2/3-active-source and source-combination counts, including per-layer/
+KV-head rows, and checks them against A423's marginal inclusion-exclusion
+bounds. It closes only the one-request fan-in overlap ambiguity; it adds no
+source service/completion order, reduction arrival, queue/FIFO occupancy,
+engine utilization, cycles, latency, throughput, HBM traffic, energy, area,
+hardware sizing, scheduler choice, or RTL evidence.
+
+### A4.2.7 implementation — cross-workload logical-event stability
+
+A427 creates a fresh retrieval replay source and independently passes A4151,
+A4154, and A424 all-layer/all-KV-head semantic/event gates before comparing it
+with the accepted summarization A424 event artifact. It reports only source
+partial/skip, exact fan-in, and source-combination fraction deltas at the same
+declared non-horizon policy point, while preserving distinct source hashes and
+recording both declared caps and actual policy-decode-call counts. A long-cap
+probe chooses the semantic child cap; the separately collected semantic source
+can have fewer `q_len=1` calls because of multi-token question forwarding or
+EOS. A4151/A4154/A424 replay-complete gates, rather than the wrapper, verify
+exact source consumption. It deliberately
+does not pre-register or select a stability threshold. Its event-structure
+comparison cannot establish source service/completion or arrival order, queue/
+FIFO occupancy, backpressure, cycles, latency, throughput, HBM traffic,
+energy, area, hardware sizing, scheduler placement, or RTL readiness.
+
+### A4.2.9 implementation — matched split-source interface demand
+
+A429 consumes A428's matched-call event artifacts and A422's explicit
+co-located/split interface contract by hash. It counts a modeled split export
+for each nonempty logical source and extra reduction inputs beyond the first,
+with per-workload and per-layer/KV-head record/page/tail distributions.
+Co-located exports remain explicitly zero. These are not state bytes, service
+times, queue/FIFO occupancy, hardware scheduling, or RTL evidence.
+
+### A4.2.10 implementation — modeled scheduler/backpressure envelope
+
+A4.2.10 consumes A428/A429/A425 by hash and applies declared virtual source
+and reducer work profiles to the timestamp-free event submission order. It
+reports split-source abstract in-flight state and blocking sensitivity alongside
+zero co-located cross-engine exports. No source arrival/completion observation,
+FIFO depth, physical scheduler, latency, throughput, or hardware conclusion is
+made.
+
+### A4.2.11 implementation — partition and burst sensitivity
+
+A4211 uses A428/A429 hash-bound events to sweep declared reducer placement,
+logical cache-position bursts, fan-in merge hierarchy, parallelism and abstract
+task capacity. It separates global from local ownership assumptions but does
+not observe arrival/completion time or select hardware resources.
+
+The revised v2 contract treats all active partials of one logical invocation
+as one fan-in merge task. Its abstract buffer holds merge tasks, avoiding the
+rejected v1 assumption that a reducer serially consumes every partial state.
+The preserved v1 output is not used to size a FIFO.
+
+### A4.2.12 implementation — source-ready/dispatch dependency evidence
+
+A4212 derives a fresh, hash-bound dispatch-epoch artifact from the accepted
+three-workload A428 event streams. It does not alter mask replay, append,
+attention, or merge semantics and executes no model. The artifact retains the
+actual Python-reference logical invocation order, identifies forward epochs
+from layer-order resets, and identifies a layer dispatch epoch from each
+contiguous `(layer, phase, cache_position)` region. It verifies that each
+same-layer/KV-head group saw a consistent hot/pending/packed source snapshot.
+That is a functional/dependency boundary: same-layer query-head partials may
+be modeled as ready together after append, whereas cross-layer events remain
+ordered. It is not source completion timing, concurrent Python execution,
+hardware dispatch, queue/FIFO occupancy, latency, throughput, HBM, or RTL
+evidence.
+
+A4211 schema v2 binds A4212 by SHA-256 and adds the explicit
+`trace_dispatch_epoch` modeled arrival contract. It removes the unjustified
+choice between a fully global sequential stream and a cache-position-wide
+burst, but still cannot select a reducer placement or any resource size.
+
+### A4.2.13 implementation — same-layer group sharing boundary
+
+A4213 uses the A4212 dispatch epochs to verify that the four query heads in
+each Qwen KV head-group see one identical hot/pending/packed source and page
+snapshot. It therefore permits one logical source/page-descriptor dispatch
+control per active source per group, instead of repeating that control once
+per query head. It explicitly does **not** coalesce Q-dependent partial
+attention, partial-softmax state, or online merge: every query head still
+owns those results. Its reported control-unit reduction is a logical contract
+count, not an operation, byte, traffic, time, queue/FIFO, throughput, or
+hardware benefit.
+
+### A4.2.14 implementation — Qwen anchor closure
+
+A4214 closes the current Qwen3-8B/KVzap A4.2 anchor without freezing an
+architecture. It verifies all required upstream guards and hashes, then emits
+three deliberately separate sections: Route-A Core Contract v1; the three
+fixed-workload Qwen resource descriptor; and portability preconditions plus
+explicit non-claims. The Qwen `group_width=4`, fan-in/page/tail distributions,
+and logical dispatch-control accounting remain model/workload descriptors.
+A4201 hardware fields remain unresolved and A4211 placement/arrival studies
+remain modeled sensitivity only. The next research scope is a minimal second
+KVzap-model portability gate, not further Qwen micro-sensitivity or RTL.
+
+### A4.2.8 implementation — matched-horizon three-workload stability
+
+A428 collects fresh summarization, retrieval, and reasoning sources under one
+declared cap, rejects the run unless their actual all-layer policy-decode-call
+counts match, then independently requires A4151, A4154, and A424 for each.
+The timestamp-free result records hashes and compares fan-in, source
+combinations, partial record counts, and packed page/tail witnesses. It removes
+the A427 horizon mismatch but remains three fixed-request logical-event and
+functional evidence, not a workload distribution, timing trace, queue/FIFO or
+backpressure observation, hardware result, scheduler choice, or RTL evidence.

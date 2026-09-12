@@ -15,6 +15,7 @@ import struct
 from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 import torch
 
@@ -24,6 +25,45 @@ class RouteAPolicy(str, Enum):
 
     FULL_KV_BYPASS = "full_kv_bypass"
     ROUTE_A_FAST_PATH = "route_a_fast_path"
+
+
+class RouteALogicalEventRecorder:
+    """Optional ordered Route-A logical-event recorder; deliberately untimed."""
+
+    SCHEMA = "kvzap-route-a424-logical-attention-events-1.0"
+
+    def __init__(self) -> None:
+        self.events: list[dict[str, Any]] = []
+
+    def record_attention(self, *, layer: int, kv_head: int, query_head: int | None, cache_position: int | None, phase: str | None, source_rows: list[dict[str, Any]], packed_page_count: int, packed_full_page_count: int, packed_tail_tokens: int) -> None:
+        if [row["source"] for row in source_rows] != ["hot", "pending", "packed"]:
+            raise AssertionError("logical event source order differs from Route-A contract")
+        if any(row["outcome"] not in {"partial", "skip"} for row in source_rows):
+            raise AssertionError("logical event has an invalid source outcome")
+        self.events.append({
+            "logical_event_sequence": len(self.events),
+            "layer": layer,
+            "kv_head": kv_head,
+            "query_head": query_head,
+            "cache_position": cache_position,
+            "phase": phase,
+            "source_decisions": source_rows,
+            "merge_after_source_decisions": True,
+            "packed_page_count": packed_page_count,
+            "packed_full_page_count": packed_full_page_count,
+            "packed_tail_tokens": packed_tail_tokens,
+        })
+
+    def summary(self) -> dict[str, Any]:
+        source = {name: {"partial_attention_events": 0, "empty_source_skip_events": 0} for name in ("hot", "pending", "packed")}
+        layer_heads: dict[int, set[int]] = {}
+        for expected, event in enumerate(self.events):
+            if event["logical_event_sequence"] != expected or event["merge_after_source_decisions"] is not True:
+                raise AssertionError("logical event ordering or merge marker is invalid")
+            layer_heads.setdefault(int(event["layer"]), set()).add(int(event["kv_head"]))
+            for row in event["source_decisions"]:
+                source[row["source"]]["partial_attention_events" if row["outcome"] == "partial" else "empty_source_skip_events"] += 1
+        return {"event_count": len(self.events), "merge_event_count": len(self.events), "by_source": source, "observed_layer_kv_heads": [{"layer": layer, "kv_heads": sorted(heads)} for layer, heads in sorted(layer_heads.items())], "timestamps_recorded": False}
 
 
 @dataclass
@@ -138,12 +178,15 @@ class RouteAPackedAttentionState:
     pending positions first.  The caller may use a distinct instance per layer.
     """
 
-    def __init__(self, *, heads: int, head_dim: int, window: int, page_tokens: int, admission_budget: int, elide_empty_sources: bool = False) -> None:
+    def __init__(self, *, heads: int, head_dim: int, window: int, page_tokens: int, admission_budget: int, elide_empty_sources: bool = False, logical_event_recorder: RouteALogicalEventRecorder | None = None, logical_layer: int | None = None) -> None:
         if min(heads, head_dim, page_tokens, admission_budget) <= 0 or window < 0:
             raise ValueError("invalid Route-A reference dimensions")
         self.heads, self.head_dim, self.window = heads, head_dim, window
         self.admission_budget = admission_budget
         self.elide_empty_sources = elide_empty_sources
+        if logical_event_recorder is not None and logical_layer is None:
+            raise ValueError("logical event recorder requires a layer identifier")
+        self.logical_event_recorder, self.logical_layer = logical_event_recorder, logical_layer
         self._empty_source_skip_counts = {name: 0 for name in ("hot", "pending", "packed")}
         self._hot: list[deque[_Record]] = [deque() for _ in range(heads)]
         self._pending: list[deque[_Record]] = [deque() for _ in range(heads)]
@@ -214,12 +257,14 @@ class RouteAPackedAttentionState:
             raise ValueError("invalid KV head")
         return {"hot": list(self._hot[head]), "pending": list(self._pending[head]), "packed": self._pages[head].records()}
 
-    def attention(self, query: torch.Tensor, *, head: int, component_measure=None) -> torch.Tensor:
+    def attention(self, query: torch.Tensor, *, head: int, component_measure=None, logical_query_head: int | None = None, logical_cache_position: int | None = None, logical_phase: str | None = None) -> torch.Tensor:
         sources = self.records(head)
         def measure(name, operation):
             return operation() if component_measure is None else component_measure(name, operation)
-        partials = []
+        partials, decisions = [], []
         for name in ("hot", "pending", "packed"):
+            records = sources[name]
+            decisions.append({"source": name, "outcome": "skip" if self.elide_empty_sources and not records else "partial", "record_count": len(records), "first_position": None if not records else records[0].position, "last_position": None if not records else records[-1].position})
             if self.elide_empty_sources and not sources[name]:
                 self._empty_source_skip_counts[name] += 1
                 measure(f"route_a_empty_source_skip_{name}", lambda: None)
@@ -227,6 +272,9 @@ class RouteAPackedAttentionState:
             partials.append(measure(f"route_a_attention_{name}", lambda name=name: _attention(query, sources[name])))
         if not partials:
             raise AssertionError("Route-A attention has no source partials")
+        if self.logical_event_recorder is not None:
+            pages = self._pages[head]
+            self.logical_event_recorder.record_attention(layer=int(self.logical_layer), kv_head=head, query_head=logical_query_head, cache_position=logical_cache_position, phase=logical_phase, source_rows=decisions, packed_page_count=pages.page_count, packed_full_page_count=pages.full_page_count, packed_tail_tokens=pages.tail_tokens)
         return measure("route_a_online_softmax_merge", lambda: online_softmax_merge(partials))
 
     def empty_source_elision_summary(self) -> dict[str, int | bool]:

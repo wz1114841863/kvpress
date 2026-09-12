@@ -1572,6 +1572,49 @@ merge precision, scheduler, admission overlap, or control timing. Any later
 contract refinement must preserve this observed-versus-modeled separation and
 bind a new result to the exact A4200/A4201 input hashes.
 
+`kvzap-route-a422-scheduler-merge-placement-1.0` is A4.2.2. It consumes a
+completed A4168 cross-horizon accounting report, A4200 observed resource
+contract, and A4201 sensitivity matrix, recording all three input SHA-256
+values. It compares two **modeled** organizations at the retained policy point
+(`threshold=-4`, hot window `128`, page `64`, admission budget `512`):
+co-located `(layer, KV head-group)` hot/pending/packed source service plus
+online merge, and split-source service that exports `{partial max, partial
+normalization state, partial value accumulator, valid/empty}` to an explicit
+reduction interface. A4168 source partial/skip/merge conservation is a hard
+gate. The split rows make state payload, one state transfer per non-empty
+source, reduction dispatch, and an in-flight partial-state capacity *axis*
+explicit. Because the inputs have no service timeline, that axis cannot infer
+queue occupancy or FIFO depth. New interface-work axes are abstract modeled
+units, not hardware cycles. The study executes no model and must not report
+HBM traffic, latency, throughput, energy, area, frequency, hardware
+acceleration, hardware sizing, or RTL readiness.
+
+`kvzap-route-a423-scheduler-merge-service-sensitivity-1.0` is A4.2.3. It
+consumes completed A4168 accounting and A422 placement reports, records their
+SHA-256 values, and runs no model. A4168 does not contain a per-evaluation
+source completion/reduction-arrival timeline. A423 therefore derives only the
+inclusion-exclusion bounds for 1/2/3 active sources per merge from hot,
+packed, and pending marginal counts; it does not recover queue occupancy. Its
+co-located serial-service and split-source barrier-service rows sweep abstract
+source, transfer, reduction-dispatch, merge-work, and per-logical-evaluation
+state-capacity axes. Those values are modeled work labels, not cycles or
+latency; the state capacity is not a FIFO depth or reducer count. No row may
+claim measured scheduling behavior, HBM traffic, throughput, energy, area,
+frequency, hardware acceleration, final placement, or RTL readiness.
+
+`kvzap-route-a424-ordered-logical-event-gate-1.0` is A4.2.4. It runs an
+explicitly enabled, untimed recorder alongside the accepted all-layer/all-head
+policy-on external-cold Route-A path. Each logical attention invocation records
+only its global invocation sequence, layer, KV/query head, cache position,
+hot/pending/packed ordered partial-or-skip decision, scalar record-position
+range, page/tail witness, and the one subsequent merge marker. The artifact
+contains no Python/CUDA/hardware timestamp, source-completion event, or
+reduction-arrival event. Trace-off, trace-on forced-token, and trace-on
+independent runs must retain replay, ownership/native-cold, source-decision,
+and token/logit guards. The gzip JSONL is a functional logical-order artifact,
+not a timing trace, queue measurement, HBM traffic, throughput, energy, area,
+hardware acceleration, or RTL result.
+
 For cross-workload A4.1 collection, `collect_kvzap_route_a41_replay_source.py`
 may record `replay_event_coverage`: selected-layer KV-head IDs, per-head event
 and keep counts, retained-event count at/after the hot-window boundary, and
@@ -1598,3 +1641,136 @@ plus median absolute deviation, and records device-global nvidia-smi state
 before/after each timed region without inspecting processes. Telemetry is
 context only: it is not per-process attribution, HBM traffic, throughput,
 energy, hardware, or RTL evidence.
+
+`kvzap-route-a425-ordered-logical-schedule-1.0` is A4.2.5. It consumes a
+completed A424 ordered-logical-event manifest plus completed A422/A423 modeled
+placement inputs, records their SHA-256 values, and executes no model. A424
+logical invocation sequence is validated as a contiguous submission order with
+one ordered hot/pending/packed partial-or-skip decision and one subsequent
+merge marker per event; timestamp-bearing events are rejected. A4.2.5 then
+compares a co-located logical `(layer, KV head)` owner with a split-source
+logical dependency that exports `{partial max, partial normalization state,
+partial value accumulator, valid/empty}` to a local reduction dependency. Its
+submission spacing, source work, transfer, dispatch, and merge work are
+declared sensitivity axes in abstract work units. Resulting work positions or
+dependency waits are not cycles, timestamps, latency, throughput, queue
+occupancy, FIFO depth, reducer count, controller timing, HBM traffic, energy,
+area, frequency, hardware sizing, final placement, acceleration, or RTL
+evidence.
+
+`kvzap-route-a426-exact-fanin-distribution-1.0` is A4.2.6. It consumes the
+completed A424 timestamp-free gzip event stream and A423 marginal fan-in report
+by SHA-256, validates A424's independent event summary, then counts exact
+1/2/3-active-source combinations and per-`(layer, KV head)` fan-in rows for
+the one fixed request. It checks these exact counts lie within A423's
+inclusion-exclusion bounds. This is event-structure accounting only: it
+records no source service/completion order, reduction arrival, timing, queue
+occupancy, FIFO depth, engine utilization, cycles, latency, throughput, HBM
+traffic, energy, area, frequency, hardware sizing, scheduler selection, or
+RTL evidence.
+
+`kvzap-route-a427-cross-workload-logical-stability-1.0` is A4.2.7. It first
+collects a fresh second-workload online dense replay source, certifies A4151
+execution semantics and A4154 empty-source elision semantics, then runs a
+fresh all-layer/all-KV-head A424 ordered-event gate. Its final no-model report
+hash-binds both accepted A424 manifests and gzip files, and compares only
+source partial/skip fractions, exact active-source fan-in fractions, and
+source-combination fractions under an identical non-horizon policy point. A
+candidate records its declared child `max_new_tokens` separately from its
+actual fresh-source `q_len=1` policy-decode-call count. A long-cap probe
+selects the semantic child cap, and a separately collected source uses that
+cap; its actual call count may differ because question forwarding can be
+multi-token and generation can stop at EOS. A4151/A4154/A424 replay-complete
+gates, rather than an equality assertion in A427, prove exact event
+consumption. Comparisons are normalized by each event stream's count. It intentionally
+selects no stability threshold. Event differences do not imply
+source completion/arrival order, buffer or FIFO occupancy, backpressure,
+cycles, latency, throughput, HBM traffic, energy, area, hardware sizing,
+scheduler/placement selection, or RTL evidence.
+
+`kvzap-route-a429-matched-interface-demand-1.0` is A4.2.9. It SHA-256 binds
+completed A428 matched-horizon workload artifacts and the completed A422
+interface definition, validates each A424 event artifact hash, then counts
+one modeled split-source partial-state export per nonempty source and the
+additional reduction inputs per merge. It reports per-workload and per-layer/
+KV-head partial record and page/tail witness distributions. These are abstract
+interface units, not bytes or cycles: no source completion/reduction arrival,
+queue/FIFO occupancy, backpressure, latency, throughput, HBM, hardware, or
+RTL result is claimed.
+
+`kvzap-route-a4210-modeled-backpressure-envelope-1.0` is A4.2.10. It binds
+A428, A429, and A425 SHA-256 inputs, rechecks matched-workload A424 event
+hashes, and sweeps declared virtual source/reducer work and state-capacity
+axes. Split-source exports, virtual in-flight states, blocked exports and wait
+are model outputs; co-located cross-engine exports are explicitly zero. No
+arrival/completion time, observed queue/FIFO occupancy, cycles, latency, HBM,
+hardware, scheduler-selection, or RTL result is asserted.
+
+Schema version `2.0` aggregates the active source partials of one logical
+invocation into one fan-in merge task. Its capacity axis is abstract merge-task
+capacity; it must not be compared as a physical FIFO depth with the preserved
+v1 serial-per-partial study.
+
+`kvzap-route-a428-matched-horizon-workload-stability-1.0` is A4.2.8. It
+collects new summarization, retrieval, and reasoning replay sources at one
+declared `max_new_tokens`, rejects unequal all-layer actual `q_len=1`
+policy-decode-call counts, then requires A4151, A4154, and A424 for every
+workload. The final report SHA-256-binds each fresh source and ordered-event
+artifact and summarizes source partial/skip combinations, fan-in, partial
+record-count distributions, and packed page/tail witnesses. It is functional
+and timestamp-free logical-event evidence only: it does not measure quality,
+runtime, source completion/reduction arrival, queue/FIFO occupancy,
+backpressure, cycles, latency, HBM traffic, throughput, energy, area,
+hardware, scheduler selection, or RTL readiness.
+
+`kvzap-route-a4211-partitioned-backpressure-sensitivity-1.0` is A4.2.11. It
+hash-binds A428/A429 inputs and sweeps declared merge placement, logical burst,
+fan-in hierarchy, reducer parallelism and task-capacity contracts. Its virtual
+backpressure outputs are not measured queue/FIFO occupancy, timing, cycles,
+latency, HBM, hardware, or RTL evidence.
+
+`kvzap-route-a4212-dispatch-epoch-evidence-1.0` is A4.2.12. It binds the
+accepted A428 report and each A424 gzip event stream by SHA-256, then records a
+separate gzip row per logical event with a reconstructed `forward_epoch`,
+`layer_dispatch_epoch`, and `source_ready_epoch`. A forward epoch begins only
+when the observed layer order resets; a layer dispatch epoch is one contiguous
+`(layer, phase, cache_position)` region. The report verifies that the recorded
+reference dispatch is serial, that same-KV-head query-head events see one
+identical source snapshot, and that layer order never regresses within an
+epoch. Same-layer source readiness is a dependency-preserving constructed
+eligibility label; it is not a concurrent execution interval. Cross-layer
+events remain ordered. No source completion/arrival timestamp, queue/FIFO
+occupancy, cycle, latency, throughput, HBM, hardware, or RTL evidence is
+recorded.
+
+Its dispatch-epoch gzip uses fixed `mtime=0` and an empty gzip filename, so
+the artifact SHA-256 is stable across hosts; this is a provenance property,
+not a timing field or semantic change.
+
+Schema version `2.0` of
+`kvzap-route-a4211-partitioned-backpressure-sensitivity-2.0` optionally
+SHA-256-binds A4.2.12 and adds `trace_dispatch_epoch` as an arrival contract.
+It may place events from the same reconstructed layer epoch at one abstract
+arrival label, while retaining distinct labels across layer epochs. The model's
+backpressure and finish-work rows remain virtual-work outputs and must not be
+interpreted as measured ready time, physical dispatch, FIFO occupancy, or a
+hardware placement decision.
+
+`kvzap-route-a4213-same-layer-group-contract-1.0` is A4.2.13. It binds A428
+and A4212 by SHA-256 and revalidates that every same `(forward epoch, layer
+dispatch epoch, KV head)` group has one immutable source/page snapshot across
+its distinct query heads. It reports two logical accounting views: independent
+per-query source/page-descriptor dispatch controls and one coalesced control
+per active source per KV head-group. Each query head still owns one source
+partial-softmax state and one online merge; neither state nor merge is reused.
+Dispatch-control units are not bytes, operations, cycles, timing, queue/FIFO
+occupancy, HBM traffic, throughput, energy, area, or hardware evidence.
+
+`kvzap-route-a4214-core-contract-closure-1.0` is A4.2.14. It is a new-output,
+no-model archive report that SHA-256 binds A4200, A4201, A428, A4211 schema v2,
+A4212, and A4213. It requires their semantic, hash, workload-coverage, and
+no-selection guards, then separates `Route-A Core Contract v1` from the fixed
+Qwen3-8B/KVzap resource descriptor. A4211 arrival/placement rows and A4201
+parameter ranges remain explicitly modeled and unresolved. The closure is
+neither an architecture specification nor a FIFO/PTE/bank/burst/precision/PE/
+scheduler/controller-timing freeze, hardware measurement, or RTL gate.
