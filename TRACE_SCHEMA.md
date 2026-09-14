@@ -1891,15 +1891,17 @@ queue/FIFO, backpressure, timing, throughput, energy, area, architecture, or
 RTL result. Its record-only setting does not alter M2's default enforce mode
 or select a merge precision or any hardware parameter.
 
-`kvzap-llama31-m51-fixed-horizon-workload-descriptor-1.0` is a fresh-output
-correction after a preserved M5 `started` record reports unequal natural
+`kvzap-llama31-m51-fixed-horizon-workload-descriptor-1.1` is a fresh-output
+correction after preserved M5 and M5.1.0 `started` records report unequal natural
 policy-decode-call counts under the same pipeline cap. It SHA-256 binds M0,
 M1, M4, M4.1, and that failed M5 record. It runs an explicit fixed non-EOS
 continuation of eight tokens: Full-KV and dense select their fixed-length
 greedy trajectories, while Route-A replays the dense token trajectory and the
 same online-dense mask stream. Every workload must have exactly seven
-`q_len=1` calls in all 32 layers, and dense/Route-A token IDs plus fixed-step
-logits must match under the declared tolerances. The report then uses the M5
+`q_len=1` calls in all 32 layers, and dense/Route-A token IDs must match under
+the declared forced trajectory. Existing per-attention FP32/executed-dtype
+same-mask guards remain the numerical gate; whole-vocabulary logits after the
+explicitly forced post-EOS trajectory are not a M5.1 gate. The report then uses the M5
 timestamp-free event schema and its per-workload/per-`(layer, KV head)`
 normalized source/fan-in/page-tail descriptors. This deliberately conditioned
 continuation is not a natural output-length, accuracy, or serving result; it

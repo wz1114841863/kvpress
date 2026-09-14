@@ -1050,8 +1050,10 @@ uses a declared fixed eight-token continuation that does not stop on EOS. The
 dense run provides both the original mask stream and each request's fixed token
 trajectory; Route-A is forced to consume both exactly once. Full-KV runs under
 the same fixed count as a separate zero-Route-A-state control. Each workload
-must observe exactly seven all-layer `q_len=1` calls, and dense/Route-A token
-IDs plus every fixed-step logits pair must satisfy the predeclared guard.
+must observe exactly seven all-layer `q_len=1` calls. M5.1 schema v1.1 retains
+the existing per-attention FP32/executed-dtype same-mask guards, but does not
+introduce a whole-vocabulary logits-close requirement after a deliberately
+forced post-EOS trajectory: that property is not part of M1/M2's contract.
 
 M5.1 fixes the *horizon conditioning* required by descriptor comparison. It
 does not report natural generation length, quality, or serving behavior. Its

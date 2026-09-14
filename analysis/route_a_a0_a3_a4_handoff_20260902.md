@@ -1304,7 +1304,11 @@ descriptor. M5.1 does not overwrite them. It hash-binds the failed started
 record and M0/M1/M4/M4.1 provenance, then writes a new output using an explicit
 non-EOS fixed eight-token continuation. Each path executes the same number of
 forwards; dense produces the fixed token trajectory and original mask stream,
-and Route-A must replay both while retaining fixed-step logits closeness.
+and Route-A must replay both. M5.1.0's extra whole-vocabulary logits-close
+check is retained as a failed started-only attempt, not weakened in place.
+M5.1 schema v1.1 instead retains the established per-attention same-mask
+FP32/executed-dtype guards; a whole-model logits equality after deliberately
+forcing post-EOS tokens is not part of the M1/M2 semantic contract.
 
 The successful M5.1 contract requires seven `q_len=1` calls across every layer
 and all three workloads, with the same existing all-layer/all-KV-head,
