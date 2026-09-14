@@ -2023,3 +2023,31 @@ P3's decisions are trace-derived and its comparison is functional. It is not
 native SnapKV cache/decode validation, accuracy, allocator or physical-capacity
 measurement, HBM traffic, true hardware latency/throughput/energy/area,
 architecture specification, or RTL evidence.
+
+### SnapKV P2 lifecycle/resource descriptor
+
+`route-a-snapkv-p2-lifecycle-resource-descriptor-1.0` is a new-output,
+no-model descriptor that consumes only completed SnapKV P0, P1, and P3
+artifacts.  It recomputes and validates P0 manifest/stream, P1 report, and P3
+manifest SHA-256 bindings; it also requires P3's exact terminal replay,
+same-mask FP32 guard, canonical original-position mapping, and no-native-cache
+replacement guards.  The descriptor contains individual field records with
+`available` or `unavailable` status, an evidence classification, a value, and
+an evidence explanation.
+
+Available fields are limited to the one terminal per-identity action set,
+canonical original-position mapping, protected-suffix-to-hot compatibility
+mapping, static packed terminal state, and bounded prefill-tail same-mask
+semantic probe.  One-shot prefill deliberately leaves online decision epochs,
+maturity events, pending arrival/service/occupancy, generated-token decisions,
+native cache replacement/decode behavior, source-ready/dispatch/completion
+order, scheduler/backpressure, allocator/interface fields, and hardware
+metrics unavailable.  An unavailable value is represented as `null`, never as
+zero.  Thus a P3 terminal state with zero pending tokens cannot be reinterpreted
+as evidence of zero pending behavior during decode.
+
+P2 is provenance-backed trace-derived/functional field classification, not a
+hardware model or measurement.  It selects no FIFO, PTE, bank/burst, merge
+precision, PE, scheduler, controller timing, or other parameter, and cannot
+authorize native SnapKV decode, scheduling/backpressure, traffic, cycles,
+latency, throughput, energy, area, architecture specification, or RTL claims.

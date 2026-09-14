@@ -1210,6 +1210,33 @@ query head 26; the maximum associated FP32 absolute difference was
 `2.9802322387695312e-08`. It is a reduction-order rounding observation, not a
 strict ULP pass or a merge-precision/hardware decision.
 
+### P2 — SnapKV lifecycle/resource descriptor
+
+P2 is the closure step after accepted P0 -> P1 -> P3, not a further model run
+or a scheduler experiment.  `tools/analyze_snapkv_route_a_p2_lifecycle_resource_descriptor.py`
+accepts only those completed artifacts, recomputes all three provenance hashes,
+and rejects a P3 result lacking its terminal replay, same-mask FP32,
+canonical-mapping, or no-native-cache-replacement guards.  It writes a fresh
+`route-a-snapkv-p2-lifecycle-resource-descriptor-1.0` report only.
+
+Its purpose is to prevent a false lifecycle inference.  The final selection,
+identity/order, protected-suffix mapping, static packed terminal state, and
+bounded P3 prefill semantics are available.  Online epochs/maturity, pending
+arrival/service/occupancy, generated-token continuation, native SnapKV
+replacement semantics, source-ready/dispatch/completion order,
+scheduler/backpressure, allocator/interface fields, and hardware metrics are
+explicitly unavailable.  `unavailable` is recorded as unknown (`null`), never
+as a zero-valued workload or resource observation.  In particular, P3's
+zero-pending terminal materialization does not demonstrate a zero-pending
+decode lifecycle.
+
+P2 is a no-model provenance-backed classification whose inputs are
+trace-derived and functional.  It is neither a new hardware model nor a
+measurement, does not authorize P4 resource-envelope comparison, and selects
+no FIFO/PTE/bank/burst/merge precision/PE/scheduler/controller setting.  It
+cannot establish native SnapKV decode, traffic, cycles, latency, throughput,
+energy, area, architecture specification, or RTL readiness.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed

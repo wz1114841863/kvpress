@@ -1447,6 +1447,30 @@ comparison. It cannot establish native SnapKV decode/cache behavior, quality,
 allocator/physical capacity, HBM traffic, timing, scheduling/backpressure,
 throughput, energy, area, architecture specification, or RTL readiness.
 
+### P2 implementation — SnapKV lifecycle/resource descriptor
+
+P2 closes the narrow frontend branch's evidence accounting after P0 -> P1 ->
+P3.  `tools/analyze_snapkv_route_a_p2_lifecycle_resource_descriptor.py` is a
+no-model, new-output tool.  It verifies P0/P1/P3 SHA-256 provenance and rejects
+a P3 manifest without the accepted terminal replay, P1 P=64 state,
+same-mask-FP32, canonical-order, and no-native-SnapKV-cache-replacement
+guards.
+
+It records the small set of available fields (terminal action, identity/order,
+protected-suffix compatibility mapping, static terminal packing, and bounded
+prefill same-mask semantics) separately from explicitly unavailable fields.
+The latter include online maturity and pending lifecycle, generated-token
+continuation, native cache/decode behavior, source-ready/dispatch/completion
+ordering, scheduler/backpressure, allocator/interface state, and hardware
+metrics.  Missing evidence is `null` and is never silently treated as a zero
+queue, source, traffic, or resource value.  Therefore P3's zero-pending final
+state is not a decode-pending conclusion.
+
+P2 is a provenance-backed trace-derived/functional classification, not a
+hardware model or measurement.  It cannot select hardware parameters or support
+native SnapKV decode, scheduling, traffic, latency, throughput, energy, area,
+architecture, or RTL claims.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It
