@@ -1407,3 +1407,16 @@ declared metadata/K+V accounting. It contains no model execution, same-mask
 functional proof, admission/pending trace, allocator/HBM measurement,
 scheduler/timing evidence, or hardware/RTL result. P3 is still required before
 any lifecycle/resource descriptor study.
+
+The accepted fixed-request P1 output is
+`analysis/experiments/snapkv_route_a_p1_packed_opportunity_qwen3_8b_01/`
+with report SHA-256
+`f55f4a4ca9020dcbf02acce3c7f272dfafd5ecfd0bdfb2a79918015ddfd3010d`.
+It binds P0 manifest `c4a2ef3150197cab46508445f03c622238d93cd650b2778e5981d3b9a0927599`
+and stream `1cb4a7bba15e54486b85cf0377554b5384999e11703183550bdc6809b1e7a365`.
+All 288 layer-head streams have the same 891/445 total/keep count: the P0
+64-token protected suffix is hot, 381 earlier keeps are cold, and three cold
+tail slots round to 384. Hence P=16/32/64/128 changes only the static per-head
+page count (24/12/6/3) and declared metadata; every row has 129,024 physical
+slots, 128,160 ideal slots, and 1.98884x fixed-request full-to-physical slot
+factor. It does not select a page size or establish a wider distribution.

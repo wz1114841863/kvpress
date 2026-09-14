@@ -1148,6 +1148,22 @@ admission/maturity, pending state, allocator behavior, HBM traffic,
 scheduler/backpressure, latency, throughput, energy, area, architecture, or
 RTL. P3 remains the next semantic gate after P1.
 
+The completed Qwen3-8B summarization P1 source is
+`analysis/experiments/snapkv_route_a_p1_packed_opportunity_qwen3_8b_01/`;
+its report SHA-256 is
+`f55f4a4ca9020dcbf02acce3c7f272dfafd5ecfd0bdfb2a79918015ddfd3010d`.
+It hash-binds the completed P0 manifest
+`c4a2ef3150197cab46508445f03c622238d93cd650b2778e5981d3b9a0927599`
+and terminal stream
+`1cb4a7bba15e54486b85cf0377554b5384999e11703183550bdc6809b1e7a365`.
+For this one 891-position prefill, every one of 36 x 8 layer-head streams has
+445 keeps: 64 hot and 381 cold. Cold packing rounds each stream to 384 slots,
+leaving three tail slots. Consequently all four page-size rows have 129,024
+physical slots versus 128,160 ideal slots (1.98884x versus 2.00225x relative
+to the 256,608-slot full baseline); page count is respectively 24/12/6/3 per
+head for P=16/32/64/128. This uniformity follows the fixed top-k count and
+single input, not a model/workload distribution or a hardware page-size choice.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed
