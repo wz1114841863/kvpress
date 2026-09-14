@@ -18,7 +18,7 @@ from tools.export_kvzap_predictor_trace import get_git_commit, stable_hash
 SCHEMA = "kvzap-llama31-m0-provenance-1.0"
 DEFAULT_MODEL_REPO = "NousResearch/Meta-Llama-3.1-8B-Instruct"
 DEFAULT_MODEL_REVISION = "d10aef7999a2b5ba950ab3974312feeedbfe0b77"
-EXPECTED_PREDICTOR_REPO = "nvidia/KVzap-linear-Meta-Llama-3.1-8B-Instruct"
+OFFICIAL_PREDICTOR_REPO = "nvidia/KVzap-linear-Llama-3.1-8B-Instruct"
 EXPECTED = {"model_type": "llama", "architecture": "LlamaForCausalLM", "hidden_size": 4096, "num_hidden_layers": 32, "num_attention_heads": 32, "num_key_value_heads": 8}
 
 
@@ -114,7 +114,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hf-home", type=Path, default=Path(os.environ.get("HF_HOME", "")))
     parser.add_argument("--model-repo-id", default=DEFAULT_MODEL_REPO)
     parser.add_argument("--model-revision", default=DEFAULT_MODEL_REVISION)
-    parser.add_argument("--predictor-repo-id", default=None)
+    parser.add_argument("--predictor-repo-id", default=OFFICIAL_PREDICTOR_REPO, help="Official candidate predictor to inspect; M0 records whether it matches KVzapPress's direct derivation.")
     parser.add_argument("--predictor-revision", default=None)
     parser.add_argument("--offline", action="store_true", help="Require cached predictor metadata/config; make no network request.")
     parser.add_argument("--output-dir", type=Path, required=True, help="New output directory only.")
@@ -127,20 +127,23 @@ def main() -> None:
         raise FileExistsError(f"output directory already exists: {args.output_dir}")
     if not str(args.hf_home):
         raise ValueError("--hf-home is required when HF_HOME is unset")
-    predictor_repo = args.predictor_repo_id or derived_predictor_repo_id(args.model_repo_id)
-    if predictor_repo != EXPECTED_PREDICTOR_REPO:
-        raise ValueError(f"unexpected derived predictor repository: {predictor_repo}")
+    predictor_repo = args.predictor_repo_id
+    if predictor_repo != OFFICIAL_PREDICTOR_REPO:
+        raise ValueError(f"unexpected official Linear predictor repository: {predictor_repo}")
     base_config, base = inspect_base_snapshot(args.hf_home, args.model_repo_id, args.model_revision)
     dimensions = validate_llama_config(base_config)
     predictor_revision = resolve_predictor_revision(predictor_repo, args.predictor_revision, args.offline, args.hf_home)
     predictor_config, predictor = inspect_predictor_config(predictor_repo, predictor_revision, args.offline, args.hf_home)
     validate_linear_predictor(predictor_config, dimensions)
     config = {"hf_home": str(args.hf_home), "model_repo_id": args.model_repo_id, "model_revision": args.model_revision, "predictor_repo_id": predictor_repo, "predictor_revision_requested": args.predictor_revision, "predictor_revision_resolved": predictor_revision, "offline": args.offline}
-    report = {"schema_version": SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "execution_classification": "no-model provenance validation; base and predictor weights were not loaded", "base_model_snapshot": base, "base_model_structure": dimensions, "kvzap_predictor": predictor, "adapter_contract": {"kvzap_press_model_type": "linear", "derived_predictor_repo_id": derived_predictor_repo_id(args.model_repo_id), "threshold_for_later_M1": -7.0, "hot_window_tokens_for_later_M1": 128}, "observational_guards": {"fixed_base_snapshot_present": True, "declared_safetensors_shards_present": True, "llama_structure_matches_expected": True, "predictor_id_matches_kvzappress_derivation": True, "predictor_linear_dimensions_match_base_structure": True, "no_base_or_predictor_weights_loaded": True}, "boundaries": ["This M0 report is observed cache/Hub provenance plus code-derived JSON compatibility only.", "NousResearch provenance is not an official Meta model reproduction claim.", "M0 establishes no generated output, mask, attention, Route-A lifecycle, accuracy, traffic, latency, throughput, energy, area, hardware parameter, architecture-specification, or RTL claim."]}
+    derived_repo = derived_predictor_repo_id(args.model_repo_id)
+    direct_derivation_matches = derived_repo == predictor_repo
+    status = "complete" if direct_derivation_matches else "blocked"
+    report = {"schema_version": SCHEMA, "status": status, "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "execution_classification": "no-model provenance validation; base and predictor weights were not loaded", "base_model_snapshot": base, "base_model_structure": dimensions, "kvzap_predictor": predictor, "adapter_contract": {"kvzap_press_model_type": "linear", "kvzappress_direct_predictor_repo_id": derived_repo, "official_candidate_predictor_repo_id": predictor_repo, "direct_kvzappress_derivation_matches_official_candidate": direct_derivation_matches, "explicit_nondefault_override_required_for_M1": not direct_derivation_matches, "threshold_for_later_M1": -7.0, "hot_window_tokens_for_later_M1": 128}, "observational_guards": {"fixed_base_snapshot_present": True, "declared_safetensors_shards_present": True, "llama_structure_matches_expected": True, "official_predictor_linear_dimensions_match_base_structure": True, "no_base_or_predictor_weights_loaded": True}, "blockers": [] if direct_derivation_matches else ["KVzapPress derives its predictor ID from the Nous base-model basename, which differs from the official Llama predictor repository name. M1 requires an explicit nondefault predictor override and a fresh M0/M1 provenance binding."], "boundaries": ["This M0 report is observed cache/Hub provenance plus code-derived JSON compatibility only.", "NousResearch provenance is not an official Meta model reproduction claim.", "A blocked M0 is not permission to alter KVzapPress's default predictor resolution.", "M0 establishes no generated output, mask, attention, Route-A lifecycle, accuracy, traffic, latency, throughput, energy, area, hardware parameter, architecture-specification, or RTL claim."]}
     args.output_dir.mkdir(parents=True)
     path = args.output_dir / "llama31_m0_provenance_manifest.json"
     path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"M0 provenance gate completed: {path}")
+    print(f"M0 provenance gate {status}: {path}")
 
 
 if __name__ == "__main__":

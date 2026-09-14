@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from tools.validate_kvzap_llama31_m0_provenance import DEFAULT_MODEL_REPO, DEFAULT_MODEL_REVISION, EXPECTED_PREDICTOR_REPO, derived_predictor_repo_id, inspect_base_snapshot, validate_linear_predictor, validate_llama_config
+from tools.validate_kvzap_llama31_m0_provenance import DEFAULT_MODEL_REPO, DEFAULT_MODEL_REVISION, OFFICIAL_PREDICTOR_REPO, derived_predictor_repo_id, inspect_base_snapshot, validate_linear_predictor, validate_llama_config
 
 
 def base_config(**updates):
@@ -24,8 +24,9 @@ def make_snapshot(tmp_path: Path, *, config=None, shards=True):
             (root / name).write_bytes(b"weight")
 
 
-def test_derives_supported_linear_predictor_id():
-    assert derived_predictor_repo_id(DEFAULT_MODEL_REPO) == EXPECTED_PREDICTOR_REPO
+def test_nous_basename_does_not_match_official_predictor_name():
+    assert derived_predictor_repo_id(DEFAULT_MODEL_REPO) == "nvidia/KVzap-linear-Meta-Llama-3.1-8B-Instruct"
+    assert derived_predictor_repo_id(DEFAULT_MODEL_REPO) != OFFICIAL_PREDICTOR_REPO
 
 
 def test_snapshot_and_llama_dimensions_are_checked(tmp_path):

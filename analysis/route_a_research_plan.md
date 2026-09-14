@@ -908,10 +908,13 @@ already cached fixed-revision Nous snapshot through JSON/index metadata and
 declared shard presence, derives the Linear predictor repository exactly as
 `KVzapPress` does, resolves/records its revision and config hash, and requires
 the JSON dimensions to agree (Llama 4096 hidden, 32 layers, 32 query heads,
-8 KV heads; Linear predictor 4096 input, 8 output, 32 modules). It loads no
-base or predictor weights. This is a prerequisite for M1, not a Meta-official
-reproduction, functional mask, Route-A lifecycle, accuracy, traffic, latency,
-hardware, or RTL result.
+8 KV heads; Linear predictor 4096 input, 8 output, 32 modules). It additionally
+records whether the official predictor name agrees with KVzapPress's base-name
+derivation. A mismatch is a `blocked` M0 outcome: do not modify the default
+path or start M1 until a separately reviewed default-off override exists. It
+loads no base or predictor weights. This is not a Meta-official reproduction,
+functional mask, Route-A lifecycle, accuracy, traffic, latency, hardware, or
+RTL result.
 
 ### A4.2.9 — matched split-source interface-demand accounting
 
