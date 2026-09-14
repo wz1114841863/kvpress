@@ -1446,3 +1446,15 @@ P3 is trace-derived at its terminal mask and functional at its same-mask
 comparison. It cannot establish native SnapKV decode/cache behavior, quality,
 allocator/physical capacity, HBM traffic, timing, scheduling/backpressure,
 throughput, energy, area, architecture specification, or RTL readiness.
+
+The accepted output is
+`analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
+`56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It
+revalidated the completed P0 manifest/stream and P1 report hashes recorded
+above. All 36 x 8 layer-head states consumed their 891 terminal P0 actions
+exactly once (256,608 total) and agreed with P1 P=64: hot=64, packed=381,
+pending=0, six pages consisting of five full pages and a 61-token tail. The
+FP32 same-mask guard passed. Executed-dtype ULP recorded one 79-ULP
+reduction-order diagnostic (layer 3, KV head 6, query head 26), with maximum
+associated FP32 absolute difference `2.9802322387695312e-08`; it is not a
+strict ULP pass or a merge-precision/hardware selection.

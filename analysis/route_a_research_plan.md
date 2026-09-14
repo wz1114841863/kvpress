@@ -1193,6 +1193,23 @@ equivalence, accuracy, pending/maturity behavior, allocator/physical capacity,
 traffic, scheduler/backpressure, latency, throughput, energy, area, hardware
 specification, or RTL. P2 may follow only after P3 is accepted.
 
+The accepted fixed-request output is
+`analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`; its manifest
+SHA-256 is `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`.
+It revalidated P0 manifest/stream SHA-256
+`c4a2ef3150197cab46508445f03c622238d93cd650b2778e5981d3b9a0927599` /
+`1cb4a7bba15e54486b85cf0377554b5384999e11703183550bdc6809b1e7a365` and
+P1 report SHA-256
+`f55f4a4ca9020dcbf02acce3c7f272dfafd5ecfd0bdfb2a79918015ddfd3010d`.
+All 36 layers and 8 KV heads consumed exactly one 891-token terminal epoch
+(7,128 decisions per layer; 256,608 total). Every state matched P1 P=64:
+64 hot tokens, 381 packed tokens in six pages (five full plus a 61-token tail),
+and zero pending tokens per layer/head. The strict FP32 same-mask guard passed.
+One executed-dtype record-only diagnostic reached 79 ULP at layer 3, KV head 6,
+query head 26; the maximum associated FP32 absolute difference was
+`2.9802322387695312e-08`. It is a reduction-order rounding observation, not a
+strict ULP pass or a merge-precision/hardware decision.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed
