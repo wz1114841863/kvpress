@@ -375,6 +375,7 @@ def main() -> None:
         rtol=args.rtol,
         atol=args.atol,
         max_executed_dtype_ulps=args.max_executed_dtype_ulps,
+        execution_dtype_ulp_mode="record_only",
         replay_mask_events=replay_masks,
     )
     seed_everything(42)
@@ -414,6 +415,7 @@ def main() -> None:
         "rtol": args.rtol,
         "atol": args.atol,
         "max_executed_dtype_ulps": args.max_executed_dtype_ulps,
+        "execution_dtype_ulp_mode": "record_only",
     }
     manifest = {
         "schema_version": P3_SCHEMA,
@@ -444,6 +446,7 @@ def main() -> None:
                 "coverage": coverage,
                 "probe_summary": probe_summary,
                 "p1_p64_state_cross_check": state,
+                "executed_dtype_ulp_breach_summary": backend.execution_dtype_ulp_breach_summary(),
             },
         },
         "observational_guards": {
@@ -452,6 +455,8 @@ def main() -> None:
             "all_qwen_layers_and_kv_heads_covered": True,
             "terminal_replay_consumed_exactly_once": True,
             "same_mask_dense_and_route_a_mask_digests_match": True,
+            "fp32_same_mask_guard_enforced": True,
+            "executed_dtype_ulp_breaches_recorded_not_selected": True,
             "p1_p64_hot_packed_state_matches_functional_route_a": True,
             "p3_preffill_tail_probes_do_not_replace_model_prefill_attention": True,
             "snapkv_native_cache_replacement_used": False,
@@ -461,6 +466,7 @@ def main() -> None:
         "boundaries": [
             "P3 is one fixed Qwen3-8B request. P0 terminal decisions are trace-derived; P3 same-mask dense/Route-A tail comparisons are functional reference evidence.",
             "P3 evaluates the final real prefill query after appending P0 state, but leaves the model's multi-token prefill output dense. It has no source decision for a generated decode position and therefore is not native SnapKV decode validation or an end-to-end generation-equivalence result.",
+            "The FP32 same-mask attention guard is enforced. Executed-dtype ULP values are bounded scalar record-only diagnostics because different reduction orders can round differently; they are not a merge-precision selection or a strict ULP pass.",
             "The P=64 and admission-budget=4096 values fully materialize the accepted P1 P=64 state for this probe. They select no FIFO depth, PTE width, bank/burst, merge precision, PE count, scheduler, controller timing, or hardware parameter.",
             "P3 establishes no quality/accuracy, allocator behavior, physical capacity, HBM traffic, true hardware latency, throughput, energy, area, hardware acceleration, architecture specification, or RTL result.",
         ],

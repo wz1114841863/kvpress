@@ -1438,6 +1438,10 @@ state evidence only. `page_tokens=64` and `admission_budget=4096` materialize
 P1's terminal P=64 state for this functional check; they select no FIFO, PTE,
 bank/burst, merge precision, PE, scheduler, controller, or hardware setting.
 
+FP32 same-mask comparison remains enforced; executed-dtype ULP is explicitly a
+bounded record-only rounding diagnostic, never a strict ULP pass or a
+merge-precision selection.
+
 P3 is trace-derived at its terminal mask and functional at its same-mask
 comparison. It cannot establish native SnapKV decode/cache behavior, quality,
 allocator/physical capacity, HBM traffic, timing, scheduling/backpressure,

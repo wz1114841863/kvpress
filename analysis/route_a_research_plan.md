@@ -1182,6 +1182,10 @@ and the P1 P=64 state are all gates. The explicit P=64 / admission-budget=4096
 pair drains this fixed terminal state for a functional reference; it does not
 select hardware parameters.
 
+P3 enforces the FP32 same-mask guard. Executed-dtype ULP is retained only as a
+bounded scalar record-only diagnostic of reduction-order rounding; it cannot
+be used as a strict ULP pass or to select merge precision.
+
 An accepted P3 run supports only bounded semantic mapping of this source. It
 does not prove native SnapKV cache/decode behavior, end-to-end generation
 equivalence, accuracy, pending/maturity behavior, allocator/physical capacity,

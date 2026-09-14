@@ -2013,6 +2013,11 @@ exact replay, all-layer/head coverage, matching mask digests, and an exact P1
 are not page/FIFO/PTE/bank/burst/merge-precision/PE/scheduler/controller
 hardware selections.
 
+The FP32 same-mask numerical guard is enforced. Its executed-dtype ULP field is
+a bounded scalar `record_only` diagnostic because different reduction orders
+can round differently; it is neither a strict ULP pass nor a merge-precision
+selection.
+
 P3's decisions are trace-derived and its comparison is functional. It is not
 native SnapKV cache/decode validation, accuracy, allocator or physical-capacity
 measurement, HBM traffic, true hardware latency/throughput/energy/area,
