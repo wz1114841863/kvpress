@@ -19,10 +19,11 @@ from typing import Any
 from tools.export_kvzap_predictor_trace import get_git_commit, stable_hash
 
 
-M6_SCHEMA = "kvzap-route-a-m6-cross-model-fixed-horizon-envelope-1.0"
+M6_SCHEMA = "kvzap-route-a-m6-cross-model-fixed-horizon-envelope-1.1"
 QWEN_CORE_SCHEMA = "kvzap-route-a4214-core-contract-closure-1.0"
 QWEN_A428_SCHEMA = "kvzap-route-a428-matched-horizon-workload-stability-1.0"
 LLAMA_M51_SCHEMA = "kvzap-llama31-m51-fixed-horizon-workload-descriptor-1.1"
+M3_RECONCILIATION_SCHEMA = "kvzap-route-a-m3-portability-envelope-comparison-1.1"
 SOURCES = ("hot", "pending", "packed")
 FAN_IN_KEYS = ("1_active_sources", "2_active_sources", "3_active_sources")
 TAIL_KEYS = ("p50", "p95", "max", "tail_p50", "tail_p95", "tail_max")
@@ -30,6 +31,12 @@ TAIL_KEYS = ("p50", "p95", "max", "tail_p50", "tail_p95", "tail_max")
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def canonical_sha256(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
 
 
 def load_completed(path: Path, schema: str) -> dict[str, Any]:
@@ -95,6 +102,63 @@ def require_tail_distribution(value: Any, *, label: str) -> dict[str, int]:
     if not isinstance(value, dict) or set(TAIL_KEYS) - set(value):
         raise ValueError(f"{label} packed-tail descriptor is incomplete")
     return {key: int(value[key]) for key in TAIL_KEYS}
+
+
+def qwen_m3_consumed_projection(qwen_core: dict[str, Any]) -> dict[str, Any]:
+    """Recreate only the Qwen projection M3.2 declares it consumed."""
+    scope = qwen_core["qwen3_8b_kvzap_resource_descriptor"]["scope"]
+    descriptor = qwen_core["qwen3_8b_kvzap_resource_descriptor"]
+    layer_count = int(scope["observed_layer_count"])
+    total_states = int(scope["observed_kv_head_count"])
+    if total_states % layer_count:
+        raise ValueError("Qwen aggregate layer/KV-head state count is not divisible by layers")
+    return {
+        "model": scope["model"],
+        "layer_count": layer_count,
+        "kv_heads_per_layer": total_states // layer_count,
+        "total_layer_kv_head_state_count": total_states,
+        "hot_window_tokens": int(scope["hot_window_tokens"]),
+        "page_tokens_reference_input": int(scope["page_tokens"]),
+        "group_width_values": descriptor["qwen_specific_group_width_values"],
+        "workloads": descriptor["workload_descriptor"],
+        "a4201_unresolved_parameters": qwen_core["modeled_sensitivity_retained_unselected"]["a4201_unresolved_parameters"],
+        "required_guards": {
+            name: qwen_core["observational_guards"][name]
+            for name in ("all_input_hashes_and_required_guards_verified", "no_hardware_parameter_selected")
+        },
+    }
+
+
+def reconcile_qwen_core_with_m3(
+    qwen_core: dict[str, Any], m3: dict[str, Any], *, raw_sha256: str
+) -> dict[str, Any]:
+    """Require the completed M3.2 projection when raw Qwen bytes differ."""
+    reconciliation = m3.get("provenance_reconciliation")
+    if not isinstance(reconciliation, dict):
+        raise ValueError("M3.2 reconciliation report lacks provenance reconciliation")
+    required = {
+        "current_qwen_raw_input_sha256",
+        "prior_m3_qwen_raw_input_sha256",
+        "current_qwen_projection_sha256",
+        "prior_serialized_qwen_projection_sha256",
+        "m3_consumed_qwen_projection_matches_prior",
+    }
+    if not required.issubset(reconciliation) or reconciliation["m3_consumed_qwen_projection_matches_prior"] is not True:
+        raise ValueError("M3.2 reconciliation report lacks a completed canonical Qwen projection check")
+    projection_sha = canonical_sha256(qwen_m3_consumed_projection(qwen_core))
+    if projection_sha != reconciliation["current_qwen_projection_sha256"]:
+        raise ValueError("supplied Qwen core does not match the M3.2 canonical consumed projection")
+    if projection_sha != reconciliation["prior_serialized_qwen_projection_sha256"]:
+        raise ValueError("M3.2 prior/current canonical Qwen projections disagree")
+    return {
+        "raw_input_sha256": raw_sha256,
+        "m3_current_local_raw_input_sha256": reconciliation["current_qwen_raw_input_sha256"],
+        "m3_prior_remote_raw_input_sha256": reconciliation["prior_m3_qwen_raw_input_sha256"],
+        "canonical_consumed_projection_sha256": projection_sha,
+        "raw_input_matches_m3_current_local": raw_sha256 == reconciliation["current_qwen_raw_input_sha256"],
+        "raw_input_matches_m3_prior_remote": raw_sha256 == reconciliation["prior_m3_qwen_raw_input_sha256"],
+        "canonical_projection_matches_m3": True,
+    }
 
 
 def normalize_workload(
@@ -193,6 +257,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--qwen-core-contract", type=Path, required=True)
     parser.add_argument("--qwen-a428-report", type=Path, required=True)
     parser.add_argument("--llama-m51-report", type=Path, required=True)
+    parser.add_argument(
+        "--m3-reconciliation-report",
+        type=Path,
+        required=True,
+        help="Completed M3.2 report that explicitly reconciles Qwen core serializations.",
+    )
     parser.add_argument("--output-dir", type=Path, required=True, help="New output directory only.")
     return parser.parse_args()
 
@@ -204,6 +274,7 @@ def main() -> None:
     qwen_core = load_completed(args.qwen_core_contract, QWEN_CORE_SCHEMA)
     qwen = load_completed(args.qwen_a428_report, QWEN_A428_SCHEMA)
     llama = load_completed(args.llama_m51_report, LLAMA_M51_SCHEMA)
+    m3 = load_completed(args.m3_reconciliation_report, M3_RECONCILIATION_SCHEMA)
     require_true(
         qwen_core,
         (
@@ -240,6 +311,19 @@ def main() -> None:
             "no_hardware_parameter_selected",
         ),
         label="Llama M5.1 descriptor",
+    )
+    require_true(
+        m3,
+        (
+            "all_input_hashes_and_required_guards_verified",
+            "prior_m3_consumed_qwen_projection_matches",
+            "qwen_and_llama_descriptors_kept_separate",
+            "no_hardware_parameter_selected",
+        ),
+        label="M3.2 reconciliation",
+    )
+    qwen_reconciliation = reconcile_qwen_core_with_m3(
+        qwen_core, m3, raw_sha256=sha256(args.qwen_core_contract)
     )
     qscope = qwen_core["qwen3_8b_kvzap_resource_descriptor"]["scope"]
     if int(qscope["hot_window_tokens"]) != int(llama["config"]["window_size"]):
@@ -291,6 +375,7 @@ def main() -> None:
         "qwen_core_contract": {"path": str(args.qwen_core_contract), "sha256": sha256(args.qwen_core_contract)},
         "qwen_a428_report": {"path": str(args.qwen_a428_report), "sha256": sha256(args.qwen_a428_report)},
         "llama_m51_report": {"path": str(args.llama_m51_report), "sha256": sha256(args.llama_m51_report)},
+        "m3_reconciliation_report": {"path": str(args.m3_reconciliation_report), "sha256": sha256(args.m3_reconciliation_report)},
         "required_declared_fixed_new_tokens": 8,
         "required_actual_policy_decode_calls": 7,
         "shared_hot_window_tokens": int(qscope["hot_window_tokens"]),
@@ -304,6 +389,7 @@ def main() -> None:
         "config": config,
         "config_hash": stable_hash(config),
         "execution_classification": "no-model, hash-bound functional/trace-derived logical-descriptor coverage comparison; not modeled or measured hardware evidence",
+        "qwen_core_provenance_reconciliation": qwen_reconciliation,
         "per_model_fixed_workload_descriptors": {
             "qwen3_8b_kvzap": qwen_rows,
             "nous_llama31_8b_kvzap": llama_rows,
@@ -320,6 +406,7 @@ def main() -> None:
             "same_actual_policy_decode_call_count_verified": True,
             "same_hot_window_and_page_reference_inputs_verified": True,
             "qwen_and_llama_rows_kept_separate": True,
+            "qwen_core_raw_hash_difference_explicitly_reconciled_or_matched": qwen_reconciliation["canonical_projection_matches_m3"],
             "absolute_event_counts_not_pooled": True,
             "source_record_ranges_conditioned_on_nonempty_source": True,
             "m41_record_only_context_retained": True,
@@ -330,6 +417,7 @@ def main() -> None:
             "M6 compares only already-completed fixed-request, timestamp-free logical descriptors. It is not a natural-generation distribution, quality benchmark, or serving measurement.",
             "The min/max values are observed coverage bounds over six rows, not FIFO depth, PTE width, bank, burst, merge precision, PE count, scheduler, controller timing, capacity, traffic, latency, throughput, energy, area, hardware, architecture-specification, or RTL inputs.",
             "Qwen and Llama differ in layer count, predictor, threshold, and request content. M6 deliberately does not pool absolute event counts or convert normalized descriptor variation into equal hardware requirements.",
+            "When Qwen A4.2.14 raw JSON serializations differ across hosts, M6 requires the completed M3.2 canonical consumed-projection reconciliation and records both raw hashes; it does not silently treat different bytes as identical.",
             "The retained Llama M4.1 record-only strict-ULP context is not a numerical pass and does not select a merge precision.",
         ],
     }

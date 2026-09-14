@@ -3,6 +3,7 @@ import pytest
 from tools.analyze_kvzap_route_a_m6_cross_model_fixed_horizon_envelope import (
     FAN_IN_KEYS,
     M6_SCHEMA,
+    canonical_sha256,
     coverage_envelope,
     normalize_workload,
     require_fraction_distribution,
@@ -27,7 +28,7 @@ def _row(*, model_anchor: str = "qwen", workload: str = "retrieval", three_way: 
 
 
 def test_m6_schema_and_fan_in_keys_are_versioned():
-    assert M6_SCHEMA == "kvzap-route-a-m6-cross-model-fixed-horizon-envelope-1.0"
+    assert M6_SCHEMA == "kvzap-route-a-m6-cross-model-fixed-horizon-envelope-1.1"
     assert FAN_IN_KEYS == ("1_active_sources", "2_active_sources", "3_active_sources")
 
 
@@ -38,6 +39,10 @@ def test_fraction_distribution_rejects_non_unit_sum():
             FAN_IN_KEYS,
             label="test",
         )
+
+
+def test_canonical_sha256_is_independent_of_dictionary_key_order():
+    assert canonical_sha256({"b": 2, "a": 1}) == canonical_sha256({"a": 1, "b": 2})
 
 
 def test_normalized_workload_rejects_mismatched_fan_in():

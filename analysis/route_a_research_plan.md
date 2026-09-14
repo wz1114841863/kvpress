@@ -1068,7 +1068,10 @@ choice is implied.
 `tools/analyze_kvzap_route_a_m6_cross_model_fixed_horizon_envelope.py` is the
 no-model next step after accepted Llama M5.1. It SHA-256 binds the Qwen A4.2.14
 core-contract closure, the Qwen A4.2.8 three-workload matched-horizon report,
-and the Llama M5.1 three-workload fixed-continuation report. Before comparing,
+and the Llama M5.1 three-workload fixed-continuation report. It also binds the
+completed M3.2 reconciliation report: any cross-host raw A4.2.14 core-report
+hash mismatch is accepted only if the M3.2 canonical consumed projection agrees
+and both raw hashes remain explicit. Before comparing,
 it requires the completed semantic/event guards, the same declared eight-token
 continuation, seven actual all-layer `q_len=1` calls, hot window 128, and page
 reference 64. It keeps six model/workload rows separate and derives only

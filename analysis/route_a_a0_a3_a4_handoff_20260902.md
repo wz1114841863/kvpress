@@ -1336,7 +1336,10 @@ backpressure observation, hardware result, scheduler choice, or RTL evidence.
 M6 is a no-model, new-output closeout step after the accepted Llama M5.1
 fixed-horizon study. It hash-binds the completed Qwen A4.2.14 closure and
 A4.2.8 matched-horizon descriptor reports with the Llama M5.1 descriptor
-report. The gate requires both anchors' completed semantic/event guards, a
+report. It additionally binds M3.2 to reconcile the known cross-host raw Qwen
+A4.2.14 JSON-hash difference through its canonical consumed projection; an
+unreconciled difference rejects the run. The gate requires both anchors'
+completed semantic/event guards, a
 shared declared eight-token continuation, seven actual all-layer `q_len=1`
 calls, hot window 128, and page reference 64. It preserves all six fixed
 model/workload rows and compares only normalized source combinations, fan-in,
