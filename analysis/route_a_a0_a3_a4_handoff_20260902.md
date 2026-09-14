@@ -1177,10 +1177,10 @@ The first second-model gate is intentionally no-model. The M0 validator checks
 the cached fixed-revision Nous snapshot, safetensors index/shard presence,
 Llama JSON structural fields, the `KVzapPress`-derived Linear predictor ID,
 the official candidate predictor ID, and the resolved predictor JSON dimensions.
-If the two IDs differ, the manifest is `blocked` and M1 cannot start without a
-separately reviewed default-off override. It cannot establish equivalence, mask
-behavior, lifecycle, performance, hardware, or RTL conclusions; those remain
-M1+ work.
+If the two IDs differ, the manifest is `blocked` until the invocation explicitly
+binds the separately reviewed default-off `predictor_repo_id_override` to the
+official candidate. It cannot establish equivalence, mask behavior, lifecycle,
+performance, hardware, or RTL conclusions; those remain M1+ work.
 
 ### A4.2.8 implementation — matched-horizon three-workload stability
 

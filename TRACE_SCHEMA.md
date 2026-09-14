@@ -1783,8 +1783,9 @@ the code-derived Linear KVzap predictor ID; the resolved predictor revision
 and predictor-config SHA-256; and the JSON-level Llama/predictor dimension
 compatibility check. It also records whether the official predictor repository
 matches `KVzapPress`'s direct base-name derivation. A mismatch produces a
-`blocked` report and requires a separately reviewed, default-off override
-before M1. It rejects an existing output directory. It never imports a model
-runtime or loads base/predictor weights, so it is observed provenance plus
+`blocked` report unless the invocation explicitly binds the reviewed,
+default-off `predictor_repo_id_override` to that exact official predictor. It
+rejects an existing output directory. It never imports a model runtime or
+loads base/predictor weights, so it is observed provenance plus
 code-derived compatibility only—not trace, semantic, accuracy, traffic,
 timing, hardware, or RTL evidence.

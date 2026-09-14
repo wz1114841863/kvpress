@@ -72,10 +72,12 @@ class KVzapPress(ScorerPress):
 
     model_type: Literal["linear", "mlp"] = "mlp"
     predictor_revision: Optional[str] = None
+    predictor_repo_id_override: Optional[str] = None
     kvzap_model_name: Optional[str] = field(default=None, init=False)
 
     def post_init_from_model(self, model):
-        kvzap_model_name = f"nvidia/KVzap-{self.model_type}-{model.config.name_or_path.split('/')[-1]}"
+        derived_model_name = f"nvidia/KVzap-{self.model_type}-{model.config.name_or_path.split('/')[-1]}"
+        kvzap_model_name = self.predictor_repo_id_override or derived_model_name
         if kvzap_model_name != self.kvzap_model_name:
             self.kvzap_model_name = kvzap_model_name
             self.kvzap_model = KVzapModel.from_pretrained(

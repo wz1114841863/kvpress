@@ -910,9 +910,10 @@ declared shard presence, derives the Linear predictor repository exactly as
 the JSON dimensions to agree (Llama 4096 hidden, 32 layers, 32 query heads,
 8 KV heads; Linear predictor 4096 input, 8 output, 32 modules). It additionally
 records whether the official predictor name agrees with KVzapPress's base-name
-derivation. A mismatch is a `blocked` M0 outcome: do not modify the default
-path or start M1 until a separately reviewed default-off override exists. It
-loads no base or predictor weights. This is not a Meta-official reproduction,
+derivation. A mismatch is a `blocked` M0 outcome until an invocation explicitly
+binds the reviewed default-off `predictor_repo_id_override` to the exact
+official candidate; this does not modify the default path. It loads no base or
+predictor weights. This is not a Meta-official reproduction,
 functional mask, Route-A lifecycle, accuracy, traffic, latency, hardware, or
 RTL result.
 
