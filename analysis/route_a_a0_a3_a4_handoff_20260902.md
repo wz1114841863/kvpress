@@ -1355,3 +1355,34 @@ precision, PE count, scheduler, controller timing, capacity, traffic, latency,
 throughput, energy, area, architecture specification, or RTL implementation.
 Llama's M4.1 strict-ULP non-pass remains record-only context, not a precision
 decision.
+
+### P0 implementation — SnapKV terminal frontend contract
+
+The first non-KVzap frontend is deliberately a narrow admission gate, not a
+claim that Route-A already supports arbitrary pruning algorithms.  SnapKV on
+the frozen Qwen3-8B model is prefill-only: after dense prefill it scores and
+top-k selects a final KV set.  `SnapKVPress` normally gathers the selected K/V
+in score-ranked order and replaces the native cache; that mutation path is not
+used by P0.
+
+`kvpress.route_a_frontend_contract.SnapKVPrefillDecisionObserver` attaches a
+read-only post-attention observer, obtains the same score tensor and native
+`ScorerPress.select_topk_indices` selected set, and writes one terminal
+decision per `(layer, KV head, original position)`.  The new
+`route-a-frontend-decision-stream-1.0` retains declared sequence length, so
+the validator rejects a missing tail rather than accepting a falsely shortened
+stream.  It also rejects duplicate identities, non-finite scores,
+non-contiguous position coverage, incorrect keep count, and any dropped
+position in SnapKV's observation window.  This records an immutable
+`prefill_terminal` action set in canonical original-position order; it does
+not reinterpret score-ranked native gather order as Route-A state order.  Its
+two dense passes share a seed and require equal trace-off/observer answer
+digests before an artifact can be written.
+
+P0 proves only that a collected SnapKV selection can meet the frontend
+finality/identity/replay prerequisites.  It supplies no online maturity or
+pending-state evidence, no native cache/decode equivalence, and no quality,
+physical capacity, traffic, timing, scheduler, hardware, architecture, or RTL
+result.  P3 must first replay this stream in a bounded same-mask dense versus
+Route-A functional reference.  Existing KVzap artifacts, defaults, and
+frozen traces remain unchanged.

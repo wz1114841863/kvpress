@@ -1091,6 +1091,39 @@ latency, throughput, energy, area, hardware parameter, architecture
 specification, or RTL result. M4.1 remains record-only and cannot be used to
 select merge precision.
 
+### P0 — SnapKV frontend admission contract on the Qwen3-8B anchor
+
+P0 begins the bounded cross-algorithm branch without reopening the completed
+KVzap A0--A4 anchor.  The admission question is narrower than Route-A mapping:
+can the frontend expose an immutable per-identity final action that a later
+backend can replay?  The required contract is a terminal action for every
+`(layer, KV head, original position)`, an explicit decision epoch, stable
+identity/position preservation, and a same-mask comparator for the later
+functional gate.  A frontend need not have KVzap's online pending state, fixed
+hot window, or online-softmax merge to pass P0.
+
+`tools/run_snapkv_route_a_p0_contract_gate.py` is initially fixed to the
+frozen Qwen3-8B revision and uses `SnapKVPress` only as a score source.  Its
+observer does not call the native press context manager and therefore never
+replaces native cache K/V.  It records a fresh
+`route-a-frontend-decision-stream-1.0` only in a new output directory.  The
+stream is produced from exactly the native top-k selected set, but is ordered
+by original position after selection; native score-ranked gather order is not a
+canonical Route-A state order.  P0 rejects duplicate or missing identities,
+inconsistent sequence lengths, nonterminal epochs, mismatched top-k counts,
+and a dropped SnapKV observation-window position.  It also runs a same-seed
+trace-off dense control and rejects any trace-on observer answer-digest change.
+
+This does not assert that SnapKV has the KVzap maturity lifecycle: SnapKV is a
+one-shot prefill decision source, so pending/maturity descriptors are absent by
+design.  P0 is functional plus (after a model run) trace-derived frontend
+evidence only.  It does not establish native SnapKV decode quality, same-mask
+Route-A attention equivalence, cache capacity, traffic, scheduling,
+backpressure, FIFO sizing, latency, throughput, energy, area, hardware
+parameters, architecture specification, or RTL readiness.  The next required
+gate is P3: replay the canonical stream into a bounded same-mask dense and
+Route-A functional reference before P1/P2/P4 resource descriptors are used.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed

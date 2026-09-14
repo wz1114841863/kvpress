@@ -1935,3 +1935,35 @@ PTE width, bank/burst, merge precision, PE count, scheduler, controller timing,
 traffic, latency, throughput, energy, area, hardware, architecture, or RTL
 result. M6 preserves Llama M4.1's record-only ULP context and cannot turn it
 into a strict numerical pass or a precision selection.
+
+### Route-A frontend terminal-decision stream (SnapKV P0)
+
+`route-a-frontend-decision-stream-1.0` is a compact, final-decision-only NPZ
+for a pruning frontend that is being assessed for Route-A mapping.  Its rows
+contain `frontend_name`, `request_id`, `decision_epoch`, `model_call_index`,
+`layer`, `kv_head`, `original_position`, declared `sequence_length`, terminal
+`keep`, and scalar `score`; it contains neither token text nor K/V tensors.
+Every `(model_call_index, layer, kv_head, original_position)` identity occurs
+once.  The declared sequence length makes a truncated tail a validation error
+rather than silently redefining the request as shorter.
+
+The first frontend is `snapkv_prefill_topk` at epoch `prefill_terminal`.
+`tools/run_snapkv_route_a_p0_contract_gate.py` attaches only a post-attention
+observer to a dense Qwen3-8B prefill; it never installs `SnapKVPress`'s native
+cache-replacing hook.  It computes the same `ScorerPress.select_topk_indices`
+set as native SnapKV, then serializes actions in canonical original-position
+order.  The native score-ranked K/V gather order is recorded neither as a
+Route-A identity order nor as a semantic equivalence claim.  The P0 validator
+requires contiguous coverage of each declared sequence, the configured top-k
+keep count, and retention of SnapKV's padded observation window.  Its two-pass
+runner also requires the trace-on observer answer digest to equal a trace-off
+dense control under the same seed.  A SnapKV P0 stream is one terminal prefill
+epoch, so it has no online pending/maturity timeline and cannot by itself
+establish a KVzap-like lifecycle.
+
+P0 is functional evidence plus trace-derived frontend evidence when collected
+on a model.  It is not same-mask decode equivalence, accuracy, physical cache
+layout, allocator behavior, HBM traffic, timing, throughput, energy, area,
+hardware sizing, architecture specification, or RTL evidence.  Later P3 must
+consume this canonical decision stream in a same-mask dense/Route-A functional
+comparison before any Route-A mapping claim extends beyond P0.

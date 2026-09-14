@@ -73,6 +73,22 @@ class ScorerPress(BasePress):
         """
         raise NotImplementedError
 
+    @staticmethod
+    def select_topk_indices(scores: torch.Tensor, n_kept: int) -> torch.Tensor:
+        """Return the native score-ranked top-k indices without gathering K/V.
+
+        Route-A frontend observers need the exact selected *set* used by a
+        score-based press, but must not invoke the in-place cache replacement
+        path.  Keeping selection here makes that observer share the same
+        ``torch.topk`` operation as :meth:`compress`; callers that need a
+        canonical position order must sort only after this selection.
+        """
+        if scores.ndim != 3:
+            raise ValueError("scores must have shape [batch, kv_head, position]")
+        if not 0 <= n_kept <= scores.shape[-1]:
+            raise ValueError("n_kept must be within the score position dimension")
+        return scores.topk(n_kept, dim=-1).indices
+
     def compress(
         self,
         module: nn.Module,
@@ -92,7 +108,7 @@ class ScorerPress(BasePress):
         # Get indices of KV pairs with the lowest scores
         k_len = keys.shape[2]
         n_kept = int(k_len * (1 - self.compression_ratio))
-        indices = scores.topk(n_kept, dim=-1).indices
+        indices = self.select_topk_indices(scores, n_kept)
         indices = indices.unsqueeze(-1).expand(-1, -1, -1, module.head_dim)
 
         # Prune keys and values
