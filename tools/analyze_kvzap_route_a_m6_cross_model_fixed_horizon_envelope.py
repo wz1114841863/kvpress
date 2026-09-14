@@ -19,7 +19,7 @@ from typing import Any
 from tools.export_kvzap_predictor_trace import get_git_commit, stable_hash
 
 
-M6_SCHEMA = "kvzap-route-a-m6-cross-model-fixed-horizon-envelope-1.1"
+M6_SCHEMA = "kvzap-route-a-m6-cross-model-fixed-horizon-envelope-1.2"
 QWEN_CORE_SCHEMA = "kvzap-route-a4214-core-contract-closure-1.0"
 QWEN_A428_SCHEMA = "kvzap-route-a428-matched-horizon-workload-stability-1.0"
 LLAMA_M51_SCHEMA = "kvzap-llama31-m51-fixed-horizon-workload-descriptor-1.1"
@@ -150,10 +150,17 @@ def reconcile_qwen_core_with_m3(
         raise ValueError("supplied Qwen core does not match the M3.2 canonical consumed projection")
     if projection_sha != reconciliation["prior_serialized_qwen_projection_sha256"]:
         raise ValueError("M3.2 prior/current canonical Qwen projections disagree")
+    known_raw_hashes = {
+        reconciliation["current_qwen_raw_input_sha256"],
+        reconciliation["prior_m3_qwen_raw_input_sha256"],
+    }
+    if raw_sha256 not in known_raw_hashes:
+        raise ValueError("supplied Qwen raw hash is not one of the two M3.2 reconciled inputs")
     return {
         "raw_input_sha256": raw_sha256,
         "m3_current_local_raw_input_sha256": reconciliation["current_qwen_raw_input_sha256"],
         "m3_prior_remote_raw_input_sha256": reconciliation["prior_m3_qwen_raw_input_sha256"],
+        "known_reconciled_raw_input_sha256s": sorted(known_raw_hashes),
         "canonical_consumed_projection_sha256": projection_sha,
         "raw_input_matches_m3_current_local": raw_sha256 == reconciliation["current_qwen_raw_input_sha256"],
         "raw_input_matches_m3_prior_remote": raw_sha256 == reconciliation["prior_m3_qwen_raw_input_sha256"],

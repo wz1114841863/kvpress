@@ -28,7 +28,7 @@ def _row(*, model_anchor: str = "qwen", workload: str = "retrieval", three_way: 
 
 
 def test_m6_schema_and_fan_in_keys_are_versioned():
-    assert M6_SCHEMA == "kvzap-route-a-m6-cross-model-fixed-horizon-envelope-1.1"
+    assert M6_SCHEMA == "kvzap-route-a-m6-cross-model-fixed-horizon-envelope-1.2"
     assert FAN_IN_KEYS == ("1_active_sources", "2_active_sources", "3_active_sources")
 
 

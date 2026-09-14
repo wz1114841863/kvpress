@@ -1910,13 +1910,14 @@ backpressure, cycles, latency, HBM traffic, throughput, energy, area, hardware
 parameters, architecture, or RTL conclusions. It preserves M4.1's record-only
 ULP context and does not alter M2's default enforce guard.
 
-`kvzap-route-a-m6-cross-model-fixed-horizon-envelope-1.1` is a fresh-output,
+`kvzap-route-a-m6-cross-model-fixed-horizon-envelope-1.2` is a fresh-output,
 no-model comparison that SHA-256 binds the completed Qwen A4.2.14 core closure,
 Qwen A4.2.8 matched-horizon descriptor report, and Llama M5.1 fixed-horizon
 descriptor report. It additionally SHA-256 binds completed M3.2 and recreates
 its canonical Qwen consumed projection: if the local and remote raw A4.2.14
-JSON hashes differ, their projection must agree with M3.2 and both raw hashes
-are recorded. An unreconciled raw-hash difference is a hard failure. It
+JSON hashes differ, their projection must agree with M3.2 and the supplied raw
+hash must be one of M3.2's two recorded hashes. Both are recorded in the
+output. An unreconciled or unrecognized raw-hash difference is a hard failure. It
 requires all six fixed workload rows to share the
 declared eight-token continuation, seven all-layer `q_len=1` policy-decode
 calls, hot window 128, and page reference 64. It retains each model/workload
