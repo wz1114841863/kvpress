@@ -1853,3 +1853,13 @@ summary; it must not turn their minima, maxima, or source/page observations
 into a Llama distribution, universal resource envelope, capacity/traffic/
 timing estimate, hardware parameter selection, architecture specification, or
 RTL gate.
+
+M4 input M2 manifests may declare `execution_dtype_ulp_mode=record_only` only
+as an explicit bounded diagnostic after a strict enforce run reports a breach.
+Such an M2 still requires executed same-mask numerical-guard work and exact
+online-mask replay, and records per-layer breach counts, finite/infinite status,
+bounded samples, and maximum observed ULP. A recorded breach is not a strict
+numerical pass and must be kept distinct from an enforce-mode input. M4 requires
+the same declared ULP mode, limit, and sample bound for all three workloads;
+these are software numerical-diagnostic controls, not merge precision or a
+hardware parameter.

@@ -996,6 +996,15 @@ content, or missing M2 guards. The three requests are a coverage matrix, not a
 model/workload distribution, accuracy benchmark, resource sizing range, or
 hardware result. No A0--A3 numeric conclusion is transferred to Llama.
 
+If a fixed-workload M2 run observes an execution-dtype ULP value above the
+default strict limit, M4 must not silently raise that limit. The M2 CLI keeps
+`--execution-dtype-ulp-mode=enforce` as its default and adds the explicit,
+bounded `record_only` diagnostic mode. It retains the same-mask FP32/executed-
+dtype guard work, exact online-dense-mask replay, and scalar breach summaries,
+but it is explicitly not a strict numerical pass. All three M4 workload inputs
+must use the same declared mode and limit; failed directories remain preserved
+and are not reused.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed

@@ -14,12 +14,14 @@ def test_m4_point_summary_keeps_only_bounded_scalars():
             "policy_coverage": {"layers": [{"original_mask_decision_count": 2, "heads": [{"kv_head": 0}]}]},
             "source_coverage": {"hot_observed": True, "pending_observed": False, "packed_observed": True},
             "page_witness": {"witnesses": [{"layer": 0, "kv_head": 0}]},
+            "execution_dtype_ulp_breach_summary": {"layers": [{"mode": "record_only", "executed_dtype_ulp_limit": 16.0, "breach_count": 1, "max_observed_ulps": 33.0, "max_observed_ulps_is_infinite": False}]},
             "final_lifecycle_state": [{"heads": [{"hot_tokens": 128, "pending_tokens": 0, "packed_tokens": 65, "packed_page_count": 2, "packed_full_page_count": 1, "packed_tail_tokens": 1}]}],
         },
     }
     summary = summarize_point(point)
     assert summary["all_layer_mask_decision_count"] == 2
     assert summary["page_witness_count"] == 1
+    assert summary["execution_dtype_ulp_diagnostic"]["breach_count"] == 1
     assert summary["final_state_maxima"]["packed_tokens"] == 65
     assert "final_lifecycle_state" not in summary
 

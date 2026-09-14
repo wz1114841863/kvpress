@@ -3,7 +3,7 @@ import json
 import pytest
 
 from tools.run_kvzap_llama31_m1_semantic_gate import M1_SCHEMA
-from tools.run_kvzap_llama31_m2_lifecycle_gate import M2_SCHEMA, page_witness, read_completed_m1
+from tools.run_kvzap_llama31_m2_lifecycle_gate import M2_SCHEMA, page_witness, parse_args, read_completed_m1
 from tools.validate_kvzap_llama31_m0_provenance import DEFAULT_MODEL_REPO, DEFAULT_MODEL_REVISION, OFFICIAL_PREDICTOR_REPO
 
 
@@ -40,3 +40,10 @@ def test_page_witness_does_not_infer_tail_from_full_pages():
 
 def test_m2_schema_is_versioned():
     assert M2_SCHEMA == "kvzap-llama31-m2-lifecycle-gate-1.0"
+
+
+def test_m2_execution_dtype_ulp_mode_defaults_to_strict_enforcement(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["m2", "--m0-manifest", "m0.json", "--m1-manifest", "m1.json", "--predictor-repo-id-override", OFFICIAL_PREDICTOR_REPO, "--page-tokens", "64", "--pending-admission-budget", "1", "--packing-admission-budget", "512", "--output-dir", "out"])
+    args = parse_args()
+    assert args.execution_dtype_ulp_mode == "enforce"
+    assert args.ulp_breach_sample_limit == 32

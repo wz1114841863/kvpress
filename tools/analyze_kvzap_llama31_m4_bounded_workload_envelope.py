@@ -26,6 +26,8 @@ REQUIRED_M2_GUARDS = (
     "all_32_layers_and_all_8_kv_heads_covered_at_both_points",
     "online_dense_events_replayed_exactly_once_at_both_points",
     "same_mask_fp32_and_executed_dtype_guards_executed_at_both_points",
+    "same_mask_numerical_guard_remained_enforced",
+    "execution_dtype_ulp_mode_declared",
     "budget_one_hot_pending_packed_observed",
     "budget_512_hot_packed_observed",
     "budget_512_full_multi_tail_page_witness",
@@ -73,12 +75,20 @@ def summarize_point(point: dict[str, Any]) -> dict[str, Any]:
     layers = coverage["layers"]
     heads = [head for layer in layers for head in layer["heads"]]
     final_states = [head for layer in route["final_lifecycle_state"] for head in layer["heads"]]
+    ulp_rows = route["execution_dtype_ulp_breach_summary"]["layers"]
     return {
         "admission_budget_reference_input": point["admission_budget"],
         "all_layer_mask_decision_count": sum(int(layer["original_mask_decision_count"]) for layer in layers),
         "all_layer_kv_head_state_count": len(heads),
         "source_coverage": route["source_coverage"],
         "page_witness_count": len(route["page_witness"]["witnesses"]),
+        "execution_dtype_ulp_diagnostic": {
+            "mode": ulp_rows[0]["mode"],
+            "executed_dtype_ulp_limit": ulp_rows[0]["executed_dtype_ulp_limit"],
+            "breach_count": sum(int(row["breach_count"]) for row in ulp_rows),
+            "max_observed_ulps": max((row["max_observed_ulps"] for row in ulp_rows if row["max_observed_ulps"] is not None), default=None),
+            "any_infinite_observation": any(bool(row["max_observed_ulps_is_infinite"]) for row in ulp_rows),
+        },
         "final_state_nonzero_counts": {
             "pending": sum(int(head["pending_tokens"]) > 0 for head in final_states),
             "packed": sum(int(head["packed_tokens"]) > 0 for head in final_states),
@@ -103,7 +113,7 @@ def summarize_workload(value: dict[str, Any]) -> dict[str, Any]:
         "context_tokens": request["context_tokens"],
         "functional_reference_inputs": {
             name: config[name]
-            for name in ("threshold", "window_size", "page_tokens", "pending_admission_budget", "packing_admission_budget", "max_new_tokens", "context_repetitions")
+            for name in ("threshold", "window_size", "page_tokens", "pending_admission_budget", "packing_admission_budget", "max_new_tokens", "context_repetitions", "max_executed_dtype_ulps", "execution_dtype_ulp_mode", "ulp_breach_sample_limit")
         },
         "pending_budget_one": summarize_point(outcomes["pending_budget_one"]),
         "packed_budget_512": summarize_point(outcomes["packed_budget_512"]),

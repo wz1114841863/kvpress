@@ -1252,6 +1252,15 @@ request Llama coverage matrix; it is neither an accuracy test nor a resource
 distribution, physical-capacity/traffic/timing result, hardware choice, or RTL
 gate.
 
+The first strict M4 summarization attempt preserved a started-only directory
+after an execution-dtype ULP breach (33 versus the default 16) during Route-A
+replay. The failure is evidence, not a reason to silently relax the guard. The
+M2 runner therefore exposes a default-preserving `record_only` ULP diagnostic
+mode with bounded scalar samples. It leaves FP32/executed-dtype guard work and
+exact dense-mask replay active, but records the breach as non-strict evidence.
+M4 reruns all three inputs in fresh, mode-matched directories rather than
+mixing strict retrieval with record-only workloads.
+
 ### A4.2.8 implementation — matched-horizon three-workload stability
 
 A428 collects fresh summarization, retrieval, and reasoning sources under one
