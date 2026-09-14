@@ -1121,8 +1121,11 @@ evidence only.  It does not establish native SnapKV decode quality, same-mask
 Route-A attention equivalence, cache capacity, traffic, scheduling,
 backpressure, FIFO sizing, latency, throughput, energy, area, hardware
 parameters, architecture specification, or RTL readiness.  The next required
-gate is P3: replay the canonical stream into a bounded same-mask dense and
-Route-A functional reference before P1/P2/P4 resource descriptors are used.
+sequence is P1 then P3 then P2.  P1 first replays the canonical stream into an
+offline append-only packed-page opportunity analysis.  P3 then replays the
+same stream into a bounded same-mask dense and Route-A functional reference.
+Only after P3 is accepted may P2 describe lifecycle/resource fields; none of
+these steps authorizes P4 resource-envelope comparison or hardware claims.
 
 ### A4.2.9 — matched split-source interface-demand accounting
 

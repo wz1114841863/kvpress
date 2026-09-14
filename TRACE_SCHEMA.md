@@ -1964,6 +1964,8 @@ establish a KVzap-like lifecycle.
 P0 is functional evidence plus trace-derived frontend evidence when collected
 on a model.  It is not same-mask decode equivalence, accuracy, physical cache
 layout, allocator behavior, HBM traffic, timing, throughput, energy, area,
-hardware sizing, architecture specification, or RTL evidence.  Later P3 must
-consume this canonical decision stream in a same-mask dense/Route-A functional
-comparison before any Route-A mapping claim extends beyond P0.
+hardware sizing, architecture specification, or RTL evidence.  The planned
+order is P1 then P3 then P2: P1 first performs offline packed-page opportunity
+analysis from this canonical stream; P3 then consumes it in a same-mask
+dense/Route-A functional comparison; P2 follows only after that mapping is
+semantically accepted.

@@ -1383,6 +1383,8 @@ P0 proves only that a collected SnapKV selection can meet the frontend
 finality/identity/replay prerequisites.  It supplies no online maturity or
 pending-state evidence, no native cache/decode equivalence, and no quality,
 physical capacity, traffic, timing, scheduler, hardware, architecture, or RTL
-result.  P3 must first replay this stream in a bounded same-mask dense versus
-Route-A functional reference.  Existing KVzap artifacts, defaults, and
-frozen traces remain unchanged.
+result.  The cross-frontend sequence is P1 then P3 then P2: P1 records the
+offline packed-page opportunity of this fixed terminal stream; P3 subsequently
+replays it in a bounded same-mask dense versus Route-A functional reference;
+P2 is deferred until that mapping is accepted.  Existing KVzap artifacts,
+defaults, and frozen traces remain unchanged.
