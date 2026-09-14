@@ -1789,3 +1789,20 @@ rejects an existing output directory. It never imports a model runtime or
 loads base/predictor weights, so it is observed provenance plus
 code-derived compatibility only—not trace, semantic, accuracy, traffic,
 timing, hardware, or RTL evidence.
+
+`kvzap-llama31-m1-semantic-gate-1.0` is the next, untimed functional gate for
+the M0-bound `NousResearch/Meta-Llama-3.1-8B-Instruct` snapshot.  It requires
+a completed M0 manifest, its fixed base/predictor revisions, and the reviewed
+default-off `predictor_repo_id_override` bound exactly to
+`nvidia/KVzap-linear-Llama-3.1-8B-Instruct`.  It runs a Full-KV bypass, an
+online same-mask dense control, and an online Route-A hot/pending/packed
+control over all 32 layers and all 8 KV heads.  The two policy controls must
+have identical original score-threshold decisions and execute their FP32 and
+executed-dtype same-mask numerical guards.  It records only hashes, bounded
+scalar coverage/comparison summaries, and optional source-presence booleans;
+it stores no K/V, attention matrices, activations, full logits, or token text.
+`page_tokens` and `admission_budget` are explicit functional-reference inputs,
+not selected hardware values.  This artifact is functional/trace-derived
+evidence for one fixed request only, not model accuracy, a Meta-official
+reproduction, traffic, timing, throughput, energy, area, hardware, or RTL
+evidence.

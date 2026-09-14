@@ -1182,6 +1182,24 @@ binds the separately reviewed default-off `predictor_repo_id_override` to the
 official candidate. It cannot establish equivalence, mask behavior, lifecycle,
 performance, hardware, or RTL conclusions; those remain M1+ work.
 
+### M1 implementation — Nous Llama 3.1 8B semantic portability
+
+M1 is intentionally a narrow functional integration gate, not a second-model
+rerun of Qwen A0--A4.  The new runner hash-binds completed M0 provenance and
+requires the reviewed explicit, default-off Linear predictor override because
+the Nous repository basename cannot derive the official predictor name.  It
+does not instantiate `DMSPress` or the fake-key path.  Instead it runs one
+fixed request as Full-KV bypass, online same-mask dense control, and online
+Route-A hot/pending/packed control over all 32 layers and all 8 KV heads.  The
+two policy paths independently score and must agree exactly on their original
+mask events; every selected group also receives the existing same-mask FP32 and
+executed-dtype attention guard.  Page/admission values are explicit reference
+inputs only, and source-state witnesses are reported rather than assumed.  A
+passing M1 supports semantic portability for this exact model/predictor/request
+contract.  It does not prove accuracy, broad model portability, lifecycle or
+resource-envelope stability, HBM/latency/throughput/energy/area, hardware
+parameter selection, architecture specification, or RTL readiness.
+
 ### A4.2.8 implementation — matched-horizon three-workload stability
 
 A428 collects fresh summarization, retrieval, and reasoning sources under one
