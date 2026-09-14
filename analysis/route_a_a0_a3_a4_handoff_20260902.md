@@ -1239,6 +1239,19 @@ that M3.1 serialized or consumed. A matching projection supports the existing
 M3 semantic conclusion only; it does not prove source-file byte identity, add
 a workload, establish a common hardware envelope, or alter RTL readiness.
 
+### M4 implementation — bounded Llama workload descriptors
+
+M4 does not reopen Qwen A0--A4. It retains the completed retrieval M2 anchor,
+then applies the unchanged M2 same-mask dense/replay lifecycle gate once to
+each fixed built-in summarization and reasoning request. A no-model aggregator
+hash-binds all three M2 manifests and rejects any differing M0/M1 provenance,
+functional inputs, duplicate request content, or missing lifecycle guards. It
+reports each request's source presence, page witness, exact-mask decision
+count, and bounded final-state scalars independently. This is only a three
+request Llama coverage matrix; it is neither an accuracy test nor a resource
+distribution, physical-capacity/traffic/timing result, hardware choice, or RTL
+gate.
+
 ### A4.2.8 implementation — matched-horizon three-workload stability
 
 A428 collects fresh summarization, retrieval, and reasoning sources under one

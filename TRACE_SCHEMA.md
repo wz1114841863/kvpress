@@ -1842,3 +1842,14 @@ projection rejects the report. Equal projections do not imply byte identity of
 the whole upstream reports. Version 1.1 adds no model run, workload sample,
 capacity/traffic/timing estimate, hardware selection, architecture
 specification, or RTL authorization.
+
+`kvzap-llama31-m4-bounded-workload-envelope-1.0` is a new-output, no-model
+aggregation of three completed `kvzap-llama31-m2-lifecycle-gate-1.0` manifests
+for the fixed built-in retrieval, summarization, and reasoning requests. It
+requires every input to bind the same M0/M1 manifests and matched functional
+reference inputs, and rejects duplicate request content or missing M2 semantic
+guards. It contains per-request bounded scalar descriptors and a coverage
+summary; it must not turn their minima, maxima, or source/page observations
+into a Llama distribution, universal resource envelope, capacity/traffic/
+timing estimate, hardware parameter selection, architecture specification, or
+RTL gate.

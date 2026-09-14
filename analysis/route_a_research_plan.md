@@ -981,6 +981,21 @@ the fields M3.1 actually serializes or consumes agrees with the prior M3.1
 report. This reconciliation establishes neither byte identity of the complete
 upstream reports nor new model/workload/hardware evidence.
 
+### M4 — bounded Nous Llama 3.1 8B workload-descriptor expansion
+
+M4 is the first limited cross-workload step after M0--M3. It reuses the
+completed retrieval M2 gate and runs the unchanged M2 functional contract once
+each for the built-in summarization and reasoning requests, at the same fixed
+threshold, hot window, page reference, state probes, seed, and decode cap.
+`tools/analyze_kvzap_llama31_m4_bounded_workload_envelope.py` then hash-binds
+the three completed M2 manifests and reports separate bounded scalar
+descriptors: context length, source presence, exact-mask decision count,
+page-witness count, and final Route-A state maxima. It rejects mismatched
+M0/M1 provenance, mismatched functional-reference inputs, duplicate request
+content, or missing M2 guards. The three requests are a coverage matrix, not a
+model/workload distribution, accuracy benchmark, resource sizing range, or
+hardware result. No A0--A3 numeric conclusion is transferred to Llama.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed
