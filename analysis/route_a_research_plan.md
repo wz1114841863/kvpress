@@ -1017,6 +1017,28 @@ matrix comparison, not a probability claim. A small absolute value does not
 convert record-only evidence into a strict ULP pass, and no merge precision,
 hardware resource, or RTL choice is made.
 
+### M5 — Llama matched-horizon source/fan-in descriptor alignment
+
+`tools/run_kvzap_llama31_m5_matched_horizon_workload_descriptor.py` is the
+next bounded model run after M4.1. It SHA-256 binds M0/M1/M4/M4.1, including
+the explicit record-only summarization ULP context, then reruns each built-in
+Llama workload at the same declared eight-token cap and requires equal actual
+all-layer policy-decode-call counts. A separate Full-KV bypass, online
+same-mask dense source, and Route-A exact replay are retained for every
+workload. Route-A enables the existing untimed logical recorder, which emits
+source partial-or-skip decisions and one merge marker for every attention
+invocation. M5 reports normalized source combinations, active-source fan-in,
+partial record counts, and page/tail descriptors both per workload and per
+`(layer, KV head)`, using fields aligned with Qwen A4.2.8.
+
+This aligns descriptor *meaning*, not numeric distributions or hardware
+requirements: Qwen and Llama retain their own fixed-workload rows. The recorder
+has no source-ready/completion timestamps, so M5 cannot validate scheduler
+overlap, backpressure, queue or FIFO occupancy, cycles, latency, HBM traffic,
+throughput, energy, area, hardware dimensions, architecture specification, or
+RTL readiness. Record-only does not relax M2's default strict guard, turn the
+M4.1 observation into a strict pass, or choose merge precision.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed

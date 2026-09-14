@@ -1272,6 +1272,28 @@ all sampled FP32 maxima are below the declared `atol`, M4.1 must retain the
 strict-ULP failure and cannot select a merge precision, hardware resource, or
 RTL direction.
 
+### M5 implementation — matched-horizon Llama descriptor alignment
+
+M5 closes the specific descriptor gap left by M4: M4 had source presence and
+final state scalars, but not the per-attention source-combination/fan-in and
+page/tail distributions required for field-level comparison with Qwen A4.2.8.
+It hash-binds completed M0, M1, M4, and M4.1 reports. The M4.1 record-only
+summarization context stays explicit: M5 cannot present its run as a strict
+16-ULP pass. Under the same fixed eight-token cap, each Llama built-in request
+uses a separate Full-KV bypass, online same-mask dense mask source, and
+Route-A exact replay. The replay enables the existing untimed logical recorder
+and must retain all-layer/all-KV-head, replay-complete, numerical-guard-work,
+hot/packed, source-decision partition, and equal actual decode-call guards.
+
+The output records only hash-bound, normalized source-combination, active
+fan-in, partial record-count, and page/tail descriptor rows, including
+`(layer, KV head)` rows. This is functional/trace-derived evidence with no
+source-ready or completion timestamp. It aligns the descriptor schema with
+Qwen; it does not demonstrate equal distributions, a common resource envelope,
+source overlap, scheduler/backpressure behavior, FIFO occupancy, capacity,
+HBM traffic, timing, throughput, energy, area, a hardware parameter, an
+architecture specification, or RTL readiness.
+
 ### A4.2.8 implementation — matched-horizon three-workload stability
 
 A428 collects fresh summarization, retrieval, and reasoning sources under one

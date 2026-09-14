@@ -1872,3 +1872,21 @@ reference point, and location. It may state whether a recorded FP32 maximum is
 within the declared software `atol`; it cannot promote record-only evidence to
 a strict ULP pass or select merge precision, capacity, traffic, timing,
 hardware, architecture, or RTL parameters.
+
+`kvzap-llama31-m5-matched-horizon-workload-descriptor-1.0` binds completed
+Llama M0, M1, M4, and M4.1 artifacts by SHA-256, retaining M4.1's explicit
+non-strict summarization 16-ULP context. It runs fresh fixed retrieval,
+summarization, and reasoning requests at the M4-declared cap and rejects the
+run unless all layers have one equal actual `q_len=1` policy-decode-call count.
+For each request, Full-KV bypass is separate, online same-mask dense supplies
+the original decisions, and Route-A consumes that decision stream once while
+an enabled logical recorder stores ordered hot/pending/packed partial-or-skip
+rows and one merge marker. The report records hashes plus event-normalized
+source-combination/fan-in, partial record-count, and page/tail descriptors at
+both workload and `(layer, KV head)` granularity. Events have no source-ready,
+completion, Python, CUDA, or hardware timestamps. Thus this is bounded
+functional/trace-derived descriptor alignment with Qwen A4.2.8 fields, not a
+workload distribution, common hardware envelope, capacity, HBM traffic,
+queue/FIFO, backpressure, timing, throughput, energy, area, architecture, or
+RTL result. Its record-only setting does not alter M2's default enforce mode
+or select a merge precision or any hardware parameter.
