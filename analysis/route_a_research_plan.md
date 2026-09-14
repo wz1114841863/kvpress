@@ -1164,6 +1164,30 @@ to the 256,608-slot full baseline); page count is respectively 24/12/6/3 per
 head for P=16/32/64/128. This uniformity follows the fixed top-k count and
 single input, not a model/workload distribution or a hardware page-size choice.
 
+### P3 — SnapKV bounded same-mask semantic mapping
+
+P3 is the required semantic gate after P1, not another static capacity sweep.
+`tools/run_snapkv_route_a_p3_semantic_gate.py` hash-binds and revalidates the
+completed P0 manifest/terminal stream and P1 report, including P1's P0
+back-pointers, canonical original-position cold mapping, and P=64 row. It
+replays the immutable terminal set for every layer/KV head without using
+SnapKV's score-ranked native gather order.
+
+P0 intentionally contains only prefill decisions, so P3 cannot and does not
+invent a generated-token decode decision. It preserves Qwen's multi-token
+prefill output and uses its final real prefill query only as a read-only probe
+after independently constructing same-mask dense-cold and Route-A
+hot/pending/packed states. Exact replay, mask digests, numerical comparisons,
+and the P1 P=64 state are all gates. The explicit P=64 / admission-budget=4096
+pair drains this fixed terminal state for a functional reference; it does not
+select hardware parameters.
+
+An accepted P3 run supports only bounded semantic mapping of this source. It
+does not prove native SnapKV cache/decode behavior, end-to-end generation
+equivalence, accuracy, pending/maturity behavior, allocator/physical capacity,
+traffic, scheduler/backpressure, latency, throughput, energy, area, hardware
+specification, or RTL. P2 may follow only after P3 is accepted.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed

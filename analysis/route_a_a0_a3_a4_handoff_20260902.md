@@ -1420,3 +1420,25 @@ tail slots round to 384. Hence P=16/32/64/128 changes only the static per-head
 page count (24/12/6/3) and declared metadata; every row has 129,024 physical
 slots, 128,160 ideal slots, and 1.98884x fixed-request full-to-physical slot
 factor. It does not select a page size or establish a wider distribution.
+
+### P3 implementation — SnapKV same-mask prefill-tail semantic gate
+
+P3 bridges the completed P0 terminal stream and P1 static mapping to bounded
+Route-A attention semantics. The runner recomputes and cross-validates P0/P1
+SHA-256 provenance, P1's P0 back-pointers, original-position cold mapping, and
+the P1 P=64 row before consuming each `(layer, KV head, original position,
+keep, score)` decision exactly once. Native score-ranked SnapKV gather order
+is excluded.
+
+P3 has no legitimate source decision for a generated token. It consequently
+leaves Qwen's multi-token prefill attention output unchanged, then probes the
+final actual prefill query against independent same-mask dense and Route-A
+hot/pending/packed plus online-softmax states. It records scalar numerical and
+state evidence only. `page_tokens=64` and `admission_budget=4096` materialize
+P1's terminal P=64 state for this functional check; they select no FIFO, PTE,
+bank/burst, merge precision, PE, scheduler, controller, or hardware setting.
+
+P3 is trace-derived at its terminal mask and functional at its same-mask
+comparison. It cannot establish native SnapKV decode/cache behavior, quality,
+allocator/physical capacity, HBM traffic, timing, scheduling/backpressure,
+throughput, energy, area, architecture specification, or RTL readiness.

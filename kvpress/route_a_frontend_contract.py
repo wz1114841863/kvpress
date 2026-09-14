@@ -184,6 +184,57 @@ def validate_snapkv_p0_contract(
     }
 
 
+def snapkv_terminal_decisions_to_route_a_replay_masks(
+    decisions: list[FrontendDecision],
+) -> dict[int, dict[tuple[int, int], tuple[bool, float]]]:
+    """Convert one complete SnapKV terminal epoch into Route-A replay masks.
+
+    The resulting keys are the existing Route-A identity contract
+    ``(KV head, original position)`` inside a layer.  This is deliberately a
+    lossless identity conversion: it does not reuse SnapKV's native
+    score-ranked gather order, generate decisions for later decode positions,
+    or turn a one-shot prefill frontend into an online predictor.
+    """
+    _validate_terminal_rows(decisions)
+    if {row.frontend_name for row in decisions} != {SNAPKV_FRONTEND_NAME}:
+        raise ValueError("Route-A replay accepts only the SnapKV frontend")
+    if {row.decision_epoch for row in decisions} != {SNAPKV_TERMINAL_EPOCH}:
+        raise ValueError("Route-A replay accepts only SnapKV terminal prefill decisions")
+    if {row.model_call_index for row in decisions} != {0}:
+        raise ValueError("SnapKV P3 accepts exactly one terminal prefill model call")
+    request_ids = {row.request_id for row in decisions}
+    if len(request_ids) != 1:
+        raise ValueError("SnapKV terminal replay requires one request identity")
+
+    by_layer_head: dict[tuple[int, int], list[FrontendDecision]] = {}
+    for row in decisions:
+        by_layer_head.setdefault((row.layer, row.kv_head), []).append(row)
+    layers = sorted({layer for layer, _head in by_layer_head})
+    if layers != list(range(len(layers))):
+        raise ValueError("SnapKV terminal replay requires contiguous layer IDs")
+    replay: dict[int, dict[tuple[int, int], tuple[bool, float]]] = {}
+    for layer in layers:
+        heads = sorted(head for candidate_layer, head in by_layer_head if candidate_layer == layer)
+        if heads != list(range(len(heads))):
+            raise ValueError("SnapKV terminal replay requires contiguous KV-head IDs per layer")
+        events: dict[tuple[int, int], tuple[bool, float]] = {}
+        for head in heads:
+            rows = sorted(by_layer_head[(layer, head)], key=lambda row: row.original_position)
+            lengths = {row.sequence_length for row in rows}
+            if len(lengths) != 1:
+                raise ValueError("SnapKV terminal replay has inconsistent sequence lengths")
+            sequence_length = lengths.pop()
+            if [row.original_position for row in rows] != list(range(sequence_length)):
+                raise ValueError("SnapKV terminal replay lacks contiguous original-position coverage")
+            for row in rows:
+                key = (head, row.original_position)
+                if key in events:
+                    raise ValueError("SnapKV terminal replay contains a duplicate Route-A event")
+                events[key] = (row.keep, row.score)
+        replay[layer] = events
+    return replay
+
+
 def write_frontend_decision_stream(path: Path, decisions: list[FrontendDecision]) -> str:
     """Write a compact, sorted, final-decision-only NPZ once."""
     if path.exists():

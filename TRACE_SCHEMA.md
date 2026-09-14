@@ -1991,3 +1991,29 @@ measurements; P1 has no model execution, native score-ranked gather order,
 pending/maturity state, same-mask attention, scheduler, timing, or hardware
 claim. The protected observation window is not a final Route-A or hardware
 hot-window choice.
+
+### SnapKV P3 same-mask prefill-tail semantic gate
+
+`route-a-snapkv-p3-same-mask-semantic-gate-1.0` accepts only a completed P0
+directory and P1 report. It recomputes the P0 manifest and terminal-stream
+SHA-256 values, verifies P1's back-pointers and canonical mapping, and requires
+the P1 `P=64` row. It converts each P0 terminal decision to the existing
+Route-A `(layer, KV head, original position)` replay identity; native
+score-ranked gather order remains unused.
+
+P0 has no generated-token decision. Therefore P3 leaves Qwen's multi-token
+prefill output unchanged and never invents a decode action. After appending the
+single terminal prefill epoch, it uses the final real prefill query in every
+layer as a read-only probe against two independent functional states:
+same-mask dense cold lists and Route-A hot/pending/packed pages with
+online-softmax merge. It records scalar numerical comparisons and requires
+exact replay, all-layer/head coverage, matching mask digests, and an exact P1
+`P=64` hot/cold/page/tail state cross-check. `page_tokens=64` and
+`admission_budget=4096` fully materialize this fixed terminal state only; they
+are not page/FIFO/PTE/bank/burst/merge-precision/PE/scheduler/controller
+hardware selections.
+
+P3's decisions are trace-derived and its comparison is functional. It is not
+native SnapKV cache/decode validation, accuracy, allocator or physical-capacity
+measurement, HBM traffic, true hardware latency/throughput/energy/area,
+architecture specification, or RTL evidence.
