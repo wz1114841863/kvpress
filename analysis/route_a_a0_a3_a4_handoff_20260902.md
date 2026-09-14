@@ -1430,9 +1430,9 @@ the P1 P=64 row before consuming each `(layer, KV head, original position,
 keep, score)` decision exactly once. Native score-ranked SnapKV gather order
 is excluded.
 
-P3 has no legitimate source decision for a generated token. It consequently
-leaves Qwen's multi-token prefill attention output unchanged, then probes the
-final actual prefill query against independent same-mask dense and Route-A
+P3 has no legitimate source decision beyond P0 context prefill. It runs that
+prefill only, leaves its multi-token attention output unchanged, then probes
+the final actual prefill query against independent same-mask dense and Route-A
 hot/pending/packed plus online-softmax states. It records scalar numerical and
 state evidence only. `page_tokens=64` and `admission_budget=4096` materialize
 P1's terminal P=64 state for this functional check; they select no FIFO, PTE,

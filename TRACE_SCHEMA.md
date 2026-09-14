@@ -2001,10 +2001,11 @@ the P1 `P=64` row. It converts each P0 terminal decision to the existing
 Route-A `(layer, KV head, original position)` replay identity; native
 score-ranked gather order remains unused.
 
-P0 has no generated-token decision. Therefore P3 leaves Qwen's multi-token
-prefill output unchanged and never invents a decode action. After appending the
-single terminal prefill epoch, it uses the final real prefill query in every
-layer as a read-only probe against two independent functional states:
+P0 has no question or generated-token decision. Therefore P3 runs exactly the
+P0 context prefill, leaves its multi-token output unchanged, and never invents
+a later action. After appending the single terminal prefill epoch, it uses the
+final real prefill query in every layer as a read-only probe against two
+independent functional states:
 same-mask dense cold lists and Route-A hot/pending/packed pages with
 online-softmax merge. It records scalar numerical comparisons and requires
 exact replay, all-layer/head coverage, matching mask digests, and an exact P1

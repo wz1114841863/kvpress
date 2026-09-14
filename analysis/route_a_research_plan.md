@@ -1173,10 +1173,11 @@ back-pointers, canonical original-position cold mapping, and P=64 row. It
 replays the immutable terminal set for every layer/KV head without using
 SnapKV's score-ranked native gather order.
 
-P0 intentionally contains only prefill decisions, so P3 cannot and does not
-invent a generated-token decode decision. It preserves Qwen's multi-token
-prefill output and uses its final real prefill query only as a read-only probe
-after independently constructing same-mask dense-cold and Route-A
+P0 intentionally contains only context-prefill decisions, so P3 runs exactly
+that prefill and does not invent a question or generated-token decision. It
+preserves Qwen's multi-token prefill output and uses its final real prefill
+query only as a read-only probe after independently constructing same-mask
+dense-cold and Route-A
 hot/pending/packed states. Exact replay, mask digests, numerical comparisons,
 and the P1 P=64 state are all gates. The explicit P=64 / admission-budget=4096
 pair drains this fixed terminal state for a functional reference; it does not

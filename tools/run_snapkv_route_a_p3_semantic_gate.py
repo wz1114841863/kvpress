@@ -13,7 +13,6 @@ a native SnapKV decode, performance, or hardware experiment.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -329,10 +328,6 @@ def assert_state_matches_p1(
     return {"page_tokens": P3_PAGE_TOKENS, "admission_budget": P3_ADMISSION_BUDGET, "layers": layers}
 
 
-def answer_hash(output: dict[str, Any]) -> str:
-    return hashlib.sha256(str(output["answer"]).encode("utf-8")).hexdigest()
-
-
 def resolve_language_model(model):
     """Resolve Qwen's inner language-model container without guessing layers."""
     model_core = model.model
@@ -361,8 +356,19 @@ def main() -> None:
         raise AssertionError("P0 replay layers differ from the loaded Qwen model")
     if any(sorted({head for head, _position in events}) != list(range(kv_head_count)) for events in replay_masks.values()):
         raise AssertionError("P0 replay KV-head count differs from the loaded Qwen model")
+    tokenized = pipe.preprocess(
+        str(request["context"]),
+        [str(request["question"])],
+        answer_prefix="",
+        max_context_length=pipe.tokenizer.model_max_length,
+        enable_thinking=False,
+    )
+    context_ids = tokenized["context_ids"].to(pipe.model.device)
+    declared_lengths = {row.sequence_length for row in decisions}
+    if declared_lengths != {int(context_ids.shape[1])}:
+        raise AssertionError("P0 terminal sequence length differs from the reconstructed context prefill")
 
-    print("P3 functional pass: replaying frozen P0 terminal masks into same-mask dense and Route-A states...")
+    print("P3 functional pass: replaying one frozen P0 context prefill into same-mask dense and Route-A states...")
     backend = SnapKVP3RouteBackendSet(
         pipe.model,
         None,
@@ -380,13 +386,7 @@ def main() -> None:
     )
     seed_everything(42)
     with torch.no_grad(), backend:
-        output = pipe(
-            str(request["context"]),
-            question=str(request["question"]),
-            cache=DynamicCache(),
-            max_new_tokens=1,
-            enable_thinking=False,
-        )
+        prefill_output = pipe.model.model(input_ids=context_ids, past_key_values=DynamicCache())
     assert_no_runtime_mask_state(pipe.model)
     backend.assert_replay_complete()
     if backend.mask_events() != replay_masks:
@@ -410,7 +410,7 @@ def main() -> None:
         "resident_window": 64,
         "page_tokens_functional_probe": P3_PAGE_TOKENS,
         "admission_budget_functional_probe": P3_ADMISSION_BUDGET,
-        "max_new_tokens": 1,
+        "generated_token_forward_count": 0,
         "seed": 42,
         "rtol": args.rtol,
         "atol": args.atol,
@@ -440,7 +440,10 @@ def main() -> None:
             "content_sha256": stable_hash({"context": request["context"], "question": request["question"]}),
         },
         "outcomes": {
-            "dense_full_prefill_output_answer_sha256": answer_hash(output),
+            "p0_context_prefill": {
+                "context_token_count": int(context_ids.shape[1]),
+                "last_hidden_state_shape": list(prefill_output.last_hidden_state.shape),
+            },
             "canonical_p0_terminal_replay_consumed_exactly_once": True,
             "same_mask_dense_vs_route_a_prefill_tail_probe": {
                 "coverage": coverage,
@@ -458,14 +461,15 @@ def main() -> None:
             "fp32_same_mask_guard_enforced": True,
             "executed_dtype_ulp_breaches_recorded_not_selected": True,
             "p1_p64_hot_packed_state_matches_functional_route_a": True,
-            "p3_preffill_tail_probes_do_not_replace_model_prefill_attention": True,
+            "p3_prefill_tail_probes_do_not_replace_model_prefill_attention": True,
+            "generated_token_forward_count_is_zero": True,
             "snapkv_native_cache_replacement_used": False,
             "route_a_predictor_scored_online": False,
             "full_kv_bypass_or_native_cache_mutation_used": False,
         },
         "boundaries": [
             "P3 is one fixed Qwen3-8B request. P0 terminal decisions are trace-derived; P3 same-mask dense/Route-A tail comparisons are functional reference evidence.",
-            "P3 evaluates the final real prefill query after appending P0 state, but leaves the model's multi-token prefill output dense. It has no source decision for a generated decode position and therefore is not native SnapKV decode validation or an end-to-end generation-equivalence result.",
+            "P3 runs exactly the P0 context prefill, evaluates its final real query after appending P0 state, and leaves the model's multi-token prefill output dense. It runs no question or generated-token forward because P0 has no decision for them; therefore it is not native SnapKV decode validation or an end-to-end generation-equivalence result.",
             "The FP32 same-mask attention guard is enforced. Executed-dtype ULP values are bounded scalar record-only diagnostics because different reduction orders can round differently; they are not a merge-precision selection or a strict ULP pass.",
             "The P=64 and admission-budget=4096 values fully materialize the accepted P1 P=64 state for this probe. They select no FIFO depth, PTE width, bank/burst, merge precision, PE count, scheduler, controller timing, or hardware parameter.",
             "P3 establishes no quality/accuracy, allocator behavior, physical capacity, HBM traffic, true hardware latency, throughput, energy, area, hardware acceleration, architecture specification, or RTL result.",
