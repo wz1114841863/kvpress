@@ -1171,6 +1171,15 @@ A4201 hardware fields remain unresolved and A4211 placement/arrival studies
 remain modeled sensitivity only. The next research scope is a minimal second
 KVzap-model portability gate, not further Qwen micro-sensitivity or RTL.
 
+### M0 implementation — Nous Llama 3.1 8B provenance and structural eligibility
+
+The first second-model gate is intentionally no-model. The M0 validator checks
+the cached fixed-revision Nous snapshot, safetensors index/shard presence,
+Llama JSON structural fields, the `KVzapPress`-derived Linear predictor ID,
+and the resolved predictor JSON dimensions. Its only output is a hash-bound
+provenance manifest. It cannot establish equivalence, mask behavior, lifecycle,
+performance, hardware, or RTL conclusions; those remain M1+ work.
+
 ### A4.2.8 implementation — matched-horizon three-workload stability
 
 A428 collects fresh summarization, retrieval, and reasoning sources under one

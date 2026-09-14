@@ -1774,3 +1774,14 @@ Qwen3-8B/KVzap resource descriptor. A4211 arrival/placement rows and A4201
 parameter ranges remain explicitly modeled and unresolved. The closure is
 neither an architecture specification nor a FIFO/PTE/bank/burst/precision/PE/
 scheduler/controller-timing freeze, hardware measurement, or RTL gate.
+
+`kvzap-llama31-m0-provenance-1.0` is the no-model M0 entry gate for the cached
+`NousResearch/Meta-Llama-3.1-8B-Instruct` snapshot. It records the fixed
+snapshot revision; SHA-256/size records for `config.json`,
+`tokenizer_config.json`, and the safetensors index; declared-shard existence;
+the code-derived Linear KVzap predictor ID; the resolved predictor revision
+and predictor-config SHA-256; and the JSON-level Llama/predictor dimension
+compatibility check. It rejects an existing output directory. It never imports
+a model runtime or loads base/predictor weights, so it is observed provenance
+plus code-derived compatibility only—not trace, semantic, accuracy, traffic,
+timing, hardware, or RTL evidence.
