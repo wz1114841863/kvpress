@@ -1795,10 +1795,12 @@ the M0-bound `NousResearch/Meta-Llama-3.1-8B-Instruct` snapshot.  It requires
 a completed M0 manifest, its fixed base/predictor revisions, and the reviewed
 default-off `predictor_repo_id_override` bound exactly to
 `nvidia/KVzap-linear-Llama-3.1-8B-Instruct`.  It runs a Full-KV bypass, an
-online same-mask dense control, and an online Route-A hot/pending/packed
-control over all 32 layers and all 8 KV heads.  The two policy controls must
-have identical original score-threshold decisions and execute their FP32 and
-executed-dtype same-mask numerical guards.  It records only hashes, bounded
+online same-mask dense control, and a Route-A hot/pending/packed control over
+all 32 layers and all 8 KV heads.  Route-A consumes the dense control's online
+original score-threshold decisions exactly once, then executes its FP32 and
+executed-dtype same-mask numerical guards.  It deliberately does not claim
+that a Route-A path can independently re-score identically after its own
+attention substitution has changed later hidden states.  It records only hashes, bounded
 scalar coverage/comparison summaries, and optional source-presence booleans;
 it stores no K/V, attention matrices, activations, full logits, or token text.
 `page_tokens` and `admission_budget` are explicit functional-reference inputs,

@@ -3,9 +3,9 @@
 
 This is deliberately a functional Route-A reference gate.  It does not use
 ``DMSPress`` or the fake-key path: a full-KV bypass, an online same-mask dense
-control, and an online hot/pending/packed Route-A control are run separately.
-The latter two must make identical original KVzap decisions for every layer
-and KV head.  None of its scalar summaries is a hardware measurement.
+control, and a hot/pending/packed Route-A control that replays the dense
+control's original decisions exactly once are run separately.  None of its
+scalar summaries is a hardware measurement.
 """
 
 from __future__ import annotations
@@ -23,11 +23,7 @@ from huggingface_hub import snapshot_download
 from transformers import pipeline
 
 from kvpress import KVzapPress
-from kvpress.route_a_policy_backend import (
-    DenseSameMaskAttentionBackendSet,
-    RouteAPolicyAttentionBackendSet,
-    compare_original_mask_events,
-)
+from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackendSet, RouteAPolicyAttentionBackendSet
 from tools.export_kvzap_predictor_trace import assert_no_runtime_mask_state, get_git_commit, stable_hash
 from tools.run_kvzap_trace import PRESETS, build_builtin_request, load_jsonl_request, seed_everything
 from tools.validate_kvzap_llama31_m0_provenance import (
@@ -60,7 +56,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "M1 functional semantic-portability gate for Nous Llama 3.1 8B: "
-            "compare online same-mask dense and Route-A controls; not a benchmark."
+            "replay online same-mask dense decisions into Route-A; not a benchmark."
         )
     )
     request = parser.add_mutually_exclusive_group()
@@ -100,7 +96,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-executed-dtype-ulps", type=float, default=16.0)
     parser.add_argument("--require-any-pending", action="store_true")
     parser.add_argument("--require-any-packed", action="store_true")
-    parser.add_argument("--mask-drift-example-limit", type=int, default=32)
     parser.add_argument("--output-dir", type=Path, required=True, help="New output directory only.")
     return parser.parse_args()
 
@@ -234,50 +229,6 @@ def compact_config(args: argparse.Namespace, *, predictor_revision: str) -> dict
     } | {"predictor_revision": predictor_revision, "predictor_model_type": "linear", "target_layers": "all", "target_kv_heads": "all"}
 
 
-def write_mask_drift_diagnostic(
-    *,
-    args: argparse.Namespace,
-    request: dict[str, Any],
-    m0: dict[str, Any],
-    predictor_revision: str,
-    full: dict[str, Any],
-    dense: dict[str, Any],
-    route: dict[str, Any],
-    dense_backend: DenseSameMaskAttentionBackendSet,
-    route_backend: RouteAPolicyAttentionBackendSet,
-    report: dict[str, Any],
-) -> Path:
-    """Write only a bounded failed-pair diagnostic into the requested new directory."""
-    args.output_dir.mkdir(parents=True, exist_ok=False)
-    payload = {
-        "schema_version": "kvzap-llama31-m1-online-mask-drift-diagnostic-1.0",
-        "status": "failed",
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "git_commit": get_git_commit(),
-        "config": compact_config(args, predictor_revision=predictor_revision),
-        "request_id": request["request_id"],
-        "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}),
-        "m0_manifest_sha256": sha256_file(args.m0_manifest),
-        "m0_config_hash": m0.get("config_hash"),
-        "answer_sha256": {
-            "full_kv_bypass": answer_hash(full),
-            "online_same_mask_dense": answer_hash(dense),
-            "online_route_a": answer_hash(route),
-        },
-        "dense_policy_coverage": dense_backend.coverage(),
-        "route_a_policy_coverage": route_backend.coverage(),
-        "mask_drift": report,
-        "boundaries": [
-            "This is a failed M1 online-mask pairing diagnostic, not a successful portability result.",
-            "The report contains bounded scalar score/decision examples only; no token text, K/V, activation, attention matrix, or logits are serialized.",
-            "It is not timing, allocator, HBM traffic, throughput, energy, area, hardware, or RTL evidence.",
-        ],
-    }
-    path = args.output_dir / "llama31_m1_online_mask_drift_diagnostic.json"
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return path
-
-
 def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
@@ -293,7 +244,7 @@ def main() -> None:
         raise ValueError("M1 is fixed to the M0-reviewed Nous model revision, threshold -7.0, and hot window 128")
     if args.predictor_repo_id_override != OFFICIAL_PREDICTOR_REPO:
         raise ValueError("M1 requires the exact M0-reviewed explicit Linear predictor override")
-    if min(args.context_repetitions, args.page_tokens, args.admission_budget, args.max_new_tokens, args.max_executed_dtype_ulps, args.mask_drift_example_limit) <= 0:
+    if min(args.context_repetitions, args.page_tokens, args.admission_budget, args.max_new_tokens, args.max_executed_dtype_ulps) <= 0:
         raise ValueError("invalid M1 functional-reference dimensions")
     if args.window_size < 0 or args.max_new_tokens < 2:
         raise ValueError("M1 requires a nonnegative window and at least two generated-token attempts")
@@ -349,10 +300,9 @@ def main() -> None:
     assert_all_layer_head_coverage(dense_coverage, expected_layers=layer_count, expected_kv_heads=kv_head_count, label="same-mask dense")
     assert_numerical_guard_work(dense_backend.same_mask_numerical_guard_work_summary(), layer_count, label="same-mask dense")
 
-    route_predictor = make_predictor(predictor_revision=predictor_revision, override=args.predictor_repo_id_override)
     route_backend = RouteAPolicyAttentionBackendSet(
         pipe.model,
-        route_predictor,
+        None,
         layers=selected_layers,
         kv_head=None,
         threshold=args.threshold,
@@ -362,34 +312,19 @@ def main() -> None:
         rtol=args.rtol,
         atol=args.atol,
         max_executed_dtype_ulps=args.max_executed_dtype_ulps,
+        replay_mask_events=dense_backend.mask_events(),
     )
-    print("Pass 3/3: online Route-A hot/pending/packed control for all layers and KV heads...")
+    print("Pass 3/3: Route-A hot/pending/packed control replaying all online dense mask events...")
     with torch.no_grad(), route_backend:
         route = generate(pipe, request, args)
     assert_no_runtime_mask_state(pipe.model)
-    if route_predictor.kvzap_model_name != OFFICIAL_PREDICTOR_REPO:
-        raise AssertionError("Route-A control did not use the explicit official Linear predictor override")
+    route_backend.assert_replay_complete()
     route_coverage = route_backend.coverage()
     assert_all_layer_head_coverage(route_coverage, expected_layers=layer_count, expected_kv_heads=kv_head_count, label="Route-A")
     assert_numerical_guard_work(route_backend.same_mask_numerical_guard_work_summary(), layer_count, label="Route-A")
 
-    drift = compare_original_mask_events(
-        dense_backend.mask_events(), route_backend.mask_events(), max_examples=args.mask_drift_example_limit
-    )
-    if not drift["matched"]:
-        diagnostic = write_mask_drift_diagnostic(
-            args=args,
-            request=request,
-            m0=m0,
-            predictor_revision=predictor_revision,
-            full=full,
-            dense=dense,
-            route=route,
-            dense_backend=dense_backend,
-            route_backend=route_backend,
-            report=drift,
-        )
-        raise AssertionError(f"M1 online same-mask pairing failed; diagnostic={diagnostic}")
+    if dense_backend.mask_events() != route_backend.mask_events():
+        raise AssertionError("Route-A replayed mask events differ from the online dense source")
 
     sources = source_coverage(route_backend.comparisons)
     if not sources["hot_observed"]:
@@ -437,20 +372,28 @@ def main() -> None:
                 "policy_coverage": dense_coverage,
                 "same_mask_numerical_guard_work": dense_backend.same_mask_numerical_guard_work_summary(),
             },
-            "online_route_a_hot_pending_packed": {
+            "replayed_same_mask_route_a_hot_pending_packed": {
                 "answer_sha256": answer_hash(route),
                 "policy_decode_call_count_by_layer": route_backend.policy_decode_calls,
                 "policy_coverage": route_coverage,
                 "same_mask_numerical_guard_work": route_backend.same_mask_numerical_guard_work_summary(),
                 "source_coverage": sources,
             },
-            "online_original_mask_pairing": drift,
+            "same_mask_pairing": {
+                "mode": "replayed_online_dense_mask",
+                "route_a_replay_consumption_complete": True,
+                "online_dense_original_mask_decision_count_by_layer": {
+                    str(row["layer"]): int(row["original_mask_decision_count"])
+                    for row in dense_coverage["layers"]
+                },
+            },
         },
         "observational_guards": {
             "m0_complete_explicit_override_bound": True,
             "all_32_layers_and_all_8_kv_heads_selected": True,
             "all_selected_groups_have_policy_comparisons": True,
-            "same_mask_dense_and_route_a_online_masks_identical": True,
+            "same_mask_dense_events_replayed_exactly_once_by_route_a": True,
+            "route_a_predictor_scored_online": False,
             "same_mask_fp32_and_executed_dtype_guards_executed": True,
             "route_a_hot_service_observed": sources["hot_observed"],
             "required_pending_observed": not args.require_any_pending or sources["pending_observed"],
@@ -463,7 +406,7 @@ def main() -> None:
         },
         "boundaries": [
             "M1 validates one fixed Nous Llama 3.1 8B request and the explicit Linear predictor override. It is not a Meta-official model reproduction or an accuracy result.",
-            "The full-KV, online same-mask dense, and Route-A generated answers need not match; the semantic relation gated here is identical online original-mask decisions plus same-mask numerical attention guards.",
+            "The full-KV, online same-mask dense, and replayed-mask Route-A generated answers need not match. Route-A does not independently re-score after it begins substituting attention; it consumes the online dense original-mask events exactly once and enforces same-mask numerical attention guards.",
             "page_tokens and admission_budget are explicit functional-reference inputs. This run selects no FIFO, PTE width, bank/burst, merge precision, PE count, scheduler, controller timing, or hardware parameter.",
             "No field is HBM traffic, true hardware latency, throughput, energy, area, hardware acceleration, architecture specification, or RTL evidence.",
         ],

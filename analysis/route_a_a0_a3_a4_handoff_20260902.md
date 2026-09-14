@@ -1189,10 +1189,11 @@ rerun of Qwen A0--A4.  The new runner hash-binds completed M0 provenance and
 requires the reviewed explicit, default-off Linear predictor override because
 the Nous repository basename cannot derive the official predictor name.  It
 does not instantiate `DMSPress` or the fake-key path.  Instead it runs one
-fixed request as Full-KV bypass, online same-mask dense control, and online
-Route-A hot/pending/packed control over all 32 layers and all 8 KV heads.  The
-two policy paths independently score and must agree exactly on their original
-mask events; every selected group also receives the existing same-mask FP32 and
+fixed request as Full-KV bypass, online same-mask dense control, and replayed-
+mask Route-A hot/pending/packed control over all 32 layers and all 8 KV heads.
+The dense control provides one online original-mask stream; Route-A must consume
+every event exactly once rather than independently re-score after its own
+attention substitution can alter later hidden states. Every selected group also receives the existing same-mask FP32 and
 executed-dtype attention guard.  Page/admission values are explicit reference
 inputs only, and source-state witnesses are reported rather than assumed.  A
 passing M1 supports semantic portability for this exact model/predictor/request

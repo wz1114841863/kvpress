@@ -922,11 +922,12 @@ RTL result.
 `tools/run_kvzap_llama31_m1_semantic_gate.py` is the minimal runtime gate after
 completed M0.  It is deliberately not the legacy DMS/fake-key path.  With the
 M0-bound explicit default-off Linear predictor override, it runs one fixed
-request through three independent controls: Full-KV bypass (zero Route-A
-admission), online same-mask dense KVzap, and online Route-A
-hot/pending/packed attention.  The latter two independently score the model
-and must produce exactly identical original decisions for every one of the 32
-layers and 8 KV heads; each selected group must perform a q_len=1 policy
+request through three controls: Full-KV bypass (zero Route-A admission), online
+same-mask dense KVzap, and replayed-mask Route-A hot/pending/packed attention.
+The dense pass is the one online source of original decisions; Route-A consumes
+those exact events once for every one of the 32 layers and 8 KV heads.  It does
+not independently re-score after its attention substitution can change later
+hidden states. Each selected group must perform a q_len=1 policy
 comparison and each layer must execute the FP32/executed-dtype same-mask guard.
 The Full-KV, dense, and Route-A generated answers are reported by digest only
 and need not be equal.  `page_tokens` and `admission_budget` are required,
