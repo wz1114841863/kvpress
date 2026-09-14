@@ -1969,3 +1969,25 @@ order is P1 then P3 then P2: P1 first performs offline packed-page opportunity
 analysis from this canonical stream; P3 then consumes it in a same-mask
 dense/Route-A functional comparison; P2 follows only after that mapping is
 semantically accepted.
+
+### SnapKV P1 static packed-page opportunity
+
+`route-a-snapkv-p1-static-packed-opportunity-1.0` is a new-output, no-model
+analysis of exactly one complete `route-a-snapkv-p0-contract-gate-1.0`
+directory. `tools/analyze_snapkv_route_a_p1_packed_opportunity.py` validates
+the P0 manifest/status, trace-off/on guard, registered terminal-stream filename
+and SHA-256, then revalidates the terminal-decision contract. It accepts one
+contiguous P0 prefill call with complete contiguous layer/KV-head/position
+coverage and constructs an explicit final-drop array once.
+
+For this mapping study only, the P0 SnapKV protected observation window is the
+resident hot window; terminal keeps before it append independently to cold
+pages in canonical original-position order, and terminal drops are absent.
+The tool rejects a different resident-window value. Page sizes are explicit
+static study axes. It writes one request row per page size and one layer-head
+row per page size with slots, pages, tail waste, and declared metadata/K+V byte
+accounting. Declared bytes are not allocator memory or HBM traffic
+measurements; P1 has no model execution, native score-ranked gather order,
+pending/maturity state, same-mask attention, scheduler, timing, or hardware
+claim. The protected observation window is not a final Route-A or hardware
+hot-window choice.

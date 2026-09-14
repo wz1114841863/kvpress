@@ -1388,3 +1388,22 @@ offline packed-page opportunity of this fixed terminal stream; P3 subsequently
 replays it in a bounded same-mask dense versus Route-A functional reference;
 P2 is deferred until that mapping is accepted.  Existing KVzap artifacts,
 defaults, and frozen traces remain unchanged.
+
+### P1 implementation — SnapKV terminal-stream packed opportunity
+
+P1 is deliberately an A0-shaped static analysis, not a reuse of the completed
+KVzap A0 numeric result. `tools/analyze_snapkv_route_a_p1_packed_opportunity.py`
+hash-binds and revalidates one completed SnapKV P0 manifest and its terminal
+decision NPZ, including the trace-off/on observer guard. It reconstructs a
+complete final keep/drop array only after rejecting missing identities,
+noncontiguous layer/head IDs, multiple calls, or a hash mismatch.
+
+For the initial mapping, SnapKV's P0-protected observation suffix is the only
+resident hot window; each earlier retained `(layer, KV head, original position)`
+record appends to its own cold page list and drops are absent. This is a
+declared compatibility mapping, not a frozen Route-A hot-window or hardware
+choice. P1 sweeps page sizes and reports slots/pages/tail plus explicitly
+declared metadata/K+V accounting. It contains no model execution, same-mask
+functional proof, admission/pending trace, allocator/HBM measurement,
+scheduler/timing evidence, or hardware/RTL result. P3 is still required before
+any lifecycle/resource descriptor study.

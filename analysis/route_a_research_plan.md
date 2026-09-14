@@ -1127,6 +1127,27 @@ same stream into a bounded same-mask dense and Route-A functional reference.
 Only after P3 is accepted may P2 describe lifecycle/resource fields; none of
 these steps authorizes P4 resource-envelope comparison or hardware claims.
 
+### P1 — SnapKV static packed-page opportunity
+
+`tools/analyze_snapkv_route_a_p1_packed_opportunity.py` is the no-model step
+after accepted P0. It consumes only one hash-bound completed P0 directory and
+revalidates its terminal stream before constructing the explicit final mask.
+The initial mapping uses exactly SnapKV's protected observation window as the
+resident hot window: terminal keeps in that suffix are hot, earlier terminal
+keeps form independent append-only cold streams per `(layer, KV head)`, and
+terminal drops are absent. The native score-ranked gather order is never used
+as position identity or append order.
+
+P1 sweeps declared page sizes `{16,32,64,128}` and reports slot count, tail
+waste, page count, and per-head distributions plus declared K+V and metadata
+accounting. The resident window and byte fields are explicit mapping/accounting
+inputs, not selected hardware parameters. This is a fixed-request
+trace-derived static opportunity study with modeled accounting fields; it does
+not establish same-mask functional equivalence, native decode quality,
+admission/maturity, pending state, allocator behavior, HBM traffic,
+scheduler/backpressure, latency, throughput, energy, area, architecture, or
+RTL. P3 remains the next semantic gate after P1.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed
