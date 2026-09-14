@@ -333,6 +333,12 @@ def answer_hash(output: dict[str, Any]) -> str:
     return hashlib.sha256(str(output["answer"]).encode("utf-8")).hexdigest()
 
 
+def resolve_language_model(model):
+    """Resolve Qwen's inner language-model container without guessing layers."""
+    model_core = model.model
+    return model_core.language_model if hasattr(model_core, "language_model") else model_core
+
+
 def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
@@ -348,7 +354,7 @@ def main() -> None:
     pipe = pipeline("kv-press-text-generation", model=DEFAULT_MODEL, revision=GATE_B_MODEL_REVISION, device_map="auto", dtype="auto")
     if getattr(pipe.model.config, "_commit_hash", None) != GATE_B_MODEL_REVISION:
         raise AssertionError("P3 loaded model revision differs from P0")
-    language_model = pipe.model.model.language_model if hasattr(pipe.model, "language_model") else pipe.model
+    language_model = resolve_language_model(pipe.model)
     layer_count = len(language_model.layers)
     kv_head_count = int(pipe.model.config.num_key_value_heads)
     if set(replay_masks) != set(range(layer_count)):

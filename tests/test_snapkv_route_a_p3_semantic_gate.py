@@ -10,7 +10,7 @@ from kvpress.route_a_frontend_contract import (
     write_frontend_decision_stream,
 )
 from tools.analyze_snapkv_route_a_p1_packed_opportunity import P0_MANIFEST_NAME, P0_STREAM_NAME
-from tools.run_snapkv_route_a_p3_semantic_gate import P1_REPORT_NAME, load_p3_inputs
+from tools.run_snapkv_route_a_p3_semantic_gate import P1_REPORT_NAME, load_p3_inputs, resolve_language_model
 
 
 def _write_completed_inputs(tmp_path):
@@ -111,3 +111,16 @@ def test_terminal_converter_rejects_a_second_model_call(tmp_path):
     changed = [replace(decision, model_call_index=1) if index == 0 else decision for index, decision in enumerate(decisions)]
     with pytest.raises(ValueError, match="one terminal prefill model call"):
         snapkv_terminal_decisions_to_route_a_replay_masks(changed)
+
+
+def test_p3_resolves_qwen_inner_language_model_not_top_level_wrapper():
+    class LanguageModel:
+        pass
+
+    class Core:
+        language_model = LanguageModel()
+
+    class Wrapper:
+        model = Core()
+
+    assert isinstance(resolve_language_model(Wrapper()), LanguageModel)
