@@ -1215,6 +1215,19 @@ replace/free Llama's native cache. It supports fixed-request functional/
 trace-derived lifecycle portability only, not physical memory, traffic, timing,
 general workload behavior, hardware parameter selection, or RTL readiness.
 
+### M3 implementation — Qwen/Llama portability closure and separate descriptors
+
+M3 is deliberately a no-model archive comparison rather than another model
+run. It hash-binds the Qwen A4.2.14 closure and the completed Nous Llama M0,
+M1, and M2 chain, rejecting incomplete guards or a broken M0/M1/M2 provenance
+link. A successful report says only that two fixed model/predictor/request
+anchors cover the Route-A same-mask/Full-KV-bypass semantics and the
+hot/pending/packed lifecycle state classes. It keeps Qwen's three fixed
+workload source/fan-in/page-tail descriptor and Llama's one-request lifecycle
+state summaries explicitly separate. Neither descriptor is a universal
+resource range, accelerator dimension, performance observation, architecture
+specification, or RTL authorization.
+
 ### A4.2.8 implementation — matched-horizon three-workload stability
 
 A428 collects fresh summarization, retrieval, and reasoning sources under one

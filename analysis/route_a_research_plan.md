@@ -953,6 +953,21 @@ functional/trace-derived lifecycle evidence only, not a lifecycle distribution,
 accuracy, physical capacity, traffic, timing, throughput, energy, area,
 hardware, architecture-specification, or RTL result.
 
+### M3 — Qwen/Llama semantic-portability and descriptor-envelope comparison
+
+`tools/compare_kvzap_route_a_m3_portability_envelope.py` is a no-model,
+new-output comparison that SHA-256 binds the completed Qwen A4.2.14 core
+contract closure with Llama M0, M1, and M2. It admits the two fixed anchors
+only after their required provenance/semantic/lifecycle guards validate, then
+records the shared Route-A semantic state classes separately from each model's
+fixed-workload descriptor. Qwen's three-request source/fan-in/page-tail
+distributions are never combined with Llama's one-request lifecycle scalar
+summaries: they are inputs for a future bounded envelope study, not universal
+resource ranges. M3 establishes neither a hardware dimension nor broad model
+or algorithm portability. It is no-model hash-bound functional/trace-derived
+comparison evidence, not capacity, traffic, timing, throughput, energy, area,
+hardware, architecture-specification, or RTL evidence.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed

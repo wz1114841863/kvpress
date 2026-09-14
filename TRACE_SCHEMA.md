@@ -1820,3 +1820,14 @@ contains hashes and bounded scalar lifecycle/page summaries only. It owns no
 native model cache and establishes no external-cache ownership, allocator,
 traffic, timing, throughput, energy, area, hardware, or RTL conclusion. The
 two page/admission values are lifecycle probes, not hardware selections.
+
+`kvzap-route-a-m3-portability-envelope-comparison-1.0` is a new-output,
+no-model report that SHA-256 binds completed Qwen A4.2.14, Llama M0, M1, and
+M2 artifacts. It rejects absent/incomplete inputs, missing required guards, or
+broken M0-to-M1-to-M2 provenance hashes. Its portable-contract section records
+only the two-anchor semantic compatibility checks; its Qwen and Llama sections
+remain separate fixed-workload descriptors. In particular, Qwen source/fan-in/
+page-tail distributions must not be merged with Llama's lifecycle scalar
+summaries into a universal resource envelope. The report does not load a model,
+estimate capacity, traffic, latency, throughput, energy, or area, select a
+hardware parameter, authorize an architecture specification, or gate RTL.
