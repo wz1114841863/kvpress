@@ -1863,3 +1863,12 @@ numerical pass and must be kept distinct from an enforce-mode input. M4 requires
 the same declared ULP mode, limit, and sample bound for all three workloads;
 these are software numerical-diagnostic controls, not merge precision or a
 hardware parameter.
+
+`kvzap-llama31-m41-summarization-ulp-diagnostic-1.0` binds a completed M4
+report and its three record-only M2 inputs. It validates the M4 hashes, M2
+replay/guard boundaries, and each retained breach sample, then joins ULP count
+to its scalar FP32 absolute difference, local route/dense values, ULP spacing,
+reference point, and location. It may state whether a recorded FP32 maximum is
+within the declared software `atol`; it cannot promote record-only evidence to
+a strict ULP pass or select merge precision, capacity, traffic, timing,
+hardware, architecture, or RTL parameters.

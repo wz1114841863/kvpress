@@ -1261,6 +1261,17 @@ exact dense-mask replay active, but records the breach as non-strict evidence.
 M4 reruns all three inputs in fresh, mode-matched directories rather than
 mixing strict retrieval with record-only workloads.
 
+### M4.1 implementation — bounded summarization ULP diagnosis
+
+M4.1 is a no-model diagnosis of the retained M4 record-only summaries, not a
+rerun or relaxed strict gate. It binds the M4 report and three M2 inputs, then
+reports each summarization breach alongside FP32 absolute difference, local
+values, ULP spacing, reference point, and location multiplicity. The fixed
+retrieval/reasoning zero-breach rows provide only comparator context. Even if
+all sampled FP32 maxima are below the declared `atol`, M4.1 must retain the
+strict-ULP failure and cannot select a merge precision, hardware resource, or
+RTL direction.
+
 ### A4.2.8 implementation — matched-horizon three-workload stability
 
 A428 collects fresh summarization, retrieval, and reasoning sources under one

@@ -1005,6 +1005,18 @@ but it is explicitly not a strict numerical pass. All three M4 workload inputs
 must use the same declared mode and limit; failed directories remain preserved
 and are not reused.
 
+### M4.1 — summarization ULP diagnostic closure
+
+`tools/analyze_kvzap_llama31_m41_summarization_ulp_diagnostic.py` is a
+no-model, hash-bound follow-up to a record-only M4 matrix. It binds M4 plus
+all three M2 manifests, rejects missing replay/guard/provenance conditions, and
+reports only bounded scalar ULP-breach samples. Each sample is paired with its
+FP32 absolute difference, local values, ULP spacing, unique location count, and
+declared `atol` context; retrieval/reasoning zero-breach counts are a fixed
+matrix comparison, not a probability claim. A small absolute value does not
+convert record-only evidence into a strict ULP pass, and no merge precision,
+hardware resource, or RTL choice is made.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed
