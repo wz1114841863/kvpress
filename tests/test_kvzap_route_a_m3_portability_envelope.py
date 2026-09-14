@@ -1,10 +1,14 @@
 import pytest
 
-from tools.compare_kvzap_route_a_m3_portability_envelope import M3_SCHEMA, lifecycle_summary, require_true
+from tools.compare_kvzap_route_a_m3_portability_envelope import M3_SCHEMA, canonical_sha256, lifecycle_summary, require_true
 
 
 def test_m3_schema_is_versioned():
-    assert M3_SCHEMA == "kvzap-route-a-m3-portability-envelope-comparison-1.0"
+    assert M3_SCHEMA == "kvzap-route-a-m3-portability-envelope-comparison-1.1"
+
+
+def test_canonical_sha256_ignores_dictionary_key_order():
+    assert canonical_sha256({"b": 2, "a": 1}) == canonical_sha256({"a": 1, "b": 2})
 
 
 def test_required_guards_reject_false_value():

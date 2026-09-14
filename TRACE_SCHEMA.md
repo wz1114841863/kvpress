@@ -1831,3 +1831,14 @@ page-tail distributions must not be merged with Llama's lifecycle scalar
 summaries into a universal resource envelope. The report does not load a model,
 estimate capacity, traffic, latency, throughput, energy, or area, select a
 hardware parameter, authorize an architecture specification, or gate RTL.
+
+`kvzap-route-a-m3-portability-envelope-comparison-1.1` is a fresh-output
+archival clarification that also binds a completed `1.0` report. It replaces
+the ambiguous descriptor field `kv_head_count` with both
+`kv_heads_per_layer` and `total_layer_kv_head_state_count`. It additionally
+records the prior/current raw Qwen source hashes and canonical hashes of the
+Qwen semantic projection that M3.1 serializes or consumes; a mismatch in that
+projection rejects the report. Equal projections do not imply byte identity of
+the whole upstream reports. Version 1.1 adds no model run, workload sample,
+capacity/traffic/timing estimate, hardware selection, architecture
+specification, or RTL authorization.

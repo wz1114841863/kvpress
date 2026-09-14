@@ -1228,6 +1228,17 @@ state summaries explicitly separate. Neither descriptor is a universal
 resource range, accelerator dimension, performance observation, architecture
 specification, or RTL authorization.
 
+### M3.2 archival clarification — descriptor units and source reconciliation
+
+M3.2 is a new-output correction to archive expression, not an additional
+experiment. It binds the completed M3.1 report and labels `kv_heads_per_layer`
+separately from `total_layer_kv_head_state_count`: Qwen is 36 x 8 = 288 and
+Llama is 32 x 8 = 256. If hosts hold different raw A4.2.14 Qwen report bytes,
+M3.2 records that fact and compares the canonical projection of all Qwen fields
+that M3.1 serialized or consumed. A matching projection supports the existing
+M3 semantic conclusion only; it does not prove source-file byte identity, add
+a workload, establish a common hardware envelope, or alter RTL readiness.
+
 ### A4.2.8 implementation — matched-horizon three-workload stability
 
 A428 collects fresh summarization, retrieval, and reasoning sources under one

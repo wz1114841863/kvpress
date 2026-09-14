@@ -968,6 +968,19 @@ or algorithm portability. It is no-model hash-bound functional/trace-derived
 comparison evidence, not capacity, traffic, timing, throughput, energy, area,
 hardware, architecture-specification, or RTL evidence.
 
+### M3.2 — archival-unit and provenance-consumption clarification
+
+The versioned `kvzap-route-a-m3-portability-envelope-comparison-1.1` report
+supersedes only the presentation of a completed M3.1 archive: it binds the
+immutable M3.1 report as an input and writes a fresh directory. It labels both
+`kv_heads_per_layer` and `total_layer_kv_head_state_count`, so Qwen's 36 x 8
+and Llama's 32 x 8 states cannot be mistaken for a per-layer comparison or an
+accelerator dimension. If raw Qwen A4.2.14 source hashes differ across hosts,
+M3.2 records both hashes and rejects the run unless the canonical projection of
+the fields M3.1 actually serializes or consumes agrees with the prior M3.1
+report. This reconciliation establishes neither byte identity of the complete
+upstream reports nor new model/workload/hardware evidence.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed
