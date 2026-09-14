@@ -1063,6 +1063,30 @@ cycles, latency, traffic, hardware resources, architecture specification, or
 RTL. The record-only ULP context stays a non-strict diagnostic; no precision
 choice is implied.
 
+### M6 — conditioned Qwen/Llama logical-descriptor coverage envelope
+
+`tools/analyze_kvzap_route_a_m6_cross_model_fixed_horizon_envelope.py` is the
+no-model next step after accepted Llama M5.1. It SHA-256 binds the Qwen A4.2.14
+core-contract closure, the Qwen A4.2.8 three-workload matched-horizon report,
+and the Llama M5.1 three-workload fixed-continuation report. Before comparing,
+it requires the completed semantic/event guards, the same declared eight-token
+continuation, seven actual all-layer `q_len=1` calls, hot window 128, and page
+reference 64. It keeps six model/workload rows separate and derives only
+normalized source-combination/fan-in/active-source fractions, source-nonempty
+conditional record-count distributions, and packed-tail distributions.
+
+M6 then reports an explicitly named observed min/max *coverage envelope* over
+those six rows. This permits later resource-contract planning to retain both
+Qwen's predominantly hot+packed cases and Llama's higher observed three-source
+cases without averaging either away. It intentionally rejects missing or
+inconsistent descriptor fields and does not pool absolute event counts, layer
+counts, or aggregate KV-head counts. The output is no-model,
+functional/trace-derived comparison evidence, not a model/workload distribution,
+physical capacity, traffic, queue/FIFO, scheduling/backpressure, cycles,
+latency, throughput, energy, area, hardware parameter, architecture
+specification, or RTL result. M4.1 remains record-only and cannot be used to
+select merge precision.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed

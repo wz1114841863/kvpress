@@ -1909,3 +1909,24 @@ has no source-ready/completion timestamp and cannot establish queue/FIFO,
 backpressure, cycles, latency, HBM traffic, throughput, energy, area, hardware
 parameters, architecture, or RTL conclusions. It preserves M4.1's record-only
 ULP context and does not alter M2's default enforce guard.
+
+`kvzap-route-a-m6-cross-model-fixed-horizon-envelope-1.0` is a fresh-output,
+no-model comparison that SHA-256 binds the completed Qwen A4.2.14 core closure,
+Qwen A4.2.8 matched-horizon descriptor report, and Llama M5.1 fixed-horizon
+descriptor report. It requires all six fixed workload rows to share the
+declared eight-token continuation, seven all-layer `q_len=1` policy-decode
+calls, hot window 128, and page reference 64. It retains each model/workload
+row and reports only observed min/max coverage across normalized source
+combination, active-source fan-in, source-active fraction, source-nonempty
+conditional record-count, and packed-tail descriptor fields. It rejects absent
+or inconsistent descriptor fields rather than silently treating them as zero;
+only a combination absent from an otherwise valid fraction vector is explicitly
+represented as an observed zero in that vector.
+
+M6 must not pool absolute invocation/event counts, layer counts, or aggregate
+KV-head state counts across models. Its observed min/max values are fixed-row
+coverage summaries, not a workload distribution, capacity requirement, FIFO,
+PTE width, bank/burst, merge precision, PE count, scheduler, controller timing,
+traffic, latency, throughput, energy, area, hardware, architecture, or RTL
+result. M6 preserves Llama M4.1's record-only ULP context and cannot turn it
+into a strict numerical pass or a precision selection.
