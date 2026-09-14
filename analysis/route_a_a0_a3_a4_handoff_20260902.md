@@ -1294,6 +1294,28 @@ source overlap, scheduler/backpressure behavior, FIFO occupancy, capacity,
 HBM traffic, timing, throughput, energy, area, a hardware parameter, an
 architecture specification, or RTL readiness.
 
+### M5.1 implementation — fixed-horizon correction after preserved M5 failure
+
+M5's `_01` output is deliberately retained as a started-only failed attempt:
+the shared `max_new_tokens=8` cap produced six Llama `q_len=1` calls for
+retrieval and seven for summarization/reasoning. The per-request gzip files
+remain evidence of that mismatch but are not an accepted matched-horizon
+descriptor. M5.1 does not overwrite them. It hash-binds the failed started
+record and M0/M1/M4/M4.1 provenance, then writes a new output using an explicit
+non-EOS fixed eight-token continuation. Each path executes the same number of
+forwards; dense produces the fixed token trajectory and original mask stream,
+and Route-A must replay both while retaining fixed-step logits closeness.
+
+The successful M5.1 contract requires seven `q_len=1` calls across every layer
+and all three workloads, with the same existing all-layer/all-KV-head,
+replay-complete, numerical-guard-work, source partition, and timestamp-free
+event guards. It is a conditioned functional/trace-derived descriptor study,
+not a natural-generation experiment. No resulting descriptor establishes
+quality, source-ready/complete timing, concurrent overlap, scheduler or
+backpressure behavior, queue/FIFO occupancy, cycles, HBM traffic, throughput,
+energy, area, hardware resources, architecture specification, or RTL
+readiness. M4.1's record-only summarization ULP status remains explicit.
+
 ### A4.2.8 implementation — matched-horizon three-workload stability
 
 A428 collects fresh summarization, retrieval, and reasoning sources under one

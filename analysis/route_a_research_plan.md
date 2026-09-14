@@ -1039,6 +1039,28 @@ throughput, energy, area, hardware dimensions, architecture specification, or
 RTL readiness. Record-only does not relax M2's default strict guard, turn the
 M4.1 observation into a strict pass, or choose merge precision.
 
+### M5.1 — fixed-continuation horizon correction
+
+The first M5 natural-pipeline attempt is retained when its three request event
+streams show unequal actual policy-decode-call counts despite the shared cap:
+the cap is an upper bound and cannot by itself create a matched horizon. M5.1
+(`tools/run_kvzap_llama31_m51_fixed_horizon_workload_descriptor.py`) binds that
+started record plus M0/M1/M4/M4.1 by SHA-256, and creates a new output only. It
+uses a declared fixed eight-token continuation that does not stop on EOS. The
+dense run provides both the original mask stream and each request's fixed token
+trajectory; Route-A is forced to consume both exactly once. Full-KV runs under
+the same fixed count as a separate zero-Route-A-state control. Each workload
+must observe exactly seven all-layer `q_len=1` calls, and dense/Route-A token
+IDs plus every fixed-step logits pair must satisfy the predeclared guard.
+
+M5.1 fixes the *horizon conditioning* required by descriptor comparison. It
+does not report natural generation length, quality, or serving behavior. Its
+events remain timestamp-free logical source/merge observations, therefore it
+does not validate overlap, scheduler/backpressure behavior, FIFO occupancy,
+cycles, latency, traffic, hardware resources, architecture specification, or
+RTL. The record-only ULP context stays a non-strict diagnostic; no precision
+choice is implied.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed
