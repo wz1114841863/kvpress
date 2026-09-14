@@ -937,6 +937,22 @@ not silently inferred.  M1 is a one-request functional/trace-derived semantic
 portability check, not an accuracy, lifecycle-envelope, HBM, timing,
 throughput, energy, area, hardware, architecture-specification, or RTL result.
 
+### M2 — Nous Llama 3.1 8B Route-A lifecycle-portability gate
+
+`tools/run_kvzap_llama31_m2_lifecycle_gate.py` is the next minimal gate, not a
+second-model A4 reimplementation. It hash-binds completed M0/M1 and reuses
+M1's paired semantic relation: an all-layer/all-head dense control scores the
+original mask online, then Route-A consumes that exact event stream once. Two
+declared reference-state points separate lifecycle witnesses: budget one
+requires hot+pending+packed state; budget 512 requires hot/packed state and a
+sealed multi-page packed witness with a nonempty tail. Both retain same-mask
+FP32/executed-dtype guards. Route-A state conserves each matured position and
+uses append-only pages, but M2 does not free or substitute native model-cache
+storage. Page/admission inputs are not hardware choices. This is fixed-request
+functional/trace-derived lifecycle evidence only, not a lifecycle distribution,
+accuracy, physical capacity, traffic, timing, throughput, energy, area,
+hardware, architecture-specification, or RTL result.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed

@@ -1201,6 +1201,20 @@ contract.  It does not prove accuracy, broad model portability, lifecycle or
 resource-envelope stability, HBM/latency/throughput/energy/area, hardware
 parameter selection, architecture specification, or RTL readiness.
 
+### M2 implementation — Nous Llama 3.1 8B lifecycle portability
+
+M2 adds only the next missing semantic layer: whether the M1-compatible mask
+stream evolves through the Route-A lifecycle on this model. It binds M0/M1
+hashes and runs all layers/all KV heads at two explicit reference points.
+Budget one must expose hot, pending, and packed sources; budget 512 must expose
+a sealed full page, multi-page state, and a nonempty packed tail. The dense pass
+remains the only online score source, while Route-A replays its mask exactly
+once and retains same-mask numerical guards. Route-A state conservation and
+contiguous-position assertions are exercised, but this gate does not
+replace/free Llama's native cache. It supports fixed-request functional/
+trace-derived lifecycle portability only, not physical memory, traffic, timing,
+general workload behavior, hardware parameter selection, or RTL readiness.
+
 ### A4.2.8 implementation — matched-horizon three-workload stability
 
 A428 collects fresh summarization, retrieval, and reasoning sources under one

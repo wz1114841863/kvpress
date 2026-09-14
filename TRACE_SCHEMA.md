@@ -1808,3 +1808,15 @@ not selected hardware values.  This artifact is functional/trace-derived
 evidence for one fixed request only, not model accuracy, a Meta-official
 reproduction, traffic, timing, throughput, energy, area, hardware, or RTL
 evidence.
+
+`kvzap-llama31-m2-lifecycle-gate-1.0` binds completed M0 and M1 manifests, then
+uses the M1 paired-mask contract at two declared functional-reference points.
+At budget one, all-layer/all-KV-head Route-A state must observe hot, pending,
+and packed service. At budget 512, it must observe hot/packed service and at
+least one sealed packed page with multi-page state and a nonempty tail. Dense
+attention is the sole online original-mask source; Route-A replays every event
+exactly once, and both paths execute same-mask numerical guards. The output
+contains hashes and bounded scalar lifecycle/page summaries only. It owns no
+native model cache and establishes no external-cache ownership, allocator,
+traffic, timing, throughput, energy, area, hardware, or RTL conclusion. The
+two page/admission values are lifecycle probes, not hardware selections.
