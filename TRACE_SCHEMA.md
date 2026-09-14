@@ -2051,3 +2051,18 @@ hardware model or measurement.  It selects no FIFO, PTE, bank/burst, merge
 precision, PE, scheduler, controller timing, or other parameter, and cannot
 authorize native SnapKV decode, scheduling/backpressure, traffic, cycles,
 latency, throughput, energy, area, architecture specification, or RTL claims.
+
+The completed fixed-request P2 output is
+`analysis/experiments/snapkv_route_a_p2_lifecycle_resource_descriptor_qwen3_8b_01/`.
+Its descriptor SHA-256 is
+`29835a960c9a010421bf088ad3a869c476f5c67041b0127e4395df41a7c1aa29`, and it
+binds P0 manifest/stream, P1 report, and P3 manifest SHA-256 values
+`c4a2ef3150197cab46508445f03c622238d93cd650b2778e5981d3b9a0927599`,
+`1cb4a7bba15e54486b85cf0377554b5384999e11703183550bdc6809b1e7a365`,
+`f55f4a4ca9020dcbf02acce3c7f272dfafd5ecfd0bdfb2a79918015ddfd3010d`, and
+`56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`.
+It records five available and eight unavailable fields for one 256,608-event
+`prefill_terminal` stream; P3 executed zero generated-token forwards.  The
+only positive eligibility is static canonical mapping and a bounded prefill
+same-mask probe.  Decode/pending, native cache/decode, scheduler/backpressure,
+and physical-resource/hardware contracts remain explicitly ineligible.

@@ -1471,6 +1471,23 @@ hardware model or measurement.  It cannot select hardware parameters or support
 native SnapKV decode, scheduling, traffic, latency, throughput, energy, area,
 architecture, or RTL claims.
 
+The completed Qwen3-8B fixed-request report is
+`analysis/experiments/snapkv_route_a_p2_lifecycle_resource_descriptor_qwen3_8b_01/`
+with SHA-256
+`29835a960c9a010421bf088ad3a869c476f5c67041b0127e4395df41a7c1aa29`.  It
+hash-binds the accepted P0 manifest/stream, P1 report, and P3 manifest:
+`c4a2ef3150197cab46508445f03c622238d93cd650b2778e5981d3b9a0927599`,
+`1cb4a7bba15e54486b85cf0377554b5384999e11703183550bdc6809b1e7a365`,
+`f55f4a4ca9020dcbf02acce3c7f272dfafd5ecfd0bdfb2a79918015ddfd3010d`, and
+`56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`.
+The descriptor classifies five fields as available and eight as unavailable for
+the 256,608-action one-shot prefill stream; P3 deliberately issued zero
+generated-token forwards.  It therefore closes only static canonical mapping
+and bounded prefill semantic portability.  Decode lifecycle/pending, native
+cache/decode, scheduler/backpressure, and physical-resource/hardware
+portability remain unsupported, rather than being treated as zero-cost or
+zero-occupancy behavior.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It
