@@ -44,6 +44,7 @@ from tools.validate_dms_m0_official_provenance import sha256_file
 
 M3_SCHEMA = "route-a-dms-m3-active-native-slot-topology-1.0"
 DECISION_STREAM_SCHEMA = "route-a-dms-decision-stream-1.0"
+OFFICIAL_DMS_SOFTWARE_CACHE_BLOCK_SIZE = 256
 
 
 def parse_args() -> argparse.Namespace:
@@ -157,6 +158,66 @@ class ActiveSlotTopologyController:
         self.assert_invariants()
         return slots
 
+    def consume_prefill(self, decisions: np.ndarray, *, software_cache_block_size: int) -> list[int]:
+        """Mirror official ``_update_many`` source-control ordering.
+
+        The official cache chunks prefill at both its software page boundary and
+        ``prefill_chunk_size``. Within a chunk it writes confirmed-eviction
+        slots first and then new slots, so resident slot order is deliberately
+        not the token-by-token append order. This is source semantics, not a
+        selected hardware page parameter.
+        """
+        if decisions.ndim != 1 or not np.isin(decisions, [0, 1]).all():
+            raise ValueError("DMS-M3 prefill controller requires a binary rank-1 decision stream")
+        if software_cache_block_size <= 0:
+            raise ValueError("DMS-M3 requires a positive official software cache block size")
+        chunk_limit = max(self.window_size - 2, software_cache_block_size)
+        if chunk_limit >= self.window_size:
+            raise AssertionError("official DMS prefill chunk must be smaller than the recent-info ring")
+        all_slots: list[int] = []
+        offset = 0
+        while offset < int(decisions.size):
+            page_remaining = software_cache_block_size - (self.cache_length % software_cache_block_size)
+            chunk_size = min(chunk_limit, page_remaining, int(decisions.size) - offset)
+            chunk = decisions[offset : offset + chunk_size]
+            previous_index = (self.recent_position + self.window_size - 1) % self.window_size
+            if self.cache_length > 0:
+                self.recent[previous_index]["evict"] = int(chunk[0])
+            ring_indices = [(self.recent_position + index) % self.window_size for index in range(chunk_size)]
+            candidates = [dict(self.recent[index]) for index in ring_indices]
+            evicted_slots = [candidate["slot"] for candidate in candidates if candidate["evict"] == 1]
+            if any(slot < 0 or slot >= self.cache_length for slot in evicted_slots):
+                raise AssertionError("official prefill controller selected a nonresident eviction slot")
+            if len(set(evicted_slots)) != len(evicted_slots):
+                raise AssertionError("official prefill controller selected one native slot twice")
+            new_slot_count = chunk_size - len(evicted_slots)
+            new_slots = list(range(self.cache_length, self.cache_length + new_slot_count))
+            write_slots = evicted_slots + new_slots
+            if len(write_slots) != chunk_size or len(set(write_slots)) != chunk_size:
+                raise AssertionError("official prefill controller write-slot construction is invalid")
+            for index, slot in enumerate(write_slots):
+                source = self.arrival_count + index
+                if slot >= len(self.slot_to_source):
+                    if slot != len(self.slot_to_source):
+                        raise AssertionError("official prefill controller appended a nonconsecutive native slot")
+                    self.slot_to_source.append(-1)
+                self.slot_to_source[slot] = source
+                # The official vectorized prefill path pads a short final
+                # chunk by repeating its terminal decision before updating
+                # recent-info. Its terminal entry therefore retains that last
+                # decision (whereas decode's one-token path stores no new
+                # future decision). This is intentionally not normalized to
+                # the simpler sequential decode contract.
+                next_flag = int(chunk[index + 1]) if index + 1 < chunk_size else int(chunk[index])
+                self.recent[ring_indices[index]] = {"slot": slot, "evict": next_flag, "source": source}
+            self.arrival_count += chunk_size
+            self.recent_position += chunk_size
+            self.cache_length += new_slot_count
+            all_slots.extend(write_slots)
+            self.assert_invariants()
+            offset += chunk_size
+        return all_slots
+
     def native_recent_info(self) -> np.ndarray:
         return np.asarray([[entry["slot"], entry["evict"]] for entry in self.recent], dtype=np.int32)
 
@@ -194,7 +255,12 @@ def replay_topology(events: list[dict[str, Any]], *, window_size: int) -> tuple[
         if before != event["cache_lengths_before"]:
             raise AssertionError(f"layer {layer} call {event['call_index']}: native/controller pre-length mismatch")
         for head in range(EXPECTED_KV_HEADS):
-            controllers[layer][head].consume(decisions[head])
+            if int(event["q_len"]) == 1:
+                controllers[layer][head].consume(decisions[head])
+            else:
+                controllers[layer][head].consume_prefill(
+                    decisions[head], software_cache_block_size=OFFICIAL_DMS_SOFTWARE_CACHE_BLOCK_SIZE
+                )
             if not np.array_equal(controllers[layer][head].native_recent_info(), native_recent[head]):
                 native_control_agreement = False
                 mismatch = np.argwhere(controllers[layer][head].native_recent_info() != native_recent[head])[0]

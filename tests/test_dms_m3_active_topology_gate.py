@@ -17,6 +17,17 @@ def test_m3_controller_tracks_logical_source_arrivals_across_slot_reuse():
     assert controller.native_recent_info().shape == (3, 2)
 
 
+def test_m3_prefill_controller_preserves_official_chunked_eviction_first_slot_order():
+    controller = ActiveSlotTopologyController(window_size=513)
+    controller.consume_prefill(np.ones((625,), dtype=np.uint8), software_cache_block_size=256)
+    # The last prefill chunk visits an unmarked ring entry before marked ones.
+    # Official _update_many writes confirmed-eviction slots first, so source
+    # 513 reaches slot 1 rather than following a naive append sequence.
+    assert controller.recent[0]["slot"] == 1
+    assert controller.cache_length == 513
+    assert len(set(controller.active_sources())) == controller.cache_length
+
+
 def test_m3_replay_requires_native_ring_metadata_and_length_agreement():
     events = []
     for layer in range(36):
