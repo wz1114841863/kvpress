@@ -1506,6 +1506,20 @@ evicted K/V, make a packed cold store, justify source partition/merge, select
 scheduler/precision/page/bank resources, or establish capacity, traffic,
 timing, hardware, quality, architecture, or RTL evidence.
 
+The completed fixed-request M4 result is
+`analysis/experiments/dms_route_a_m4_active_resident_attention_qwen3_8b_retrieval_01/`
+(manifest SHA-256
+`6e4dc1eda065f440800ee29c03f65ad59502cf95c84f2408dce7ce8e6485b028`).
+The trace-off/on token/logit/final-cache digests match exactly. All 144 decode
+FlashAttention calls (36 layers times four decode forwards) meet the declared
+FP32 `atol=rtol=0.03` guard; the recorded maximum absolute difference is
+`0.0629558563`, while the mean of per-call mean absolute differences is
+`0.0003103976`. The fresh 180-event control replay again agrees with native
+length and ring metadata. Resident lengths span 513--629 and 269 layer/KV-head
+native orders remain nonmonotonic, consistent with M3. This supports only the
+need to preserve official active-slot order in a later adapter; it does not
+justify source splitting, merge placement, or any physical design choice.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

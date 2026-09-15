@@ -2273,3 +2273,16 @@ splitting/merge placement, or prove order-invariance. Native observations are
 trace-derived software state and the replay is bounded functional evidence;
 neither is capacity, HBM/DRAM traffic, latency, throughput, energy, area,
 quality, hardware, architecture, or RTL evidence.
+
+The first accepted artifact is
+`analysis/experiments/dms_route_a_m4_active_resident_attention_qwen3_8b_retrieval_01/`,
+whose manifest SHA-256 is
+`6e4dc1eda065f440800ee29c03f65ad59502cf95c84f2408dce7ce8e6485b028`.
+It observes 144 decode calls (36 layers times four fixed decode forwards), all
+within the declared FP32 `atol=rtol=0.03`; the recorded maximum absolute
+difference is `0.0629558563` and the mean of per-call mean absolute differences
+is `0.0003103976`. This tolerance result is a numerical functional guard, not
+a statement that the maximum difference is a universal numerical bound. The
+fresh 180-event topology replay also again matches native length/ring metadata,
+with active resident lengths 513--629 and 269 nonmonotonic layer/KV-head slot
+orders. It validates only the fixed-request native-resident source reference.

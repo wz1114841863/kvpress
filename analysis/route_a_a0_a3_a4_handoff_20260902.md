@@ -1698,6 +1698,25 @@ slots can be reordered, that sources can be split/merged, or that Route-A
 scheduling, capacity, traffic, timing, hardware, quality, architecture
 specification, or RTL follows.
 
+### DMS-M4 result — native active-resident source is functionally replayable
+
+The accepted run is
+`analysis/experiments/dms_route_a_m4_active_resident_attention_qwen3_8b_retrieval_01/`,
+manifest SHA-256
+`6e4dc1eda065f440800ee29c03f65ad59502cf95c84f2408dce7ce8e6485b028`.
+Its trace-off/on generated tokens, per-forward logits, and final native cache
+digests are identical. For every one of 144 decode FlashAttention calls, the
+temporary one-source FP32 replay over active K/V in official native logical-slot
+order passes declared `atol=rtol=0.03`; recorded max absolute difference is
+`0.0629558563` and mean per-call mean absolute difference is `0.0003103976`.
+
+This makes the M3 order condition operational: the active native resident set
+can be treated as one semantically checked attention source for this fixed DMS
+workload, but not reordered or assumed to be a KVzap cold source. The fresh
+control replay again observes 269 nonmonotonic layer/KV-head orders. It remains
+functional/trace-derived software evidence, not capacity, traffic, timing,
+hardware, quality, architecture, or RTL evidence.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It
