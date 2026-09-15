@@ -324,11 +324,34 @@ def main() -> None:
         raise AssertionError("DMS-M3 observation changed official DMS token/logit/cache-state digests")
     events = recorder.events
     observed_summary = summarize_events([public_event(event) for event in events], decode_steps=args.decode_steps)
-    replay, final_lengths, active_sources = replay_topology(events, window_size=ring_window)
-    if final_lengths.tolist() != observed["final_cache_lengths_by_layer_kv_head"]:
-        raise AssertionError("DMS-M3 final topology controller/native cache-length matrix differs")
+    # Preserve a fresh, bounded diagnostic trace when the stronger topology
+    # gate rejects an inferred controller.  It contains no K/V or tokens and
+    # makes the failed contract inspectable without treating it as completion.
     args.output_dir.mkdir(parents=True, exist_ok=False)
     control_stream = write_control_trace(args.output_dir / "dms_m3_native_control_trace.npz", events)
+    try:
+        replay, final_lengths, active_sources = replay_topology(events, window_size=ring_window)
+    except AssertionError as error:
+        blocked = {
+            "schema_version": M3_SCHEMA,
+            "status": "native_control_topology_mismatch",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "git_commit": git_commit(),
+            "config": config,
+            "config_hash": stable_hash(config),
+            "execution_classification": "trace-derived official DMS decision/ring-metadata observation; independent topology controller rejected",
+            "m0_provenance": provenance,
+            "m2_provenance": m2_provenance,
+            "request": {**request_provenance, "input_shape": list(input_ids.shape)},
+            "trace_off_on_equivalence": {"token_logit_cache_digests_identical": True},
+            "official_native_control_capture": {"native_event_summary": observed_summary, "ring_window_size": ring_window, "control_stream": control_stream},
+            "rejection": {"error": str(error), "next_action": "derive and test the official prefill-chunk control semantics from this immutable native-control trace before attempting a new M3 controller run"},
+            "boundaries": ["This is a failed modeled topology contract with preserved trace-derived native control metadata, not accepted M3 evidence.", "No K/V payload, attention substitution, Route-A backend, hardware, traffic, timing, capacity, or RTL claim is permitted."],
+        }
+        (args.output_dir / "dms_m3_active_topology_manifest.json").write_text(json.dumps(blocked, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        raise
+    if final_lengths.tolist() != observed["final_cache_lengths_by_layer_kv_head"]:
+        raise AssertionError("DMS-M3 final topology controller/native cache-length matrix differs")
     topology_path = args.output_dir / "dms_m3_final_active_slot_topology.npz"
     np.savez_compressed(topology_path, schema_version=np.asarray(["route-a-dms-active-native-slot-topology-1.0"]), final_cache_lengths=final_lengths, active_source_arrival_serial_by_native_slot=active_sources)
     topology_artifact = {"path": topology_path.name, "sha256": sha256_file(topology_path), "contents": "final logical-source arrival serial per active native slot, padded with -1; no token IDs/text or K/V payload"}
