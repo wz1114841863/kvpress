@@ -2198,3 +2198,10 @@ K/V movement, a hot/pending/packed-cold mapping, allocator capacity, external
 storage, or an interface suitable for Route-A. M2 is not a trained-DMS quality
 result and makes no HBM/DRAM, latency, throughput, energy, area, hardware,
 architecture, or RTL claim.
+
+M1 supplies a completed native-observer prerequisite and identical-request
+provenance; M2 records, but does not require, equality of its newly observed
+event-summary hash with M1's summary-only hash. M1 did not preserve raw bits,
+and cross-run/device summary equality is not the M2 semantic gate. M2 instead
+requires its own trace-off/on equivalence and exact per-event native-length
+agreement by the controller.

@@ -1629,6 +1629,12 @@ official native pre/post cache-length vector and the final 36-by-8 matrix. The
 model records that the official cache ring is one element larger than the
 configured decision window; it does not silently choose a hardware FIFO depth.
 
+M1's prior summary hash is recorded as a cross-run comparison only. It cannot
+be an unconditional equality gate because M1 saved summaries rather than raw
+decision bits and a later M2 run may use a different available GPU. M2 instead
+binds identical request provenance and requires its own trace-off/on equality
+and exact native-length agreement at every observed event.
+
 If accepted, M2 provides trace-derived official DMS decision/cache observations
 and a bounded functional controller replay for one request. It still is not a
 Route-A hot/pending/packed-cold adapter, physical capacity/traffic measurement,

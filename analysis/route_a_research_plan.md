@@ -1432,6 +1432,12 @@ its abstract native slot; otherwise grow the native logical length. Every
 native before/after cache-length vector and the final 36-by-8 vector must
 match.
 
+M1's summary hash is retained for an informational cross-run comparison, not
+as an unsupported requirement that a later capture on another available GPU
+have identical summary bits. M2 validates identical request provenance, and
+its actual acceptance conditions are its own trace-off/on equivalence plus
+per-event and final-matrix native-length agreement.
+
 This can establish trace-derived native decision/state evidence plus a bounded
 functional modeled controller contract for that request. It cannot establish
 semantic portability into Route-A, packed capacity, traffic, timing,
