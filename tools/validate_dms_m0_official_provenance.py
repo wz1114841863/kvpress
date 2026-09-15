@@ -68,6 +68,16 @@ def parse_args() -> argparse.Namespace:
         default="cuda:0",
         help="Torch device used only by --runtime-probe model-prefill (default: cuda:0).",
     )
+    parser.add_argument(
+        "--tokenizer-root",
+        type=Path,
+        default=None,
+        help=(
+            "Explicit local tokenizer snapshot used only by --runtime-probe model-prefill. "
+            "The official DMS README names Qwen/Qwen3-8B rather than the DMS checkpoint itself. "
+            "No network download is attempted."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -143,7 +153,34 @@ def inspect_static_snapshot(snapshot_root: Path) -> dict[str, Any]:
     }
 
 
-def runtime_probe(snapshot_root: Path, mode: str, device: str) -> dict[str, Any]:
+def _local_tokenizer_provenance(tokenizer_root: Path) -> dict[str, Any]:
+    """Record the explicit local tokenizer input without asserting its file layout."""
+    root = tokenizer_root.resolve(strict=True)
+    if not root.is_dir():
+        raise NotADirectoryError(f"M0 tokenizer root is not a directory: {root}")
+    known_names = (
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "special_tokens_map.json",
+        "vocab.json",
+        "merges.txt",
+    )
+    files = {
+        name: sha256_file(root / name)
+        for name in known_names
+        if (root / name).is_file()
+    }
+    if not files:
+        raise FileNotFoundError(f"M0 tokenizer root has none of the recognized tokenizer files: {root}")
+    return {"root": str(root), "selected_file_sha256": files}
+
+
+def runtime_probe(
+    snapshot_root: Path,
+    mode: str,
+    device: str,
+    tokenizer_root: Path | None = None,
+) -> dict[str, Any]:
     """Run an explicit minimal local-only compatibility probe, never generation."""
     if mode == "none":
         return {
@@ -172,6 +209,14 @@ def runtime_probe(snapshot_root: Path, mode: str, device: str) -> dict[str, Any]
     }
     model = tokenizer = config = None
     try:
+        # NVIDIA's DMS README explicitly loads the base Qwen/Qwen3-8B tokenizer.
+        # Requiring a local path makes that second artifact visible and prevents an
+        # accidental download or a silent assumption that DMS ships tokenizer files.
+        tokenizer_provenance = None
+        if mode == "model-prefill":
+            if tokenizer_root is None:
+                raise ValueError("M0 model-prefill requires an explicit --tokenizer-root")
+            tokenizer_provenance = _local_tokenizer_provenance(tokenizer_root)
         config = AutoConfig.from_pretrained(snapshot_root, local_files_only=True, trust_remote_code=True)
         outcome["custom_code_executed"] = True
         outcome["config_class"] = f"{type(config).__module__}.{type(config).__name__}"
@@ -180,7 +225,11 @@ def runtime_probe(snapshot_root: Path, mode: str, device: str) -> dict[str, Any]
             return outcome
         if not torch.cuda.is_available():
             raise RuntimeError("model-prefill requires CUDA; M0 does not fall back to CPU")
-        tokenizer = AutoTokenizer.from_pretrained(snapshot_root, local_files_only=True, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(
+            tokenizer_root,
+            local_files_only=True,
+            trust_remote_code=True,
+        )
         model = AutoModelForCausalLM.from_pretrained(
             snapshot_root,
             config=config,
@@ -202,6 +251,7 @@ def runtime_probe(snapshot_root: Path, mode: str, device: str) -> dict[str, Any]
             {
                 "status": "passed",
                 "model_class": f"{type(model).__module__}.{type(model).__name__}",
+                "tokenizer_provenance": tokenizer_provenance,
                 "prefill": {
                     "input_shape": list(inputs["input_ids"].shape),
                     "logits_shape": list(logits.shape),
@@ -237,7 +287,7 @@ def build_manifest(static: dict[str, Any], probe: dict[str, Any]) -> dict[str, A
         "boundaries": [
             "M0 does not change KVPress defaults, instantiate DMSPress, create a Route-A event stream, or compare any attention result.",
             "Static validation parses custom-code syntax and Safetensors headers only. The explicit runtime probe may execute official checkpoint code from the pinned local snapshot, but it never downloads files, generates tokens, measures performance, or interprets a successful load as algorithmic correctness.",
-            "A blocked runtime probe demonstrates only that this pinned snapshot was not compatible with this exact runtime/probe. It is not evidence against trained DMS or Route-A.",
+            "For model-prefill, the DMS checkpoint and the explicitly supplied local base tokenizer are separate provenance inputs. A blocked runtime probe demonstrates only that those pinned inputs were not compatible with this exact runtime/probe. It is not evidence against trained DMS or Route-A.",
             "M0 selects no page size, FIFO/PTE/bank/burst, merge precision, PE count, scheduler, controller timing, capacity, traffic, latency, throughput, energy, area, architecture specification, or RTL implementation.",
         ],
     }
@@ -248,7 +298,7 @@ def main() -> None:
     if args.output_dir.exists():
         raise FileExistsError(f"M0 output directory already exists: {args.output_dir}")
     static = inspect_static_snapshot(args.snapshot_root)
-    probe = runtime_probe(args.snapshot_root, args.runtime_probe, args.device)
+    probe = runtime_probe(args.snapshot_root, args.runtime_probe, args.device, args.tokenizer_root)
     manifest = build_manifest(static, probe)
     args.output_dir.mkdir(parents=True, exist_ok=False)
     (args.output_dir / "dms_m0_official_provenance_manifest.json").write_text(

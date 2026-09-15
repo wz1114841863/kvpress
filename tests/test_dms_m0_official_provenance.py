@@ -77,3 +77,15 @@ def test_m0_default_runtime_probe_executes_nothing_and_manifest_stays_complete(t
         "generation_calls": 0,
     }
     assert manifest["status"] == "complete"
+
+
+def test_m0_model_prefill_requires_explicit_tokenizer_root():
+    probe = runtime_probe(Path("/not/used"), "model-prefill", "cuda:0")
+    assert probe["status"] == "blocked"
+    assert probe["custom_code_executed"] is False
+    assert probe["model_weights_loaded"] is False
+    assert probe["generation_calls"] == 0
+    assert probe["exception"] == {
+        "type": "ValueError",
+        "message": "M0 model-prefill requires an explicit --tokenizer-root",
+    }
