@@ -2205,3 +2205,17 @@ event-summary hash with M1's summary-only hash. M1 did not preserve raw bits,
 and cross-run/device summary equality is not the M2 semantic gate. M2 instead
 requires its own trace-off/on equivalence and exact per-event native-length
 agreement by the controller.
+
+The first completed M2 artifact is
+`analysis/experiments/dms_route_a_m2_adapter_contract_qwen3_8b_retrieval_01/`,
+manifest SHA-256
+`52b1445bf591948c12b8af131e3c92be4be3a9c9f73f35804b5ff77d0cfc842e`.
+On the M1-bound 625-token retrieval request plus four fixed decode forwards,
+M2 captured 180 events and 127,047 decision-one bits. Its independent
+controller exactly matched every native before/after length vector and the
+final 36-by-8 matrix; 269/288 final layer-head lengths were below logical
+history, and abstract slot reuse was observed in 677 layer-head event states.
+The M2 and M1 summary hashes differed across runs and are retained as a
+reported comparison, not treated as a controller failure. These are still
+fixed-request native-state/control-contract results, not physical capacity or
+hardware evidence.

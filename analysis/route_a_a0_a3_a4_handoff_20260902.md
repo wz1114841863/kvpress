@@ -1635,6 +1635,18 @@ decision bits and a later M2 run may use a different available GPU. M2 instead
 binds identical request provenance and requires its own trace-off/on equality
 and exact native-length agreement at every observed event.
 
+The accepted M2 result is
+`analysis/experiments/dms_route_a_m2_adapter_contract_qwen3_8b_retrieval_01/`,
+manifest SHA-256
+`52b1445bf591948c12b8af131e3c92be4be3a9c9f73f35804b5ff77d0cfc842e`.
+On the M1-bound 625-token retrieval request plus four fixed decode forwards,
+the capture contains 180 events and 127,047 decision-one bits. The independent
+controller matched each official native cache-length transition and the final
+36-by-8 matrix exactly. It found native shortening in 269/288 final
+layer-heads and abstract slot reuse in 677 layer-head event states. The M1/M2
+summary hashes differ across the separately run observations and are recorded
+as such; they do not erase M2's within-run trace-off/on and controller guards.
+
 If accepted, M2 provides trace-derived official DMS decision/cache observations
 and a bounded functional controller replay for one request. It still is not a
 Route-A hot/pending/packed-cold adapter, physical capacity/traffic measurement,

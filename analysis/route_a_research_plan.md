@@ -1438,6 +1438,18 @@ have identical summary bits. M2 validates identical request provenance, and
 its actual acceptance conditions are its own trace-off/on equivalence plus
 per-event and final-matrix native-length agreement.
 
+The accepted M2 run is
+`analysis/experiments/dms_route_a_m2_adapter_contract_qwen3_8b_retrieval_01/`
+with manifest SHA-256
+`52b1445bf591948c12b8af131e3c92be4be3a9c9f73f35804b5ff77d0cfc842e`.
+For the M1-bound 625-token retrieval request and four decode forwards, it
+captured 180 native events and 127,047 decision-one bits. The controller agreed
+with every native before/after length vector and the final 36-by-8 matrix; 269
+of 288 final layer-head lengths were shorter than the 629-token logical
+history, and 677 layer-head event states contained abstract slot reuse. M1/M2
+summary hashes were not identical across runs; that discrepancy is explicitly
+recorded rather than discarded or relabeled as a semantic failure.
+
 This can establish trace-derived native decision/state evidence plus a bounded
 functional modeled controller contract for that request. It cannot establish
 semantic portability into Route-A, packed capacity, traffic, timing,
