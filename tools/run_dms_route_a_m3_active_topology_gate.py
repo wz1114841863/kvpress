@@ -197,7 +197,14 @@ def replay_topology(events: list[dict[str, Any]], *, window_size: int) -> tuple[
             controllers[layer][head].consume(decisions[head])
             if not np.array_equal(controllers[layer][head].native_recent_info(), native_recent[head]):
                 native_control_agreement = False
-                raise AssertionError(f"layer {layer} head {head} call {event['call_index']}: native/controller ring metadata mismatch")
+                mismatch = np.argwhere(controllers[layer][head].native_recent_info() != native_recent[head])[0]
+                ring_index, field = (int(value) for value in mismatch.tolist())
+                controller_value = int(controllers[layer][head].native_recent_info()[ring_index, field])
+                native_value = int(native_recent[head, ring_index, field])
+                raise AssertionError(
+                    f"layer {layer} head {head} call {event['call_index']}: native/controller ring metadata mismatch "
+                    f"at ring_index={ring_index} field={field}; controller={controller_value} native={native_value}"
+                )
             if controllers[layer][head].recent_position != int(native_position[head]):
                 native_control_agreement = False
                 raise AssertionError(f"layer {layer} head {head} call {event['call_index']}: native/controller ring cursor mismatch")
