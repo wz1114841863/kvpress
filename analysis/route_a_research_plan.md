@@ -1411,6 +1411,34 @@ area, hardware, or RTL evidence. A subsequent DMS-M2 must explicitly decide
 whether an adapter can preserve this delayed-eviction/reuse semantics; it may
 not assume it is KVzap's packed-cold lifecycle.
 
+### DMS-M2 — delayed-eviction/slot-reuse adapter-contract replay
+
+M2 is the deliberately narrow next question after M1: can an independent
+control-plane model reproduce the official DMS delayed-eviction and native-slot
+reuse lifecycle without changing a native DMS execution? It is not allowed to
+instantiate `DMSPress`, alter an official decision, move K/V, replace
+attention, create a packed cold store, or call the outcome a Route-A mapping.
+The completed M0 source/runtime manifest and M1 observer-equivalence manifest
+are required inputs and their SHA-256 values are recorded.
+
+The gate first runs one fixed request with the normal official cache and then
+with a read-only observer that copies the binary decision bits only after they
+have been supplied to the native update. It requires exact token/logit/final
+cache-state equivalence. The result serializes a compact decision NPZ with
+only decision bits and structural event delimiters. A pure-Python controller
+then applies the official contract per layer/KV head: a decision labels the
+preceding arrival; when that arrival reaches the delayed ring candidate, reuse
+its abstract native slot; otherwise grow the native logical length. Every
+native before/after cache-length vector and the final 36-by-8 vector must
+match.
+
+This can establish trace-derived native decision/state evidence plus a bounded
+functional modeled controller contract for that request. It cannot establish
+semantic portability into Route-A, packed capacity, traffic, timing,
+throughput, energy, area, quality, hardware selection, architecture, or RTL.
+Only after this gate passes should a later, separately designed study ask what
+additional state/interface would be needed for a Route-A-compatible adapter.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

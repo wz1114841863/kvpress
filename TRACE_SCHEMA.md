@@ -2168,3 +2168,33 @@ trace-derived native-DMS state plus functional observer equivalence. DMS's
 delayed eviction and cache-slot reuse are not relabeled as Route-A
 hot/pending/packed cold storage, so this does not yet establish a Route-A
 adapter, physical capacity, traffic, timing, hardware, or RTL claim.
+
+### Official trained-DMS M2 delayed-eviction adapter-contract manifest
+
+`route-a-dms-m2-delayed-eviction-adapter-contract-1.0` is a bounded follow-on
+to completed M0 and M1, not a Route-A attention implementation. It runs the
+same official DMS request once without observation and once with the existing
+read-only cache-update observer extended to make an in-memory copy of the
+official binary decision bits. The two native executions must retain exactly
+identical generated-token, per-forward last-logit, and final native-cache
+length digests. M2 then writes a compressed NPZ containing only flattened
+binary decision bits and event layer/call/q-length/kind delimiters—never token
+IDs/text, K/V, attention, logits, allocator data, or timing.
+
+An independent pure-Python controller consumes that stream per layer and
+KV-head. Its explicit contract is: a decision labels the preceding arrival;
+when that arrival subsequently becomes the configured ring's eviction
+candidate, its abstract native slot is reused, otherwise the native logical
+cache length grows. The manifest accepts only if the controller agrees with
+the official native before/after cache lengths at every observed event and with
+the final 36-by-8 matrix. Its `dms_cache_ring_window_size` is recorded
+separately from the model `dms_window_size`, because official model creation
+passes the cache a value one larger than the decision window.
+
+The binary decisions and native-state comparison are trace-derived software
+evidence for the fixed request. The standalone controller is functional,
+explicitly scoped modeled contract evidence. Abstract slots do not indicate
+K/V movement, a hot/pending/packed-cold mapping, allocator capacity, external
+storage, or an interface suitable for Route-A. M2 is not a trained-DMS quality
+result and makes no HBM/DRAM, latency, throughput, energy, area, hardware,
+architecture, or RTL claim.

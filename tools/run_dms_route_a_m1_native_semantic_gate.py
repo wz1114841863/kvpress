@@ -140,8 +140,13 @@ def cache_state(cache, layer_count: int) -> list[list[int]]:
 class DMSUpdateRecorder(AbstractContextManager):
     """Observe one official cache class without changing values or return paths."""
 
-    def __init__(self, cache_class):
+    def __init__(self, cache_class, *, capture_decision_bits: bool = False):
         self.cache_class = cache_class
+        # M1 deliberately records summaries only.  A later, separately named
+        # contract gate can opt in to an in-memory copy so it can serialize a
+        # bounded decision stream outside the M1 manifest without changing the
+        # official update inputs or return path.
+        self.capture_decision_bits = capture_decision_bits
         self.original_update = None
         self.events: list[dict[str, Any]] = []
 
@@ -173,18 +178,22 @@ class DMSUpdateRecorder(AbstractContextManager):
             ]
             result = self.original_update(cache, key_states, value_states, layer_idx, cache_kwargs)
             after = [int(value) for value in cache[layer_idx].get_seq_lengths().detach().to(device="cpu", dtype=torch.int64).tolist()]
-            self.events.append(
-                {
-                    "layer": int(layer_idx),
-                    "call_index": len(self.events),
-                    "kind": "prefill" if q_len > 1 else "decode",
-                    "q_len": q_len,
-                    "decision_sha256": hashlib.sha256(decision_cpu.numpy().tobytes()).hexdigest(),
-                    "decision_ones_by_kv_head": [int(value) for value in decision_cpu.sum(dim=(0, 2)).tolist()],
-                    "cache_lengths_before": before,
-                    "cache_lengths_after": after,
-                }
-            )
+            event = {
+                "layer": int(layer_idx),
+                "call_index": len(self.events),
+                "kind": "prefill" if q_len > 1 else "decode",
+                "q_len": q_len,
+                "decision_sha256": hashlib.sha256(decision_cpu.numpy().tobytes()).hexdigest(),
+                "decision_ones_by_kv_head": [int(value) for value in decision_cpu.sum(dim=(0, 2)).tolist()],
+                "cache_lengths_before": before,
+                "cache_lengths_after": after,
+            }
+            if self.capture_decision_bits:
+                # The copy is intentionally in-memory only here.  M1's JSON
+                # schema remains summary-only; M2 owns any compact raw-stream
+                # artifact and its provenance contract.
+                event["decision_bits"] = decision_cpu.squeeze(0).numpy().copy()
+            self.events.append(event)
             return result
 
         self.cache_class.update = observed_update

@@ -1611,6 +1611,30 @@ of DMS's native delayed-eviction-and-reuse lifecycle, but does not claim that
 it already has a Route-A hot/pending/packed mapping, nor any physical capacity,
 traffic, timing, hardware, or RTL result.
 
+### DMS-M2 implementation — delayed-eviction and slot-reuse contract replay
+
+The next DMS gate must preserve the distinction exposed by M1 rather than
+forcing DMS into the KVzap packed-cold vocabulary. DMS-M2 therefore binds the
+completed M0 and M1 manifest hashes, repeats the fixed official-DMS native pass
+with trace-off/on equivalence, and captures only the official binary decision
+stream plus structural event boundaries. It never records token IDs/text, K/V,
+attention, logits, allocator data, or timing.
+
+`tools/run_dms_route_a_m2_adapter_contract_gate.py` then feeds that stream to
+an independent per-layer/KV-head pure-Python controller. The controller's
+explicit modeled contract is delayed eviction: each bit labels the preceding
+arrival; once that arrival reaches the configured ring candidate, its abstract
+native slot is reused; otherwise cache length grows. It must reproduce every
+official native pre/post cache-length vector and the final 36-by-8 matrix. The
+model records that the official cache ring is one element larger than the
+configured decision window; it does not silently choose a hardware FIFO depth.
+
+If accepted, M2 provides trace-derived official DMS decision/cache observations
+and a bounded functional controller replay for one request. It still is not a
+Route-A hot/pending/packed-cold adapter, physical capacity/traffic measurement,
+latency/throughput/energy/area evidence, trained-DMS quality result, architecture
+specification, or RTL gate.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It
