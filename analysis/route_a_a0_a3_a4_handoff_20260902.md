@@ -1545,6 +1545,26 @@ This resolves neither DMS semantics nor Route-A; it only establishes that a
 usable runtime must meet both the custom-code Transformers API and the
 FlashAttention binary dependency together.
 
+The unified KVPress `.venv` then passed a separate FlashAttention dependency
+gate: the hash-pinned third-party
+`flash_attn-2.8.3.post1+cu12torch2.10cxx11abiTRUE-cp312-cp312-linux_x86_64`
+wheel (SHA-256
+`35e46afd97efbbc9a1163ddf7f8acb7f32a95927ca02b0bd323a14de740c303f`)
+installed with no dependencies, while PyTorch remained `2.10.0+cu128`.  A
+minimal A100 `sm_80` CUDA call passed; it is a software dependency function
+check only, not a hardware performance observation.
+
+The subsequent fresh M0 result is
+`analysis/experiments/dms_route_a_m0_official_provenance_qwen3_8b_venv_flash_attn_01/`
+with manifest SHA-256
+`d39a15f0aadbdfefc07665361d8fca8dbd449b179c6095c0ab53129565cfc125`.
+It has passed the missing-FlashAttention point and imported the pinned
+configuration custom code, but it is blocked before weight loading/prefill by
+`AttributeError: 'Qwen3Config' object has no attribute 'pad_token_id'` in
+Transformers `5.0.0`.  It records zero generation calls.  Thus this is the
+next exact environment API blocker, not an official DMS or Route-A negative;
+M1 remains gated.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

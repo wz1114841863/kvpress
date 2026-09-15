@@ -2112,3 +2112,15 @@ whose `configuration_utils` lacks `layer_type_validation` required before the
 checkpoint configuration can import.  It likewise executed no checkpoint
 custom code, loaded no weights, and made no generation, trace, performance, or
 hardware claim.
+
+A third M0 runtime probe preserves the result after the unified KVPress
+`.venv` gained a separately hash-verified FlashAttention wheel.  The artifact
+is `dms_route_a_m0_official_provenance_qwen3_8b_venv_flash_attn_01`, with
+manifest SHA-256
+`d39a15f0aadbdfefc07665361d8fca8dbd449b179c6095c0ab53129565cfc125`.
+It records that configuration custom code imported, while the model remains
+unloaded and generation calls remain zero; under Transformers `5.0.0` it is
+blocked by missing `Qwen3Config.pad_token_id`.  The separately confirmed
+FlashAttention import/minimal CUDA call establishes only dependency
+functionality.  It does not make this blocked manifest a DMS trace, hardware
+measurement, or an eligibility upgrade for M1.

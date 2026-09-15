@@ -1317,6 +1317,31 @@ weights, DMS semantics, Route-A, or hardware.  The next candidate runtime
 must jointly satisfy the checkpoint custom configuration's Transformers API
 and the FlashAttention/PyTorch/CUDA binary interface.
 
+#### DMS-M0 — unified `.venv` FlashAttention probe
+
+With explicit user authorization, the shared KVPress `.venv` received the
+third-party, hash-pinned
+`flash_attn-2.8.3.post1+cu12torch2.10cxx11abiTRUE-cp312-cp312-linux_x86_64`
+wheel.  The release SHA-256 was verified as
+`35e46afd97efbbc9a1163ddf7f8acb7f32a95927ca02b0bd323a14de740c303f`
+before its dependency-free installation.  PyTorch remained
+`2.10.0+cu128` before and after installation, and a minimal A100 `sm_80`
+FlashAttention CUDA call produced a finite output of the expected shape.  This
+is a narrowly scoped software dependency/functionality check, not a hardware
+latency, throughput, energy, or accelerator measurement.
+
+The fresh official checkpoint probe is
+`analysis/experiments/dms_route_a_m0_official_provenance_qwen3_8b_venv_flash_attn_01/`
+with manifest SHA-256
+`d39a15f0aadbdfefc07665361d8fca8dbd449b179c6095c0ab53129565cfc125`.
+It is `blocked` after importing the pinned configuration custom code, but
+before weight loading, by `AttributeError: 'Qwen3Config' object has no
+attribute 'pad_token_id'` under Transformers `5.0.0`.  `model_weights_loaded`
+and `generation_calls` remain false/zero.  Therefore the FlashAttention
+dependency is no longer the M0 blocker; the remaining issue is an exact
+Transformers-5/custom-DMS configuration API incompatibility.  It is not a DMS,
+Route-A, quality, decode, or hardware result, and M1 remains ineligible.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed
