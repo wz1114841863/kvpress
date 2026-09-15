@@ -1298,6 +1298,25 @@ not fall back to `DMSPress`; resume M0 only in an explicitly approved,
 isolated runtime that provides a compatible FlashAttention stack, then retain
 that new probe as a separate manifest.
 
+The isolated existing `debug_env` was also probed without installing or
+upgrading anything.  Its recorded Python/PyTorch/Transformers/FlashAttention
+versions were `3.12.13` / `2.5.1+cu121` / `4.52.4` / `2.8.3`; the static M0
+gate completed at
+`analysis/experiments/dms_route_a_m0_official_provenance_qwen3_8b_debug_env_static_01/`
+(manifest SHA-256
+`a77bee5d89f36889a548a5c9dcd77f7dac4a5a173362eccf1efc3243a945b861`).
+The separate model-prefill probe at
+`analysis/experiments/dms_route_a_m0_official_provenance_qwen3_8b_debug_env_01/`
+is again `blocked`, now before checkpoint custom-code execution, by
+`ImportError: cannot import name 'layer_type_validation' from
+'transformers.configuration_utils'`.  Its manifest SHA-256 is
+`91ac04a5d90b11090fc14cce9a325023fe35999f869d312e677c541738336f8e`.
+Thus FlashAttention removes the first environment blocker but does not make
+this older Transformers runtime compatible; it is not evidence about model
+weights, DMS semantics, Route-A, or hardware.  The next candidate runtime
+must jointly satisfy the checkpoint custom configuration's Transformers API
+and the FlashAttention/PyTorch/CUDA binary interface.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed

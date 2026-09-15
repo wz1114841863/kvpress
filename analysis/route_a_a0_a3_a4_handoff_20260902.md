@@ -1528,6 +1528,23 @@ it neither rejects the official checkpoint nor licenses a `DMSPress` fallback.
 M1 remains gated on a separately recorded successful exact-source probe in an
 explicitly approved compatible isolated runtime.
 
+An existing isolated `debug_env` was then checked without environment changes.
+It provides FlashAttention `2.8.3` with PyTorch `2.5.1+cu121`, but its
+Transformers `4.52.4` runtime is still incompatible.  The no-model static
+result completed in
+`analysis/experiments/dms_route_a_m0_official_provenance_qwen3_8b_debug_env_static_01/`
+(manifest SHA-256
+`a77bee5d89f36889a548a5c9dcd77f7dac4a5a173362eccf1efc3243a945b861`).
+The separate prefill probe in
+`analysis/experiments/dms_route_a_m0_official_provenance_qwen3_8b_debug_env_01/`
+is blocked before custom checkpoint code/weight loading with
+`ImportError` for `layer_type_validation` from
+`transformers.configuration_utils` (manifest SHA-256
+`91ac04a5d90b11090fc14cce9a325023fe35999f869d312e677c541738336f8e`).
+This resolves neither DMS semantics nor Route-A; it only establishes that a
+usable runtime must meet both the custom-code Transformers API and the
+FlashAttention binary dependency together.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

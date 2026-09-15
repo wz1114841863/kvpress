@@ -2097,3 +2097,18 @@ probe is `blocked` at model-code import with `ModuleNotFoundError` for
 `model_weights_loaded=false` and `generation_calls=0`.  This preserves the
 exact environment incompatibility as provenance and does not create a DMS
 trace or upgrade any evidence classification.
+
+A second isolated-environment probe is recorded separately, rather than
+overwriting that blocked result.  The static manifest
+`dms_route_a_m0_official_provenance_qwen3_8b_debug_env_static_01` completed
+with SHA-256
+`a77bee5d89f36889a548a5c9dcd77f7dac4a5a173362eccf1efc3243a945b861`.
+Its companion `model-prefill` manifest
+`dms_route_a_m0_official_provenance_qwen3_8b_debug_env_01` is blocked with
+SHA-256
+`91ac04a5d90b11090fc14cce9a325023fe35999f869d312e677c541738336f8e`:
+the available FlashAttention `2.8.3` environment has Transformers `4.52.4`,
+whose `configuration_utils` lacks `layer_type_validation` required before the
+checkpoint configuration can import.  It likewise executed no checkpoint
+custom code, loaded no weights, and made no generation, trace, performance, or
+hardware claim.
