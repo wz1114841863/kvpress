@@ -1669,6 +1669,19 @@ arrival order after reuse. Passing M3 does not prove attention equivalence or
 that those slots form KVzap-like hot/pending/packed-cold sources; any attention
 replacement is a subsequent, separately guarded functional experiment.
 
+The accepted M3 output is
+`analysis/experiments/dms_route_a_m3_active_topology_qwen3_8b_retrieval_04/`,
+manifest SHA-256
+`f56816bb7998083de49ff24385f4bb5793d4445a98783c2063f328c2b3bf74a7`.
+Its 180 events pass native cache-length, full ring metadata, and ring cursor
+agreement; every final active slot has a unique logical source arrival. The
+important result is that native physical slot traversal is nonmonotonic in
+logical arrival order for 269/288 layer-heads (3,140 adjacent descents). The
+controller reaches agreement only by reflecting the official software prefill
+chunk rule: confirmed-eviction slots are filled before new slots. This is a
+real adapter-control requirement, but not a hardware page/bank choice or proof
+that external Route-A attention is equivalent.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

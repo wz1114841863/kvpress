@@ -2239,3 +2239,17 @@ not say that physical slot order is chronological, that attention is
 order-invariant in a numerical implementation, or that the topology is already
 a Route-A hot/pending/packed-cold mapping. A later functional attention study
 remains separately gated.
+
+The accepted M3 artifact is
+`analysis/experiments/dms_route_a_m3_active_topology_qwen3_8b_retrieval_04/`,
+manifest SHA-256
+`f56816bb7998083de49ff24385f4bb5793d4445a98783c2063f328c2b3bf74a7`.
+For the fixed 629-token horizon it observed 180 events and accepted every
+native length, ring-metadata, and cursor comparison. Its final active native
+slots map to unique logical source arrivals in every layer/KV head. Crucially,
+269/288 layer-heads have nonmonotonic logical-source order when read in native
+physical-slot order (3,140 adjacent descents total). The controller required
+the official software cache's prefill chunk rule—confirmed-eviction slots are
+written before newly allocated slots within a chunk—to reproduce that state.
+This identifies a necessary adapter metadata/order-preservation condition, not
+a physical page-size or hardware-selection result.

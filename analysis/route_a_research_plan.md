@@ -1475,6 +1475,19 @@ traffic, timing, hardware, or RTL claim. Its value is to determine whether a
 subsequent adapter must preserve physical resident-slot order and which logical
 position metadata it would need.
 
+The completed result is
+`analysis/experiments/dms_route_a_m3_active_topology_qwen3_8b_retrieval_04/`
+with manifest SHA-256
+`f56816bb7998083de49ff24385f4bb5793d4445a98783c2063f328c2b3bf74a7`.
+All 180 observed native events passed cache-length, complete ring-metadata, and
+cursor agreement, and every final active slot maps to a unique logical source
+arrival. However, 269/288 final layer-head topologies are nonmonotonic in
+logical arrival serial when traversed in native physical-slot order (3,140
+adjacent descents). The matching controller must preserve the official
+software prefill rule that writes confirmed-eviction slots before new slots in
+each chunk. This is the concrete condition a future adapter must represent;
+it is not a selected physical page size or an attention-equivalence result.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects
