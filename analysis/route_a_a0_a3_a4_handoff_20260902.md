@@ -1565,6 +1565,28 @@ Transformers `5.0.0`.  It records zero generation calls.  Thus this is the
 next exact environment API blocker, not an official DMS or Route-A negative;
 M1 remains gated.
 
+#### DMS-M0 recorded result — compatible `debug_env` runtime accepted
+
+The official DMS README requires Transformers `4.57.3` and explicitly obtains
+the tokenizer from base `Qwen/Qwen3-8B`; its DMS snapshot does not include
+tokenizer files. The M0 tool now makes that second input explicit through a
+local-only `--tokenizer-root` and hash-records selected tokenizer files. Only
+the isolated `debug_env` was changed: Transformers became `4.57.3`, while
+PyTorch stayed `2.5.1+cu121` and FlashAttention stayed `2.8.3`.
+
+After a new-output static gate (manifest SHA-256
+`35f65e8e72b2342bc4e1caa76157792e6932cbe93c07501798aca9ac384633a7`), the
+fresh prefill result at
+`analysis/experiments/dms_route_a_m0_official_provenance_qwen3_8b_debug_env_tf457_base_tokenizer_prefill_01/`
+completed with manifest SHA-256
+`0fda714d8f67b9c646c82788113b4e037c9e3b70ef12121b6133cb103dc7687d`.
+It loaded the official DMS weights and completed one cache-enabled seven-token
+prefill with finite logits; `generation_calls=0`. This removes the runtime
+blocker for the exact recorded inputs, but is only functional compatibility.
+It does not validate DMS pruning/mask semantics, Route-A behavior, accuracy,
+decode lifecycle, traffic, timing, hardware, or RTL. The next work is a
+separate DMS-M1 semantic gate, not hardware selection.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

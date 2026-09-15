@@ -1365,6 +1365,27 @@ invocation into one fan-in merge task; its capacity axis is merge tasks, not
 partial states. The v1 serial-per-partial result remains preserved but is not a
 FIFO-sizing result.
 
+### DMS-M0 — compatible isolated runtime accepted
+
+The official DMS README specifies Transformers `4.57.3` and loads a separate
+base `Qwen/Qwen3-8B` tokenizer. Accordingly, M0 model-prefill now requires an
+explicit local tokenizer snapshot rather than incorrectly treating the DMS
+weight snapshot as tokenizer-complete. The only mutated environment is the
+isolated `debug_env`: Transformers is `4.57.3`, PyTorch remains
+`2.5.1+cu121`, and FlashAttention remains `2.8.3`. A no-model static gate and
+a minimal FlashAttention CUDA functionality check passed first.
+
+The completed prefill manifest is
+`analysis/experiments/dms_route_a_m0_official_provenance_qwen3_8b_debug_env_tf457_base_tokenizer_prefill_01/dms_m0_official_provenance_manifest.json`
+(SHA-256 `0fda714d8f67b9c646c82788113b4e037c9e3b70ef12121b6133cb103dc7687d`).
+It binds the pinned official DMS source and the supplied cached Qwen3-8B
+tokenizer files, loads the weights, and completes one cache-enabled short
+prefill with finite logits and no generation. M0 is therefore no longer
+environment-blocked, but it proves no DMS pruning semantics, decode
+lifecycle, Route-A portability, quality, timing, capacity, traffic, hardware,
+or RTL property. DMS-M1 may now be designed as the next separate semantic
+gate; no hardware parameter is selected.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

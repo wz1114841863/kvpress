@@ -2124,3 +2124,22 @@ blocked by missing `Qwen3Config.pad_token_id`.  The separately confirmed
 FlashAttention import/minimal CUDA call establishes only dependency
 functionality.  It does not make this blocked manifest a DMS trace, hardware
 measurement, or an eligibility upgrade for M1.
+
+The next isolated `debug_env` probe upgrades only that environment's
+Transformers to the version named by the official DMS README, `4.57.3`, while
+preserving PyTorch `2.5.1+cu121`; FlashAttention remains `2.8.3`. M0 now
+requires an explicit local `--tokenizer-root` for `model-prefill`, because the
+DMS README names the separate base `Qwen/Qwen3-8B` tokenizer and the DMS
+snapshot contains no tokenizer files. The fresh static artifact
+`dms_route_a_m0_official_provenance_qwen3_8b_debug_env_tf457_tokenizer_contract_static_01`
+completed with manifest SHA-256
+`35f65e8e72b2342bc4e1caa76157792e6932cbe93c07501798aca9ac384633a7`.
+The separate prefill artifact
+`dms_route_a_m0_official_provenance_qwen3_8b_debug_env_tf457_base_tokenizer_prefill_01`
+completed with manifest SHA-256
+`0fda714d8f67b9c646c82788113b4e037c9e3b70ef12121b6133cb103dc7687d`.
+It hash-records the supplied base-tokenizer files, loads official DMS weights,
+and completes one cache-enabled `[1, 7]` prefill with finite `[1, 7, 151936]`
+logits and zero generation calls. This is bounded functional runtime
+compatibility only: it is neither a DMS semantic/mask/lifecycle result nor
+trace-derived, modeled, or measured hardware evidence.
