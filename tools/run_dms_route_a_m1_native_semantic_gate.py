@@ -140,13 +140,23 @@ def cache_state(cache, layer_count: int) -> list[list[int]]:
 class DMSUpdateRecorder(AbstractContextManager):
     """Observe one official cache class without changing values or return paths."""
 
-    def __init__(self, cache_class, *, capture_decision_bits: bool = False):
+    def __init__(
+        self,
+        cache_class,
+        *,
+        capture_decision_bits: bool = False,
+        capture_native_control_state: bool = False,
+    ):
         self.cache_class = cache_class
         # M1 deliberately records summaries only.  A later, separately named
         # contract gate can opt in to an in-memory copy so it can serialize a
         # bounded decision stream outside the M1 manifest without changing the
         # official update inputs or return path.
         self.capture_decision_bits = capture_decision_bits
+        # Like decision bits, native ring metadata is opt-in and remains an
+        # in-memory observation here.  A later gate owns any serialized control
+        # trace; M1 stays summary-only and never reads K/V payloads.
+        self.capture_native_control_state = capture_native_control_state
         self.original_update = None
         self.events: list[dict[str, Any]] = []
 
@@ -193,6 +203,16 @@ class DMSUpdateRecorder(AbstractContextManager):
                 # schema remains summary-only; M2 owns any compact raw-stream
                 # artifact and its provenance contract.
                 event["decision_bits"] = decision_cpu.squeeze(0).numpy().copy()
+            if self.capture_native_control_state:
+                layer = cache[layer_idx]
+                recent_info = layer.recent_info.detach().to(device="cpu", dtype=torch.int32).contiguous()
+                recent_position = layer.recent_info_position.detach().to(device="cpu", dtype=torch.int32).contiguous()
+                if recent_info.ndim != 3 or recent_info.shape[0] != EXPECTED_KV_HEADS or recent_info.shape[2] != 2:
+                    raise AssertionError(f"unexpected native DMS recent_info shape: {tuple(recent_info.shape)}")
+                if tuple(recent_position.shape) != (EXPECTED_KV_HEADS,):
+                    raise AssertionError(f"unexpected native DMS recent_info_position shape: {tuple(recent_position.shape)}")
+                event["native_recent_info"] = recent_info.numpy().copy()
+                event["native_recent_info_position"] = recent_position.numpy().copy()
             self.events.append(event)
             return result
 

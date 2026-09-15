@@ -1457,6 +1457,24 @@ throughput, energy, area, quality, hardware selection, architecture, or RTL.
 Only after this gate passes should a later, separately designed study ask what
 additional state/interface would be needed for a Route-A-compatible adapter.
 
+### DMS-M3 — active-native-slot topology precondition
+
+M3 asks a narrower question before any adapter attention reference: can the
+official DMS resident native slots be mapped back to unique logical arrival
+serials under the documented delayed-eviction control rule? It binds the M2
+decision stream but does not assume a later run has identical decisions. Its
+own trace-off/on-equivalent official run observes only decisions, native cache
+lengths, and DMS `recent_info`/cursor metadata. An independent controller must
+match each event's ring metadata as well as its cache length, then exports the
+final source-arrival serial assigned to every active native slot.
+
+This is a topology/control contract, not an attention substitution. In
+particular, DMS native slot order can differ from logical arrival order after
+reuse; M3 makes no same-output, reordering-invariance, packed-cold, capacity,
+traffic, timing, hardware, or RTL claim. Its value is to determine whether a
+subsequent adapter must preserve physical resident-slot order and which logical
+position metadata it would need.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

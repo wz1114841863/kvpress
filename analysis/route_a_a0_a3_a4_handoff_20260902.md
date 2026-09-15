@@ -1653,6 +1653,22 @@ Route-A hot/pending/packed-cold adapter, physical capacity/traffic measurement,
 latency/throughput/energy/area evidence, trained-DMS quality result, architecture
 specification, or RTL gate.
 
+### DMS-M3 implementation — active native-slot topology precondition
+
+M3 is not yet the Route-A mapping or an attention replacement. It binds M2's
+compact decision artifact and runs the official DMS request with trace-off/on
+equivalence while observing only `recent_info`, its cursor, decisions, and
+native lengths. A separate controller augments the M2 delayed-eviction rule
+with a logical arrival serial per source, and must reproduce native length plus
+the complete ring metadata at every event. It exports the final logical source
+serial for each active native slot, without K/V payloads or token IDs/text.
+
+The purpose is to establish whether an adapter can represent DMS's actual
+resident topology and whether native physical slot order differs from logical
+arrival order after reuse. Passing M3 does not prove attention equivalence or
+that those slots form KVzap-like hot/pending/packed-cold sources; any attention
+replacement is a subsequent, separately guarded functional experiment.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

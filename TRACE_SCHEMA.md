@@ -2219,3 +2219,23 @@ The M2 and M1 summary hashes differed across runs and are retained as a
 reported comparison, not treated as a controller failure. These are still
 fixed-request native-state/control-contract results, not physical capacity or
 hardware evidence.
+
+### Official trained-DMS M3 active-native-slot topology manifest
+
+`route-a-dms-m3-active-native-slot-topology-1.0` is the next bounded adapter
+precondition after M2. It binds completed M0/M1/M2 manifests and M2's hashed
+decision stream, then repeats one fixed official DMS request with trace-off/on
+equivalence. The observer copies only official binary decisions, native cache
+lengths, `recent_info` ring metadata, and `recent_info_position`; it never
+reads or writes K/V, token IDs/text, attention outputs, allocator state, or
+timing.
+
+An independent controller assigns each arrival a logical serial and replays
+the delayed decision, ring candidate, and native slot reuse. It must agree at
+every event with official lengths, full per-head `recent_info`, and ring cursor.
+It exports final logical-source serials by active native slot. This establishes
+only a control/topology representation for native DMS resident slots. It does
+not say that physical slot order is chronological, that attention is
+order-invariant in a numerical implementation, or that the topology is already
+a Route-A hot/pending/packed-cold mapping. A later functional attention study
+remains separately gated.
