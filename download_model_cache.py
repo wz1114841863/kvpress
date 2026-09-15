@@ -68,17 +68,17 @@ from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 # ============================================================
 
 MODELS = [
-    "NousResearch/Meta-Llama-3.1-8B-Instruct",
+    "nvidia/Qwen3-8B-DMS-8x",
 ]
 
 
 # 为需要严格固定版本的模型指定 commit.
 # 其他模型默认使用 main.
 MODEL_REVISIONS = {
-    # Resolved from the Nous repository API on 2026-09-12.  Keep the exact
-    # requested repository ID here so a download cannot silently fall back to
-    # the moving ``main`` revision.
-    "NousResearch/Meta-Llama-3.1-8B-Instruct": "d10aef7999a2b5ba950ab3974312feeedbfe0b77",
+    # Official NVIDIA DMS checkpoint revision resolved from the model repository
+    # on 2026-09-15.  Keep the exact requested repository ID and revision so a
+    # download cannot silently follow the moving ``main`` branch.
+    "nvidia/Qwen3-8B-DMS-8x": "da1535fc3bfb52fa340eca692a7e4e650f98838d",
 }
 
 
