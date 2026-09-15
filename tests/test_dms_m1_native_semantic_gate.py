@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from tools.run_dms_route_a_m1_native_semantic_gate import (
+    DMSUpdateRecorder,
     EXPECTED_KV_HEADS,
     M0_SCHEMA,
     OFFICIAL_DMS_REPO,
@@ -11,6 +12,15 @@ from tools.run_dms_route_a_m1_native_semantic_gate import (
     read_completed_m0,
     summarize_events,
 )
+
+
+class _ParentCache:
+    def update(self):
+        return "parent"
+
+
+class _ChildDMSCache(_ParentCache):
+    pass
 
 
 def _m0(tmp_path: Path, *, status: str = "complete") -> Path:
@@ -64,3 +74,7 @@ def test_m1_event_summary_requires_full_layer_coverage_and_reports_native_evicti
     assert summary["all_36_layers_all_8_kv_heads_covered"] is True
     assert summary["native_eviction_observed"] is True
     assert summary["decision_ones_total"] == 36 * 3 * EXPECTED_KV_HEADS
+
+
+def test_m1_recorder_binds_the_inherited_update_method_before_installing_wrapper():
+    assert DMSUpdateRecorder.inherited_update_method(_ChildDMSCache) is _ParentCache.update

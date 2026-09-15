@@ -145,8 +145,20 @@ class DMSUpdateRecorder(AbstractContextManager):
         self.original_update = None
         self.events: list[dict[str, Any]] = []
 
+    @staticmethod
+    def inherited_update_method(cache_class):
+        """Return the real inherited update implementation, never our wrapper."""
+        for base in cache_class.__mro__[1:]:
+            candidate = base.__dict__.get("update")
+            if candidate is not None:
+                return candidate
+        raise AttributeError("DMS cache class has no inherited update method")
+
     def __enter__(self):
-        self.original_update = self.cache_class.update
+        # The official DMSCache inherits Cache.update rather than defining an
+        # update method. Looking it up on DMSCache after installing a wrapper
+        # can resolve to that wrapper, so bind the owning parent implementation.
+        self.original_update = self.inherited_update_method(self.cache_class)
 
         def observed_update(cache, key_states, value_states, layer_idx, cache_kwargs):
             decisions = cache_kwargs["eviction_info"]
