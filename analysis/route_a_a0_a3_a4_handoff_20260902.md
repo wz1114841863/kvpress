@@ -1506,6 +1506,28 @@ fresh blocked manifest and must not be hidden by falling back to `DMSPress` or
 a different model/runtime.  M1 starts only if the exact official source and
 runtime probe are accepted.
 
+#### DMS-M0 recorded result — source gate accepted, runtime probe blocked
+
+The fresh remote result
+`analysis/experiments/dms_route_a_m0_official_provenance_qwen3_8b_01/` has
+manifest SHA-256
+`a8b6099eaa618249ff49ef73c43fb7a8df55d2aca2eb510f8c3cd922835b655e`.
+Static source checks all accepted: the fixed official revision's expected
+DMS-8x/512 Qwen3 fields, four indexed Safetensors headers, and four parseable
+custom-code files.  That static phase did not execute checkpoint code or
+materialize any weight tensor.
+
+Its deliberately bounded `model-prefill` compatibility probe imported the
+pinned configuration code, but model-code import raised
+`ModuleNotFoundError: No module named 'flash_attn'` in the existing PyTorch
+`2.10.0+cu128` / Transformers `5.0.0` environment.  It therefore records
+`model_weights_loaded=false` and `generation_calls=0`: no weights, prefill,
+generation, DMS lifecycle evidence, Route-A adaptation, quality result, or
+hardware observation exists.  This is an environment dependency blocker only;
+it neither rejects the official checkpoint nor licenses a `DMSPress` fallback.
+M1 remains gated on a separately recorded successful exact-source probe in an
+explicitly approved compatible isolated runtime.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

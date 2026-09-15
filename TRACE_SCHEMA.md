@@ -2086,3 +2086,14 @@ runtime/probe combination was incompatible; it is not a DMS or Route-A
 negative result.  M0 selects no hardware parameter and establishes no quality,
 lifecycle, traffic, latency, throughput, energy, area, architecture, or RTL
 claim.
+
+The first recorded instance is
+`analysis/experiments/dms_route_a_m0_official_provenance_qwen3_8b_01/`, whose
+manifest SHA-256 is
+`a8b6099eaa618249ff49ef73c43fb7a8df55d2aca2eb510f8c3cd922835b655e`.
+Its static source guards accepted the pinned revision.  Its `model-prefill`
+probe is `blocked` at model-code import with `ModuleNotFoundError` for
+`flash_attn`; configuration custom code had imported, but
+`model_weights_loaded=false` and `generation_calls=0`.  This preserves the
+exact environment incompatibility as provenance and does not create a DMS
+trace or upgrade any evidence classification.

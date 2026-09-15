@@ -1275,6 +1275,29 @@ throughput, energy, area, architecture, or RTL readiness.  DMS-M1 may begin
 only after M0 has both accepted source provenance and a successful explicitly
 recorded runtime compatibility probe.
 
+#### DMS-M0 outcome — source accepted; current runtime probe blocked
+
+The first remote M0 run is retained at
+`analysis/experiments/dms_route_a_m0_official_provenance_qwen3_8b_01/` with
+manifest SHA-256
+`a8b6099eaa618249ff49ef73c43fb7a8df55d2aca2eb510f8c3cd922835b655e`.
+All six static source gates accepted the pinned official revision: the expected
+Qwen3 DMS-8x/512 fields, four indexed readable Safetensors headers, and four
+parseable custom-code files (with no custom-code execution or weight tensor
+materialization during the static phase).  This is provenance evidence only.
+
+The explicit `model-prefill` compatibility probe then imported the pinned
+configuration custom code but stopped while importing the model custom code:
+`ModuleNotFoundError: No module named 'flash_attn'`.  The manifest records
+PyTorch `2.10.0+cu128`, Transformers `5.0.0`, `model_weights_loaded=false`,
+and `generation_calls=0`.  Thus it did not load weights, execute a prefill,
+or establish compatibility with the current environment.  This is a precise
+dependency blocker for this runtime/probe combination, not a negative result
+about DMS, Route-A, quality, decode behavior, or any hardware property.  Do
+not fall back to `DMSPress`; resume M0 only in an explicitly approved,
+isolated runtime that provides a compatible FlashAttention stack, then retain
+that new probe as a separate manifest.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed
