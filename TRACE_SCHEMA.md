@@ -2286,3 +2286,17 @@ a statement that the maximum difference is a universal numerical bound. The
 fresh 180-event topology replay also again matches native length/ring metadata,
 with active resident lengths 513--629 and 269 nonmonotonic layer/KV-head slot
 orders. It validates only the fixed-request native-resident source reference.
+
+### Cross-frontend residency descriptor study (planned)
+
+The post-M4 commonality phase is specified in
+`analysis/cross_frontend_commonality_study_plan.md` and archived in
+`analysis/cross_frontend_residency_evidence_archive_20260915.md`. Its v1
+descriptor separates semantic identity/visibility/epoch/order fields from the
+`persistent_packed`, `one_shot_packed`, and `dynamic_resident_slot` realization
+extensions. Every descriptor value must explicitly distinguish `observed`,
+`derived`, `modeled`, `unknown`, and `not_applicable`; unknown is never zero.
+
+This study does not make DMS slots a packed-cold source, infer unobserved
+SnapKV decode behavior, pool Qwen/Llama resource values, define a hardware
+interface, select a parameter, or authorize RTL.

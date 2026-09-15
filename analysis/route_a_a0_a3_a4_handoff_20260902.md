@@ -1717,6 +1717,22 @@ control replay again observes 269 nonmonotonic layer/KV-head orders. It remains
 functional/trace-derived software evidence, not capacity, traffic, timing,
 hardware, quality, architecture, or RTL evidence.
 
+### Cross-frontend evidence archive and next plan
+
+The present stopping point is recorded by
+`analysis/cross_frontend_residency_evidence_archive_20260915.md`; it preserves
+Route-A persistent-packed KVzap as the primary architecture path, treats Llama
+as two-anchor KVzap portability evidence, SnapKV as one-shot packed-residency
+evidence, and DMS as dynamic-resident boundary evidence. It deliberately does
+not claim observed SnapKV decode behavior or a universal DMS position field.
+
+The planned C0--C5 Commonality Study is
+`analysis/cross_frontend_commonality_study_plan.md`. It first derives a
+provenance-bound semantic descriptor and realization extensions, then tests
+candidate source traversal/optional composition without forcing any frontend
+into hot/pending/packed cold lifecycle. It neither selects hardware resources
+nor authorizes architecture specification or RTL.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

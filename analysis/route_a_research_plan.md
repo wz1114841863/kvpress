@@ -1520,6 +1520,19 @@ native orders remain nonmonotonic, consistent with M3. This supports only the
 need to preserve official active-slot order in a later adapter; it does not
 justify source splitting, merge placement, or any physical design choice.
 
+### Cross-frontend Commonality Study — next phase
+
+The current Qwen A4.2 closure, two-anchor KVzap portability work, SnapKV P2,
+and DMS M4 are archived in
+`analysis/cross_frontend_residency_evidence_archive_20260915.md`. The next
+execution plan is `analysis/cross_frontend_commonality_study_plan.md` (C0--C5).
+It retains Route-A persistent-packed KVzap as the primary path and asks only
+which semantic source-traversal fields are shared versus realization-specific.
+It must not treat unobserved SnapKV decode state as available, convert DMS
+arrival serials into unrecorded token positions, or promote page/FIFO/free-slot
+state to a universal interface. No hardware parameter or RTL decision follows
+from C0--C4.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects
