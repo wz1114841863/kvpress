@@ -1682,6 +1682,22 @@ chunk rule: confirmed-eviction slots are filled before new slots. This is a
 real adapter-control requirement, but not a hardware page/bank choice or proof
 that external Route-A attention is equivalent.
 
+### DMS-M4 — active-resident attention semantic gate (planned)
+
+The next DMS gate is not a KVzap packed-cold substitution. It binds M0--M3 and
+observes the official DMS decode FlashAttention call without changing it. A
+temporary FP32 reference gathers only active native K/V slots in official
+logical-slot/block-table order and compares its one-source online-softmax
+output with the unchanged official output. Required guards are exact trace
+off/on token/logit/final-cache state, fresh control/topology replay, all-layer
+decode coverage, and explicit numerical tolerance.
+
+If accepted, M4 proves one fixed-request functional active-resident attention
+reference only. It does not show that evicted DMS K/V has a cold source, that
+slots can be reordered, that sources can be split/merged, or that Route-A
+scheduling, capacity, traffic, timing, hardware, quality, architecture
+specification, or RTL follows.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

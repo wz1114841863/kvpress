@@ -1488,6 +1488,24 @@ software prefill rule that writes confirmed-eviction slots before new slots in
 each chunk. This is the concrete condition a future adapter must represent;
 it is not a selected physical page size or an attention-equivalence result.
 
+### DMS-M4 — active-resident attention semantic gate
+
+M4 asks the first functional question after M3, but is still narrower than a
+Route-A adapter: can a one-source online-softmax replay over the *active native
+DMS slots*, in official logical-slot/block-table order, agree numerically with
+the unchanged official DMS decode FlashAttention result? It binds M0--M3 and
+runs the same fixed request trace-off/on. The observer must not alter a cache
+update or FlashAttention return path, and cannot serialize K/V, query,
+attention, token, or text payloads.
+
+The gate requires exact trace-off/on token/logit/final-cache agreement, fresh
+ring/controller replay agreement, complete all-layer decode-call coverage, and
+declared FP32 tolerances. Passing establishes only a fixed-request,
+active-resident functional reference. It does not make DMS KVzap, retain
+evicted K/V, make a packed cold store, justify source partition/merge, select
+scheduler/precision/page/bank resources, or establish capacity, traffic,
+timing, hardware, quality, architecture, or RTL evidence.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

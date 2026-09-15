@@ -2253,3 +2253,23 @@ the official software cache's prefill chunk rule—confirmed-eviction slots are
 written before newly allocated slots within a chunk—to reproduce that state.
 This identifies a necessary adapter metadata/order-preservation condition, not
 a physical page-size or hardware-selection result.
+
+### Official trained-DMS M4 active-resident attention manifest
+
+`route-a-dms-m4-active-resident-attention-gate-1.0` is the functional gate
+after accepted M3 topology. It binds M0--M3 and the hashed M3 control/topology
+artifacts, then repeats one fixed official DMS request twice. The second pass
+wraps the official cache update and `flash_attn_with_kvcache` only to observe
+their unchanged inputs and return value. It gathers active native K/V in the
+official logical-slot/block-table order and performs an in-memory one-source
+FP32 online-softmax replay for every `q_len=1` decode call. K/V, queries,
+attention outputs, token IDs, and text are never serialized.
+
+Acceptance requires exact trace-off/on generated-token, per-forward logit, and
+final native-cache digests; fresh native ring/controller agreement; complete
+all-layer decode coverage; and declared FP32 numerical tolerance. M4 does not
+replace official attention, create packed cold storage, establish source
+splitting/merge placement, or prove order-invariance. Native observations are
+trace-derived software state and the replay is bounded functional evidence;
+neither is capacity, HBM/DRAM traffic, latency, throughput, energy, area,
+quality, hardware, architecture, or RTL evidence.
