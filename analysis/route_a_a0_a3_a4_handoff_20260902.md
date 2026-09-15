@@ -1488,6 +1488,24 @@ cache/decode, scheduler/backpressure, and physical-resource/hardware
 portability remain unsupported, rather than being treated as zero-cost or
 zero-occupancy behavior.
 
+### DMS-M0 implementation — official trained-DMS entry gate
+
+The next frontend is the official trained `nvidia/Qwen3-8B-DMS-8x` checkpoint,
+not the existing KVPress DMS-like wrapper.  The checkpoint supplies custom
+configuration, model, attention, and cache code, so
+`tools/validate_dms_m0_official_provenance.py` first hash-binds its pinned
+snapshot revision `da1535fc3bfb52fa340eca692a7e4e650f98838d`, expected DMS
+8x/512-window configuration, code files, Safetensors index, and shard headers
+without executing custom code or materializing weights.
+
+Its explicit runtime modes then permit only a config load or one short
+cache-enabled prefill from the local snapshot.  They do not generate, mutate
+KVPress, implement a Route-A adapter, collect a DMS lifecycle trace, or make a
+quality/hardware claim.  A failed compatibility attempt must be retained as a
+fresh blocked manifest and must not be hidden by falling back to `DMSPress` or
+a different model/runtime.  M1 starts only if the exact official source and
+runtime probe are accepted.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

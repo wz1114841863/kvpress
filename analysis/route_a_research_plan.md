@@ -1254,6 +1254,27 @@ scheduler/backpressure, and physical-resource/hardware contracts explicitly
 remain ineligible.  This is the desired negative boundary, not an experiment
 failure and not evidence that any unavailable workload quantity is zero.
 
+### DMS-M0 — official trained-DMS provenance and runtime-compatibility gate
+
+The next online-frontend branch must use the official trained checkpoint, not
+silently substitute KVPress `DMSPress` or a training-free scorer.  M0 is
+implemented by `tools/validate_dms_m0_official_provenance.py` and is fixed to
+`nvidia/Qwen3-8B-DMS-8x` revision
+`da1535fc3bfb52fa340eca692a7e4e650f98838d`.  Its default static mode checks
+the expected 8x/512-window Qwen3 configuration, four indexed Safetensors
+shards, and the checkpoint's custom configuration/model/attention/cache code
+without importing or executing that code.
+
+The optional `config-only` and single short `model-prefill` modes are explicit
+functional runtime compatibility probes.  They use the pinned local snapshot,
+perform no download or generation, and produce a fresh `blocked` manifest if
+the current environment cannot run the checkpoint.  A successful load/prefill
+does not prove trained-DMS accuracy, mask semantics, decode lifecycle, Route-A
+compatibility, allocator behavior, physical capacity, traffic, timing,
+throughput, energy, area, architecture, or RTL readiness.  DMS-M1 may begin
+only after M0 has both accepted source provenance and a successful explicitly
+recorded runtime compatibility probe.
+
 ### A4.2.9 — matched split-source interface-demand accounting
 
 `tools/analyze_kvzap_route_a429_matched_interface_demand.py` binds completed

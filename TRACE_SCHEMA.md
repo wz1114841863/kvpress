@@ -2066,3 +2066,23 @@ It records five available and eight unavailable fields for one 256,608-event
 only positive eligibility is static canonical mapping and a bounded prefill
 same-mask probe.  Decode/pending, native cache/decode, scheduler/backpressure,
 and physical-resource/hardware contracts remain explicitly ineligible.
+
+### Official trained-DMS M0 provenance and compatibility manifest
+
+`route-a-dms-m0-official-provenance-1.0` is the entry gate for the separately
+trained `nvidia/Qwen3-8B-DMS-8x` frontend.  It accepts only the pinned local
+snapshot revision `da1535fc3bfb52fa340eca692a7e4e650f98838d`.  Static M0
+parses the configuration and Safetensors index, checks the expected DMS
+configuration fields and custom-code `auto_map`, parses the four required
+checkpoint code files without importing them, and reads Safetensors headers
+without materializing tensors.  It records snapshot/config/index/custom-code
+hashes and shard metadata in a fresh manifest.
+
+An explicit optional runtime probe may import the pinned local custom code and
+perform either configuration loading or one short cache-enabled prefill; it
+never downloads, generates tokens, creates Route-A decisions, compares
+attention, or measures performance.  `blocked` means only that the exact
+runtime/probe combination was incompatible; it is not a DMS or Route-A
+negative result.  M0 selects no hardware parameter and establishes no quality,
+lifecycle, traffic, latency, throughput, energy, area, architecture, or RTL
+claim.
