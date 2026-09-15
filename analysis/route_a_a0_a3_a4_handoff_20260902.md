@@ -1587,6 +1587,30 @@ It does not validate DMS pruning/mask semantics, Route-A behavior, accuracy,
 decode lifecycle, traffic, timing, hardware, or RTL. The next work is a
 separate DMS-M1 semantic gate, not hardware selection.
 
+### DMS-M1 implementation and recorded result — native semantic observation
+
+DMS-M1 is a separate narrow gate for the official trained-DMS frontend. It
+does not substitute Route-A attention: the checkpoint's own source makes
+binary decisions and its native cache delays eviction before reusing a slot.
+The new observer only wraps inherited `DMSCache.update`; a normal official-DMS
+run must exactly match the observed run's generated-token IDs, per-forward
+last-logit digests, and final 36-by-8 cache-length digest. This excludes the
+old KVPress `DMSPress`, KVzap, fake-key attention, and generation API.
+
+The completed fresh result
+`analysis/experiments/dms_route_a_m1_native_semantic_qwen3_8b_retrieval_02/`
+has manifest SHA-256
+`5c3e72957711c6d801667a2da0ca08720ce9e1238393b42137c1c9874a0aaa55` and
+hash-binds the completed compatible M0 manifest. With a 625-token retrieval
+input and four fixed decode forwards, it observes all 36 layers and 8 KV heads
+on every one of five calls (180 events). It records 126,919 binary
+decision-one bits; native cache length is below the 629-token logical history
+in 269/288 layer-head states, with final length range 513--629. Observer
+equivalence passed exactly. This is useful trace-derived/functional evidence
+of DMS's native delayed-eviction-and-reuse lifecycle, but does not claim that
+it already has a Route-A hot/pending/packed mapping, nor any physical capacity,
+traffic, timing, hardware, or RTL result.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

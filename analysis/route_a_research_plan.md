@@ -1386,6 +1386,31 @@ lifecycle, Route-A portability, quality, timing, capacity, traffic, hardware,
 or RTL property. DMS-M1 may now be designed as the next separate semantic
 gate; no hardware parameter is selected.
 
+### DMS-M1 — native decision/cache semantic observation
+
+M1 is intentionally not a KVzap-style same-mask Route-A substitution gate:
+the official trained DMS code makes binary decisions, delays their effects by
+its configured window, and reuses native cache slots. The M1 observer wraps
+only the inherited `DMSCache.update` call and requires a separate trace-off
+execution to have identical generated-token, per-forward logit, and final
+native-cache-state digests. It does not instantiate `DMSPress`, KVzap, a
+Route-A backend, fake-key attention, or the generation API.
+
+The first completed fixed retrieval instance is
+`analysis/experiments/dms_route_a_m1_native_semantic_qwen3_8b_retrieval_02/`
+(manifest SHA-256
+`5c3e72957711c6d801667a2da0ca08720ce9e1238393b42137c1c9874a0aaa55`).
+For 625 prompt tokens and four explicit decode forwards, it observes all 180
+expected layer-call events (36 layers times five calls), 126,919 binary
+decision-one bits, and native cache shortening in 269/288 layer-head states;
+the final native lengths range from 513 to 629 versus logical history 629.
+This proves only the recorded official DMS native-state behavior and that the
+observer leaves that execution unchanged. It does not prove DMS accuracy or
+make cache lengths physical capacity, traffic, latency, throughput, energy,
+area, hardware, or RTL evidence. A subsequent DMS-M2 must explicitly decide
+whether an adapter can preserve this delayed-eviction/reuse semantics; it may
+not assume it is KVzap's packed-cold lifecycle.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

@@ -2143,3 +2143,28 @@ and completes one cache-enabled `[1, 7]` prefill with finite `[1, 7, 151936]`
 logits and zero generation calls. This is bounded functional runtime
 compatibility only: it is neither a DMS semantic/mask/lifecycle result nor
 trace-derived, modeled, or measured hardware evidence.
+
+### Official trained-DMS M1 native semantic manifest
+
+`route-a-dms-m1-native-semantic-gate-1.0` binds a completed official DMS-M0
+manifest, its exact local DMS snapshot, and the explicit base-tokenizer root.
+It runs the official model twice on one fixed input: first without observation,
+then with a wrapper around inherited `DMSCache.update` that only copies binary
+decision summaries and per-layer/KV-head native cache lengths before and after
+each update. It accepts only if generated token IDs, per-forward last-logit
+digests, and final 36-by-8 native-cache-length digest match exactly between
+the two runs. It records no K/V tensors, attention matrices, token text, or
+performance data.
+
+The first completed M1 artifact is
+`analysis/experiments/dms_route_a_m1_native_semantic_qwen3_8b_retrieval_02/`,
+manifest SHA-256
+`5c3e72957711c6d801667a2da0ca08720ce9e1238393b42137c1c9874a0aaa55`.
+For its one 625-token input plus four fixed decode forwards, all 36 layers and
+8 KV heads emitted 180 observed cache-update events. It observed 126,919
+binary decision-one bits and native cache length below the 629-token logical
+history in 269/288 layer-head states (final lengths range 513--629). This is
+trace-derived native-DMS state plus functional observer equivalence. DMS's
+delayed eviction and cache-slot reuse are not relabeled as Route-A
+hot/pending/packed cold storage, so this does not yet establish a Route-A
+adapter, physical capacity, traffic, timing, hardware, or RTL claim.
