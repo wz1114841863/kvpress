@@ -2479,9 +2479,7 @@ only count, first/last positions, and the first scalar mismatch, never token
 text or a full position vector. This diagnostic is not an accepted trace,
 workload result, or hardware observation.
 The A4.3.1 source manifests must additionally declare
-`explicit_cache_positions=true`: the policy gate passes the contiguous logical
-prefill/question/decode positions to Qwen explicitly. This is a functional
-alignment control, not an HBM, timing, or cache-allocation observation.
-The opt-in path materializes each position vector before multi-device dispatch
-so the Python semantic hook cannot observe an unfinished source-device tensor;
-the synchronization is not a latency or throughput measurement.
+`require_single_visible_cuda_device=true` and record `cuda_environment` with
+exactly one visible CUDA device. This protects the Python semantic hook from
+unsupported multi-device automatic dispatch. It is an execution-environment
+guard, not a hardware performance or architecture result.

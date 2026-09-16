@@ -10,7 +10,7 @@ from transformers import AutoTokenizer, DynamicCache, QuantizedCache
 from transformers.utils import is_flash_attn_2_available, is_optimum_quanto_available
 
 from kvpress import ExpectedAttentionPress
-from kvpress.pipeline import KVPressTextGenerationPipeline, _materialize_contiguous_positions
+from kvpress.pipeline import KVPressTextGenerationPipeline
 from tests.fixtures import danube_500m_model  # noqa: F401
 from tests.fixtures import kv_press_danube_pipeline  # noqa: F401
 from tests.fixtures import unit_test_model  # noqa: F401
@@ -92,20 +92,6 @@ def test_pipeline_no_press_works(kv_press_unit_test_pipeline, caplog):  # noqa: 
     context = "This is a test article. It was written on 2022-01-01."
     question = "When was this article written?"
     kv_press_unit_test_pipeline(context, question=question)
-
-
-def test_pipeline_explicit_cache_positions_are_opt_in_forward_parameter():
-    pipeline = object.__new__(KVPressTextGenerationPipeline)
-    _preprocess, forward, _postprocess = pipeline._sanitize_parameters(
-        question="What is this?", explicit_cache_positions=True
-    )
-    assert forward["explicit_cache_positions"] is True
-
-
-def test_materialize_contiguous_positions_has_exact_logical_values_on_cpu():
-    positions = _materialize_contiguous_positions(17, 4, torch.device("cpu"))
-    assert torch.equal(positions, torch.tensor([17, 18, 19, 20]))
-    assert positions.dtype == torch.long
 
 
 def test_pipeline_answer_is_correct(danube_500m_model, caplog):  # noqa: F811

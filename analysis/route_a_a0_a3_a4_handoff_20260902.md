@@ -1925,8 +1925,7 @@ arrival/completion and cannot select a finite FIFO depth or controller timing.
 The underlying policy-on backend still rejects non-contiguous logical cache
 positions. Its failure-only report is bounded to scalar sequence context; it
 does not change Route-A semantics or count as a successful workload artifact.
-The accepted source commands explicitly pass logical cache positions on
-prefill, question, and decode calls; this opt-in gate control leaves the
-repository's default pruning path unchanged.
-Those opt-in vectors are materialized before multi-device dispatch to keep the
-Python semantic hook ordered; this barrier is not hardware or timing evidence.
+Accepted source commands require exactly one visible CUDA device and record the
+visibility environment. Multi-device `device_map=auto` is not an accepted
+execution mode for this Python policy hook; this restriction does not select a
+hardware architecture or imply a performance result.

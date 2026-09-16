@@ -1728,9 +1728,8 @@ workload-varying pending state.
 The all-layer gate retains the pre-existing contiguous logical-cache-position
 contract. A rejection emits bounded scalar mismatch context only; it does not
 relax the state model or produce an accepted A4.3.1 workload result.
-Accepted A4.3.1 source runs must set `--explicit-cache-positions`, which is a
-functional alignment control for observed logical positions, not a default-path
-change or a hardware/cache-allocation claim.
-The opt-in control includes a pre-dispatch materialization barrier solely for
-Python-hook correctness under multi-device model placement; its runtime is out
-of scope for performance evidence.
+Accepted A4.3.1 source runs must set
+`--require-single-visible-cuda-device`; the manifest records the visible-device
+count, `CUDA_VISIBLE_DEVICES`, and logical device name. Multi-device
+`device_map=auto` is outside this Python-hook gate's accepted integration
+contract. This environment guard is not a hardware-performance claim.

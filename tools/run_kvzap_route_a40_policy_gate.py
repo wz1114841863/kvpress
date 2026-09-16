@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -40,7 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--target-kv-head", default="0", help="KV-head index, or 'all' to substitute every KV head in the selected layer.")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max-new-tokens", type=int, default=8)
-    parser.add_argument("--explicit-cache-positions", action="store_true", help="Pass explicit contiguous logical cache positions on all policy-gate model calls.")
+    parser.add_argument("--require-single-visible-cuda-device", action="store_true", help="Fail before model loading unless exactly one CUDA device is visible; record the visibility contract in the manifest.")
     parser.add_argument("--rtol", type=float, default=1e-4)
     parser.add_argument("--atol", type=float, default=1e-5)
     parser.add_argument("--max-executed-dtype-ulps", type=float, default=16.0, help="Maximum post-cast ULP diagnostic difference. FP32 same-mask rtol/atol remains a mandatory semantic guard.")
@@ -59,7 +60,24 @@ def answer_hash(output: dict[str, Any]) -> str:
 
 def generate(pipe, request: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
     seed_everything(args.seed)
-    return pipe(str(request["context"]), question=str(request["question"]), max_new_tokens=args.max_new_tokens, enable_thinking=False, explicit_cache_positions=args.explicit_cache_positions)
+    return pipe(str(request["context"]), question=str(request["question"]), max_new_tokens=args.max_new_tokens, enable_thinking=False)
+
+
+def cuda_environment(*, require_single_visible_device: bool) -> dict[str, Any]:
+    available = bool(torch.cuda.is_available())
+    count = int(torch.cuda.device_count()) if available else 0
+    report = {
+        "cuda_available": available,
+        "visible_cuda_device_count": count,
+        "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+        "visible_device_names": [torch.cuda.get_device_name(index) for index in range(count)],
+    }
+    if require_single_visible_device and count != 1:
+        raise RuntimeError(
+            "policy gate requires exactly one visible CUDA device: "
+            f"observed={count}, CUDA_VISIBLE_DEVICES={report['cuda_visible_devices']!r}"
+        )
+    return report
 
 
 def resolve_target_layers(values: list[str], layer_count: int) -> tuple[int, ...]:
@@ -128,6 +146,7 @@ def main() -> None:
             raise ValueError("--target-kv-head must be non-negative or 'all'")
     if (args.model_name, args.predictor_name, args.model_revision, args.predictor_revision) != (DEFAULT_MODEL, DEFAULT_PREDICTOR, GATE_B_MODEL_REVISION, GATE_A_PREDICTOR_REVISION):
         raise ValueError("policy gate is currently bounded to frozen Qwen3-8B and official MLP revisions")
+    cuda_env = cuda_environment(require_single_visible_device=args.require_single_visible_cuda_device)
     gate_a = validate_gate_a_evidence(args.gate_a_evidence, model_name=args.model_name, predictor_name=args.predictor_name, threshold=args.threshold, window_size=args.window_size)
     if not gate_a["passed"]:
         raise ValueError("frozen Gate-A evidence validation failed")
@@ -198,6 +217,7 @@ def main() -> None:
     manifest = {
         "schema_version": "kvzap-route-a40-policy-on-qwen-gate-1.4", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(),
         "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}),
+        "cuda_environment": cuda_env,
         "gate_a_evidence": gate_a, "full_kv_bypass_answer_sha256": answer_hash(full), "same_mask_dense_kvzap": None if dense is None or dense_backend is None or dense_coverage is None else {"pairing_mode": "replayed_dense_mask" if args.replay_dense_mask_for_route_a else "independent_online_mask", "answer_sha256": answer_hash(dense), "answers_identical_to_full_kv": answer_hash(dense) == answer_hash(full), "policy_decode_call_count_by_layer": dense_backend.policy_decode_calls, "comparisons": dense_backend.comparisons, "policy_coverage": dense_coverage, "original_mask_digest_matches_route_a": True}, "route_a_fast_path_answer_sha256": answer_hash(fast), "answers_identical": answer_hash(full) == answer_hash(fast),
         "policy_decode_call_count_by_layer": backend.policy_decode_calls, "comparisons": backend.comparisons, "policy_coverage": coverage,
         "source_artifact_sha256": {"gate_a_manifest": file_sha256(args.gate_a_evidence / "manifest.json"), "gate_a_score_mask": file_sha256(args.gate_a_evidence / "score_mask.npz")},

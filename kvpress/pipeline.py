@@ -21,20 +21,6 @@ from kvpress.presses.prefill_decoding_press import PrefillDecodingPress
 logger = logging.getLogger(__name__)
 
 
-def _materialize_contiguous_positions(start: int, length: int, device: torch.device) -> torch.Tensor:
-    """Build an observed logical-position vector before cross-device dispatch.
-
-    Route-A policy hooks inspect these values from Python.  With a multi-GPU
-    ``device_map``, synchronizing this opt-in tensor prevents the hook from
-    observing storage whose source-device ``arange`` kernel is still pending.
-    This barrier is a functional gate aid, not a performance path.
-    """
-    positions = torch.arange(start, start + length, device=device, dtype=torch.long)
-    if positions.is_cuda:
-        torch.cuda.synchronize(positions.device)
-    return positions
-
-
 class KVPressTextGenerationPipeline(Pipeline):
     """
     Pipeline for key-value cache compression in causal language models.
@@ -60,7 +46,6 @@ class KVPressTextGenerationPipeline(Pipeline):
         max_context_length: Optional[int] = None,
         enable_thinking: bool = False,
         cache: Optional[Cache] = None,
-        explicit_cache_positions: bool = False,
         **kwargs,
     ):
         """
@@ -89,9 +74,6 @@ class KVPressTextGenerationPipeline(Pipeline):
             Whether to enable thinking in the chat template (chat template must support this argument)
         cache : Cache, optional
             The cache to use for the forward pass. Defaults to None (DynamicCache).
-        explicit_cache_positions : bool, default=False
-            Supply contiguous logical cache positions on every model call. This
-            is opt-in for callers that require position-observable hooks.
         **kwargs : dict
             Additional keyword arguments, currently ignored.
 
@@ -116,7 +98,7 @@ class KVPressTextGenerationPipeline(Pipeline):
             "max_context_length": max_context_length,
             "enable_thinking": enable_thinking,
         }
-        forward_kwargs = {"press": press, "max_new_tokens": max_new_tokens, "cache": cache, "explicit_cache_positions": explicit_cache_positions}
+        forward_kwargs = {"press": press, "max_new_tokens": max_new_tokens, "cache": cache}
         return preprocess_kwargs, forward_kwargs, postprocess_kwargs
 
     def preprocess(
@@ -193,7 +175,6 @@ class KVPressTextGenerationPipeline(Pipeline):
         max_new_tokens: int = 50,
         press: Optional[BasePress] = None,
         cache: Optional[Cache] = None,
-        explicit_cache_positions: bool = False,
     ):
         """
         Execute KV cache compression and text generation pipeline.
@@ -211,8 +192,6 @@ class KVPressTextGenerationPipeline(Pipeline):
             Compression method for context pre-filling. If None, no compression.
         cache : Cache, optional
             Cache object for forward pass. If None, creates new DynamicCache.
-        explicit_cache_positions : bool, default=False
-            Pass explicit contiguous logical positions to model calls.
 
         Returns
         -------
@@ -235,12 +214,10 @@ class KVPressTextGenerationPipeline(Pipeline):
         perform_prefill_compression = press is not None and not isinstance(press, DecodingPress)
         with press(self.model) if perform_prefill_compression else contextlib.nullcontext():
             # We run the model without the lm head for pre-filling.
-            prefill_kwargs = {"input_ids": context_ids, "past_key_values": cache}
-            if explicit_cache_positions:
-                prefill_kwargs["cache_position"] = _materialize_contiguous_positions(
-                    0, context_length, context_ids.device
-                )
-            self.model.model(**prefill_kwargs)
+            self.model.model(
+                input_ids=context_ids,
+                past_key_values=cache,
+            )
 
             logger.debug(f"Context Length: {context_length}")
             logger.debug(f"Compressed Context Length: {cache.get_seq_length()}")
@@ -262,7 +239,6 @@ class KVPressTextGenerationPipeline(Pipeline):
                     cache=cache,
                     context_length=context_length,
                     max_new_tokens=max_new_tokens,
-                    explicit_cache_positions=explicit_cache_positions,
                 )
                 self._remove_answer_from_cache(cache, cache_seq_lengths)
 
@@ -285,8 +261,7 @@ class KVPressTextGenerationPipeline(Pipeline):
                 ]
 
     def generate_answer(
-        self, question_ids: torch.Tensor, cache: Cache, context_length: int, max_new_tokens: int, return_token_ids: bool = False,
-        explicit_cache_positions: bool = False,
+        self, question_ids: torch.Tensor, cache: Cache, context_length: int, max_new_tokens: int, return_token_ids: bool = False
     ) -> str | tuple[str, list[int]]:
         """
         Generate an answer to a question using greedy decoding.
@@ -307,26 +282,17 @@ class KVPressTextGenerationPipeline(Pipeline):
         str
             The generated answer.
         """
-        model_question_ids = question_ids.to(self.model.device)
-        if explicit_cache_positions:
-            position_ids = _materialize_contiguous_positions(
-                context_length, question_ids.shape[1], model_question_ids.device
-            ).unsqueeze(0)
-        else:
-            position_ids = torch.arange(
-                context_length, context_length + question_ids.shape[1], device=model_question_ids.device
-            ).unsqueeze(0)
+        position_ids = torch.arange(
+            context_length, context_length + question_ids.shape[1], device=self.model.device
+        ).unsqueeze(0)
 
         # if the user doesn't provide a question, skip forward pass
-        question_kwargs = {
-            "input_ids": model_question_ids,
-            "past_key_values": cache,
-            "position_ids": position_ids,
-            "num_logits_to_keep": 1,
-        }
-        if explicit_cache_positions:
-            question_kwargs["cache_position"] = position_ids.reshape(-1)
-        outputs = self.model(**question_kwargs)
+        outputs = self.model(
+            input_ids=question_ids.to(self.model.device),
+            past_key_values=cache,
+            position_ids=position_ids,
+            num_logits_to_keep=1,
+        )
 
         position_ids = position_ids[:, -1:] + 1
         generated_ids = [outputs.logits[0, -1].argmax()]
@@ -336,21 +302,11 @@ class KVPressTextGenerationPipeline(Pipeline):
             should_stop_token_ids = [should_stop_token_ids]
 
         for i in range(max_new_tokens - 1):
-            decode_position_ids = (
-                _materialize_contiguous_positions(
-                    context_length + question_ids.shape[1] + i, 1, generated_ids[-1].device
-                ).unsqueeze(0)
-                if explicit_cache_positions
-                else position_ids + i
+            outputs = self.model(
+                input_ids=generated_ids[-1].unsqueeze(0).unsqueeze(0),
+                past_key_values=cache,
+                position_ids=position_ids + i,
             )
-            decode_kwargs = {
-                "input_ids": generated_ids[-1].unsqueeze(0).unsqueeze(0),
-                "past_key_values": cache,
-                "position_ids": decode_position_ids,
-            }
-            if explicit_cache_positions:
-                decode_kwargs["cache_position"] = decode_position_ids.reshape(-1)
-            outputs = self.model(**decode_kwargs)
             new_id = outputs.logits[0, -1].argmax()
             generated_ids.append(new_id)
             if new_id.item() in should_stop_token_ids:
