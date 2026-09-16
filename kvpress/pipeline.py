@@ -223,7 +223,10 @@ class KVPressTextGenerationPipeline(Pipeline):
             # We run the model without the lm head for pre-filling.
             prefill_kwargs = {"input_ids": context_ids, "past_key_values": cache}
             if explicit_cache_positions:
-                prefill_kwargs["cache_position"] = torch.arange(context_length, device=self.model.device)
+                # Under device_map="auto", model.device may be a dispatcher/meta
+                # sentinel. The already materialized input tensor is the only
+                # reliable placement source for an observed position vector.
+                prefill_kwargs["cache_position"] = torch.arange(context_length, device=context_ids.device)
             self.model.model(**prefill_kwargs)
 
             logger.debug(f"Context Length: {context_length}")
@@ -291,13 +294,14 @@ class KVPressTextGenerationPipeline(Pipeline):
         str
             The generated answer.
         """
+        model_question_ids = question_ids.to(self.model.device)
         position_ids = torch.arange(
-            context_length, context_length + question_ids.shape[1], device=self.model.device
+            context_length, context_length + question_ids.shape[1], device=model_question_ids.device
         ).unsqueeze(0)
 
         # if the user doesn't provide a question, skip forward pass
         question_kwargs = {
-            "input_ids": question_ids.to(self.model.device),
+            "input_ids": model_question_ids,
             "past_key_values": cache,
             "position_ids": position_ids,
             "num_logits_to_keep": 1,
