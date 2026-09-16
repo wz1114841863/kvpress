@@ -1837,6 +1837,23 @@ The matching `zsy_1` remote replica is
 It is cross-host provenance reproduction over the accepted C2 remote replica,
 not additional model, resource, or hardware evidence.
 
+### C4 implementation — comparator-bound traversal study
+
+`tools/build_cross_frontend_c4_attention_primitive_study.py` binds accepted
+C2/C3 reports and rechecks the literal comparator/traversal assertions in the
+KVzap core, SnapKV P2/P3 summary, and DMS M4 manifest. It does not rerun model
+attention. The three reports explicitly retain KVzap's optional one-to-three
+source composition, SnapKV's single canonical terminal-prefill source, and
+DMS's single native active-resident source in required native order.
+
+The accepted C4 report is
+`analysis/experiments/cross_frontend_c4_attention_primitive_study_01/cross_frontend_c4_attention_primitive_study_report.json`
+(SHA-256 `558f5a9c9c4c09c6ad9d4f4d4a562182be8e2841b10362f7b4cce6e0a158c715`).
+It supports only a frontend-bound ordered variable-length source traversal
+abstraction under each accepted comparator; it establishes no common source
+order/cache, scheduler/resource contract, hardware interface, architecture,
+parameter, or RTL result.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

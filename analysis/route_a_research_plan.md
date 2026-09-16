@@ -1631,6 +1631,22 @@ The matching `zsy_1` remote replica is
 It is provenance reproduction over the accepted C2 remote replica, not a new
 workload or hardware result.
 
+### Cross-frontend C4 attention primitive study
+
+C4 is implemented by `tools/build_cross_frontend_c4_attention_primitive_study.py`.
+It hash-binds C2/C3 and rechecks each frontend's already accepted comparator
+and traversal assertion without loading a model or executing attention. KVzap
+permits one to three ordered hot/pending/packed sources and one merge; the
+bounded SnapKV and DMS evidence permits one ordered source each. C4 forbids
+inventing a multi-source decomposition for those latter two frontends.
+
+The accepted C4 report is
+`analysis/experiments/cross_frontend_c4_attention_primitive_study_01/cross_frontend_c4_attention_primitive_study_report.json`
+(SHA-256 `558f5a9c9c4c09c6ad9d4f4d4a562182be8e2841b10362f7b4cce6e0a158c715`).
+Its candidate common primitive is frontend-bound ordered variable-length source
+traversal under each frontend's comparator; it selects no cache format,
+scheduler/resource contract, hardware interface, architecture, or RTL target.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

@@ -154,6 +154,24 @@ The matching remote `zsy_1` replica is
 It binds the accepted C2 remote replica and is cross-host provenance
 reproduction only.
 
+## C4 implementation and interpretation
+
+`tools/build_cross_frontend_c4_attention_primitive_study.py` rechecks the
+already accepted frontend-specific comparator assertions in the KVzap core,
+SnapKV P2/P3 summary, and DMS M4 manifest. It does not execute model
+attention. Each report declares source cardinality, required traversal order,
+accepted comparator, and its boundary; the gate rejects artificial multi-source
+requirements for SnapKV/DMS and rejects DMS arrival-order substitution.
+
+The accepted C4 artifact is
+`analysis/experiments/cross_frontend_c4_attention_primitive_study_01/cross_frontend_c4_attention_primitive_study_report.json`
+(SHA-256 `558f5a9c9c4c09c6ad9d4f4d4a562182be8e2841b10362f7b4cce6e0a158c715`).
+KVzap supports one to three ordered hot/pending/packed sources followed by one
+merge; SnapKV and DMS each support one ordered source in their bounded
+comparators. The only candidate common primitive is frontend-bound ordered
+variable-length source traversal under each frontend's own comparator—not a
+common source order, cache format, scheduler, or hardware interface.
+
 ## Minimal missing fields and collection policy
 
 1. **DMS position provenance:** M3 has source arrival serials and native order,

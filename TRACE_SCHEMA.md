@@ -2398,3 +2398,19 @@ The matching remote replica is
 `analysis/experiments/cross_frontend_c3_commonality_matrix_remote_replica_01/cross_frontend_c3_commonality_matrix_report.json`
 (SHA-256 `74fc3eb42a3231904bc6762221c4ea41590c48813aa27b1267107560d8834a0f`).
 It is cross-host provenance reproduction only.
+
+### Cross-frontend C4 attention primitive study
+
+`cross-frontend-c4-attention-primitive-study-1.0` is a no-model revalidation
+of previously accepted functional comparator evidence. It binds completed C2
+and C3 reports plus the KVzap core, SnapKV P2, and DMS M4 manifests. It records
+one declared source-cardinality/order/comparator report per frontend; it does
+not rerun attention. C4 requires a single source to remain sufficient for the
+bounded SnapKV and DMS evidence, retains DMS native order, and permits optional
+KVzap multi-source composition only for KVzap.
+
+The accepted C4 artifact is
+`analysis/experiments/cross_frontend_c4_attention_primitive_study_01/cross_frontend_c4_attention_primitive_study_report.json`
+with SHA-256 `558f5a9c9c4c09c6ad9d4f4d4a562182be8e2841b10362f7b4cce6e0a158c715`.
+It establishes no new attention execution, measurement, resource, hardware,
+or RTL evidence.
