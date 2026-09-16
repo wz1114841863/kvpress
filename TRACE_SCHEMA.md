@@ -2419,3 +2419,19 @@ The matching remote replica is
 `analysis/experiments/cross_frontend_c4_attention_primitive_study_remote_replica_01/cross_frontend_c4_attention_primitive_study_report.json`
 (SHA-256 `6808293d0e49e34c84db9e59058407049ec788d4ac3289661204b381a6310087`).
 It is cross-host provenance reproduction only.
+
+### Cross-frontend C5 hardware-direction decision
+
+`cross-frontend-c5-hardware-direction-decision-1.0` is a no-model archival
+decision memo over the hash-bound C0--C4 chain. It decides only the research
+primary path and records the pre-RTL checklist; it cannot select a hardware
+parameter, freeze an architecture specification, or authorize RTL. Its decision
+rule keeps Route-A persistent-packed primary when C3/C4 establish only a
+frontend-bound semantic traversal abstraction and retain frontend-specific
+lifecycle/order/comparator differences.
+
+The accepted C5 artifact is
+`analysis/experiments/cross_frontend_c5_hardware_direction_decision_01/cross_frontend_c5_hardware_direction_decision_report.json`
+with SHA-256 `f7f3aec661602e5ec8febb7a43418c16cdf3dfc27e84a808a084b737d3c06fff`.
+It selects Route-A as research direction only; resource parameters, architecture
+specification, and RTL remain unselected/unfrozen/unauthorized.

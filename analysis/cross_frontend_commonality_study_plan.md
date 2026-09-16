@@ -216,3 +216,21 @@ frontend-specific semantic loss. Neither outcome is a failure.
 | Invariant candidates | Realization-specific mechanisms | Unresolved |
 |---|---|---|
 | layer/KV-head identity; query-to-KV mapping; epoch; visibility; explicit provenance/order; variable-length active source traversal | KVzap pending/admission/page sealing; SnapKV terminal compaction/protected suffix; DMS delayed eviction/reuse/native slot order | Literal DMS token-position provenance; SnapKV decode behavior; value of optional multi-source composition outside KVzap; scheduler/backpressure; resource envelope and hardware direction |
+
+## C5 implementation and direction decision
+
+`tools/build_cross_frontend_c5_direction_decision.py` verifies the complete
+C0--C4 SHA-256 chain, then writes a decision memo using explicit rules. It may
+retain Route-A persistent-packed as the research primary only when C3 retains
+all three frontend-specific realizations and C4 retains the absence of a common
+cache/order/multi-source/resource contract. It rejects promoting the common
+semantic abstraction to a hardware direction and rejects any RTL-ready status.
+
+The accepted C5 artifact is
+`analysis/experiments/cross_frontend_c5_hardware_direction_decision_01/cross_frontend_c5_hardware_direction_decision_report.json`
+(SHA-256 `f7f3aec661602e5ec8febb7a43418c16cdf3dfc27e84a808a084b737d3c06fff`).
+It retains `route_a_persistent_packed_backend` as the primary research and
+architecture path. The frontend-bound ordered variable-length traversal is
+archived as a semantic abstraction only. The memo explicitly leaves resource
+parameter selection, architecture-spec freeze, and RTL unauthorized pending a
+separate Route-A resource-contract and workload-envelope/fallback gate.

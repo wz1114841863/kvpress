@@ -1860,6 +1860,23 @@ The matching `zsy_1` remote replica is
 It is cross-host provenance reproduction over the accepted remote C2/C3 chain,
 not a new attention execution, resource, or hardware result.
 
+### C5 implementation — evidence-bound direction decision
+
+`tools/build_cross_frontend_c5_direction_decision.py` verifies the hash chain
+from C0 through C4 and writes a direction-decision memo, not another hardware
+study. It keeps Route-A persistent-packed primary only because C3/C4 retain
+KVzap's distinct lifecycle while finding only a frontend-bound semantic
+traversal abstraction; it rejects promoting that abstraction to a common cache
+or hardware direction.
+
+The accepted C5 report is
+`analysis/experiments/cross_frontend_c5_hardware_direction_decision_01/cross_frontend_c5_hardware_direction_decision_report.json`
+(SHA-256 `f7f3aec661602e5ec8febb7a43418c16cdf3dfc27e84a808a084b737d3c06fff`).
+It makes Route-A persistent-packed the research/architecture primary path but
+does not select FIFO/PTE/page/bank/burst/merge/PE/scheduler/controller settings,
+freeze an architecture specification, or authorize RTL. Those require separate
+resource-contract and workload-envelope/fallback evidence.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

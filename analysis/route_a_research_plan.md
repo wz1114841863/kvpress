@@ -1653,6 +1653,23 @@ The matching `zsy_1` remote replica is
 It is provenance reproduction over the accepted remote C2/C3 chain, not a new
 functional execution or hardware result.
 
+### Cross-frontend C5 direction decision
+
+C5 is implemented by `tools/build_cross_frontend_c5_direction_decision.py`.
+It verifies the complete C0--C4 hash chain, then archives an evidence-bound
+choice between Route-A persistent-packed primary path and a generic common
+substrate. Its rules retain the latter only as a semantic abstraction because
+the frontends do not share cache/lifecycle/order/comparator details or a
+physical/temporal resource contract.
+
+The accepted C5 report is
+`analysis/experiments/cross_frontend_c5_hardware_direction_decision_01/cross_frontend_c5_hardware_direction_decision_report.json`
+(SHA-256 `f7f3aec661602e5ec8febb7a43418c16cdf3dfc27e84a808a084b737d3c06fff`).
+It retains Route-A persistent-packed as the research/architecture primary path.
+It explicitly leaves FIFO/PTE/page/bank/burst/merge/PE/scheduler/controller
+selection, architecture-spec freeze, and RTL unauthorized pending separate
+Route-A resource-contract and workload-envelope/fallback gates.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects
