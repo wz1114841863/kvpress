@@ -2414,3 +2414,8 @@ The accepted C4 artifact is
 with SHA-256 `558f5a9c9c4c09c6ad9d4f4d4a562182be8e2841b10362f7b4cce6e0a158c715`.
 It establishes no new attention execution, measurement, resource, hardware,
 or RTL evidence.
+
+The matching remote replica is
+`analysis/experiments/cross_frontend_c4_attention_primitive_study_remote_replica_01/cross_frontend_c4_attention_primitive_study_report.json`
+(SHA-256 `6808293d0e49e34c84db9e59058407049ec788d4ac3289661204b381a6310087`).
+It is cross-host provenance reproduction only.

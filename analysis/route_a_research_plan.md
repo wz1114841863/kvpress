@@ -1647,6 +1647,12 @@ Its candidate common primitive is frontend-bound ordered variable-length source
 traversal under each frontend's comparator; it selects no cache format,
 scheduler/resource contract, hardware interface, architecture, or RTL target.
 
+The matching `zsy_1` remote replica is
+`analysis/experiments/cross_frontend_c4_attention_primitive_study_remote_replica_01/cross_frontend_c4_attention_primitive_study_report.json`
+(SHA-256 `6808293d0e49e34c84db9e59058407049ec788d4ac3289661204b381a6310087`).
+It is provenance reproduction over the accepted remote C2/C3 chain, not a new
+functional execution or hardware result.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

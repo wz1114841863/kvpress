@@ -1854,6 +1854,12 @@ abstraction under each accepted comparator; it establishes no common source
 order/cache, scheduler/resource contract, hardware interface, architecture,
 parameter, or RTL result.
 
+The matching `zsy_1` remote replica is
+`analysis/experiments/cross_frontend_c4_attention_primitive_study_remote_replica_01/cross_frontend_c4_attention_primitive_study_report.json`
+(SHA-256 `6808293d0e49e34c84db9e59058407049ec788d4ac3289661204b381a6310087`).
+It is cross-host provenance reproduction over the accepted remote C2/C3 chain,
+not a new attention execution, resource, or hardware result.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

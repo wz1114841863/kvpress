@@ -172,6 +172,12 @@ comparators. The only candidate common primitive is frontend-bound ordered
 variable-length source traversal under each frontend's own comparator—not a
 common source order, cache format, scheduler, or hardware interface.
 
+The matching remote `zsy_1` replica is
+`analysis/experiments/cross_frontend_c4_attention_primitive_study_remote_replica_01/cross_frontend_c4_attention_primitive_study_report.json`
+(SHA-256 `6808293d0e49e34c84db9e59058407049ec788d4ac3289661204b381a6310087`).
+It rechecks the accepted C2/C3 remote-replica chain and is cross-host
+provenance reproduction only.
+
 ## Minimal missing fields and collection policy
 
 1. **DMS position provenance:** M3 has source arrival serials and native order,
