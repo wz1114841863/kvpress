@@ -45,6 +45,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rtol", type=float, default=1e-4)
     parser.add_argument("--atol", type=float, default=1e-5)
     parser.add_argument("--max-executed-dtype-ulps", type=float, default=16.0, help="Maximum post-cast ULP diagnostic difference. FP32 same-mask rtol/atol remains a mandatory semantic guard.")
+    parser.add_argument("--execution-dtype-ulp-mode", choices=("enforce", "record_only"), default="enforce", help="Keep the default strict ULP gate, or retain bounded scalar ULP diagnostics while another executed-dtype close envelope remains hard.")
+    parser.add_argument("--execution-dtype-close-mode", choices=("off", "scale_aware_enforce", "quantization_aware_enforce"), default="off", help="Optional hard executed-dtype close envelope; quantization-aware mode includes local route/dense rounding allowances after the FP32 guard.")
+    parser.add_argument("--ulp-breach-sample-limit", type=int, default=32, help="Maximum scalar-only ULP breach samples retained in record-only mode.")
     parser.add_argument("--with-same-mask-dense-baseline", action="store_true", help="Run an independent online same-mask dense KVzap control before Route-A and require per-layer original-mask digests to match.")
     parser.add_argument("--replay-dense-mask-for-route-a", action="store_true", help="Use Pass 2's frozen original mask events in Route-A Pass 3. This is a replayed-mask paired control, not an independent online Route-A predictor run.")
     parser.add_argument("--mask-drift-example-limit", type=int, default=32, help="Maximum per-layer mask-drift examples saved when the paired online masks differ.")
@@ -133,8 +136,10 @@ def main() -> None:
         raise ValueError("--request-id requires --input-jsonl")
     if args.replay_dense_mask_for_route_a and not args.with_same_mask_dense_baseline:
         raise ValueError("--replay-dense-mask-for-route-a requires --with-same-mask-dense-baseline")
-    if min(args.context_repetitions, args.page_tokens, args.admission_budget, args.max_new_tokens, args.max_executed_dtype_ulps, args.mask_drift_example_limit) <= 0 or args.window_size < 0:
+    if min(args.context_repetitions, args.page_tokens, args.admission_budget, args.max_new_tokens, args.max_executed_dtype_ulps, args.mask_drift_example_limit, args.ulp_breach_sample_limit) <= 0 or args.window_size < 0:
         raise ValueError("invalid Route-A policy-gate dimensions")
+    if args.execution_dtype_ulp_mode == "record_only" and args.execution_dtype_close_mode == "off":
+        raise ValueError("record-only ULP mode requires a hard executed-dtype close envelope")
     if args.max_new_tokens < 2:
         raise ValueError("max-new-tokens must be at least 2")
     if args.target_kv_head != "all":
@@ -173,7 +178,7 @@ def main() -> None:
     dense_backend = None
     dense_coverage = None
     if args.with_same_mask_dense_baseline:
-        dense_backend = DenseSameMaskAttentionBackendSet(pipe.model, KVzapPress(model_type="mlp", predictor_revision=args.predictor_revision), layers=selected_layers, kv_head=selected, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps)
+        dense_backend = DenseSameMaskAttentionBackendSet(pipe.model, KVzapPress(model_type="mlp", predictor_revision=args.predictor_revision), layers=selected_layers, kv_head=selected, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, execution_dtype_ulp_mode=args.execution_dtype_ulp_mode, execution_dtype_close_mode=args.execution_dtype_close_mode, ulp_breach_sample_limit=args.ulp_breach_sample_limit)
         print(f"Pass 2/{total_passes}: independent online same-mask dense KVzap control in layers {list(selected_layers)}...")
         with torch.no_grad(), dense_backend:
             dense = generate(pipe, request, args)
@@ -182,7 +187,7 @@ def main() -> None:
             raise AssertionError("no complete same-mask dense KVzap decode comparison was observed")
         dense_coverage = dense_backend.coverage()
     replay_events = None if dense_backend is None or not args.replay_dense_mask_for_route_a else dense_backend.mask_events()
-    backend = RouteAPolicyAttentionBackendSet(pipe.model, None if replay_events is not None else KVzapPress(model_type="mlp", predictor_revision=args.predictor_revision), layers=selected_layers, kv_head=selected, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, replay_mask_events=replay_events)
+    backend = RouteAPolicyAttentionBackendSet(pipe.model, None if replay_events is not None else KVzapPress(model_type="mlp", predictor_revision=args.predictor_revision), layers=selected_layers, kv_head=selected, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, execution_dtype_ulp_mode=args.execution_dtype_ulp_mode, execution_dtype_close_mode=args.execution_dtype_close_mode, ulp_breach_sample_limit=args.ulp_breach_sample_limit, replay_mask_events=replay_events)
     route_mode = "replayed dense-mask" if replay_events is not None else "online predictor"
     print(f"Pass {total_passes}/{total_passes}: Route-A fast path with {route_mode} policy-on decode substitution in layers {list(selected_layers)}...")
     with torch.no_grad(), backend:
@@ -215,15 +220,16 @@ def main() -> None:
                 raise AssertionError(f"layer {layer}: strict pending coverage failed: seen={sorted(seen)}, expected={sorted(expected)}; inspect manifest coverage to distinguish no retained cold token from pending absence")
     config = {key: value for key, value in vars(args).items() if key not in {"output_dir", "gate_a_evidence"}}
     manifest = {
-        "schema_version": "kvzap-route-a40-policy-on-qwen-gate-1.4", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(),
+        "schema_version": "kvzap-route-a40-policy-on-qwen-gate-1.5", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(),
         "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}),
         "cuda_environment": cuda_env,
-        "gate_a_evidence": gate_a, "full_kv_bypass_answer_sha256": answer_hash(full), "same_mask_dense_kvzap": None if dense is None or dense_backend is None or dense_coverage is None else {"pairing_mode": "replayed_dense_mask" if args.replay_dense_mask_for_route_a else "independent_online_mask", "answer_sha256": answer_hash(dense), "answers_identical_to_full_kv": answer_hash(dense) == answer_hash(full), "policy_decode_call_count_by_layer": dense_backend.policy_decode_calls, "comparisons": dense_backend.comparisons, "policy_coverage": dense_coverage, "original_mask_digest_matches_route_a": True}, "route_a_fast_path_answer_sha256": answer_hash(fast), "answers_identical": answer_hash(full) == answer_hash(fast),
+        "gate_a_evidence": gate_a, "full_kv_bypass_answer_sha256": answer_hash(full), "same_mask_dense_kvzap": None if dense is None or dense_backend is None or dense_coverage is None else {"pairing_mode": "replayed_dense_mask" if args.replay_dense_mask_for_route_a else "independent_online_mask", "answer_sha256": answer_hash(dense), "answers_identical_to_full_kv": answer_hash(dense) == answer_hash(full), "policy_decode_call_count_by_layer": dense_backend.policy_decode_calls, "comparisons": dense_backend.comparisons, "policy_coverage": dense_coverage, "execution_dtype_ulp_breaches": dense_backend.execution_dtype_ulp_breach_summary(), "original_mask_digest_matches_route_a": True}, "route_a_fast_path_answer_sha256": answer_hash(fast), "answers_identical": answer_hash(full) == answer_hash(fast),
         "policy_decode_call_count_by_layer": backend.policy_decode_calls, "comparisons": backend.comparisons, "policy_coverage": coverage,
+        "execution_dtype_ulp_breaches": backend.execution_dtype_ulp_breach_summary(),
         "source_artifact_sha256": {"gate_a_manifest": file_sha256(args.gate_a_evidence / "manifest.json"), "gate_a_score_mask": file_sha256(args.gate_a_evidence / "score_mask.npz")},
         "control_plane": {"full_kv_bypass": "Pass 1 uses no Route-A backend or admission.", "same_mask_dense_kvzap": None if not args.with_same_mask_dense_baseline else "Pass 2 scores original KVzap masks online and substitutes each selected group with hot plus retained dense-cold K/V; it has no pending FIFO, admission service, or packed pages.", "route_a_fast_path": f"Pass {total_passes} substitutes each selected layer/KV-head GQA query group at q_len=1; selected groups read hot/pending/packed only. Mask source: {'replayed Pass-2 dense events' if args.replay_dense_mask_for_route_a else 'online predictor'}."},
-        "observational_guards": {"selected_head_original_attention_called_during_policy_decode": False, "route_a_mask_source": "replayed_dense_mask" if args.replay_dense_mask_for_route_a else "online_predictor", "replay_mask_consumption_complete": args.replay_dense_mask_for_route_a, "fp32_same_mask_guard": {"rtol": args.rtol, "atol": args.atol}, "executed_dtype_ulp_limit": args.max_executed_dtype_ulps, "dms_press_used": False, "masked_key_indices_created": False, "fake_key_attention_used": False, "model_cache_mutated_by_backend": False},
-        "boundaries": ["This is a policy-on generation gate for the declared layers. With --target-kv-head all, every KV-head group in every declared layer is Route-A; undeclared layers remain dense.", "With --replay-dense-mask-for-route-a, Route-A consumes Pass-2 online dense mask events exactly once and does not score its own predictor; this is a replayed-mask paired control, not independent online predictor evidence. The Full-KV, same-mask dense, and Route-A answers need not match.", "No field is an allocator/HBM counter, timing, latency, throughput, energy, area, frequency, cross-workload result, or RTL evidence."],
+        "observational_guards": {"selected_head_original_attention_called_during_policy_decode": False, "route_a_mask_source": "replayed_dense_mask" if args.replay_dense_mask_for_route_a else "online_predictor", "replay_mask_consumption_complete": args.replay_dense_mask_for_route_a, "fp32_same_mask_guard": {"rtol": args.rtol, "atol": args.atol}, "executed_dtype_ulp_limit": args.max_executed_dtype_ulps, "execution_dtype_ulp_mode": args.execution_dtype_ulp_mode, "execution_dtype_close_mode": args.execution_dtype_close_mode, "execution_dtype_close_enforced": args.execution_dtype_close_mode != "off", "dms_press_used": False, "masked_key_indices_created": False, "fake_key_attention_used": False, "model_cache_mutated_by_backend": False},
+        "boundaries": ["This is a policy-on generation gate for the declared layers. With --target-kv-head all, every KV-head group in every declared layer is Route-A; undeclared layers remain dense.", "With --replay-dense-mask-for-route-a, Route-A consumes Pass-2 online dense mask events exactly once and does not score its own predictor; this is a replayed-mask paired control, not independent online Route-A predictor evidence. The Full-KV, same-mask dense, and Route-A answers need not match.", "When record-only ULP mode is selected, ULP breaches are bounded scalar rounding diagnostics; the FP32 and configured executed-dtype close envelopes remain hard guards.", "No field is an allocator/HBM counter, timing, latency, throughput, energy, area, frequency, cross-workload result, or RTL evidence."],
         "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__),
     }
     args.output_dir.mkdir(parents=True, exist_ok=False)

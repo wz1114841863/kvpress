@@ -1733,3 +1733,8 @@ Accepted A4.3.1 source runs must set
 count, `CUDA_VISIBLE_DEVICES`, and logical device name. Multi-device
 `device_map=auto` is outside this Python-hook gate's accepted integration
 contract. This environment guard is not a hardware-performance claim.
+The accepted A4.3.1 runs also use the already established Qwen numerical
+contract: the 16-ULP threshold is retained as a bounded record-only diagnostic,
+while the FP32 same-mask check and quantization-aware executed-dtype close
+envelope remain hard. This does not turn a large near-zero ULP count into a
+strict pass and cannot select merge precision.

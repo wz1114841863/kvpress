@@ -2483,3 +2483,10 @@ The A4.3.1 source manifests must additionally declare
 exactly one visible CUDA device. This protects the Python semantic hook from
 unsupported multi-device automatic dispatch. It is an execution-environment
 guard, not a hardware performance or architecture result.
+They use `kvzap-route-a40-policy-on-qwen-gate-1.5`, retain
+`max_executed_dtype_ulps=16` in `record_only` mode with a 32-sample scalar
+bound, and hard-enforce `quantization_aware_enforce` in addition to the FP32
+same-mask guard. Both dense and Route-A sections serialize bounded per-layer
+ULP-breach summaries. A recorded ULP breach is neither a strict ULP pass nor
+permission to choose a wider merge datapath; failure of either hard close
+guard rejects the source manifest.

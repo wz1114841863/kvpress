@@ -18,7 +18,7 @@ from tools.export_kvzap_predictor_trace import get_git_commit, stable_hash
 
 
 SCHEMA = "kvzap-route-a431-policy-pending-staging-envelope-1.0"
-POLICY_SCHEMA = "kvzap-route-a40-policy-on-qwen-gate-1.4"
+POLICY_SCHEMA = "kvzap-route-a40-policy-on-qwen-gate-1.5"
 REQUIRED_PRESETS = {"retrieval", "summarization", "reasoning"}
 
 
@@ -57,6 +57,7 @@ def load_policy_manifest(path: Path) -> dict[str, Any]:
         raise ValueError(f"policy manifest is not the bounded pending-staging probe: {path}")
     if config.get("with_same_mask_dense_baseline") is not True or config.get("replay_dense_mask_for_route_a") is not True:
         raise ValueError(f"policy manifest lacks paired same-mask replay: {path}")
+    validate_numerical_contract(config, guards, path=path)
     required_guards = ("selected_head_original_attention_called_during_policy_decode", "replay_mask_consumption_complete", "fake_key_attention_used", "model_cache_mutated_by_backend")
     expected = (False, True, False, False)
     if tuple(guards.get(name) for name in required_guards) != expected:
@@ -65,6 +66,20 @@ def load_policy_manifest(path: Path) -> dict[str, Any]:
     if not isinstance(comparisons, list) or not comparisons:
         raise ValueError(f"policy manifest has no comparison snapshots: {path}")
     return data
+
+
+def validate_numerical_contract(config: dict[str, Any], guards: dict[str, Any], *, path: Path | str) -> None:
+    """Require the archived Qwen record-only plus hard close-envelope contract."""
+    expected = {
+        "execution_dtype_ulp_mode": "record_only",
+        "execution_dtype_close_mode": "quantization_aware_enforce",
+        "max_executed_dtype_ulps": 16.0,
+        "ulp_breach_sample_limit": 32,
+    }
+    if any(config.get(key) != value for key, value in expected.items()):
+        raise ValueError(f"policy manifest lacks the bounded quantization-aware numerical contract: {path}")
+    if guards.get("execution_dtype_ulp_mode") != "record_only" or guards.get("execution_dtype_close_mode") != "quantization_aware_enforce" or guards.get("execution_dtype_close_enforced") is not True:
+        raise ValueError(f"policy manifest lacks the hard executed-dtype close guard: {path}")
 
 
 def summarize_comparisons(comparisons: list[dict[str, Any]]) -> dict[str, Any]:
@@ -113,7 +128,7 @@ def main() -> None:
     by_preset = {str(data["config"]["preset"]): (path, data) for path, data in zip(args.policy_manifest, manifests)}
     if set(by_preset) != REQUIRED_PRESETS or len(by_preset) != 3:
         raise ValueError("A4.3.1 requires one distinct retrieval, summarization, and reasoning manifest")
-    common_keys = ("model_name", "model_revision", "predictor_name", "predictor_revision", "threshold", "window_size", "page_tokens", "admission_budget", "max_new_tokens", "seed", "target_layers", "target_kv_head", "with_same_mask_dense_baseline", "replay_dense_mask_for_route_a", "require_single_visible_cuda_device")
+    common_keys = ("model_name", "model_revision", "predictor_name", "predictor_revision", "threshold", "window_size", "page_tokens", "admission_budget", "max_new_tokens", "seed", "target_layers", "target_kv_head", "with_same_mask_dense_baseline", "replay_dense_mask_for_route_a", "require_single_visible_cuda_device", "max_executed_dtype_ulps", "execution_dtype_ulp_mode", "execution_dtype_close_mode", "ulp_breach_sample_limit")
     reference = manifests[0]["config"]
     if any(any(data["config"].get(key) != reference.get(key) for key in common_keys) for data in manifests[1:]):
         raise ValueError("A4.3.1 policy manifests have inconsistent bounded reference inputs")

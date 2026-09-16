@@ -1929,3 +1929,9 @@ Accepted source commands require exactly one visible CUDA device and record the
 visibility environment. Multi-device `device_map=auto` is not an accepted
 execution mode for this Python policy hook; this restriction does not select a
 hardware architecture or imply a performance result.
+The accepted source manifests use schema
+`kvzap-route-a40-policy-on-qwen-gate-1.5` and the archived Qwen numerical
+contract: ULP greater than 16 is bounded record-only context, while FP32
+same-mask and the quantization-aware executed-dtype close envelope are hard
+guards. Raising the ULP limit is not an accepted workaround, and these
+diagnostics do not select merge precision or another hardware parameter.
