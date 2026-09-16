@@ -349,15 +349,6 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
                     if key in self._mask_events:
                         raise AssertionError("duplicate original-mask event for a layer/KV-head/position")
                     self._mask_events[key] = (bool(decisions[head, offset].item()), float(scores[0, head, offset].item()))
-        elif isinstance(self.state, RouteAPackedAttentionState) and start == 0 and self.prefill_maturity_chunk_tokens:
-            for offset in range(0, q_len, self.prefill_maturity_chunk_tokens):
-                end = min(q_len, offset + self.prefill_maturity_chunk_tokens)
-                self.state.append(
-                    key[0, :, start + offset:start + end],
-                    value[0, :, start + offset:start + end],
-                    keep_mask[0, :, offset:end], start_position=start + offset,
-                    logical_phase="prefill", component_measure=measure,
-                )
         else:
             heads_at_start = sorted(head for head, position in self._replay_mask_events if position == start)
             if not heads_at_start or heads_at_start != list(range(heads_at_start[-1] + 1)):
@@ -439,6 +430,15 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
                 )
                 if after_token_append is not None:
                     after_token_append(offset, start + offset)
+        elif isinstance(self.state, RouteAPackedAttentionState) and start == 0 and self.prefill_maturity_chunk_tokens:
+            for offset in range(0, q_len, self.prefill_maturity_chunk_tokens):
+                end = min(q_len, offset + self.prefill_maturity_chunk_tokens)
+                self.state.append(
+                    key[0, :, start + offset:start + end],
+                    value[0, :, start + offset:start + end],
+                    keep_mask[0, :, offset:end], start_position=start + offset,
+                    logical_phase="prefill", component_measure=measure,
+                )
         else:
             self.state.append(
                 key[0, :, start:start + q_len], value[0, :, start:start + q_len],

@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import torch
 from transformers import DynamicCache
 
+from kvpress.route_a_attention import RouteALifecycleTransitionRecorder
 from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackend, cache_position_contiguity_diagnostic, compare_original_mask_events
 
 
@@ -44,6 +45,17 @@ def test_selected_decode_group_uses_route_state_without_calling_original_and_rea
     assert backend.policy_decode_calls == 1
     assert backend.comparisons[0]["pending_tokens"] > 0
     assert backend.comparisons[0]["packed_tokens"] > 0
+
+
+def test_prefill_micro_event_backend_splits_real_state_append_into_bounded_trace_events():
+    recorder = RouteALifecycleTransitionRecorder()
+    backend = RouteAPolicyAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6, lifecycle_transition_recorder=recorder, prefill_maturity_chunk_tokens=2)
+    keys = torch.arange(10, dtype=torch.float32).reshape(1, 1, 5, 2)
+    backend._keep_mask, backend._score_start = torch.ones(1, 1, 5, dtype=torch.bool), 0
+    backend._append_state(keys, keys + 10)
+    assert [(event["start_position"], event["input_token_count"]) for event in recorder.events] == [(0, 2), (2, 2), (4, 1)]
+    assert backend.state is not None and backend.state.next_position == 5
+    backend.state.assert_conservation()
 
 
 def test_cold_ownership_backend_poisoning_prevents_selected_native_cold_read():
