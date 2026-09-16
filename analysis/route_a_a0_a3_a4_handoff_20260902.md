@@ -1905,6 +1905,8 @@ as candidate/model-only axes, keeps the six conditioned Qwen/Llama rows
 separate, and requires Full-KV bypass to remain the explicit
 zero-admission/zero-cold-ownership control. A318 is a modeled
 contract-breach-risk boundary, not controller timing.
+Its Qwen input guard also requires A4214 to bind the supplied A4211 hash and
+to be one of M6's explicit reconciled A4214 raw serializations.
 
 Passing A4.3.0 means only that its inputs form an auditable next-study ledger.
 It does not select FIFO/PTE/page/bank/burst/merge/PE/scheduler/controller

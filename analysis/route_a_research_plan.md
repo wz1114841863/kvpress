@@ -1698,6 +1698,10 @@ Qwen/Llama descriptors, and A317/A318's continuation-contract and breach
 records. It must retain six distinct model/workload rows, preserve Full-KV
 bypass as a zero-admission/zero-cold-ownership control, and retain all five
 resource parameters as unresolved rather than selected.
+For the known local/remote Qwen A4214 raw-serialization difference, the gate
+requires the supplied A4214 to bind its supplied A4211 hash and to be one of
+M6's explicit reconciled raw hashes; this is provenance reconciliation, not
+byte-identity or a new hardware result.
 
 The output identifies next evidence needed for each resource field; it is not
 a workload distribution, hardware resource envelope, parameter choice,

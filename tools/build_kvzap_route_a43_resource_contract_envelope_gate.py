@@ -88,6 +88,27 @@ def conditioned_rows(m6: dict[str, Any]) -> list[dict[str, Any]]:
     return sorted(rows, key=lambda row: (str(row["model_anchor"]), str(row["workload"])))
 
 
+def verify_qwen_provenance(
+    a4211: dict[str, Any], a4214: dict[str, Any], m6: dict[str, Any], a4211_sha256: str, a4214_sha256: str
+) -> dict[str, Any]:
+    """Accept only M6-reconciled A4214 serializations and their declared A4211."""
+    if a4214["config"]["a4211"].get("sha256") != a4211_sha256:
+        raise ValueError("A4214 does not bind the supplied A4211 report")
+    reconciliation = m6.get("qwen_core_provenance_reconciliation")
+    if not isinstance(reconciliation, dict) or reconciliation.get("canonical_projection_matches_m3") is not True:
+        raise ValueError("M6 lacks a completed Qwen provenance reconciliation")
+    known = reconciliation.get("known_reconciled_raw_input_sha256s")
+    if not isinstance(known, list) or a4214_sha256 not in known:
+        raise ValueError("A4214 raw serialization is not M6-reconciled")
+    return {
+        "a4211_sha256_matches_a4214_binding": True,
+        "a4214_raw_sha256": a4214_sha256,
+        "a4214_sha256_is_m6_reconciled": True,
+        "m6_known_reconciled_a4214_raw_sha256s": sorted(known),
+        "canonical_qwen_projection_matches_m3": True,
+    }
+
+
 def fallback_contract(
     a4200: dict[str, Any], a4201: dict[str, Any], a317: dict[str, Any], a318: dict[str, Any], a317_sha256: str
 ) -> dict[str, Any]:
@@ -145,6 +166,9 @@ def main() -> None:
     require_true(inputs["m6"], ("all_input_hashes_and_required_guards_verified", "qwen_and_llama_rows_kept_separate", "no_hardware_parameter_selected"), "M6")
     rows = conditioned_rows(inputs["m6"])
     resources = resource_rows(inputs["a4200"], inputs["a4201"])
+    qwen_provenance = verify_qwen_provenance(
+        inputs["a4211"], inputs["a4214"], inputs["m6"], sha256(args.a4211_report), sha256(args.a4214_report)
+    )
     fallback = fallback_contract(inputs["a4200"], inputs["a4201"], inputs["a317"], inputs["a318"], sha256(args.a317_report))
     config = {name: {"path": str(getattr(args, f"{name}_report")), "sha256": sha256(getattr(args, f"{name}_report"))} for name in INPUT_SCHEMAS}
     report = {
@@ -152,6 +176,7 @@ def main() -> None:
         "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config),
         "execution_classification": "no-model provenance-bound functional/trace-derived and modeled-input ledger; not a measured or modeled hardware result",
         "resource_contract_ledger": resources,
+        "qwen_provenance_reconciliation": qwen_provenance,
         "conditioned_workload_envelope": {"rows": rows, "row_count": len(rows), "interpretation": "Six fixed-horizon descriptors remain model/workload-separated; normalized variation is not a hardware resource range."},
         "full_kv_fallback_contract": fallback,
         "architecture_spec_gate": {"eligible": False, "reason": "All five resource fields retain candidate/model-only or unresolved status; this gate selects no parameter.", "rtl_authorized": False},

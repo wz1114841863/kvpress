@@ -4,6 +4,7 @@ from tools.build_kvzap_route_a43_resource_contract_envelope_gate import (
     UNRESOLVED_PARAMETERS,
     conditioned_rows,
     resource_rows,
+    verify_qwen_provenance,
 )
 
 
@@ -36,3 +37,23 @@ def test_conditioned_rows_rejects_pooled_or_duplicate_rows():
     report = {"per_model_fixed_workload_descriptors": {"qwen": rows, "llama": []}}
     with pytest.raises(ValueError, match="six distinct"):
         conditioned_rows(report)
+
+
+def test_qwen_provenance_requires_a4214_to_bind_a4211_and_m6_to_reconcile_it():
+    a4211 = {}
+    a4214 = {"config": {"a4211": {"sha256": "a4211"}}}
+    m6 = {"qwen_core_provenance_reconciliation": {
+        "canonical_projection_matches_m3": True,
+        "known_reconciled_raw_input_sha256s": ["a4214"],
+    }}
+    result = verify_qwen_provenance(a4211, a4214, m6, "a4211", "a4214")
+    assert result["a4214_sha256_is_m6_reconciled"] is True
+
+
+def test_qwen_provenance_rejects_unbound_a4211():
+    with pytest.raises(ValueError, match="does not bind"):
+        verify_qwen_provenance(
+            {}, {"config": {"a4211": {"sha256": "different"}}},
+            {"qwen_core_provenance_reconciliation": {"canonical_projection_matches_m3": True, "known_reconciled_raw_input_sha256s": ["a4214"]}},
+            "a4211", "a4214",
+        )

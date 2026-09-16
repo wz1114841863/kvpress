@@ -2451,6 +2451,10 @@ resource-contract parameters, six distinct fixed-horizon Qwen/Llama
 model/workload descriptor rows, and the Full-KV zero-admission fallback
 contract including the A318 breach boundary. It rejects pooled rows, parameter
 selection, input drift, or a bypass that enters Route-A admission/cold state.
+When a local and remote A4214 serialization differ, the supplied A4214 must
+bind the supplied A4211 hash and must be one of M6's explicitly reconciled raw
+hashes; this records provenance variants without treating different bytes as
+identical.
 
 The result is a provenance-bound functional/trace-derived and modeled-input
 ledger only. It does not establish occupancy, FIFO depth, PTE encoding,
