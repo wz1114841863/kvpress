@@ -2482,3 +2482,6 @@ The A4.3.1 source manifests must additionally declare
 `explicit_cache_positions=true`: the policy gate passes the contiguous logical
 prefill/question/decode positions to Qwen explicitly. This is a functional
 alignment control, not an HBM, timing, or cache-allocation observation.
+The opt-in path materializes each position vector before multi-device dispatch
+so the Python semantic hook cannot observe an unfinished source-device tensor;
+the synchronization is not a latency or throughput measurement.

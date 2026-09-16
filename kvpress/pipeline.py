@@ -21,6 +21,20 @@ from kvpress.presses.prefill_decoding_press import PrefillDecodingPress
 logger = logging.getLogger(__name__)
 
 
+def _materialize_contiguous_positions(start: int, length: int, device: torch.device) -> torch.Tensor:
+    """Build an observed logical-position vector before cross-device dispatch.
+
+    Route-A policy hooks inspect these values from Python.  With a multi-GPU
+    ``device_map``, synchronizing this opt-in tensor prevents the hook from
+    observing storage whose source-device ``arange`` kernel is still pending.
+    This barrier is a functional gate aid, not a performance path.
+    """
+    positions = torch.arange(start, start + length, device=device, dtype=torch.long)
+    if positions.is_cuda:
+        torch.cuda.synchronize(positions.device)
+    return positions
+
+
 class KVPressTextGenerationPipeline(Pipeline):
     """
     Pipeline for key-value cache compression in causal language models.
@@ -223,10 +237,9 @@ class KVPressTextGenerationPipeline(Pipeline):
             # We run the model without the lm head for pre-filling.
             prefill_kwargs = {"input_ids": context_ids, "past_key_values": cache}
             if explicit_cache_positions:
-                # Under device_map="auto", model.device may be a dispatcher/meta
-                # sentinel. The already materialized input tensor is the only
-                # reliable placement source for an observed position vector.
-                prefill_kwargs["cache_position"] = torch.arange(context_length, device=context_ids.device)
+                prefill_kwargs["cache_position"] = _materialize_contiguous_positions(
+                    0, context_length, context_ids.device
+                )
             self.model.model(**prefill_kwargs)
 
             logger.debug(f"Context Length: {context_length}")
@@ -295,9 +308,14 @@ class KVPressTextGenerationPipeline(Pipeline):
             The generated answer.
         """
         model_question_ids = question_ids.to(self.model.device)
-        position_ids = torch.arange(
-            context_length, context_length + question_ids.shape[1], device=model_question_ids.device
-        ).unsqueeze(0)
+        if explicit_cache_positions:
+            position_ids = _materialize_contiguous_positions(
+                context_length, question_ids.shape[1], model_question_ids.device
+            ).unsqueeze(0)
+        else:
+            position_ids = torch.arange(
+                context_length, context_length + question_ids.shape[1], device=model_question_ids.device
+            ).unsqueeze(0)
 
         # if the user doesn't provide a question, skip forward pass
         question_kwargs = {
@@ -318,13 +336,20 @@ class KVPressTextGenerationPipeline(Pipeline):
             should_stop_token_ids = [should_stop_token_ids]
 
         for i in range(max_new_tokens - 1):
+            decode_position_ids = (
+                _materialize_contiguous_positions(
+                    context_length + question_ids.shape[1] + i, 1, generated_ids[-1].device
+                ).unsqueeze(0)
+                if explicit_cache_positions
+                else position_ids + i
+            )
             decode_kwargs = {
                 "input_ids": generated_ids[-1].unsqueeze(0).unsqueeze(0),
                 "past_key_values": cache,
-                "position_ids": position_ids + i,
+                "position_ids": decode_position_ids,
             }
             if explicit_cache_positions:
-                decode_kwargs["cache_position"] = (position_ids + i).reshape(-1)
+                decode_kwargs["cache_position"] = decode_position_ids.reshape(-1)
             outputs = self.model(**decode_kwargs)
             new_id = outputs.logits[0, -1].argmax()
             generated_ids.append(new_id)

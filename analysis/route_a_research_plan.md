@@ -1731,3 +1731,6 @@ relax the state model or produce an accepted A4.3.1 workload result.
 Accepted A4.3.1 source runs must set `--explicit-cache-positions`, which is a
 functional alignment control for observed logical positions, not a default-path
 change or a hardware/cache-allocation claim.
+The opt-in control includes a pre-dispatch materialization barrier solely for
+Python-hook correctness under multi-device model placement; its runtime is out
+of scope for performance evidence.

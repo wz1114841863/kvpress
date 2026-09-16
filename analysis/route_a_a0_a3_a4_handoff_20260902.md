@@ -1928,3 +1928,5 @@ does not change Route-A semantics or count as a successful workload artifact.
 The accepted source commands explicitly pass logical cache positions on
 prefill, question, and decode calls; this opt-in gate control leaves the
 repository's default pruning path unchanged.
+Those opt-in vectors are materialized before multi-device dispatch to keep the
+Python semantic hook ordered; this barrier is not hardware or timing evidence.
