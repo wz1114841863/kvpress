@@ -1581,6 +1581,13 @@ The accepted C1 report is
 It typed all eight core fields for all three frontend classes while retaining
 the listed unknowns and selecting no interface or resource parameter.
 
+A `zsy` remote replica also passed in the fresh
+`cross_frontend_c1_semantic_descriptor_remote_replica_01` directory (report
+SHA-256 `58a1dda80511f4f580853b0aaa32c8aa82b77133db472b315ad2adb5f839f1d0`).
+It uses only byte-identical C0-bound manifest staging after a remote same-name
+Qwen A4.2.14 artifact was found to have a different hash; it is provenance
+reproduction, not a new model, resource, or hardware result.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

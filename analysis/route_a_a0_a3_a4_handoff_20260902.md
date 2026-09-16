@@ -1782,6 +1782,13 @@ It revalidated every C0-bound input and typed all eight core semantic fields
 for each frontend class without loading a model or selecting an interface,
 resource parameter, architecture, or RTL target.
 
+The matching remote `zsy` replica is stored at
+`analysis/experiments/cross_frontend_c1_semantic_descriptor_remote_replica_01/cross_frontend_c1_semantic_descriptor_report.json`
+with SHA-256 `58a1dda80511f4f580853b0aaa32c8aa82b77133db472b315ad2adb5f839f1d0`.
+It used a fresh staging directory containing byte-identical C0-bound manifests
+because the existing remote same-name Qwen A4.2.14 artifact had a divergent
+hash; it did not modify that artifact and remains a provenance replica only.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

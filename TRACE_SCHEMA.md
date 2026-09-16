@@ -2352,3 +2352,8 @@ The accepted C1 artifact is
 with SHA-256 `7b37e8f0945018f6b387085ea129f10758962dd987b4d8437cb243c7a45677a7`.
 It records only typed availability over C0-bound evidence and selects no
 hardware interface or parameter.
+
+The hash-preserving remote replica is
+`analysis/experiments/cross_frontend_c1_semantic_descriptor_remote_replica_01/cross_frontend_c1_semantic_descriptor_report.json`
+(SHA-256 `58a1dda80511f4f580853b0aaa32c8aa82b77133db472b315ad2adb5f839f1d0`).
+It is a cross-host provenance replica, not a second frontend measurement.

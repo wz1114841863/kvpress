@@ -98,6 +98,13 @@ The accepted C1 output is
 It reverified all C0-bound sources, typed all eight core fields for every
 frontend, and selected no hardware interface or parameter.
 
+The remote `zsy` replica is
+`analysis/experiments/cross_frontend_c1_semantic_descriptor_remote_replica_01/cross_frontend_c1_semantic_descriptor_report.json`
+(SHA-256 `58a1dda80511f4f580853b0aaa32c8aa82b77133db472b315ad2adb5f839f1d0`).
+It uses fresh input staging only because a pre-existing remote same-name Qwen
+A4.2.14 report had a different hash. Every staged manifest matches the C0
+hash, and the report records both the C0-bound origin and staged input paths.
+
 ## Minimal missing fields and collection policy
 
 1. **DMS position provenance:** M3 has source arrival serials and native order,
