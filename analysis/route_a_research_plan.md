@@ -1670,6 +1670,12 @@ It explicitly leaves FIFO/PTE/page/bank/burst/merge/PE/scheduler/controller
 selection, architecture-spec freeze, and RTL unauthorized pending separate
 Route-A resource-contract and workload-envelope/fallback gates.
 
+The matching remote `zsy_1` provenance replica is
+`analysis/experiments/cross_frontend_c5_hardware_direction_decision_remote_replica_01/cross_frontend_c5_hardware_direction_decision_report.json`
+(SHA-256 `1e45e60713ce6256df33c5efb06b5db93f1ecf6a630b9de7fb916b9d730868b3`).
+It validates the decision over the remote C0--C4 replica chain only; it does
+not select a resource parameter or establish a functional/hardware result.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

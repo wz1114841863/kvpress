@@ -2435,3 +2435,9 @@ The accepted C5 artifact is
 with SHA-256 `f7f3aec661602e5ec8febb7a43418c16cdf3dfc27e84a808a084b737d3c06fff`.
 It selects Route-A as research direction only; resource parameters, architecture
 specification, and RTL remain unselected/unfrozen/unauthorized.
+
+The matching remote `zsy_1` provenance replica is
+`analysis/experiments/cross_frontend_c5_hardware_direction_decision_remote_replica_01/cross_frontend_c5_hardware_direction_decision_report.json`
+with SHA-256 `1e45e60713ce6256df33c5efb06b5db93f1ecf6a630b9de7fb916b9d730868b3`.
+It reproduces the complete remote C0--C4 evidence chain and does not add a
+functional, modeled-resource, measured-hardware, or RTL claim.

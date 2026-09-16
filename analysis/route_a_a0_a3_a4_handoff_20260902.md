@@ -1877,6 +1877,13 @@ does not select FIFO/PTE/page/bank/burst/merge/PE/scheduler/controller settings,
 freeze an architecture specification, or authorize RTL. Those require separate
 resource-contract and workload-envelope/fallback evidence.
 
+The matching remote `zsy_1` provenance replica is
+`analysis/experiments/cross_frontend_c5_hardware_direction_decision_remote_replica_01/cross_frontend_c5_hardware_direction_decision_report.json`
+(SHA-256 `1e45e60713ce6256df33c5efb06b5db93f1ecf6a630b9de7fb916b9d730868b3`).
+It reproduces the complete remote C0--C4 hash-bound decision chain only; it
+does not add a semantic execution, resource model, hardware measurement, or
+RTL authorization claim.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

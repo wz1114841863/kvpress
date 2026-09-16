@@ -234,3 +234,10 @@ architecture path. The frontend-bound ordered variable-length traversal is
 archived as a semantic abstraction only. The memo explicitly leaves resource
 parameter selection, architecture-spec freeze, and RTL unauthorized pending a
 separate Route-A resource-contract and workload-envelope/fallback gate.
+
+The matching remote `zsy_1` provenance replica is
+`analysis/experiments/cross_frontend_c5_hardware_direction_decision_remote_replica_01/cross_frontend_c5_hardware_direction_decision_report.json`
+(SHA-256 `1e45e60713ce6256df33c5efb06b5db93f1ecf6a630b9de7fb916b9d730868b3`).
+It reproduces the decision over the complete remote C0--C4 replica chain; it
+is cross-host provenance evidence only, not another functional execution or a
+hardware result.
