@@ -1813,6 +1813,24 @@ The matching remote `zsy_1` replica is
 It binds the accepted C1 remote replica and byte-identical staged manifests;
 it is a cross-host provenance reproduction, not new model or hardware evidence.
 
+### C3 implementation — commonality classification
+
+`tools/analyze_cross_frontend_c3_commonality.py` consumes the completed C2
+report and produces a hash-bound per-field status matrix together with explicit
+invariant-candidate, frontend-specific, and unresolved lists. It accepts a
+candidate only when every prerequisite field is observed for all three
+frontends. Therefore it can state the need to preserve each frontend's required
+traversal order, but cannot turn that into one shared order or cache format.
+
+The accepted C3 report is
+`analysis/experiments/cross_frontend_c3_commonality_matrix_01/cross_frontend_c3_commonality_matrix_report.json`
+(SHA-256 `6d9e16d618dc9d779db60d6a408b87c3257e3aa2e33394e4c4e425032607fea0`).
+It identifies abstraction-level identity, epoch/decision scope, order
+preservation, and comparator obligations; it retains SnapKV decode/lifecycle,
+DMS literal position, physical/temporal resources, and universal source
+composition as unresolved. It selects no interface, parameter, architecture,
+or RTL target. C4 may now use each frontend's own accepted comparator.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

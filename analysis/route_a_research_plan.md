@@ -1609,6 +1609,22 @@ The corresponding `zsy_1` remote replica passed at
 It reuses C1's byte-identical staging solely for cross-host provenance
 reproduction and does not add a model or hardware result.
 
+### Cross-frontend C3 commonality matrix
+
+C3 is implemented by `tools/analyze_cross_frontend_c3_commonality.py`. It
+compares only the accepted C2 projections, admitting a commonality candidate
+only when all prerequisite fields are observed in every frontend. Its candidate
+wording is deliberately abstract: a required traversal order is common as a
+preservation obligation, not as a shared reorderable order or cache layout.
+
+The accepted C3 report is
+`analysis/experiments/cross_frontend_c3_commonality_matrix_01/cross_frontend_c3_commonality_matrix_report.json`
+(SHA-256 `6d9e16d618dc9d779db60d6a408b87c3257e3aa2e33394e4c4e425032607fea0`).
+It retains four abstraction-level candidates while leaving SnapKV decode,
+DMS literal position, shared resource/temporal contract, and universal
+multi-source composition unresolved. C3 enables C4 comparator-bound attention
+study only; it is not a shared hardware/architecture or RTL gate.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

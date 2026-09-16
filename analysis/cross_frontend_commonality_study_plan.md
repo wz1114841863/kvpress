@@ -128,6 +128,26 @@ The matching remote `zsy_1` replica is
 It binds the accepted C1 remote replica and its byte-identical staged manifests;
 it is cross-host provenance reproduction, not a second frontend measurement.
 
+## C3 implementation and interpretation
+
+`tools/analyze_cross_frontend_c3_commonality.py` consumes one completed C2
+report and builds a hash-bound field matrix, invariant-candidate list,
+frontend-specific mechanism list, and unresolved-boundary list. An invariant
+candidate is admitted only if every prerequisite field is `observed` in all
+three projections. It describes only the shared abstraction—for example,
+"preserve frontend-specified traversal order"—and separately records that it
+does not define a common source order.
+
+The accepted C3 artifact is
+`analysis/experiments/cross_frontend_c3_commonality_matrix_01/cross_frontend_c3_commonality_matrix_report.json`
+(SHA-256 `6d9e16d618dc9d779db60d6a408b87c3257e3aa2e33394e4c4e425032607fea0`).
+It identifies four abstraction-level candidates: explicit source identity,
+explicit epoch/decision scope, required frontend-specific traversal order, and
+frontend-bound semantic comparator. It rejects a pooled model topology,
+universal visibility, and literal shared position provenance; DMS position and
+SnapKV decode/lifecycle remain unresolved. C3 is not a common cache, source
+order, resource contract, or hardware-interface result.
+
 ## Minimal missing fields and collection policy
 
 1. **DMS position provenance:** M3 has source arrival serials and native order,

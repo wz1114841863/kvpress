@@ -2378,3 +2378,18 @@ The matching remote replica is
 `analysis/experiments/cross_frontend_c2_realization_adapters_remote_replica_01/cross_frontend_c2_realization_adapters_report.json`
 (SHA-256 `3dd5e120438db7406f02482ba74b50afaf9c8048d5c43cc9228234919e70b568`).
 It is a cross-host provenance replica only.
+
+### Cross-frontend C3 commonality matrix
+
+`cross-frontend-c3-commonality-matrix-1.0` is a no-model classification over a
+completed C2 report. It records per-frontend typed field status, admits an
+invariant candidate only when all of its prerequisite fields are observed in
+all three projections, and emits separate frontend-specific and unresolved
+lists. A candidate may state only an abstraction (such as preserving a required
+frontend order); it never creates a common physical order or cache format.
+
+The accepted C3 artifact is
+`analysis/experiments/cross_frontend_c3_commonality_matrix_01/cross_frontend_c3_commonality_matrix_report.json`
+with SHA-256 `6d9e16d618dc9d779db60d6a408b87c3257e3aa2e33394e4c4e425032607fea0`.
+It retains DMS literal position and SnapKV generated decode/lifecycle as
+unresolved and establishes no resource, hardware interface, or RTL evidence.
