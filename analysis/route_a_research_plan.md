@@ -1755,3 +1755,15 @@ GPU and record-only/quantization-aware numerical contract. Its budget-one
 transition values are functional/trace-derived Route-A reference actions, not
 FIFO occupancy, drain rate, overflow, controller timing, HBM traffic, or a
 hardware parameter selection.
+
+### A4.3.3 — conditional admission/staging envelope
+
+The next no-model study replays the three hash-bound A4.3.2 event streams as
+independent layer-local scalar recurrences. It must reproduce the observed
+budget-one aggregate pending state before it sweeps declared `Q` service counts
+and `C` aggregate pending thresholds. This finds only conditional no-breach
+regions on these three Qwen streams. It neither observes FIFO arrival or
+completion nor assigns extra admissions to individual heads, so it cannot
+select capacity, service rate, page size, page sealing, bank/burst behavior,
+or a Qwen-specific hardware configuration. A corresponding Llama envelope
+gate remains necessary before any architecture specification.

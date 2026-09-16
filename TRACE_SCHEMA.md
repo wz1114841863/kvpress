@@ -2504,3 +2504,13 @@ packed tokens, and records no K/V, token text, timestamps, source-ready/
 completion order, queue arrival, or hardware service interval. Trace-on must
 match trace-off Route-A answer and original-mask decisions; this is functional
 trace integrity, not FIFO sizing or hardware evidence.
+
+### Route-A A4.3.3 conditional admission/staging envelope
+
+`kvzap-route-a433-conditional-admission-staging-envelope-1.0` consumes exactly
+three hash-checked A4.3.2 transition sources and first reproduces their
+aggregate budget-one pending state per layer append. It then replays scalar
+head-token arrivals under declared service quanta and conditional aggregate
+pending thresholds. `Q` is an untimed count after each logical append, and
+`C` is a comparison threshold; neither is a hardware rate, FIFO depth, SRAM
+capacity, overflow observation, page-sealing result, or resource selection.

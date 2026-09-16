@@ -1946,3 +1946,13 @@ maturity, and after the declared budget-one reference admission action. The
 companion no-model A4.3.2 analyzer preserves all three workload rows and
 hash-binds their transition artifacts. Neither artifact observes FIFO arrival
 or completion, service time, overflow, or physical resource behavior.
+
+### A4.3.3 implementation — conditional untimed staging recurrence
+
+The A4.3.3 analyzer accepts only the three A4.3.2 sources, verifies their
+budget-one aggregate pending recurrence, then sweeps declared post-append
+service counts and aggregate pending thresholds. Its results are explicitly
+conditional scalar comparisons: they do not model a per-head queue, page
+sealing, arrival/completion timing, FIFO overflow, or a hardware controller.
+They must not select Qwen-specific hardware parameters; a Llama-equivalent
+envelope remains a required later gate.
