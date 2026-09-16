@@ -3,11 +3,23 @@ from types import SimpleNamespace
 import torch
 from transformers import DynamicCache
 
-from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackend, compare_original_mask_events
+from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackend, cache_position_contiguity_diagnostic, compare_original_mask_events
 
 
 def fake_model(layer_count=1):
     return SimpleNamespace(model=SimpleNamespace(layers=[SimpleNamespace(self_attn=SimpleNamespace()) for _ in range(layer_count)]))
+
+
+def test_cache_position_contiguity_diagnostic_is_bounded_and_scalar_only():
+    diagnostic = cache_position_contiguity_diagnostic(torch.tensor([100, 101, 103, 104]))
+    assert diagnostic == {
+        "position_count": 4,
+        "first_position": 100,
+        "last_position": 104,
+        "first_noncontiguous_offset": 2,
+        "expected_position": 102,
+        "observed_position": 103,
+    }
 
 
 def test_selected_decode_group_uses_route_state_without_calling_original_and_reads_pending():

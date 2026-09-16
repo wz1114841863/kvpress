@@ -1921,3 +1921,7 @@ state visible to Route-A attention comparisons, preserving retrieval,
 summarization, and reasoning rows. It rejects a missing workload or any change
 to the functional control. This is not a FIFO high-water mark at admission
 arrival/completion and cannot select a finite FIFO depth or controller timing.
+
+The underlying policy-on backend still rejects non-contiguous logical cache
+positions. Its failure-only report is bounded to scalar sequence context; it
+does not change Route-A semantics or count as a successful workload artifact.

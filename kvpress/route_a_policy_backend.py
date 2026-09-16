@@ -22,6 +22,44 @@ MaskEvent = tuple[bool, float]
 MaskEventLayers = dict[int, dict[tuple[int, int], MaskEvent]]
 
 
+def cache_position_contiguity_diagnostic(positions: torch.Tensor) -> dict[str, int | None]:
+    """Return bounded scalar context for a rejected non-contiguous position run.
+
+    This is failure-only diagnostic context. It retains neither token text nor
+    a full position vector, and does not relax Route-A's sequential-state
+    contract.
+    """
+    flat = positions.detach().reshape(-1)
+    if flat.numel() == 0:
+        return {
+            "position_count": 0,
+            "first_position": None,
+            "last_position": None,
+            "first_noncontiguous_offset": None,
+            "expected_position": None,
+            "observed_position": None,
+        }
+    start = int(flat[0].item())
+    expected = torch.arange(start, start + flat.numel(), device=flat.device, dtype=flat.dtype)
+    mismatches = (flat != expected).nonzero(as_tuple=False)
+    if mismatches.numel() == 0:
+        mismatch_offset = None
+        expected_position = None
+        observed_position = None
+    else:
+        mismatch_offset = int(mismatches[0].item())
+        expected_position = int(expected[mismatch_offset].item())
+        observed_position = int(flat[mismatch_offset].item())
+    return {
+        "position_count": int(flat.numel()),
+        "first_position": start,
+        "last_position": int(flat[-1].item()),
+        "first_noncontiguous_offset": mismatch_offset,
+        "expected_position": expected_position,
+        "observed_position": observed_position,
+    }
+
+
 class RouteAExecutionDtypeGuardError(AssertionError):
     """Base class for bounded, serializable execution-dtype guard failures."""
 
@@ -289,7 +327,10 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         start = int(positions[0].item())
         expected = torch.arange(start, start + hidden.shape[1], device=positions.device, dtype=positions.dtype)
         if not torch.equal(positions, expected):
-            raise AssertionError("Route-A backend requires contiguous cache positions")
+            raise AssertionError(
+                "Route-A backend requires contiguous cache positions: "
+                f"{cache_position_contiguity_diagnostic(positions)}"
+            )
         if self._replay_mask_events is None:
             phase = "prefill" if hidden.shape[1] > 1 else "decode"
             score_operation = lambda: self.predictor.score(module, hidden, None, None, None, kwargs)

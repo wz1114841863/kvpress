@@ -1724,3 +1724,7 @@ FIFO, overflow, service rate, or controller timing. Thus the output is not a
 FIFO sizing result or architecture-specification gate; it only identifies
 whether a later target-specific service contract needs to cover nonzero,
 workload-varying pending state.
+
+The all-layer gate retains the pre-existing contiguous logical-cache-position
+contract. A rejection emits bounded scalar mismatch context only; it does not
+relax the state model or produce an accepted A4.3.1 workload result.

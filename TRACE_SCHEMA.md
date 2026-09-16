@@ -2473,3 +2473,8 @@ pending-token comparison-snapshot maxima plus a three-workload observed range.
 The values are functional/trace-derived attention-comparison snapshots. They
 are not FIFO occupancy at arrival/completion, finite FIFO depth, overflow
 observation, service rate, target capacity, or hardware performance evidence.
+The policy-on backend retains its contiguous logical cache-position contract;
+if a gate rejects a non-contiguous call, its failure-only diagnostic reports
+only count, first/last positions, and the first scalar mismatch, never token
+text or a full position vector. This diagnostic is not an accepted trace,
+workload result, or hardware observation.
