@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import os
@@ -16,6 +17,7 @@ from huggingface_hub import snapshot_download
 from transformers import pipeline
 
 from kvpress import KVzapPress
+from kvpress.route_a_attention import RouteALifecycleTransitionRecorder
 from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackendSet, RouteAPolicyAttentionBackendSet, compare_original_mask_events
 from tools.export_kvzap_predictor_trace import GATE_A_PREDICTOR_REVISION, GATE_B_MODEL_REVISION, assert_no_runtime_mask_state, file_sha256, get_git_commit, stable_hash, validate_gate_a_evidence
 from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, build_builtin_request, load_jsonl_request, seed_everything
@@ -53,6 +55,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mask-drift-example-limit", type=int, default=32, help="Maximum per-layer mask-drift examples saved when the paired online masks differ.")
     parser.add_argument("--require-pending-nonempty", action="store_true", help="Fail unless at least one policy decode comparison has pending retained cold staging.")
     parser.add_argument("--require-all-selected-heads-pending", action="store_true", help="Optional strict coverage assertion. This can legitimately fail when a selected original-mask head retains no mature cold token; use --require-pending-nonempty for the standard all-head gate.")
+    parser.add_argument("--record-lifecycle-transitions", action="store_true", help="Run an additional trace-on Route-A replay pass and write untimed scalar lifecycle transitions. Requires paired dense-mask replay; it is not a FIFO/timing trace.")
     parser.add_argument("--output-dir", type=Path, required=True, help="New output directory only.")
     return parser.parse_args()
 
@@ -128,6 +131,14 @@ def write_mask_drift_diagnostic(*, args: argparse.Namespace, request: dict[str, 
     return path
 
 
+def write_lifecycle_transitions(path: Path, recorder: RouteALifecycleTransitionRecorder) -> str:
+    """Write scalar-only, ordered lifecycle transitions in a compact immutable form."""
+    with gzip.open(path, "wt", encoding="utf-8") as handle:
+        for event in recorder.events:
+            handle.write(json.dumps(event, sort_keys=True, separators=(",", ":")) + "\n")
+    return file_sha256(path)
+
+
 def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
@@ -136,6 +147,8 @@ def main() -> None:
         raise ValueError("--request-id requires --input-jsonl")
     if args.replay_dense_mask_for_route_a and not args.with_same_mask_dense_baseline:
         raise ValueError("--replay-dense-mask-for-route-a requires --with-same-mask-dense-baseline")
+    if args.record_lifecycle_transitions and not (args.with_same_mask_dense_baseline and args.replay_dense_mask_for_route_a):
+        raise ValueError("--record-lifecycle-transitions requires paired same-mask dense replay")
     if min(args.context_repetitions, args.page_tokens, args.admission_budget, args.max_new_tokens, args.max_executed_dtype_ulps, args.mask_drift_example_limit, args.ulp_breach_sample_limit) <= 0 or args.window_size < 0:
         raise ValueError("invalid Route-A policy-gate dimensions")
     if args.execution_dtype_ulp_mode == "record_only" and args.execution_dtype_close_mode == "off":
@@ -166,7 +179,7 @@ def main() -> None:
     tokenized = pipe.preprocess(str(request["context"]), [str(request["question"])], answer_prefix="", max_context_length=pipe.tokenizer.model_max_length, enable_thinking=False)
     if int(tokenized["context_ids"].shape[1]) <= args.window_size:
         raise ValueError("context does not exceed protected hot window")
-    total_passes = 3 if args.with_same_mask_dense_baseline else 2
+    total_passes = (3 if args.with_same_mask_dense_baseline else 2) + int(args.record_lifecycle_transitions)
     print(f"Pass 1/{total_passes}: Full-KV bypass reference (zero Route-A admission)...")
     full = generate(pipe, request, args)
     assert_no_runtime_mask_state(pipe.model)
@@ -189,50 +202,74 @@ def main() -> None:
     replay_events = None if dense_backend is None or not args.replay_dense_mask_for_route_a else dense_backend.mask_events()
     backend = RouteAPolicyAttentionBackendSet(pipe.model, None if replay_events is not None else KVzapPress(model_type="mlp", predictor_revision=args.predictor_revision), layers=selected_layers, kv_head=selected, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, execution_dtype_ulp_mode=args.execution_dtype_ulp_mode, execution_dtype_close_mode=args.execution_dtype_close_mode, ulp_breach_sample_limit=args.ulp_breach_sample_limit, replay_mask_events=replay_events)
     route_mode = "replayed dense-mask" if replay_events is not None else "online predictor"
-    print(f"Pass {total_passes}/{total_passes}: Route-A fast path with {route_mode} policy-on decode substitution in layers {list(selected_layers)}...")
+    route_pass = total_passes - int(args.record_lifecycle_transitions)
+    print(f"Pass {route_pass}/{total_passes}: trace-off Route-A fast path with {route_mode} policy-on decode substitution in layers {list(selected_layers)}...")
     with torch.no_grad(), backend:
         fast = generate(pipe, request, args)
     assert_no_runtime_mask_state(pipe.model)
     if not backend.comparisons or not all(count > 0 for count in backend.policy_decode_calls.values()):
         raise AssertionError("no complete policy-on decode comparison was observed")
     backend.assert_replay_complete()
-    if args.require_pending_nonempty and not any(int(row["pending_tokens"]) > 0 for row in backend.comparisons):
-        raise AssertionError("required non-empty pending cold staging was not observed")
     coverage = backend.coverage()
+    transition_recorder = None
+    traced_backend = None
+    traced = None
+    if args.record_lifecycle_transitions:
+        transition_recorder = RouteALifecycleTransitionRecorder()
+        traced_backend = RouteAPolicyAttentionBackendSet(pipe.model, None, layers=selected_layers, kv_head=selected, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, execution_dtype_ulp_mode=args.execution_dtype_ulp_mode, execution_dtype_close_mode=args.execution_dtype_close_mode, ulp_breach_sample_limit=args.ulp_breach_sample_limit, replay_mask_events=replay_events, lifecycle_transition_recorder=transition_recorder)
+        print(f"Pass {total_passes}/{total_passes}: trace-on Route-A lifecycle-transition replay in layers {list(selected_layers)}...")
+        with torch.no_grad(), traced_backend:
+            traced = generate(pipe, request, args)
+        assert_no_runtime_mask_state(pipe.model)
+        traced_backend.assert_replay_complete()
+        if answer_hash(fast) != answer_hash(traced):
+            raise AssertionError("lifecycle-transition trace changed the Route-A answer")
+        trace_report = compare_original_mask_events(backend.mask_events(), traced_backend.mask_events(), max_examples=args.mask_drift_example_limit)
+        if mask_summaries(coverage) != mask_summaries(traced_backend.coverage()) or not trace_report["matched"]:
+            raise AssertionError("lifecycle-transition trace changed Route-A original-mask decisions")
+        if not transition_recorder.events or transition_recorder.summary()["observed_layers"] != list(selected_layers):
+            raise AssertionError("lifecycle-transition trace has incomplete all-layer coverage")
+        coverage = traced_backend.coverage()
+    comparison_backend = backend if traced_backend is None else traced_backend
+    if args.require_pending_nonempty and not any(int(row["pending_tokens"]) > 0 for row in comparison_backend.comparisons):
+        raise AssertionError("required non-empty pending cold staging was not observed")
     if dense_coverage is not None:
-        report = compare_original_mask_events(dense_backend.mask_events(), backend.mask_events(), max_examples=args.mask_drift_example_limit)
+        report = compare_original_mask_events(dense_backend.mask_events(), comparison_backend.mask_events(), max_examples=args.mask_drift_example_limit)
         if mask_summaries(dense_coverage) != mask_summaries(coverage) or not report["matched"]:
-            diagnostic = write_mask_drift_diagnostic(args=args, request=request, full=full, dense=dense, fast=fast, dense_backend=dense_backend, route_backend=backend, report=report)
+            diagnostic = write_mask_drift_diagnostic(args=args, request=request, full=full, dense=dense, fast=fast, dense_backend=dense_backend, route_backend=comparison_backend, report=report)
             first = next((example for layer in report["layers"] for example in layer["examples"]), None)
             raise AssertionError(f"online same-mask dense KVzap and Route-A fast path produced different per-layer original-mask decisions; diagnostic={diagnostic}; first_difference={first}")
     for layer_coverage in coverage["layers"]:
         layer = int(layer_coverage["layer"])
         expected = set(layer_coverage["selected_kv_heads"])
-        compared = {int(row["kv_head"]) for row in backend.comparisons if int(row["layer"]) == layer}
+        compared = {int(row["kv_head"]) for row in comparison_backend.comparisons if int(row["layer"]) == layer}
         if compared != expected:
             raise AssertionError(f"layer {layer}: not every selected KV head produced a policy comparison: seen={sorted(compared)}, expected={sorted(expected)}")
     if args.require_all_selected_heads_pending:
         for layer_coverage in coverage["layers"]:
             layer = int(layer_coverage["layer"])
             expected = set(layer_coverage["selected_kv_heads"])
-            seen = {int(row["kv_head"]) for row in backend.comparisons if int(row["layer"]) == layer and int(row["pending_tokens"]) > 0}
+            seen = {int(row["kv_head"]) for row in comparison_backend.comparisons if int(row["layer"]) == layer and int(row["pending_tokens"]) > 0}
             if seen != expected:
                 raise AssertionError(f"layer {layer}: strict pending coverage failed: seen={sorted(seen)}, expected={sorted(expected)}; inspect manifest coverage to distinguish no retained cold token from pending absence")
     config = {key: value for key, value in vars(args).items() if key not in {"output_dir", "gate_a_evidence"}}
     manifest = {
-        "schema_version": "kvzap-route-a40-policy-on-qwen-gate-1.5", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(),
+        "schema_version": "kvzap-route-a40-policy-on-qwen-gate-1.6" if args.record_lifecycle_transitions else "kvzap-route-a40-policy-on-qwen-gate-1.5", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(),
         "config": config, "config_hash": stable_hash(config), "request_id": request["request_id"], "request_content_hash": stable_hash({"context": request["context"], "question": request["question"]}),
         "cuda_environment": cuda_env,
         "gate_a_evidence": gate_a, "full_kv_bypass_answer_sha256": answer_hash(full), "same_mask_dense_kvzap": None if dense is None or dense_backend is None or dense_coverage is None else {"pairing_mode": "replayed_dense_mask" if args.replay_dense_mask_for_route_a else "independent_online_mask", "answer_sha256": answer_hash(dense), "answers_identical_to_full_kv": answer_hash(dense) == answer_hash(full), "policy_decode_call_count_by_layer": dense_backend.policy_decode_calls, "comparisons": dense_backend.comparisons, "policy_coverage": dense_coverage, "execution_dtype_ulp_breaches": dense_backend.execution_dtype_ulp_breach_summary(), "original_mask_digest_matches_route_a": True}, "route_a_fast_path_answer_sha256": answer_hash(fast), "answers_identical": answer_hash(full) == answer_hash(fast),
-        "policy_decode_call_count_by_layer": backend.policy_decode_calls, "comparisons": backend.comparisons, "policy_coverage": coverage,
-        "execution_dtype_ulp_breaches": backend.execution_dtype_ulp_breach_summary(),
+        "policy_decode_call_count_by_layer": comparison_backend.policy_decode_calls, "comparisons": comparison_backend.comparisons, "policy_coverage": coverage,
+        "execution_dtype_ulp_breaches": comparison_backend.execution_dtype_ulp_breach_summary(),
         "source_artifact_sha256": {"gate_a_manifest": file_sha256(args.gate_a_evidence / "manifest.json"), "gate_a_score_mask": file_sha256(args.gate_a_evidence / "score_mask.npz")},
-        "control_plane": {"full_kv_bypass": "Pass 1 uses no Route-A backend or admission.", "same_mask_dense_kvzap": None if not args.with_same_mask_dense_baseline else "Pass 2 scores original KVzap masks online and substitutes each selected group with hot plus retained dense-cold K/V; it has no pending FIFO, admission service, or packed pages.", "route_a_fast_path": f"Pass {total_passes} substitutes each selected layer/KV-head GQA query group at q_len=1; selected groups read hot/pending/packed only. Mask source: {'replayed Pass-2 dense events' if args.replay_dense_mask_for_route_a else 'online predictor'}."},
-        "observational_guards": {"selected_head_original_attention_called_during_policy_decode": False, "route_a_mask_source": "replayed_dense_mask" if args.replay_dense_mask_for_route_a else "online_predictor", "replay_mask_consumption_complete": args.replay_dense_mask_for_route_a, "fp32_same_mask_guard": {"rtol": args.rtol, "atol": args.atol}, "executed_dtype_ulp_limit": args.max_executed_dtype_ulps, "execution_dtype_ulp_mode": args.execution_dtype_ulp_mode, "execution_dtype_close_mode": args.execution_dtype_close_mode, "execution_dtype_close_enforced": args.execution_dtype_close_mode != "off", "dms_press_used": False, "masked_key_indices_created": False, "fake_key_attention_used": False, "model_cache_mutated_by_backend": False},
-        "boundaries": ["This is a policy-on generation gate for the declared layers. With --target-kv-head all, every KV-head group in every declared layer is Route-A; undeclared layers remain dense.", "With --replay-dense-mask-for-route-a, Route-A consumes Pass-2 online dense mask events exactly once and does not score its own predictor; this is a replayed-mask paired control, not independent online Route-A predictor evidence. The Full-KV, same-mask dense, and Route-A answers need not match.", "When record-only ULP mode is selected, ULP breaches are bounded scalar rounding diagnostics; the FP32 and configured executed-dtype close envelopes remain hard guards.", "No field is an allocator/HBM counter, timing, latency, throughput, energy, area, frequency, cross-workload result, or RTL evidence."],
+        "control_plane": {"full_kv_bypass": "Pass 1 uses no Route-A backend or admission.", "same_mask_dense_kvzap": None if not args.with_same_mask_dense_baseline else "Pass 2 scores original KVzap masks online and substitutes each selected group with hot plus retained dense-cold K/V; it has no pending FIFO, admission service, or packed pages.", "route_a_fast_path": f"Pass {route_pass} substitutes each selected layer/KV-head GQA query group at q_len=1; selected groups read hot/pending/packed only. Mask source: {'replayed Pass-2 dense events' if args.replay_dense_mask_for_route_a else 'online predictor'}."},
+        "observational_guards": {"selected_head_original_attention_called_during_policy_decode": False, "route_a_mask_source": "replayed_dense_mask" if args.replay_dense_mask_for_route_a else "online_predictor", "replay_mask_consumption_complete": args.replay_dense_mask_for_route_a, "fp32_same_mask_guard": {"rtol": args.rtol, "atol": args.atol}, "executed_dtype_ulp_limit": args.max_executed_dtype_ulps, "execution_dtype_ulp_mode": args.execution_dtype_ulp_mode, "execution_dtype_close_mode": args.execution_dtype_close_mode, "execution_dtype_close_enforced": args.execution_dtype_close_mode != "off", "lifecycle_transition_trace_enabled": args.record_lifecycle_transitions, "trace_off_route_a_answer_equals_trace_on": None if traced is None else answer_hash(fast) == answer_hash(traced), "dms_press_used": False, "masked_key_indices_created": False, "fake_key_attention_used": False, "model_cache_mutated_by_backend": False},
+        "boundaries": ["This is a policy-on generation gate for the declared layers. With --target-kv-head all, every KV-head group in every declared layer is Route-A; undeclared layers remain dense.", "With --replay-dense-mask-for-route-a, Route-A consumes Pass-2 online dense mask events exactly once and does not score its own predictor; this is a replayed-mask paired control, not independent online Route-A predictor evidence. The Full-KV, same-mask dense, and Route-A answers need not match.", "When enabled, lifecycle transitions are scalar Route-A reference-state records before maturity, after maturity, and after the reference admission action; they contain no timestamps, queue arrival/completion evidence, or hardware service rate.", "When record-only ULP mode is selected, ULP breaches are bounded scalar rounding diagnostics; the FP32 and configured executed-dtype close envelopes remain hard guards.", "No field is an allocator/HBM counter, timing, latency, throughput, energy, area, frequency, cross-workload result, or RTL evidence."],
         "torch_version": str(torch.__version__), "transformers_version": str(transformers.__version__),
     }
     args.output_dir.mkdir(parents=True, exist_ok=False)
+    if transition_recorder is not None:
+        trace_path = args.output_dir / "a432_logical_lifecycle_transitions.jsonl.gz"
+        manifest["lifecycle_transition_trace"] = {"schema_version": RouteALifecycleTransitionRecorder.SCHEMA, "path": trace_path.name, "sha256": write_lifecycle_transitions(trace_path, transition_recorder), "summary": transition_recorder.summary(), "recording_semantics": "scalar Route-A reference state before maturity, after maturity, and after the configured logical admission action; no queue arrival/completion or timing"}
     path = args.output_dir / "a40_policy_on_qwen_manifest.json"
     path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"Policy-on Route-A gate passed: {path}")

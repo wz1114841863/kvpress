@@ -1738,3 +1738,20 @@ contract: the 16-ULP threshold is retained as a bounded record-only diagnostic,
 while the FP32 same-mask check and quantization-aware executed-dtype close
 envelope remain hard. This does not turn a large near-zero ULP count into a
 strict pass and cannot select merge precision.
+
+### A4.3.2 — policy-on lifecycle-transition envelope
+
+`--record-lifecycle-transitions` is an explicit, default-off A4.3.2 mode of
+the policy-on gate. It adds a trace-off Route-A replay and a trace-on replay
+under the same dense mask events, requiring identical Route-A answer hashes and
+original-mask digests. The trace records scalar pre-maturity, post-maturity,
+and post-reference-service state for each layer append, including per-head
+admitted tokens and page/tail state. It contains no K/V, token text, source
+arrival/completion timestamp, or hardware service interval.
+
+`tools/analyze_kvzap_route_a432_policy_lifecycle_transition_envelope.py`
+requires three fresh Qwen all-layer/all-KV-head sources under the same single-
+GPU and record-only/quantization-aware numerical contract. Its budget-one
+transition values are functional/trace-derived Route-A reference actions, not
+FIFO occupancy, drain rate, overflow, controller timing, HBM traffic, or a
+hardware parameter selection.

@@ -2490,3 +2490,17 @@ same-mask guard. Both dense and Route-A sections serialize bounded per-layer
 ULP-breach summaries. A recorded ULP breach is neither a strict ULP pass nor
 permission to choose a wider merge datapath; failure of either hard close
 guard rejects the source manifest.
+
+### Route-A A4.3.2 policy-on lifecycle-transition trace
+
+When `record_lifecycle_transitions=true`, schema
+`kvzap-route-a40-policy-on-qwen-gate-1.6` includes
+`a432_logical_lifecycle_transitions.jsonl.gz`, hash-bound from the manifest.
+Each `kvzap-route-a432-logical-lifecycle-transitions-1.0` row is one scalar
+Route-A state append with layer-local logical position range, phase, and
+per-KV-head pre-maturity, post-maturity, and post-reference-service state.
+The recorder verifies conservation of mature-kept, pending, admitted, and
+packed tokens, and records no K/V, token text, timestamps, source-ready/
+completion order, queue arrival, or hardware service interval. Trace-on must
+match trace-off Route-A answer and original-mask decisions; this is functional
+trace integrity, not FIFO sizing or hardware evidence.

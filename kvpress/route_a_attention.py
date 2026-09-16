@@ -66,6 +66,52 @@ class RouteALogicalEventRecorder:
         return {"event_count": len(self.events), "merge_event_count": len(self.events), "by_source": source, "observed_layer_kv_heads": [{"layer": layer, "kv_heads": sorted(heads)} for layer, heads in sorted(layer_heads.items())], "timestamps_recorded": False}
 
 
+class RouteALifecycleTransitionRecorder:
+    """Optional, scalar-only Route-A lifecycle recorder; deliberately untimed.
+
+    Each event is one call to the reference state's ``append`` method.  It
+    records state before maturity, after maturity, and after this reference
+    call's bounded admission service.  It is not a queue arrival/completion
+    trace or a hardware service-time observation.
+    """
+
+    SCHEMA = "kvzap-route-a432-logical-lifecycle-transitions-1.0"
+
+    def __init__(self) -> None:
+        self.events: list[dict[str, Any]] = []
+        self._last_end_by_layer: dict[int, int] = {}
+
+    def record_append(self, *, layer: int, phase: str | None, start_position: int, input_token_count: int, heads: list[dict[str, int]]) -> None:
+        if input_token_count <= 0 or start_position < 0 or not heads:
+            raise AssertionError("lifecycle transition has invalid append dimensions")
+        if phase not in {"prefill", "multi_token", "decode"}:
+            raise AssertionError("lifecycle transition has invalid phase")
+        end_position = start_position + input_token_count - 1
+        previous = self._last_end_by_layer.get(layer)
+        if previous is not None and start_position != previous + 1:
+            raise AssertionError("lifecycle transition positions are non-contiguous within a layer")
+        for expected_head, row in enumerate(heads):
+            if row.get("kv_head") != expected_head:
+                raise AssertionError("lifecycle transition KV-head order is invalid")
+            required = ("hot_tokens_before", "pending_tokens_before_maturity", "matured_kept_tokens", "matured_dropped_tokens", "pending_tokens_after_maturity", "admitted_tokens", "pending_tokens_after_service", "packed_tokens_before", "packed_tokens_after_service", "packed_page_count_after_service", "packed_full_page_count_after_service", "packed_tail_tokens_after_service")
+            if any(not isinstance(row.get(key), int) or row[key] < 0 for key in required):
+                raise AssertionError("lifecycle transition has invalid scalar state")
+            if row["pending_tokens_after_maturity"] != row["pending_tokens_before_maturity"] + row["matured_kept_tokens"]:
+                raise AssertionError("lifecycle transition maturity conservation failed")
+            if row["pending_tokens_after_service"] != row["pending_tokens_after_maturity"] - row["admitted_tokens"]:
+                raise AssertionError("lifecycle transition service conservation failed")
+            if row["packed_tokens_after_service"] != row["packed_tokens_before"] + row["admitted_tokens"]:
+                raise AssertionError("lifecycle transition packed conservation failed")
+        self.events.append({"logical_transition_sequence": len(self.events), "layer": layer, "phase": phase, "start_position": start_position, "end_position": end_position, "input_token_count": input_token_count, "heads": heads, "admitted_tokens_total": sum(row["admitted_tokens"] for row in heads), "timestamps_recorded": False})
+        self._last_end_by_layer[layer] = end_position
+
+    def summary(self) -> dict[str, Any]:
+        for expected, event in enumerate(self.events):
+            if event["logical_transition_sequence"] != expected or event["timestamps_recorded"] is not False:
+                raise AssertionError("lifecycle transition ordering or timestamp guard is invalid")
+        return {"event_count": len(self.events), "observed_layers": sorted(self._last_end_by_layer), "timestamps_recorded": False, "recording_semantics": "post-append scalar Route-A reference state before maturity, after maturity, and after bounded logical admission service; no queue arrival/completion or timing"}
+
+
 @dataclass
 class _Record:
     position: int
@@ -178,15 +224,15 @@ class RouteAPackedAttentionState:
     pending positions first.  The caller may use a distinct instance per layer.
     """
 
-    def __init__(self, *, heads: int, head_dim: int, window: int, page_tokens: int, admission_budget: int, elide_empty_sources: bool = False, logical_event_recorder: RouteALogicalEventRecorder | None = None, logical_layer: int | None = None) -> None:
+    def __init__(self, *, heads: int, head_dim: int, window: int, page_tokens: int, admission_budget: int, elide_empty_sources: bool = False, logical_event_recorder: RouteALogicalEventRecorder | None = None, lifecycle_transition_recorder: RouteALifecycleTransitionRecorder | None = None, logical_layer: int | None = None) -> None:
         if min(heads, head_dim, page_tokens, admission_budget) <= 0 or window < 0:
             raise ValueError("invalid Route-A reference dimensions")
         self.heads, self.head_dim, self.window = heads, head_dim, window
         self.admission_budget = admission_budget
         self.elide_empty_sources = elide_empty_sources
-        if logical_event_recorder is not None and logical_layer is None:
-            raise ValueError("logical event recorder requires a layer identifier")
-        self.logical_event_recorder, self.logical_layer = logical_event_recorder, logical_layer
+        if (logical_event_recorder is not None or lifecycle_transition_recorder is not None) and logical_layer is None:
+            raise ValueError("logical recorder requires a layer identifier")
+        self.logical_event_recorder, self.lifecycle_transition_recorder, self.logical_layer = logical_event_recorder, lifecycle_transition_recorder, logical_layer
         self._empty_source_skip_counts = {name: 0 for name in ("hot", "pending", "packed")}
         self._hot: list[deque[_Record]] = [deque() for _ in range(heads)]
         self._pending: list[deque[_Record]] = [deque() for _ in range(heads)]
@@ -210,7 +256,7 @@ class RouteAPackedAttentionState:
         """Exclusive next cache position, exposed for ownership guards."""
         return self._next_position
 
-    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int, component_measure=None) -> None:
+    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int, logical_phase: str | None = None, component_measure=None) -> None:
         """Append contiguous [KV-head, token, head-dim] K/V under the original mask."""
         if keys.ndim != 3 or values.shape != keys.shape or keys.shape[:1] != (self.heads,) or keys.shape[2] != self.head_dim:
             raise ValueError("keys and values must be [KV-head, token, head-dim]")
@@ -218,6 +264,10 @@ class RouteAPackedAttentionState:
             raise ValueError("keep_mask must be bool [KV-head, token]")
         if start_position != self._next_position:
             raise AssertionError(f"non-contiguous position: expected {self._next_position}, got {start_position}")
+        before = [self.state_summary(head) for head in range(self.heads)]
+        matured_kept = [0 for _ in range(self.heads)]
+        matured_dropped = [0 for _ in range(self.heads)]
+
         def mature_to_pending() -> None:
             for offset in range(keys.shape[1]):
                 position = start_position + offset
@@ -230,27 +280,51 @@ class RouteAPackedAttentionState:
                         if mature.keep:
                             self._pending[head].append(mature)
                             self._decided_kept[head].append(mature.position)
+                            matured_kept[head] += 1
                         else:
                             self._decided_dropped[head].append(mature.position)
+                            matured_dropped[head] += 1
             self._next_position += keys.shape[1]
 
         def measure(name, operation):
             return operation() if component_measure is None else component_measure(name, operation)
 
         measure("route_a_maturity_pending_staging", mature_to_pending)
-        measure("route_a_admission_page_append_table", self._service_oldest_first)
+        after_maturity = [self.state_summary(head) for head in range(self.heads)]
+        admitted = measure("route_a_admission_page_append_table", self._service_oldest_first)
         self.assert_conservation()
+        if self.lifecycle_transition_recorder is not None:
+            after_service = [self.state_summary(head) for head in range(self.heads)]
+            rows = [{
+                "kv_head": head,
+                "hot_tokens_before": int(before[head]["hot_tokens"]),
+                "pending_tokens_before_maturity": int(before[head]["pending_tokens"]),
+                "matured_kept_tokens": matured_kept[head],
+                "matured_dropped_tokens": matured_dropped[head],
+                "pending_tokens_after_maturity": int(after_maturity[head]["pending_tokens"]),
+                "admitted_tokens": admitted[head],
+                "pending_tokens_after_service": int(after_service[head]["pending_tokens"]),
+                "packed_tokens_before": int(before[head]["packed_tokens"]),
+                "packed_tokens_after_service": int(after_service[head]["packed_tokens"]),
+                "packed_page_count_after_service": int(after_service[head]["packed_page_count"]),
+                "packed_full_page_count_after_service": int(after_service[head]["packed_full_page_count"]),
+                "packed_tail_tokens_after_service": int(after_service[head]["packed_tail_tokens"]),
+            } for head in range(self.heads)]
+            self.lifecycle_transition_recorder.record_append(layer=int(self.logical_layer), phase=logical_phase, start_position=start_position, input_token_count=int(keys.shape[1]), heads=rows)
 
-    def _service_oldest_first(self) -> None:
+    def _service_oldest_first(self) -> list[int]:
         queue: list[tuple[int, int]] = [(items[0].position, head) for head, items in enumerate(self._pending) if items]
         heapq.heapify(queue)
+        admitted = [0 for _ in range(self.heads)]
         for _ in range(self.admission_budget):
             if not queue:
                 break
             _position, head = heapq.heappop(queue)
             self._pages[head].append(self._pending[head].popleft())
+            admitted[head] += 1
             if self._pending[head]:
                 heapq.heappush(queue, (self._pending[head][0].position, head))
+        return admitted
 
     def records(self, head: int) -> dict[str, list[_Record]]:
         if not 0 <= head < self.heads:

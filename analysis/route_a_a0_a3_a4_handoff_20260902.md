@@ -1935,3 +1935,14 @@ contract: ULP greater than 16 is bounded record-only context, while FP32
 same-mask and the quantization-aware executed-dtype close envelope are hard
 guards. Raising the ULP limit is not an accepted workaround, and these
 diagnostics do not select merge precision or another hardware parameter.
+
+### A4.3.2 implementation — policy-on lifecycle transitions
+
+The optional `--record-lifecycle-transitions` mode creates an additional
+trace-on Route-A replay after the normal trace-off replay. It must preserve the
+Route-A answer and original-mask decisions exactly. Its gzip JSONL contains
+only scalar state transitions per layer append: before maturity, after
+maturity, and after the declared budget-one reference admission action. The
+companion no-model A4.3.2 analyzer preserves all three workload rows and
+hash-binds their transition artifacts. Neither artifact observes FIFO arrival
+or completion, service time, overflow, or physical resource behavior.

@@ -1,6 +1,6 @@
 import torch
 
-from kvpress.route_a_attention import DenseSameMaskAttentionState, _Record, RouteAPackedAttentionState, RouteAPolicy, dense_same_mask_attention, online_softmax_merge, policy_attention
+from kvpress.route_a_attention import DenseSameMaskAttentionState, _Record, RouteALifecycleTransitionRecorder, RouteAPackedAttentionState, RouteAPolicy, dense_same_mask_attention, online_softmax_merge, policy_attention
 
 
 def make_state(*, heads=1, window=2, page_tokens=2, budget=1):
@@ -18,6 +18,22 @@ def test_fast_path_preserves_mask_positions_hot_window_fifo_and_page_order():
     assert [item.position for item in sources["hot"]] == [4, 5]
     assert state.state_summary(0) == {"hot_tokens": 2, "pending_tokens": 2, "packed_tokens": 1, "packed_page_count": 1, "packed_full_page_count": 0, "packed_tail_tokens": 1}
     state.assert_conservation()
+
+
+def test_lifecycle_transition_recorder_tracks_maturity_and_global_oldest_service_without_timing():
+    recorder = RouteALifecycleTransitionRecorder()
+    state = RouteAPackedAttentionState(heads=2, head_dim=2, window=1, page_tokens=2, admission_budget=1, lifecycle_transition_recorder=recorder, logical_layer=4)
+    keys = torch.arange(8, dtype=torch.float32).reshape(2, 2, 2)
+    state.append(keys, keys, torch.ones(2, 2, dtype=torch.bool), start_position=0, logical_phase="prefill")
+    assert len(recorder.events) == 1
+    event = recorder.events[0]
+    assert event["timestamps_recorded"] is False and event["start_position"] == 0 and event["end_position"] == 1
+    assert event["admitted_tokens_total"] == 1
+    assert event["heads"][0]["matured_kept_tokens"] == 1
+    assert event["heads"][0]["admitted_tokens"] == 1
+    assert event["heads"][1]["matured_kept_tokens"] == 1
+    assert event["heads"][1]["admitted_tokens"] == 0
+    assert recorder.summary()["observed_layers"] == [4]
 
 
 def test_three_store_attention_matches_dense_same_mask_and_online_merge():
