@@ -1925,3 +1925,6 @@ arrival/completion and cannot select a finite FIFO depth or controller timing.
 The underlying policy-on backend still rejects non-contiguous logical cache
 positions. Its failure-only report is bounded to scalar sequence context; it
 does not change Route-A semantics or count as a successful workload artifact.
+The accepted source commands explicitly pass logical cache positions on
+prefill, question, and decode calls; this opt-in gate control leaves the
+repository's default pruning path unchanged.

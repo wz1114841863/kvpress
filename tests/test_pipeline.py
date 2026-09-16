@@ -94,6 +94,14 @@ def test_pipeline_no_press_works(kv_press_unit_test_pipeline, caplog):  # noqa: 
     kv_press_unit_test_pipeline(context, question=question)
 
 
+def test_pipeline_explicit_cache_positions_are_opt_in_forward_parameter():
+    pipeline = object.__new__(KVPressTextGenerationPipeline)
+    _preprocess, forward, _postprocess = pipeline._sanitize_parameters(
+        question="What is this?", explicit_cache_positions=True
+    )
+    assert forward["explicit_cache_positions"] is True
+
+
 def test_pipeline_answer_is_correct(danube_500m_model, caplog):  # noqa: F811
     with caplog.at_level(logging.DEBUG):
         answers = generate_answer(danube_500m_model)

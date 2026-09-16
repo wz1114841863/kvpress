@@ -48,6 +48,8 @@ def load_policy_manifest(path: Path) -> dict[str, Any]:
         raise ValueError(f"policy manifest has no bounded A4.3.1 preset: {path}")
     if config.get("target_layers") != ["all"] or config.get("target_kv_head") != "all":
         raise ValueError(f"policy manifest is not all-layer/all-KV-head: {path}")
+    if config.get("explicit_cache_positions") is not True:
+        raise ValueError(f"policy manifest lacks explicit contiguous logical cache positions: {path}")
     if config.get("admission_budget") != 1 or config.get("require_pending_nonempty") is not True:
         raise ValueError(f"policy manifest is not the bounded pending-staging probe: {path}")
     if config.get("with_same_mask_dense_baseline") is not True or config.get("replay_dense_mask_for_route_a") is not True:
@@ -108,7 +110,7 @@ def main() -> None:
     by_preset = {str(data["config"]["preset"]): (path, data) for path, data in zip(args.policy_manifest, manifests)}
     if set(by_preset) != REQUIRED_PRESETS or len(by_preset) != 3:
         raise ValueError("A4.3.1 requires one distinct retrieval, summarization, and reasoning manifest")
-    common_keys = ("model_name", "model_revision", "predictor_name", "predictor_revision", "threshold", "window_size", "page_tokens", "admission_budget", "max_new_tokens", "seed", "target_layers", "target_kv_head", "with_same_mask_dense_baseline", "replay_dense_mask_for_route_a")
+    common_keys = ("model_name", "model_revision", "predictor_name", "predictor_revision", "threshold", "window_size", "page_tokens", "admission_budget", "max_new_tokens", "seed", "target_layers", "target_kv_head", "with_same_mask_dense_baseline", "replay_dense_mask_for_route_a", "explicit_cache_positions")
     reference = manifests[0]["config"]
     if any(any(data["config"].get(key) != reference.get(key) for key in common_keys) for data in manifests[1:]):
         raise ValueError("A4.3.1 policy manifests have inconsistent bounded reference inputs")

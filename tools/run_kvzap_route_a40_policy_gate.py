@@ -40,6 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--target-kv-head", default="0", help="KV-head index, or 'all' to substitute every KV head in the selected layer.")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max-new-tokens", type=int, default=8)
+    parser.add_argument("--explicit-cache-positions", action="store_true", help="Pass explicit contiguous logical cache positions on all policy-gate model calls.")
     parser.add_argument("--rtol", type=float, default=1e-4)
     parser.add_argument("--atol", type=float, default=1e-5)
     parser.add_argument("--max-executed-dtype-ulps", type=float, default=16.0, help="Maximum post-cast ULP diagnostic difference. FP32 same-mask rtol/atol remains a mandatory semantic guard.")
@@ -58,7 +59,7 @@ def answer_hash(output: dict[str, Any]) -> str:
 
 def generate(pipe, request: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
     seed_everything(args.seed)
-    return pipe(str(request["context"]), question=str(request["question"]), max_new_tokens=args.max_new_tokens, enable_thinking=False)
+    return pipe(str(request["context"]), question=str(request["question"]), max_new_tokens=args.max_new_tokens, enable_thinking=False, explicit_cache_positions=args.explicit_cache_positions)
 
 
 def resolve_target_layers(values: list[str], layer_count: int) -> tuple[int, ...]:

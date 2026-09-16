@@ -2478,3 +2478,7 @@ if a gate rejects a non-contiguous call, its failure-only diagnostic reports
 only count, first/last positions, and the first scalar mismatch, never token
 text or a full position vector. This diagnostic is not an accepted trace,
 workload result, or hardware observation.
+The A4.3.1 source manifests must additionally declare
+`explicit_cache_positions=true`: the policy gate passes the contiguous logical
+prefill/question/decode positions to Qwen explicitly. This is a functional
+alignment control, not an HBM, timing, or cache-allocation observation.
