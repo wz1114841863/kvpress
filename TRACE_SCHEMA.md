@@ -2323,3 +2323,27 @@ with SHA-256
 All four completed artifacts are hash-bound to the archive; C0 records that no
 raw trace/tensor payload, model/runtime, or hardware parameter was opened or
 selected. It advances only the provenance index prerequisite for C1.
+
+### Cross-frontend C1 semantic descriptor
+
+`cross-frontend-c1-semantic-descriptor-1.0` is a no-model contract artifact,
+not a raw trace schema or cache format. It hash-binds C0 and its four completed
+source manifests, then defines `CrossFrontendResidencyDescriptor v1` at
+`(model, layer, kv_head, epoch)` grain. Its typed core fields are
+`model_topology`, `identity`, `epoch`, `decision`, `visibility`,
+`position_provenance`, `traversal_order`, and `attention_binding`. Each value
+uses exactly one of `observed`, `derived`, `modeled`, `unknown`, or
+`not_applicable`; `unknown` and `not_applicable` require a literal reason and
+are never encoded as zero.
+
+`persistent_packed`, `one_shot_packed`, and `dynamic_resident_slot` are
+realization extensions, not core schema fields. C1 preserves SnapKV generated
+decode as unknown and preserves DMS arrival serial, unknown literal position,
+and required native traversal order as distinct facts. It does not open raw
+payloads or create a shared hardware/resource interface.
+
+The accepted C1 artifact is
+`analysis/experiments/cross_frontend_c1_semantic_descriptor_01/cross_frontend_c1_semantic_descriptor_report.json`
+with SHA-256 `7b37e8f0945018f6b387085ea129f10758962dd987b4d8437cb243c7a45677a7`.
+It records only typed availability over C0-bound evidence and selects no
+hardware interface or parameter.

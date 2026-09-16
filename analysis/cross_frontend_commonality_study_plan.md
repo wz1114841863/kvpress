@@ -68,6 +68,31 @@ already validated for each frontend:
 | C4 — attention primitive study | C3 plus existing frontend comparators | Per-frontend, semantics-checked source-traversal reports and comparison summary | Each uses its own accepted comparator; no mandatory multi-source requirement; failure may narrow commonality | Determines whether a useful common source-traversal primitive exists, not hardware performance. |
 | C5 — hardware direction decision | C0–C4 archive | Decision memo: Route-A persistent-packed focus vs candidate common substrate | Evidence, not preference, determines branch; all unresolved resource fields remain listed | No RTL or parameter freeze unless a separate later gate authorizes it. |
 
+## C1 implementation and interpretation
+
+`tools/build_cross_frontend_c1_semantic_descriptor.py` consumes the completed
+C0 evidence index and the same four JSON inputs. It rechecks each C0-bound
+path/SHA-256/schema/status before writing a new
+`cross-frontend-c1-semantic-descriptor-1.0` report. The report types every
+core field at `(model, layer, kv_head, epoch)` grain and records availability
+separately for KVzap persistent-packed, SnapKV one-shot packed, and official
+DMS dynamic-resident-slot evidence.
+
+C1 is an inventory of what can be stated truthfully, not a claim that the
+three frontends have one cache format. `pending`, page descriptors, free-slot
+lists, and DMS native block tables remain realization extensions. Every
+`unknown` or `not_applicable` entry requires a reason: in particular, SnapKV
+generated decode remains `unknown`, and DMS literal original position remains
+`unknown` even though its arrival serial and native traversal order are
+observed. No model is run and no common hardware interface, resource envelope,
+parameter, or RTL choice is produced.
+
+The accepted C1 output is
+`analysis/experiments/cross_frontend_c1_semantic_descriptor_01/cross_frontend_c1_semantic_descriptor_report.json`
+(SHA-256 `7b37e8f0945018f6b387085ea129f10758962dd987b4d8437cb243c7a45677a7`).
+It reverified all C0-bound sources, typed all eight core fields for every
+frontend, and selected no hardware interface or parameter.
+
 ## Minimal missing fields and collection policy
 
 1. **DMS position provenance:** M3 has source arrival serials and native order,
@@ -106,4 +131,3 @@ frontend-specific semantic loss. Neither outcome is a failure.
 | Invariant candidates | Realization-specific mechanisms | Unresolved |
 |---|---|---|
 | layer/KV-head identity; query-to-KV mapping; epoch; visibility; explicit provenance/order; variable-length active source traversal | KVzap pending/admission/page sealing; SnapKV terminal compaction/protected suffix; DMS delayed eviction/reuse/native slot order | Literal DMS token-position provenance; SnapKV decode behavior; value of optional multi-source composition outside KVzap; scheduler/backpressure; resource envelope and hardware direction |
-

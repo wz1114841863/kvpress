@@ -1553,6 +1553,29 @@ It hash-binds all four archive entries and records no raw payload opening,
 runtime loading, or hardware-parameter selection. C1 may now specify descriptor
 fields and availability semantics without rerunning any model gate.
 
+### Cross-frontend C1 semantic descriptor
+
+C1 is implemented by `tools/build_cross_frontend_c1_semantic_descriptor.py`.
+It revalidates the C0 hash bindings to the Qwen A4.2.14, Qwen/Llama M6, SnapKV
+P2, and DMS M4 completed manifests, then writes a fresh typed
+field-availability matrix. The descriptor is semantic-only at `(model, layer,
+kv_head, epoch)` grain: `identity`, `epoch`, `decision`, `visibility`,
+position provenance, traversal order, attention binding, and model topology
+are core; pending/pages/free slots/native block tables are frontend-specific
+extensions.
+
+C1 is no-model and creates neither a common cache format nor a hardware
+interface. It must retain SnapKV generated decode as unknown and DMS literal
+position as unknown, while keeping DMS arrival serial and native traversal
+order distinct. C1 can prepare C2 realization adapters only; it cannot select
+resources, establish a resource envelope, or authorize RTL.
+
+The accepted C1 report is
+`analysis/experiments/cross_frontend_c1_semantic_descriptor_01/cross_frontend_c1_semantic_descriptor_report.json`
+(SHA-256 `7b37e8f0945018f6b387085ea129f10758962dd987b4d8437cb243c7a45677a7`).
+It typed all eight core fields for all three frontend classes while retaining
+the listed unknowns and selecting no interface or resource parameter.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

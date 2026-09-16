@@ -1751,6 +1751,31 @@ It verifies all four archive source bindings while loading no model or raw
 payload. The next eligible step is C1 descriptor specification, not hardware
 design.
 
+### C1 implementation — typed semantic descriptor
+
+`tools/build_cross_frontend_c1_semantic_descriptor.py` is the next no-model
+Commonality Study gate. It verifies that all four JSON inputs still match the
+C0-bound path/SHA-256/schema/status records, then writes a new
+`cross-frontend-c1-semantic-descriptor-1.0` availability matrix. The v1 core
+is limited to model topology, identity, epoch, decision, visibility, position
+provenance, traversal order, and attention binding at `(model, layer, kv_head,
+epoch)` grain. Every value is explicitly `observed`, `derived`, `modeled`,
+`unknown`, or `not_applicable`; unavailable values require reasons.
+
+This gate deliberately leaves KVzap hot/pending/packed lifecycle, SnapKV
+one-shot state, and DMS dynamic slots as realization extensions. It preserves
+SnapKV generated decode as unknown, and separately records DMS arrival serial,
+unknown literal original position, and required native traversal order. C1 is
+not a common hardware interface, resource contract, architecture decision, or
+RTL gate; it only prepares provenance-preserving C2 adapters.
+
+The accepted local output is
+`analysis/experiments/cross_frontend_c1_semantic_descriptor_01/cross_frontend_c1_semantic_descriptor_report.json`
+(SHA-256 `7b37e8f0945018f6b387085ea129f10758962dd987b4d8437cb243c7a45677a7`).
+It revalidated every C0-bound input and typed all eight core semantic fields
+for each frontend class without loading a model or selecting an interface,
+resource parameter, architecture, or RTL target.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It
