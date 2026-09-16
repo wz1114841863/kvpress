@@ -1911,3 +1911,13 @@ to be one of M6's explicit reconciled A4214 raw serializations.
 Passing A4.3.0 means only that its inputs form an auditable next-study ledger.
 It does not select FIFO/PTE/page/bank/burst/merge/PE/scheduler/controller
 parameters, establish an architecture specification, or authorize RTL.
+
+### A4.3.1 implementation — bounded policy-on pending-state snapshots
+
+`tools/analyze_kvzap_route_a431_policy_pending_staging_envelope.py` consumes
+three fresh, accepted Qwen all-layer/all-KV-head paired-mask policy-on manifests
+at the budget-one pending witness point. It records only the pending-token
+state visible to Route-A attention comparisons, preserving retrieval,
+summarization, and reasoning rows. It rejects a missing workload or any change
+to the functional control. This is not a FIFO high-water mark at admission
+arrival/completion and cannot select a finite FIFO depth or controller timing.

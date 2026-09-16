@@ -1708,3 +1708,19 @@ a workload distribution, hardware resource envelope, parameter choice,
 architecture specification, or RTL authorization. A317/A318 remain modeled
 policy evidence, not controller timing, HBM, latency, throughput, or hardware
 performance evidence.
+
+### A4.3.1 — policy-on pending-staging snapshot envelope
+
+`tools/analyze_kvzap_route_a431_policy_pending_staging_envelope.py` is the
+first bounded follow-up to A4.3.0's pending-FIFO evidence gap. After each
+fresh all-layer/all-KV-head Qwen policy-on semantic gate passes for retrieval,
+summarization, and reasoning at the same paired-mask/budget-one reference
+point, it hash-binds their manifests and summarizes pending-token state at
+Route-A attention comparisons. It rejects a missing workload, changed control
+inputs, absent pending witness, or a non-paired semantic run.
+
+Its snapshots do not observe an admission arrival/completion queue, a finite
+FIFO, overflow, service rate, or controller timing. Thus the output is not a
+FIFO sizing result or architecture-specification gate; it only identifies
+whether a later target-specific service contract needs to cover nonzero,
+workload-varying pending state.

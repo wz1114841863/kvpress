@@ -2460,3 +2460,16 @@ The result is a provenance-bound functional/trace-derived and modeled-input
 ledger only. It does not establish occupancy, FIFO depth, PTE encoding,
 allocator behavior, bank/burst utilization, service timing, HBM traffic,
 hardware latency/throughput, energy, area, architecture specification, or RTL.
+
+### Route-A A4.3.1 policy-on pending-staging snapshot envelope
+
+`kvzap-route-a431-policy-pending-staging-envelope-1.0` is a new-output-only,
+no-model aggregation of exactly three accepted Qwen all-layer/all-KV-head
+policy-on manifests: retrieval, summarization, and reasoning. Each must use
+the paired online same-mask dense/replayed-mask Route-A control, budget one,
+and a nonempty pending witness. It reports per-workload and per-layer/KV-head
+pending-token comparison-snapshot maxima plus a three-workload observed range.
+
+The values are functional/trace-derived attention-comparison snapshots. They
+are not FIFO occupancy at arrival/completion, finite FIFO depth, overflow
+observation, service rate, target capacity, or hardware performance evidence.
