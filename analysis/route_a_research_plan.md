@@ -1533,6 +1533,26 @@ arrival serials into unrecorded token positions, or promote page/FIFO/free-slot
 state to a universal interface. No hardware parameter or RTL decision follows
 from C0--C4.
 
+### C0 — completed-artifact evidence-index gate
+
+`tools/archive_cross_frontend_c0_evidence_index.py` is the required no-model
+entry gate for the Commonality Study. It consumes the archive-named Qwen
+A4.2.14, Qwen/Llama M6, SnapKV P2, and DMS M4 JSON artifacts only, verifies
+their expected completed schemas, SHA-256 values named by the archive, and
+literal claim-boundary guards, then writes a new
+`cross-frontend-c0-evidence-index-1.0` report. It opens no raw traces or
+payloads. SnapKV generated-token/decode must remain unavailable/null; DMS
+remains a native active-resident source rather than a Route-A packed-cold
+mapping. C0 is provenance-only and cannot select hardware parameters or
+establish a common descriptor/hardware interface.
+
+The accepted local output is
+`analysis/experiments/cross_frontend_c0_evidence_index_01/cross_frontend_c0_evidence_index_report.json`
+(SHA-256 `8a7636c2cce353ae1ba6099abb19861694d8789a6b23c8063825aeb88a750cc4`).
+It hash-binds all four archive entries and records no raw payload opening,
+runtime loading, or hardware-parameter selection. C1 may now specify descriptor
+fields and availability semantics without rerunning any model gate.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

@@ -1733,6 +1733,24 @@ candidate source traversal/optional composition without forcing any frontend
 into hot/pending/packed cold lifecycle. It neither selects hardware resources
 nor authorizes architecture specification or RTL.
 
+### C0 implementation — cross-frontend evidence index
+
+C0 is implemented by `tools/archive_cross_frontend_c0_evidence_index.py`. It
+is a new-output, no-model gate that hash-binds only the archive-named completed
+Qwen A4.2.14, Qwen/Llama M6, SnapKV P2, and DMS M4 JSON artifacts. It verifies
+schemas/statuses, archive-recorded SHA-256 values, and semantic-boundary
+guards. SnapKV's unobserved generated-token/decode state must remain explicit
+unavailable/null; DMS's native active-resident/no-replacement state remains
+literal. C0 opens no raw trace/tensor payload and is not a descriptor,
+architecture, resource, hardware, or RTL result.
+
+The accepted C0 report is
+`analysis/experiments/cross_frontend_c0_evidence_index_01/cross_frontend_c0_evidence_index_report.json`,
+SHA-256 `8a7636c2cce353ae1ba6099abb19861694d8789a6b23c8063825aeb88a750cc4`.
+It verifies all four archive source bindings while loading no model or raw
+payload. The next eligible step is C1 descriptor specification, not hardware
+design.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

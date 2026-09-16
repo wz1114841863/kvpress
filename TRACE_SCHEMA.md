@@ -2300,3 +2300,26 @@ extensions. Every descriptor value must explicitly distinguish `observed`,
 This study does not make DMS slots a packed-cold source, infer unobserved
 SnapKV decode behavior, pool Qwen/Llama resource values, define a hardware
 interface, select a parameter, or authorize RTL.
+
+### Cross-frontend C0 evidence index
+
+`cross-frontend-c0-evidence-index-1.0` is the no-model C0 entry gate for the
+Commonality Study. It reads only the four completed JSON artifacts explicitly
+named and SHA-256-bound by the 2026-09-15 archive: Qwen A4.2.14 core closure,
+Qwen/Llama M6 coverage, SnapKV P2, and DMS M4. It requires each expected
+schema/status/hash and stated semantic/claim-boundary guards. It rejects
+SnapKV generated-token/decode state if changed from unavailable/null and
+rejects DMS if native-source/no-attention-replacement guards drift.
+
+C0 opens no trace/tensor payload, model, runtime, cache, or allocator state.
+It writes only a new provenance index and establishes no descriptor field,
+resource envelope, hardware interface/parameter, architecture specification,
+or RTL claim.
+
+The first accepted C0 output is
+`analysis/experiments/cross_frontend_c0_evidence_index_01/cross_frontend_c0_evidence_index_report.json`,
+with SHA-256
+`8a7636c2cce353ae1ba6099abb19861694d8789a6b23c8063825aeb88a750cc4`.
+All four completed artifacts are hash-bound to the archive; C0 records that no
+raw trace/tensor payload, model/runtime, or hardware parameter was opened or
+selected. It advances only the provenance index prerequisite for C1.
