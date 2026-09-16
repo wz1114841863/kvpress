@@ -1625,6 +1625,12 @@ DMS literal position, shared resource/temporal contract, and universal
 multi-source composition unresolved. C3 enables C4 comparator-bound attention
 study only; it is not a shared hardware/architecture or RTL gate.
 
+The matching `zsy_1` remote replica is
+`analysis/experiments/cross_frontend_c3_commonality_matrix_remote_replica_01/cross_frontend_c3_commonality_matrix_report.json`
+(SHA-256 `74fc3eb42a3231904bc6762221c4ea41590c48813aa27b1267107560d8834a0f`).
+It is provenance reproduction over the accepted C2 remote replica, not a new
+workload or hardware result.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

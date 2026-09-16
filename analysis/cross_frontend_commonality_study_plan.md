@@ -148,6 +148,12 @@ universal visibility, and literal shared position provenance; DMS position and
 SnapKV decode/lifecycle remain unresolved. C3 is not a common cache, source
 order, resource contract, or hardware-interface result.
 
+The matching remote `zsy_1` replica is
+`analysis/experiments/cross_frontend_c3_commonality_matrix_remote_replica_01/cross_frontend_c3_commonality_matrix_report.json`
+(SHA-256 `74fc3eb42a3231904bc6762221c4ea41590c48813aa27b1267107560d8834a0f`).
+It binds the accepted C2 remote replica and is cross-host provenance
+reproduction only.
+
 ## Minimal missing fields and collection policy
 
 1. **DMS position provenance:** M3 has source arrival serials and native order,

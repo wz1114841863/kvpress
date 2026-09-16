@@ -2393,3 +2393,8 @@ The accepted C3 artifact is
 with SHA-256 `6d9e16d618dc9d779db60d6a408b87c3257e3aa2e33394e4c4e425032607fea0`.
 It retains DMS literal position and SnapKV generated decode/lifecycle as
 unresolved and establishes no resource, hardware interface, or RTL evidence.
+
+The matching remote replica is
+`analysis/experiments/cross_frontend_c3_commonality_matrix_remote_replica_01/cross_frontend_c3_commonality_matrix_report.json`
+(SHA-256 `74fc3eb42a3231904bc6762221c4ea41590c48813aa27b1267107560d8834a0f`).
+It is cross-host provenance reproduction only.

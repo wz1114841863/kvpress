@@ -1831,6 +1831,12 @@ DMS literal position, physical/temporal resources, and universal source
 composition as unresolved. It selects no interface, parameter, architecture,
 or RTL target. C4 may now use each frontend's own accepted comparator.
 
+The matching `zsy_1` remote replica is
+`analysis/experiments/cross_frontend_c3_commonality_matrix_remote_replica_01/cross_frontend_c3_commonality_matrix_report.json`
+(SHA-256 `74fc3eb42a3231904bc6762221c4ea41590c48813aa27b1267107560d8834a0f`).
+It is cross-host provenance reproduction over the accepted C2 remote replica,
+not additional model, resource, or hardware evidence.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It
