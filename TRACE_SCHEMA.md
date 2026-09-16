@@ -2514,3 +2514,13 @@ head-token arrivals under declared service quanta and conditional aggregate
 pending thresholds. `Q` is an untimed count after each logical append, and
 `C` is a comparison threshold; neither is a hardware rate, FIFO depth, SRAM
 capacity, overflow observation, page-sealing result, or resource selection.
+
+### Route-A A4.3.4 prefill micro-event lifecycle trace
+
+Schema `kvzap-route-a40-policy-on-qwen-gate-1.7` records a default-off,
+trace-on-only `prefill_maturity_chunk_tokens` value in its lifecycle descriptor.
+Positive values split only the Route-A reference state's contiguous prefill
+append into ordered micro-events under the same replayed original mask. The
+trace must match the batch Route-A answer and mask decisions. This is a
+functional granularity counterfactual, not a controller clock, service rate,
+FIFO observation, page/bank/burst measurement, or hardware selection.

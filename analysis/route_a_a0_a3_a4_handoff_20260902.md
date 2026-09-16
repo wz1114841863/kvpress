@@ -1956,3 +1956,13 @@ conditional scalar comparisons: they do not model a per-head queue, page
 sealing, arrival/completion timing, FIFO overflow, or a hardware controller.
 They must not select Qwen-specific hardware parameters; a Llama-equivalent
 envelope remains a required later gate.
+
+### A4.3.4 implementation — prefill micro-event reference
+
+`--prefill-maturity-chunk-tokens` is default zero and requires the trace-on
+lifecycle replay. A positive value slices only a contiguous prefill append in
+the Route-A reference state; it does not alter the predictor, mask, model
+cache, or default pruning path. The micro-event trace is accepted only when it
+matches batch Route-A answer and original-mask decisions under the existing
+numerical and ownership guards. It is not a controller timing or physical page
+experiment.

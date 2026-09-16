@@ -1767,3 +1767,14 @@ completion nor assigns extra admissions to individual heads, so it cannot
 select capacity, service rate, page size, page sealing, bank/burst behavior,
 or a Qwen-specific hardware configuration. A corresponding Llama envelope
 gate remains necessary before any architecture specification.
+
+### A4.3.4 — prefill micro-event functional gate
+
+To distinguish a retained-token burst from batch-append granularity, the
+default-off trace-on reference may split only prefill into contiguous ordered
+micro-events under the same replayed mask and admission policy. The batch
+Route-A replay remains the trace-off comparator and must have the same answer
+and mask decisions. Any observed pending/page-state change is a functional
+lifecycle consequence of additional declared service opportunities, not timing
+or hardware evidence. Llama requires an analogous gate before architecture
+specification and no Qwen result selects a resource parameter.

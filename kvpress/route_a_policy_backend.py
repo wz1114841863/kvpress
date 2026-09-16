@@ -145,7 +145,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
     first layer-complete gate; it leaves no dense attention group in that layer.
     """
 
-    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", elide_empty_sources: bool = False, ulp_breach_sample_limit: int = 32, replay_mask_events: dict[tuple[int, int], MaskEvent] | None = None, component_measure=None, logical_event_recorder: RouteALogicalEventRecorder | None = None, lifecycle_transition_recorder: RouteALifecycleTransitionRecorder | None = None) -> None:
+    def __init__(self, model, predictor, *, layer: int, kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_ulp_mode: str = "enforce", execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", elide_empty_sources: bool = False, ulp_breach_sample_limit: int = 32, replay_mask_events: dict[tuple[int, int], MaskEvent] | None = None, component_measure=None, logical_event_recorder: RouteALogicalEventRecorder | None = None, lifecycle_transition_recorder: RouteALifecycleTransitionRecorder | None = None, prefill_maturity_chunk_tokens: int = 0) -> None:
         language_model = model.model.language_model if hasattr(model.model, "language_model") else model.model
         if not 0 <= layer < len(language_model.layers):
             raise ValueError("target layer is outside the model")
@@ -159,6 +159,8 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
             raise ValueError("same_mask_numerical_guard_mode must be 'enforce' or 'execution_only'")
         if not isinstance(elide_empty_sources, bool):
             raise ValueError("elide_empty_sources must be boolean")
+        if prefill_maturity_chunk_tokens < 0:
+            raise ValueError("prefill_maturity_chunk_tokens must be non-negative")
         if predictor is None and replay_mask_events is None:
             raise ValueError("an online predictor or explicit replay mask is required")
         self.model, self.predictor, self.layer, self.kv_head = model, predictor, layer, kv_head
@@ -191,6 +193,7 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         self.component_measure = component_measure
         self.logical_event_recorder = logical_event_recorder
         self.lifecycle_transition_recorder = lifecycle_transition_recorder
+        self.prefill_maturity_chunk_tokens = prefill_maturity_chunk_tokens
 
     def _measure_component(self, name: str, operation):
         """Optionally label an operation without changing Route-A semantics."""
@@ -346,6 +349,15 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
                     if key in self._mask_events:
                         raise AssertionError("duplicate original-mask event for a layer/KV-head/position")
                     self._mask_events[key] = (bool(decisions[head, offset].item()), float(scores[0, head, offset].item()))
+        elif isinstance(self.state, RouteAPackedAttentionState) and start == 0 and self.prefill_maturity_chunk_tokens:
+            for offset in range(0, q_len, self.prefill_maturity_chunk_tokens):
+                end = min(q_len, offset + self.prefill_maturity_chunk_tokens)
+                self.state.append(
+                    key[0, :, start + offset:start + end],
+                    value[0, :, start + offset:start + end],
+                    keep_mask[0, :, offset:end], start_position=start + offset,
+                    logical_phase="prefill", component_measure=measure,
+                )
         else:
             heads_at_start = sorted(head for head, position in self._replay_mask_events if position == start)
             if not heads_at_start or heads_at_start != list(range(heads_at_start[-1] + 1)):
@@ -1112,14 +1124,14 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
 
     backend_class = RouteAPolicyAttentionBackend
 
-    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", elide_empty_sources: bool = False, ulp_breach_sample_limit: int = 32, replay_mask_events: MaskEventLayers | None = None, component_measure=None, logical_event_recorder: RouteALogicalEventRecorder | None = None, lifecycle_transition_recorder: RouteALifecycleTransitionRecorder | None = None, execution_dtype_ulp_mode: str = "enforce") -> None:
+    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", elide_empty_sources: bool = False, ulp_breach_sample_limit: int = 32, replay_mask_events: MaskEventLayers | None = None, component_measure=None, logical_event_recorder: RouteALogicalEventRecorder | None = None, lifecycle_transition_recorder: RouteALifecycleTransitionRecorder | None = None, execution_dtype_ulp_mode: str = "enforce", prefill_maturity_chunk_tokens: int = 0) -> None:
         if not layers or len(set(layers)) != len(layers) or any(layer < 0 for layer in layers):
             raise ValueError("layers must be unique non-negative indices")
         if replay_mask_events is not None and set(replay_mask_events) != set(layers):
             raise ValueError("replay mask layers must exactly match selected layers")
         self.model, self.predictor, self.layers = model, predictor, tuple(layers)
         self.backends = {
-            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, execution_dtype_ulp_mode=execution_dtype_ulp_mode, execution_dtype_close_mode=execution_dtype_close_mode, same_mask_numerical_guard_mode=same_mask_numerical_guard_mode, elide_empty_sources=elide_empty_sources, ulp_breach_sample_limit=ulp_breach_sample_limit, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure, logical_event_recorder=logical_event_recorder, lifecycle_transition_recorder=lifecycle_transition_recorder)
+            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, execution_dtype_ulp_mode=execution_dtype_ulp_mode, execution_dtype_close_mode=execution_dtype_close_mode, same_mask_numerical_guard_mode=same_mask_numerical_guard_mode, elide_empty_sources=elide_empty_sources, ulp_breach_sample_limit=ulp_breach_sample_limit, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure, logical_event_recorder=logical_event_recorder, lifecycle_transition_recorder=lifecycle_transition_recorder, prefill_maturity_chunk_tokens=prefill_maturity_chunk_tokens)
             for layer in self.layers
         }
 

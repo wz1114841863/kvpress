@@ -36,6 +36,21 @@ def test_lifecycle_transition_recorder_tracks_maturity_and_global_oldest_service
     assert recorder.summary()["observed_layers"] == [4]
 
 
+def test_prefill_micro_events_preserve_retained_positions_while_creating_extra_service_opportunities():
+    key = torch.arange(20, dtype=torch.float32).reshape(2, 5, 2)
+    mask = torch.ones(2, 5, dtype=torch.bool)
+    batch = RouteAPackedAttentionState(heads=2, head_dim=2, window=1, page_tokens=2, admission_budget=1)
+    micro = RouteAPackedAttentionState(heads=2, head_dim=2, window=1, page_tokens=2, admission_budget=1)
+    batch.append(key, key + 100, mask, start_position=0)
+    for start in range(0, 5, 2):
+        end = min(5, start + 2)
+        micro.append(key[:, start:end], key[:, start:end] + 100, mask[:, start:end], start_position=start, logical_phase="prefill")
+    for head in range(2):
+        assert {record.position for source in batch.records(head).values() for record in source} == {record.position for source in micro.records(head).values() for record in source}
+    batch.assert_conservation()
+    micro.assert_conservation()
+
+
 def test_three_store_attention_matches_dense_same_mask_and_online_merge():
     state = make_state(budget=1)
     keys = torch.tensor([[[1., 0.], [0., 1.], [2., 0.], [0., 2.], [3., 0.], [0., 3.]]])
