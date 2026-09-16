@@ -72,7 +72,7 @@ already validated for each frontend:
 
 `tools/build_cross_frontend_c1_semantic_descriptor.py` consumes the completed
 C0 evidence index and the same four JSON inputs. It rechecks each C0-bound
-path/SHA-256/schema/status before writing a new
+SHA-256/schema/status and, by default, its literal path before writing a new
 `cross-frontend-c1-semantic-descriptor-1.0` report. The report types every
 core field at `(model, layer, kv_head, epoch)` grain and records availability
 separately for KVzap persistent-packed, SnapKV one-shot packed, and official
@@ -86,6 +86,11 @@ generated decode remains `unknown`, and DMS literal original position remains
 `unknown` even though its arrival serial and native traversal order are
 observed. No model is run and no common hardware interface, resource envelope,
 parameter, or RTL choice is produced.
+
+For cross-host reproduction, an explicit hash-preserving relocation may use a
+fresh staging path only when the manifest SHA-256 still equals the C0-bound
+value; the C0 origin path and actual staging path are both recorded. It never
+authorizes overwriting an existing experiment output.
 
 The accepted C1 output is
 `analysis/experiments/cross_frontend_c1_semantic_descriptor_01/cross_frontend_c1_semantic_descriptor_report.json`

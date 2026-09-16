@@ -1755,7 +1755,8 @@ design.
 
 `tools/build_cross_frontend_c1_semantic_descriptor.py` is the next no-model
 Commonality Study gate. It verifies that all four JSON inputs still match the
-C0-bound path/SHA-256/schema/status records, then writes a new
+C0-bound SHA-256/schema/status records and, by default, their literal paths,
+then writes a new
 `cross-frontend-c1-semantic-descriptor-1.0` availability matrix. The v1 core
 is limited to model topology, identity, epoch, decision, visibility, position
 provenance, traversal order, and attention binding at `(model, layer, kv_head,
@@ -1768,6 +1769,11 @@ SnapKV generated decode as unknown, and separately records DMS arrival serial,
 unknown literal original position, and required native traversal order. C1 is
 not a common hardware interface, resource contract, architecture decision, or
 RTL gate; it only prepares provenance-preserving C2 adapters.
+
+For a remote replica, an explicit hash-preserving relocation is allowed only
+into a fresh staging location whose manifest bytes exactly match the C0
+SHA-256; the output retains both the C0-bound origin and staging path. It is
+not permission to overwrite or merge a divergent same-name experiment artifact.
 
 The accepted local output is
 `analysis/experiments/cross_frontend_c1_semantic_descriptor_01/cross_frontend_c1_semantic_descriptor_report.json`

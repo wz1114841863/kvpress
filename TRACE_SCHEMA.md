@@ -2342,6 +2342,11 @@ decode as unknown and preserves DMS arrival serial, unknown literal position,
 and required native traversal order as distinct facts. It does not open raw
 payloads or create a shared hardware/resource interface.
 
+C1 normally consumes each literal C0-bound path. An explicit cross-host staging
+path is permitted only when its SHA-256 exactly matches C0; both origin and
+staging path are recorded. This is provenance transport only and never
+authorizes replacing an existing artifact.
+
 The accepted C1 artifact is
 `analysis/experiments/cross_frontend_c1_semantic_descriptor_01/cross_frontend_c1_semantic_descriptor_report.json`
 with SHA-256 `7b37e8f0945018f6b387085ea129f10758962dd987b4d8437cb243c7a45677a7`.

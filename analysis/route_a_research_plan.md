@@ -1570,6 +1570,11 @@ position as unknown, while keeping DMS arrival serial and native traversal
 order distinct. C1 can prepare C2 realization adapters only; it cannot select
 resources, establish a resource envelope, or authorize RTL.
 
+For cross-host reproduction, C1 defaults to literal C0-bound paths. A fresh
+staging path is eligible only with an explicit hash-preserving relocation flag
+and exact C0 SHA-256 equality; the report records both paths. It cannot replace
+an existing experiment output or reconcile divergent same-name artifacts.
+
 The accepted C1 report is
 `analysis/experiments/cross_frontend_c1_semantic_descriptor_01/cross_frontend_c1_semantic_descriptor_report.json`
 (SHA-256 `7b37e8f0945018f6b387085ea129f10758962dd987b4d8437cb243c7a45677a7`).
