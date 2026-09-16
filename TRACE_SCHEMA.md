@@ -2524,3 +2524,11 @@ append into ordered micro-events under the same replayed original mask. The
 trace must match the batch Route-A answer and mask decisions. This is a
 functional granularity counterfactual, not a controller clock, service rate,
 FIFO observation, page/bank/burst measurement, or hardware selection.
+
+### Route-A A4.3.5 micro-event quantum sweep
+
+`kvzap-route-a435-microevent-quantum-sweep-1.0` compares hash-bound chunk-64
+functional sources at declared admission budgets 1, 8, and 32. It requires
+per-workload batch Route-A answers to match across the sweep. Q is a reference
+action count, not a hardware rate; pending/page state is not FIFO, HBM, or
+physical-page evidence.

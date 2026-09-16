@@ -1966,3 +1966,11 @@ cache, or default pruning path. The micro-event trace is accepted only when it
 matches batch Route-A answer and original-mask decisions under the existing
 numerical and ownership guards. It is not a controller timing or physical page
 experiment.
+
+### A4.3.5 implementation — micro-event quantum comparison
+
+The A4.3.5 analyzer accepts exactly three workloads at each of Q=1, 8, and 32
+under the chunk-64 micro-event contract. It rejects answer divergence across
+the quantum sweep and reports only hash-bound functional lifecycle state. It
+selects no hardware service rate, FIFO depth, page/bank/burst behavior, or
+Qwen-specific architecture parameter.

@@ -1778,3 +1778,11 @@ and mask decisions. Any observed pending/page-state change is a functional
 lifecycle consequence of additional declared service opportunities, not timing
 or hardware evidence. Llama requires an analogous gate before architecture
 specification and no Qwen result selects a resource parameter.
+
+### A4.3.5 — micro-event admission-quantum functional sweep
+
+With chunk-64 A4.3.4 as Q=1 control, bounded Q=8 and Q=32 functional replays
+test whether greater declared admission actions change pending/page state while
+preserving the batch Route-A answer and replayed mask. These are geometric
+sensitivity points, not controller-rate candidates. A page state is logical
+only, and Llama remains required before an architecture specification.
