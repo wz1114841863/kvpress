@@ -1895,3 +1895,17 @@ FP32 same-mask guard passed. Executed-dtype ULP recorded one 79-ULP
 reduction-order diagnostic (layer 3, KV head 6, query head 26), with maximum
 associated FP32 absolute difference `2.9802322387695312e-08`; it is not a
 strict ULP pass or a merge-precision/hardware selection.
+
+### A4.3.0 implementation — pre-spec resource, envelope, and fallback gate
+
+`tools/build_kvzap_route_a43_resource_contract_envelope_gate.py` consumes only
+completed C5, A4200/A4201/A4211/A4214, M6, and A317/A318 reports, writes a
+fresh report, and runs no model. It retains the five unresolved resource fields
+as candidate/model-only axes, keeps the six conditioned Qwen/Llama rows
+separate, and requires Full-KV bypass to remain the explicit
+zero-admission/zero-cold-ownership control. A318 is a modeled
+contract-breach-risk boundary, not controller timing.
+
+Passing A4.3.0 means only that its inputs form an auditable next-study ledger.
+It does not select FIFO/PTE/page/bank/burst/merge/PE/scheduler/controller
+parameters, establish an architecture specification, or authorize RTL.

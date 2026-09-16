@@ -2441,3 +2441,18 @@ The matching remote `zsy_1` provenance replica is
 with SHA-256 `1e45e60713ce6256df33c5efb06b5db93f1ecf6a630b9de7fb916b9d730868b3`.
 It reproduces the complete remote C0--C4 evidence chain and does not add a
 functional, modeled-resource, measured-hardware, or RTL claim.
+
+### Route-A A4.3.0 resource-contract / workload-envelope / fallback gate
+
+`kvzap-route-a43-resource-contract-envelope-fallback-1.0` is a no-model,
+new-output-only pre-specification gate. It SHA-256 binds C5, A4200, A4201,
+A4211, A4214, M6, A317, and A318. Its output separates the five unresolved
+resource-contract parameters, six distinct fixed-horizon Qwen/Llama
+model/workload descriptor rows, and the Full-KV zero-admission fallback
+contract including the A318 breach boundary. It rejects pooled rows, parameter
+selection, input drift, or a bypass that enters Route-A admission/cold state.
+
+The result is a provenance-bound functional/trace-derived and modeled-input
+ledger only. It does not establish occupancy, FIFO depth, PTE encoding,
+allocator behavior, bank/burst utilization, service timing, HBM traffic,
+hardware latency/throughput, energy, area, architecture specification, or RTL.

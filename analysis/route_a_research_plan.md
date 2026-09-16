@@ -1687,3 +1687,20 @@ packed page/tail witnesses. It records source/A424 SHA-256 values. This removes
 the specific declared/observed horizon mismatch from A427, but three fixed
 requests do not establish a workload distribution. No timing, queue, FIFO,
 backpressure, HBM, hardware, scheduler-selection, or RTL claim is permitted.
+
+### A4.3.0 — resource-contract / workload-envelope / Full-KV fallback gate
+
+After C5 retains Route-A persistent-packed as the research direction,
+`tools/build_kvzap_route_a43_resource_contract_envelope_gate.py` is the
+minimal no-model pre-specification gate. It hash-binds the Qwen
+A4200/A4201/A4211/A4214 contract chain, M6's six separately conditioned
+Qwen/Llama descriptors, and A317/A318's continuation-contract and breach
+records. It must retain six distinct model/workload rows, preserve Full-KV
+bypass as a zero-admission/zero-cold-ownership control, and retain all five
+resource parameters as unresolved rather than selected.
+
+The output identifies next evidence needed for each resource field; it is not
+a workload distribution, hardware resource envelope, parameter choice,
+architecture specification, or RTL authorization. A317/A318 remain modeled
+policy evidence, not controller timing, HBM, latency, throughput, or hardware
+performance evidence.
