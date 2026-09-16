@@ -1789,6 +1789,24 @@ It used a fresh staging directory containing byte-identical C0-bound manifests
 because the existing remote same-name Qwen A4.2.14 artifact had a divergent
 hash; it did not modify that artifact and remains a provenance replica only.
 
+### C2 implementation — realization-specific projections
+
+`tools/build_cross_frontend_c2_realization_adapters.py` consumes the accepted
+C1 descriptor and its hash-bound four source manifests. It emits one semantic
+projection for KVzap persistent-packed, SnapKV one-shot packed, and official
+DMS dynamic-resident-slot realization. The gate requires all eight core fields
+to retain their C1 status and evidence pointer; an unavailable field must stay
+null with a reason. Thus it explicitly rejects fabricated SnapKV decode data,
+and DMS arrival serial remains distinct from unknown literal position.
+
+The accepted C2 report is
+`analysis/experiments/cross_frontend_c2_realization_adapters_01/cross_frontend_c2_realization_adapters_report.json`
+(SHA-256 `7e14af14250b0143b37a9462bea152ce67b44cd9d227e37ae88e31ea24f43acb`).
+It keeps separate KVzap model anchors and realization extensions; it establishes
+no shared cache/hardware interface, resource/performance conclusion,
+architecture decision, parameter, or RTL readiness. C3 may now compare the
+three projections without inventing fields.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

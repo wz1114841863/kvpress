@@ -1588,6 +1588,21 @@ It uses only byte-identical C0-bound manifest staging after a remote same-name
 Qwen A4.2.14 artifact was found to have a different hash; it is provenance
 reproduction, not a new model, resource, or hardware result.
 
+### Cross-frontend C2 realization adapters
+
+C2 is implemented by `tools/build_cross_frontend_c2_realization_adapters.py`.
+It builds three frontend-specific semantic projections only after rechecking
+the C1-bound source hashes. The adapter rejects any changed C1 status or an
+unexplained/non-null unknown field, so it cannot turn SnapKV's absent decode
+state into zero or DMS arrival serial into a literal token position.
+
+The accepted C2 report is
+`analysis/experiments/cross_frontend_c2_realization_adapters_01/cross_frontend_c2_realization_adapters_report.json`
+(SHA-256 `7e14af14250b0143b37a9462bea152ce67b44cd9d227e37ae88e31ea24f43acb`).
+It keeps KVzap Qwen/Llama anchors separate and preserves realization-specific
+extensions. C2 is not a common cache/hardware interface, resource envelope,
+architecture specification, or RTL gate; it only enables C3 comparison.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

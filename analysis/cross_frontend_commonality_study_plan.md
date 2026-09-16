@@ -105,6 +105,23 @@ It uses fresh input staging only because a pre-existing remote same-name Qwen
 A4.2.14 report had a different hash. Every staged manifest matches the C0
 hash, and the report records both the C0-bound origin and staged input paths.
 
+## C2 implementation and interpretation
+
+`tools/build_cross_frontend_c2_realization_adapters.py` consumes a completed
+C1 report and the four C1-bound manifests. It produces exactly three
+frontend-specific projections: KVzap `persistent_packed`, SnapKV
+`one_shot_packed`, and official DMS `dynamic_resident_slot`. It rejects a
+source SHA-256 mismatch, a changed C1 core-field status, a missing evidence
+pointer, or a non-null value for an `unknown`/`not_applicable` field.
+
+The accepted C2 artifact is
+`analysis/experiments/cross_frontend_c2_realization_adapters_01/cross_frontend_c2_realization_adapters_report.json`
+(SHA-256 `7e14af14250b0143b37a9462bea152ce67b44cd9d227e37ae88e31ea24f43acb`).
+It retains separate Qwen/Llama KVzap anchors, SnapKV's three unobserved
+decode/online subfields, and DMS's unknown literal original position. It is a
+mapping/classification result only: neither capacity, traffic, timing, nor a
+common hardware interface is asserted.
+
 ## Minimal missing fields and collection policy
 
 1. **DMS position provenance:** M3 has source arrival serials and native order,

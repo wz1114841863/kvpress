@@ -2357,3 +2357,19 @@ The hash-preserving remote replica is
 `analysis/experiments/cross_frontend_c1_semantic_descriptor_remote_replica_01/cross_frontend_c1_semantic_descriptor_report.json`
 (SHA-256 `58a1dda80511f4f580853b0aaa32c8aa82b77133db472b315ad2adb5f839f1d0`).
 It is a cross-host provenance replica, not a second frontend measurement.
+
+### Cross-frontend C2 realization adapters
+
+`cross-frontend-c2-realization-adapters-1.0` is a no-model semantic-projection
+artifact. It hash-binds C1 plus the four source manifests and emits exactly one
+projection per realization extension: KVzap `persistent_packed`, SnapKV
+`one_shot_packed`, and official DMS `dynamic_resident_slot`. Every projection
+must preserve C1's eight core-field statuses, source provenance, and required
+traversal order. An `unknown` or `not_applicable` core field must have a reason
+and a null value; otherwise the gate rejects it as fabricated.
+
+The accepted C2 artifact is
+`analysis/experiments/cross_frontend_c2_realization_adapters_01/cross_frontend_c2_realization_adapters_report.json`
+with SHA-256 `7e14af14250b0143b37a9462bea152ce67b44cd9d227e37ae88e31ea24f43acb`.
+It is mapping/classification evidence only and defines neither allocator,
+physical-capacity, traffic, timing, hardware interface, nor RTL evidence.
