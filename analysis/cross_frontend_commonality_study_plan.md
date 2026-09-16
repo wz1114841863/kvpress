@@ -122,6 +122,12 @@ decode/online subfields, and DMS's unknown literal original position. It is a
 mapping/classification result only: neither capacity, traffic, timing, nor a
 common hardware interface is asserted.
 
+The matching remote `zsy_1` replica is
+`analysis/experiments/cross_frontend_c2_realization_adapters_remote_replica_01/cross_frontend_c2_realization_adapters_report.json`
+(SHA-256 `3dd5e120438db7406f02482ba74b50afaf9c8048d5c43cc9228234919e70b568`).
+It binds the accepted C1 remote replica and its byte-identical staged manifests;
+it is cross-host provenance reproduction, not a second frontend measurement.
+
 ## Minimal missing fields and collection policy
 
 1. **DMS position provenance:** M3 has source arrival serials and native order,

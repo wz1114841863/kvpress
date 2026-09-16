@@ -1807,6 +1807,12 @@ no shared cache/hardware interface, resource/performance conclusion,
 architecture decision, parameter, or RTL readiness. C3 may now compare the
 three projections without inventing fields.
 
+The matching remote `zsy_1` replica is
+`analysis/experiments/cross_frontend_c2_realization_adapters_remote_replica_01/cross_frontend_c2_realization_adapters_report.json`
+(SHA-256 `3dd5e120438db7406f02482ba74b50afaf9c8048d5c43cc9228234919e70b568`).
+It binds the accepted C1 remote replica and byte-identical staged manifests;
+it is a cross-host provenance reproduction, not new model or hardware evidence.
+
 The accepted output is
 `analysis/experiments/snapkv_route_a_p3_semantic_qwen3_8b_01/`, manifest SHA-256
 `56cd9ca61d303be0154ec12c2934ee4b71c08332d8dc8d32c5e09ca27c73ff37`. It

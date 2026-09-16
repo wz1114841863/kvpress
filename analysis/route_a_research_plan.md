@@ -1603,6 +1603,12 @@ It keeps KVzap Qwen/Llama anchors separate and preserves realization-specific
 extensions. C2 is not a common cache/hardware interface, resource envelope,
 architecture specification, or RTL gate; it only enables C3 comparison.
 
+The corresponding `zsy_1` remote replica passed at
+`analysis/experiments/cross_frontend_c2_realization_adapters_remote_replica_01/cross_frontend_c2_realization_adapters_report.json`
+(SHA-256 `3dd5e120438db7406f02482ba74b50afaf9c8048d5c43cc9228234919e70b568`).
+It reuses C1's byte-identical staging solely for cross-host provenance
+reproduction and does not add a model or hardware result.
+
 ### A4.2.8 — matched-horizon three-workload logical-event stability
 
 `tools/run_kvzap_route_a428_matched_horizon_workload_stability.py` collects

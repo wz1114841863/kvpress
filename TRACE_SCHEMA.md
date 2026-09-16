@@ -2373,3 +2373,8 @@ The accepted C2 artifact is
 with SHA-256 `7e14af14250b0143b37a9462bea152ce67b44cd9d227e37ae88e31ea24f43acb`.
 It is mapping/classification evidence only and defines neither allocator,
 physical-capacity, traffic, timing, hardware interface, nor RTL evidence.
+
+The matching remote replica is
+`analysis/experiments/cross_frontend_c2_realization_adapters_remote_replica_01/cross_frontend_c2_realization_adapters_report.json`
+(SHA-256 `3dd5e120438db7406f02482ba74b50afaf9c8048d5c43cc9228234919e70b568`).
+It is a cross-host provenance replica only.
