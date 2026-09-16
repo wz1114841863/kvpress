@@ -1786,3 +1786,19 @@ test whether greater declared admission actions change pending/page state while
 preserving the batch Route-A answer and replayed mask. These are geometric
 sensitivity points, not controller-rate candidates. A page state is logical
 only, and Llama remains required before an architecture specification.
+
+### A4.3.6 — conditioned Llama micro-event admission-quantum sweep
+
+The required Llama analogue does not copy Qwen's natural decode trajectory.
+It binds completed M0/M1 and the M5.1 fixed non-EOS continuation contract,
+including its retained record-only summarization ULP context, then runs the
+three built-in Llama workloads separately at Q=`{1,8,32}` and chunk 64. For
+each source, Full-KV, online same-mask dense, trace-off Route-A, and trace-on
+Route-A must execute the declared fixed eight-token trajectory; both Route-A
+paths replay the dense mask stream and forced token IDs exactly once. The
+no-model closeout accepts only the nine hash-bound source manifests and rejects
+cross-Q trajectory divergence, timed events, or mixed prerequisites. This tests
+whether the *shape* of a functional Q sensitivity is observable on the second
+KVzap anchor, not whether Qwen and Llama share a numerical envelope. It does
+not convert the retained record-only diagnostic into a strict pass or select a
+FIFO, page/bank/burst, controller rate, merge precision, or hardware design.

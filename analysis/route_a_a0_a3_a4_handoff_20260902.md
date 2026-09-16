@@ -1974,3 +1974,17 @@ under the chunk-64 micro-event contract. It rejects answer divergence across
 the quantum sweep and reports only hash-bound functional lifecycle state. It
 selects no hardware service rate, FIFO depth, page/bank/burst behavior, or
 Qwen-specific architecture parameter.
+
+### A4.3.6 implementation — conditioned Llama micro-event comparison
+
+The Llama follow-up is deliberately conditioned on M5.1's fixed eight-token,
+non-EOS continuation rather than reusing Qwen's natural trajectory. Each of
+the three Llama workloads is run at Q=1, 8, and 32 with chunk-64 trace-on
+micro-events. The source requires the reviewed default-off Linear predictor
+override; M0/M1/M5.1 hash binding; dense-only online mask decisions; exact
+mask and fixed token-trajectory replay by both trace-off and trace-on Route-A;
+all 32 layers and 8 KV heads; numerical-guard work; and timestamp-free,
+layer-contiguous lifecycle records. The aggregate accepts only those nine
+sources. It retains M5.1's record-only ULP context as non-strict evidence and
+does not select cross-model or Llama-specific controller, FIFO, page, bank,
+burst, merge, or architecture parameters.

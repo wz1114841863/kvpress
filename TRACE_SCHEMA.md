@@ -2532,3 +2532,19 @@ functional sources at declared admission budgets 1, 8, and 32. It requires
 per-workload batch Route-A answers to match across the sweep. Q is a reference
 action count, not a hardware rate; pending/page state is not FIFO, HBM, or
 physical-page evidence.
+
+### Route-A A4.3.6 conditioned Llama micro-event quantum sweep
+
+`kvzap-route-a436-llama31-microevent-gate-1.0` binds the completed Llama M0,
+M1, and M5.1 fixed-continuation prerequisites, including M5.1's explicit
+record-only ULP context. It records a full-KV bypass, online dense mask source,
+trace-off Route-A replay, and trace-on chunk-64 Route-A replay for one Llama
+workload at each Q in `{1,8,32}`. The trace-on path must consume the dense
+mask stream and forced fixed token trajectory exactly once, preserve the
+trace-off token digest, and contain scalar, layer-contiguous, timestamp-free
+lifecycle events. `kvzap-route-a436-llama31-microevent-quantum-sweep-1.0`
+accepts exactly the nine such sources, preserves workload rows separately, and
+rejects cross-Q conditioned token-trajectory divergence. The fixed continuation
+is not natural-generation evidence; record-only ULP context is not a strict
+pass. Q and logical pending/page state do not define a hardware rate, FIFO,
+physical page, HBM traffic, timing, capacity, or architecture parameter.
