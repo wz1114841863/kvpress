@@ -1897,6 +1897,24 @@ implemented by a hook that cannot preinspect later layers. This gate cannot
 select `C`, FIFO capacity/service, page/bank/burst, merge/PE, scheduler,
 controller timing, or architecture parameters, and does not measure allocator
 behavior, physical traffic, timing, performance, or hardware cost.
+
+### A4.5.2 — request-global controller reconciliation
+
+Before a model-on request-global fallback is attempted, perform a no-model,
+hash-bound reconciliation of A4.4 activation state, A4.5.0's `C=1024`
+request-global counterfactual, and A4.5.1's actual layer-local transitions.
+For each anchor/workload, reject any disagreement between the A4.4 threshold
+set and A4.5.1 protected-layer set. Then record the first layer-complete
+observation that can latch global protection, the count of lower layers that
+already completed the current activation epoch, and the non-retroactive
+all-layer effect boundary at the next decode epoch.
+
+This establishes control semantics only. It does not implement a global
+controller, controller barrier/broadcast, or next-epoch native fallback; it
+does not select C/FIFO/service/page/bank/burst/merge/scheduler parameters or
+measure any latency, traffic, capacity, or hardware cost. A later A4.5.3
+model-on gate must implement precisely this next-epoch scope before any
+resource contract treats request-global protection as executable.
 The model-on gate must declare offline cached-artifact loading before the
 Transformers/HF libraries initialize; a cache miss must fail explicitly rather
 than causing a network-dependent rerun or provenance substitution.

@@ -2097,3 +2097,20 @@ architecture specification, or RTL conclusion is authorized.
 The runner establishes offline mode before importing the HF libraries. Thus a
 missing cached model/predictor auxiliary file fails explicitly; it must not
 cause an incidental metadata download or a substituted provenance path.
+
+### A4.5.2 implementation — request-global controller reconciliation
+
+`tools/analyze_kvzap_route_a452_global_protection_controller_reconciliation.py`
+binds A4.4, A4.5.0, and A4.5.1 reports for both anchors. It verifies that each
+actual A4.5.1 layer-local protected set exactly equals the corresponding A4.4
+activation `pending >= C=1024` set, and that all retained local events use the
+activation boundary with native fallback and frozen Route-A state. It then
+records the first ordered layer observation at which a request-global latch can
+be formed and declares all-layer action effective only in the next decode
+epoch: lower layers already completed in the current epoch are not rewritten.
+
+This is a no-model semantic reconciliation, not an implementation of a
+request-global controller or a controller-delay measurement. It creates no
+FIFO/service/page/bank/burst/merge/scheduler selection, physical capacity or
+traffic result, timing/performance result, architecture specification, or RTL
+authorization. Qwen and Llama rows remain separate.

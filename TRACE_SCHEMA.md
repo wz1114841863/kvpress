@@ -2663,3 +2663,23 @@ The runner declares its cached model/predictor artifact requirement before
 importing Transformers/huggingface_hub: it may not issue an incidental Hub
 metadata request. A missing local artifact is a blocked provenance/runtime
 condition, not a reason to substitute a model, revision, or network result.
+
+### Route-A A4.5.2 request-global controller reconciliation
+
+`kvzap-route-a452-global-protection-controller-reconciliation-1.0` is a
+no-model, hash-bound reconciliation of completed A4.4 activation reports,
+the A4.5.0 `C=1024` request-global counterfactual, and completed A4.5.1
+layer-local functional reports. For every anchor/workload row, it requires the
+actual A4.5.1 protected-layer set to equal the A4.4 per-layer aggregate-pending
+set at or above `C=1024`, including activation-boundary native fallback and
+frozen-state guards.
+
+It then declares a non-retroactive controller contract: the first triggering
+layer-complete activation observation latches request-global protection, but
+layers already completed in that activation epoch cannot be rerouted; the first
+all-layer request-global effect boundary is the following decode epoch. This
+is neither a model-on global-controller implementation nor a measured delay,
+barrier, broadcast, cycle, or timing result. `C=1024` remains a logical probe,
+not a FIFO capacity/service parameter. The report contains no physical
+capacity, traffic, burst, performance, energy, area, architecture, or RTL
+claim, and preserves Qwen/Llama rows without numeric pooling.
