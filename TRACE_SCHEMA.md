@@ -2683,3 +2683,26 @@ barrier, broadcast, cycle, or timing result. `C=1024` remains a logical probe,
 not a FIFO capacity/service parameter. The report contains no physical
 capacity, traffic, burst, performance, energy, area, architecture, or RTL
 claim, and preserves Qwen/Llama rows without numeric pooling.
+
+### Route-A A4.5.3 model-on next-epoch request-global protection semantic gate
+
+`kvzap-route-a453-global-next-epoch-protection-gate-1.0` is a model-on,
+anchor-specific functional report. It hash-binds the completed A4.5.2
+reconciliation report and its completed A4.5.1 inputs before model loading.
+For each fixed-continuation workload, `controller` records the ordered
+post-hydration/pre-append activation observations, first threshold latch, and
+the only permitted request-global effect position: the next `q_len=1` decode
+epoch after every layer completed the activation epoch. Per-layer rows retain
+the local A4.5.1 event (if any), the global next-epoch event, native fallback
+call counts, and frozen Route-A logical state positions.
+
+The first threshold observation is a latch, not permission to rewrite layers
+already completed in the activation epoch. A local crossing may take its
+existing current-epoch layer-local fallback; all layers take request-global
+native Full-KV fallback only at the committed next epoch. Reports reject an
+early/non-uniform action, re-entry, source-set inconsistency, input mutation, or
+Route-A state mutation after freezing. `C=1024` is a logical sensitivity probe,
+not a FIFO occupancy/capacity, service rate, overflow, or hardware parameter.
+This schema records no controller delay/broadcast timing, physical allocation,
+HBM/DMA traffic, bursts, latency, throughput, energy, area, architecture
+specification, or RTL evidence. Qwen and Llama rows remain separate.

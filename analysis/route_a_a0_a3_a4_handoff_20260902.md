@@ -2114,3 +2114,25 @@ request-global controller or a controller-delay measurement. It creates no
 FIFO/service/page/bank/burst/merge/scheduler selection, physical capacity or
 traffic result, timing/performance result, architecture specification, or RTL
 authorization. Qwen and Llama rows remain separate.
+
+### A4.5.3 implementation — model-on next-epoch request-global protection gate
+
+`RouteAGlobalProtectionCoordinator` is request-scoped and accepts only ordered
+post-hydration/pre-append activation observations. Its first `pending >= 1024`
+observation latches global protection. It commits an effective position only
+when every layer has completed that activation epoch, at one subsequent decode
+position. `GlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend` keeps
+the A4.5.1 local crossing behavior for the current epoch, then freezes and
+delegates every layer to retained native Full-KV attention at the coordinator's
+committed next epoch. The default pruning path is unchanged.
+
+`tools/run_kvzap_route_a453_global_next_epoch_protection_gate.py` binds A4.5.2
+and its A4.5.1 source reports, requires cached artifacts before Transformers/HF
+initialization, and runs Qwen and Llama separately on one visible CUDA device.
+It verifies the controller observation order/latch/boundary, all-layer
+next-epoch native fallback, frozen logical state, lack of re-entry, and forced
+Full-KV input preservation. This establishes functional control semantics, not
+controller timing/broadcast behavior or a resource result. `C=1024` does not
+select FIFO/service/page/bank/burst/merge/PE/scheduler or any architecture
+parameter; no physical traffic, latency, throughput, energy, area,
+architecture-specification, or RTL conclusion is authorized.

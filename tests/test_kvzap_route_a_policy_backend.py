@@ -4,7 +4,7 @@ import torch
 from transformers import DynamicCache
 
 from kvpress.route_a_attention import RouteALifecycleTransitionRecorder
-from kvpress.route_a_policy_backend import CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend, DeferredActivationRouteAPolicyAttentionBackend, DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackend, cache_position_contiguity_diagnostic, compare_original_mask_events
+from kvpress.route_a_policy_backend import CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend, DeferredActivationRouteAPolicyAttentionBackend, DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, GlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteAGlobalProtectionCoordinator, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackend, cache_position_contiguity_diagnostic, compare_original_mask_events
 
 
 def fake_model(layer_count=1):
@@ -134,6 +134,62 @@ def test_capacity_protection_freezes_route_a_at_activation_and_delegates_later_c
     assert summary["route_a_logical_state_next_position_at_end"] == 4
     assert summary["native_cache_mutated_or_freed"] is False
     assert len(native_calls) == 4
+
+
+def test_global_next_epoch_protection_waits_for_all_activation_observations_then_freezes_every_layer():
+    coordinator = RouteAGlobalProtectionCoordinator(layers=(0, 1), pending_high_watermark=1)
+    model = fake_model(layer_count=2)
+    backends = [
+        GlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend(
+            model, object(), layer=layer, kv_head=0, threshold=0.0, window=1,
+            page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6,
+            deferred_decode_steps=1, pending_high_watermark=1,
+            global_protection_coordinator=coordinator,
+        )
+        for layer in (0, 1)
+    ]
+    module = SimpleNamespace(scaling=1.0)
+    keys = torch.arange(12, dtype=torch.float32).reshape(1, 1, 6, 2)
+    values = keys + 10
+    native_calls = []
+
+    def original(*_args, **_kwargs):
+        native_calls.append(True)
+        return torch.zeros(1, 3, 1, 2), None
+
+    # Both layers receive the same native prefix. Only layer zero has a mature
+    # retained pending witness; layer one remains locally Route-A active.
+    for backend, keeps in zip(backends, ((True, True, True), (False, False, False))):
+        backend._keep_mask, backend._score_start = torch.tensor([[list(keeps)]]), 0
+        backend._mask_events.update({(0, position): (keep, 0.0) for position, keep in enumerate(keeps)})
+        backend.attention(original, module, torch.ones(1, 3, 3, 2), keys[:, :, :3], values[:, :, :3], None, 0.0, scaling=1.0)
+    for backend, keep in zip(backends, (True, False)):
+        backend._keep_mask, backend._score_start = torch.tensor([[[keep]]]), 3
+        backend._mask_events[(0, 3)] = (keep, 0.0)
+        backend.attention(original, module, torch.ones(1, 3, 1, 2), keys[:, :, :4], values[:, :, :4], None, 0.0, scaling=1.0)
+    for backend, keep in zip(backends, (True, False)):
+        backend._keep_mask, backend._score_start = torch.tensor([[[keep]]]), 4
+        backend._mask_events[(0, 4)] = (keep, 0.0)
+        backend.attention(original, module, torch.ones(1, 3, 1, 2), keys[:, :, :5], values[:, :, :5], None, 0.0, scaling=1.0)
+
+    controller = coordinator.summary()
+    assert controller["global_latch_event"]["first_trigger_observation_layer"] == 0
+    assert controller["global_effective_cache_position"] == 5
+    assert backends[0].protection_event is not None
+    assert backends[1].protection_event is None
+    assert backends[1].state is not None and backends[1].state.next_position == 5
+
+    # At the following q_len=1 epoch, every layer—not only the original local
+    # crossing layer—freezes and delegates to native Full KV.
+    for backend, keep in zip(backends, (True, False)):
+        backend._keep_mask, backend._score_start = torch.tensor([[[keep]]]), 5
+        backend._mask_events[(0, 5)] = (keep, 0.0)
+        backend.attention(original, module, torch.ones(1, 3, 1, 2), keys, values, None, 0.0, scaling=1.0)
+        summary = backend.global_next_epoch_summary()
+        assert summary["request_global_protection_committed"]
+        assert summary["request_global_protection_event"]["boundary"] == "next_decode_epoch_after_completion_of_current_activation_epoch"
+        assert summary["request_global_native_attention_calls"] == 1
+    assert len(native_calls) == 7
 
 
 def test_prefill_micro_event_backend_splits_real_state_append_into_bounded_trace_events():

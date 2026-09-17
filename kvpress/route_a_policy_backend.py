@@ -820,6 +820,14 @@ class CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend(DeferredAc
         self._protected_frozen_next_position: int | None = None
         self.protected_native_attention_calls = 0
 
+    def _on_activation_hydrated(self, *, current_start: int) -> None:
+        """Hook for default-off controller variants before current append.
+
+        The base layer-local primitive intentionally has no shared controller.
+        A subclass may observe this scalar post-hydration pending boundary but
+        must not alter the current call through this hook.
+        """
+
     def _aggregate_pending_tokens(self) -> int:
         if self.state is None:
             raise AssertionError("capacity protection requires Route-A state")
@@ -868,6 +876,7 @@ class CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend(DeferredAc
             if self._score_start is None:
                 raise AssertionError("activation lacks captured cache position")
             self._activate(key=key, value=value, current_start=self._score_start)
+            self._on_activation_hydrated(current_start=self._score_start)
             if self._aggregate_pending_tokens() >= self.pending_high_watermark:
                 self._enter_protected_full_kv(boundary="activation_commit_before_current_route_a_logical_append", current_start=self._score_start)
                 return self._protected_native_attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
@@ -885,6 +894,135 @@ class CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend(DeferredAc
             "protected_native_attention_calls": self.protected_native_attention_calls,
             "route_a_logical_state_next_position_at_end": None if self.state is None else self.state.next_position,
             "native_cache_mutated_or_freed": False,
+        }
+
+
+class RouteAGlobalProtectionCoordinator:
+    """Share an ordered activation observation/latch contract across layers.
+
+    This has deliberately logical positions, never cycles or timestamps.  A
+    crossing latches a request-global *next-epoch* action.  It cannot rewrite
+    lower layers which completed the current activation epoch before the first
+    layer-complete crossing observation.
+    """
+
+    def __init__(self, *, layers: tuple[int, ...], pending_high_watermark: int) -> None:
+        if not layers or tuple(sorted(layers)) != layers or len(set(layers)) != len(layers) or pending_high_watermark <= 0:
+            raise ValueError("global protection coordinator requires ordered layers and a positive watermark")
+        self.layers = layers
+        self.pending_high_watermark = pending_high_watermark
+        self.activation_observations: dict[int, dict[str, Any]] = {}
+        self.global_latch_event: dict[str, Any] | None = None
+        self.global_effective_cache_position: int | None = None
+
+    def observe_activation(self, *, layer: int, cache_position: int, aggregate_pending_tokens: int) -> None:
+        if layer not in self.layers or layer in self.activation_observations or aggregate_pending_tokens < 0:
+            raise AssertionError("invalid or duplicate global-protection activation observation")
+        if self.activation_observations and cache_position != next(iter(self.activation_observations.values()))["cache_position"]:
+            raise AssertionError("global-protection activation observations disagree on cache position")
+        if self.global_effective_cache_position is not None:
+            raise AssertionError("activation observation arrived after global next-epoch boundary closed")
+        observation = {
+            "layer": layer,
+            "cache_position": cache_position,
+            "aggregate_pending_tokens": aggregate_pending_tokens,
+            "at_or_above_high_watermark": aggregate_pending_tokens >= self.pending_high_watermark,
+        }
+        self.activation_observations[layer] = observation
+        if observation["at_or_above_high_watermark"] and self.global_latch_event is None:
+            self.global_latch_event = {
+                "latch_boundary": "first_layer_complete_activation_observation_at_or_above_high_watermark",
+                "first_trigger_observation_layer": layer,
+                "layers_completed_before_trigger_observation": layer,
+                "cache_position": cache_position,
+                "pending_high_watermark": self.pending_high_watermark,
+                "aggregate_pending_tokens_at_first_trigger": aggregate_pending_tokens,
+                "current_epoch_retroactive_reroute_permitted": False,
+                "reentry_permitted": False,
+            }
+        if set(self.activation_observations) == set(self.layers) and self.global_latch_event is not None:
+            self.global_effective_cache_position = cache_position + 1
+
+    def globally_effective_for(self, *, cache_position: int) -> bool:
+        if self.global_effective_cache_position is None:
+            return False
+        return cache_position >= self.global_effective_cache_position
+
+    def summary(self) -> dict[str, Any]:
+        complete = set(self.activation_observations) == set(self.layers)
+        if complete and self.global_latch_event is None:
+            raise AssertionError("complete A4.5.3 activation epoch lacks its required global latch")
+        if self.global_effective_cache_position is not None and not complete:
+            raise AssertionError("global next-epoch action became effective before activation observations completed")
+        return {
+            "layers": list(self.layers),
+            "pending_high_watermark": self.pending_high_watermark,
+            "activation_observations_by_layer": [self.activation_observations[layer] for layer in self.layers if layer in self.activation_observations],
+            "activation_observations_complete": complete,
+            "global_latch_event": self.global_latch_event,
+            "global_effective_cache_position": self.global_effective_cache_position,
+            "all_layer_global_effective_boundary": "next_decode_epoch_after_completion_of_current_activation_epoch" if self.global_effective_cache_position is not None else None,
+            "controller_timestamps_or_cycles_recorded": False,
+        }
+
+
+class GlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend(CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend):
+    """A4.5.3 local primitive plus next-epoch request-global native fallback."""
+
+    def __init__(self, *args, global_protection_coordinator: RouteAGlobalProtectionCoordinator, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.global_protection_coordinator = global_protection_coordinator
+        self.global_protection_event: dict[str, Any] | None = None
+        self.global_native_attention_calls = 0
+
+    def _on_activation_hydrated(self, *, current_start: int) -> None:
+        self.global_protection_coordinator.observe_activation(
+            layer=self.layer, cache_position=current_start, aggregate_pending_tokens=self._aggregate_pending_tokens()
+        )
+
+    def _enter_global_protected_full_kv(self, *, current_start: int) -> None:
+        if self.state is None or self.global_protection_event is not None:
+            raise AssertionError("global protection must freeze one existing Route-A state exactly once")
+        latch = self.global_protection_coordinator.global_latch_event
+        effective = self.global_protection_coordinator.global_effective_cache_position
+        if latch is None or effective is None or current_start < effective:
+            raise AssertionError("global protection entered before its declared next-epoch boundary")
+        self.global_protection_event = {
+            "mode_before_transition": "protected_full_kv" if self.protection_event is not None else "route_a_active",
+            "mode_after_transition": "request_global_protected_full_kv",
+            "boundary": "next_decode_epoch_after_completion_of_current_activation_epoch",
+            "cache_position_of_native_full_kv_fallback": current_start,
+            "global_latch_first_trigger_observation_layer": latch["first_trigger_observation_layer"],
+            "global_effective_cache_position": effective,
+            "route_a_state_next_position_frozen": self.state.next_position,
+            "native_cache_mutated_or_freed_by_transition": False,
+            "post_transition_route_a_logical_admission_or_drop": "disabled",
+            "reentry_permitted": False,
+        }
+
+    def _global_native_attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
+        if self.state is None or self.global_protection_event is None:
+            raise AssertionError("global native fallback lacks a frozen Route-A state")
+        frozen = self.global_protection_event["route_a_state_next_position_frozen"]
+        if self.state.next_position != frozen:
+            raise AssertionError("global native fallback mutated Route-A logical state")
+        self._clear_captured_mask()
+        self.global_native_attention_calls += 1
+        return original(module, query, key, value, attention_mask, dropout, **kwargs)
+
+    def attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
+        if query.shape[2] == 1 and self._score_start is not None and self.global_protection_coordinator.globally_effective_for(cache_position=self._score_start):
+            if self.global_protection_event is None:
+                self._enter_global_protected_full_kv(current_start=self._score_start)
+            return self._global_native_attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
+        return super().attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
+
+    def global_next_epoch_summary(self) -> dict[str, Any]:
+        return {
+            **self.capacity_protection_summary(),
+            "request_global_protection_committed": self.global_protection_event is not None,
+            "request_global_protection_event": self.global_protection_event,
+            "request_global_native_attention_calls": self.global_native_attention_calls,
         }
 
 
@@ -1396,6 +1534,33 @@ class CapacityProtectedDeferredActivationRouteAPolicyAttentionBackendSet(RouteAP
 
     def capacity_protection_summary(self) -> dict[str, Any]:
         return {"layers": [{"layer": layer, **backend.capacity_protection_summary()} for layer, backend in self.backends.items()]}
+
+
+class GlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackendSet(RouteAPolicyAttentionBackendSet):
+    """All-layer A4.5.3 set with one shared logical global coordinator."""
+
+    backend_class = GlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend
+
+    def __init__(self, *args, layers: tuple[int, ...], deferred_decode_steps: int, pending_high_watermark: int, **kwargs) -> None:
+        self.global_protection_coordinator = RouteAGlobalProtectionCoordinator(
+            layers=layers, pending_high_watermark=pending_high_watermark
+        )
+        super().__init__(
+            *args, layers=layers,
+            backend_extra_kwargs={
+                "deferred_decode_steps": deferred_decode_steps,
+                "pending_high_watermark": pending_high_watermark,
+                "global_protection_coordinator": self.global_protection_coordinator,
+            },
+            **kwargs,
+        )
+
+    def global_next_epoch_summary(self) -> dict[str, Any]:
+        controller = self.global_protection_coordinator.summary()
+        return {
+            "controller": controller,
+            "layers": [{"layer": layer, **backend.global_next_epoch_summary()} for layer, backend in self.backends.items()],
+        }
 
 
 class RouteAColdOwnershipAttentionBackendSet(RouteAPolicyAttentionBackendSet):

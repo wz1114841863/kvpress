@@ -1918,3 +1918,24 @@ resource contract treats request-global protection as executable.
 The model-on gate must declare offline cached-artifact loading before the
 Transformers/HF libraries initialize; a cache miss must fail explicitly rather
 than causing a network-dependent rerun or provenance substitution.
+
+### A4.5.3 — model-on next-epoch request-global protection semantic gate
+
+Implement the A4.5.2 controller scope without retrospectively changing the
+activation epoch. Each layer reports its post-hydration, pre-append aggregate
+pending state to one request-scoped coordinator. The first `pending >= C=1024`
+observation latches the request; only after every ordered layer completes that
+same activation epoch does the coordinator commit an all-layer native Full-KV
+fallback at the following `q_len=1` decode epoch. A current-epoch local crossing
+retains the A4.5.1 layer-local behavior; its Route-A state freezes immediately,
+while the global action must neither reroute earlier layers nor freeze a
+non-crossing layer until the next epoch.
+
+The runner must hash-bind the A4.5.2 reconciliation and its A4.5.1 sources,
+exercise separate Qwen and Llama fixed continuations on one visible GPU, and
+assert the ordered observations, latch layer, next-epoch boundary, native
+fallback on every layer, frozen Route-A state, no re-entry, and unchanged forced
+Full-KV inputs. This is functional control-semantics evidence only. It is not a
+controller implementation suitable for timing closure and does not measure or
+select FIFO capacity/service, page/bank/burst, merge/PE, scheduler, latency,
+traffic, throughput, energy, area, architecture parameters, or RTL.
