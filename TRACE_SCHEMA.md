@@ -2602,3 +2602,20 @@ FIFO/service, timing, throughput, energy, area, hardware-parameter, or RTL
 evidence.  Qwen and Llama A4.4 rows must remain separate until a later
 no-model cross-anchor contract report verifies shared *semantics* without
 numeric pooling.
+
+### Route-A A4.4.2 no-model cross-anchor activation-contract closeout
+
+`kvzap-route-a442-cross-anchor-activation-contract-1.0` accepts only a
+completed Qwen A4.4.1 report and completed Llama A4.4.0 report.  It SHA-256
+binds each report and every referenced post-commit gzip trace, verifies the
+three workloads independently for pure `D=8` Full-KV bypass, `D=1` one-commit
+activation, absent pre-commit Route-A logical state, retained native cache,
+positive post-commit same-mask guard work, and timestamp-free one-token decode
+trace rows.  It retains six separate anchor/workload rows and a boolean
+semantic-invariant matrix only.
+
+It has no cross-anchor mean, min/max, normalization, common capacity/traffic
+envelope, or parameter derivation.  The logical activation totals remain
+per-anchor reference accounting, not FIFO/PTE/page/bank/burst/merge/scheduler
+resources, physical capacity, allocator/HBM/DMA observations, timing,
+throughput, energy, area, architecture specification, or RTL evidence.

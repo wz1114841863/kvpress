@@ -2040,3 +2040,20 @@ cache reclamation, physical allocation/traffic/bursts, FIFO/service timing,
 or any common Qwen/Llama resource contract.  A subsequent no-model report may
 compare only per-anchor contract predicates; it must not pool activation
 counts or select hardware parameters.
+
+### A4.4.2 implementation — hash-bound cross-anchor contract closeout
+
+`tools/analyze_kvzap_route_a442_cross_anchor_activation_contract.py` runs no
+model.  It accepts only completed Qwen A4.4.1 and Llama A4.4.0 reports,
+recomputes report and referenced post-commit trace hashes, parses the gzip
+scalar traces, and rejects missing layer coverage, timestamps, non-decode
+rows, or a broken bypass/activation/numerical-guard invariant.  Its output has
+one preserved row for each anchor/workload and a boolean matrix for contract
+parity.  It intentionally does not calculate a Qwen/Llama average, range,
+common resource envelope, or microarchitectural parameter.
+
+Consequently, its completion is a no-model archival semantic decision, not
+measured or modeled hardware evidence.  Logical state totals remain inputs for
+the later Capacity Protection Contract and resource models; they must not be
+called physical memory, traffic, bursts, FIFO capacity, latency, throughput,
+energy, area, or an architecture specification.

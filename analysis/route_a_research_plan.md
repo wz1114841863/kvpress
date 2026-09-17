@@ -1848,3 +1848,16 @@ observable.  The required result is contract parity, not equal activation
 counts: Qwen and Llama must retain separate rows and no common hardware range
 may be derived.  Only after this Qwen gate can a no-model A4.4.2 report bind
 the two anchors' semantic invariants.  Capacity protection remains later.
+
+### A4.4.2 — non-pooled cross-anchor contract closeout
+
+The no-model closeout hash-binds completed Qwen A4.4.1 and Llama A4.4.0
+reports plus their post-commit traces.  It rejects any source that lacks pure
+Full-KV end-before-activation, exactly one `FULL_KV -> ROUTE_A` commit, absent
+pre-commit Route-A logical state, retained native cache, post-commit numerical
+guard work, or timestamp-free layer-complete decode events.  Its only shared
+result is a boolean semantic-contract matrix.  Activation counts, logical
+pages, pending, and packed state remain six independent rows: no averaging,
+range/envelope, or hardware parameter derivation is allowed.  Passing this
+step authorizes neither capacity sizing nor RTL; it only makes Capacity
+Protection Contract design the next missing mode/fallback question.
