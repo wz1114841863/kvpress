@@ -1802,3 +1802,15 @@ whether the *shape* of a functional Q sensitivity is observable on the second
 KVzap anchor, not whether Qwen and Llama share a numerical envelope. It does
 not convert the retained record-only diagnostic into a strict pass or select a
 FIFO, page/bank/burst, controller rate, merge precision, or hardware design.
+
+### A4.3.7 — cross-anchor Q-sensitivity closeout
+
+Before testing a Full-KV fallback transition, a no-model report binds the
+completed Qwen A4.3.5 and conditioned-Llama A4.3.6 reports. It validates the
+three-workload, Q=`{1,8,32}`, chunk-64 contracts and then reports only
+within-row Q=1-to-8/32 deltas plus a direction matrix for pending, logical
+packed state, and logical full-page state. Qwen and Llama rows remain separate:
+their different continuation conditions forbid numeric pooling, averaging, or a
+unified resource envelope. The result is a falsifiable functional-state
+comparison, not evidence for Q, FIFO, page/bank/burst, capacity, traffic,
+timing, merge precision, or any architecture parameter.

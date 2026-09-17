@@ -2548,3 +2548,15 @@ rejects cross-Q conditioned token-trajectory divergence. The fixed continuation
 is not natural-generation evidence; record-only ULP context is not a strict
 pass. Q and logical pending/page state do not define a hardware rate, FIFO,
 physical page, HBM traffic, timing, capacity, or architecture parameter.
+
+### Route-A A4.3.7 cross-anchor micro-event Q-sensitivity envelope
+
+`kvzap-route-a437-cross-anchor-microevent-envelope-1.0` SHA-256 binds only a
+completed Qwen A4.3.5 report and completed conditioned-Llama A4.3.6 report.
+It requires each input to retain its three workload rows, Q=`{1,8,32}`, and
+chunk-64 contract, and retains Llama's fixed continuation plus record-only ULP
+context. It emits a direction matrix and Q=1-to-8/32 deltas *within each
+model/workload row only*. It creates no cross-model average, min/max envelope,
+common capacity/traffic range, or hardware parameter. These scalar logical
+state summaries remain neither FIFO, physical-page, HBM, timing, nor hardware
+evidence.

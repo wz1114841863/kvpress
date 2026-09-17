@@ -1988,3 +1988,14 @@ layer-contiguous lifecycle records. The aggregate accepts only those nine
 sources. It retains M5.1's record-only ULP context as non-strict evidence and
 does not select cross-model or Llama-specific controller, FIFO, page, bank,
 burst, merge, or architecture parameters.
+
+### A4.3.7 implementation — non-pooled cross-anchor Q report
+
+The A4.3.7 analyzer accepts only the completed A4.3.5 Qwen and A4.3.6 Llama
+aggregate reports. It hash-binds both, rejects incomplete Q/chunk/workload
+contracts, preserves the Llama fixed-continuation and record-only ULP context,
+and emits six separate model/workload direction rows. Each row compares only
+its own Q=1, 8, and 32 logical state summaries. The report deliberately has no
+cross-model statistic, common range, or hardware selection; a sign difference
+between later rows is dependence evidence rather than a reason to change any
+accepted source.
