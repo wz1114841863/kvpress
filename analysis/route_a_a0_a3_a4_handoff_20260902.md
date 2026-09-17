@@ -2057,3 +2057,20 @@ measured or modeled hardware evidence.  Logical state totals remain inputs for
 the later Capacity Protection Contract and resource models; they must not be
 called physical memory, traffic, bursts, FIFO capacity, latency, throughput,
 energy, area, or an architecture specification.
+
+### A4.5.0 implementation — logical Capacity Protection Contract replay
+
+`tools/analyze_kvzap_route_a450_capacity_protection_replay.py` is a no-model,
+trace-derived boundary replay on the completed A4.4 Qwen/Llama sources. It
+first invokes the A4.4.2 input validators, then scans declared logical pending
+high-watermarks against the maximum selected-layer aggregate pending state at
+activation and subsequent pre-append boundaries. A crossing enters a one-way
+`protected_full_kv` state: native Full-KV is already retained, Route-A logical
+admission/drop is counterfactually frozen, and no re-entry occurs in the
+bounded trace. It retains every anchor/workload/high-watermark row separately.
+
+This is deliberately not a FIFO occupancy, capacity, overflow, service-rate,
+or controller-timing result. The replay cannot install a real native attention
+switch or prove output preservation; a later model-on protection gate is
+required. It contains no physical allocation/traffic/burst, HBM/DMA, latency,
+throughput, energy, area, architecture-specification, or RTL claim.

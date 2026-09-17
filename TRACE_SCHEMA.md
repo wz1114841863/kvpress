@@ -2619,3 +2619,21 @@ envelope, or parameter derivation.  The logical activation totals remain
 per-anchor reference accounting, not FIFO/PTE/page/bank/burst/merge/scheduler
 resources, physical capacity, allocator/HBM/DMA observations, timing,
 throughput, energy, area, architecture specification, or RTL evidence.
+
+### Route-A A4.5.0 logical capacity-protection boundary replay
+
+`kvzap-route-a450-capacity-protection-boundary-replay-1.0` consumes only
+hash-validated A4.4.1/A4.4.0 reports and their post-commit logical traces. It
+sweeps declared positive integer pending high-watermarks over the maximum
+per-selected-layer aggregate pending state. At the activation boundary or a
+later pre-append logical boundary, a crossing moves the *counterfactual*
+request mode one-way from `route_a_active` to `protected_full_kv`: later
+Route-A logical admissions and drops are disabled, re-entry is disallowed, and
+the retained native Full-KV cache is the fallback authority.
+
+The high-watermarks are sensitivity labels only; they are not observed FIFO
+depths, capacities, overflows, service rates, physical resource sizes, or
+hardware selections. The scalar replay cannot prove a real controller avoids
+within-append transients, performs a native attention switch, or preserves
+model outputs. It records no transfer, HBM/DMA traffic, allocation, timing,
+latency, throughput, energy, area, architecture specification, or RTL result.

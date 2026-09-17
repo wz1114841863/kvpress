@@ -1861,3 +1861,21 @@ pages, pending, and packed state remain six independent rows: no averaging,
 range/envelope, or hardware parameter derivation is allowed.  Passing this
 step authorizes neither capacity sizing nor RTL; it only makes Capacity
 Protection Contract design the next missing mode/fallback question.
+
+### A4.5.0 — logical capacity-protection boundary replay
+
+Before a model-on protection switch is attempted, replay the A4.4 activation
+snapshots and post-commit traces under explicit logical pending high-watermark
+sensitivity points. The first scope is intentionally conservative and
+specified: maximum aggregate pending state of any selected layer. A crossing at
+the activation boundary or before a later logical append transitions the
+request one-way to `PROTECTED_FULL_KV`; the retained native cache becomes the
+fallback authority, Route-A logical admission/drop stops, and re-entry is not
+permitted in the bounded trace. This checks a falsifiable control-state
+contract, not a FIFO implementation. The thresholds do not select capacity,
+service rate, page/bank/burst, scheduler, controller timing, or hardware.
+
+A later model-on gate must verify that this control action can be inserted
+without changing the required Full-KV fallback semantics. Only after that may
+a resource model study high-watermark/service interactions; neither replay
+alone supplies physical capacity or overflow evidence.
