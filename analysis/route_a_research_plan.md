@@ -1879,3 +1879,21 @@ A later model-on gate must verify that this control action can be inserted
 without changing the required Full-KV fallback semantics. Only after that may
 a resource model study high-watermark/service interactions; neither replay
 alone supplies physical capacity or overflow evidence.
+
+### A4.5.1 — model-on layer-local protection semantic gate
+
+Implement the smallest executable protection primitive before a resource
+model: each attention-layer hook retains native Full-KV cache, hydrates
+Route-A once under the A4.4 fixed continuation, and at `C=1024` aggregate
+pending freezes that layer's Route-A state and uses native attention for its
+current and subsequent calls. Bind the A4.5.0 `C=1024` witness per workload;
+assert one-way transition, native call use, frozen `next_position`, contiguous
+predictor journals, and unchanged forced Full-KV token inputs. Run Qwen and
+conditioned Llama separately on one visible GPU.
+
+The scope is layer-local. A4.5.0's request-global maximum-over-layers policy
+remains a conservative control-plane counterfactual; it is not silently
+implemented by a hook that cannot preinspect later layers. This gate cannot
+select `C`, FIFO capacity/service, page/bank/burst, merge/PE, scheduler,
+controller timing, or architecture parameters, and does not measure allocator
+behavior, physical traffic, timing, performance, or hardware cost.

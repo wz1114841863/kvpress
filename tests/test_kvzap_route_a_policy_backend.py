@@ -4,7 +4,7 @@ import torch
 from transformers import DynamicCache
 
 from kvpress.route_a_attention import RouteALifecycleTransitionRecorder
-from kvpress.route_a_policy_backend import DeferredActivationRouteAPolicyAttentionBackend, DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackend, cache_position_contiguity_diagnostic, compare_original_mask_events
+from kvpress.route_a_policy_backend import CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend, DeferredActivationRouteAPolicyAttentionBackend, DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackend, cache_position_contiguity_diagnostic, compare_original_mask_events
 
 
 def fake_model(layer_count=1):
@@ -86,6 +86,54 @@ def test_deferred_backend_keeps_full_kv_before_commit_then_hydrates_route_a_once
     assert event["route_a_logical_state_existed_before_commit"] is False
     assert summary["native_cache_mutated_or_freed"] is False
     assert backend.state is not None and backend.state.next_position == 5
+
+
+def test_capacity_protection_freezes_route_a_at_activation_and_delegates_later_calls_to_native():
+    backend = CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend(
+        fake_model(), object(), layer=0, kv_head=0, threshold=0.0,
+        window=1, page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6,
+        deferred_decode_steps=1, pending_high_watermark=1,
+    )
+    module = SimpleNamespace(scaling=1.0)
+    keys = torch.arange(12, dtype=torch.float32).reshape(1, 1, 6, 2)
+    values = keys + 10
+    native_calls = []
+
+    def original(*_args, **_kwargs):
+        native_calls.append(True)
+        return torch.zeros(1, 3, 1, 2), None
+
+    # Prefill and first decode are the authoritative Full-KV prefix.
+    backend._keep_mask, backend._score_start = torch.tensor([[[True, True, True]]]), 0
+    backend._mask_events.update({(0, position): (True, 0.0) for position in range(3)})
+    backend.attention(original, module, torch.ones(1, 3, 3, 2), keys[:, :, :3], values[:, :, :3], None, 0.0, scaling=1.0)
+    backend._keep_mask, backend._score_start = torch.tensor([[[True]]]), 3
+    backend._mask_events[(0, 3)] = (True, 0.0)
+    backend.attention(original, module, torch.ones(1, 3, 1, 2), keys[:, :, :4], values[:, :, :4], None, 0.0, scaling=1.0)
+
+    # Hydration is a commit boundary; its pending aggregate deliberately crosses
+    # the logical probe watermark before the current token may be appended.
+    backend._keep_mask, backend._score_start = torch.tensor([[[True]]]), 4
+    backend.attention(original, module, torch.ones(1, 3, 1, 2), keys[:, :, :5], values[:, :, :5], None, 0.0, scaling=1.0)
+    summary = backend.capacity_protection_summary()
+    event = summary["capacity_protection_event"]
+    assert event is not None
+    assert event["boundary"] == "activation_commit_before_current_route_a_logical_append"
+    assert event["mode_after_transition"] == "protected_full_kv"
+    assert event["route_a_state_next_position_frozen"] == 4
+    assert summary["protected_native_attention_calls"] == 1
+    assert backend.state is not None and backend.state.next_position == 4
+
+    # A later captured predictor decision is journal-only; protected mode clears
+    # it and cannot append/admit/drop into the now-frozen Route-A state.
+    backend._keep_mask, backend._score_start = torch.tensor([[[False]]]), 5
+    backend._mask_events[(0, 5)] = (False, 0.0)
+    backend.attention(original, module, torch.ones(1, 3, 1, 2), keys, values, None, 0.0, scaling=1.0)
+    summary = backend.capacity_protection_summary()
+    assert summary["protected_native_attention_calls"] == 2
+    assert summary["route_a_logical_state_next_position_at_end"] == 4
+    assert summary["native_cache_mutated_or_freed"] is False
+    assert len(native_calls) == 4
 
 
 def test_prefill_micro_event_backend_splits_real_state_append_into_bounded_trace_events():

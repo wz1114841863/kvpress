@@ -2074,3 +2074,23 @@ or controller-timing result. The replay cannot install a real native attention
 switch or prove output preservation; a later model-on protection gate is
 required. It contains no physical allocation/traffic/burst, HBM/DMA, latency,
 throughput, energy, area, architecture-specification, or RTL claim.
+
+### A4.5.1 implementation — model-on layer-local protection primitive
+
+`CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend` extends the
+default-off deferred reference with a one-way local transition. At the
+post-hydration pending boundary it records scalar state, freezes Route-A
+`next_position`, clears the captured current mask, and delegates current/later
+calls to retained native Full-KV attention. It rejects missing native fallback,
+post-freeze state mutation, below-boundary transition, or re-entry. Default
+KVzap pruning behavior remains unchanged.
+
+`tools/run_kvzap_route_a451_capacity_protection_semantic_gate.py` binds each
+anchor A4.4 report and its A4.5.0 `C=1024` witness before model load, then uses
+the fixed continuation with forced Full-KV token inputs. It produces separate
+Qwen/Llama reports and requires one visible CUDA device. This is a layer-local
+primitive, not a request-global controller/look-ahead or within-append capacity
+guarantee. `C=1024` is a logical probe, not FIFO capacity/service or a hardware
+choice. Results remain functional only: no allocator/reclamation, physical
+capacity, HBM/DMA traffic, burst, timing, latency, throughput, energy, area,
+architecture specification, or RTL conclusion is authorized.

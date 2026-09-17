@@ -800,6 +800,94 @@ class DeferredActivationRouteAPolicyAttentionBackend(RouteAPolicyAttentionBacken
         }
 
 
+class CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend(DeferredActivationRouteAPolicyAttentionBackend):
+    """One layer's executable Route-A-active to protected-Full-KV primitive.
+
+    This is deliberately layer-local: an attention hook cannot synchronously
+    inspect future layers' cache prefixes before their own invocation.  It is
+    the model-on primitive for a later request-global controller, not that
+    controller itself.  On a declared aggregate-pending boundary it retains
+    native Full KV, freezes the logical Route-A state, and delegates current
+    and later attention calls to the native implementation.
+    """
+
+    def __init__(self, *args, pending_high_watermark: int, **kwargs) -> None:
+        if pending_high_watermark <= 0:
+            raise ValueError("pending_high_watermark must be positive")
+        super().__init__(*args, **kwargs)
+        self.pending_high_watermark = pending_high_watermark
+        self.protection_event: dict[str, Any] | None = None
+        self._protected_frozen_next_position: int | None = None
+        self.protected_native_attention_calls = 0
+
+    def _aggregate_pending_tokens(self) -> int:
+        if self.state is None:
+            raise AssertionError("capacity protection requires Route-A state")
+        return sum(int(self.state.state_summary(head)["pending_tokens"]) for head in range(self.state.heads))
+
+    def _enter_protected_full_kv(self, *, boundary: str, current_start: int) -> None:
+        if self.state is None or self.protection_event is not None:
+            raise AssertionError("capacity protection transition may occur exactly once after activation")
+        pending = self._aggregate_pending_tokens()
+        if pending < self.pending_high_watermark:
+            raise AssertionError("capacity protection entered below its declared logical boundary")
+        self._protected_frozen_next_position = self.state.next_position
+        self.protection_event = {
+            "mode_before_transition": "route_a_active",
+            "mode_after_transition": "protected_full_kv",
+            "boundary": boundary,
+            "cache_position_of_native_full_kv_fallback": current_start,
+            "aggregate_pending_tokens_at_transition": pending,
+            "pending_high_watermark": self.pending_high_watermark,
+            "route_a_state_next_position_frozen": self._protected_frozen_next_position,
+            "native_cache_mutated_or_freed_by_transition": False,
+            "post_transition_route_a_logical_admission_or_drop": "disabled",
+            "reentry_permitted": False,
+        }
+
+    def _protected_native_attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
+        if self.state is None or self._protected_frozen_next_position is None:
+            raise AssertionError("protected Full-KV fallback lacks frozen Route-A state")
+        if self.state.next_position != self._protected_frozen_next_position:
+            raise AssertionError("protected fallback mutated Route-A logical state")
+        self._clear_captured_mask()
+        self.protected_native_attention_calls += 1
+        return original(module, query, key, value, attention_mask, dropout, **kwargs)
+
+    def attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
+        if self.protection_event is not None:
+            return self._protected_native_attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
+        # A post-service state is the next logical append's boundary.  This
+        # check occurs before appending the newly scored K/V to Route-A state.
+        if self.state is not None and query.shape[2] == 1 and self._aggregate_pending_tokens() >= self.pending_high_watermark:
+            if self._score_start is None:
+                raise AssertionError("capacity protection lacks current cache position")
+            self._enter_protected_full_kv(boundary="post_commit_before_next_route_a_logical_append", current_start=self._score_start)
+            return self._protected_native_attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
+        if self.state is None and query.shape[2] == 1 and self.full_kv_prefix_decode_calls >= self.deferred_decode_steps:
+            if self._score_start is None:
+                raise AssertionError("activation lacks captured cache position")
+            self._activate(key=key, value=value, current_start=self._score_start)
+            if self._aggregate_pending_tokens() >= self.pending_high_watermark:
+                self._enter_protected_full_kv(boundary="activation_commit_before_current_route_a_logical_append", current_start=self._score_start)
+                return self._protected_native_attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
+        return super().attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
+
+    def capacity_protection_summary(self) -> dict[str, Any]:
+        if self.protection_event is not None and self.protected_native_attention_calls <= 0:
+            raise AssertionError("protected Full-KV transition did not invoke native attention")
+        return {
+            **self.deferred_activation_summary(),
+            "pending_high_watermark": self.pending_high_watermark,
+            "mode_at_trace_end": "protected_full_kv" if self.protection_event is not None else ("route_a_active" if self.state is not None else "full_kv_bypass"),
+            "capacity_protection_committed": self.protection_event is not None,
+            "capacity_protection_event": self.protection_event,
+            "protected_native_attention_calls": self.protected_native_attention_calls,
+            "route_a_logical_state_next_position_at_end": None if self.state is None else self.state.next_position,
+            "native_cache_mutated_or_freed": False,
+        }
+
+
 class DenseSameMaskAttentionBackend(RouteAPolicyAttentionBackend):
     """Policy-on dense KVzap control with no pending, admission, or pages.
 
@@ -1292,6 +1380,22 @@ class DeferredActivationRouteAPolicyAttentionBackendSet(RouteAPolicyAttentionBac
 
     def deferred_activation_summary(self) -> dict[str, Any]:
         return {"layers": [{"layer": layer, **backend.deferred_activation_summary()} for layer, backend in self.backends.items()]}
+
+
+class CapacityProtectedDeferredActivationRouteAPolicyAttentionBackendSet(RouteAPolicyAttentionBackendSet):
+    """All-layer set for the executable layer-local protection primitive."""
+
+    backend_class = CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend
+
+    def __init__(self, *args, deferred_decode_steps: int, pending_high_watermark: int, **kwargs) -> None:
+        super().__init__(
+            *args,
+            backend_extra_kwargs={"deferred_decode_steps": deferred_decode_steps, "pending_high_watermark": pending_high_watermark},
+            **kwargs,
+        )
+
+    def capacity_protection_summary(self) -> dict[str, Any]:
+        return {"layers": [{"layer": layer, **backend.capacity_protection_summary()} for layer, backend in self.backends.items()]}
 
 
 class RouteAColdOwnershipAttentionBackendSet(RouteAPolicyAttentionBackendSet):

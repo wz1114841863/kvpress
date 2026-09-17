@@ -2637,3 +2637,25 @@ hardware selections. The scalar replay cannot prove a real controller avoids
 within-append transients, performs a native attention switch, or preserves
 model outputs. It records no transfer, HBM/DMA traffic, allocation, timing,
 latency, throughput, energy, area, architecture specification, or RTL result.
+
+### Route-A A4.5.1 model-on layer-local capacity-protection semantic gate
+
+`kvzap-route-a451-capacity-protection-semantic-gate-1.0` hash-binds one
+completed anchor-specific A4.4 activation report and the completed A4.5.0
+replay before model load. For each fixed continuation workload it uses the
+declared `C=1024` logical pending witness to exercise a one-way, **layer-local**
+`route_a_active -> protected_full_kv` transition. After hydration from retained
+native Full-KV history, a layer whose aggregate pending tokens across KV heads
+reaches `C` freezes its Route-A state, clears the current captured mask, and
+uses native attention for current and later calls. The report retains scalar
+transition state, frozen logical position, native-call count, and whether
+other layers remain Route-A active; journals must remain contiguous.
+
+This is an executable attention-hook primitive, not A4.5.0's request-global
+controller replay. It proves neither controller look-ahead/synchronization nor
+prevention of a within-append transient. `C=1024` is a logical probe, not FIFO
+depth/capacity, overflow observation, service rate, or hardware choice. Forced
+Full-KV tokens establish bounded functional inputs only. No field is
+natural-generation/quality, allocator/reclamation, physical capacity, HBM/DMA
+traffic, burst, timing, latency, throughput, energy, area, architecture-spec,
+or RTL evidence. Qwen and Llama reports remain separate and cannot be pooled.
