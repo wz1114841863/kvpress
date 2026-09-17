@@ -2727,3 +2727,20 @@ is explicitly not a Python allocator/free observation, allocated bytes,
 physical-page release, HBM/DMA traffic, burst, FIFO capacity/service/overflow,
 controller timing, latency, throughput, energy, area, architecture
 specification, or RTL evidence. Qwen and Llama remain separate.
+
+### Route-A A4.6.0 Route-A-active long-horizon steady-state gate
+
+`kvzap-route-a460-route-a-active-steady-state-gate-1.0` hash-binds completed
+A4.4.2 activation-contract evidence and records a model-on, fixed 64-token
+continuation after a `D=1` Full-KV-to-Route-A commit. The active branch must
+remain `route_a_active`; its Full-KV run exists only to provide fixed token
+inputs and must not become a fallback or backing path. Per workload it stores
+the timestamp-free post-commit lifecycle trace and an untimed final-32-decode
+append-opportunity analysis of sustained non-decreasing pending-growth witnesses.
+
+The trace's hot/pending/packed/page fields and tail witness are functional
+logical state, not an observed queue, arrival/service rate, FIFO occupancy,
+capacity, overflow, physical allocation, bytes, HBM/DMA traffic, burst, timing,
+latency, throughput, energy, area, architecture specification, or RTL evidence.
+The finite horizon cannot prove indefinite stability or select hardware
+parameters. Qwen and Llama rows remain separate.

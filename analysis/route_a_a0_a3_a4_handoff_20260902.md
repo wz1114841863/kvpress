@@ -2157,3 +2157,19 @@ forced Full-KV inputs, and retained native cache. Its inventory is functional
 state only: it cannot measure allocation/free behavior, bytes, physical
 capacity, HBM/DMA traffic, bursts, FIFO/service/overflow, timing, latency,
 throughput, energy, area, architecture specification, or RTL.
+
+### A4.6.0 implementation — Route-A-active long-horizon steady-state gate
+
+`tools/run_kvzap_route_a460_steady_state_gate.py` binds A4.4.2 before model
+load, then uses a fixed 64-token Full-KV reference only as token-input source.
+After the `D=1` activation commit its Route-A branch remains active and rejects
+fallback/protection. A lifecycle recorder exports all-layer/all-KV-head,
+timestamp-free post-commit transitions; its final 32 decode append opportunities
+are checked for a sustained non-decreasing pending-growth witness. This is the
+normal persistent-packed path, not a permanent native Full-KV backing design.
+
+The finite-horizon tail is functional logical state only. It is not a proof of
+indefinite stability or an observed service timeline, FIFO capacity/occupancy,
+overflow, physical allocation/traffic/burst, timing, latency, throughput,
+energy, area, architecture specification, or RTL. Qwen and Llama outputs stay
+separate and select no hardware parameter.

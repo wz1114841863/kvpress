@@ -1959,3 +1959,24 @@ allocator behavior, HBM/DMA traffic, bursts, FIFO occupancy/capacity, service
 rate, overflow, timing, latency, throughput, energy, area, or a hardware
 parameter. A passing tombstone gate is a prerequisite to later fallback
 dual-residency/workload-envelope modeling, not that model or an RTL decision.
+
+### A4.6.0 — Route-A-active long-horizon steady-state gate
+
+With A4.5 Full-KV-backed exit closed as a candidate protection upper bound,
+return to the required normal path. Hash-bind A4.4.2 activation semantics and
+run each anchor/workload under one fixed 64-token continuation: one native
+Full-KV prefix decode commits Route-A, then every remaining decode call must
+remain Route-A active. Full-KV supplies only the fixed token-input reference;
+the active branch may not enter protection or fallback. Record timestamp-free
+post-commit logical lifecycle transitions and separately analyze the final 32
+decode append opportunities per layer/KV-head for sustained non-decreasing
+pending-growth witnesses.
+
+This is a bounded functional/trace-derived normal-path check, not proof of
+indefinite stability. Lifecycle opportunities have no arrival/service time,
+FIFO occupancy/capacity, overflow, controller timing, or physical interpretation.
+It selects no service rate, FIFO/page/bank/burst/merge/PE/scheduler parameter
+and reports no traffic, latency, throughput, energy, area, architecture, or RTL
+result. Qwen and Llama remain separate. A failure or tail-growth witness routes
+the next study to Route-A-native protection; a pass permits a later explicit
+resource-model service-envelope study.
