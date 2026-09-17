@@ -17,6 +17,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+# Transformers and huggingface_hub cache the offline mode during import.  Set
+# this before either package is imported so a missing cached auxiliary file
+# fails explicitly instead of making an incidental Hub metadata request.
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 import torch
 import transformers
 from huggingface_hub import snapshot_download
@@ -197,7 +203,6 @@ def main() -> None:
     config = {key: str(value) if isinstance(value, Path) else value for key, value in vars(args).items() if key != "output_dir"}
     started = {"schema_version": SCHEMA, "status": "started", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "boundaries": ["A4.5.1 is a layer-local functional primitive, not A4.5.0's request-global control-plane replay.", "C=1024 is a logical probe point bound to A4.5.0, not a FIFO depth, capacity selection, or hardware parameter."]}
     (args.output_dir / "a451_capacity_protection_started.json").write_text(json.dumps(started, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.environ["HF_HUB_OFFLINE"] = "1"; os.environ["TRANSFORMERS_OFFLINE"] = "1"
     print(f"Loading A4.5.1 {args.anchor} base model: {model_name}", flush=True)
     pipe = pipeline("kv-press-text-generation", model=model_name, revision=model_revision, device_map="auto", dtype="auto")
     if getattr(pipe.model.config, "_commit_hash", None) != model_revision:

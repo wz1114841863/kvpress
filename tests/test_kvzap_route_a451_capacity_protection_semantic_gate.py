@@ -1,6 +1,13 @@
 import json
+from pathlib import Path
 
 from tools.run_kvzap_route_a451_capacity_protection_semantic_gate import read_a450_row, validate_protection
+
+
+def test_a451_declares_offline_mode_before_hf_library_imports():
+    source = Path("tools/run_kvzap_route_a451_capacity_protection_semantic_gate.py").read_text(encoding="utf-8")
+    assert source.index('os.environ["HF_HUB_OFFLINE"] = "1"') < source.index("import transformers")
+    assert source.index('os.environ["TRANSFORMERS_OFFLINE"] = "1"') < source.index("from huggingface_hub import snapshot_download")
 
 
 def test_a451_requires_hash_bound_a450_c1024_witness(tmp_path):

@@ -2659,3 +2659,7 @@ Full-KV tokens establish bounded functional inputs only. No field is
 natural-generation/quality, allocator/reclamation, physical capacity, HBM/DMA
 traffic, burst, timing, latency, throughput, energy, area, architecture-spec,
 or RTL evidence. Qwen and Llama reports remain separate and cannot be pooled.
+The runner declares its cached model/predictor artifact requirement before
+importing Transformers/huggingface_hub: it may not issue an incidental Hub
+metadata request. A missing local artifact is a blocked provenance/runtime
+condition, not a reason to substitute a model, revision, or network result.

@@ -1897,3 +1897,6 @@ implemented by a hook that cannot preinspect later layers. This gate cannot
 select `C`, FIFO capacity/service, page/bank/burst, merge/PE, scheduler,
 controller timing, or architecture parameters, and does not measure allocator
 behavior, physical traffic, timing, performance, or hardware cost.
+The model-on gate must declare offline cached-artifact loading before the
+Transformers/HF libraries initialize; a cache miss must fail explicitly rather
+than causing a network-dependent rerun or provenance substitution.

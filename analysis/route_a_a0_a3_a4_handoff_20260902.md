@@ -2094,3 +2094,6 @@ guarantee. `C=1024` is a logical probe, not FIFO capacity/service or a hardware
 choice. Results remain functional only: no allocator/reclamation, physical
 capacity, HBM/DMA traffic, burst, timing, latency, throughput, energy, area,
 architecture specification, or RTL conclusion is authorized.
+The runner establishes offline mode before importing the HF libraries. Thus a
+missing cached model/predictor auxiliary file fails explicitly; it must not
+cause an incidental metadata download or a substituted provenance path.
