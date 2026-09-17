@@ -1836,3 +1836,15 @@ mapping, merge/PE, scheduler, controller timing, or a hardware architecture.
 The native cache remains retained in this functional reference.  Capacity
 pressure handling after activation (`ROUTE_A_ACTIVE -> protected/degraded`) is
 intentionally a later Capacity Protection Contract, not A4.4.0.
+
+### A4.4.1 — Qwen activation-contract anchor
+
+Before any cross-anchor consolidation or capacity-pressure study, repeat the
+A4.4.0 contract on Route-A's Qwen3-8B anchor.  Bind frozen Gate-A provenance
+and the completed A4.3.5 three-workload Qwen source, retain Qwen's accepted
+quantization-aware numerical guard, and use a declared fixed continuation only
+to ensure both `D=8` end-before-activation and `D=1` activation branches are
+observable.  The required result is contract parity, not equal activation
+counts: Qwen and Llama must retain separate rows and no common hardware range
+may be derived.  Only after this Qwen gate can a no-model A4.4.2 report bind
+the two anchors' semantic invariants.  Capacity protection remains later.

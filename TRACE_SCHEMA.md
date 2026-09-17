@@ -2583,3 +2583,22 @@ physical capacity, FIFO occupancy/depth, service rate, PTE width, page/bank
 mapping, merge precision/PE, scheduler/controller timing, latency, throughput,
 energy, area, architecture specification, or RTL evidence.  The two model
 anchors remain separate; this Llama gate creates no common hardware envelope.
+
+### Route-A A4.4.1 Qwen activation and benefit-bypass contract
+
+`kvzap-route-a441-qwen-deferred-activation-contract-1.0` is the independently
+conditioned Qwen counterpart to A4.4.0.  It hash-binds the frozen Qwen Gate-A
+manifest/mask and the completed A4.3.5 Qwen report, requires exactly one
+visible CUDA device, and runs retrieval, summarization, and reasoning under a
+declared fixed eight-token non-EOS continuation.  `D=8` must remain pure native
+Full KV through end; `D=1` must commit exactly once from Full-KV history to
+logical Route-A state.  It retains Qwen's existing quantization-aware hard
+executed-dtype close envelope plus record-only ULP diagnostics.
+
+Its report and post-commit traces retain only scalar lifecycle state and
+logical page metadata.  They are functional/trace-derived evidence, not
+natural-output, quality, allocator, physical-capacity, HBM, DMA, burst,
+FIFO/service, timing, throughput, energy, area, hardware-parameter, or RTL
+evidence.  Qwen and Llama A4.4 rows must remain separate until a later
+no-model cross-anchor contract report verifies shared *semantics* without
+numeric pooling.

@@ -2021,3 +2021,22 @@ or any final resource/microarchitecture choice.  It is a conditioned Llama
 anchor gate and deliberately cannot pool Qwen and Llama into one hardware
 contract.  Capacity protection after Route-A activation remains a distinct
 future contract.
+
+### A4.4.1 implementation — Qwen deferred activation gate
+
+`tools/run_kvzap_qwen_a441_deferred_activation_gate.py` applies the same
+default-off backend transition to the Qwen3-8B Route-A anchor under its frozen
+Gate-A model/predictor provenance and accepted quantization-aware numerical
+guard.  It binds the completed A4.3.5 Qwen source only as prior workload
+provenance, not as a replayed mask or numerical pool.  Each workload has a
+native Full-KV reference, `D=8` pure-bypass branch, and `D=1` one-commit branch
+with forced Full-KV token inputs after activation.  The gate requires a
+single-visible-device execution environment because the Python hook is not an
+accepted multi-device automatic-dispatch integration mode.
+
+Its scalar commit/page and post-commit lifecycle outputs are functional and
+trace-derived only.  They prove neither natural generation behavior nor native
+cache reclamation, physical allocation/traffic/bursts, FIFO/service timing,
+or any common Qwen/Llama resource contract.  A subsequent no-model report may
+compare only per-anchor contract predicates; it must not pool activation
+counts or select hardware parameters.
