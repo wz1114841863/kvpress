@@ -4,7 +4,7 @@ import torch
 from transformers import DynamicCache
 
 from kvpress.route_a_attention import RouteALifecycleTransitionRecorder
-from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackend, cache_position_contiguity_diagnostic, compare_original_mask_events
+from kvpress.route_a_policy_backend import DeferredActivationRouteAPolicyAttentionBackend, DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackend, cache_position_contiguity_diagnostic, compare_original_mask_events
 
 
 def fake_model(layer_count=1):
@@ -45,6 +45,47 @@ def test_selected_decode_group_uses_route_state_without_calling_original_and_rea
     assert backend.policy_decode_calls == 1
     assert backend.comparisons[0]["pending_tokens"] > 0
     assert backend.comparisons[0]["packed_tokens"] > 0
+
+
+def test_deferred_backend_keeps_full_kv_before_commit_then_hydrates_route_a_once():
+    backend = DeferredActivationRouteAPolicyAttentionBackend(fake_model(), object(), layer=0, kv_head=0, threshold=0.0, window=1, page_tokens=2, admission_budget=2, rtol=1e-5, atol=1e-6, deferred_decode_steps=1)
+    module = SimpleNamespace(scaling=1.0)
+    keys = torch.arange(10, dtype=torch.float32).reshape(1, 1, 5, 2)
+    values = keys + 10
+    original_calls = []
+
+    def original(*_args, **_kwargs):
+        original_calls.append(True)
+        return torch.zeros(1, 3, 1, 2), None
+
+    # A prefill and first q_len=1 invocation are native Full-KV only.
+    backend._keep_mask, backend._score_start = torch.tensor([[[True, False, True]]]), 0
+    backend._mask_events.update({(0, position): (keep, 0.0) for position, keep in enumerate((True, False, True))})
+    backend.attention(original, module, torch.ones(1, 3, 3, 2), keys[:, :, :3], values[:, :, :3], None, 0.0, scaling=1.0)
+    backend._keep_mask, backend._score_start = torch.tensor([[[True]]]), 3
+    backend._mask_events[(0, 3)] = (True, 0.0)
+    backend.attention(original, module, torch.ones(1, 3, 1, 2), keys[:, :, :4], values[:, :, :4], None, 0.0, scaling=1.0)
+    assert original_calls == [True, True]
+    assert backend.state is None
+    assert backend.deferred_activation_summary()["mode_at_trace_end"] == "full_kv_bypass"
+
+    # The next decode call is the explicit commit. Its current decision is
+    # appended after historical Full-KV hydration and must not invoke dense.
+    backend._keep_mask, backend._score_start = torch.tensor([[[True]]]), 4
+    output, weights = backend.attention(
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("committed Route-A called native attention")),
+        module, torch.ones(1, 3, 1, 2), keys, values, None, 0.0, scaling=1.0,
+    )
+    assert weights is None and output.shape == (1, 3, 1, 2)
+    summary = backend.deferred_activation_summary()
+    event = summary["activation_event"]
+    assert event is not None
+    assert event["mode_before_commit"] == "full_kv_bypass"
+    assert event["mode_after_commit"] == "route_a_active"
+    assert event["history_token_count"] == 4
+    assert event["route_a_logical_state_existed_before_commit"] is False
+    assert summary["native_cache_mutated_or_freed"] is False
+    assert backend.state is not None and backend.state.next_position == 5
 
 
 def test_prefill_micro_event_backend_splits_real_state_append_into_bounded_trace_events():

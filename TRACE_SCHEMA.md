@@ -2560,3 +2560,26 @@ model/workload row only*. It creates no cross-model average, min/max envelope,
 common capacity/traffic range, or hardware parameter. These scalar logical
 state summaries remain neither FIFO, physical-page, HBM, timing, nor hardware
 evidence.
+
+### Route-A A4.4.0 Full-KV-to-Route-A activation and benefit-bypass contract
+
+`kvzap-route-a440-deferred-activation-contract-1.0` is a functional gate
+conditioned on the completed Llama M0/M1/M5.1 provenance and M5.1's declared
+eight-token non-EOS continuation.  For each of retrieval, summarization, and
+reasoning it records two distinct deferred-policy branches: an
+end-before-activation branch (`D=8`) that remains native Full KV through end,
+and an activation branch (`D=1`) that transitions
+`full_kv_bypass -> route_a_active` at an explicit q_len=1 commit boundary.
+
+Before commit, the predictor decision journal is permitted but Route-A logical
+hot/pending/packed records, admissions, logical pages, and logical page-table
+entries must not exist.  At commit, the report records only scalar prefix
+length, mature-kept/drop partition, hot/pending/packed split, one configured
+reference admission action, and logical page/tail counts.  The native cache is
+retained by the functional reference.  Post-commit lifecycle JSONL contains
+only timestamp-free Route-A state transitions; it is hash-bound from the
+report.  No row is allocator activity, DMA/HBM traffic, a burst observation,
+physical capacity, FIFO occupancy/depth, service rate, PTE width, page/bank
+mapping, merge precision/PE, scheduler/controller timing, latency, throughput,
+energy, area, architecture specification, or RTL evidence.  The two model
+anchors remain separate; this Llama gate creates no common hardware envelope.

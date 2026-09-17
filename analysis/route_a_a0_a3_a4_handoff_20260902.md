@@ -1999,3 +1999,25 @@ its own Q=1, 8, and 32 logical state summaries. The report deliberately has no
 cross-model statistic, common range, or hardware selection; a sign difference
 between later rows is dependence evidence rather than a reason to change any
 accepted source.
+
+### A4.4.0 implementation — deferred Full-KV-to-Route-A activation gate
+
+`tools/run_kvzap_llama31_a440_deferred_activation_gate.py` introduces a
+default-off policy backend for an explicit functional commit.  It does not
+alter the normal KVzap pruning path.  The backend keeps native Full KV
+authoritative while journaling online predictor decisions, has no Route-A
+logical state before commit, then hydrates logical hot/pending/packed history
+from that cache prefix and applies one existing reference admission action.
+The paired `D=8` end-before-activation branch must remain pure Full KV, while
+the `D=1` branch must commit exactly once and exercise post-commit same-mask
+numerical guards under M5.1's existing fixed-continuation/record-only context.
+
+The output serializes only scalar activation partition/page events and
+timestamp-free post-commit lifecycle records.  It is functional and
+trace-derived evidence, not measured or modeled hardware evidence: it neither
+observes native allocator release nor reports physical capacity, transfers,
+HBM traffic, bursts, FIFO occupancy/depth, timing, throughput, energy, area,
+or any final resource/microarchitecture choice.  It is a conditioned Llama
+anchor gate and deliberately cannot pool Qwen and Llama into one hardware
+contract.  Capacity protection after Route-A activation remains a distinct
+future contract.

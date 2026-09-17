@@ -1814,3 +1814,25 @@ their different continuation conditions forbid numeric pooling, averaging, or a
 unified resource envelope. The result is a falsifiable functional-state
 comparison, not evidence for Q, FIFO, page/bank/burst, capacity, traffic,
 timing, merge precision, or any architecture parameter.
+
+### A4.4.0 — activation contract and benefit bypass contract
+
+This step does not repeat A3.20's modeled question of whether a deferred
+policy eventually recovers an activation dip.  It holds the declared deferred
+policy fixed and tests the missing functional transition:
+`FULL_KV_BYPASS -> ACTIVATING -> ROUTE_A_ACTIVE`.  Before an explicit commit
+boundary, Full KV is authoritative and may retain an online predictor-decision
+journal, but it must create neither Route-A logical admission state nor logical
+hot/pending/packed/page/metadata state.  A request that ends before the gate
+must remain pure Full KV with zero Route-A logical physicalization.
+
+At activation, the reference hydrates history from the retained native Full-KV
+prefix, partitions mature kept/drop positions, keeps the protected hot suffix,
+performs one explicitly declared logical admission action, and records the
+logical hot/pending/packed and page/tail split.  This supplies trace-derived
+activation-burst and post-commit arrival inputs for a later resource model; it
+does not select a flush service rate, FIFO capacity, PTE width, page/bank/burst
+mapping, merge/PE, scheduler, controller timing, or a hardware architecture.
+The native cache remains retained in this functional reference.  Capacity
+pressure handling after activation (`ROUTE_A_ACTIVE -> protected/degraded`) is
+intentionally a later Capacity Protection Contract, not A4.4.0.

@@ -709,6 +709,97 @@ class RouteAPolicyAttentionBackend(AbstractContextManager):
         return route_output, None
 
 
+class DeferredActivationRouteAPolicyAttentionBackend(RouteAPolicyAttentionBackend):
+    """Keep native Full-KV authoritative until one explicit Route-A commit.
+
+    The online predictor records an immutable decision journal during the
+    Full-KV prefix, but this backend constructs no Route-A state before the
+    commit.  At the first decode call after ``deferred_decode_steps`` observed
+    q_len=1 calls, it materializes logical Route-A state from the current
+    native cache prefix and uses Route-A only thereafter.  Native cache storage
+    is deliberately retained; this is a functional contract, not a memory
+    reclamation or timing implementation.
+    """
+
+    def __init__(self, *args, deferred_decode_steps: int, **kwargs) -> None:
+        if deferred_decode_steps < 0:
+            raise ValueError("deferred_decode_steps must be non-negative")
+        super().__init__(*args, **kwargs)
+        self.deferred_decode_steps = deferred_decode_steps
+        self.full_kv_prefix_decode_calls = 0
+        self.full_kv_prefix_attention_calls = 0
+        self.activation_event: dict[str, Any] | None = None
+
+    def _clear_captured_mask(self) -> None:
+        if self._keep_mask is None or self._score_start is None:
+            raise AssertionError("Full-KV deferred prefix lacks captured predictor decisions")
+        self._keep_mask = self._score_start = None
+
+    def _history_keep_mask(self, *, heads: int, history_tokens: int, device: torch.device) -> torch.Tensor:
+        if history_tokens <= 0:
+            raise AssertionError("deferred Route-A activation requires a nonempty Full-KV history")
+        expected = {(head, position) for head in range(heads) for position in range(history_tokens)}
+        available = set(self._mask_events)
+        missing = expected - available
+        if missing:
+            raise AssertionError(f"deferred activation decision journal is incomplete: missing={len(missing)}")
+        return torch.tensor(
+            [[self._mask_events[(head, position)][0] for position in range(history_tokens)] for head in range(heads)],
+            dtype=torch.bool,
+            device=device,
+        )
+
+    def _activate(self, *, key: torch.Tensor, value: torch.Tensor, current_start: int) -> None:
+        if self.state is not None or self.activation_event is not None:
+            raise AssertionError("deferred Route-A activation may commit exactly once")
+        if key.ndim != 4 or value.shape != key.shape or key.shape[0] != 1 or key.shape[2] < current_start:
+            raise AssertionError("activation cache does not cover the Full-KV prefix")
+        self.selected_kv_heads(key.shape[1])
+        self.state = self._new_state(heads=key.shape[1], head_dim=key.shape[-1])
+        details = self.state.activate_from_full_kv_history(
+            key[0, :, :current_start],
+            value[0, :, :current_start],
+            self._history_keep_mask(heads=key.shape[1], history_tokens=current_start, device=key.device),
+        )
+        self.activation_event = {
+            "mode_before_commit": "full_kv_bypass",
+            "mode_after_commit": "route_a_active",
+            "activation_decode_call_after_full_prefix": self.full_kv_prefix_decode_calls,
+            "activation_cache_position": current_start,
+            "journal_mask_decision_count_before_commit": current_start * key.shape[1],
+            "route_a_logical_state_existed_before_commit": False,
+            "native_cache_mutated_or_freed_by_commit": False,
+            **details,
+        }
+
+    def attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
+        if self.state is None:
+            self.full_kv_prefix_attention_calls += 1
+            if query.shape[2] == 1 and self.full_kv_prefix_decode_calls >= self.deferred_decode_steps:
+                if self._score_start is None:
+                    raise AssertionError("activation lacks captured cache position")
+                self._activate(key=key, value=value, current_start=self._score_start)
+            else:
+                if query.shape[2] == 1:
+                    self.full_kv_prefix_decode_calls += 1
+                self._clear_captured_mask()
+                return original(module, query, key, value, attention_mask, dropout, **kwargs)
+        return super().attention(original, module, query, key, value, attention_mask, dropout, **kwargs)
+
+    def deferred_activation_summary(self) -> dict[str, Any]:
+        return {
+            "mode_at_trace_end": "route_a_active" if self.state is not None else "full_kv_bypass",
+            "deferred_decode_steps": self.deferred_decode_steps,
+            "full_kv_prefix_decode_calls": self.full_kv_prefix_decode_calls,
+            "full_kv_prefix_attention_calls": self.full_kv_prefix_attention_calls,
+            "activation_committed": self.activation_event is not None,
+            "activation_event": self.activation_event,
+            "journal_mask_decision_count": len(self._mask_events),
+            "route_a_logical_state_exists_at_end": self.state is not None,
+            "native_cache_mutated_or_freed": False,
+        }
+
+
 class DenseSameMaskAttentionBackend(RouteAPolicyAttentionBackend):
     """Policy-on dense KVzap control with no pending, admission, or pages.
 
@@ -1124,14 +1215,17 @@ class RouteAPolicyAttentionBackendSet(AbstractContextManager):
 
     backend_class = RouteAPolicyAttentionBackend
 
-    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", elide_empty_sources: bool = False, ulp_breach_sample_limit: int = 32, replay_mask_events: MaskEventLayers | None = None, component_measure=None, logical_event_recorder: RouteALogicalEventRecorder | None = None, lifecycle_transition_recorder: RouteALifecycleTransitionRecorder | None = None, execution_dtype_ulp_mode: str = "enforce", prefill_maturity_chunk_tokens: int = 0) -> None:
+    def __init__(self, model, predictor, *, layers: tuple[int, ...], kv_head: int | None, threshold: float, window: int, page_tokens: int, admission_budget: int, rtol: float, atol: float, max_executed_dtype_ulps: float = 16.0, execution_dtype_close_mode: str = "off", same_mask_numerical_guard_mode: str = "enforce", elide_empty_sources: bool = False, ulp_breach_sample_limit: int = 32, replay_mask_events: MaskEventLayers | None = None, component_measure=None, logical_event_recorder: RouteALogicalEventRecorder | None = None, lifecycle_transition_recorder: RouteALifecycleTransitionRecorder | None = None, execution_dtype_ulp_mode: str = "enforce", prefill_maturity_chunk_tokens: int = 0, backend_extra_kwargs: dict[str, Any] | None = None) -> None:
         if not layers or len(set(layers)) != len(layers) or any(layer < 0 for layer in layers):
             raise ValueError("layers must be unique non-negative indices")
         if replay_mask_events is not None and set(replay_mask_events) != set(layers):
             raise ValueError("replay mask layers must exactly match selected layers")
+        if backend_extra_kwargs is not None and not isinstance(backend_extra_kwargs, dict):
+            raise ValueError("backend_extra_kwargs must be a dictionary when supplied")
         self.model, self.predictor, self.layers = model, predictor, tuple(layers)
+        self.backend_extra_kwargs = {} if backend_extra_kwargs is None else dict(backend_extra_kwargs)
         self.backends = {
-            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, execution_dtype_ulp_mode=execution_dtype_ulp_mode, execution_dtype_close_mode=execution_dtype_close_mode, same_mask_numerical_guard_mode=same_mask_numerical_guard_mode, elide_empty_sources=elide_empty_sources, ulp_breach_sample_limit=ulp_breach_sample_limit, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure, logical_event_recorder=logical_event_recorder, lifecycle_transition_recorder=lifecycle_transition_recorder, prefill_maturity_chunk_tokens=prefill_maturity_chunk_tokens)
+            layer: self.backend_class(model, predictor, layer=layer, kv_head=kv_head, threshold=threshold, window=window, page_tokens=page_tokens, admission_budget=admission_budget, rtol=rtol, atol=atol, max_executed_dtype_ulps=max_executed_dtype_ulps, execution_dtype_ulp_mode=execution_dtype_ulp_mode, execution_dtype_close_mode=execution_dtype_close_mode, same_mask_numerical_guard_mode=same_mask_numerical_guard_mode, elide_empty_sources=elide_empty_sources, ulp_breach_sample_limit=ulp_breach_sample_limit, replay_mask_events=None if replay_mask_events is None else replay_mask_events[layer], component_measure=component_measure, logical_event_recorder=logical_event_recorder, lifecycle_transition_recorder=lifecycle_transition_recorder, prefill_maturity_chunk_tokens=prefill_maturity_chunk_tokens, **self.backend_extra_kwargs)
             for layer in self.layers
         }
 
@@ -1186,6 +1280,18 @@ class DenseSameMaskAttentionBackendSet(RouteAPolicyAttentionBackendSet):
     """Multi-layer set for the independent online same-mask dense control."""
 
     backend_class = DenseSameMaskAttentionBackend
+
+
+class DeferredActivationRouteAPolicyAttentionBackendSet(RouteAPolicyAttentionBackendSet):
+    """All-layer deferred Full-KV-to-Route-A functional transition set."""
+
+    backend_class = DeferredActivationRouteAPolicyAttentionBackend
+
+    def __init__(self, *args, deferred_decode_steps: int, **kwargs) -> None:
+        super().__init__(*args, backend_extra_kwargs={"deferred_decode_steps": deferred_decode_steps}, **kwargs)
+
+    def deferred_activation_summary(self) -> dict[str, Any]:
+        return {"layers": [{"layer": layer, **backend.deferred_activation_summary()} for layer, backend in self.backends.items()]}
 
 
 class RouteAColdOwnershipAttentionBackendSet(RouteAPolicyAttentionBackendSet):

@@ -256,6 +256,68 @@ class RouteAPackedAttentionState:
         """Exclusive next cache position, exposed for ownership guards."""
         return self._next_position
 
+    def activate_from_full_kv_history(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor) -> dict[str, Any]:
+        """Materialize Route-A state once from an authoritative Full-KV prefix.
+
+        This is a functional commit operation for deferred admission.  Before
+        it, the caller owns only native Full-KV plus a decision journal; this
+        state has no records.  The operation partitions the historical prefix
+        into hot / mature-kept / mature-dropped, then applies exactly this
+        reference state's bounded admission action once.  It is intentionally
+        not an allocator, DMA, timing, or physical-copy model.
+        """
+        if self._next_position != 0 or any(self.records(head)[name] for head in range(self.heads) for name in ("hot", "pending", "packed")):
+            raise AssertionError("deferred activation requires an empty Route-A state")
+        if keys.ndim != 3 or values.shape != keys.shape or keys.shape[0] != self.heads or keys.shape[2] != self.head_dim:
+            raise ValueError("activation keys and values must be [KV-head, token, head-dim]")
+        if keep_mask.shape != keys.shape[:2] or keep_mask.dtype != torch.bool:
+            raise ValueError("activation keep mask must be bool [KV-head, token]")
+        history_tokens = int(keys.shape[1])
+        mature_end = max(0, history_tokens - self.window)
+        matured_kept = [0 for _ in range(self.heads)]
+        matured_dropped = [0 for _ in range(self.heads)]
+        for position in range(history_tokens):
+            for head in range(self.heads):
+                record = _Record(position, keys[head, position].detach().clone(), values[head, position].detach().clone(), bool(keep_mask[head, position]))
+                self._record_mask_decision(head=head, position=position, keep=record.keep)
+                if position < mature_end:
+                    if record.keep:
+                        self._pending[head].append(record)
+                        self._decided_kept[head].append(position)
+                        matured_kept[head] += 1
+                    else:
+                        self._decided_dropped[head].append(position)
+                        matured_dropped[head] += 1
+                else:
+                    self._hot[head].append(record)
+        self._next_position = history_tokens
+        pending_after_maturity = [len(queue) for queue in self._pending]
+        admitted = self._service_oldest_first()
+        self.assert_conservation()
+        after_service = [self.state_summary(head) for head in range(self.heads)]
+        return {
+            "history_token_count": history_tokens,
+            "matured_position_count": mature_end,
+            "activation_admission_budget": self.admission_budget,
+            "heads": [
+                {
+                    "kv_head": head,
+                    "matured_kept_tokens": matured_kept[head],
+                    "matured_dropped_tokens": matured_dropped[head],
+                    "pending_tokens_after_maturity": pending_after_maturity[head],
+                    "admitted_tokens": admitted[head],
+                    "hot_tokens_after_commit": int(after_service[head]["hot_tokens"]),
+                    "pending_tokens_after_commit": int(after_service[head]["pending_tokens"]),
+                    "packed_tokens_after_commit": int(after_service[head]["packed_tokens"]),
+                    "logical_page_count_after_commit": int(after_service[head]["packed_page_count"]),
+                    "logical_full_page_count_after_commit": int(after_service[head]["packed_full_page_count"]),
+                    "logical_tail_tokens_after_commit": int(after_service[head]["packed_tail_tokens"]),
+                }
+                for head in range(self.heads)
+            ],
+            "recording_semantics": "one logical deferred-admission commit from native Full-KV history; no physical allocation, transfer, timing, or cache-free observation",
+        }
+
     def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int, logical_phase: str | None = None, component_measure=None) -> None:
         """Append contiguous [KV-head, token, head-dim] K/V under the original mask."""
         if keys.ndim != 3 or values.shape != keys.shape or keys.shape[:1] != (self.heads,) or keys.shape[2] != self.head_dim:

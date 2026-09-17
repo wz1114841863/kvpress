@@ -137,6 +137,55 @@ def test_full_kv_bypass_is_explicit_and_does_not_construct_route_a_state():
     assert state.state_summary(0) == {"hot_tokens": 0, "pending_tokens": 0, "packed_tokens": 0, "packed_page_count": 0, "packed_full_page_count": 0, "packed_tail_tokens": 0}
 
 
+def test_deferred_activation_commits_full_kv_history_once_then_continues_contiguously():
+    """Activation owns no Route-A records before its explicit commit boundary."""
+    state = make_state(window=2, page_tokens=2, budget=2)
+    keys = torch.arange(12, dtype=torch.float32).reshape(1, 6, 2)
+    keep = torch.tensor([[True, False, True, True, False, True]])
+    details = state.activate_from_full_kv_history(keys, keys + 100, keep)
+    assert details["history_token_count"] == 6
+    assert details["matured_position_count"] == 4
+    assert details["activation_admission_budget"] == 2
+    assert details["heads"] == [{
+        "kv_head": 0,
+        "matured_kept_tokens": 3,
+        "matured_dropped_tokens": 1,
+        "pending_tokens_after_maturity": 3,
+        "admitted_tokens": 2,
+        "hot_tokens_after_commit": 2,
+        "pending_tokens_after_commit": 1,
+        "packed_tokens_after_commit": 2,
+        "logical_page_count_after_commit": 1,
+        "logical_full_page_count_after_commit": 1,
+        "logical_tail_tokens_after_commit": 0,
+    }]
+    assert [record.position for record in state.records(0)["packed"]] == [0, 2]
+    assert [record.position for record in state.records(0)["pending"]] == [3]
+    assert [record.position for record in state.records(0)["hot"]] == [4, 5]
+    assert state.mask_summary()["original_mask_decision_count"] == 6
+    state.append(keys[:, :1] + 1000, keys[:, :1] + 1100, torch.tensor([[True]]), start_position=6)
+    assert state.next_position == 7
+    state.assert_conservation()
+
+
+def test_deferred_activation_rejects_a_second_commit_or_wrong_history_mask():
+    state = make_state(window=1, page_tokens=2, budget=1)
+    keys = torch.zeros(1, 3, 2)
+    try:
+        state.activate_from_full_kv_history(keys, keys, torch.ones(1, 2, dtype=torch.bool))
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("activation accepted a malformed history mask")
+    state.activate_from_full_kv_history(keys, keys, torch.ones(1, 3, dtype=torch.bool))
+    try:
+        state.activate_from_full_kv_history(keys, keys, torch.ones(1, 3, dtype=torch.bool))
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("activation accepted a second commit")
+
+
 def test_rejects_noncontiguous_positions_and_wrong_mask_shape():
     state = make_state()
     keys = torch.zeros(1, 2, 2)
