@@ -2706,3 +2706,24 @@ not a FIFO occupancy/capacity, service rate, overflow, or hardware parameter.
 This schema records no controller delay/broadcast timing, physical allocation,
 HBM/DMA traffic, bursts, latency, throughput, energy, area, architecture
 specification, or RTL evidence. Qwen and Llama rows remain separate.
+
+### Route-A A4.5.4 protected Route-A shadow-state disposition semantic gate
+
+`kvzap-route-a454-protected-shadow-state-reclamation-gate-1.0` is a model-on,
+anchor-specific functional report hash-bound to a completed A4.5.3 report and
+its A4.5.2/A4.5.1 source chain. At the existing next-decode-epoch request-global
+fallback boundary, each layer records `logical_inventory_before_tombstone`:
+per-KV-head and total hot/pending/packed token counts plus logical packed-page
+counts. It then marks Route-A shadow state non-authoritative and replaces it
+with an access-failing tombstone; native Full-KV remains the sole authority.
+
+Every later bounded continuation call must use native attention without a
+Route-A shadow read, append, admission, drop, re-entry, or native-cache
+mutation. The report rejects an inventory/head-total mismatch, a changed global
+boundary or local trigger set, absent tombstone, or non-identical forced
+Full-KV token input. `route_a_shadow_logically_marked_reclaimable=true` means
+only that the functional reference no longer permits Route-A shadow access. It
+is explicitly not a Python allocator/free observation, allocated bytes,
+physical-page release, HBM/DMA traffic, burst, FIFO capacity/service/overflow,
+controller timing, latency, throughput, energy, area, architecture
+specification, or RTL evidence. Qwen and Llama remain separate.

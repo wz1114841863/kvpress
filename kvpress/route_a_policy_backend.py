@@ -1026,6 +1026,116 @@ class GlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend(CapacityProte
         }
 
 
+class _RouteAShadowStateTombstone:
+    """Fail closed if protected Route-A shadow state is touched after disposal."""
+
+    def __getattr__(self, name: str) -> Any:
+        raise AssertionError(f"tombstoned Route-A shadow state was accessed: {name}")
+
+
+class ReclaimingGlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend(GlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend):
+    """A4.5.4 functional tombstone after the A4.5.3 global fallback boundary.
+
+    The tombstone is deliberately a logical ownership check, not an allocator
+    action.  It proves only that the retained native Full-KV path can remain
+    authoritative without later Route-A shadow reads in the bounded run.
+    """
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._route_a_shadow_tombstone: _RouteAShadowStateTombstone | None = None
+        self.route_a_shadow_state_disposition_event: dict[str, Any] | None = None
+
+    def _route_a_shadow_inventory(self) -> dict[str, Any]:
+        if self.state is None or isinstance(self.state, _RouteAShadowStateTombstone):
+            raise AssertionError("Route-A shadow inventory requires live pre-tombstone state")
+        per_head = []
+        totals = {
+            "hot_tokens": 0,
+            "pending_tokens": 0,
+            "packed_tokens": 0,
+            "packed_page_count": 0,
+            "packed_full_page_count": 0,
+            "packed_tail_tokens": 0,
+        }
+        for head in range(self.state.heads):
+            row = {"kv_head": head, **self.state.state_summary(head)}
+            for key in totals:
+                totals[key] += int(row[key])
+            per_head.append(row)
+        return {
+            "route_a_state_next_position": self.state.next_position,
+            "per_kv_head": per_head,
+            "totals": totals,
+            "inventory_semantics": "logical Route-A reference-state token/page counts at fallback; not allocated bytes, physical pages, or allocator observation",
+        }
+
+    def _enter_global_protected_full_kv(self, *, current_start: int) -> None:
+        super()._enter_global_protected_full_kv(current_start=current_start)
+        if self.global_protection_event is None or self.state is None:
+            raise AssertionError("A4.5.4 tombstone requires a committed global fallback and live Route-A state")
+        if self.route_a_shadow_state_disposition_event is not None:
+            raise AssertionError("Route-A shadow disposition may occur exactly once")
+        inventory = self._route_a_shadow_inventory()
+        frozen = self.global_protection_event["route_a_state_next_position_frozen"]
+        if inventory["route_a_state_next_position"] != frozen:
+            raise AssertionError("Route-A shadow inventory differs from the global frozen position")
+        self._route_a_shadow_tombstone = _RouteAShadowStateTombstone()
+        self.state = self._route_a_shadow_tombstone  # type: ignore[assignment]
+        self.route_a_shadow_state_disposition_event = {
+            "boundary": "next_decode_epoch_after_completion_of_current_activation_epoch",
+            "cache_position_of_disposition": current_start,
+            "mode_before_disposition": "request_global_protected_full_kv",
+            "mode_after_disposition": "request_global_protected_full_kv_route_a_shadow_tombstoned",
+            "native_full_kv_authoritative_after_disposition": True,
+            "route_a_shadow_authoritative_after_disposition": False,
+            "route_a_shadow_logically_marked_reclaimable": True,
+            "route_a_shadow_python_allocator_reclaimed_or_measured": False,
+            "route_a_shadow_state_tombstoned": True,
+            "route_a_state_next_position_at_tombstone": frozen,
+            "logical_inventory_before_tombstone": inventory,
+            "post_disposition_route_a_access": "forbidden_by_tombstone",
+            "reentry_permitted": False,
+        }
+
+    def _global_native_attention(self, original: Callable[..., Any], module, query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, attention_mask: torch.Tensor | None, dropout: float, **kwargs: Any):
+        if self.global_protection_event is None or self.route_a_shadow_state_disposition_event is None:
+            raise AssertionError("A4.5.4 global fallback lacks its shadow disposition")
+        if self.state is not self._route_a_shadow_tombstone or self._route_a_shadow_tombstone is None:
+            raise AssertionError("A4.5.4 global fallback lost its Route-A shadow tombstone")
+        event = self.route_a_shadow_state_disposition_event
+        if event["route_a_state_next_position_at_tombstone"] != self.global_protection_event["route_a_state_next_position_frozen"]:
+            raise AssertionError("A4.5.4 tombstone state does not match the global frozen position")
+        self._clear_captured_mask()
+        self.global_native_attention_calls += 1
+        return original(module, query, key, value, attention_mask, dropout, **kwargs)
+
+    def protected_shadow_state_summary(self) -> dict[str, Any]:
+        if self.global_protection_event is not None and self.route_a_shadow_state_disposition_event is None:
+            raise AssertionError("A4.5.4 global protection completed without shadow-state disposition")
+        disposition = self.route_a_shadow_state_disposition_event
+        return {
+            "deferred_decode_steps": self.deferred_decode_steps,
+            "full_kv_prefix_decode_calls": self.full_kv_prefix_decode_calls,
+            "full_kv_prefix_attention_calls": self.full_kv_prefix_attention_calls,
+            "activation_committed": self.activation_event is not None,
+            "activation_event": self.activation_event,
+            "journal_mask_decision_count": len(self._mask_events),
+            "pending_high_watermark": self.pending_high_watermark,
+            "mode_at_trace_end": "request_global_protected_full_kv_route_a_shadow_tombstoned" if disposition is not None else ("route_a_active" if self.state is not None else "full_kv_bypass"),
+            "capacity_protection_committed": self.protection_event is not None,
+            "capacity_protection_event": self.protection_event,
+            "protected_native_attention_calls": self.protected_native_attention_calls,
+            "request_global_protection_committed": self.global_protection_event is not None,
+            "request_global_protection_event": self.global_protection_event,
+            "request_global_native_attention_calls": self.global_native_attention_calls,
+            "route_a_shadow_state_tombstoned": disposition is not None,
+            "route_a_shadow_state_disposition_event": disposition,
+            "route_a_logical_state_next_position_at_end": None if disposition is None else disposition["route_a_state_next_position_at_tombstone"],
+            "native_cache_mutated_or_freed": False,
+        }
+
+
 class DenseSameMaskAttentionBackend(RouteAPolicyAttentionBackend):
     """Policy-on dense KVzap control with no pending, admission, or pages.
 
@@ -1560,6 +1670,33 @@ class GlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackendSet(RouteAPoli
         return {
             "controller": controller,
             "layers": [{"layer": layer, **backend.global_next_epoch_summary()} for layer, backend in self.backends.items()],
+        }
+
+
+class ReclaimingGlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackendSet(RouteAPolicyAttentionBackendSet):
+    """A4.5.4 all-layer set with a shared controller and shadow tombstones."""
+
+    backend_class = ReclaimingGlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend
+
+    def __init__(self, *args, layers: tuple[int, ...], deferred_decode_steps: int, pending_high_watermark: int, **kwargs) -> None:
+        self.global_protection_coordinator = RouteAGlobalProtectionCoordinator(
+            layers=layers, pending_high_watermark=pending_high_watermark
+        )
+        super().__init__(
+            *args, layers=layers,
+            backend_extra_kwargs={
+                "deferred_decode_steps": deferred_decode_steps,
+                "pending_high_watermark": pending_high_watermark,
+                "global_protection_coordinator": self.global_protection_coordinator,
+            },
+            **kwargs,
+        )
+
+    def protected_shadow_state_summary(self) -> dict[str, Any]:
+        controller = self.global_protection_coordinator.summary()
+        return {
+            "controller": controller,
+            "layers": [{"layer": layer, **backend.protected_shadow_state_summary()} for layer, backend in self.backends.items()],
         }
 
 

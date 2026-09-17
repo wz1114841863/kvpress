@@ -2136,3 +2136,24 @@ controller timing/broadcast behavior or a resource result. `C=1024` does not
 select FIFO/service/page/bank/burst/merge/PE/scheduler or any architecture
 parameter; no physical traffic, latency, throughput, energy, area,
 architecture-specification, or RTL conclusion is authorized.
+
+### A4.5.4 implementation — protected Route-A shadow-state disposition gate
+
+`ReclaimingGlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend` is a
+default-off A4.5.3 variant. At the already-authorized next-epoch global native
+fallback, it snapshots scalar Route-A hot/pending/packed/page state and replaces
+the live Route-A state with an access-failing tombstone. Its native fallback
+path accepts only that tombstone; any later Route-A state access fails closed.
+The tombstone is an ownership guard, not a Python allocator operation or a
+claim that a physical page has been released. Retained native Full-KV remains
+the sole authority; default pruning behavior is unchanged.
+
+`tools/run_kvzap_route_a454_protected_shadow_state_reclamation_gate.py` binds
+the A4.5.3 report plus its A4.5.2/A4.5.1 chain, validates the former controller
+and local-trigger contracts, then runs each anchor separately on one visible
+CUDA device. It requires all-layer next-epoch native fallback and tombstones,
+head-total-conserving logical inventories, no shadow access/re-entry, preserved
+forced Full-KV inputs, and retained native cache. Its inventory is functional
+state only: it cannot measure allocation/free behavior, bytes, physical
+capacity, HBM/DMA traffic, bursts, FIFO/service/overflow, timing, latency,
+throughput, energy, area, architecture specification, or RTL.

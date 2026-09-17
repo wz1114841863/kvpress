@@ -1939,3 +1939,23 @@ Full-KV inputs. This is functional control-semantics evidence only. It is not a
 controller implementation suitable for timing closure and does not measure or
 select FIFO capacity/service, page/bank/burst, merge/PE, scheduler, latency,
 traffic, throughput, energy, area, architecture parameters, or RTL.
+
+### A4.5.4 — protected Route-A shadow-state disposition semantic gate
+
+The next missing condition is whether request-global fallback can actually
+make its non-authoritative Route-A reference state inaccessible. At the A4.5.3
+next-epoch boundary, snapshot each layer's logical hot/pending/packed/page
+state, then replace that state with a fail-closed tombstone while retaining
+native Full-KV as the sole authority. Continue the bounded fixed horizon and
+reject any Route-A shadow read, append, admission, drop, re-entry, altered
+forced Full-KV token input, or native-cache mutation. This establishes only
+logical reclaimability of the Route-A shadow, not a physical release.
+
+Bind completed A4.5.3 Qwen/Llama reports and their A4.5.2/A4.5.1 source chain
+before model load. Keep Qwen and Llama separate; require the same ordered
+controller observations and local trigger sets as A4.5.3. The recorded state
+inventory is scalar functional-reference state, not bytes, physical pages,
+allocator behavior, HBM/DMA traffic, bursts, FIFO occupancy/capacity, service
+rate, overflow, timing, latency, throughput, energy, area, or a hardware
+parameter. A passing tombstone gate is a prerequisite to later fallback
+dual-residency/workload-envelope modeling, not that model or an RTL decision.

@@ -4,7 +4,7 @@ import torch
 from transformers import DynamicCache
 
 from kvpress.route_a_attention import RouteALifecycleTransitionRecorder
-from kvpress.route_a_policy_backend import CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend, DeferredActivationRouteAPolicyAttentionBackend, DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, GlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteAGlobalProtectionCoordinator, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackend, cache_position_contiguity_diagnostic, compare_original_mask_events
+from kvpress.route_a_policy_backend import CapacityProtectedDeferredActivationRouteAPolicyAttentionBackend, DeferredActivationRouteAPolicyAttentionBackend, DenseSameMaskAttentionBackend, DenseSameMaskAttentionBackendSet, GlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend, ReclaimingGlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend, RouteAColdOwnershipAttentionBackend, RouteAColdOwnershipAttentionBackendSet, RouteAExecutionDtypeCloseGuardError, RouteAGlobalProtectionCoordinator, RouteANumericalGuardError, RouteAPolicyAttentionBackend, RouteAPolicyAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackend, cache_position_contiguity_diagnostic, compare_original_mask_events
 
 
 def fake_model(layer_count=1):
@@ -190,6 +190,70 @@ def test_global_next_epoch_protection_waits_for_all_activation_observations_then
         assert summary["request_global_protection_event"]["boundary"] == "next_decode_epoch_after_completion_of_current_activation_epoch"
         assert summary["request_global_native_attention_calls"] == 1
     assert len(native_calls) == 7
+
+
+def test_global_next_epoch_protection_tombstones_route_a_shadow_state_without_later_access():
+    coordinator = RouteAGlobalProtectionCoordinator(layers=(0, 1), pending_high_watermark=1)
+    model = fake_model(layer_count=2)
+    backends = [
+        ReclaimingGlobalNextEpochCapacityProtectedRouteAPolicyAttentionBackend(
+            model, object(), layer=layer, kv_head=0, threshold=0.0, window=1,
+            page_tokens=2, admission_budget=1, rtol=1e-5, atol=1e-6,
+            deferred_decode_steps=1, pending_high_watermark=1,
+            global_protection_coordinator=coordinator,
+        )
+        for layer in (0, 1)
+    ]
+    module = SimpleNamespace(scaling=1.0)
+    keys = torch.arange(14, dtype=torch.float32).reshape(1, 1, 7, 2)
+    values = keys + 10
+    native_calls = []
+
+    def original(*_args, **_kwargs):
+        native_calls.append(True)
+        return torch.zeros(1, 3, 1, 2), None
+
+    # Layer zero crosses locally on activation; layer one proves that an
+    # initially Route-A-active state is also tombstoned at global commit.
+    for backend, keeps in zip(backends, ((True, True, True), (False, False, False))):
+        backend._keep_mask, backend._score_start = torch.tensor([[list(keeps)]]), 0
+        backend._mask_events.update({(0, position): (keep, 0.0) for position, keep in enumerate(keeps)})
+        backend.attention(original, module, torch.ones(1, 3, 3, 2), keys[:, :, :3], values[:, :, :3], None, 0.0, scaling=1.0)
+    for backend, keep in zip(backends, (True, False)):
+        backend._keep_mask, backend._score_start = torch.tensor([[[keep]]]), 3
+        backend._mask_events[(0, 3)] = (keep, 0.0)
+        backend.attention(original, module, torch.ones(1, 3, 1, 2), keys[:, :, :4], values[:, :, :4], None, 0.0, scaling=1.0)
+    for backend, keep in zip(backends, (True, False)):
+        backend._keep_mask, backend._score_start = torch.tensor([[[keep]]]), 4
+        backend._mask_events[(0, 4)] = (keep, 0.0)
+        backend.attention(original, module, torch.ones(1, 3, 1, 2), keys[:, :, :5], values[:, :, :5], None, 0.0, scaling=1.0)
+
+    # Global commit at position five snapshots then tombstones every Route-A
+    # shadow state. A later native call proves the tombstone is not revisited.
+    for position in (5, 6):
+        for backend, keep in zip(backends, (True, False)):
+            backend._keep_mask, backend._score_start = torch.tensor([[[keep]]]), position
+            backend._mask_events[(0, position)] = (keep, 0.0)
+            backend.attention(original, module, torch.ones(1, 3, 1, 2), keys[:, :, :position + 1], values[:, :, :position + 1], None, 0.0, scaling=1.0)
+
+    for backend in backends:
+        summary = backend.protected_shadow_state_summary()
+        event = summary["route_a_shadow_state_disposition_event"]
+        assert summary["route_a_shadow_state_tombstoned"] is True
+        assert summary["request_global_native_attention_calls"] == 2
+        assert event is not None
+        assert event["native_full_kv_authoritative_after_disposition"] is True
+        assert event["route_a_shadow_logically_marked_reclaimable"] is True
+        assert event["route_a_shadow_python_allocator_reclaimed_or_measured"] is False
+        assert event["logical_inventory_before_tombstone"]["route_a_state_next_position"] == summary["request_global_protection_event"]["route_a_state_next_position_frozen"]
+        assert event["logical_inventory_before_tombstone"]["totals"]["hot_tokens"] >= 1
+        try:
+            _ = backend.state.next_position
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError("tombstoned Route-A state permitted a later access")
+    assert len(native_calls) == 9
 
 
 def test_prefill_micro_event_backend_splits_real_state_append_into_bounded_trace_events():
