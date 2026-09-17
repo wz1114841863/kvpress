@@ -1,13 +1,22 @@
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
-from tools.run_kvzap_route_a451_capacity_protection_semantic_gate import read_a450_row, validate_protection
+from tools.run_kvzap_route_a451_capacity_protection_semantic_gate import qwen_kv_head_counts, read_a450_row, validate_protection
 
 
 def test_a451_declares_offline_mode_before_hf_library_imports():
     source = Path("tools/run_kvzap_route_a451_capacity_protection_semantic_gate.py").read_text(encoding="utf-8")
     assert source.index('os.environ["HF_HUB_OFFLINE"] = "1"') < source.index("import transformers")
     assert source.index('os.environ["TRANSFORMERS_OFFLINE"] = "1"') < source.index("from huggingface_hub import snapshot_download")
+
+
+def test_a451_reads_qwen_kv_heads_from_attention_config_not_module_attribute():
+    language_model = SimpleNamespace(layers=[
+        SimpleNamespace(self_attn=SimpleNamespace(config=SimpleNamespace(num_key_value_heads=8))),
+        SimpleNamespace(self_attn=SimpleNamespace(config=SimpleNamespace(num_key_value_heads=8))),
+    ])
+    assert qwen_kv_head_counts(language_model) == {0: 8, 1: 8}
 
 
 def test_a451_requires_hash_bound_a450_c1024_witness(tmp_path):

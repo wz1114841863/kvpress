@@ -137,6 +137,17 @@ def build_predictor(args: argparse.Namespace, *, predictor_revision: str):
     return make_predictor(predictor_revision=predictor_revision, override=args.predictor_repo_id_override)
 
 
+def qwen_kv_head_counts(language_model) -> dict[int, int]:
+    """Read Qwen KV-head topology from the version-stable attention config."""
+    counts = {
+        layer: int(block.self_attn.config.num_key_value_heads)
+        for layer, block in enumerate(language_model.layers)
+    }
+    if not counts or any(count <= 0 for count in counts.values()):
+        raise AssertionError("loaded Qwen structure has no Route-A layer/KV-head coverage")
+    return counts
+
+
 def run_workload(*, workload: str, pipe, args: argparse.Namespace, layers: tuple[int, ...], heads_by_layer: dict[int, int], predictor_revision: str, output_dir: Path) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=False)
     request = build_builtin_request(workload, args.context_repetitions)
@@ -210,7 +221,7 @@ def main() -> None:
     if args.anchor == "qwen3_8b":
         language_model = pipe.model.model.language_model if hasattr(pipe.model.model, "language_model") else pipe.model.model
         layers = tuple(range(len(language_model.layers)))
-        heads_by_layer = {layer: int(language_model.layers[layer].self_attn.num_key_value_heads) for layer in layers}
+        heads_by_layer = qwen_kv_head_counts(language_model)
     else:
         layer_count, head_count = validate_runtime_structure(pipe.model)
         if (layer_count, head_count) != (EXPECTED_STRUCTURE["layer_count"], EXPECTED_STRUCTURE["kv_head_count"]):
