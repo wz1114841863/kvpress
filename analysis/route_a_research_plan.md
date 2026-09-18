@@ -1980,3 +1980,23 @@ and reports no traffic, latency, throughput, energy, area, architecture, or RTL
 result. Qwen and Llama remain separate. A failure or tail-growth witness routes
 the next study to Route-A-native protection; a pass permits a later explicit
 resource-model service-envelope study.
+
+### A4.6.1 — source-separated activation-burst logical envelope
+
+After a passing A4.6.0 finite normal-path gate, do not infer a FIFO, bandwidth,
+or controller rate. First hash-bind A4.4.2 and the completed Qwen/Llama A4.6.0
+reports, then retain each anchor/workload separately and split its
+timestamp-free lifecycle into two sources: (1) the activation-commit
+all-layer/all-KV-head logical inventory and (2) the subsequent `q_len=1`
+append-opportunity inventory. Recheck trace hashes, complete layer/head
+coverage, and exact pending/packed conservation. Report distributions over the
+recorded logical rows, including mature-kept, pending, admitted, packed, and
+logical-page state, without numerically pooling anchors.
+
+This makes the activation peak and subsequent steady-state arrivals explicit
+inputs to a later resource model; it is not that model. Counts in this stage
+are neither physical bursts nor FIFO occupancy/capacity, service rate,
+overflow, allocation, traffic, bytes, HBM/DMA activity, timing, latency,
+throughput, energy, area, an architecture specification, or RTL evidence. A
+later model must introduce its own explicit service/backing assumptions before
+using these inputs to study capacity protection or net benefit.

@@ -2744,3 +2744,22 @@ capacity, overflow, physical allocation, bytes, HBM/DMA traffic, burst, timing,
 latency, throughput, energy, area, architecture specification, or RTL evidence.
 The finite horizon cannot prove indefinite stability or select hardware
 parameters. Qwen and Llama rows remain separate.
+
+### Route-A A4.6.1 activation-burst logical envelope
+
+`kvzap-route-a461-activation-burst-logical-envelope-1.0` is a no-model,
+hash-bound analysis of completed A4.4.2 and anchor-specific A4.6.0 reports.
+For every retained anchor/workload row it records two deliberately separate
+timestamp-free logical sources: the all-layer/all-KV-head activation-commit
+inventory (`matured_*`, pending, admitted, hot, packed, and logical pages) and
+the subsequent `q_len=1` append-event inventory (`matured_*`, admission,
+pending, and packed state). It verifies report/trace SHA-256 bindings,
+complete layer/head coverage, and per-event pending/packed conservation before
+emitting integer distribution summaries.
+
+These are trace-derived/functional logical workload inputs for a later resource
+model, not observed physical bursts or a service timeline. They do not state
+FIFO occupancy/capacity, service rate, overflow, allocation/capacity, bytes,
+HBM/DMA traffic, page/PTE/bank requirements, timing, latency, throughput,
+energy, area, architecture specification, or RTL. Qwen and Llama rows cannot
+be pooled, range-reduced, or used to select hardware parameters.

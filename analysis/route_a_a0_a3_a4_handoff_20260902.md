@@ -2173,3 +2173,20 @@ indefinite stability or an observed service timeline, FIFO capacity/occupancy,
 overflow, physical allocation/traffic/burst, timing, latency, throughput,
 energy, area, architecture specification, or RTL. Qwen and Llama outputs stay
 separate and select no hardware parameter.
+
+### A4.6.1 implementation — source-separated activation-burst logical envelope
+
+`tools/analyze_kvzap_route_a461_activation_burst_envelope.py` is a no-model,
+hash-bound closeout over A4.4.2 and completed Qwen/Llama A4.6.0 reports. It
+does not rerun a model. For every anchor/workload it checks the A4.4.2 binding,
+the lifecycle trace hash, layer/KV-head coverage, timestamp-free `q_len=1`
+events, and the per-event pending/packed conservation equations. It then
+retains—without cross-anchor pooling—the activation-commit logical inventory
+separately from subsequent logical append opportunities.
+
+The resulting integer distributions are source-separated workload inputs for a
+later explicitly assumed resource model. They do not observe physical
+activation bursts, FIFO occupancy/capacity, service rate, overflow, allocation,
+bytes, HBM/DMA traffic, page/bank/PTE requirements, timing, latency,
+throughput, energy, area, architecture specification, or RTL. A4.6.1 selects
+no hardware parameter and does not revive Full-KV backing as the normal path.
