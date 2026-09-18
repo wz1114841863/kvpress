@@ -2062,6 +2062,8 @@ eager-copy or sealed-page-with-tail-reference assumption, retaining payload,
 page/PTE, position, merge, and endpoint-tail inventories separately.
 Dual-source merge is counted at most once per layer/KV-head after the complete
 opportunity's grants, matching the A4.6.3.0 post-service state contract.
+It is reported separately as attention-side dual-source work, rather than
+silently charging it to admission when `G_t=0`.
 
 Compare strict attention-first, non-borrowing hard reservation, a
 work-conserving minimum guarantee, and a simple bounded-horizon

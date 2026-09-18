@@ -2247,7 +2247,8 @@ backlog, grant `G_t`, and post-grant backlog, with per-head drain/fairness state
 Each realised grant is passed through the named A4.6.3.0 eager or sealed-page
 mapping, including page/PTE/position/merge records and endpoint tail references.
 In particular, merge is a single post-service head/opportunity record, never a
-per-token-grant record.
+per-token-grant record, and it remains separate attention-side work when an
+opportunity has no admission grant.
 
 It compares strict attention-first, hard non-borrowing reservation,
 work-conserving reserved minimum, and a deliberately offline

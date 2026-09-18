@@ -2837,7 +2837,9 @@ idle capacity, work-conserving attention borrowing, and grant-mapped payload,
 position, PTE, page-seal, merge, and tail-reference inventories. Mapping work
 uses only the named eager-copy or sealed-page-copy-with-tail-reference
 assumption. A dual-source merge record is emitted once per head after all grants
-in an append opportunity, never once per individual token grant. It is a timestamp-free modeled inventory, never measured KV
+in an append opportunity, never once per individual token grant. It is emitted
+as separate attention-side work, including when `G_t` is zero, rather than as
+admission-occupied work. It is a timestamp-free modeled inventory, never measured KV
 traffic, bytes, HBM/DMA work, cycles, bandwidth, latency, throughput, energy,
 area, FIFO capacity, or hardware scheduler behavior. No policy, mapping, page
 size, reservation, or resource parameter is selected.
