@@ -2209,3 +2209,19 @@ the trace prefix and serves only as input to later physicalization-cost and
 attention/admission-contention DSE; it selects no hardware parameter, does not
 establish net benefit, and does not reintroduce Full-KV backing on the normal
 Route-A path.
+
+### A4.6.3.0 implementation — physicalization mapping contract
+
+`tools/analyze_kvzap_route_a4630_physicalization_mapping.py` is the first,
+no-model substep of A4.6.3. It hash-binds A4.4.2 through A4.6.2, replays each
+modeled per-head candidate, and validates its granted/final-pending state. It
+then emits separate eager-copy and sealed-page-copy-with-tail-reference
+inventories over `P={16,64,128}`: payload token units, page allocation/seal/tail,
+PTE/position metadata records, and post-service dual-source merge-state records.
+
+This is an explicit mapping sensitivity, not evidence that a lifecycle event
+caused a real transfer. Its units are not measured KV reads/writes, bytes,
+HBM/DMA traffic, transactions, bandwidth, timing, or hardware resources, and it
+selects neither mapping nor page/PTE metadata format. A4.6.3.1 remains separate:
+only it may combine these named inventories with continuous attention in an
+abstract contention model.

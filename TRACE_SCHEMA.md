@@ -2786,3 +2786,23 @@ FIFO capacity/depth, bandwidth, physical burst/traffic, HBM/DMA activity, or a
 page/bank/PTE/merge/PE resource selection. The bounded model is an input to
 later physicalization-cost and attention/admission-contention DSE; Qwen/Llama
 rows remain separate and no hardware parameter or RTL result follows.
+
+### Route-A A4.6.3.0 physicalization mapping contract
+
+`kvzap-route-a4630-physicalization-mapping-contract-1.0` hash-binds the
+completed A4.4.2/A4.6.0/A4.6.1/A4.6.2 chain and replays each A4.6.2 per-head
+candidate to check its granted/final-pending state. It records physicalization
+work only under named assumptions: `eager_copy_on_logical_service` maps one
+logical service token to one abstract source-read and packed-write token unit;
+`sealed_page_copy_with_unsealed_tail_reference` maps payload work only for
+newly sealed candidate pages and retains an explicit unsealed-tail reference.
+For page-token sensitivity `{16,64,128}`, each variant records page allocation,
+seal, tail, PTE, position-metadata, and post-service dual-source merge-state
+records per head.
+
+No lifecycle transition is automatically a transfer. These are modeled
+token-unit/record inventories, not measured KV reads/writes, bytes,
+transactions, HBM/DMA traffic, bandwidth, timing, or hardware resource use.
+Neither mapping nor page sensitivity point is selected. A later A4.6.3.1 may
+place this explicit inventory beside continuous attention work in a separate
+abstract contention model; this mapping report does not do so.

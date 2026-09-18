@@ -2022,3 +2022,20 @@ hardware parameter. This is modeled logical backlog sensitivity, bounded by the
 recorded trace horizon, and becomes an input to later physicalization-cost and
 attention/admission-contention DSE—not that DSE, a net-benefit conclusion, or
 a Route-A-native protection implementation.
+
+### A4.6.3.0 — physicalization mapping contract
+
+Before any attention/admission contention model, map A4.6.2 logical service
+work to physicalization inventory under explicit alternatives. Hash-bind the
+whole A4.4.2--A4.6.2 chain and recheck every A4.6.2 head's granted/final pending
+state. For candidate page sizes `{16,64,128}`, report per-head KV payload
+source-read/write token units, page fills/seals/tail, page-table/PTE records,
+position-metadata records, and candidate dual-source merge-state records.
+
+The mapping must name when payload movement occurs. The initial sensitivity
+contains eager copy on each logical service action and sealed-page copy with an
+explicit unsealed-tail reference; it must never silently call a logical
+maturity/admission/page event a transfer. The output is modeled work inventory,
+not measured traffic or a chosen page/PTE/metadata implementation. Only after
+this contract is reviewed may A4.6.3.1 place its work alongside continuous
+attention under declared arbitration policies.
