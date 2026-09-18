@@ -2818,3 +2818,25 @@ bounded-horizon abstract work units, not temporal arbitration, traffic, cycles,
 bandwidth, FIFO, or hardware-resource results. No mapping/page/cost/share is
 selected and A4.6.2 per-head deadline/fairness is inherited rather than
 recomputed under a temporal fabric.
+
+### Route-A A4.6.3.2 temporal abstract contention replay
+
+`kvzap-route-a4632-temporal-abstract-contention-replay-1.0` hash-binds the
+complete A4.6.1 activation/append source and A4.6.3.0 mapping report. It keeps
+the Qwen and Llama anchor/workload rows separate and, for every retained
+layer-shared mapping point at horizons `{8,16,32,62}`, stores epoch records with
+`A_t_attn_source_traversal_token_units`, `A_t_new_mature_kept_logical_tokens`,
+`B_t_before_arrivals_logical_tokens`, `B_t_after_arrivals_logical_tokens`,
+`G_t_logical_admission_grant`, and `B_t_plus_1_after_grant_logical_tokens`.
+The final field records the explicit logical recurrence
+`B[t+1]=max(0,B[t]+A_new[t]-G[t])`.
+
+Each policy result provides `B_max`, `B_max_h`, per-head final backlog and
+terminal drain/censoring, deadline misses, per-layer fairness, hard-reservation
+idle capacity, work-conserving attention borrowing, and grant-mapped payload,
+position, PTE, page-seal, merge, and tail-reference inventories. Mapping work
+uses only the named eager-copy or sealed-page-copy-with-tail-reference
+assumption. It is a timestamp-free modeled inventory, never measured KV
+traffic, bytes, HBM/DMA work, cycles, bandwidth, latency, throughput, energy,
+area, FIFO capacity, or hardware scheduler behavior. No policy, mapping, page
+size, reservation, or resource parameter is selected.

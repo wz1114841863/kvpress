@@ -2235,3 +2235,22 @@ work requirements under named cost profiles, without selecting a mapping/page
 or interpreting units as physical traffic, cycles, bandwidth, FIFO, or hardware
 resources. It is aggregate and bounded-horizon only; A4.6.2 deadline/fairness
 is inherited, not temporally re-simulated under shared arbitration.
+
+### A4.6.3.2 implementation — temporal abstract contention replay
+
+`tools/analyze_kvzap_route_a4632_temporal_contention_replay.py` is the separate
+no-model temporal follow-up. It selects only the A4.6.2 layer-shared candidates
+as a shared-fabric sensitivity; the independent per-head envelope remains an
+earlier optimistic bound. At every recorded append opportunity it emits
+retained-source `A_t^attn`, mature-kept `A_t^new`, pre/post-arrival logical
+backlog, grant `G_t`, and post-grant backlog, with per-head drain/fairness state.
+Each realised grant is passed through the named A4.6.3.0 eager or sealed-page
+mapping, including page/PTE/position/merge records and endpoint tail references.
+
+It compares strict attention-first, hard non-borrowing reservation,
+work-conserving reserved minimum, and a deliberately offline
+backlog/deadline-aware sensitivity. Its named composite-work profiles and
+attention-borrow accounting are not a real shared fabric, measured traffic,
+cycles, service rate, FIFO, latency, or scheduler selection. Thus it can only
+bound the question of fixed background service versus buffering plus elastic
+arbitration; it does not select an implementation or establish net benefit.

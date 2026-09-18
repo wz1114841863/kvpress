@@ -2050,3 +2050,25 @@ admission shares. This is an aggregate sensitivity only: do not claim temporal
 controller behavior, bandwidth, cycles, or an updated per-head backlog. A later
 temporal contention model must recompute those states before a resource contract
 or net-benefit conclusion is permitted.
+
+### A4.6.3.2 — temporal abstract contention replay
+
+Build on the A4.6.3.0 named mapping inventory, but do not reinterpret the
+A4.6.3.1 aggregate envelope as a controller result. For layer-shared A4.6.2
+points at horizons `{8,16,32,62}`, replay every opportunity with explicit
+`A_t^attn`, mature-kept `A_t^new`, pending `B_t`, logical grant `G_t`, and
+`B_{t+1}=max(0,B_t+A_t^new-G_t)`. Map every realised grant through the named
+eager-copy or sealed-page-with-tail-reference assumption, retaining payload,
+page/PTE, position, merge, and endpoint-tail inventories separately.
+
+Compare strict attention-first, non-borrowing hard reservation, a
+work-conserving minimum guarantee, and a simple bounded-horizon
+backlog/deadline-aware sensitivity. Record aggregate and per-head peak/final
+backlog, terminal drain/censoring, deadline miss, grant spread, reservation
+idle/attention borrowing, and abstract admission work beside the retained
+attention-source traversal demand. The deadline-aware policy may see the
+recorded future only as an offline sensitivity; it is not an online scheduler.
+All outcomes remain timestamp-free modeled work: they choose no scheduler,
+FIFO, bandwidth, page/bank, controller, or hardware parameter, and they are
+not measured traffic, timing, latency, throughput, energy, area, net benefit,
+or RTL evidence.
