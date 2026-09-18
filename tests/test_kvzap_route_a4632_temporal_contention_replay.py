@@ -33,3 +33,11 @@ def test_a4632_work_conserving_lends_empty_reservation_but_hard_does_not():
     assert hard["attention_borrowed_logical_admission_capacity"] == 0
     assert work_conserving["reservation_idle_logical_tokens"] == 0
     assert work_conserving["attention_borrowed_logical_admission_capacity"] == 8
+
+
+def test_a4632_counts_dual_source_merge_once_per_head_per_opportunity():
+    inventory = {(0, 0): {"pending": 3, "packed": 1, "hot": 2}}
+    arrivals = {(0, 0): [0, 0]}
+    variant = {**_variant(), "minimum_logical_service_quantum": 1}
+    result = replay(inventory=inventory, arrivals=arrivals, variant=variant, policy="hard_reservation")
+    assert result["mapped_admission_work_components"]["modeled_post_service_dual_source_merge_state_records"] == 2

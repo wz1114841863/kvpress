@@ -2060,6 +2060,8 @@ points at horizons `{8,16,32,62}`, replay every opportunity with explicit
 `B_{t+1}=max(0,B_t+A_t^new-G_t)`. Map every realised grant through the named
 eager-copy or sealed-page-with-tail-reference assumption, retaining payload,
 page/PTE, position, merge, and endpoint-tail inventories separately.
+Dual-source merge is counted at most once per layer/KV-head after the complete
+opportunity's grants, matching the A4.6.3.0 post-service state contract.
 
 Compare strict attention-first, non-borrowing hard reservation, a
 work-conserving minimum guarantee, and a simple bounded-horizon

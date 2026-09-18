@@ -62,13 +62,13 @@ def minimum_reservation(quantum: int) -> int:
     return math.ceil(quantum * HARD_RESERVATION_SHARE)
 
 
-def mapped_work(*, movement: str, page_tokens: int, packed_before: int, grant: int, pending_after_service: int) -> dict[str, int]:
+def mapped_work(*, movement: str, page_tokens: int, packed_before: int, grant: int) -> dict[str, int]:
     """Apply a named A4.6.3.0 mapping to one actual temporal grant."""
     pages = page_events(packed_before, grant, page_tokens)
     if movement == EAGER_COPY: reads = writes = grant
     elif movement == SEALED_COPY: reads = writes = pages["newly_sealed_page_count"] * page_tokens
     else: raise ValueError(f"unknown mapping assumption: {movement}")
-    return {"modeled_kv_payload_source_read_token_units": reads, "modeled_kv_payload_packed_write_token_units": writes, "modeled_position_metadata_update_records": grant, "modeled_page_table_update_records": pages["new_page_allocations"], "modeled_page_seal_records": pages["newly_sealed_page_count"], "modeled_post_service_dual_source_merge_state_records": int(pending_after_service > 0 and pages["packed_tokens_after_mapping"] > 0)}
+    return {"modeled_kv_payload_source_read_token_units": reads, "modeled_kv_payload_packed_write_token_units": writes, "modeled_position_metadata_update_records": grant, "modeled_page_table_update_records": pages["new_page_allocations"], "modeled_page_seal_records": pages["newly_sealed_page_count"], "modeled_post_service_dual_source_merge_state_records": 0}
 
 
 def composite_work(mapped: dict[str, int], profile: dict[str, int]) -> int:
@@ -130,9 +130,15 @@ def replay(*, inventory: dict[Stream, dict[str, int]], arrivals: dict[Stream, li
                 head = layer_heads[rr_next[layer] % len(layer_heads)]; key = layer, head; rr_next[layer] = (rr_next[layer] + 1) % len(layer_heads)
                 if pending[key] == 0: misses += 1; continue
                 pending[key] -= 1; grants[key] += 1; remaining_grant -= 1; epoch_grant += 1; misses = 0
-                mapped = mapped_work(movement=movement, page_tokens=page_tokens, packed_before=packed[key], grant=1, pending_after_service=pending[key]); packed[key] += 1
+                mapped = mapped_work(movement=movement, page_tokens=page_tokens, packed_before=packed[key], grant=1); packed[key] += 1
                 for field in MAPPED_FIELDS: epoch_mapped[field] += mapped[field]; total_mapped[field] += mapped[field]
-        for key in heads: post_trace[key].append(pending[key]); post_peak[key] = max(post_peak[key], pending[key])
+        # A4.6.3.0 maps dual-source merge state once per stream after all grants
+        # in the append opportunity, rather than once for each token grant.
+        for key in heads:
+            merge = int(pending[key] > 0 and packed[key] > 0)
+            epoch_mapped["modeled_post_service_dual_source_merge_state_records"] += merge
+            total_mapped["modeled_post_service_dual_source_merge_state_records"] += merge
+            post_trace[key].append(pending[key]); post_peak[key] = max(post_peak[key], pending[key])
         epochs.append({"append_opportunity": t + 1, "A_t_attn_source_traversal_token_units": a_attn, "A_t_new_mature_kept_logical_tokens": a_new, "B_t_before_arrivals_logical_tokens": b_before, "B_t_after_arrivals_logical_tokens": b_after_arrival, "G_t_logical_admission_grant": epoch_grant, "B_t_plus_1_after_grant_logical_tokens": sum(pending.values()), "minimum_admission_grant_target_logical_tokens": epoch_minimum_target, "G_t_mapped_work_components": epoch_mapped, "G_t_mapped_abstract_work_units_by_cost_profile": {name: composite_work(epoch_mapped, weights) for name, weights in COST_PROFILES.items()}})
     per_head = []
     for key in heads:
