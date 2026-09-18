@@ -2225,3 +2225,13 @@ HBM/DMA traffic, transactions, bandwidth, timing, or hardware resources, and it
 selects neither mapping nor page/PTE metadata format. A4.6.3.1 remains separate:
 only it may combine these named inventories with continuous attention in an
 abstract contention model.
+
+### A4.6.3.1 implementation — aggregate attention/admission contention envelope
+
+`tools/analyze_kvzap_route_a4631_attention_admission_contention.py` consumes
+the complete A4.6.3.0 mapping sensitivity and its A4.6.1 source traversal
+inventory. It compares isolated, attention-first, and reserved-share abstract
+work requirements under named cost profiles, without selecting a mapping/page
+or interpreting units as physical traffic, cycles, bandwidth, FIFO, or hardware
+resources. It is aggregate and bounded-horizon only; A4.6.2 deadline/fairness
+is inherited, not temporally re-simulated under shared arbitration.

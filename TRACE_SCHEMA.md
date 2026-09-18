@@ -2806,3 +2806,15 @@ transactions, HBM/DMA traffic, bandwidth, timing, or hardware resource use.
 Neither mapping nor page sensitivity point is selected. A later A4.6.3.1 may
 place this explicit inventory beside continuous attention work in a separate
 abstract contention model; this mapping report does not do so.
+
+### Route-A A4.6.3.1 aggregate attention/admission contention envelope
+
+`kvzap-route-a4631-aggregate-attention-admission-contention-1.0` consumes all
+A4.6.3.0 mapping variants and the hash-bound A4.6.1 source traversal inventory.
+It keeps attention traversal/merge work separate from admission physicalization
+work, under named abstract cost profiles, and compares admission-isolated,
+attention-first, and reserved-admission-share aggregate requirements. These are
+bounded-horizon abstract work units, not temporal arbitration, traffic, cycles,
+bandwidth, FIFO, or hardware-resource results. No mapping/page/cost/share is
+selected and A4.6.2 per-head deadline/fairness is inherited rather than
+recomputed under a temporal fabric.

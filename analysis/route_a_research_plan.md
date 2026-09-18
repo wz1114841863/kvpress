@@ -2039,3 +2039,14 @@ maturity/admission/page event a transfer. The output is modeled work inventory,
 not measured traffic or a chosen page/PTE/metadata implementation. Only after
 this contract is reviewed may A4.6.3.1 place its work alongside continuous
 attention under declared arbitration policies.
+
+### A4.6.3.1 — aggregate attention/admission contention envelope
+
+Consume every named A4.6.3.0 variant before selecting no mapping/page point.
+Under explicit abstract cost profiles, retain continuous source traversal and
+merge work separately from admission physicalization work; report the bounded
+horizon requirements for admission-isolated, attention-first, and reserved
+admission shares. This is an aggregate sensitivity only: do not claim temporal
+controller behavior, bandwidth, cycles, or an updated per-head backlog. A later
+temporal contention model must recompute those states before a resource contract
+or net-benefit conclusion is permitted.
