@@ -2763,3 +2763,26 @@ FIFO occupancy/capacity, service rate, overflow, allocation/capacity, bytes,
 HBM/DMA traffic, page/PTE/bank requirements, timing, latency, throughput,
 energy, area, architecture specification, or RTL. Qwen and Llama rows cannot
 be pooled, range-reduced, or used to select hardware parameters.
+
+### Route-A A4.6.2 multi-horizon logical service envelope
+
+`kvzap-route-a462-activation-logical-service-envelope-1.0` is a no-model,
+hash-bound sensitivity model over completed A4.4.2, Qwen/Llama A4.6.0, and
+A4.6.1 inputs. For each anchor/workload separately it initializes every
+`(layer, KV-head)` backlog from activation-commit pending state and replays only
+the post-commit `matured_kept_tokens` arrival sequence. Recorded A4.6.1
+admission actions are explicitly not reused as a service-rate input. It finds
+the minimum logical quantum that drains each bounded prefix at horizons
+`{1,2,4,8,16,32,62}` append opportunities, and records per-head maximum/final
+backlog, service grant, drain opportunity, reaccumulation, and per-layer
+fairness spreads.
+
+Independent per-stream quantum is an optimistic no-competition bound. The
+second policy shares one quantum within each layer and assigns individual
+logical tokens round-robin among nonempty KV heads; it is a declared contention
+sensitivity, not a hardware scheduler. A quantum is only an abstract
+tokens-per-logical-append-opportunity variable. It is not cycles, service rate,
+FIFO capacity/depth, bandwidth, physical burst/traffic, HBM/DMA activity, or a
+page/bank/PTE/merge/PE resource selection. The bounded model is an input to
+later physicalization-cost and attention/admission-contention DSE; Qwen/Llama
+rows remain separate and no hardware parameter or RTL result follows.

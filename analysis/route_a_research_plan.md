@@ -2000,3 +2000,25 @@ overflow, allocation, traffic, bytes, HBM/DMA activity, timing, latency,
 throughput, energy, area, an architecture specification, or RTL evidence. A
 later model must introduce its own explicit service/backing assumptions before
 using these inputs to study capacity protection or net benefit.
+
+### A4.6.2 — multi-horizon logical admission-service envelope
+
+Do not reduce the activation question to whether one quantum clears the fixed
+62-opportunity continuation. Bind the completed A4.4.2/A4.6.0/A4.6.1 chain and
+model every anchor/workload separately across drain horizons
+`{1,2,4,8,16,32,62}`. Initialize each `(layer, KV-head)` from its activation
+pending state and replay only the post-commit mature-kept arrival sequence.
+For every horizon, find the minimum declared logical service quantum that
+drains the bounded prefix, and retain each head's initial/peak/final backlog,
+service grant, first/terminal drain opportunity, and reaccumulation state.
+Report layer-local completion and service/peak spread as the fairness contract.
+
+Use independent per-stream service only as an optimistic no-competition bound.
+Use a separately named per-layer shared policy with an explicit allocation rule
+to expose head competition; the initial rule is unit-token round-robin among
+nonempty heads. Neither policy is a scheduler implementation. Logical quantum
+must not be translated into cycles, FIFO depth, bandwidth, HBM traffic, or a
+hardware parameter. This is modeled logical backlog sensitivity, bounded by the
+recorded trace horizon, and becomes an input to later physicalization-cost and
+attention/admission-contention DSE—not that DSE, a net-benefit conclusion, or
+a Route-A-native protection implementation.

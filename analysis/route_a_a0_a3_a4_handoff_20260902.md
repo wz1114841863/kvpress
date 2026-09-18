@@ -2190,3 +2190,22 @@ activation bursts, FIFO occupancy/capacity, service rate, overflow, allocation,
 bytes, HBM/DMA traffic, page/bank/PTE requirements, timing, latency,
 throughput, energy, area, architecture specification, or RTL. A4.6.1 selects
 no hardware parameter and does not revive Full-KV backing as the normal path.
+
+### A4.6.2 implementation — multi-horizon logical admission-service envelope
+
+`tools/analyze_kvzap_route_a462_activation_service_envelope.py` hash-binds the
+complete A4.4.2/A4.6.0/A4.6.1 source chain and runs no model. It initializes
+per-head backlog from A4.6.1 activation pending inventory, replays only mature
+kept append arrivals, and searches the minimum logical service quantum that
+drains every head by each of the `1,2,4,8,16,32,62` logical append-opportunity
+horizons. It records per-head backlog/drain/reaccumulation/service state and
+per-layer fairness spread under two explicit models: independent per-stream
+optimistic service and shared per-layer unit-token round-robin service.
+
+The quantum is a model-only tokens-per-append-opportunity variable. It is not a
+cycle, service rate, FIFO depth/capacity, bandwidth, HBM/DMA traffic, physical
+burst, or a hardware scheduler/resource choice. The A4.6.2 model is bounded by
+the trace prefix and serves only as input to later physicalization-cost and
+attention/admission-contention DSE; it selects no hardware parameter, does not
+establish net benefit, and does not reintroduce Full-KV backing on the normal
+Route-A path.
