@@ -2843,3 +2843,22 @@ admission-occupied work. It is a timestamp-free modeled inventory, never measure
 traffic, bytes, HBM/DMA work, cycles, bandwidth, latency, throughput, energy,
 area, FIFO capacity, or hardware scheduler behavior. No policy, mapping, page
 size, reservation, or resource parameter is selected.
+
+### Route-A A4.6.4 causal elastic-admission contract
+
+`kvzap-route-a464-causal-elastic-admission-contract-1.0` hash-binds the valid
+A4.6.1/A4.6.3.0/A4.6.3.2 chain and emits three same-level policy replays:
+minimum-only work-conserving, `causal_counter_hysteresis_v1`, and a
+clairvoyant same-level offline reference.  Each epoch records the normal
+`A_t`, `B_t`, `G_t` recurrence plus per-layer observable controller inputs:
+`B_layer`, `B_max_h`, `Age_max`, current mature-kept arrival, selected level,
+actual grant, and transition.
+
+The causal policy receives neither later arrivals, evaluation horizon, anchor
+or workload identity, nor A4.6.2's trace-derived optimal quantum.  It uses the
+fixed global logical ladder `{16,64,256}` and declared counter hysteresis;
+prefix-causality is a required test.  Per-head age/backlog/deadline/fairness,
+level occupancy, transitions, mapped admission work, and separate dual-source
+merge work are modeled logical/token-unit/record evidence only.  They are not
+hardware service rates, cycles, traffic, bytes, HBM/DMA activity, bandwidth,
+FIFO depth, timing, latency, throughput, energy, area, or hardware selection.

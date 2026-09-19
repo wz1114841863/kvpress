@@ -2257,3 +2257,19 @@ attention-borrow accounting are not a real shared fabric, measured traffic,
 cycles, service rate, FIFO, latency, or scheduler selection. Thus it can only
 bound the question of fixed background service versus buffering plus elastic
 arbitration; it does not select an implementation or establish net benefit.
+
+### A4.6.4 implementation — causal elastic-admission contract
+
+`tools/analyze_kvzap_route_a464_causal_elastic_contract.py` hash-binds the
+A4.6.1 source, A4.6.3.0 mapping, and valid A4.6.3.2 report, but deliberately
+does not pass the A4.6.2 quantum or evaluation horizon to its causal controller.
+One global configuration supplies logical levels `{16,64,256}` and uses only
+layer/head backlog, pending-cohort age, previous level, and hysteresis state.
+It is identical across all anchor/workload rows and has a prefix-causality test.
+
+The same-level offline oracle may see future arrivals solely as a clairvoyant
+reference.  All actual grants retain named A4.6.3.0 mapping and separate
+post-service dual-source merge accounting.  Logical level occupancy,
+transitions, backlog, age, deadline, fairness, and borrow summaries remain
+timestamp-free modeled quantities, not cycles, FIFO/bandwidth requirements,
+traffic, timing, a selected scheduler, or hardware specification.

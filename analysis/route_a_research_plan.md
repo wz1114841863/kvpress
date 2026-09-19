@@ -2076,3 +2076,28 @@ All outcomes remain timestamp-free modeled work: they choose no scheduler,
 FIFO, bandwidth, page/bank, controller, or hardware parameter, and they are
 not measured traffic, timing, latency, throughput, energy, area, net benefit,
 or RTL evidence.
+
+### A4.6.4 — causal elastic-admission contract
+
+Replace the A4.6.3.2 future-aware elasticity upper bound with a falsifiable
+causal controller sensitivity.  Evaluation horizons `{8,16,32,62}` remain
+deadlines only and are never controller inputs; likewise, A4.6.2's per-trace
+optimal quantum is not available at runtime.  The fixed global controller sees
+only current/history logical counters: layer backlog, maximum head backlog,
+pending-cohort maximum age, previous service level, and hysteresis state.
+
+Use exactly three pre-registered logical sensitivity levels
+`minimum/medium/high={16,64,256}` with one fixed counter policy across every
+Qwen/Llama and workload row.  A head-backlog or age threshold raises to high;
+a layer-backlog threshold raises to medium; two consecutive low-pressure
+opportunities permit one-level de-escalation.  Compare it with minimum-only
+work-conserving service and a clairvoyant reference which may see future
+arrivals but is restricted to the same three levels.  Assert prefix causality:
+changing later arrivals must not change any earlier causal decision.
+
+Report per-head backlog/age/deadline/fairness, level occupancy and transition
+frequency, borrowed logical admission capacity, and separately mapped
+admission and dual-source attention merge work.  The levels and thresholds are
+not cycles, service rates, FIFO depth, bandwidth, or hardware parameters; the
+oracle is not a controller proposal.  This stage cannot establish physical
+implementability, net benefit, architecture selection, or RTL readiness.
