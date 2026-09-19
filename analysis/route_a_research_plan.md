@@ -2103,3 +2103,22 @@ oracle is not a controller proposal.  This stage cannot establish physical
 implementability, net benefit, architecture selection, or RTL readiness.
 Layer-local round-robin allocation must constrain every grant by the current
 head backlog, so no controller level can silently over-service a pending cohort.
+
+### A4.6.5 — observer-only causal pending-capacity and service-shortage envelope
+
+Consume the fixed, validated A4.6.4 causal policy without changing one grant or
+controller state.  For each evaluation horizon, compare head-local pending caps
+and layer-shared pending-pool caps only as logical observers sampled after
+arrivals and before grant.  Pre-register one global logarithmic cap grid for
+all rows, and report breach count/first breach, peak excess, maximum consecutive
+breach duration, and affected head/layer.  A cap must never cause DROP,
+fallback, Full-KV backing, reordering, admission modification, or protection.
+
+Retain, especially for reasoning rows, per-layer `Age_max`, high-level selected
+with residual post-grant backlog, saturation duration, positive-debt run, and
+peak debt.  Recheck that the observer replay exactly reproduces A4.6.4's
+backlog/grant/drain outcome at every horizon.  These are logical pressure
+descriptors—not FIFO depth, physical capacity, buffer organization, hardware
+service, traffic, timing, or a protection-policy decision.  Only their shape
+may determine whether a later distinct study examines pending organization or
+Route-A-native protection.

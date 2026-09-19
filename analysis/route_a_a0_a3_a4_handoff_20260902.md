@@ -2275,3 +2275,17 @@ timestamp-free modeled quantities, not cycles, FIFO/bandwidth requirements,
 traffic, timing, a selected scheduler, or hardware specification.
 Its unit-token round-robin allocator bounds each head's grant by its current
 pending cohort before updating any mapping inventory.
+
+### A4.6.5 implementation — observer-only causal capacity envelope
+
+`tools/analyze_kvzap_route_a465_causal_capacity_envelope.py` hash-binds the
+A4.6.1 source, A4.6.3.0 mapping, and completed A4.6.4 report.  It replays the
+same causal controller only to validate identical logical outcomes, then places
+head-local and layer-shared caps as passive observers after arrival and before
+grant.  No cap is passed to the controller or can change a grant, lifecycle
+state, DROP decision, fallback, backing, or protection mode.
+
+It records breach/excess/duration tails and service-shortage pressure, with
+reasoning rows retaining high-level saturation and `Age_max` explicitly.  The
+cap grids are global logical sensitivities, not FIFO depth, buffer organization,
+physical capacity, traffic, timing, or hardware parameters.

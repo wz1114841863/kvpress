@@ -2864,3 +2864,20 @@ hardware service rates, cycles, traffic, bytes, HBM/DMA activity, bandwidth,
 FIFO depth, timing, latency, throughput, energy, area, or hardware selection.
 Within a layer, round-robin grants cannot exceed each head's current pending
 cohort; over-service is an invalid replay.
+
+### Route-A A4.6.5 observer-only causal capacity envelope
+
+`kvzap-route-a465-causal-capacity-envelope-1.0` hash-binds A4.6.1, A4.6.3.0,
+and the completed A4.6.4 causal report.  For each horizon it verifies that an
+independent replay reproduces A4.6.4 backlog/grant/drain state, then records
+head-local and layer-shared cap observers over pending immediately after arrival
+and before grant.  Each cap point contains first breach, breach count, peak
+excess, consecutive duration, and affected streams; it cannot alter controller
+inputs/state, grants, admission, DROP, fallback, backing, or protection.
+
+Per-layer service-shortage records include `Age_max`, high-level saturation with
+residual post-grant backlog, saturation duration, positive-debt run, and peak
+debt.  The logical cap grids and these pressure descriptors are not FIFO depth,
+physical capacity, buffer organization, bytes, HBM/DMA traffic, cycles,
+bandwidth, timing, latency, throughput, energy, area, scheduler selection, or
+hardware parameters.
