@@ -2862,3 +2862,5 @@ level occupancy, transitions, mapped admission work, and separate dual-source
 merge work are modeled logical/token-unit/record evidence only.  They are not
 hardware service rates, cycles, traffic, bytes, HBM/DMA activity, bandwidth,
 FIFO depth, timing, latency, throughput, energy, area, or hardware selection.
+Within a layer, round-robin grants cannot exceed each head's current pending
+cohort; over-service is an invalid replay.

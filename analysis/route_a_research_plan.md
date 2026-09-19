@@ -2101,3 +2101,5 @@ admission and dual-source attention merge work.  The levels and thresholds are
 not cycles, service rates, FIFO depth, bandwidth, or hardware parameters; the
 oracle is not a controller proposal.  This stage cannot establish physical
 implementability, net benefit, architecture selection, or RTL readiness.
+Layer-local round-robin allocation must constrain every grant by the current
+head backlog, so no controller level can silently over-service a pending cohort.

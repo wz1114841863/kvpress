@@ -1,5 +1,5 @@
 from tools.analyze_kvzap_route_a4630_physicalization_mapping import EAGER_COPY
-from tools.analyze_kvzap_route_a464_causal_elastic_contract import SERVICE_LEVELS, causal_level, replay
+from tools.analyze_kvzap_route_a464_causal_elastic_contract import SERVICE_LEVELS, causal_level, replay, rr_grants
 
 
 def _variant() -> dict[str, object]:
@@ -32,3 +32,10 @@ def test_a464_offline_oracle_is_explicitly_distinct_from_causal_policy():
     oracle = replay(inventory=inventory, arrivals=arrivals, variant=_variant(), policy="same_levels_offline_oracle_reference")
     assert causal["epoch_records"][0]["layer_controller_observations"][0]["service_level"] == "minimum"
     assert oracle["epoch_records"][0]["layer_controller_observations"][0]["transition"] == "offline_reference"
+
+
+def test_a464_round_robin_never_grants_more_than_a_head_backlog():
+    pending = {(0, 0): 1, (0, 1): 3}
+    rr_next = {0: 0}
+    grants = rr_grants(layer=0, heads=[0, 1], pending=pending, budget=16, rr_next=rr_next)
+    assert grants == {(0, 0): 1, (0, 1): 3}

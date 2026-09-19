@@ -107,15 +107,17 @@ def oracle_level(*, layer_backlog: int, future_arrivals: int, remaining_opportun
 
 def rr_grants(*, layer: int, heads: list[int], pending: dict[Stream, int], budget: int, rr_next: dict[int, int]) -> dict[Stream, int]:
     grants = {(layer, head): 0 for head in heads}
+    available = {(layer, head): pending[layer, head] for head in heads}
     remaining, misses = min(budget, sum(pending[layer, head] for head in heads)), 0
     while remaining and misses < len(heads):
         head = heads[rr_next[layer] % len(heads)]
         key = layer, head
         rr_next[layer] = (rr_next[layer] + 1) % len(heads)
-        if pending[key] == 0:
+        if available[key] == 0:
             misses += 1
             continue
         grants[key] += 1
+        available[key] -= 1
         remaining -= 1
         misses = 0
     return grants

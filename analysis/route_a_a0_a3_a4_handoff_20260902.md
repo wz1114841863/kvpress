@@ -2273,3 +2273,5 @@ post-service dual-source merge accounting.  Logical level occupancy,
 transitions, backlog, age, deadline, fairness, and borrow summaries remain
 timestamp-free modeled quantities, not cycles, FIFO/bandwidth requirements,
 traffic, timing, a selected scheduler, or hardware specification.
+Its unit-token round-robin allocator bounds each head's grant by its current
+pending cohort before updating any mapping inventory.
