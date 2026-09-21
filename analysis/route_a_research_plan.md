@@ -2122,3 +2122,31 @@ descriptors—not FIFO depth, physical capacity, buffer organization, hardware
 service, traffic, timing, or a protection-policy decision.  Only their shape
 may determine whether a later distinct study examines pending organization or
 Route-A-native protection.
+
+### A4.6.6 — equal-budget pending-organization contract
+
+Use the fixed, validated A4.6.4 causal arrivals, grants, and per-head FIFO order
+without changing one controller decision.  Inspect only the post-arrival,
+pre-grant pending snapshots.  For the same logical capacity budget `C` per
+layer, compare: equal private capacity per head; one layer-shared pool; and
+hierarchical private quota plus a shared overflow pool satisfying
+`N_head*q + C_overflow = C`.  Shared capacity is not admission service: no
+organization may recompute `G_t`, redirect a grant, change ordering, or emulate
+an allocator.
+
+Sweep one globally declared set of private quota fractions under the same `C`.
+Report breach, peak excess, longest overflow duration, and private capacity
+stranded while another head/layer demand breaches.  Construct a
+capacity-efficiency frontier: exact logical `Cmin` for zero breach and named
+bounded-breach sensitivities.  The head-local and shared endpoints must be
+recovered by hierarchical `q=C/N_head` and `q=0`, respectively; all results must
+also reproduce A4.6.4 and A4.6.5 backlog/drain/per-head tails exactly.
+
+The outcome may quantify the capacity tax of preserving private ownership and
+whether pooling absorbs skew.  It does not choose an organization or physical
+capacity, and it is not a model of descriptor/PTE/allocator, ports, banking,
+traffic, cycles, timing, hardware protection, or RTL.  Only if reasoning tails
+remain bounded under equal-budget pooling should a later study examine the
+metadata and physicalization cost of hierarchical/shared pending state;
+otherwise a distinct Route-A-native protection/service-shortage contract is
+required.

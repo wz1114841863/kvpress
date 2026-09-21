@@ -2289,3 +2289,25 @@ It records breach/excess/duration tails and service-shortage pressure, with
 reasoning rows retaining high-level saturation and `Age_max` explicitly.  The
 cap grids are global logical sensitivities, not FIFO depth, buffer organization,
 physical capacity, traffic, timing, or hardware parameters.
+
+### A4.6.6 implementation — equal-budget pending-organization contract
+
+`tools/analyze_kvzap_route_a466_pending_organization_contract.py` extends the
+capacity study without turning storage organization into a scheduler.  It
+hash-binds the A4.6.1/A4.6.3.0/A4.6.4/A4.6.5 chain, independently replays the
+fixed causal policy, and rejects a run unless its aggregate and per-head result
+matches both A4.6.4 and A4.6.5.  Organization observers then receive the same
+post-arrival/pre-grant vectors; they cannot modify arrivals, grants, controller
+state, per-head FIFO order, admission, lifecycle state, DROP, fallback, or
+backing.
+
+Each comparison gives head-local, layer-shared, and hierarchical private-plus-
+overflow ownership exactly the same per-layer logical capacity budget `C`.
+Hierarchical points satisfy `N_head*q+C_overflow=C`; its quota fractions and
+the common integral `C` grid are globally declared across anchor head counts.
+The report provides equal-budget breach/excess/duration/stranding
+summaries and `Cmin` zero-breach or named bounded-breach frontiers.  They remain
+observer-only logical sensitivities, not an allocator or physical implementation
+claim: no FIFO, descriptor, PTE, port, bank, byte, HBM/DMA, cycle, timing,
+throughput, energy, area, protection, hardware parameter, architecture spec, or
+RTL conclusion is allowed.

@@ -2881,3 +2881,29 @@ debt.  The logical cap grids and these pressure descriptors are not FIFO depth,
 physical capacity, buffer organization, bytes, HBM/DMA traffic, cycles,
 bandwidth, timing, latency, throughput, energy, area, scheduler selection, or
 hardware parameters.
+
+### Route-A A4.6.6 equal-budget pending-organization contract
+
+`kvzap-route-a466-pending-organization-contract-1.0` hash-binds the complete
+A4.6.1/A4.6.3.0/A4.6.4/A4.6.5 chain.  It independently reproduces the fixed
+A4.6.4 causal replay and validates the resulting `B_max`, terminal state, drain,
+and per-head tails against both A4.6.4 and A4.6.5 before any organization
+observer runs.  The input at each opportunity is only the same post-arrival,
+pre-grant pending vector already produced by that replay.
+
+For an identical per-layer logical budget `C`, it compares equal-quota
+head-local capacity, one layer-shared pool, and hierarchical `N_head*q +
+C_overflow = C` ownership.  The hierarchical private-quota fraction sweep is
+global, and all sampled `C` values use one globally pre-registered grid that
+preserves integral quarter-quota splits across observed head counts.  It reports equal-budget
+breach/excess/duration and private-reservation stranding, plus zero-breach
+`Cmin` and named bounded-breach logical sensitivity frontiers.
+
+These rows neither allocate storage nor assign individual overflow entries.
+They cannot alter an A4.6.4 grant, controller state, arrival, per-head order,
+admission, DROP/fallback/backing state, or lifecycle.  `C`, quota, overflow,
+stranding, and `Cmin` are logical observer quantities only: not FIFO depth,
+physical capacity, descriptor/PTE format, allocator behavior, ports, banking,
+bytes, HBM/DMA traffic, cycles, bandwidth, timing, latency, throughput, energy,
+area, protection policy, hardware selection, architecture specification, or RTL
+evidence.
