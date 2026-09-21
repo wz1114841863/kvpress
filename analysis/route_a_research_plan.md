@@ -2174,3 +2174,31 @@ queue events, source spans, cross-source oldest selections, and concurrency
 demand.  They are inputs to a later explicit
 organization-tax versus capacity-recovery mapping, not descriptor bytes,
 physical ports/banks, accesses, traffic, cycles, or hardware cost.
+
+### A4.6.7.1 — unweighted organization-management exposure versus capacity recovery
+
+After A4.6.7.0 has shown exact immutable-source FIFO semantics, pair its
+activation/append logical ownership inventory with the hash-bound A4.6.6 `Cmin`
+frontier.  The fixed A4.6.4 arrival/grant/order trajectory remains immutable:
+this step must not invoke a scheduler, alter a grant, or use capacity pressure
+to cause DROP, fallback, spill, migration, or a backing action.
+
+For each ownership variant and horizon, report the A4.6.6 logical capacity
+recovery relative to head-local together with separate, unweighted candidate
+management primitives: private/shared source-affiliation segment creation and
+release, activation versus append enqueue units, oldest-source comparisons,
+source switches, cross-source dequeue head-opportunities, and peak logical
+span/source concurrency.  A prefix horizon retaining backlog must be explicitly
+labeled rather than treated as a completed lifecycle.  Verify that the q=0 and
+large-q endpoints retain their shared and head-local inventories respectively,
+that `Cmin` contexts match A4.6.6, and that enqueue/dequeue/pending conservation
+holds.
+
+The resulting ratios may only divide recovered *logical token-layers* by a
+named logical event count; they assign no equivalence or physical cost weight
+between events.  A segment is a candidate logical ownership record, not a
+descriptor or PTE; comparisons, releases, spans, and concurrency are not
+accesses, ports, bank conflicts, bytes, HBM/DMA traffic, cycles, timing,
+latency, throughput, energy, area, physical capacity, hardware selection, or
+RTL evidence.  This creates a falsifiable input contract for a later explicit
+physical pending-storage mapping, not a physical implementation claim.

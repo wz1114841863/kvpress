@@ -2330,3 +2330,27 @@ selection/switches, and concurrency.  It has no
 finite capacity or allocator and does not claim descriptor/PTE layout, physical
 accesses, ports, banks, bytes, HBM/DMA traffic, cycles, timing, throughput,
 energy, area, protection, hardware selection, architecture spec, or RTL.
+
+### A4.6.7.1 implementation — unweighted organization-management exposure versus recovery
+
+`tools/analyze_kvzap_route_a4671_pending_organization_tax_recovery.py` consumes
+only the completed A4.6.6 organization frontier and repaired A4.6.7.0 immutable
+ownership reference.  It revalidates their complete A4.6.1--A4.6.7.0 hash chain,
+all fixed-grant/FIFO guards, each `Cmin` context, endpoint degeneracy, and
+per-horizon enqueue/dequeue/pending conservation before producing a fresh
+report.
+
+For each fixed causal horizon it places logical capacity recovery beside an
+unweighted inventory of source-affiliation creation/release segments,
+activation-versus-append enqueue units, oldest-source comparisons, switches,
+cross-source dequeue opportunities, and span/source concurrency.  Short
+horizons that retain pending work are explicitly prefix-censored; they are not
+silently counted as lifecycle completion.  The report's optional exposure ratios
+are merely logical token-layer/event divisions, not a cost model or a choice
+between organizations.
+
+No logical segment is declared a descriptor/PTE, no event is an access or port,
+and no ratio is bytes, traffic, bandwidth, cycles, timing, latency, throughput,
+energy, area, FIFO depth, physical capacity, protection policy, hardware
+parameter, architecture specification, or RTL evidence.  A4.6.7.1 is the
+contract boundary before a separately declared physical pending-storage mapping.

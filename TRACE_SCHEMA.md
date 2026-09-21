@@ -2934,3 +2934,29 @@ It has no finite capacity, allocator, spill, compaction, descriptor format,
 PTE, physical port/bank, byte, HBM/DMA, cycle, timing, throughput, energy,
 area, protection, hardware selection, architecture specification, or RTL
 meaning.  A4.6.6 `Cmin` values are context only, never allocated state.
+
+### Route-A A4.6.7.1 unweighted organization-management exposure versus capacity recovery
+
+`kvzap-route-a4671-pending-organization-tax-recovery-contract-1.0` hash-binds
+the completed A4.6.6 organization frontier and repaired A4.6.7.0 ownership
+reference, while retaining their A4.6.1/A4.6.3.0/A4.6.4/A4.6.5 provenance
+hashes.  It reuses the already fixed causal grants and exact per-head FIFO
+reference; it cannot reschedule admission or invoke finite-capacity behavior.
+
+Each `organization_tax_capacity_rows` item contains: (1) the named
+organization's A4.6.6 `Cmin` recovery relative to head-local in logical tokens
+per layer and logical token-layers; (2) separate logical source-affiliation
+creation/release, cross-source selection, concurrency, and unit-conservation
+inventories; and (3) unweighted exposure ratios that use a named logical event
+count as denominator.  `horizon_completion_state` is `drained` only when the
+fixed causal backlog is zero; otherwise it is `prefix_censored_pending_remains`.
+
+Logical source-affiliation segments are candidate bookkeeping records only, not
+physical descriptors or PTEs.  Creation/release/comparison/switch/span fields
+are not descriptor width, metadata bytes, accesses, ports, banks, bank
+conflicts, HBM/DMA traffic, cycles, timing, latency, throughput, energy, area,
+FIFO depth, physical capacity, or hardware cost.  The ratios assign no equal
+cost weight to heterogeneous primitives and select no organization or hardware
+parameter.  This schema contains no allocator, spill, migration, compaction,
+DROP, fallback, Full-KV backing, protection policy, physical mapping,
+architecture specification, or RTL result.
