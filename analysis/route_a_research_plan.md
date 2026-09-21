@@ -2169,7 +2169,8 @@ grant/backlog/drain equivalence to A4.6.4--A4.6.6, source-age-inversion count
 zero, migration count zero, q=0 equivalence to shared, and sufficient-q
 equivalence to head-local.
 
-Report only logical queue events, source spans, cross-source oldest selections,
-and opportunity-local concurrency demand.  They are inputs to a later explicit
+Report activation enqueue/residency separately from append-opportunity logical
+queue events, source spans, cross-source oldest selections, and concurrency
+demand.  They are inputs to a later explicit
 organization-tax versus capacity-recovery mapping, not descriptor bytes,
 physical ports/banks, accesses, traffic, cycles, or hardware cost.

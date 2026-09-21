@@ -1,4 +1,4 @@
-from tools.analyze_kvzap_route_a4670_pending_ownership_reference import PendingOwnershipState
+from tools.analyze_kvzap_route_a4670_pending_ownership_reference import PendingOwnershipState, simulate_ownership
 
 
 def _dequeue_sources(state: PendingOwnershipState, count: int) -> list[str]:
@@ -36,3 +36,19 @@ def test_a4670_invalid_grant_cannot_change_pending_semantics():
         assert "invalid dequeue grant" in str(error)
     else:
         raise AssertionError("overservice must be rejected")
+
+
+def test_a4670_activation_enqueue_is_separate_from_append_opportunity_inventory():
+    result = simulate_ownership(
+        inventory={(0, 0): {"pending": 3, "packed": 0, "hot": 0}},
+        arrivals={(0, 0): [0]},
+        fixed_schedule=[{(0, 0): (3, 3, 0)}],
+        organization="head_local",
+        private_quota=None,
+    )
+    activation = result["activation_logical_operation_and_concurrency_summary"][0]
+    append = result["per_layer_append_opportunity_logical_operation_and_concurrency_summary"][0]
+    assert activation["private_enqueue_token_units"] == 3
+    assert activation["active_spans_after_activation"] == 1
+    assert append["private_dequeue_token_units"] == 3
+    assert append.get("private_enqueue_token_units", 0) == 0

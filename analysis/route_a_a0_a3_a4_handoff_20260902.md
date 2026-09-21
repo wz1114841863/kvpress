@@ -2324,8 +2324,9 @@ migration, a grant change, or source-age inversion: cross-source dequeue must
 select the oldest per-head entry, even when that entry is older shared overflow
 and newer items are private.
 
-The output inventories logical enqueue/dequeue/release operations, source spans,
-cross-source selection/switches, and per-opportunity concurrency.  It has no
+The output inventories activation enqueue/residency separately from append
+enqueue/dequeue/release operations, source spans, cross-source
+selection/switches, and concurrency.  It has no
 finite capacity or allocator and does not claim descriptor/PTE layout, physical
 accesses, ports, banks, bytes, HBM/DMA traffic, cycles, timing, throughput,
 energy, area, protection, hardware selection, architecture spec, or RTL.

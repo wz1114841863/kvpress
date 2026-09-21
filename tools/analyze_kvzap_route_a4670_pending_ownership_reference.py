@@ -287,11 +287,17 @@ def summarize_layer_opportunity(states: dict[Stream, PendingOwnershipState], lay
 
 def simulate_ownership(*, inventory: dict[Stream, dict[str, int]], arrivals: dict[Stream, list[int]], fixed_schedule: list[dict[Stream, tuple[int, int, int]]], organization: str, private_quota: int | None) -> dict[str, Any]:
     """Run an immutable-source ownership trace against a fixed per-head schedule."""
+    layers = sorted({layer for layer, _ in inventory})
     states = {key: PendingOwnershipState(organization=organization, private_quota=private_quota) for key in sorted(inventory)}
+    activation_metrics: dict[int, dict[str, int]] = {layer: defaultdict(int) for layer in layers}
     for key, state in states.items():
-        state.enqueue(count=inventory[key]["pending"], birth_opportunity=0)
-    layers = sorted({layer for layer, _ in states})
-    layer_metrics: dict[int, dict[str, int]] = {layer: defaultdict(int) for layer in layers}
+        for event in state.enqueue(count=inventory[key]["pending"], birth_opportunity=0):
+            activation_metrics[key[0]][f"{event['source']}_enqueue_token_units"] += event["count"]
+            activation_metrics[key[0]][f"{event['source']}_enqueue_segment_count"] += 1
+    for layer in layers:
+        for name, value in summarize_layer_opportunity(states, layer).items():
+            activation_metrics[layer][name.replace("after_arrival", "after_activation")] = value
+    append_layer_metrics: dict[int, dict[str, int]] = {layer: defaultdict(int) for layer in layers}
     global_max_pending = sum(state.pending for state in states.values())
     for index, schedule in enumerate(fixed_schedule):
         opportunity = index + 1
@@ -307,7 +313,7 @@ def simulate_ownership(*, inventory: dict[Stream, dict[str, int]], arrivals: dic
         for layer in layers:
             summary = summarize_layer_opportunity(states, layer)
             for name, value in summary.items():
-                layer_metrics[layer][f"max_{name}"] = max(layer_metrics[layer][f"max_{name}"], value)
+                append_layer_metrics[layer][f"max_{name}"] = max(append_layer_metrics[layer][f"max_{name}"], value)
         for key, state in states.items():
             _, grant, expected_post = schedule[key]
             chunks = state.dequeue(count=grant)
@@ -324,8 +330,8 @@ def simulate_ownership(*, inventory: dict[Stream, dict[str, int]], arrivals: dic
                 raise AssertionError("ownership dequeue changed fixed post-grant pending state")
         for layer in layers:
             for name, value in event_ops[layer].items():
-                layer_metrics[layer][name] += value
-                layer_metrics[layer][f"max_{name}_one_opportunity"] = max(layer_metrics[layer][f"max_{name}_one_opportunity"], value)
+                append_layer_metrics[layer][name] += value
+                append_layer_metrics[layer][f"max_{name}_one_opportunity"] = max(append_layer_metrics[layer][f"max_{name}_one_opportunity"], value)
     per_head = []
     for (layer, head), state in sorted(states.items()):
         per_head.append({
@@ -347,7 +353,8 @@ def simulate_ownership(*, inventory: dict[Stream, dict[str, int]], arrivals: dic
         "global_B_max": global_max_pending,
         "global_B_final": sum(state.pending for state in states.values()),
         "per_head": per_head,
-        "per_layer_logical_operation_and_concurrency_summary": [{"layer": layer, **dict(sorted(metrics.items()))} for layer, metrics in sorted(layer_metrics.items())],
+        "activation_logical_operation_and_concurrency_summary": [{"layer": layer, **dict(sorted(metrics.items()))} for layer, metrics in sorted(activation_metrics.items())],
+        "per_layer_append_opportunity_logical_operation_and_concurrency_summary": [{"layer": layer, **dict(sorted(metrics.items()))} for layer, metrics in sorted(append_layer_metrics.items())],
         "global_logical_queue_operations": dict(sorted(global_ops.items())),
         "semantic_guards": {
             "per_head_canonical_fifo_exact": True,

@@ -2925,10 +2925,11 @@ entry for that head; any source-age inversion, altered grant, or migration is
 an invalid run.  q=0 and a per-row large-quota semantic endpoint must recover
 the layer-shared and head-local traces respectively.
 
-The report records logical enqueue/dequeue/release, active span/source counts,
-oldest-source comparisons, cross-source switches, per-opportunity maxima, and a
-hash-bound per-head semantic summary after every individual head has been
-validated in memory.
+The report records a separate activation enqueue/residency summary and append-
+opportunity enqueue/dequeue/release, active span/source, oldest-source
+comparison, and cross-source-switch summaries.  It retains a hash-bound
+per-head semantic summary after every individual head has been validated in
+memory; activation must never be silently omitted from concurrency inventory.
 It has no finite capacity, allocator, spill, compaction, descriptor format,
 PTE, physical port/bank, byte, HBM/DMA, cycle, timing, throughput, energy,
 area, protection, hardware selection, architecture specification, or RTL
