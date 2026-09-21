@@ -2202,3 +2202,33 @@ accesses, ports, bank conflicts, bytes, HBM/DMA traffic, cycles, timing,
 latency, throughput, energy, area, physical capacity, hardware selection, or
 RTL evidence.  This creates a falsifiable input contract for a later explicit
 physical pending-storage mapping, not a physical implementation claim.
+
+### A4.6.8.0 — birth-ordered span representation sufficiency gate
+
+Before reducing pending metadata to any descriptor/span representation, prove
+that the representation retains the semantics it would otherwise risk hiding.
+Consume the fixed A4.6.4 grants, immutable A4.6.7.0 source assignment, and the
+authoritative A4.6.7.1 management inventory; do not re-schedule admission or
+use finite capacity to alter lifecycle behavior.
+
+The declared candidate is a per-head private/shared source queue of immutable
+`(source, birth_opportunity, within_head_sequence_start, count)` spans.  A span
+may combine only contiguous entries from the same source and birth opportunity.
+After activation, every append, and every dequeue, reconstruct for every head:
+the current pending set, exact birth/order runs, source ownership, and unique
+canonical oldest entry.  Replay the fixed grant and require its source/count
+chunks plus residual state to match A4.6.7.0 exactly.  q=0 and sufficient-q
+endpoints must remain shared and head-local equivalents.
+
+Include a deliberately lossy source-count-only negative control containing an
+older shared entry followed by newer private entries; it must be rejected
+because it cannot identify the canonical oldest entry.  Only a representation
+that passes this sufficiency gate may report logical span-record inventory next
+to A4.6.7.1 capacity recovery context.  Per-token reference units and span
+record counts are semantic accounting, not physical metadata compression.
+
+No span is a chosen descriptor/PTE, and no count is bytes, payload movement,
+accesses, ports, banks, traffic, cycles, timing, latency, throughput, energy,
+area, physical capacity, hardware selection, architecture specification, or RTL
+evidence.  A4.6.8.1 banking/port sensitivity is blocked unless the sufficiency
+gate passes.

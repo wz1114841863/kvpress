@@ -2960,3 +2960,26 @@ cost weight to heterogeneous primitives and select no organization or hardware
 parameter.  This schema contains no allocator, spill, migration, compaction,
 DROP, fallback, Full-KV backing, protection policy, physical mapping,
 architecture specification, or RTL result.
+
+### Route-A A4.6.8.0 birth-ordered span representation sufficiency
+
+`kvzap-route-a4680-pending-representation-sufficiency-1.0` hash-binds A4.6.1,
+A4.6.4, A4.6.7.0, and the authoritative A4.6.7.1 report.  It derives the fixed
+per-head grant trajectory from A4.6.4 and replays the immutable A4.6.7.0 source
+assignment with `birth_ordered_source_span_v1`: private/shared source queues of
+`(source, birth_opportunity, within_head_sequence_start, count)` spans.
+
+For every ownership variant and horizon, `representation_sufficiency_gate`
+records successful reconstruction of current pending state, exact birth/order,
+unique oldest entry, source ownership, and fixed dequeue chunks at activation,
+append, and dequeue checkpoints.  The span creation/release inventory must
+match A4.6.7.0 and A4.6.7.1.  A source-total-only negative control is explicitly
+rejected because it cannot order older shared work ahead of newer private work.
+
+The representation is a logical semantic candidate, not a physical descriptor
+or PTE.  Per-token reference units, span counts, and logical entries/span are
+not metadata bytes, payload movement, accesses, ports, banks, traffic,
+HBM/DMA, cycles, timing, latency, throughput, energy, area, physical capacity,
+hardware selection, architecture specification, or RTL evidence.  No finite
+allocator, migration, spill, compaction, DROP, fallback, Full-KV backing,
+protection action, or banking/port model is present.

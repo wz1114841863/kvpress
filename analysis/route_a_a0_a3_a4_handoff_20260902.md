@@ -2354,3 +2354,26 @@ and no ratio is bytes, traffic, bandwidth, cycles, timing, latency, throughput,
 energy, area, FIFO depth, physical capacity, protection policy, hardware
 parameter, architecture specification, or RTL evidence.  A4.6.7.1 is the
 contract boundary before a separately declared physical pending-storage mapping.
+
+### A4.6.8.0 implementation — birth-ordered span representation sufficiency
+
+`tools/analyze_kvzap_route_a4680_pending_representation_sufficiency.py` uses the
+authoritative remote-replicated A4.6.7.1 report together with A4.6.1, A4.6.4,
+and A4.6.7.0.  It validates the entire hash chain, retains fixed grants and
+immutable source assignment, then independently replays each ownership variant
+with a per-head private/shared queue of birth-ordered source spans.
+
+The representation sufficiency gate runs after activation, every append, and
+every dequeue.  It reconstructs pending cardinality, canonical birth/order,
+source queues, and the unique oldest entry, and rejects any source/count replay
+that diverges from A4.6.7.0.  It also rejects a deliberately lossy source-total
+control with older shared work ahead of newer private work.  Thus a lower span
+count cannot be presented as a benefit unless the retained state is adequate to
+recover every required per-head FIFO semantic.
+
+Span and per-token reference counts are logical semantic inventory only.  This
+implementation chooses no descriptor/PTE width, layout, allocator, payload
+movement, access, port, bank, byte, HBM/DMA traffic, cycle, timing, latency,
+throughput, energy, area, physical capacity, protection policy, hardware
+parameter, architecture specification, or RTL.  A4.6.8.1 is blocked until this
+gate passes.
