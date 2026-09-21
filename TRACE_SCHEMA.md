@@ -2907,3 +2907,29 @@ physical capacity, descriptor/PTE format, allocator behavior, ports, banking,
 bytes, HBM/DMA traffic, cycles, bandwidth, timing, latency, throughput, energy,
 area, protection policy, hardware selection, architecture specification, or RTL
 evidence.
+
+### Route-A A4.6.7.0 immutable pending-ownership semantic reference
+
+`kvzap-route-a4670-pending-ownership-reference-1.0` hash-binds the complete
+A4.6.1/A4.6.3.0/A4.6.4/A4.6.5/A4.6.6 chain.  It derives per-head grants from
+the already validated A4.6.4 state trajectory rather than re-running a
+scheduler, then verifies aggregate and per-head pending state against all three
+predecessors at every horizon.
+
+Each pending entry has immutable `(birth_opportunity, within_head_sequence,
+source_at_enqueue)` identity.  Head-local assigns private source, layer-shared
+assigns shared source, and hierarchical assigns private until its declared
+per-head quota then shared overflow.  Source residence cannot change.  Every
+dequeue compares private/shared fronts and must consume the canonical oldest
+entry for that head; any source-age inversion, altered grant, or migration is
+an invalid run.  q=0 and a per-row large-quota semantic endpoint must recover
+the layer-shared and head-local traces respectively.
+
+The report records logical enqueue/dequeue/release, active span/source counts,
+oldest-source comparisons, cross-source switches, per-opportunity maxima, and a
+hash-bound per-head semantic summary after every individual head has been
+validated in memory.
+It has no finite capacity, allocator, spill, compaction, descriptor format,
+PTE, physical port/bank, byte, HBM/DMA, cycle, timing, throughput, energy,
+area, protection, hardware selection, architecture specification, or RTL
+meaning.  A4.6.6 `Cmin` values are context only, never allocated state.

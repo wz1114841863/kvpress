@@ -2311,3 +2311,21 @@ observer-only logical sensitivities, not an allocator or physical implementation
 claim: no FIFO, descriptor, PTE, port, bank, byte, HBM/DMA, cycle, timing,
 throughput, energy, area, protection, hardware parameter, architecture spec, or
 RTL conclusion is allowed.
+
+### A4.6.7.0 implementation — immutable pending-ownership semantic reference
+
+`tools/analyze_kvzap_route_a4670_pending_ownership_reference.py` is the
+functional prerequisite to organization-cost modeling.  It hash-binds A4.6.1
+through A4.6.6, derives rather than re-schedules the fixed causal per-head
+grants, and independently rechecks the A4.6.4/A4.6.5/A4.6.6 pending trajectory.
+Each logical entry carries immutable birth/order/source identity.  Private,
+shared, and hierarchical source affiliation can never cause private/shared
+migration, a grant change, or source-age inversion: cross-source dequeue must
+select the oldest per-head entry, even when that entry is older shared overflow
+and newer items are private.
+
+The output inventories logical enqueue/dequeue/release operations, source spans,
+cross-source selection/switches, and per-opportunity concurrency.  It has no
+finite capacity or allocator and does not claim descriptor/PTE layout, physical
+accesses, ports, banks, bytes, HBM/DMA traffic, cycles, timing, throughput,
+energy, area, protection, hardware selection, architecture spec, or RTL.

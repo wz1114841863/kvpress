@@ -2150,3 +2150,26 @@ remain bounded under equal-budget pooling should a later study examine the
 metadata and physicalization cost of hierarchical/shared pending state;
 otherwise a distinct Route-A-native protection/service-shortage contract is
 required.
+
+### A4.6.7.0 — immutable pending-ownership semantic reference
+
+Before estimating any organization tax, verify that ownership does not alter
+Route-A semantics.  Consume the fixed A4.6.4 replay state and derive its
+per-head grants directly; do not re-run or modify the causal controller.  Model
+head-local private ownership, layer-shared ownership, and globally declared
+hierarchical private quotas.  There is no finite capacity, allocator, spill, or
+protection action in this step.
+
+Every logical entry must retain immutable birth, within-head sequence, and
+source-at-enqueue identity.  Hierarchical enqueue may fill private quota then
+shared overflow, but entries may never migrate between sources.  On a grant,
+compare private/shared source fronts and consume the oldest canonical entry;
+private priority is invalid when shared holds an older entry.  Assert exact
+grant/backlog/drain equivalence to A4.6.4--A4.6.6, source-age-inversion count
+zero, migration count zero, q=0 equivalence to shared, and sufficient-q
+equivalence to head-local.
+
+Report only logical queue events, source spans, cross-source oldest selections,
+and opportunity-local concurrency demand.  They are inputs to a later explicit
+organization-tax versus capacity-recovery mapping, not descriptor bytes,
+physical ports/banks, accesses, traffic, cycles, or hardware cost.
