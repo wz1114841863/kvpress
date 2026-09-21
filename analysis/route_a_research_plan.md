@@ -2232,3 +2232,34 @@ accesses, ports, banks, traffic, cycles, timing, latency, throughput, energy,
 area, physical capacity, hardware selection, architecture specification, or RTL
 evidence.  A4.6.8.1 banking/port sensitivity is blocked unless the sufficiency
 gate passes.
+
+### A4.6.8.1 — representation-aware, hardware-agnostic access contract
+
+With the A4.6.8.0 sufficiency gate as a required input, make the access behavior
+of `birth_ordered_source_span_v1` explicit before considering banking or ports.
+Keep the A4.6.4 grant trajectory, A4.6.7.0 immutable source assignment, and
+per-head FIFO fixed.  The experiment must neither re-schedule admission nor use
+shared capacity to change arrival, grant, or dequeue order.
+
+Declare and replay logical primitives for span create, legal tail extension,
+partial dequeue, release, oldest-source selection, and source-ownership
+link/unlink.  A tail extension is legal only for same-source, same-birth,
+sequence-contiguous entries; it must never silently merge across a birth
+boundary.  After activation, each append, and each dequeue, reconstruct current
+pending work, exact birth order, unique oldest entry, and source ownership; the
+dequeue chunks and residual state must exactly equal A4.6.7.0 canonical FIFO.
+
+Separate three categories in the report: logical lifecycle events,
+hardware-agnostic metadata primitives, and payload-reference lifetime.  The
+last category only records association creation/release: it is not a K/V read,
+write, copy, fill, seal, movement, or byte count.  Report activation and
+steady-state append/dequeue primitive frequencies, per-layer/opportunity peaks,
+active-span/source concurrency, cross-source comparisons, and release patterns.
+These are stable inputs to A4.6.8.2 physical pending-storage banking/port
+sensitivity, not a physical implementation or organization selection.
+
+No primitive count is a descriptor/PTE width, physical access, port, bank,
+conflict, payload movement, bytes, HBM/DMA traffic, bandwidth, cycle, timing,
+latency, throughput, energy, area, capacity, hardware parameter, architecture
+specification, or RTL evidence.  No finite allocator, migration, spill, DROP,
+fallback, Full-KV backing, protection, or scheduler policy is present.

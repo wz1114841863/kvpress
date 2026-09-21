@@ -2377,3 +2377,30 @@ movement, access, port, bank, byte, HBM/DMA traffic, cycle, timing, latency,
 throughput, energy, area, physical capacity, protection policy, hardware
 parameter, architecture specification, or RTL.  A4.6.8.1 is blocked until this
 gate passes.
+
+### A4.6.8.1 implementation — representation-aware access contract
+
+`tools/analyze_kvzap_route_a4681_representation_access_contract.py` consumes
+the hash-bound A4.6.8.0 remote-replicated report as a required sufficiency gate,
+then replays the same fixed A4.6.4 grants and immutable A4.6.7.0 source
+assignment.  It does not create a new admission or ownership policy.  For each
+source span it emits declared logical primitives for create, legal tail
+extension, partial dequeue, release, dual-source oldest selection, and
+ownership update, while independently proving after every lifecycle event that
+the exact pending set, birth order, oldest entry, source ownership, and dequeue
+chunks still match the A4.6.7.0 FIFO oracle.
+
+The report explicitly separates logical lifecycle, hardware-agnostic metadata
+primitives, and payload-reference lifecycle.  Payload-reference create/release
+means association lifetime only: it does not assert a K/V read, write, copy,
+fill, seal, movement, or byte transfer.  It reports activation and steady-state
+append/dequeue operation pressure, peak layer/opportunity concurrency,
+cross-source selection, and release patterns as input evidence for a later
+physical pending-storage sensitivity study.
+
+This implementation selects no descriptor/PTE width, physical layout,
+allocator, payload movement, access width, port, bank, traffic, HBM/DMA,
+bandwidth, cycle, timing, latency, throughput, energy, area, capacity,
+hardware parameter, architecture specification, or RTL.  It contains no
+finite-capacity action, migration, spill, compaction, DROP, fallback, Full-KV
+backing, protection, or scheduler policy.

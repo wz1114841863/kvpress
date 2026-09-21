@@ -2983,3 +2983,33 @@ HBM/DMA, cycles, timing, latency, throughput, energy, area, physical capacity,
 hardware selection, architecture specification, or RTL evidence.  No finite
 allocator, migration, spill, compaction, DROP, fallback, Full-KV backing,
 protection action, or banking/port model is present.
+
+### Route-A A4.6.8.1 representation-aware access contract
+
+`kvzap-route-a4681-representation-access-contract-1.0` hash-binds the A4.6.1,
+A4.6.4, A4.6.7.0, A4.6.7.1, and A4.6.8.0 reports.  The latter is a mandatory
+representation-sufficiency gate.  The schema replays the same fixed grants and
+source assignment with `birth_ordered_source_span_v1`, checking after
+activation, every append, and every dequeue that pending membership, exact
+birth order, unique oldest entry, source ownership, and source/count dequeue
+chunks reconstruct A4.6.7.0 canonical FIFO exactly.
+
+For every ownership variant and horizon, `hardware_agnostic_access_pressure`
+separates activation, steady-state append, and steady-state dequeue primitive
+counts.  Declared lifecycle primitives are `span_create`, `tail_extension`,
+`span_partial_dequeue`, and `span_release`; declared metadata primitives include
+source-head observation, two-source oldest comparison, remaining/head update,
+and ownership link/unlink.  Tail extension is legal only for same-source,
+same-birth, sequence-contiguous work and is explicitly rejected across a birth
+boundary.  `payload_reference_create/release` records association lifetime only,
+not payload movement.  The schema also reports per-layer/opportunity primitive
+and cross-source-selection peaks, active-span/source concurrency, and release
+patterns.
+
+All operations are hardware-agnostic logical primitives.  They are not
+physical accesses, descriptor/PTE widths, payload reads/writes/copies, bytes,
+HBM/DMA traffic, bandwidth, ports, banks, conflicts, cycles, timing, latency,
+throughput, energy, area, capacity, hardware selection, architecture
+specification, or RTL evidence.  No allocator, finite capacity, migration,
+spill, compaction, DROP, fallback, Full-KV backing, protection, scheduler, or
+physical storage mapping is modeled.
