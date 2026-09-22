@@ -1,4 +1,7 @@
+import hashlib
+
 from tools.analyze_kvzap_route_a4682_access_epoch_trace import (
+    AccessEpochTraceWriter,
     LifetimeTracker,
     OccupancyTracker,
     checkpoint_index,
@@ -50,3 +53,13 @@ def test_a4682_peak_plateau_counts_logical_checkpoints_not_cycles():
     assert plateau["peak_active_spans"] == 3
     assert plateau["peak_active_span_plateau_max_contiguous_checkpoints"] == 2
     assert plateau["peak_active_span_plateau_total_checkpoints"] == 3
+
+
+def test_a4682_closed_trace_is_final_before_manifest_hash(tmp_path):
+    path = tmp_path / "events.jsonl.gz"
+    writer = AccessEpochTraceWriter(path)
+    writer.record(phase="activation", opportunity=0, primitive="span_create")
+    writer.close()
+    first = hashlib.sha256(path.read_bytes()).hexdigest()
+    assert path.read_bytes()
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == first

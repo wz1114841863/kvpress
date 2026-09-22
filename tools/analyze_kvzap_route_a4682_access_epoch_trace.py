@@ -122,6 +122,10 @@ class AccessEpochTraceWriter:
 
     def close(self) -> None:
         self._text.close()
+        # GzipFile does not close a caller-supplied file object.  Close the
+        # buffered raw stream before computing the manifest hash; otherwise a
+        # report can hash a prefix that differs from the finalized gzip file.
+        self._raw.close()
 
 
 @dataclass
