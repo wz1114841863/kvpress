@@ -2263,3 +2263,29 @@ conflict, payload movement, bytes, HBM/DMA traffic, bandwidth, cycle, timing,
 latency, throughput, energy, area, capacity, hardware parameter, architecture
 specification, or RTL evidence.  No finite allocator, migration, spill, DROP,
 fallback, Full-KV backing, protection, or scheduler policy is present.
+
+### A4.6.8.2.0 — access-epoch trace and span-lifetime closure
+
+Before banking/port sensitivity, freeze the remaining temporal input that an
+aggregate A4.6.8.1 primitive count cannot retain.  Consume A4.6.8.1 as a
+mandatory hash-bound contract and replay its fixed grant, source ownership, and
+per-head FIFO without re-scheduling or changing any lifecycle event.  Emit a
+compact ordered trace containing phase, opportunity, layer, head, source, span
+identity, and each already-declared logical primitive.
+
+Use ordered logical checkpoints only: activation is checkpoint 0, append at
+opportunity `t` is `2t-1`, and dequeue at `t` is `2t`.  They are replay indices,
+not cycles or elapsed time.  For every span, report completed and right-censored
+lifetime distributions, active-span residence checkpoint distributions, and
+their per-source breakdown.  At the layer/global level report active-span peak
+and the duration of its exact-max contiguous checkpoint plateau.  A span still
+live at a horizon must remain explicitly censored rather than being dropped.
+
+At every checkpoint, require exact reconstruction of current pending work,
+birth order, source ownership, and canonical oldest entry; phase primitive
+totals must exactly equal A4.6.8.1.  This closure provides a stable temporal
+input to A4.6.8.2.1 metadata organization/banking sensitivity.  No lifetime or
+occupancy statistic implies metadata-cache value, descriptor retention policy,
+physical capacity, time, payload movement, bytes, HBM/DMA traffic, port, bank,
+cycle, timing, latency, throughput, energy, area, hardware parameter,
+architecture specification, or RTL.

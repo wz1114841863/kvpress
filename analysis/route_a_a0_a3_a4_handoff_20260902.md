@@ -2404,3 +2404,28 @@ bandwidth, cycle, timing, latency, throughput, energy, area, capacity,
 hardware parameter, architecture specification, or RTL.  It contains no
 finite-capacity action, migration, spill, compaction, DROP, fallback, Full-KV
 backing, protection, or scheduler policy.
+
+### A4.6.8.2.0 implementation — access-epoch trace and span lifetime
+
+`tools/analyze_kvzap_route_a4682_access_epoch_trace.py` is the temporal closure
+between A4.6.8.1's aggregate logical primitive contract and any later metadata
+organization sensitivity.  It hash-binds A4.6.8.1 and all of its predecessors,
+then replays the same fixed grants, source affiliations, and canonical FIFO
+without re-scheduling.  The compressed event trace preserves logical phase,
+opportunity, layer/head, source, span identity, and primitive order; it stores
+neither token text nor K/V payload.
+
+The implementation records completed versus right-censored span lifetimes,
+active-span residence checkpoint distributions, and phase-separated active-span
+occupancy.  Its ordered checkpoint convention is activation=0, append(t)=2t-1,
+and dequeue(t)=2t; these are replay indices only.  Peak active-span plateau
+duration means consecutive logical checkpoints at exact peak occupancy, not
+hardware time or cache residency time.  Phase primitive totals and every
+post-event FIFO state must reproduce A4.6.8.1/A4.6.7.0 exactly.
+
+No event, lifetime, or occupancy statistic is a physical access, descriptor/PTE
+width, payload movement, bytes, HBM/DMA traffic, port, bank, cycle, timing,
+latency, throughput, energy, area, capacity, hardware parameter, architecture
+specification, or RTL.  No allocator, finite capacity, migration, spill,
+compaction, DROP, fallback, Full-KV backing, protection, scheduler, or physical
+metadata organization is modeled.

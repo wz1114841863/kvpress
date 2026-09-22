@@ -3013,3 +3013,29 @@ throughput, energy, area, capacity, hardware selection, architecture
 specification, or RTL evidence.  No allocator, finite capacity, migration,
 spill, compaction, DROP, fallback, Full-KV backing, protection, scheduler, or
 physical storage mapping is modeled.
+
+### Route-A A4.6.8.2.0 access-epoch trace and span-lifetime closure
+
+`kvzap-route-a4682-access-epoch-trace-1.0` hash-binds A4.6.1, A4.6.4,
+A4.6.7.0, A4.6.7.1, A4.6.8.0, and the completed A4.6.8.1 access-contract
+report.  `a4682_access_epoch_trace.jsonl.gz` uses
+`kvzap-route-a4682-access-epoch-trace-record-1.0`; every record contains only
+the prior logical primitive and its phase, opportunity, layer, KV head, source,
+and span identity.  It does not contain token text, K/V payload, physical
+addresses, widths, or bytes.
+
+The logical checkpoint convention is activation=0, append(t)=2t-1, and
+dequeue(t)=2t.  `span_lifetime` separates completed from right-censored spans,
+and reports lifetime checkpoint/opportunity distance plus active-span residence
+checkpoint distributions, including per-source breakdown.  A right-censored
+span remains active at the fixed horizon and is observationally ended at the
+final dequeue checkpoint.  `phase_separated_active_span_occupancy` reports
+global/per-layer peaks and exact-max contiguous plateau duration.
+
+These are ordered functional replay indices and logical occupancy statistics,
+not hardware time, cache residency time, physical accesses, descriptor/PTE
+widths, payload movement, bytes, HBM/DMA traffic, ports, banks, cycles, timing,
+latency, throughput, energy, area, capacity, hardware selection, architecture
+specification, or RTL evidence.  No allocator, finite capacity, migration,
+spill, compaction, DROP, fallback, Full-KV backing, protection, scheduler, or
+physical metadata mapping is present.
