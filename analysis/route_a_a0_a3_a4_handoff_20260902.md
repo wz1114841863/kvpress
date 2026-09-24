@@ -2604,3 +2604,14 @@ transitions, and residual backlog are therefore inputs to later candidate
 freezing only; they are not a selected controller, bank/port design, hardware
 service result, timing/performance measurement, architecture specification, or
 RTL authorization.
+
+### A4.8.1a implementation — causal readiness/root-cause audit
+
+`tools/analyze_kvzap_route_a481a_readiness_root_cause.py` consumes a completed
+A4.8.0 baseline and replays it unchanged before recording readiness. It adds
+no service sweep or controller variant. It separates dependency-ready work from
+dependency-blocked work and traces a declared canonical shortage root through
+unresolved predecessor chains, reporting downstream amplification rather than
+mistaking all resulting FIFO blockers for intrinsic serialization. This lineage
+is a logical attribution convention only; it is not a physical queueing,
+bank/port, timing, performance, or architecture result.

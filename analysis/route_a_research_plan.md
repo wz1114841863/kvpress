@@ -2504,3 +2504,23 @@ sensitivity. It does not select a storage organization, bank count, port,
 scheduler, or controller; it does not establish a hardware transaction,
 cycle, latency, throughput, bandwidth, capacity, energy, area, architecture
 specification, or RTL readiness.
+
+### A4.8.1a — causal readiness and shortage-root propagation audit
+
+Consume the completed A4.8.0 report as a fixed-controller baseline and first
+reproduce every causal result exactly. Do not alter one service decision,
+transaction, predecessor, FIFO relation, mapping, commit boundary, or drain
+bound. At each logical opportunity, partition the post-arrival backlog into
+`B_ready` (all fixed predecessors committed) and `B_dep`; report ready P95/max,
+ready age, per-head ready skew, trace-end residual, extra no-arrival drain
+length, phase-separated sustained ready-positive runs, and the existing A4.8.0
+high-level state.
+
+For each dependency-ready group denied abstract service, create one declared
+shortage-root incident. Propagate its canonical lineage through unresolved
+predecessors and report amplification: downstream transaction groups per root,
+lineage observations, and maximum dependency depth, separately for RMW,
+same-bank, and cross-bank shortage. Immediate dependency blocking and root
+cause must remain separate. This establishes whether the large A4.8.0
+intrinsic count is structural or shortage-propagated; it is not a new service
+sweep, scheduler, hardware queue, or performance experiment.

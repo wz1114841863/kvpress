@@ -1482,6 +1482,31 @@ its A4151 provenance. The A4155 manifest records that relay explicitly. This
 is provenance validation only, not a timing, memory, HBM, hardware, or RTL
 claim.
 
+### Route-A A4.8.1a causal readiness and root-cause propagation audit
+
+`kvzap-route-a481a-readiness-root-cause-1.0` hash-binds the completed A4.8.0
+report and every predecessor used there. It first reproduces each fixed A4.8.0
+causal replay exactly, then adds observer-only readiness instrumentation. A
+transaction is `ready` only when all fixed A4.7.0/A4.7.1 predecessors have
+committed; a dependency-blocked transaction is not silently counted as a
+service shortage.
+
+The audit reports pre/post-service ready and dependency-blocked backlog, ready
+age, per-head ready skew, trace-end residuals, extra no-arrival drain
+opportunities, sustained ready-positive logical-opportunity runs, and
+phase-separated rows. A shortage-root incident is a dependency-ready group
+whose immediate blocker is modeled RMW, same-bank, or cross-bank shortage. Its
+canonical lineage is propagated only through unresolved predecessors, so the
+report gives downstream groups, lineage observations, and maximum dependency
+depth per root. This is an attribution convention, not a complete causal graph
+or hardware queueing proof; immediate blocker and root cause remain separate.
+
+No service level, controller state, transaction mapping, FIFO order, commit
+boundary, trace horizon, or scheduling decision changes. These logical
+readiness/amplification quantities are not hardware capacity, service rate,
+bank/port demand, cycle, timing, latency, traffic, bandwidth, throughput,
+energy, area, architecture selection, or RTL evidence.
+
 `kvzap-route-a4162-cross-workload-three-path-measurement-1.0` is the A4.1.7.11
 second-workload repeated measurement schema.  Every fresh reset run is one of
 Full-KV bypass, same-mask dense replay, or A4154-certified empty-source-elided
