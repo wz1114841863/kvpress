@@ -2503,3 +2503,24 @@ These fields distinguish a sequence of dependency-bearing checkpoints from a
 long direct dependency chain without introducing a scheduler or hardware-time
 interpretation.  `_01` remains preserved as a partial historical observer and
 must not be used for final chain-length or low-tail-parallelism claims.
+
+### A4.7.1 implementation — semantic metadata transaction contract
+
+`tools/analyze_kvzap_route_a471_metadata_transaction_contract.py` hash-binds
+the finalized A4.6.8.2.2.0 record trace and A4.7.0 `_02` report. It partitions
+every fixed record node into exactly one predeclared logical transaction group:
+admission create/link, nonterminal dequeue, or terminal dequeue/release. Each
+trace row exposes logical read/write/RMW/release sets, deduplicated touched
+record identities, ordered member nodes, and one semantic commit boundary.
+
+At every group commit, the implementation replays span/owner/source-front state
+and checks source-front plus global oldest ordering. It reports all-node and
+A4.7.0 critical-path node-to-group-to-record expansion. Negative controls split
+multi-record admission and terminal release and reject the resulting
+pending/ownership/frontier inconsistency. Tail extension is retained as a
+zero-observed reserved definition only.
+
+An atomic group is a functional non-observability boundary, not a hardware
+atomic, SRAM transaction, physical access, cycle, port/bank request, byte,
+payload movement, HBM/DMA transfer, timing, latency, throughput, energy, area,
+capacity, hardware selection, architecture specification, or RTL evidence.

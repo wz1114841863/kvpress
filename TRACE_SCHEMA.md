@@ -3126,3 +3126,26 @@ Per-checkpoint critical-work/total-work fractions and their complements include
 percentiles from hiding a small set of bad checkpoints.  The former `_01`
 schema lacks these contract-completion fields and is not the authority for
 chain-length or low-tail-ratio conclusions.
+
+### Route-A A4.7.1 semantic metadata-transaction contract
+
+`kvzap-route-a471-metadata-transaction-contract-1.0` consumes and hash-binds
+the finalized A4.6.8.2.2.0 record trace and A4.7.0 `_02` report.
+`a471_metadata_transaction_trace.jsonl.gz` uses
+`kvzap-route-a471-metadata-transaction-record-1.0`. Each row maps fixed
+dependency-record nodes to one declared semantic transaction group, carrying
+`read_set`, `write_set`, `rmw_set`, `release_set`, deduplicated
+`touched_records`, and exactly one commit/linearization boundary.
+
+`admission_create`, `dequeue_nonterminal`, and `dequeue_terminal` are the only
+observed group types. `tail_extension_reserved_zero_observed` remains a defined
+contract type with observed count zero; no synthetic tail event may be added.
+Phase summaries and A4.7.0 critical-path expansion rows report dependency
+nodes, transaction groups, and touched-record instances separately. Negative
+controls expose an unowned pending span after split admission and a stale
+owner/frontier after split terminal release.
+
+Semantic atomicity only prevents observation of a partial logical state. It is
+not an SRAM atomic, physical transaction, access, port/bank request, cycle,
+byte, HBM/DMA movement, timing, latency, throughput, energy, area, capacity,
+architecture specification, or RTL evidence.

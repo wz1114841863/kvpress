@@ -2380,3 +2380,30 @@ critical-work/total-work and parallel-work complements with `min/P1/P5/P50/P95/
 P99/max`; P95/P99 parallel fraction alone is insufficient because it can hide
 rare serialized checkpoints.  Any prior A4.7.0 output missing these fields is
 only a partial observer result and cannot close the chain-length gate.
+
+### A4.7.1 — semantic metadata-transaction / atomicity contract
+
+Before interpreting an A4.7.0 dependency node as an implementable record
+operation, freeze the visibility contract it participates in. Consume the
+A4.6.8.2.2.0 record trace and corrected A4.7.0 `_02` graph unchanged; do not
+re-schedule, reorder, merge, alter a grant, or change FIFO/source ownership.
+Pre-register every transaction's `read_set`, `write_set`, `rmw_set`, release
+set, ordered member record nodes, and exactly one commit/linearization boundary.
+
+The observed catalog is admission create/link, nonterminal dequeue, and terminal
+dequeue/release. Semantic atomicity only prevents intermediate-state observation;
+it is not an SRAM atomic, hardware transaction, access, cycle, or service unit.
+Define tail extension but retain its observed count of zero. Replay at every
+commit and require pending membership, source ownership, source fronts, and
+canonical oldest dequeue to remain consistent. A negative control must split a
+required multi-record admission or terminal-release group and expose an invalid
+pending/oldest/ownership state.
+
+Report dependency-node to transaction-group to touched-record expansion,
+including group-node and touched-record distributions, phase separation, and
+each A4.7.0 critical-path expansion. This determines whether the reasoning
+chain stays locally single-record or expands into multi-record semantic commits.
+Sets and expansion factors are logical records only, never physical accesses,
+descriptor fields/widths, ports, banks, bytes, traffic, cycles, timing, latency,
+throughput, energy, area, capacity, hardware parameters, architecture choice,
+or RTL.
