@@ -2568,13 +2568,16 @@ access or atomic, cycle model, traffic/bandwidth measurement, timing/latency or
 throughput result, energy/area estimate, architecture selection, or RTL. It is
 only a bounded abstract input to a later cost model.
 
-#### A4.7.2.1 `_02` correction
+#### A4.7.2.1 `_02`/`_03` corrections
 
 The `_01` report preserved valid transaction/bank/service sensitivity results,
 but its per-context maximum metadata-bit value was not a conservative fixed
 cross-workload candidate footprint, and saturated-observation counts did not
 show whether pressure was consecutive. The corrected schema `1.1` emits the
 joint-safe modeled field-width/object-count bound and per-bank, per-phase
-logical-checkpoint saturation-run summaries. `_01` remains preserved; `_02`
-is the only artifact eligible for the A4.7.2.1 exit assessment. Neither added
-quantity is a physical capacity, bank/port choice, cycle, or timing claim.
+saturation summaries. A4.7.1 append/dequeue checkpoints are interleaved, so
+the subsequent `_03` correction computes run length over phase-local
+opportunity ordinal rather than raw numeric checkpoint adjacency. `_01` and
+`_02` remain preserved; only `_03` is eligible for the A4.7.2.1 exit
+assessment. Neither added quantity is a physical capacity, bank/port choice,
+cycle, or timing claim.

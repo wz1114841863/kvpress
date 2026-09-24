@@ -2464,11 +2464,14 @@ Passing provides a candidate physical-organization contract for a later cost
 model; it does not select a microarchitecture, freeze an architecture spec, or
 authorize RTL.
 
-The corrected A4.7.2.1 `_02` report must not use a per-context maximum
+The corrected A4.7.2.1 `_03` report must not use a per-context maximum
 metadata-bit total as the fixed candidate footprint. It must additionally emit
 the conservative joint-safe cross-context modeled bound formed from maximum
 field widths and maximum modeled object counts. It must also report longest
 per-bank numerical logical-checkpoint saturation runs by phase and service
 interpretation, including RMW and aggregate bases. A count of saturated
-observations alone cannot determine persistent pressure. These are still
-abstract logical service observations, not cycles or timing.
+observations alone cannot determine persistent pressure. Because A4.7.1 append
+and dequeue checkpoints are interleaved, longest runs must use phase-local
+opportunity ordinal rather than raw checkpoint adjacency. `_02` remains
+preserved but is not eligible for the exit assessment. These are still abstract
+logical service observations, not cycles or timing.

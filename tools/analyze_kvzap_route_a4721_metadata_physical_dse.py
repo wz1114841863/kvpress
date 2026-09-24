@@ -26,7 +26,7 @@ from tools.analyze_kvzap_route_a4720_metadata_storage_sufficiency import LAYOUTS
 from tools.export_kvzap_predictor_trace import get_git_commit, stable_hash
 
 
-SCHEMA = "kvzap-route-a4721-metadata-physical-dse-1.1"
+SCHEMA = "kvzap-route-a4721-metadata-physical-dse-1.2"
 OPS = ("read", "write", "rmw")
 PHASES = ("activation", "steady_state_append", "steady_state_dequeue")
 BANK_COUNTS = (1, 4, 8)
@@ -175,14 +175,17 @@ def static_candidate_rows(a4720: dict[str, Any]) -> tuple[list[dict[str, Any]], 
 
 
 def saturation_streaks(checkpoints: list[int], bank_count: int, saturated: dict[int, set[int]]) -> dict[str, Any]:
-    per_bank = {bank: longest_consecutive_integer_run(saturated.get(bank, set())) for bank in range(bank_count)}
+    """Summarize runs over phase-local opportunity ordinal, never raw time."""
+    ordinal = {checkpoint: index for index, checkpoint in enumerate(sorted(checkpoints))}
+    per_bank = {bank: longest_consecutive_integer_run(ordinal[checkpoint] for checkpoint in saturated.get(bank, set())) for bank in range(bank_count)}
     observed = set(checkpoints)
     full = [bank for bank in range(bank_count) if observed and saturated.get(bank, set()) == observed]
     return {
-        "per_bank_max_consecutive_saturated_logical_checkpoint_run": distribution(per_bank.values()),
-        "peak_any_bank_consecutive_saturated_logical_checkpoint_run": max(per_bank.values(), default=0),
-        "banks_saturated_at_every_observed_phase_checkpoint": full,
-        "checkpoint_adjacency_rule": "only numerically consecutive logical checkpoints extend a run; this is not a cycle or time duration",
+        "phase_local_opportunity_count": len(ordinal),
+        "per_bank_max_consecutive_saturated_phase_local_opportunity_run": distribution(per_bank.values()),
+        "peak_any_bank_consecutive_saturated_phase_local_opportunity_run": max(per_bank.values(), default=0),
+        "banks_saturated_at_every_observed_phase_local_opportunity": full,
+        "phase_local_order_rule": "sort the immutable A4.7.1 raw logical checkpoints within each phase, then map them to contiguous phase-local opportunity ordinals; this is not a cycle or time duration",
     }
 
 
@@ -303,14 +306,14 @@ def main() -> None:
         "service_models": {"independent_class": "Each modeled R/W/RMW class receives the declared quantum independently; no shared resource is implied.", "unified_total": "All modeled R/W/RMW demand shares one declared total quantum; class-specific shortfall is deliberately unattributed."},
         "static_filter": static_filter["filter"],
         "transaction_lowering": "Within one immutable A4.7.1 transaction, RMW or read+write/release lowers to modeled RMW, release-only lowers to modeled write, and no transactions merge or reorder.",
-        "boundary": "Bank labels, modeled object-operation demand, service quanta, shortfall, fanout, and logical-checkpoint saturation runs are abstract sensitivity values, not selected physical banks/ports, hardware accesses/atomics/transactions, cycles, timing, latency, throughput, bandwidth, HBM traffic, energy, area, architecture specification, or RTL.",
+        "boundary": "Bank labels, modeled object-operation demand, service quanta, shortfall, fanout, and phase-local opportunity saturation runs are abstract sensitivity values, not selected physical banks/ports, hardware accesses/atomics/transactions, cycles, timing, latency, throughput, bandwidth, HBM traffic, energy, area, architecture specification, or RTL.",
     }
     report = {
         "schema_version": SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config),
         "execution_classification": "functional lowering of fixed semantic transaction sets plus modeled storage-object footprint, bank-mapping, commit-fanout, and abstract per-logical-checkpoint service sensitivity; not measured hardware behavior",
         "input_artifacts": {"a470_report_sha256": sha256_file(args.a470_report), "a471_report_sha256": sha256_file(args.a471_report), "a471_trace_sha256": sha256_file(args.a471_trace), "a4720_report_sha256": sha256_file(args.a4720_report)},
         "static_candidate_rows": candidates, "static_filter_summary": static_filter, "bank_pressure_rows": bank_rows, "commit_fanout_rows": fanout_rows, "service_sensitivity_rows": service_rows,
-        "semantic_guards": {"complete_a470_a471_a4720_hash_bound_chain_validated": True, "only_a4720_sufficient_layouts_and_width_profiles_consumed": True, "a471_transaction_sets_commit_boundaries_and_order_unchanged": True, "semantic_atomicity_explicitly_not_hardware_atomic_operation": True, "intrinsic_dependency_not_recomputed_or_conflated_with_modeled_physical_contention": True, "static_slack_filter_is_only_monotonic_modeled_bit_filter": True, "cross_context_joint_safe_modeled_footprint_reported": True, "phase_and_bank_saturation_streaks_reported": True, "bank_mapping_and_service_vectors_predeclared": True, "modeled_operations_do_not_equal_hardware_accesses": True, "no_scheduler_reordering_payload_movement_or_protection_action": True, "no_model_runtime_profiler_or_hardware_parameter_loaded": True, "no_cycles_bandwidth_latency_throughput_energy_area_or_architecture_selection": True},
+        "semantic_guards": {"complete_a470_a471_a4720_hash_bound_chain_validated": True, "only_a4720_sufficient_layouts_and_width_profiles_consumed": True, "a471_transaction_sets_commit_boundaries_and_order_unchanged": True, "semantic_atomicity_explicitly_not_hardware_atomic_operation": True, "intrinsic_dependency_not_recomputed_or_conflated_with_modeled_physical_contention": True, "static_slack_filter_is_only_monotonic_modeled_bit_filter": True, "cross_context_joint_safe_modeled_footprint_reported": True, "phase_local_opportunity_saturation_streaks_reported": True, "bank_mapping_and_service_vectors_predeclared": True, "modeled_operations_do_not_equal_hardware_accesses": True, "no_scheduler_reordering_payload_movement_or_protection_action": True, "no_model_runtime_profiler_or_hardware_parameter_loaded": True, "no_cycles_bandwidth_latency_throughput_energy_area_or_architecture_selection": True},
     }
     args.output_dir.mkdir(parents=True)
     path = args.output_dir / "a4721_metadata_physical_dse_report.json"

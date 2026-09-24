@@ -3195,7 +3195,7 @@ port choices, hardware accesses, SRAM/HBM transactions, cycles, timing,
 bandwidth, latency, throughput, energy, area, architecture specification, or RTL
 evidence.
 
-The corrected schema `1.1`, used only for a fresh `_02` output, additionally
+Schema `1.1`, preserved in `_02`, additionally
 reports a conservative cross-context joint-safe modeled footprint: maximum field
 widths and maximum modeled object counts are combined before bit accounting,
 rather than treating a per-context maximum as a fixed-candidate bound. It also
@@ -3203,3 +3203,10 @@ records per-bank, per-phase maximum consecutive saturated
 *logical-checkpoint* runs for each abstract service interpretation. Checkpoint
 adjacency is numerical only and is not a cycle or timing duration. These
 additions do not select physical entries, banks, ports, or service rates.
+
+The corrected schema `1.2`, used only for a fresh `_03` output, fixes the
+saturation-run axis: A4.7.1 append and dequeue raw logical checkpoints are
+interleaved, so runs are computed over the contiguous phase-local opportunity
+ordinal obtained by sorting raw checkpoints within that phase. The raw
+checkpoint remains provenance only; the ordinal is not a cycle, latency, or
+time quantity.

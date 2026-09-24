@@ -19,9 +19,9 @@ def test_a4721_release_is_modeled_write_not_payload_movement():
     assert lower_transaction(row, "separated_direct_v1") == {("span_descriptor", (1, 2, 7)): "write"}
 
 
-def test_a4721_saturation_run_requires_numerically_consecutive_checkpoints():
+def test_a4721_saturation_run_uses_phase_local_order_not_raw_checkpoint_spacing():
     assert longest_consecutive_integer_run([]) == 0
     assert longest_consecutive_integer_run([2, 3, 4, 8, 9]) == 3
-    streaks = saturation_streaks([2, 3, 4, 8, 9], 2, {0: {2, 3, 4}, 1: {8, 9}})
-    assert streaks["peak_any_bank_consecutive_saturated_logical_checkpoint_run"] == 3
-    assert streaks["banks_saturated_at_every_observed_phase_checkpoint"] == []
+    streaks = saturation_streaks([1, 3, 5, 7, 9], 2, {0: {1, 3, 5}, 1: {7, 9}})
+    assert streaks["peak_any_bank_consecutive_saturated_phase_local_opportunity_run"] == 3
+    assert streaks["banks_saturated_at_every_observed_phase_local_opportunity"] == []
