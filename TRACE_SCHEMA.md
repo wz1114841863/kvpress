@@ -3034,6 +3034,23 @@ No field is a physical access, descriptor/PTE width, payload movement, bytes,
 HBM/DMA traffic, port, bank, conflict, cycle, timing, latency, throughput,
 energy, area, physical capacity, hardware parameter, architecture spec, or RTL.
 
+### Route-A A4.6.8.2.2.0 strict metadata-recordization report
+
+`kvzap-route-a468220-metadata-recordization-1.0` hash-binds the finalized
+A4.6.8.2.0 event report/trace and A4.6.8.2.1 report. Its
+`a468220_record_access_trace.jsonl.gz` uses
+`kvzap-route-a468220-record-access-record-1.0` and records a logical record
+type/identity, access kind, primitive sequence, and conservative/strict merged
+operation count. The only strict merge sequence is adjacent partial-dequeue plus
+remaining-update on an identical span record and ordered context.
+
+`record_operation_curves` and per-context phase curves distinguish the
+conservative primitive-granularity upper curve from the strict same-record
+curve. Payload-reference events are counted separately and excluded. Logical
+record identities have no descriptor fields, physical layout, width, address,
+bytes, payload movement, HBM/DMA traffic, bank, port, cycle, timing, latency,
+throughput, energy, area, capacity, or RTL meaning.
+
 ### Route-A A4.6.8.2.0 access-epoch trace and span-lifetime closure
 
 `kvzap-route-a4682-access-epoch-trace-1.0` hash-binds A4.6.1, A4.6.4,

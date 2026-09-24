@@ -53,6 +53,24 @@ bound is `2.9502x`, whereas timeline-position pages achieve only `1.5418x`.
 This establishes a *motivation* for compaction, not a measured memory or speed
 result.
 
+### A4.6.8.2.2.0 — strict metadata-recordization sufficiency gate
+
+Before any record-aware organization study, consume the finalized A4.6.8.2.0
+event trace and A4.6.8.2.1 report as hash-bound inputs. Map each non-payload
+primitive to exactly one member of the minimal logical record set:
+`frontier_control`, `span_descriptor`, `ownership_link`, or the optional
+`selection_control`. Emit both a conservative curve (one declared record
+operation per primitive) and a strict merge curve.
+
+The only merge permitted in this stage is the adjacent
+`span_partial_dequeue` then `span_head_remaining_update` pair on the same
+checkpoint, span descriptor, source, birth, and sequence. No merge may cross a
+source, birth, or FIFO-order boundary, and payload-reference events remain
+explicitly excluded. Require primitive-to-record count conservation, complete
+context coverage, and the pre-existing FIFO/oldest/ownership contract. Record
+identity has no width, physical address, byte, bank, port, cycle, or traffic
+meaning; this is not descriptor layout or hardware cost selection.
+
 Current traces contain no trustworthy decode lifecycle. They cannot establish
 per-step cold admission bursts, packing writes, break-even output horizon, or
 measured end-to-end performance. Those are explicit evidence gaps.

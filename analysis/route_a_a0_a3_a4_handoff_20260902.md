@@ -2443,3 +2443,18 @@ but excluding payload-reference lifecycle events.
 organization over abstract bucket counts and same-epoch service units. Shortfall
 is non-propagating and identifies only logical concentration; it selects no
 physical banks, ports, capacities, timing, traffic, controller, or cost.
+
+### A4.6.8.2.2.0 implementation — strict metadata recordization
+
+`tools/analyze_kvzap_route_a468220_metadata_recordization.py` creates the
+minimal logical record-access bridge required before record-aware organization
+work. It hash-validates A4.6.8.2.0 and A4.6.8.2.1, preserves their event order
+and contracts, and maps every non-payload primitive to frontier control, span
+descriptor, ownership link, or optional selection control.
+
+It reports conservative one-primitive-per-record-operation accounting alongside
+a strict same-record curve. The sole allowed merge is the adjacent same-span
+partial-dequeue/remaining-update pair with equal checkpoint, source, birth, and
+sequence; any cross-boundary merge is rejected. This remains a logical
+functional recordization gate, not a physical descriptor layout, memory access,
+byte, banking, port, timing, or hardware-cost model.
