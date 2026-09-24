@@ -3172,3 +3172,25 @@ deletes semantic state nor selects a physical entry or allocator. Metadata bits
 are modeled field accounting only. A4.7.2.0 contains no bank mapping, service
 capability, scheduler, contention, access, SRAM/HBM transaction, cycle,
 latency, throughput, energy, area, architecture specification, or RTL claim.
+
+### Route-A A4.7.2.1 metadata physicalization sensitivity report
+
+`kvzap-route-a4721-metadata-physical-dse-1.0` hash-binds A4.7.0 `_02`,
+A4.7.1, and A4.7.2.0. It replays the immutable A4.7.1 transaction trace and
+maps only A4.7.2.0-sufficient semantic layouts to modeled storage-object
+operations. The report separates static field/footprint profiles after a
+declared monotonic width-slack filter, per-logical-checkpoint modeled R/W/RMW
+demand under predeclared bank-count/mapping sensitivities, object/bank commit
+fanout, and independent-class versus unified-total abstract service shortfall.
+
+Each transaction retains its A4.7.1 order and commit boundary. Co-location may
+lower records only inside one existing transaction to one modeled object
+operation; it never merges transactions or makes a hardware atomic operation.
+A4.7.0 intrinsic dependency remains predecessor evidence and is not attributed
+to modeled bank contention.
+
+Bank labels, modeled object-operation demand, logical-checkpoint service quanta,
+shortfall, and fanout are sensitivity values only. They are not physical bank or
+port choices, hardware accesses, SRAM/HBM transactions, cycles, timing,
+bandwidth, latency, throughput, energy, area, architecture specification, or RTL
+evidence.

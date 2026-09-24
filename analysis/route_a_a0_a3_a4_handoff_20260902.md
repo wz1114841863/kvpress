@@ -2545,3 +2545,25 @@ This is not a bank, service, contention, allocator, or access model. Its bits
 and storage objects are modeled sufficiency accounting only, not SRAM/HBM
 transactions, ports, cycles, timing, latency, throughput, energy, area,
 hardware selection, architecture specification, or RTL.
+
+### A4.7.2.1 implementation — metadata physicalization sensitivity
+
+`tools/analyze_kvzap_route_a4721_metadata_physical_dse.py` is the first
+replaceable physicalization sensitivity model, not a new semantic stage. It
+hash-binds A4.7.0 `_02`, A4.7.1, and A4.7.2.0; leaves A4.7.1 transaction sets,
+order, and commit boundaries immutable; and consumes only A4.7.2.0-sufficient
+layouts.
+
+It filters only positive width slack as a monotonic modeled-bit expansion within
+an otherwise identical profile. It then lowers semantic R/W/RMW/release sets to
+modeled storage-object operations, reports candidate metadata-footprint
+envelopes, and sweeps predeclared `{1,4,8}` bank-count,
+head-affine/object-identity mapping, and `{1,2,4}` logical-checkpoint service
+sensitivities. Independent-class and unified-total service interpretations are
+separate, as are object/bank commit fanout and A4.7.0 intrinsic dependency
+versus newly modeled mapping contention.
+
+This is not an allocation, SRAM array layout, real bank/port choice, hardware
+access or atomic, cycle model, traffic/bandwidth measurement, timing/latency or
+throughput result, energy/area estimate, architecture selection, or RTL. It is
+only a bounded abstract input to a later cost model.

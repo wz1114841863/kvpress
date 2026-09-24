@@ -2432,3 +2432,34 @@ are modeled accounting, not measured storage. A4.7.2.0 has no bank mapping,
 R/W/RMW service capability, scheduler, physical contention, access count,
 cycle, latency, throughput, bandwidth, energy, area, or architecture choice;
 only layouts passing it may enter A4.7.2.1.
+
+### A4.7.2.1 — metadata physicalization sensitivity DSE
+
+Consume only A4.7.2.0-sufficient layouts and the immutable A4.7.1 transaction
+trace. First apply one narrow static filter: for a fixed layout, namespace
+scope, reuse policy, and generation choice, positive width slack is a monotonic
+modeled-bit expansion and is reported but not swept for contention. Do not
+discard layout, scope, or reuse variants merely because their field-bit totals
+match; their locality/conflict trade-offs remain open.
+
+Lower each pre-existing transaction to modeled storage-object R/W/RMW work with
+an explicit rule: existing RMW or read combined with write/release is modeled
+RMW; release-only is modeled write. Co-location applies only inside the same
+A4.7.1 transaction and modeled object. It never merges or reorders transactions
+and preserves one commit/linearization boundary.
+
+Replay predeclared bank-count `{1,4,8}` and mapping
+`{head_affine_v1, object_identity_striped_v1}` sensitivities. At each logical
+checkpoint, report per-bank modeled R/W/RMW demand, object/bank commit fanout,
+and service-shortfall sensitivity under independent-class and unified-total
+abstract quanta `{1,2,4}`. These are logical checkpoint coordinates, not
+hardware ports or cycles. Keep A4.7.0 intrinsic dependency separate from newly
+modeled mapping contention.
+
+The exit question is not which bank count wins: it is whether one or two
+non-dominated layouts have bounded metadata-footprint envelope, transaction
+fanout, and no whole-horizon persistent modeled RMW/cross-bank pressure under a
+predeclared moderate abstract service vector, especially for Llama reasoning.
+Passing provides a candidate physical-organization contract for a later cost
+model; it does not select a microarchitecture, freeze an architecture spec, or
+authorize RTL.
