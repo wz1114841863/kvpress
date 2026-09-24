@@ -2524,3 +2524,21 @@ same-bank, and cross-bank shortage. Immediate dependency blocking and root
 cause must remain separate. This establishes whether the large A4.8.0
 intrinsic count is structural or shortage-propagated; it is not a new service
 sweep, scheduler, hardware queue, or performance experiment.
+
+### A4.8.1b — fixed-service shortage/root sensitivity
+
+Keep A4.8.0 direct-service and A4.8.1a causal-controller results as immutable
+side-by-side baselines. On the exact same transactions, dependencies, FIFO
+order, commit boundary, mapping profile, and logical opportunities, sweep only
+global predeclared abstract per-bank/per-operation service quanta
+`{1,2,4,8,16}`. A fixed replay may not use backlog/age adaptation, future
+arrivals, workload/anchor/horizon identity, borrowing, or a new scheduler.
+
+For every fixed point, report `B_ready` P95/max, ready age, per-head ready
+skew, trace-end ready/dependency-blocked residual, extra bounded no-arrival
+drain, sustained ready-positive runs, immediate blocker, and canonical
+shortage-root amplification. The comparison answers whether the causal
+controller is inefficient, service shortage remains despite a fixed higher
+level, or dependency serialization persists with little ready work. It is an
+abstract logical sensitivity study, not a selected service rate or hardware
+performance/capacity result.

@@ -2615,3 +2615,14 @@ unresolved predecessor chains, reporting downstream amplification rather than
 mistaking all resulting FIFO blockers for intrinsic serialization. This lineage
 is a logical attribution convention only; it is not a physical queueing,
 bank/port, timing, performance, or architecture result.
+
+### A4.8.1b implementation — fixed-service sensitivity
+
+`tools/analyze_kvzap_route_a481b_fixed_service_sweep.py` consumes the
+hash-bound A4.8.1a/A4.8.0 chain and preserves their direct and causal results
+as side-by-side baselines. It holds all semantic transaction behavior fixed
+while sweeping only global predeclared logical quanta `{1,2,4,8,16}`. Each
+point reports the same readiness and canonical shortage-root attribution as
+A4.8.1a, so controller behavior can be separated from sustained-service
+shortage. It neither selects a service rate nor models a hardware queue,
+bank/port, cycle, timing, performance, or architecture.

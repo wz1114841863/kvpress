@@ -1507,6 +1507,26 @@ readiness/amplification quantities are not hardware capacity, service rate,
 bank/port demand, cycle, timing, latency, traffic, bandwidth, throughput,
 energy, area, architecture selection, or RTL evidence.
 
+### Route-A A4.8.1b fixed abstract-service readiness/root-cause sweep
+
+`kvzap-route-a481b-fixed-service-sweep-1.0` hash-binds the completed A4.8.1a
+and A4.8.0 reports plus their full predecessor chain. It retains the recorded
+direct-service and causal-controller baselines side by side, first checking
+that A4.8.1a still exactly reproduces A4.8.0. It then replays the exact same
+immutable transaction/order/commit/opportunity stream at global, predeclared
+fixed per-bank/per-operation abstract quanta `{1,2,4,8,16}`. The sweep has no
+future input, workload/anchor/horizon input, controller adaptation, borrowing,
+or scheduler action.
+
+For each quantum it reports ready/dependency-blocked backlog and age,
+trace-end residual, bounded extra no-arrival drain, sustained ready-positive
+run, immediate blocker, and the same declared shortage-root propagation
+attribution as A4.8.1a. This permits controller-versus-sustained-service
+sensitivity without treating a fixed quantum as a hardware service rate.
+The resulting quantities are logical-model observations, not hardware queue,
+bank/port, transaction, cycle, timing, latency, traffic, bandwidth,
+throughput, energy, area, architecture-selection, or RTL evidence.
+
 `kvzap-route-a4162-cross-workload-three-path-measurement-1.0` is the A4.1.7.11
 second-workload repeated measurement schema.  Every fresh reset run is one of
 Full-KV bypass, same-mask dense replay, or A4154-certified empty-source-elided
