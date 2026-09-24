@@ -2407,3 +2407,28 @@ Sets and expansion factors are logical records only, never physical accesses,
 descriptor fields/widths, ports, banks, bytes, traffic, cycles, timing, latency,
 throughput, energy, area, capacity, hardware parameters, architecture choice,
 or RTL.
+
+### A4.7.2.0 — final metadata storage sufficiency closure
+
+This is the final semantic closure before a physical-contention DSE, not a new
+long-lived lifecycle stage. Hash-bind A4.6.8.2.0, A4.6.8.2.2.0, A4.7.0 `_02`,
+and A4.7.1. Verify only three requirements: every fixed semantic record maps to
+a declared modeled storage object, A4.7.1 transaction/commit semantics remain
+unchanged, and every candidate field/namespace width is explicit and sufficient.
+No new record type, transaction type, tail-extension event, or semantic merge is
+permitted.
+
+For each declared scope (`per_head`, `per_layer`, `global`), distinguish
+trace-distinct no-reuse namespace from reuse-after-terminal-commit namespace;
+record reserved invalid encodings, generation bits, and width slack explicitly.
+`peak live` alone is not a safe handle width unless reuse is declared. Preserve
+right-censored spans as live state. Candidate layouts are separated,
+span/ownership co-located, control co-located, and both co-located, all with
+direct frontier compare keys so no new access lowering is introduced.
+
+Report semantic-record count separately from modeled storage-object count and
+explicitly leave physical entries unselected. Field and peak metadata bit totals
+are modeled accounting, not measured storage. A4.7.2.0 has no bank mapping,
+R/W/RMW service capability, scheduler, physical contention, access count,
+cycle, latency, throughput, bandwidth, energy, area, or architecture choice;
+only layouts passing it may enter A4.7.2.1.

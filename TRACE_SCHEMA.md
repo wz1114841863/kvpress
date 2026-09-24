@@ -3149,3 +3149,26 @@ Semantic atomicity only prevents observation of a partial logical state. It is
 not an SRAM atomic, physical transaction, access, port/bank request, cycle,
 byte, HBM/DMA movement, timing, latency, throughput, energy, area, capacity,
 architecture specification, or RTL evidence.
+
+### Route-A A4.7.2.0 metadata-storage sufficiency report
+
+`kvzap-route-a4720-metadata-storage-sufficiency-1.0` hash-binds A4.6.8.2.0,
+A4.6.8.2.2.0, A4.7.0 `_02`, and A4.7.1 report/transaction-trace inputs. It is
+the final semantic storage closure: the fixed four semantic records map to
+declared modeled storage objects while A4.7.1 read/write/RMW/release sets and
+commit boundaries remain unchanged.
+
+`width_sufficiency_rows` explicitly records scope (`per_head`, `per_layer`, or
+`global`), trace-distinct versus reuse-after-terminal-commit namespace policy,
+reserved invalid encoding, generation bits, slack, field widths, semantic
+record widths, modeled storage-object widths, right-censored live descriptors,
+and overflow guards. `layout_mapping_rows` separately preserves semantic record
+count and reports only modeled storage-object fanout for full separation,
+span/ownership co-location, control co-location, and both co-locations.
+
+A semantic record, modeled storage object, and physical entry are distinct:
+co-location maps multiple semantic records to one modeled object; it neither
+deletes semantic state nor selects a physical entry or allocator. Metadata bits
+are modeled field accounting only. A4.7.2.0 contains no bank mapping, service
+capability, scheduler, contention, access, SRAM/HBM transaction, cycle,
+latency, throughput, energy, area, architecture specification, or RTL claim.

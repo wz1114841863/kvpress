@@ -2524,3 +2524,24 @@ An atomic group is a functional non-observability boundary, not a hardware
 atomic, SRAM transaction, physical access, cycle, port/bank request, byte,
 payload movement, HBM/DMA transfer, timing, latency, throughput, energy, area,
 capacity, hardware selection, architecture specification, or RTL evidence.
+
+### A4.7.2.0 implementation — metadata storage sufficiency closure
+
+`tools/analyze_kvzap_route_a4720_metadata_storage_sufficiency.py` is the last
+pre-contention semantic closure. It hash-validates A4.6.8.2.0 through A4.7.1,
+then maps the fixed frontier-control, span-descriptor, ownership-link, and
+selection-control records to declared modeled storage objects. A4.7.1 sets,
+transaction groups, and commit boundaries remain immutable; a co-located object
+still retains every participating semantic record.
+
+The implementation distinguishes trace-distinct no-reuse namespace from
+reuse-after-terminal-commit namespace, invalid/reserved encoding, optional
+generation bits, scope, and width slack. It retains right-censored spans as
+live state, reports field/object width envelopes and modeled peak metadata-bit
+accounting, and leaves physical entry allocation unselected. Tail extension is
+asserted zero observed.
+
+This is not a bank, service, contention, allocator, or access model. Its bits
+and storage objects are modeled sufficiency accounting only, not SRAM/HBM
+transactions, ports, cycles, timing, latency, throughput, energy, area,
+hardware selection, architecture specification, or RTL.
