@@ -2344,3 +2344,30 @@ same-epoch shortfall, class isolated shortfall, leave-one-out relief, phase
 separation, and top hotspots. Shortfall is non-propagating logical observation,
 not a port/bank conflict, queue depth, cycle, latency, bandwidth, or hardware
 result.
+
+### A4.7.0 — metadata-access concurrency contract
+
+With A4.6.8.2.2.0 recordization and A4.6.8.2.2.1 mapping sensitivity complete,
+measure the fixed logical dependency structure before selecting any physical
+organization.  Hash-bind their reports and finalized record trace.  Keep the
+record order, same-record merge curve, per-head FIFO, source ownership, grants,
+and organization labels unchanged; this observer cannot create a scheduler,
+reorder work, make capacity decisions, or introduce protection.
+
+Pre-register exactly four direct edge kinds: `same-record`,
+`same-head-control`, `span-lifecycle`, and `ownership-order`.  For each record
+curve, existing abstract record-to-bucket mapping, and abstract bucket-count
+sensitivity point, form only the phase-induced graph.  Separately for
+activation, steady-state append, and steady-state dequeue, report total logical
+record work, critical-path work, critical-path/total ratio, and its complement
+as a logical parallel-work fraction.  Also report edge counts, P50/P95/P99/max
+checkpoint work and critical path, contiguous dependency-bearing checkpoint
+runs, cross-bucket fanout, and per-head skew.  No edge may be added after
+observing a workload.
+
+This answers whether persistent concentration is largely independent logical
+work or is structurally serialized by record/head/lifecycle order.  Neither
+critical-path work nor its complement denotes hardware cycles, achieved
+parallelism, ports, banks, bandwidth, latency, throughput, capacity, energy,
+area, hardware parameters, architecture selection, or RTL.  It is a
+hardware-independent gate for the next explicitly mapped physical-cost study.

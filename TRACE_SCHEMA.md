@@ -3091,3 +3091,27 @@ latency, throughput, energy, area, capacity, hardware selection, architecture
 specification, or RTL evidence.  No allocator, finite capacity, migration,
 spill, compaction, DROP, fallback, Full-KV backing, protection, scheduler, or
 physical metadata mapping is present.
+
+### Route-A A4.7.0 metadata-access concurrency contract
+
+`kvzap-route-a470-metadata-access-concurrency-1.0` consumes and hash-validates
+the finalized A4.6.8.2.2.0 record trace plus the A4.6.8.2.2.1 observer report.
+It does not emit a new lifecycle trace or alter its fixed event order. For each
+anchor/workload/horizon/organization, record curve, abstract mapping, bucket
+count, and phase, `dependency_rows` reports weighted logical total record work,
+longest-path critical work, and `1 - critical_path_work / total_record_work`.
+
+The only preregistered direct dependency labels are `same-record`,
+`same-head-control`, `span-lifecycle`, and `ownership-order`.  The report also
+contains their counts, checkpoint distributions (P50/P95/P99/max), contiguous
+dependency-bearing logical-checkpoint runs, per-head skew, and logical
+cross-bucket fanout.  Activation, steady-state append, and steady-state dequeue
+are phase-induced analyses: edges from another phase are not silently carried
+into a phase result.
+
+Critical-path and parallel-work values are logical graph accounting, not an
+instruction schedule, measured runtime, hardware parallelism, bank/port
+requirement, cycles, timing, latency, throughput, traffic, bytes, capacity,
+energy, area, architecture specification, or RTL evidence.  No record
+reordering, merge, FIFO/source/grant change, scheduler, protection, or payload
+movement is modeled.

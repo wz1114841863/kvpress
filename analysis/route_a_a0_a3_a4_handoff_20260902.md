@@ -2471,3 +2471,25 @@ changing any lifecycle, source, FIFO, grant, or pending-organization semantic.
 Its bucket and issue-unit axes are explicitly abstract: no output is a selected
 bank/port, physical access, descriptor layout, byte, HBM transaction, cycle,
 latency, capacity, or hardware-cost result.
+
+### A4.7.0 implementation — metadata access concurrency contract
+
+`tools/analyze_kvzap_route_a470_metadata_access_concurrency.py` hash-binds the
+finalized A4.6.8.2.2.0 record trace and A4.6.8.2.2.1 observer report, then
+constructs a fixed-order logical dependency graph.  The sole preregistered edge
+kinds are `same-record`, `same-head-control`, `span-lifecycle`, and
+`ownership-order`; the script has no workload-specific edge discovery.  It
+replays neither admissions nor FIFO state and cannot merge, reorder, migrate,
+drop, or protect work.
+
+For every existing record curve, mapping, and abstract bucket-count sensitivity
+point, the implementation reports phase-separated activation, append, and
+dequeue logical work, critical-path work, its fraction of total work, logical
+parallel-work complement, edge counts, dependency-bearing runs, per-head skew,
+and cross-bucket fanout.  Phase summaries intentionally include only edges
+whose endpoints are in that phase.
+
+All values are logical functional graph accounting.  They do not select or
+measure a physical scheduler, descriptor layout, access, port, bank, bytes,
+payload movement, HBM/DMA traffic, cycle, timing, latency, throughput, energy,
+area, capacity, hardware parameter, architecture specification, or RTL.
