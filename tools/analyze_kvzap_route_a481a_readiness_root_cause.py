@@ -63,6 +63,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--a4720-report", type=Path, required=True)
     parser.add_argument("--a4721-report", type=Path, required=True)
     parser.add_argument("--a480-report", type=Path, required=True, help="Completed fixed-controller A4.8.0 baseline to reproduce exactly.")
+    parser.add_argument("--post-trace-drain-limit", type=int, default=DEFAULT_POST_TRACE_DRAIN_LIMIT, help="Must equal the recorded A4.8.0 no-arrival observation bound (512); not a controller input or timing parameter.")
     parser.add_argument("--preflight-only", action="store_true", help="Validate A4.8.0 and all hash-bound predecessors without creating output.")
     parser.add_argument("--output-dir", type=Path, required=True, help="Previously absent output directory only.")
     return parser.parse_args()
@@ -73,6 +74,8 @@ def compact_replay(replay: dict[str, Any]) -> dict[str, Any]:
 
 
 def validate_inputs(args: argparse.Namespace) -> dict[str, Any]:
+    if args.post_trace_drain_limit != DEFAULT_POST_TRACE_DRAIN_LIMIT:
+        raise ValueError("A4.8.1a fixes the A4.8.0 post-trace drain observation bound at 512")
     # Reuse the A4.8.0 hash/guard validation verbatim before binding its output.
     validate_a480_inputs(args)
     a480 = read_completed(args.a480_report, A480_SCHEMA, "A4.8.0")

@@ -1,7 +1,8 @@
 from collections import Counter
+import pytest
 
-from tools.analyze_kvzap_route_a480_commit_aware_backlog import ScheduledTransaction, service_backlog
-from tools.analyze_kvzap_route_a481a_readiness_root_cause import audit_causal_replay, baseline_equivalent
+from tools.analyze_kvzap_route_a480_commit_aware_backlog import DEFAULT_POST_TRACE_DRAIN_LIMIT, ScheduledTransaction, service_backlog
+from tools.analyze_kvzap_route_a481a_readiness_root_cause import audit_causal_replay, baseline_equivalent, parse_args, validate_inputs
 
 
 PROFILE = {"profile": "test", "layout": "both_colocated_direct_v1", "bank_count": 8, "bank_mapping": "head_affine_v1"}
@@ -40,3 +41,11 @@ def test_a481a_no_ready_work_is_not_mislabeled_as_service_shortage():
     assert audit["completion_state"] == "drained"
     assert audit["readiness"]["post_service_ready_backlog"]["max"] == 1
     assert audit["root_cause_amplification"]["same_bank_service_shortage"]["root_incident_count"] >= 1
+
+
+def test_a481a_drain_limit_contract_rejects_a_new_controller_bound(monkeypatch):
+    monkeypatch.setattr("sys.argv", ["a481a", "--a468220-trace", "a", "--a470-report", "b", "--a471-report", "c", "--a471-trace", "d", "--a4720-report", "e", "--a4721-report", "f", "--a480-report", "g", "--output-dir", "out", "--post-trace-drain-limit", "511"])
+    args = parse_args()
+    assert args.post_trace_drain_limit == DEFAULT_POST_TRACE_DRAIN_LIMIT - 1
+    with pytest.raises(ValueError, match="fixes the A4.8.0"):
+        validate_inputs(args)
