@@ -17,7 +17,7 @@ from tools.analyze_kvzap_route_a468220_metadata_recordization import SCHEMA as A
 from tools.analyze_kvzap_route_a468221_record_organization_sensitivity import SCHEMA as A468221_SCHEMA, bucket_for_record, curve_weight
 from tools.export_kvzap_predictor_trace import get_git_commit, stable_hash
 
-SCHEMA = "kvzap-route-a470-metadata-access-concurrency-1.0"
+SCHEMA = "kvzap-route-a470-metadata-access-concurrency-1.1"
 # These literals are part of the preregistered A4.7.0 contract.  Do not add
 # edge kinds after inspecting a workload: new dependencies require a new study.
 EDGE_TYPES = ("same-record", "same-head-control", "span-lifecycle", "ownership-order")
@@ -46,7 +46,7 @@ def percentile(values: Iterable[float], fraction: float) -> float | None:
 
 def distribution(values: Iterable[float]) -> dict[str, float | int | None]:
     values = list(values)
-    return {"count": len(values), "p50": percentile(values, .50), "p95": percentile(values, .95), "p99": percentile(values, .99), "max": max(values) if values else None, "sum": sum(values)}
+    return {"count": len(values), "min": min(values) if values else None, "p01": percentile(values, .01), "p05": percentile(values, .05), "p50": percentile(values, .50), "p95": percentile(values, .95), "p99": percentile(values, .99), "max": max(values) if values else None, "sum": sum(values)}
 
 
 def context_key(op: dict[str, Any]) -> tuple[str, str, int, str]:
@@ -120,32 +120,70 @@ def dependencies(ops: list[dict[str, Any]], curve: str) -> tuple[list[dict[str, 
     return nodes, edge_totals
 
 
+def longest_path(nodes: list[dict[str, Any]], selected: set[int]) -> dict[str, Any]:
+    """Deterministic weighted path over declared direct edges only.
+
+    The tie-break intentionally prefers more trace nodes only when weighted
+    logical work is equal, then the earlier predecessor.  Thus node/edge length
+    is an observable property of the fixed graph rather than a scheduler choice.
+    """
+    work: dict[int, int] = {}
+    node_count: dict[int, int] = {}
+    predecessor: dict[int, tuple[int | None, str | None]] = {}
+    for node in nodes:
+        index = node["index"]
+        if index not in selected:
+            continue
+        candidates: list[tuple[int, int, int | None, str | None]] = [(0, 0, None, None)]
+        for edge_type, parent in node["edges"]:
+            if parent in selected:
+                candidates.append((work[parent], node_count[parent], parent, edge_type))
+        parent_work, parent_nodes, parent_index, edge_type = max(
+            candidates,
+            key=lambda item: (item[0], item[1], -(item[2] if item[2] is not None else -1)),
+        )
+        work[index] = int(node["weight"]) + parent_work
+        node_count[index] = 1 + parent_nodes
+        predecessor[index] = (parent_index, edge_type)
+    if not work:
+        return {"work": 0, "node_count": 0, "edge_count": 0, "edge_type_counts": {name: 0 for name in EDGE_TYPES}}
+    target = max(work, key=lambda index: (work[index], node_count[index], -index))
+    edge_type_counts: Counter[str] = Counter()
+    cursor = target
+    while predecessor[cursor][0] is not None:
+        parent, edge_type = predecessor[cursor]
+        assert edge_type is not None
+        edge_type_counts[edge_type] += 1
+        cursor = parent
+    return {"work": work[target], "node_count": node_count[target], "edge_count": node_count[target] - 1, "edge_type_counts": {name: edge_type_counts[name] for name in EDGE_TYPES}}
+
+
 def phase_summary(nodes: list[dict[str, Any]], phase: str, mapping: str, bucket_count: int) -> dict[str, Any]:
     phase_nodes = [node for node in nodes if node["phase"] == phase]
     selected = {node["index"] for node in phase_nodes}
-    dp: dict[int, int] = {}
+    phase_path = longest_path(phase_nodes, selected)
     edge_counts: Counter[str] = Counter()
     by_checkpoint: dict[int, list[dict[str, Any]]] = defaultdict(list)
     by_head_checkpoint: dict[tuple[int, int, int], list[dict[str, Any]]] = defaultdict(list)
     for node in phase_nodes:
-        parents = [dp[parent] for kind, parent in node["edges"] if parent in selected]
-        dp[node["index"]] = node["weight"] + max(parents, default=0)
         for kind, parent in node["edges"]:
             if parent in selected:
                 edge_counts[kind] += 1
         by_checkpoint[node["checkpoint"]].append(node)
         by_head_checkpoint[(node["checkpoint"], node["layer"], node["head"])].append(node)
     checkpoint_critical = []
+    checkpoint_critical_nodes = []
+    checkpoint_critical_fractions = []
     checkpoint_work = []
     checkpoint_parallel = []
     dependency_checkpoints = []
     for checkpoint, checkpoint_nodes in by_checkpoint.items():
         ids = {node["index"] for node in checkpoint_nodes}
-        local_dp: dict[int, int] = {}
-        for node in checkpoint_nodes:
-            local_dp[node["index"]] = node["weight"] + max([local_dp[parent] for _, parent in node["edges"] if parent in ids], default=0)
-        work, critical = sum(node["weight"] for node in checkpoint_nodes), max(local_dp.values(), default=0)
+        checkpoint_path = longest_path(checkpoint_nodes, ids)
+        work, critical = sum(node["weight"] for node in checkpoint_nodes), checkpoint_path["work"]
         checkpoint_work.append(work); checkpoint_critical.append(critical); checkpoint_parallel.append(1.0 - critical / work if work else 0.0)
+        checkpoint_critical_nodes.append(checkpoint_path["node_count"])
+        checkpoint_critical_fractions.append(critical / work if work else 0.0)
         if any(parent in ids for node in checkpoint_nodes for _, parent in node["edges"]):
             dependency_checkpoints.append(checkpoint)
     fanouts = []
@@ -159,8 +197,8 @@ def phase_summary(nodes: list[dict[str, Any]], phase: str, mapping: str, bucket_
     for values in grouped_heads.values():
         skew.append(max(values) / (sum(values) / len(values)))
     total = sum(node["weight"] for node in phase_nodes)
-    critical = max(dp.values(), default=0)
-    return {"total_record_work": total, "critical_path_work": critical, "critical_path_work_fraction": critical / total if total else 0.0, "parallel_record_work_fraction": 1.0 - critical / total if total else 0.0, "dependency_edge_counts": {name: edge_counts[name] for name in EDGE_TYPES}, "checkpoint_total_work": distribution(checkpoint_work), "checkpoint_critical_path_work": distribution(checkpoint_critical), "checkpoint_parallel_record_work_fraction": distribution(checkpoint_parallel), "dependency_bearing_contiguous_checkpoint_run": contiguous(dependency_checkpoints, phase), "head_checkpoint_cross_bucket_fanout": distribution(fanouts), "per_head_skew_ratio": distribution(skew)}
+    critical = phase_path["work"]
+    return {"total_record_work": total, "critical_path_work": critical, "critical_path_node_count": phase_path["node_count"], "critical_path_edge_count": phase_path["edge_count"], "critical_path_edge_type_counts": phase_path["edge_type_counts"], "critical_path_work_fraction": critical / total if total else 0.0, "parallel_record_work_fraction": 1.0 - critical / total if total else 0.0, "dependency_edge_counts": {name: edge_counts[name] for name in EDGE_TYPES}, "checkpoint_total_work": distribution(checkpoint_work), "checkpoint_critical_path_work": distribution(checkpoint_critical), "checkpoint_critical_path_node_count": distribution(checkpoint_critical_nodes), "checkpoint_critical_path_work_fraction": distribution(checkpoint_critical_fractions), "checkpoint_parallel_record_work_fraction": distribution(checkpoint_parallel), "dependency_bearing_contiguous_checkpoint_run": contiguous(dependency_checkpoints, phase), "head_checkpoint_cross_bucket_fanout": distribution(fanouts), "per_head_skew_ratio": distribution(skew)}
 
 
 def summarize_context(context: tuple[str, str, int, str], ops: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -200,8 +238,8 @@ def main() -> None:
     contexts = {(r["anchor"], r["workload"], r["evaluation_horizon_append_opportunities"], r["organization_label"]) for r in rows}
     expected = {(r["anchor"], r["workload"], r["evaluation_horizon_append_opportunities"], r["organization_label"]) for r in a468221["sensitivity_rows"]}
     if contexts != expected or len(rows) != len(contexts) * len(CURVES) * len(MAPPINGS) * len(BUCKET_COUNTS): raise AssertionError("unexpected A4.7.0 coverage")
-    config = {"preregistered_dependency_edge_types": list(EDGE_TYPES), "record_curves": list(CURVES), "record_bucket_mappings": list(MAPPINGS), "abstract_bucket_counts_per_layer": list(BUCKET_COUNTS), "critical_path_definition": "weighted longest path in a phase-induced fixed-order logical dependency graph; logical work units are not cycles", "parallel_work_definition": "1 - critical_path_work / total_record_work; not measured hardware parallelism or throughput", "boundary": "No edge, work, fanout, or ratio selects physical layout, descriptor width, address, byte, payload movement, HBM/DMA traffic, bank, port, cycle, timing, latency, throughput, energy, area, capacity, architecture specification, or RTL."}
-    report = {"schema_version": SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "execution_classification": "no-model functional fixed-order dependency analysis over trace-derived logical record operations; critical-path work is not hardware timing", "input_artifacts": {"a468220_report_sha256": sha256_file(args.a468220_report), "a468220_trace_sha256": sha256_file(args.a468220_trace), "a468221_report_sha256": sha256_file(args.a468221_report)}, "record_trace_validation": {"schema_version": TRACE_SCHEMA, "record_count": trace_count, "sha256": sha256_file(args.a468220_trace)}, "dependency_rows": rows, "semantic_guards": {"a468220_and_a468221_hash_bound_contracts_validated": True, "fixed_record_trace_fifo_grants_source_and_order_not_rescheduled": True, "only_four_preregistered_dependency_edge_types_emitted": True, "each_edge_derives_from_fixed_order_identity_and_declared_scope": True, "no_cross_birth_source_or_fifo_order_merge_or_reordering": True, "critical_path_and_parallel_work_defined_in_logical_work_only": True, "activation_append_and_dequeue_reported_separately": True, "qwen_llama_rows_separate": True, "no_model_runtime_profiler_or_hardware_parameter_loaded": True, "no_payload_movement_or_physical_cost_inferred": True, "no_drop_fallback_migration_backing_or_protection_action": True}}
+    config = {"preregistered_dependency_edge_types": list(EDGE_TYPES), "record_curves": list(CURVES), "record_bucket_mappings": list(MAPPINGS), "abstract_bucket_counts_per_layer": list(BUCKET_COUNTS), "critical_path_definition": "weighted longest path in a phase-induced fixed-order logical dependency graph; logical work units are not cycles", "critical_path_length_definition": "node/edge count on the deterministic maximum-work path; equal-work ties prefer more nodes then earlier predecessor; this is not an instruction schedule", "checkpoint_ratio_definition": "per-checkpoint critical_path_work / total_record_work and its complement are reported with low-tail percentiles; neither is measured hardware parallelism", "parallel_work_definition": "1 - critical_path_work / total_record_work; not measured hardware parallelism or throughput", "boundary": "No edge, work, fanout, or ratio selects physical layout, descriptor width, address, byte, payload movement, HBM/DMA traffic, bank, port, cycle, timing, latency, throughput, energy, area, capacity, architecture specification, or RTL."}
+    report = {"schema_version": SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config), "execution_classification": "no-model functional fixed-order dependency analysis over trace-derived logical record operations; critical-path work and node/edge lengths are not hardware timing", "input_artifacts": {"a468220_report_sha256": sha256_file(args.a468220_report), "a468220_trace_sha256": sha256_file(args.a468220_trace), "a468221_report_sha256": sha256_file(args.a468221_report)}, "record_trace_validation": {"schema_version": TRACE_SCHEMA, "record_count": trace_count, "sha256": sha256_file(args.a468220_trace)}, "dependency_rows": rows, "semantic_guards": {"a468220_and_a468221_hash_bound_contracts_validated": True, "fixed_record_trace_fifo_grants_source_and_order_not_rescheduled": True, "only_four_preregistered_dependency_edge_types_emitted": True, "each_edge_derives_from_fixed_order_identity_and_declared_scope": True, "critical_path_node_edge_lengths_and_checkpoint_low_tail_ratios_reported": True, "no_cross_birth_source_or_fifo_order_merge_or_reordering": True, "critical_path_and_parallel_work_defined_in_logical_work_only": True, "activation_append_and_dequeue_reported_separately": True, "qwen_llama_rows_separate": True, "no_model_runtime_profiler_or_hardware_parameter_loaded": True, "no_payload_movement_or_physical_cost_inferred": True, "no_drop_fallback_migration_backing_or_protection_action": True}}
     args.output_dir.mkdir(parents=True)
     path = args.output_dir / "a470_metadata_access_concurrency_report.json"
     path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

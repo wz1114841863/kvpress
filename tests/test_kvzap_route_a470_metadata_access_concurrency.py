@@ -1,4 +1,4 @@
-from tools.analyze_kvzap_route_a470_metadata_access_concurrency import EDGE_TYPES, contiguous, dependencies
+from tools.analyze_kvzap_route_a470_metadata_access_concurrency import EDGE_TYPES, contiguous, dependencies, longest_path
 
 
 def _op(record_type, identity, phase='steady_state_dequeue', checkpoint=2, head=0, weight=1):
@@ -28,3 +28,17 @@ def test_a470_head_control_and_ownership_edges_have_fixed_declared_scopes():
         _op('ownership_link', [0, 0, 'packed'], checkpoint=4),
     ], 'conservative')
     assert ('ownership-order', 0) in ownership[1]['edges']
+
+
+def test_a470_path_length_uses_only_declared_edges_and_deterministic_tie_break():
+    nodes, _ = dependencies([
+        _op('span_descriptor', [0, 0, 1]),
+        _op('span_descriptor', [0, 0, 1]),
+        _op('frontier_control', [0, 0, 'packed']),
+        _op('selection_control', [0, 0, 'packed']),
+    ], 'conservative')
+    path = longest_path(nodes, {node['index'] for node in nodes})
+    assert path['work'] == 2
+    assert path['node_count'] == 2
+    assert path['edge_count'] == 1
+    assert sum(path['edge_type_counts'].values()) == path['edge_count']

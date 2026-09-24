@@ -3115,3 +3115,14 @@ requirement, cycles, timing, latency, throughput, traffic, bytes, capacity,
 energy, area, architecture specification, or RTL evidence.  No record
 reordering, merge, FIFO/source/grant change, scheduler, protection, or payload
 movement is modeled.
+
+The corrected `_02` result uses schema
+`kvzap-route-a470-metadata-access-concurrency-1.1`.  In addition to weighted
+critical work, it records deterministic maximum-work path node count, edge
+count, and edge-type composition.  Ties prefer more nodes and then the earlier
+predecessor, so a path length is reproducible without becoming a schedule.
+Per-checkpoint critical-work/total-work fractions and their complements include
+`min`, `P1`, `P5`, `P50`, `P95`, `P99`, and `max`; this prevents high parallel
+percentiles from hiding a small set of bad checkpoints.  The former `_01`
+schema lacks these contract-completion fields and is not the authority for
+chain-length or low-tail-ratio conclusions.

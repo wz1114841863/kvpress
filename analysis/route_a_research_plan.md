@@ -2371,3 +2371,12 @@ critical-path work nor its complement denotes hardware cycles, achieved
 parallelism, ports, banks, bandwidth, latency, throughput, capacity, energy,
 area, hardware parameters, architecture selection, or RTL.  It is a
 hardware-independent gate for the next explicitly mapped physical-cost study.
+
+The A4.7.0 completion interface must additionally report deterministic
+maximum-work path node and edge lengths, including their four edge-type
+composition.  For equal weighted work, choose the path with more nodes and then
+the earlier predecessor.  At checkpoint granularity, report both
+critical-work/total-work and parallel-work complements with `min/P1/P5/P50/P95/
+P99/max`; P95/P99 parallel fraction alone is insufficient because it can hide
+rare serialized checkpoints.  Any prior A4.7.0 output missing these fields is
+only a partial observer result and cannot close the chain-length gate.

@@ -2493,3 +2493,13 @@ All values are logical functional graph accounting.  They do not select or
 measure a physical scheduler, descriptor layout, access, port, bank, bytes,
 payload movement, HBM/DMA traffic, cycle, timing, latency, throughput, energy,
 area, capacity, hardware parameter, architecture specification, or RTL.
+
+The corrected `_02` implementation output advances the report schema to
+`kvzap-route-a470-metadata-access-concurrency-1.1`: it adds deterministic
+maximum-work path node/edge lengths and edge-type composition, plus low-tail
+(`min/P1/P5`) checkpoint critical-work fractions and parallel complements.
+Equal-work path ties are resolved by node count and then earlier predecessor.
+These fields distinguish a sequence of dependency-bearing checkpoints from a
+long direct dependency chain without introducing a scheduler or hardware-time
+interpretation.  `_01` remains preserved as a partial historical observer and
+must not be used for final chain-length or low-tail-parallelism claims.
