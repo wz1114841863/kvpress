@@ -3014,6 +3014,26 @@ specification, or RTL evidence.  No allocator, finite capacity, migration,
 spill, compaction, DROP, fallback, Full-KV backing, protection, scheduler, or
 physical storage mapping is modeled.
 
+### Route-A A4.6.8.2.1 metadata-organization sensitivity report
+
+`kvzap-route-a46821-metadata-organization-sensitivity-1.0` consumes and
+hash-validates finalized `kvzap-route-a4682-access-epoch-trace-record-1.0`; it
+does not create a lifecycle trace. `sensitivity_rows` retain anchor/workload/
+horizon/organization plus `metadata_bucket_mapping`,
+`abstract_bucket_count_per_layer`, and
+`abstract_service_units_per_bucket_per_logical_checkpoint`.
+
+`span_identity_striped_v1` and `head_source_affine_v1` are replaceable logical
+projections, not physical bank mappings. Classes are source-head read, source
+compare, mutable-head update, release update, and creation/ownership link.
+Payload-reference events are counted but excluded. Each phase/all-phase summary
+reports nonzero demand, same-epoch shortfall, class shares, class-isolated
+shortfall, and leave-one-out relief; shortfall cannot alter FIFO/grants.
+
+No field is a physical access, descriptor/PTE width, payload movement, bytes,
+HBM/DMA traffic, port, bank, conflict, cycle, timing, latency, throughput,
+energy, area, physical capacity, hardware parameter, architecture spec, or RTL.
+
 ### Route-A A4.6.8.2.0 access-epoch trace and span-lifetime closure
 
 `kvzap-route-a4682-access-epoch-trace-1.0` hash-binds A4.6.1, A4.6.4,

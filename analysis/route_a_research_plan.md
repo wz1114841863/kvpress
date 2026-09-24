@@ -2289,3 +2289,23 @@ occupancy statistic implies metadata-cache value, descriptor retention policy,
 physical capacity, time, payload movement, bytes, HBM/DMA traffic, port, bank,
 cycle, timing, latency, throughput, energy, area, hardware parameter,
 architecture specification, or RTL.
+
+### A4.6.8.2.1 — metadata-organization and abstract access-hotspot sensitivity
+
+Consume finalized A4.6.8.2.0 ordered events and their hash chain. Keep the
+A4.6.4 fixed grant sequence, A4.6.7.0 canonical FIFO, source affiliation,
+event order, and organization labels unchanged. This observer cannot cause
+DROP, fallback, migration, a new grant, or protection/scheduler action.
+
+Classify fixed metadata as source-head reads, oldest-source compares,
+mutable-head updates, release updates, and creation/ownership links. Count but
+exclude payload-reference create/release: lifecycle is not payload movement.
+For each organization, phase, and workload, sweep independent replaceable
+logical mappings `span_identity_striped_v1` and `head_source_affine_v1`,
+abstract bucket counts `{1,2,4,8}`, and same-epoch service `{1,2,4}`.
+
+Report nonzero `(layer, logical checkpoint, abstract bucket)` demand,
+same-epoch shortfall, class isolated shortfall, leave-one-out relief, phase
+separation, and top hotspots. Shortfall is non-propagating logical observation,
+not a port/bank conflict, queue depth, cycle, latency, bandwidth, or hardware
+result.

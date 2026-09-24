@@ -2429,3 +2429,17 @@ latency, throughput, energy, area, capacity, hardware parameter, architecture
 specification, or RTL.  No allocator, finite capacity, migration, spill,
 compaction, DROP, fallback, Full-KV backing, protection, scheduler, or physical
 metadata organization is modeled.
+
+### A4.6.8.2.1 implementation — metadata organization and access-hotspot observer
+
+`tools/analyze_kvzap_route_a46821_metadata_organization_sensitivity.py` bridges
+finalized A4.6.8.2.0 ordered logical events to a later physical metadata DSE.
+It does not alter head-local/layer-shared/hierarchical replay, grants, FIFO,
+source ownership, or event order. It classifies source reads, source compares,
+mutable updates, release updates, and creation/ownership links, while reporting
+but excluding payload-reference lifecycle events.
+
+`span_identity_striped_v1` and `head_source_affine_v1` sweep independently of
+organization over abstract bucket counts and same-epoch service units. Shortfall
+is non-propagating and identifies only logical concentration; it selects no
+physical banks, ports, capacities, timing, traffic, controller, or cost.
