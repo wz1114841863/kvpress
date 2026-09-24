@@ -2463,3 +2463,12 @@ predeclared moderate abstract service vector, especially for Llama reasoning.
 Passing provides a candidate physical-organization contract for a later cost
 model; it does not select a microarchitecture, freeze an architecture spec, or
 authorize RTL.
+
+The corrected A4.7.2.1 `_02` report must not use a per-context maximum
+metadata-bit total as the fixed candidate footprint. It must additionally emit
+the conservative joint-safe cross-context modeled bound formed from maximum
+field widths and maximum modeled object counts. It must also report longest
+per-bank numerical logical-checkpoint saturation runs by phase and service
+interpretation, including RMW and aggregate bases. A count of saturated
+observations alone cannot determine persistent pressure. These are still
+abstract logical service observations, not cycles or timing.

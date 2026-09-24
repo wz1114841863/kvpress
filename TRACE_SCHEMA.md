@@ -3175,7 +3175,7 @@ latency, throughput, energy, area, architecture specification, or RTL claim.
 
 ### Route-A A4.7.2.1 metadata physicalization sensitivity report
 
-`kvzap-route-a4721-metadata-physical-dse-1.0` hash-binds A4.7.0 `_02`,
+`kvzap-route-a4721-metadata-physical-dse-1.1` hash-binds A4.7.0 `_02`,
 A4.7.1, and A4.7.2.0. It replays the immutable A4.7.1 transaction trace and
 maps only A4.7.2.0-sufficient semantic layouts to modeled storage-object
 operations. The report separates static field/footprint profiles after a
@@ -3194,3 +3194,12 @@ shortfall, and fanout are sensitivity values only. They are not physical bank or
 port choices, hardware accesses, SRAM/HBM transactions, cycles, timing,
 bandwidth, latency, throughput, energy, area, architecture specification, or RTL
 evidence.
+
+The corrected schema `1.1`, used only for a fresh `_02` output, additionally
+reports a conservative cross-context joint-safe modeled footprint: maximum field
+widths and maximum modeled object counts are combined before bit accounting,
+rather than treating a per-context maximum as a fixed-candidate bound. It also
+records per-bank, per-phase maximum consecutive saturated
+*logical-checkpoint* runs for each abstract service interpretation. Checkpoint
+adjacency is numerical only and is not a cycle or timing duration. These
+additions do not select physical entries, banks, ports, or service rates.

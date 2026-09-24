@@ -2567,3 +2567,14 @@ This is not an allocation, SRAM array layout, real bank/port choice, hardware
 access or atomic, cycle model, traffic/bandwidth measurement, timing/latency or
 throughput result, energy/area estimate, architecture selection, or RTL. It is
 only a bounded abstract input to a later cost model.
+
+#### A4.7.2.1 `_02` correction
+
+The `_01` report preserved valid transaction/bank/service sensitivity results,
+but its per-context maximum metadata-bit value was not a conservative fixed
+cross-workload candidate footprint, and saturated-observation counts did not
+show whether pressure was consecutive. The corrected schema `1.1` emits the
+joint-safe modeled field-width/object-count bound and per-bank, per-phase
+logical-checkpoint saturation-run summaries. `_01` remains preserved; `_02`
+is the only artifact eligible for the A4.7.2.1 exit assessment. Neither added
+quantity is a physical capacity, bank/port choice, cycle, or timing claim.

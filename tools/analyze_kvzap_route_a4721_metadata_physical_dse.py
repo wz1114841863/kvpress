@@ -22,11 +22,11 @@ from tools.analyze_kvzap_route_a442_cross_anchor_activation_contract import sha2
 from tools.analyze_kvzap_route_a461_activation_burst_envelope import read_completed
 from tools.analyze_kvzap_route_a470_metadata_access_concurrency import SCHEMA as A470_SCHEMA
 from tools.analyze_kvzap_route_a471_metadata_transaction_contract import SCHEMA as A471_SCHEMA, TRANSACTION_TRACE_SCHEMA
-from tools.analyze_kvzap_route_a4720_metadata_storage_sufficiency import LAYOUTS, SCHEMA as A4720_SCHEMA, context_key, normalized_object_key
+from tools.analyze_kvzap_route_a4720_metadata_storage_sufficiency import LAYOUTS, SCHEMA as A4720_SCHEMA, context_key, modeled_object_bits, normalized_object_key, semantic_record_bits
 from tools.export_kvzap_predictor_trace import get_git_commit, stable_hash
 
 
-SCHEMA = "kvzap-route-a4721-metadata-physical-dse-1.0"
+SCHEMA = "kvzap-route-a4721-metadata-physical-dse-1.1"
 OPS = ("read", "write", "rmw")
 PHASES = ("activation", "steady_state_append", "steady_state_dequeue")
 BANK_COUNTS = (1, 4, 8)
@@ -50,6 +50,18 @@ def distribution(values: Iterable[int]) -> dict[str, int | None]:
     def percentile(fraction: float) -> int | None:
         return items[int((len(items) - 1) * fraction)] if items else None
     return {"count": len(items), "min": min(items) if items else None, "p50": percentile(.50), "p95": percentile(.95), "p99": percentile(.99), "max": max(items) if items else None, "sum": sum(items)}
+
+
+def longest_consecutive_integer_run(values: Iterable[int]) -> int:
+    """Return a checkpoint-number run, not a cycle/timing duration."""
+    ordered = sorted(set(values))
+    if not ordered:
+        return 0
+    best = current = 1
+    for previous, value in zip(ordered, ordered[1:]):
+        current = current + 1 if value == previous + 1 else 1
+        best = max(best, current)
+    return best
 
 
 @dataclass
@@ -142,16 +154,36 @@ def static_candidate_rows(a4720: dict[str, Any]) -> tuple[list[dict[str, Any]], 
         baseline = [item for item in members if int(item["width_slack_bits"]) == 0]
         if not baseline or not all(item["namespace_width_sufficient"] for item in baseline):
             raise AssertionError("zero-slack profile lacks A4.7.2.0 sufficiency")
+        joint_widths = {field: max(item["field_widths_bits"][field] for item in baseline) for field in baseline[0]["field_widths_bits"]}
+        joint_counts = {name: max(item["modeled_peak_storage_object_counts"][name] for item in baseline) for name in baseline[0]["modeled_peak_storage_object_counts"]}
+        joint_object_bits = modeled_object_bits(key[0], semantic_record_bits(joint_widths))
+        joint_safe_bits = sum(joint_counts[name] * joint_object_bits[name] for name in joint_counts)
         rows.append({
             "layout": key[0], "storage_scope": key[1], "namespace_policy": key[2], "generation_bits": key[3], "context_count": len(baseline),
-            "modeled_peak_metadata_bits_envelope": distribution(item["modeled_peak_metadata_bits"] for item in baseline),
-            "field_width_envelope_bits": {field: max(item["field_widths_bits"][field] for item in baseline) for field in baseline[0]["field_widths_bits"]},
+            "trace_context_peak_metadata_bits_distribution": distribution(item["modeled_peak_metadata_bits"] for item in baseline),
+            "cross_context_joint_safe_field_widths_bits": joint_widths,
+            "cross_context_joint_safe_modeled_storage_object_counts": joint_counts,
+            "cross_context_joint_safe_modeled_storage_object_widths_bits": joint_object_bits,
+            "cross_context_joint_safe_modeled_metadata_bits": joint_safe_bits,
+            "joint_safe_footprint_rule": "max each field width across the fixed workload set, max each modeled object count across the fixed workload set, then multiply together. This is a conservative cross-context modeled accounting bound, not a physical entry allocation or measured capacity.",
             "static_filter": "survives_zero_slack", "all_contexts_namespace_sufficient": True,
             "positive_slack_filtered_as_monotonic_modeled_bit_expansion": sorted({int(item["width_slack_bits"]) for item in members if int(item["width_slack_bits"]) > 0}),
             "physical_entry_not_selected": True,
         })
-    summary = {"input_width_rows": len(a4720["width_sufficiency_rows"]), "surviving_static_profiles": len(rows), "filter": "Only width slack >0 is filtered within an identical layout/scope/namespace-policy/generation profile as a monotonic modeled-bit expansion. Layout/scope/reuse alternatives remain for later locality/conflict analysis."}
+    summary = {"input_width_rows": len(a4720["width_sufficiency_rows"]), "surviving_static_profiles": len(rows), "filter": "Only width slack >0 is filtered within an identical layout/scope/namespace-policy/generation profile as a monotonic modeled-bit expansion. Layout/scope/reuse alternatives remain for later locality/conflict analysis.", "joint_safe_footprint_added_in_schema_1_1": True}
     return rows, summary
+
+
+def saturation_streaks(checkpoints: list[int], bank_count: int, saturated: dict[int, set[int]]) -> dict[str, Any]:
+    per_bank = {bank: longest_consecutive_integer_run(saturated.get(bank, set())) for bank in range(bank_count)}
+    observed = set(checkpoints)
+    full = [bank for bank in range(bank_count) if observed and saturated.get(bank, set()) == observed]
+    return {
+        "per_bank_max_consecutive_saturated_logical_checkpoint_run": distribution(per_bank.values()),
+        "peak_any_bank_consecutive_saturated_logical_checkpoint_run": max(per_bank.values(), default=0),
+        "banks_saturated_at_every_observed_phase_checkpoint": full,
+        "checkpoint_adjacency_rule": "only numerically consecutive logical checkpoints extend a run; this is not a cycle or time duration",
+    }
 
 
 class ContextReplay:
@@ -209,11 +241,19 @@ class ContextReplay:
                                     saturated = sum(value > quantum for op in OPS for value in demand_by_op[op])
                                     demand = sum(sum(values) for values in demand_by_op.values())
                                     slots = len(checkpoints) * bank_count * len(OPS) * quantum
+                                    saturation_streak_by_basis: dict[str, dict[str, Any]] = {}
+                                    for op in OPS:
+                                        per_bank = {bank: {checkpoint for checkpoint in checkpoints if self.pressure[(layout, bank_count, mapping, checkpoint, bank, op)] > quantum} for bank in range(bank_count)}
+                                        saturation_streak_by_basis[op] = saturation_streaks(checkpoints, bank_count, per_bank)
+                                    any_class = {bank: {checkpoint for checkpoint in checkpoints if any(self.pressure[(layout, bank_count, mapping, checkpoint, bank, op)] > quantum for op in OPS)} for bank in range(bank_count)}
+                                    saturation_streak_by_basis["any_class"] = saturation_streaks(checkpoints, bank_count, any_class)
                                 else:
                                     totals = [sum(self.pressure[(layout, bank_count, mapping, checkpoint, bank, op)] for op in OPS) for checkpoint in checkpoints for bank in range(bank_count)]
                                     shortfall_by_op = {"unattributed_unified_total": sum(max(0, value - quantum) for value in totals)}
                                     saturated, demand, slots = sum(value > quantum for value in totals), sum(totals), len(totals) * quantum
-                                service_rows.append({**common, "phase": phase, "service_model": service_model, "abstract_service_quantum_per_bank_per_logical_checkpoint": quantum, "logical_checkpoint_count": len(checkpoints), "total_modeled_object_operation_demand": demand, "abstract_service_slots": slots, "modeled_shortfall": sum(shortfall_by_op.values()), "shortfall_by_operation": shortfall_by_op, "saturated_bank_checkpoint_observations": saturated, "no_reordering_or_scheduler_inferred": True, "not_cycles_bandwidth_or_port_requirement": True})
+                                    per_bank = {bank: {checkpoint for checkpoint in checkpoints if sum(self.pressure[(layout, bank_count, mapping, checkpoint, bank, op)] for op in OPS) > quantum} for bank in range(bank_count)}
+                                    saturation_streak_by_basis = {"unified_total": saturation_streaks(checkpoints, bank_count, per_bank)}
+                                service_rows.append({**common, "phase": phase, "service_model": service_model, "abstract_service_quantum_per_bank_per_logical_checkpoint": quantum, "logical_checkpoint_count": len(checkpoints), "total_modeled_object_operation_demand": demand, "abstract_service_slots": slots, "modeled_shortfall": sum(shortfall_by_op.values()), "shortfall_by_operation": shortfall_by_op, "saturated_bank_checkpoint_observations": saturated, "saturation_streaks_by_basis": saturation_streak_by_basis, "no_reordering_or_scheduler_inferred": True, "not_cycles_bandwidth_or_port_requirement": True})
         return bank_rows, fanout_rows, service_rows
 
 
@@ -263,14 +303,14 @@ def main() -> None:
         "service_models": {"independent_class": "Each modeled R/W/RMW class receives the declared quantum independently; no shared resource is implied.", "unified_total": "All modeled R/W/RMW demand shares one declared total quantum; class-specific shortfall is deliberately unattributed."},
         "static_filter": static_filter["filter"],
         "transaction_lowering": "Within one immutable A4.7.1 transaction, RMW or read+write/release lowers to modeled RMW, release-only lowers to modeled write, and no transactions merge or reorder.",
-        "boundary": "Bank labels, modeled object-operation demand, service quanta, shortfall, and fanout are abstract per-logical-checkpoint sensitivity values, not selected physical banks/ports, hardware accesses/atomics/transactions, cycles, timing, latency, throughput, bandwidth, HBM traffic, energy, area, architecture specification, or RTL.",
+        "boundary": "Bank labels, modeled object-operation demand, service quanta, shortfall, fanout, and logical-checkpoint saturation runs are abstract sensitivity values, not selected physical banks/ports, hardware accesses/atomics/transactions, cycles, timing, latency, throughput, bandwidth, HBM traffic, energy, area, architecture specification, or RTL.",
     }
     report = {
         "schema_version": SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "config": config, "config_hash": stable_hash(config),
         "execution_classification": "functional lowering of fixed semantic transaction sets plus modeled storage-object footprint, bank-mapping, commit-fanout, and abstract per-logical-checkpoint service sensitivity; not measured hardware behavior",
         "input_artifacts": {"a470_report_sha256": sha256_file(args.a470_report), "a471_report_sha256": sha256_file(args.a471_report), "a471_trace_sha256": sha256_file(args.a471_trace), "a4720_report_sha256": sha256_file(args.a4720_report)},
         "static_candidate_rows": candidates, "static_filter_summary": static_filter, "bank_pressure_rows": bank_rows, "commit_fanout_rows": fanout_rows, "service_sensitivity_rows": service_rows,
-        "semantic_guards": {"complete_a470_a471_a4720_hash_bound_chain_validated": True, "only_a4720_sufficient_layouts_and_width_profiles_consumed": True, "a471_transaction_sets_commit_boundaries_and_order_unchanged": True, "semantic_atomicity_explicitly_not_hardware_atomic_operation": True, "intrinsic_dependency_not_recomputed_or_conflated_with_modeled_physical_contention": True, "static_slack_filter_is_only_monotonic_modeled_bit_filter": True, "bank_mapping_and_service_vectors_predeclared": True, "modeled_operations_do_not_equal_hardware_accesses": True, "no_scheduler_reordering_payload_movement_or_protection_action": True, "no_model_runtime_profiler_or_hardware_parameter_loaded": True, "no_cycles_bandwidth_latency_throughput_energy_area_or_architecture_selection": True},
+        "semantic_guards": {"complete_a470_a471_a4720_hash_bound_chain_validated": True, "only_a4720_sufficient_layouts_and_width_profiles_consumed": True, "a471_transaction_sets_commit_boundaries_and_order_unchanged": True, "semantic_atomicity_explicitly_not_hardware_atomic_operation": True, "intrinsic_dependency_not_recomputed_or_conflated_with_modeled_physical_contention": True, "static_slack_filter_is_only_monotonic_modeled_bit_filter": True, "cross_context_joint_safe_modeled_footprint_reported": True, "phase_and_bank_saturation_streaks_reported": True, "bank_mapping_and_service_vectors_predeclared": True, "modeled_operations_do_not_equal_hardware_accesses": True, "no_scheduler_reordering_payload_movement_or_protection_action": True, "no_model_runtime_profiler_or_hardware_parameter_loaded": True, "no_cycles_bandwidth_latency_throughput_energy_area_or_architecture_selection": True},
     }
     args.output_dir.mkdir(parents=True)
     path = args.output_dir / "a4721_metadata_physical_dse_report.json"
