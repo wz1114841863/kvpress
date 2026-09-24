@@ -3,6 +3,7 @@ from collections import Counter
 from tools.analyze_kvzap_route_a46821_metadata_organization_sensitivity import (
     METADATA_CLASSES,
     bucket_for_event,
+    expected_contexts_from_a4682,
     summarize_demands,
 )
 
@@ -30,3 +31,8 @@ def test_a46821_same_epoch_shortfall_is_observer_only_and_class_attribution_is_c
     assert result["all_phases"]["metadata_class_totals"]["creation_link"] == 3
     assert set(result["all_phases"]["metadata_class_totals"]) == set(METADATA_CLASSES)
     assert result["top_hotspots"][0]["logical_checkpoint"] == 0
+
+
+def test_a46821_expected_coverage_is_derived_from_a4682_not_a_literal_count():
+    report = {"anchor_rows": [{"anchor": "Qwen", "workload": "reasoning", "horizon_rows": [{"evaluation_horizon_append_opportunities": 8, "access_epoch_rows": [{"label": "shared"}, {"label": "hierarchical"}]}]}]}
+    assert expected_contexts_from_a4682(report) == {("Qwen", "reasoning", 8, "shared"), ("Qwen", "reasoning", 8, "hierarchical")}

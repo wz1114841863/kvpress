@@ -163,6 +163,16 @@ def stream_contexts(path: Path) -> Iterable[tuple[tuple[str, str, int, str], lis
         yield current, records
 
 
+def expected_contexts_from_a4682(report: dict[str, Any]) -> set[tuple[str, str, int, str]]:
+    """Derive coverage from the hash-bound predecessor, never a literal count."""
+    return {
+        (str(anchor_row["anchor"]), str(anchor_row["workload"]), int(horizon_row["evaluation_horizon_append_opportunities"]), str(access_row["label"]))
+        for anchor_row in report["anchor_rows"]
+        for horizon_row in anchor_row["horizon_rows"]
+        for access_row in horizon_row["access_epoch_rows"]
+    }
+
+
 def analyze_context(context: tuple[str, str, int, str], events: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], Counter[str], Counter[str]]:
     demands: dict[tuple[str, int], dict[tuple[str, int, int, int], Counter[str]]] = {(mapping, buckets): defaultdict(Counter) for mapping in MAPPINGS for buckets in BUCKET_COUNTS}
     primitives: Counter[str] = Counter()
@@ -202,7 +212,8 @@ def main() -> None:
     if trace_records != int(a4682["access_epoch_trace"]["record_count"]):
         raise AssertionError("streamed trace record count differs from A4.6.8.2.0 manifest")
     contexts = {(r["anchor"], r["workload"], r["evaluation_horizon_append_opportunities"], r["organization_label"]) for r in rows}
-    if len(contexts) != 120 or len(rows) != 120 * len(MAPPINGS) * len(BUCKET_COUNTS) * len(SERVICE_UNITS):
+    expected_contexts = expected_contexts_from_a4682(a4682)
+    if contexts != expected_contexts or len(rows) != len(expected_contexts) * len(MAPPINGS) * len(BUCKET_COUNTS) * len(SERVICE_UNITS):
         raise AssertionError("unexpected A4.6.8.2.1 coverage")
     config = {
         "representation": REPRESENTATION, "metadata_bucket_mappings": list(MAPPINGS), "abstract_bucket_counts_per_layer": list(BUCKET_COUNTS), "abstract_service_units_per_bucket_per_logical_checkpoint": list(SERVICE_UNITS),
