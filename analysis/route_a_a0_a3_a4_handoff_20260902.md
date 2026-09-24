@@ -2458,3 +2458,16 @@ partial-dequeue/remaining-update pair with equal checkpoint, source, birth, and
 sequence; any cross-boundary merge is rejected. This remains a logical
 functional recordization gate, not a physical descriptor layout, memory access,
 byte, banking, port, timing, or hardware-cost model.
+
+### A4.6.8.2.2.1 implementation — record-aware organization observer
+
+`tools/analyze_kvzap_route_a468221_record_organization_sensitivity.py` fixes
+the A4.6.8.2.2.0 record-access sequence and observes only logical
+record-to-bucket mappings. Conservative and strict recordization curves remain
+separate. The observer reports control/span/ownership/RMW pressure, logical
+fanout, P95/P99, continuous hot-checkpoint runs, and per-head skew without
+changing any lifecycle, source, FIFO, grant, or pending-organization semantic.
+
+Its bucket and issue-unit axes are explicitly abstract: no output is a selected
+bank/port, physical access, descriptor layout, byte, HBM transaction, cycle,
+latency, capacity, or hardware-cost result.

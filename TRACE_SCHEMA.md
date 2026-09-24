@@ -3051,6 +3051,21 @@ record identities have no descriptor fields, physical layout, width, address,
 bytes, payload movement, HBM/DMA traffic, bank, port, cycle, timing, latency,
 throughput, energy, area, capacity, or RTL meaning.
 
+### Route-A A4.6.8.2.2.1 record-aware organization sensitivity report
+
+`kvzap-route-a468221-record-organization-sensitivity-1.0` hash-binds the
+A4.6.8.2.1 report and finalized A4.6.8.2.2.0 report/record trace.
+`sensitivity_rows` retain the fixed context and add `record_curve`,
+`record_bucket_mapping`, abstract bucket count, and abstract issue units.
+
+Each row separates control, span, ownership, and same-record RMW demand;
+reports P95/P99/max, non-propagating shortfall, RMW serialization sensitivity,
+per-head skew, contiguous logical-checkpoint hot runs, and phase/checkpoint/
+head bucket fanout. Mapping and issue units are abstract sensitivity labels,
+not physical banking/port/timing parameters. No row denotes physical accesses,
+bytes, payload traffic, HBM/DMA, cycles, latency, throughput, energy, area,
+capacity, or an architecture/RTL choice.
+
 ### Route-A A4.6.8.2.0 access-epoch trace and span-lifetime closure
 
 `kvzap-route-a4682-access-epoch-trace-1.0` hash-binds A4.6.1, A4.6.4,

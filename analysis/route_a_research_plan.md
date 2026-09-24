@@ -71,6 +71,23 @@ context coverage, and the pre-existing FIFO/oldest/ownership contract. Record
 identity has no width, physical address, byte, bank, port, cycle, or traffic
 meaning; this is not descriptor layout or hardware cost selection.
 
+### A4.6.8.2.2.1 — record-aware organization sensitivity
+
+Consume the fixed A4.6.8.2.2.0 record-access trace and preserve both its
+conservative and strict curves. Change only declared logical record-to-bucket
+mappings: all-record striped, head/source affine, control-affine plus
+span-striped, and hierarchical control/span. Keep this axis separate from
+pending organization, FIFO, source affiliation, grants, and scheduler policy.
+
+For every mapping, abstract bucket-count and issue-unit sensitivity point,
+separate control, span-descriptor, ownership, and same-record RMW pressure.
+Report phase-local P95/P99/max demand, non-propagating abstract shortfall,
+same-record RMW serialization sensitivity, per-head checkpoint skew, contiguous
+hot logical-checkpoint runs, and head-checkpoint cross-bucket fanout. Fanout is
+only the set of logical buckets touched in a replay checkpoint, not simultaneous
+physical accesses. No result selects banks, ports, descriptor width, timing,
+traffic, capacity, or hardware cost.
+
 Current traces contain no trustworthy decode lifecycle. They cannot establish
 per-step cold admission bursts, packing writes, break-even output horizon, or
 measured end-to-end performance. Those are explicit evidence gaps.
