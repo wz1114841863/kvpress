@@ -2581,3 +2581,26 @@ opportunity ordinal rather than raw numeric checkpoint adjacency. `_01` and
 `_02` remain preserved; only `_03` is eligible for the A4.7.2.1 exit
 assessment. Neither added quantity is a physical capacity, bank/port choice,
 cycle, or timing claim.
+
+### A4.8.0 implementation — causal commit-aware transaction backlog
+
+`tools/analyze_kvzap_route_a480_commit_aware_backlog.py` is the next bounded
+model after A4.7.2.1 `_03`. It consumes the hash-bound A4.7.0 `_02`, A4.7.1,
+A4.7.2.0, and corrected A4.7.2.1 `_03` chain, plus the immutable record trace
+solely to lift the existing four intrinsic dependency edge types to complete
+semantic transaction groups. It also preserves A4.7.1's existing per-head FIFO
+transaction predecessor as a serialization guard; that does not create a new
+A4.7.0 edge type. It preserves every group, FIFO-derived order, and A4.7.1
+commit boundary.
+
+It keeps a direct unconstrained-commit reference separate from one fixed
+causal elastic abstract-service replay. The causal controller can observe only
+current backlog/age counters and its own history; it cannot use future arrivals
+or per-trace parameters. Residual backlog is attributed in a fixed order to
+intrinsic dependency, same-bank modeled shortage, RMW modeled shortage, or
+cross-bank atomic-commit waiting. Its delay coordinate is explicitly named a
+logical opportunity/epoch delay, not latency. High-level occupancy, runs,
+transitions, and residual backlog are therefore inputs to later candidate
+freezing only; they are not a selected controller, bank/port design, hardware
+service result, timing/performance measurement, architecture specification, or
+RTL authorization.

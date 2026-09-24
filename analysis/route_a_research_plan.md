@@ -2475,3 +2475,32 @@ and dequeue checkpoints are interleaved, longest runs must use phase-local
 opportunity ordinal rather than raw checkpoint adjacency. `_02` remains
 preserved but is not eligible for the exit assessment. These are still abstract
 logical service observations, not cycles or timing.
+
+### A4.8.0 — causal commit-aware metadata backlog replay
+
+Consume only A4.7.2.1 `_03`, A4.7.2.0, the immutable A4.7.1 transaction trace,
+and the A4.6.8.2.2.0 record trace needed to lift the four already preregistered
+A4.7.0 dependency edges to transaction groups. Retain the existing A4.7.1
+per-head FIFO transaction predecessor as a serialization guard, not as a new
+A4.7.0 edge type. Preserve the direct-service
+functional baseline: it commits every dependency-ready immutable transaction
+without an abstract capacity restriction and must drain completely. The bounded
+candidate policy uses only fixed `minimum/medium/high={1,2,4}` abstract
+per-bank/per-operation logical-opportunity quanta and causal current/history
+counters; it may not see a future arrival, horizon, anchor, workload identity,
+or an offline envelope.
+
+At every logical opportunity, preserve transaction order and atomic commit
+visibility. Attribute each residual group once, in declared precedence, to an
+intrinsic transaction dependency, same-bank modeled service shortage, RMW
+modeled service shortage, or cross-bank atomic-commit wait. Report
+post-service backlog/age, logical-opportunity epoch delay, high-level occupancy
+fraction, longest high-level run, escalation/de-escalation counts, and residual
+backlog under high level. A bounded no-arrival drain continuation may establish
+drained versus prefix-censored status, but its length is not controller input.
+
+This is a dependency-preserving functional replay plus abstract service
+sensitivity. It does not select a storage organization, bank count, port,
+scheduler, or controller; it does not establish a hardware transaction,
+cycle, latency, throughput, bandwidth, capacity, energy, area, architecture
+specification, or RTL readiness.

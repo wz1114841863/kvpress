@@ -3210,3 +3210,34 @@ interleaved, so runs are computed over the contiguous phase-local opportunity
 ordinal obtained by sorting raw checkpoints within that phase. The raw
 checkpoint remains provenance only; the ordinal is not a cycle, latency, or
 time quantity.
+
+### Route-A A4.8.0 commit-aware transaction-backlog replay
+
+`kvzap-route-a480-commit-aware-backlog-1.0` hash-binds the corrected A4.7.2.1
+`_03` report, A4.7.2.0, A4.7.1 transaction trace, and the A4.6.8.2.2.0 record
+trace required to reconstruct exactly the four preregistered A4.7.0 dependency
+edge types. It additionally retains the already-fixed A4.7.1 per-head FIFO
+transaction predecessor; that serialization guard is not a new A4.7.0 edge
+type. It retains every A4.7.1 transaction group, FIFO-derived order,
+and one commit/linearization boundary. A `direct_unconstrained_commit`
+functional baseline must drain all dependency-ready groups in their recorded
+logical opportunities.
+
+The only bounded sensitivity policy is `causal_elastic_v1`. It selects from
+fixed abstract levels `minimum/medium/high={1,2,4}` using only present logical
+backlog, maximum per-head backlog, maximum pending age, and its own previous
+state. It receives no future arrival, evaluation horizon, anchor, or workload
+identity. A no-arrival post-trace drain continuation is explicitly bounded and
+reported solely to distinguish `drained` from `prefix_censored_backlog_remains`;
+its bound is not controller input.
+
+For each uncommitted group after an opportunity, exactly one first blocker is
+reported with fixed precedence: intrinsic transaction dependency, modeled RMW
+service shortage, modeled cross-bank atomic-commit waiting, or modeled
+same-bank service shortage. `logical_opportunity_epoch_delay` is an ordinal
+difference between trace/replay opportunities, never latency. Level occupancy,
+longest high-level logical-opportunity run, escalation/de-escalation counts,
+and residual high-level backlog are modeled observations only. No field is a
+physical bank/port, access/atomic/transaction, cycle, timing, traffic,
+bandwidth, performance, capacity, energy, area, architecture selection, or RTL
+claim.
