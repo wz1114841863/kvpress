@@ -1527,6 +1527,28 @@ The resulting quantities are logical-model observations, not hardware queue,
 bank/port, transaction, cycle, timing, latency, traffic, bandwidth,
 throughput, energy, area, architecture-selection, or RTL evidence.
 
+### Route-A A4.8.2a contract-simplification legality gate
+
+`kvzap-route-a482a-contract-simplification-gate-1.0` hash-binds A4.8.1b,
+A4.8.1a, A4.8.0, and their complete predecessor chain. It freezes the four
+semantic record types and every A4.7.1 transaction/commit boundary, then
+replays authoritative state after every unchanged commit. The only admitted
+non-baseline work template expands one existing same-record RMW into one
+logical read plus one logical write that remain invisible until that same
+commit. It preserves record identity and adds no semantic record, but records
+both the extra work and a same-record commit-exclusion obligation.
+
+A versioned/shadow update is explicitly rejected: a latest-version selector is
+additional semantic state not present in the frozen catalog or A4.7.1 sets.
+Negative controls reject partial publication and ambiguous selector visibility.
+This closes the A4.8.2a semantic variant catalog; A4.8.2b may assess only the
+admitted baseline and read/write-expansion templates with full total-work,
+footprint, readiness, drain, and root-amplification accounting.
+
+The ledger is logical contract work, not hardware RMW/read/write accesses,
+atomics, queues, banks/ports, cycles, timing, latency, traffic, bandwidth,
+throughput, energy, area, architecture selection, or RTL evidence.
+
 `kvzap-route-a4162-cross-workload-three-path-measurement-1.0` is the A4.1.7.11
 second-workload repeated measurement schema.  Every fresh reset run is one of
 Full-KV bypass, same-mask dense replay, or A4154-certified empty-source-elided

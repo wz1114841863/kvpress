@@ -2542,3 +2542,24 @@ controller is inefficient, service shortage remains despite a fixed higher
 level, or dependency serialization persists with little ready work. It is an
 abstract logical sensitivity study, not a selected service rate or hardware
 performance/capacity result.
+
+### A4.8.2a — bounded contract-simplification legality gate
+
+This is the final semantic gate for the contract-simplification route. Freeze
+the A4.7.1 transaction sets, four-record catalog, FIFO/order, and commit
+boundaries. Replay the authoritative semantic state after every unchanged
+commit, and admit no new record or transaction type. Compare only the eager
+RMW baseline with one explicit same-record `read + write` expansion whose
+write publishes at the unchanged atomic boundary. It must account for the
+extra read/write work and same-record commit-exclusion obligation; it may not
+claim that an RMW disappeared for free.
+
+Reject versioned/shadow proposals unless their authoritative latest-version
+selector is already expressible in the frozen catalog and transaction sets;
+otherwise that proposal is outside this closure. Negative controls must expose
+partial publication and ambiguous version selection. A4.8.2b may consume only
+the admitted templates and must compare total metadata work, R/W/RMW mix,
+footprint, ready backlog/age, residual/drain tail, and root-lineage
+amplification. If no admitted candidate materially relieves persistent `q=4`
+pressure without offsetting read/write/footprint cost, end this route and enter
+physical-cost evaluation rather than adding further semantic variants.

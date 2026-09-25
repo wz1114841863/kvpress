@@ -2626,3 +2626,15 @@ point reports the same readiness and canonical shortage-root attribution as
 A4.8.1a, so controller behavior can be separated from sustained-service
 shortage. It neither selects a service rate nor models a hardware queue,
 bank/port, cycle, timing, performance, or architecture.
+
+### A4.8.2a implementation — contract-simplification closure gate
+
+`tools/analyze_kvzap_route_a482a_contract_simplification_gate.py` is the
+bounded semantic closure after A4.8.1b. It replays unchanged A4.7.1 commits
+while comparing the eager RMW ledger with a same-record read/write expansion
+that preserves publication at the existing commit boundary. It retains all
+four semantic record types, adds no selector state, and explicitly charges the
+extra work and same-record commit-exclusion obligation. Versioned/shadow
+updates are rejected rather than silently adding an authoritative selector.
+This does not select an implementation, RMW unit, queue, bank/port, cycle,
+timing, performance result, or architecture.
