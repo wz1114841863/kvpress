@@ -1580,6 +1580,22 @@ Its cycles are declared model units, not calibrated hardware latency.
 It additionally records joint-safe raw modeled-object widths and the declared
 64-bit padded candidate entries, with a no-field-overflow guard.
 
+### Route-A A4.9.2 record-granular internal-execution sensitivity
+
+`kvzap-route-a492-record-granular-engine-1.0` hash-binds A4.9.1 `_02` and its
+complete immutable A4.9.0/A4.7.2/A4.7.1 input chain. It compares only the
+exact A4.9.1 whole-bank reservation baseline with modeled storage-object
+micro-ops that may interleave inside an existing A4.7.1 transaction. Every
+member remains externally invisible until the unchanged single commit boundary;
+FIFO, ownership, oldest selection, and dependency release are commit-gated.
+
+The schema keeps eager RMW as one RMW micro-op and separately records declared
+intrinsic-dependency, same-record-lock, bank-read-port, bank-write-port,
+RMW-lane, and cross-bank-commit-coordination observations. Queue, Cmin,
+drain, delay, and active micro-op concurrency are declared model quantities,
+not hardware timing, FIFO depth, throughput, traffic, energy, area,
+architecture selection, or RTL evidence. No third granularity is admitted.
+
 ### Route-A A4.8.2b admitted-template fixed-service replay
 
 `kvzap-route-a482b-contract-simplification-replay-1.0` hash-binds the closed

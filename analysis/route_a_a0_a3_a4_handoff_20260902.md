@@ -2683,3 +2683,13 @@ report modeled queue and abstract-cycle effects separately from all hardware
 measurements or final architecture claims.
 Candidate output must also close field-to-entry sufficiency through explicit
 joint-safe widths and word padding before any service result is interpreted.
+
+### A4.9.2 planned implementation — final execution-granularity sensitivity
+
+This final sensitivity compares A4.9.1's exact whole-bank reservation replay
+against record-granular internal modeled-object micro-ops only. A4.7.1's one
+transaction commit boundary remains the sole external publication boundary:
+FIFO, ownership, oldest selection, and dependency release cannot occur after a
+member micro-op alone. The stage retains eager RMW and the fixed candidate
+catalog, separately reports declared blockers and concurrency, and introduces
+neither a third execution model nor RTL/hardware claims.

@@ -2618,3 +2618,17 @@ hardware timing or a final architecture selection.
 Each candidate must emit its joint-safe raw object widths, 64-bit padded entry
 widths and aligned modeled footprint; lacking this guard is not a sufficient
 physical-candidate result.
+
+### A4.9.2 — final execution-granularity sensitivity
+
+Compare only the exact A4.9.1 whole-bank reservation baseline with
+record-granular internal micro-op execution. The immutable A4.7.1 transaction,
+its FIFO/predecessors, ownership/oldest release, and single external commit
+boundary remain unchanged. Member micro-ops may interleave internally, but all
+members must finish before the existing commit publishes any state. Keep eager
+RMW as one existing RMW operation; do not add read/write expansion, DROP,
+fallback, a new scheduler, or a third execution granularity. Report declared
+abstract Cmin, drain, queue occupancy, delay, active micro-op concurrency, and
+separate intrinsic, same-record-lock, read-port, write-port, RMW-lane, and
+cross-bank-commit observations. These are execution-model sensitivities, not
+hardware timing, FIFO sizing, throughput, area, energy, architecture, or RTL.
