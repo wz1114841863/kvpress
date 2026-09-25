@@ -2591,9 +2591,11 @@ not hardware service, timing, traffic, or performance claims.
 
 This is the final envelope stage; no `A4.9.0.x` branch is permitted. Consume
 only the closed A4.8.2b eager-RMW contract and its immutable predecessors.
-Reuse A4.7.2.0's already-sufficient zero-slack metadata references and
-A4.7.2.1's fixed object mapping; do not sweep or choose a new layout, bank
-count, port, queue, RMW lane, cycle model, or SRAM organization.
+Retain A4.7.2.0's already-sufficient zero-slack per-context metadata
+observations, but use A4.7.2.1's cross-context joint-safe metadata references
+for the persistent-footprint exit check. Reuse A4.7.2.1's fixed object mapping;
+do not sweep or choose a new layout, bank count, port, queue, RMW lane, cycle
+model, or SRAM organization.
 
 Report only: persistent metadata-bit reference envelopes, per-unchanged-atomic
 group temporary commit/commit-exclusion state, transaction/object and modeled

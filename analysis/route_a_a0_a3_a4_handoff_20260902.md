@@ -2660,8 +2660,9 @@ to add a third semantic variant or select hardware service/area/timing.
 
 `tools/analyze_kvzap_route_a490_eager_rmw_envelope.py` is explicitly the last
 envelope stage. It consumes the completed A4.8.2b eager path, checks that its
-modeled demand exactly reproduces the prior replay, then reports only existing
-A4.7.2.0 persistent metadata references plus one-atomic-group temporary
+modeled demand exactly reproduces the prior replay, then retains A4.7.2.0
+per-context persistent observations while using A4.7.2.1 cross-context
+joint-safe references for its exit proof, plus one-atomic-group temporary
 commit/exclusion state and existing object/bank fanout. Reasoning is observed
 only through the already-fixed logical `q=4` drain continuation; this does not
 choose a service rate or establish universal boundedness.

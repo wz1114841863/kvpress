@@ -138,7 +138,7 @@ def selected_width_rows(a4720: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def persistent_envelope(width_rows: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Summarize existing A4.7.2.0 records without a new footprint sweep."""
+    """Keep A4.7.2.0 per-context observations separate from joint-safe bounds."""
     grouped: dict[tuple[str, str, int], list[dict[str, Any]]] = defaultdict(list)
     for row in width_rows:
         grouped[(str(row["storage_scope"]), str(row["namespace_policy"]), int(row["generation_bits"]))].append(row)
@@ -156,6 +156,27 @@ def persistent_envelope(width_rows: Iterable[dict[str, Any]]) -> list[dict[str, 
             "reference_rule": "Existing A4.7.2.0 zero-slack sufficient rows only; this is a modeled metadata-bit envelope, not allocated SRAM capacity or a selected organization.",
         })
     return output
+
+
+def joint_safe_persistent_references(a4721: dict[str, Any]) -> list[dict[str, Any]]:
+    """Use A4.7.2.1's pre-existing cross-context-safe, nonselected references."""
+    references = []
+    for row in a4721.get("static_candidate_rows", []):
+        if row.get("layout") != LAYOUT:
+            continue
+        references.append({
+            "layout": row["layout"], "storage_scope": row["storage_scope"],
+            "namespace_policy": row["namespace_policy"], "generation_bits": row["generation_bits"],
+            "context_count": row["context_count"],
+            "cross_context_joint_safe_modeled_metadata_bits": row["cross_context_joint_safe_modeled_metadata_bits"],
+            "cross_context_joint_safe_field_widths_bits": row["cross_context_joint_safe_field_widths_bits"],
+            "cross_context_joint_safe_modeled_storage_object_counts": row["cross_context_joint_safe_modeled_storage_object_counts"],
+            "reference_rule": row["joint_safe_footprint_rule"],
+            "physical_entry_not_selected": row["physical_entry_not_selected"],
+        })
+    if not references:
+        raise AssertionError("A4.7.2.1 has no joint-safe persistent footprint reference for the fixed layout")
+    return references
 
 
 def group_temporary_state(group: dict[str, Any], profile: dict[str, Any]) -> dict[str, Any]:
@@ -234,6 +255,7 @@ def main() -> None:
     args = parse_args()
     a480, a481a, a481b, a482a, a482b = validate_inputs(args)
     a4720 = read_completed(args.a4720_report, A4720_SCHEMA, "A4.7.2.0")
+    a4721 = read_completed(args.a4721_report, A4721_SCHEMA, "A4.7.2.1 _03")
     if args.preflight_only:
         print("A4.9.0 preflight passed: eager A4.8.2b closure and complete predecessor hash/guard chain validated; no output created.")
         return
@@ -273,14 +295,17 @@ def main() -> None:
     if {context_key(row) for row in width_rows} != expected_contexts:
         raise AssertionError("A4.7.2.0 persistent envelope coverage does not equal A4.8.2b contexts")
     reasoning = reasoning_observation(a482b["context_profile_rows"])
-    persistent = persistent_envelope(width_rows)
+    persistent_observations = persistent_envelope(width_rows)
+    persistent_joint_safe = joint_safe_persistent_references(a4721)
+    if not all(int(item["context_count"]) == len(expected_contexts) for item in persistent_joint_safe):
+        raise AssertionError("A4.7.2.1 joint-safe footprint reference does not cover every A4.9.0 context")
     config = {
         "eager_contract": EAGER_OPTION,
         "layout_reference": LAYOUT,
         "candidate_profiles": CANDIDATE_PROFILES,
         "reasoning_observation_quantum": OBSERVATION_QUANTUM,
         "stage_boundary": "A4.9.0 is the final envelope stage. A pass may authorize A4.9.1 candidate microarchitecture DSE; this stage does not add an A4.9.0.x branch.",
-        "pass_observation_rule": "Pass requires finite existing persistent metadata references, finite per-atomic-group temporary commit/exclusion state and object/bank fanout in every covered context/profile, plus all reasoning q=4 observations draining within the already-fixed continuation bound. It is finite-trace evidence, not proof for arbitrary workloads.",
+        "pass_observation_rule": "Pass requires finite A4.7.2.1 cross-context joint-safe persistent metadata references, finite per-atomic-group temporary commit/exclusion state and object/bank fanout in every covered context/profile, plus all reasoning q=4 observations draining within the already-fixed continuation bound. A4.7.2.0 per-context maxima are retained only as observations, never substituted for the joint-safe bound. It is finite-trace evidence, not proof for arbitrary workloads.",
         "boundary": "All metadata bits, storage objects, atomic-group state, fanout, abstract q=4 observations, and drain opportunities are trace-derived/functional/model quantities. They are not selected SRAM capacity, bank count, port count, queue depth, RMW lane count, cycles, timing, traffic, bandwidth, throughput, energy, area, architecture specification, or RTL evidence.",
     }
     report = {
@@ -295,11 +320,18 @@ def main() -> None:
             "a481b_report_sha256": sha256_file(args.a481b_report), "a482a_report_sha256": sha256_file(args.a482a_report),
             "a482b_report_sha256": sha256_file(args.a482b_report),
         },
-        "persistent_metadata_envelope_references": persistent,
+        "persistent_metadata_envelope_references": {
+            "a4720_per_context_zero_slack_observations": persistent_observations,
+            "a4721_cross_context_joint_safe_references": persistent_joint_safe,
+        },
         "temporary_commit_and_fanout_envelope_rows": temporary_rows,
         "reasoning_hotspot_observation": reasoning,
         "envelope_exit_observation": {
-            "persistent_metadata_reference_finite_in_every_covered_a4720_context": all(item["context_count"] == len(expected_contexts) for item in persistent),
+            "persistent_metadata_cross_context_joint_safe_reference_finite_in_every_covered_a4721_context": all(
+                int(item["context_count"]) == len(expected_contexts)
+                and int(item["cross_context_joint_safe_modeled_metadata_bits"]) > 0
+                for item in persistent_joint_safe
+            ),
             "per_atomic_group_temporary_commit_and_rmw_exclusion_state_finite": all(
                 item["all_phase_envelope"]["per_atomic_group"]["atomic_group_commit_guarded_modeled_storage_objects"]["max"] is not None
                 for item in temporary_rows
@@ -315,7 +347,7 @@ def main() -> None:
             "a482b_eager_closure_and_full_predecessor_hash_chain_validated": True,
             "a490_is_final_envelope_stage_without_a490_substage_or_new_semantic_variant": True,
             "a482b_eager_modeled_demand_exactly_reproduced_before_envelope_summary": True,
-            "persistent_metadata_uses_only_existing_a4720_zero_slack_sufficient_references": True,
+            "persistent_metadata_retains_a4720_observations_but_uses_existing_a4721_cross_context_joint_safe_references_for_exit": True,
             "temporary_state_is_limited_to_one_unchanged_atomic_group_and_does_not_select_inflight_queue_depth": True,
             "transaction_object_and_bank_fanout_preserve_existing_layout_mapping_and_profiles": True,
             "reasoning_hotspot_uses_existing_q4_observation_only_not_a_selected_service_rate": True,

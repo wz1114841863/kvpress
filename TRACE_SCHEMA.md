@@ -1554,9 +1554,11 @@ throughput, energy, area, architecture selection, or RTL evidence.
 `kvzap-route-a490-eager-rmw-envelope-1.0` hash-binds the completed A4.8.2b
 eager-RMW closure and its full predecessor chain. It contains no new service
 or semantic variant. It first reproduces A4.8.2b's eager modeled demand, then
-reports only A4.7.2.0 zero-slack persistent metadata references, per unchanged
-atomic-group commit/exclusion state, existing object/bank fanout, and the
-already-recorded reasoning `q=4` drain observation.
+retains A4.7.2.0 zero-slack per-context persistent metadata observations while
+using A4.7.2.1 cross-context joint-safe references for its persistent-footprint
+exit proof, along with per unchanged atomic-group commit/exclusion state,
+existing object/bank fanout, and the already-recorded reasoning `q=4` drain
+observation.
 
 It is the final envelope schema: no `A4.9.0.x` extension is authorized. A
 finite observation in its covered traces is not a proof for arbitrary future
