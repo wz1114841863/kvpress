@@ -2563,3 +2563,26 @@ footprint, ready backlog/age, residual/drain tail, and root-lineage
 amplification. If no admitted candidate materially relieves persistent `q=4`
 pressure without offsetting read/write/footprint cost, end this route and enter
 physical-cost evaluation rather than adding further semantic variants.
+
+### A4.8.2b — bounded admitted-template service replay
+
+Consume only A4.8.2a's eager-RMW and same-record `read + write` templates.
+Keep the exact A4.8.1b transaction arrival/order, dependency/FIFO relation,
+commit boundary, candidate profile, and fixed logical quantum sweep
+`{1,2,4,8,16}`. The eager path must reproduce every A4.8.1b replay exactly;
+the alternate path changes only an existing modeled storage-object RMW demand
+to same-object read plus write demand, jointly required before the unchanged
+commit. It must not introduce a scheduler, controller, future information,
+new semantic record, allocator, or a new contract candidate.
+
+Report semantic-record work separately from modeled storage-object demand,
+because already-declared record co-location may make them differ. For both
+admitted templates and every fixed quantum, retain the direct and causal
+references and report R/W/RMW mix, fixed semantic catalog and A4.7.2.1
+footprint reference, unselected commit-exclusion footprint, ready backlog/age,
+trace-end residual, bounded no-arrival drain, and canonical root-lineage
+amplification. This is the final falsification of this simplification route:
+if the alternate template cannot relieve the persistent `q=4` pressure without
+offsetting logical work/footprint obligations, stop semantic rewrites and move
+to physical-cost evaluation. All quantities remain logical/model observations,
+not hardware service, timing, traffic, or performance claims.

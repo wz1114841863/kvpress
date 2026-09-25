@@ -1549,6 +1549,25 @@ The ledger is logical contract work, not hardware RMW/read/write accesses,
 atomics, queues, banks/ports, cycles, timing, latency, traffic, bandwidth,
 throughput, energy, area, architecture selection, or RTL evidence.
 
+### Route-A A4.8.2b admitted-template fixed-service replay
+
+`kvzap-route-a482b-contract-simplification-replay-1.0` hash-binds the closed
+A4.8.2a report and the full A4.8.1b/A4.8.1a/A4.8.0 predecessor chain. It has
+exactly two options: the eager RMW baseline and A4.8.2a's same-record
+read/write expansion. It first requires eager modeled storage-object demands
+and every fixed-quantum replay to reproduce A4.8.1b exactly. The alternate
+maps an existing modeled storage-object RMW demand to read plus write demand on
+that same object; neither may independently publish before the existing A4.7.1
+commit boundary.
+
+The schema records semantic-record work separately from modeled storage-object
+demand, fixed semantic catalog/A4.7.2.1 footprint references, the explicitly
+unselected commit-exclusion realization footprint, and per-option/quantum
+ready backlog, age, residual, bounded no-arrival drain, and canonical root
+lineage. These remain trace-derived/functional/model quantities, never
+hardware accesses, queues, ports, cycles, latency, traffic, bandwidth,
+throughput, energy, area, architecture selection, or RTL evidence.
+
 `kvzap-route-a4162-cross-workload-three-path-measurement-1.0` is the A4.1.7.11
 second-workload repeated measurement schema.  Every fresh reset run is one of
 Full-KV bypass, same-mask dense replay, or A4154-certified empty-source-elided

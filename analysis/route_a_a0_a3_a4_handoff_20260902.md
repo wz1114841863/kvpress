@@ -2638,3 +2638,20 @@ extra work and same-record commit-exclusion obligation. Versioned/shadow
 updates are rejected rather than silently adding an authoritative selector.
 This does not select an implementation, RMW unit, queue, bank/port, cycle,
 timing, performance result, or architecture.
+
+### A4.8.2b planned implementation — admitted-template fixed-service replay
+
+`tools/analyze_kvzap_route_a482b_contract_simplification_replay.py` consumes
+only the two templates admitted by A4.8.2a. It will retain every immutable
+A4.8.1b transaction property and must exactly reproduce the eager fixed-service
+replay before comparing the same-record read/write expansion. At the existing
+A4.7.2.1 modeled storage-object layer, an existing RMW demand becomes a read
+plus write demand on that same object; both are jointly required before the
+unchanged A4.7.1 commit. This is a logical service mapping, not a hardware
+operation or atomic implementation.
+
+The report will keep semantic-record ledger work distinct from modeled
+storage-object demand, retain direct and causal references, and report the
+fixed catalog/footprint reference plus unselected commit-exclusion obligation.
+It is the bounded exit experiment for contract simplification, not authority
+to add a third semantic variant or select hardware service/area/timing.
