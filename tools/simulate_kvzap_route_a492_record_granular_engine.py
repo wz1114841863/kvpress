@@ -302,7 +302,8 @@ def record_granular_replay(transactions: list[ScheduledTransaction], opportuniti
     commit_delays = [transaction_commit_tick[index] - transaction.arrival_ordinal for index, transaction in enumerate(transactions) if index in transaction_commit_tick]
     if any(index in committed and any(parent not in committed or transaction_commit_tick[parent] > transaction_commit_tick[index] for parent in transaction.predecessors) for index, transaction in enumerate(transactions)):
         raise AssertionError("a transaction committed before an intrinsic predecessor commit")
-    if committed and locks:
+    stale_locks = {object_key: owner for object_key, owner in locks.items() if owner in committed}
+    if stale_locks:
         raise AssertionError("committed transaction left a same-record lock behind")
     return {
         "completed": len(committed), "total": len(transactions),

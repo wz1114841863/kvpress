@@ -39,6 +39,17 @@ def test_same_record_lock_is_distinct_from_intrinsic_dependency():
     assert result["blocking_observation_counts"]["intrinsic_dependency"] == 0
 
 
+def test_inflight_transaction_lock_remains_legal_after_another_transaction_commits():
+    completed_first = tx(0, 0, (), {0})
+    still_inflight = tx(1, 0, (), {1})
+    members = {
+        0: (MicroOp(0, ("first", (0,)), 0, "write"),),
+        1: (MicroOp(1, ("second", (0,)), 1, "rmw"),),
+    }
+    result = record_granular_replay([completed_first, still_inflight], [("x", 0)], members, candidate(commit_slots=0), 16)
+    assert result["completed"] == 2 and result["drained_within_declared_bound"]
+
+
 def test_bank_resource_reasons_are_separate():
     group = tx(0, 0, (), {0})
     members = {0: (
