@@ -1577,6 +1577,8 @@ closure and immutable A4.7.1 transaction trace. It declares a small fixed set
 of bank/port/RMW-lane/queue/cycle candidates and replays their conservative
 atomic-group reservations without changing FIFO, ownership, or commit order.
 Its cycles are declared model units, not calibrated hardware latency.
+It additionally records joint-safe raw modeled-object widths and the declared
+64-bit padded candidate entries, with a no-field-overflow guard.
 
 ### Route-A A4.8.2b admitted-template fixed-service replay
 

@@ -2681,3 +2681,5 @@ The next stage fixes a small candidate catalog and consumes A4.9.0's exact
 transaction contract. It must preserve FIFO/ownership/commit semantics and
 report modeled queue and abstract-cycle effects separately from all hardware
 measurements or final architecture claims.
+Candidate output must also close field-to-entry sufficiency through explicit
+joint-safe widths and word padding before any service result is interpreted.

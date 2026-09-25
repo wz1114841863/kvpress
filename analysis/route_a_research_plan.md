@@ -2615,3 +2615,6 @@ against a pre-registered small candidate set. Report queue overflow without
 dropping work, abstract-cycle drain and delay, and separate predecessor, bank,
 RMW and cross-bank-commit blocking. This is a declared model, not measured
 hardware timing or a final architecture selection.
+Each candidate must emit its joint-safe raw object widths, 64-bit padded entry
+widths and aligned modeled footprint; lacking this guard is not a sufficient
+physical-candidate result.
