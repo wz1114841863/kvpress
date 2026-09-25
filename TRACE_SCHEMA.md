@@ -1570,6 +1570,14 @@ workloads, and none of its metadata bits, temporary state, fanout, abstract
 quantum, or drain observations selects SRAM capacity, bank count, port count,
 queue depth, RMW lane count, cycle/timing cost, architecture, or RTL.
 
+### Route-A A4.9.1 declared-candidate metadata-engine replay
+
+`kvzap-route-a491-candidate-metadata-engine-1.0` consumes the completed A4.9.0
+closure and immutable A4.7.1 transaction trace. It declares a small fixed set
+of bank/port/RMW-lane/queue/cycle candidates and replays their conservative
+atomic-group reservations without changing FIFO, ownership, or commit order.
+Its cycles are declared model units, not calibrated hardware latency.
+
 ### Route-A A4.8.2b admitted-template fixed-service replay
 
 `kvzap-route-a482b-contract-simplification-replay-1.0` hash-binds the closed

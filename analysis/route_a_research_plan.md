@@ -2607,3 +2607,11 @@ set of candidate bank/SRAM/RMW-lane/port/queue/cycle models. A4.9.0 itself
 remains trace-derived/functional/model evidence, not a hardware result.
 The completion record must label the reference count as A4.7.2.1 joint-safe,
 so a per-context A4.7.2.0 observation cannot be substituted accidentally.
+
+### A4.9.1 — declared candidate metadata-engine cycle model
+
+Consume the closed A4.9.0 report and replay its unchanged transaction stream
+against a pre-registered small candidate set. Report queue overflow without
+dropping work, abstract-cycle drain and delay, and separate predecessor, bank,
+RMW and cross-bank-commit blocking. This is a declared model, not measured
+hardware timing or a final architecture selection.

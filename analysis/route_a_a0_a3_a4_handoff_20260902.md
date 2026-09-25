@@ -2674,3 +2674,10 @@ summary aligned with the exit proof.
 No A4.9.0.x stage may be added. Passing this finite-trace closure authorizes
 A4.9.1 to declare a small physical candidate set; it does not itself select an
 SRAM, bank count, queue, port, RMW lane, cycle cost, architecture, or RTL.
+
+### A4.9.1 planned implementation — declared candidate engine replay
+
+The next stage fixes a small candidate catalog and consumes A4.9.0's exact
+transaction contract. It must preserve FIFO/ownership/commit semantics and
+report modeled queue and abstract-cycle effects separately from all hardware
+measurements or final architecture claims.
