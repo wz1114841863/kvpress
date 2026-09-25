@@ -1560,6 +1560,10 @@ exit proof, along with per unchanged atomic-group commit/exclusion state,
 existing object/bank fanout, and the already-recorded reasoning `q=4` drain
 observation.
 
+Its completion record names the count as `persistent_joint_safe_refs`; this is
+the number of A4.7.2.1 cross-context references, never a count of A4.7.2.0
+per-context observations.
+
 It is the final envelope schema: no `A4.9.0.x` extension is authorized. A
 finite observation in its covered traces is not a proof for arbitrary future
 workloads, and none of its metadata bits, temporary state, fanout, abstract

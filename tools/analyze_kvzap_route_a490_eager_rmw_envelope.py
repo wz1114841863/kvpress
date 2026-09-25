@@ -359,7 +359,10 @@ def main() -> None:
     args.output_dir.mkdir(parents=True)
     path = args.output_dir / "a490_eager_rmw_envelope_report.json"
     path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print(f"A4.9.0 complete: {path} sha256={hashlib.sha256(path.read_bytes()).hexdigest()} rows={len(temporary_rows)} persistent_refs={len(persistent)}")
+    print(
+        f"A4.9.0 complete: {path} sha256={hashlib.sha256(path.read_bytes()).hexdigest()} "
+        f"rows={len(temporary_rows)} persistent_joint_safe_refs={len(persistent_joint_safe)}"
+    )
 
 
 if __name__ == "__main__":

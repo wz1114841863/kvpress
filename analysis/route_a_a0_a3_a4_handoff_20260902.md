@@ -2667,6 +2667,10 @@ commit/exclusion state and existing object/bank fanout. Reasoning is observed
 only through the already-fixed logical `q=4` drain continuation; this does not
 choose a service rate or establish universal boundedness.
 
+The completion record explicitly counts A4.7.2.1 joint-safe references, rather
+than the retained A4.7.2.0 per-context observations, to keep the reported
+summary aligned with the exit proof.
+
 No A4.9.0.x stage may be added. Passing this finite-trace closure authorizes
 A4.9.1 to declare a small physical candidate set; it does not itself select an
 SRAM, bank count, queue, port, RMW lane, cycle cost, architecture, or RTL.

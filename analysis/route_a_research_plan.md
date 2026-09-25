@@ -2605,3 +2605,5 @@ existing bounded continuation; this is not a proof of boundedness for arbitrary
 workloads. If it passes, move directly to A4.9.1, which must declare a small
 set of candidate bank/SRAM/RMW-lane/port/queue/cycle models. A4.9.0 itself
 remains trace-derived/functional/model evidence, not a hardware result.
+The completion record must label the reference count as A4.7.2.1 joint-safe,
+so a per-context A4.7.2.0 observation cannot be substituted accidentally.
