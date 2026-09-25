@@ -2632,3 +2632,12 @@ abstract Cmin, drain, queue occupancy, delay, active micro-op concurrency, and
 separate intrinsic, same-record-lock, read-port, write-port, RMW-lane, and
 cross-bank-commit observations. These are execution-model sensitivities, not
 hardware timing, FIFO sizing, throughput, area, energy, architecture, or RTL.
+
+### A4.10 — queue / staging / credit-backpressure resource contract
+
+Fix A4.9.2 record-granular execution, HA8-wide primary and HA8-base control.
+Compare the uncontrolled bank-local reference, small local plus layer-shared
+overflow, and finite local/shared staging with lossless credit. Report
+occupancy, skew, stranded capacity, shared/staging use, declared bits,
+backpressure, held work, residual, drain, and Llama reasoning separately.
+Full-KV is a protection classification, not a default queue remedy.

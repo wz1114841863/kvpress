@@ -1596,6 +1596,16 @@ drain, delay, and active micro-op concurrency are declared model quantities,
 not hardware timing, FIFO depth, throughput, traffic, energy, area,
 architecture selection, or RTL evidence. No third granularity is admitted.
 
+### Route-A A4.10 queue/staging/credit resource-contract replay
+
+`kvzap-route-a410-queue-staging-credit-contract-1.0` fixes A4.9.2
+record-granular execution and compares only HA8-wide with HA8-base under a
+bank-local queue reference, layer-shared overflow, and finite shared staging
+with lossless credit/backpressure. It does not alter pruning, admission,
+transaction identity, FIFO/ownership, or the single commit boundary. Queue,
+staging, held-work, Cmin, and declared reference-word bits remain model
+quantities, never macro sizing, timing, performance, architecture, or RTL.
+
 ### Route-A A4.8.2b admitted-template fixed-service replay
 
 `kvzap-route-a482b-contract-simplification-replay-1.0` hash-binds the closed

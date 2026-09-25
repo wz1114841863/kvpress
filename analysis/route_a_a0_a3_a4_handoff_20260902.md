@@ -2693,3 +2693,10 @@ FIFO, ownership, oldest selection, and dependency release cannot occur after a
 member micro-op alone. The stage retains eager RMW and the fixed candidate
 catalog, separately reports declared blockers and concurrency, and introduces
 neither a third execution model nor RTL/hardware claims.
+
+### A4.10 planned implementation — queue/staging/credit contract
+
+After A4.9.2, hold record-granular execution fixed and evaluate where delayed
+transactions reside: bank-local queues, layer-shared overflow, finite staging,
+and lossless credit. No delayed member may publish before its unchanged commit;
+the output is a bounded declared resource envelope, not a FIFO macro choice.
