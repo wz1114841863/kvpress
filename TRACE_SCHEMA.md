@@ -1549,6 +1549,21 @@ The ledger is logical contract work, not hardware RMW/read/write accesses,
 atomics, queues, banks/ports, cycles, timing, latency, traffic, bandwidth,
 throughput, energy, area, architecture selection, or RTL evidence.
 
+### Route-A A4.9.0 final eager-RMW envelope closure
+
+`kvzap-route-a490-eager-rmw-envelope-1.0` hash-binds the completed A4.8.2b
+eager-RMW closure and its full predecessor chain. It contains no new service
+or semantic variant. It first reproduces A4.8.2b's eager modeled demand, then
+reports only A4.7.2.0 zero-slack persistent metadata references, per unchanged
+atomic-group commit/exclusion state, existing object/bank fanout, and the
+already-recorded reasoning `q=4` drain observation.
+
+It is the final envelope schema: no `A4.9.0.x` extension is authorized. A
+finite observation in its covered traces is not a proof for arbitrary future
+workloads, and none of its metadata bits, temporary state, fanout, abstract
+quantum, or drain observations selects SRAM capacity, bank count, port count,
+queue depth, RMW lane count, cycle/timing cost, architecture, or RTL.
+
 ### Route-A A4.8.2b admitted-template fixed-service replay
 
 `kvzap-route-a482b-contract-simplification-replay-1.0` hash-binds the closed

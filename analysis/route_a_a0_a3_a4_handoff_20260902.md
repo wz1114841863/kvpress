@@ -2655,3 +2655,17 @@ storage-object demand, retain direct and causal references, and report the
 fixed catalog/footprint reference plus unselected commit-exclusion obligation.
 It is the bounded exit experiment for contract simplification, not authority
 to add a third semantic variant or select hardware service/area/timing.
+
+### A4.9.0 planned implementation — final eager-RMW envelope closure
+
+`tools/analyze_kvzap_route_a490_eager_rmw_envelope.py` is explicitly the last
+envelope stage. It consumes the completed A4.8.2b eager path, checks that its
+modeled demand exactly reproduces the prior replay, then reports only existing
+A4.7.2.0 persistent metadata references plus one-atomic-group temporary
+commit/exclusion state and existing object/bank fanout. Reasoning is observed
+only through the already-fixed logical `q=4` drain continuation; this does not
+choose a service rate or establish universal boundedness.
+
+No A4.9.0.x stage may be added. Passing this finite-trace closure authorizes
+A4.9.1 to declare a small physical candidate set; it does not itself select an
+SRAM, bank count, queue, port, RMW lane, cycle cost, architecture, or RTL.
