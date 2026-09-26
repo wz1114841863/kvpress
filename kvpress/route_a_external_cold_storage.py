@@ -14,7 +14,11 @@ from typing import Any
 
 import torch
 
-from kvpress.route_a_attention import RouteALogicalEventRecorder, RouteAPackedAttentionState
+from kvpress.route_a_attention import (
+    RouteALifecycleTransitionRecorder,
+    RouteALogicalEventRecorder,
+    RouteAPackedAttentionState,
+)
 from kvpress.route_a_storage_contract import selected_storage_ownership_contract
 
 
@@ -25,14 +29,20 @@ class RouteAExternalColdStorageAdapter:
     allocator measurement, or performance implementation.
     """
 
-    def __init__(self, *, heads: int, head_dim: int, window: int, page_tokens: int, admission_budget: int, selected_kv_heads: tuple[int, ...], elide_empty_sources: bool = False, logical_event_recorder: RouteALogicalEventRecorder | None = None, logical_layer: int | None = None) -> None:
+    def __init__(self, *, heads: int, head_dim: int, window: int, page_tokens: int, admission_budget: int, selected_kv_heads: tuple[int, ...], elide_empty_sources: bool = False, logical_event_recorder: RouteALogicalEventRecorder | None = None, lifecycle_transition_recorder: RouteALifecycleTransitionRecorder | None = None, logical_layer: int | None = None) -> None:
         if not selected_kv_heads or len(set(selected_kv_heads)) != len(selected_kv_heads):
             raise ValueError("selected KV heads must be unique and nonempty")
         if any(head < 0 or head >= heads for head in selected_kv_heads):
             raise ValueError("selected KV head is outside the declared head count")
         self.heads, self.head_dim, self.window = heads, head_dim, window
         self.selected_kv_heads = tuple(selected_kv_heads)
-        self.state = RouteAPackedAttentionState(heads=heads, head_dim=head_dim, window=window, page_tokens=page_tokens, admission_budget=admission_budget, elide_empty_sources=elide_empty_sources, logical_event_recorder=logical_event_recorder, logical_layer=logical_layer)
+        self.state = RouteAPackedAttentionState(
+            heads=heads, head_dim=head_dim, window=window, page_tokens=page_tokens,
+            admission_budget=admission_budget, elide_empty_sources=elide_empty_sources,
+            logical_event_recorder=logical_event_recorder,
+            lifecycle_transition_recorder=lifecycle_transition_recorder,
+            logical_layer=logical_layer,
+        )
         self._selected_hot_keys: torch.Tensor | None = None
         self._selected_hot_values: torch.Tensor | None = None
 
@@ -49,7 +59,7 @@ class RouteAExternalColdStorageAdapter:
     def selected_native_hot_values(self) -> torch.Tensor | None:
         return self._selected_hot_values
 
-    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int, component_measure=None) -> None:
+    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int, logical_phase: str | None = None, component_measure=None) -> None:
         """Append a contiguous segment, evicting selected mature native K/V."""
         if keys.ndim != 3 or values.shape != keys.shape or keys.shape[0] != self.heads or keys.shape[2] != self.head_dim:
             raise ValueError("keys and values must be [KV-head, token, head-dim]")
@@ -59,7 +69,10 @@ class RouteAExternalColdStorageAdapter:
             raise AssertionError("adapter append position must equal its logical cache position")
 
         # Route-A becomes the sole selected-head mature-cold owner first.
-        self.state.append(keys, values, keep_mask, start_position=start_position, component_measure=component_measure)
+        self.state.append(
+            keys, values, keep_mask, start_position=start_position,
+            logical_phase=logical_phase, component_measure=component_measure,
+        )
 
         def materialize_selected_hot() -> None:
             selected_keys = keys[list(self.selected_kv_heads)].detach().clone()

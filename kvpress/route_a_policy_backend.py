@@ -1468,7 +1468,9 @@ class RouteAQwenExternalColdStorageAttentionBackend(RouteAColdOwnershipAttention
                 heads=key.shape[1], head_dim=key.shape[-1], window=self.window,
                 page_tokens=self.page_tokens, admission_budget=self.admission_budget,
                 selected_kv_heads=selected, elide_empty_sources=self.elide_empty_sources,
-                logical_event_recorder=self.logical_event_recorder, logical_layer=self.layer,
+                logical_event_recorder=self.logical_event_recorder,
+                lifecycle_transition_recorder=self.lifecycle_transition_recorder,
+                logical_layer=self.layer,
             )
             self.state = self.external_cold_storage.state
         elif self.state is not self.external_cold_storage.state:
@@ -1481,6 +1483,7 @@ class RouteAQwenExternalColdStorageAttentionBackend(RouteAColdOwnershipAttention
             self._measure_component("route_a_external_cache_append", lambda: self.external_cold_storage.append(
                 key[0, :, position:position + 1], value[0, :, position:position + 1],
                 keep_mask[0, :, offset:offset + 1], start_position=position,
+                logical_phase="multi_token",
                 component_measure=self.component_measure,
             ))
             self.external_storage_append_calls += 1
@@ -1502,6 +1505,7 @@ class RouteAQwenExternalColdStorageAttentionBackend(RouteAColdOwnershipAttention
             self._measure_component("route_a_external_cache_append", lambda: self.external_cold_storage.append(
                 key[0, :, start:start + q_len], value[0, :, start:start + q_len],
                 keep_mask[0], start_position=start,
+                logical_phase="prefill" if start == 0 else ("multi_token" if q_len > 1 else "decode"),
                 component_measure=self.component_measure,
             ))
             self.external_storage_append_calls += 1

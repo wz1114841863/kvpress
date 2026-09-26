@@ -1493,6 +1493,27 @@ its A4151 provenance. The A4155 manifest records that relay explicitly. This
 is provenance validation only, not a timing, memory, HBM, hardware, or RTL
 claim.
 
+### Route-A A4.11.2b external-storage lifecycle binding
+
+`kvzap-route-a4112b-external-storage-lifecycle-1.0` is an untimed,
+scalar-only lifecycle trace emitted by
+`RouteAQwenExternalColdStorageAttentionBackendSet` together with
+`RouteAQwenMultiLayerExternalColdCache`.  It is armed before the first
+external-storage prefill append and uses the existing
+`kvzap-route-a432-logical-lifecycle-transitions-1.0` row schema: per-layer
+append range and phase, then per-KV-head hot/pending state before maturity,
+matured keep/drop counts, pending after maturity and service, and packed-page
+state after service.  It contains neither generated token IDs nor decoded text.
+
+The companion manifest records separate SHA-256 values for raw decoded answer
+text and generated token IDs.  It requires exact generated-token-ID equality
+for same-mask dense versus trace-on external storage and for trace-off versus
+trace-on external storage, full replay consumption, all-layer/all-head
+coverage, and equal final scalar packed/pending/cold state.  It does not emit
+or imply ready groups, micro-op completion, bank ports, RMW completion, credit
+latency, ownership publication, physical commit timing, FIFO occupancy, or any
+hardware timing/capacity claim.
+
 ### Route-A A4.8.1a causal readiness and root-cause propagation audit
 
 `kvzap-route-a481a-readiness-root-cause-1.0` hash-binds the completed A4.8.0

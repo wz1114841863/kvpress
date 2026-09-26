@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import torch
 
 from kvpress.route_a_external_cold_storage import RouteAExternalColdStorageAdapter
+from kvpress.route_a_attention import RouteALifecycleTransitionRecorder
 from kvpress.route_a_qwen_cache import RouteAQwenMultiLayerExternalColdCache, RouteAQwenSingleLayerExternalColdCache
 from kvpress.route_a_policy_backend import RouteAQwenExternalColdStorageAttentionBackend, RouteAQwenExternalColdStorageAttentionBackendSet
 from tools.run_kvzap_route_a4142_qwen_multilayer_allhead_native_storage_gate import aggregate_full_multi_tail_page_coverage, parse_args, resolve_scope_layers
@@ -139,6 +140,22 @@ def test_qwen_multilayer_backend_set_has_independent_external_adapter_slots():
     )
     assert set(backend_set.backends) == {0, 18, 35}
     assert backend_set.external_adapters_by_layer() == {0: None, 18: None, 35: None}
+
+
+def test_external_adapter_lifecycle_recorder_is_scalar_and_prefill_armed():
+    recorder = RouteALifecycleTransitionRecorder()
+    adapter = RouteAExternalColdStorageAdapter(
+        heads=1, head_dim=2, window=1, page_tokens=2, admission_budget=1,
+        selected_kv_heads=(0,), lifecycle_transition_recorder=recorder,
+        logical_layer=3,
+    )
+    key = torch.arange(6, dtype=torch.float32).reshape(1, 3, 2)
+    adapter.append(key, key + 10, torch.ones(1, 3, dtype=torch.bool), start_position=0, logical_phase="prefill")
+    assert len(recorder.events) == 1
+    event = recorder.events[0]
+    assert event["layer"] == 3 and event["phase"] == "prefill"
+    assert event["heads"][0]["matured_kept_tokens"] == 2
+    assert event["heads"][0]["packed_tokens_after_service"] == 1
 
 
 def test_qwen_multilayer_page_state_needs_one_complete_layer_head_witness():
