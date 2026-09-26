@@ -25,6 +25,17 @@ The labels are nested and may be inclusive, so their times cannot be summed or
 treated as latency data. They do not change mask replay, state ownership,
 attention, or numerical-guard semantics.
 
+## A4.11.2 trace-on Route-A lifecycle-to-model mapping
+
+`kvzap-route-a4112-trace-on-control-event-mapping-1.0` consumes a prefill-armed
+`kvzap-route-a40-policy-on-qwen-gate-1.6` Route-A lifecycle trace. Its scalar
+records begin before pending creation, validate maturity/admission/pending
+conservation, and map only matured retained tokens and software pending
+watermarks to declared A4.10 inputs. Ready, micro-op completion, ownership
+publish, bank-port, RMW, and cross-bank fields have no direct software event
+and must be explicitly reported as unmapped; this is not a timing or hardware
+queue trace.
+
 ## A4.1.6.1 paired phase-profiler coverage repair
 
 `kvzap-route-a4150-qwen-external-storage-paired-phase-profiler-1.0` repairs
