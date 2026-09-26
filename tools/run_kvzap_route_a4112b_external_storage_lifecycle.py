@@ -15,7 +15,7 @@ import torch
 import transformers
 from transformers import DynamicCache, pipeline
 
-from kvpress.route_a_attention import RouteALifecycleTransitionRecorder
+from kvpress.route_a_attention import RouteALifecycleTransitionRecorder, RouteALogicalEventRecorder
 from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackendSet
 from kvpress.route_a_qwen_cache import RouteAQwenMultiLayerExternalColdCache
 from tools.export_kvzap_predictor_trace import GATE_A_PREDICTOR_REVISION, GATE_B_MODEL_REVISION, assert_no_runtime_mask_state, get_git_commit, stable_hash
@@ -139,8 +139,15 @@ def run_dense(*, pipe, context_ids: torch.Tensor, question_ids: torch.Tensor, ev
     return {"answer_sha256": answer_hash(answer), "generated_token_count": len(token_ids), "generated_token_ids_sha256": token_ids_hash(token_ids), "replay_complete": True}
 
 
-def run_external(*, pipe, context_ids: torch.Tensor, question_ids: torch.Tensor, events, args: argparse.Namespace, heads: dict[int, tuple[int, ...]], recorder: RouteALifecycleTransitionRecorder | None) -> dict[str, Any]:
-    backend = RouteAQwenExternalColdStorageAttentionBackendSet(pipe.model, None, layers=ALL_LAYERS, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, execution_dtype_ulp_mode="record_only", execution_dtype_close_mode="quantization_aware_enforce", ulp_breach_sample_limit=args.ulp_breach_sample_limit, replay_mask_events=events, lifecycle_transition_recorder=recorder)
+def run_external(*, pipe, context_ids: torch.Tensor, question_ids: torch.Tensor, events, args: argparse.Namespace, heads: dict[int, tuple[int, ...]], recorder: RouteALifecycleTransitionRecorder | None, logical_event_recorder: RouteALogicalEventRecorder | None = None) -> dict[str, Any]:
+    """Run the unchanged external-storage reference with optional scalar recorders.
+
+    The default remains exactly the A4.11.2b lifecycle-only path.  A4.13.1
+    supplies the optional logical attention recorder to observe reference
+    source traversal counts; this does not change the mask, cache ownership,
+    admission, or attention result.
+    """
+    backend = RouteAQwenExternalColdStorageAttentionBackendSet(pipe.model, None, layers=ALL_LAYERS, kv_head=None, threshold=args.threshold, window=args.window_size, page_tokens=args.page_tokens, admission_budget=args.admission_budget, rtol=args.rtol, atol=args.atol, max_executed_dtype_ulps=args.max_executed_dtype_ulps, execution_dtype_ulp_mode="record_only", execution_dtype_close_mode="quantization_aware_enforce", ulp_breach_sample_limit=args.ulp_breach_sample_limit, replay_mask_events=events, lifecycle_transition_recorder=recorder, logical_event_recorder=logical_event_recorder)
     seed_everything(args.seed)
     with torch.no_grad(), backend:
         cache = RouteAQwenMultiLayerExternalColdCache(selected_kv_heads_by_layer=heads)
