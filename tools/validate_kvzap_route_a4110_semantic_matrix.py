@@ -34,7 +34,8 @@ STABLE_POLICY_FIELDS = (
     "model_name", "model_revision", "predictor_name", "predictor_revision",
     "threshold", "window_size", "page_tokens", "admission_budget",
     "context_repetitions", "max_new_tokens", "seed", "rtol", "atol",
-    "max_executed_dtype_ulps", "target_layers", "target_kv_head",
+    "max_executed_dtype_ulps", "execution_dtype_ulp_mode",
+    "execution_dtype_close_mode", "target_layers", "target_kv_head",
 )
 
 
@@ -93,6 +94,11 @@ def required_trace_off_config(config: dict[str, Any], workload: str) -> None:
         raise ValueError(f"{workload}: A4.11.0 accepts trace-off manifests only")
     if config.get("require_pending_nonempty") is not True:
         raise ValueError(f"{workload}: A4.11.0 requires a pending-staging witness")
+    if config.get("execution_dtype_ulp_mode") != "record_only" or config.get("execution_dtype_close_mode") != "quantization_aware_enforce":
+        raise ValueError(
+            f"{workload}: A4.11.0 requires record-only ULP diagnostics with "
+            "quantization-aware executed-dtype close enforcement"
+        )
 
 
 def validate_policy_manifest(manifest: dict[str, Any], workload: str) -> dict[str, Any]:

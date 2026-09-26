@@ -14,6 +14,13 @@ replay, per-head numerical comparisons, a pending-staging witness, and the
 existing no-DMS/no-fake-key/no-native-cache-mutation guards.  Full-KV output
 equality is recorded but intentionally not required.
 
+The policy manifests must use `--execution-dtype-ulp-mode record_only` and
+`--execution-dtype-close-mode quantization_aware_enforce`.  FP32 same-mask
+`rtol/atol` remains mandatory and the executed-dtype close check remains hard;
+only scalar ULP exceedances are retained as bounded diagnostics.  This matches
+the subsequent A4.1.4 measurement contract and prevents the generic runner's
+strict 16-ULP default from rejecting a semantically valid quantized execution.
+
 ## Fixed boundary
 
 The input A4.10 report must retain record-granular execution, HA8-wide plus
@@ -32,7 +39,10 @@ For each named preset, first create a fresh trace-off semantic manifest with
 the existing runner using `--target-layers all --target-kv-head all`,
 `--with-same-mask-dense-baseline`,
 `--replay-dense-mask-for-route-a`, and `--require-pending-nonempty`.  Use one
-fixed semantic configuration across all three runs.  Then validate them:
+fixed semantic configuration across all three runs, including
+`--execution-dtype-ulp-mode record_only` and
+`--execution-dtype-close-mode quantization_aware_enforce`.  Then validate
+them:
 
 ```bash
 .venv/bin/python tools/validate_kvzap_route_a4110_semantic_matrix.py \

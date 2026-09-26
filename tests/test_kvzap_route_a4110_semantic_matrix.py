@@ -19,7 +19,7 @@ def policy_manifest(workload="retrieval"):
     coverage = {"layers": [{"layer": layer, "selected_kv_heads": heads, "original_mask_sha256": f"mask-{layer}", "original_mask_decision_count": 8, "heads": [{"kv_head": head, "comparison_count": 1, "max_pending_tokens": int(layer == 0 and head == 0)} for head in heads]} for layer in layers]}
     return {
         "schema_version": POLICY_SCHEMA,
-        "config": {"preset": workload, "input_jsonl": None, "target_layers": ["all"], "target_kv_head": "all", "with_same_mask_dense_baseline": True, "replay_dense_mask_for_route_a": True, "record_lifecycle_transitions": False, "prefill_maturity_chunk_tokens": 0, "require_pending_nonempty": True, "resolved_target_layers": layers, "model_name": "model", "model_revision": "model-rev", "predictor_name": "predictor", "predictor_revision": "predictor-rev", "threshold": -4.0, "window_size": 128, "page_tokens": 64, "admission_budget": 512, "context_repetitions": 12, "max_new_tokens": 8, "seed": 42, "rtol": 1e-4, "atol": 1e-5, "max_executed_dtype_ulps": 16.0},
+        "config": {"preset": workload, "input_jsonl": None, "target_layers": ["all"], "target_kv_head": "all", "with_same_mask_dense_baseline": True, "replay_dense_mask_for_route_a": True, "record_lifecycle_transitions": False, "prefill_maturity_chunk_tokens": 0, "require_pending_nonempty": True, "resolved_target_layers": layers, "model_name": "model", "model_revision": "model-rev", "predictor_name": "predictor", "predictor_revision": "predictor-rev", "threshold": -4.0, "window_size": 128, "page_tokens": 64, "admission_budget": 512, "context_repetitions": 12, "max_new_tokens": 8, "seed": 42, "rtol": 1e-4, "atol": 1e-5, "max_executed_dtype_ulps": 16.0, "execution_dtype_ulp_mode": "record_only", "execution_dtype_close_mode": "quantization_aware_enforce"},
         "observational_guards": {"selected_head_original_attention_called_during_policy_decode": False, "route_a_mask_source": "replayed_dense_mask", "replay_mask_consumption_complete": True, "lifecycle_transition_trace_enabled": False, "prefill_micro_event_trace_enabled": False, "dms_press_used": False, "masked_key_indices_created": False, "fake_key_attention_used": False, "model_cache_mutated_by_backend": False},
         "full_kv_bypass_answer_sha256": "f" * 64, "route_a_fast_path_answer_sha256": "r" * 64,
         "policy_coverage": coverage, "policy_decode_call_count_by_layer": {str(layer): 1 for layer in layers}, "comparisons": [{"layer": 0}],
@@ -47,3 +47,10 @@ def test_a4110_rejects_changed_a410_queue_parameter():
     report["config"]["shared_capacity_per_layer"] = 128
     with pytest.raises(ValueError, match="configuration"):
         validate_a410(report)
+
+
+def test_a4110_rejects_default_strict_ulp_mode_without_executed_dtype_close_guard():
+    manifest = policy_manifest()
+    manifest["config"].update({"execution_dtype_ulp_mode": "enforce", "execution_dtype_close_mode": "off"})
+    with pytest.raises(ValueError, match="record-only ULP"):
+        validate_policy_manifest(manifest, "retrieval")
