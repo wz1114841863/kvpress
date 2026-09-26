@@ -1549,7 +1549,9 @@ self-contained A4.12.0 `_02` interface inventory and evaluates exactly M1
 (banked SRAM plus pipelined-RMW hypothesis), M2 (replicated/duplicated control
 storage), and M3 (register hot state plus SRAM backing). It emits generated
 CACTI RAM configurations, raw CACTI output, public-source checkout provenance,
-and macro-instance area/access-energy characterizations.
+and macro-instance area/access-energy characterizations. The exact `cache.cfg`
+template is materialized under the result's `input_artifacts/`, so the saved
+report does not depend on a transient CACTI checkout path.
 
 The public CACTI `0.032 um` point is an analytical technology proxy only, not
 a PDK, target technology, compiled macro, signoff estimate, or physical layout.

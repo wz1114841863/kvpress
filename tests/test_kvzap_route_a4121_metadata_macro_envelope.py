@@ -2,7 +2,7 @@ from pathlib import Path
 from subprocess import CompletedProcess
 
 import tools.run_kvzap_route_a4121_metadata_macro_envelope as a4121
-from tools.run_kvzap_route_a4121_metadata_macro_envelope import candidate_templates, mutate_cacti_config, parse_cacti_output
+from tools.run_kvzap_route_a4121_metadata_macro_envelope import candidate_templates, materialize_cacti_template, mutate_cacti_config, parse_cacti_output
 
 
 def a4120_stub():
@@ -48,3 +48,15 @@ def test_cacti_runner_uses_source_checkout_cwd_and_absolute_generated_config(tmp
     a4121.run_cacti(binary, source, output, {"role": "unit", "instances": 1, "bytes_per_instance": 1024}, .032)
     assert called["cwd"] == source.resolve()
     assert Path(called["args"][-1]).is_absolute()
+
+
+def test_cacti_template_is_materialized_beside_result_not_left_in_temporary_checkout(tmp_path):
+    source, inputs = tmp_path / "cacti", tmp_path / "result" / "input_artifacts"
+    source.mkdir(parents=True)
+    inputs.mkdir(parents=True)
+    template = source / "cache.cfg"
+    template.write_text("-technology (u) 0.032\n", encoding="utf-8")
+    provenance = {"template_sha256": __import__("hashlib").sha256(template.read_bytes()).hexdigest()}
+    copied = materialize_cacti_template(source, inputs, provenance)
+    assert copied.read_bytes() == template.read_bytes()
+    assert provenance["materialized_template"] == str(copied)

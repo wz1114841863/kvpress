@@ -85,7 +85,7 @@ def cacti_provenance(binary: Path, source_dir: Path, node_um: float) -> dict[str
     origin = subprocess.run(["git", "-C", str(source_dir), "config", "--get", "remote.origin.url"], text=True, capture_output=True).stdout.strip()
     if origin != CACTI_SOURCE_URL:
         raise ValueError("CACTI source origin differs from the pre-registered public repository")
-    return {"source_url": origin, "source_commit": commit, "binary_path": str(binary), "template_path": str(template), "template_sha256": sha256_file(template), "technology_proxy_node_um": node_um, "technology_boundary": "CACTI public 0.032-um model is an analytical technology proxy, not a foundry PDK, synthesized macro, target process, or signoff estimate."}
+    return {"source_url": origin, "source_commit": commit, "build_command": "make -j2", "template_filename": "cache.cfg", "template_sha256": sha256_file(template), "technology_proxy_node_um": node_um, "technology_boundary": "CACTI public 0.032-um model is an analytical technology proxy, not a foundry PDK, synthesized macro, target process, or signoff estimate."}
 
 
 def candidate_templates(a4120: dict[str, Any]) -> list[dict[str, Any]]:
@@ -196,6 +196,16 @@ def trace_peak_summary(a4120: dict[str, Any]) -> dict[str, Any]:
     return {"available_in_a4120": False, "reason": "A4.12.0 freezes the A4.10 logical contract and source hash, but does not reclassify context-wise queue observations into physical simultaneous-layer occupancy. A4.12.1 therefore does not use trace peaks to reduce provisioned capacity."}
 
 
+def materialize_cacti_template(source_dir: Path, input_dir: Path, provenance: dict[str, Any]) -> Path:
+    """Preserve the exact public CACTI template beside the result, never in /tmp."""
+    destination = input_dir / "cacti_cache_template.cfg"
+    shutil.copyfile(source_dir / "cache.cfg", destination)
+    if sha256_file(destination) != provenance["template_sha256"]:
+        raise AssertionError("CACTI template changed while materializing")
+    provenance["materialized_template"] = str(destination)
+    return destination
+
+
 def main() -> None:
     args = parse_args()
     a4120 = require_a4120(args.a4120_report)
@@ -213,6 +223,7 @@ def main() -> None:
     shutil.copyfile(args.a4120_report, a4120_copy)
     if sha256_file(a4120_copy) != A4120_SHA256:
         raise AssertionError("A4.12.0 input changed while materializing")
+    materialize_cacti_template(args.cacti_source_dir, input_dir, provenance)
     rows = []
     for candidate in templates:
         macros = [run_cacti(args.cacti_binary, args.cacti_source_dir, args.output_dir, request, args.technology_node_um) for request in candidate["macro_requests"]]

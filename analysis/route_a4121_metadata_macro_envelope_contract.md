@@ -18,8 +18,10 @@ port count. Every CACTI macro is a 1RW RAM proxy.
 ## Technology boundary
 
 The only technology point is public Hewlett Packard CACTI at `0.032 um`. The
-runner records the public source URL, checkout commit, template hash, generated
-configs, and raw output. CACTI's area and per-access dynamic-energy values are
+runner records the public source URL, checkout commit, materialized template
+hash, generated configs, and raw output. The public template is copied under
+the result's `input_artifacts/`; no saved result depends on a temporary source
+checkout. CACTI's area and per-access dynamic-energy values are
 analytical proxy values, not a foundry PDK, macro compiler result, signoff
 estimate, physical layout, or target process claim.
 
