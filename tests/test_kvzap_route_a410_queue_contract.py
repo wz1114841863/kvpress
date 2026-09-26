@@ -18,3 +18,13 @@ def test_shared_unbounded_reference_has_no_credit_backpressure():
     members={i:(MicroOp(i,("x",(i,)),0,"rmw"),) for i in range(40)}
     result=replay(transactions,[("x",0)],members,candidate(),ORGANIZATIONS[0],256)
     assert result["backpressure_event_count"]==0 and result["held_transaction_high_water"]==0
+
+
+def test_started_transaction_remains_schedulable_until_all_members_commit():
+    transaction = tx(0, 0)
+    members = {0: (
+        MicroOp(0, ("first", (0,)), 0, "rmw"),
+        MicroOp(0, ("second", (0,)), 0, "rmw"),
+    )}
+    result = replay([transaction], [("x", 0)], members, candidate(), ORGANIZATIONS[0], 16)
+    assert result["completed"] == 1 and result["drained_within_declared_bound"]

@@ -150,7 +150,10 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
             shared_samples[layer].append(shared_count[layer]); staging_samples[layer].append(staging_count[layer])
         stranded_samples.append(sum(LOCAL_CAPACITY-counts[bank] for bank in range(candidate["banks"])) if (shared_members or staging_members or held_members) else 0)
         active_resource = Counter((m.bank, m.operation) for _, m in active)
-        for i in sorted(local):
+        # A first member frees only the local *queue* slot.  The transaction
+        # remains internally schedulable through commit, otherwise a later
+        # member would be stranded after its first sibling starts.
+        for i in sorted(local | active_groups):
             tx = transactions[i]
             if any(parent not in committed for parent in tx.predecessors): reasons["intrinsic_dependency"] += 1; continue
             for member in members[i]:
