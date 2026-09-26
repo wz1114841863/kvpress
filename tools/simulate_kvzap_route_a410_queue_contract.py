@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -78,62 +78,77 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
     """Lossless queue hierarchy; state is published only by the fixed commit."""
     arrivals: dict[int, list[int]] = defaultdict(list)
     for tx in transactions: arrivals[tx.arrival_ordinal].append(tx.index)
-    location: dict[int, str] = {}
     committed, started, completed = set(), defaultdict(set), defaultdict(set)
     locks: dict[Any, int] = {}; active: list[tuple[int, Any]] = []
-    local: set[int] = set(); shared: set[int] = set(); staging: set[int] = set(); held: set[int] = set()
+    local: set[int] = set(); active_groups: set[int] = set(); arrived: set[int] = set()
+    shared: dict[int, deque[int]] = defaultdict(deque); staging: dict[int, deque[int]] = defaultdict(deque); held: dict[int, deque[int]] = defaultdict(deque)
+    shared_members: set[int] = set(); staging_members: set[int] = set(); held_members: set[int] = set()
+    local_count: Counter[int] = Counter(); shared_count: Counter[int] = Counter(); staging_count: Counter[int] = Counter(); held_count: Counter[int] = Counter()
+    layers = sorted({tx.layer for tx in transactions})
     local_samples: list[list[int]] = [[] for _ in range(candidate["banks"])]
     shared_samples: dict[int, list[int]] = defaultdict(list); staging_samples: dict[int, list[int]] = defaultdict(list)
     active_samples: list[int] = []; held_samples: list[int] = []; bp_flags: list[bool] = []; stranded_samples: list[int] = []
     reasons: Counter[str] = Counter(); bp_events = 0; coordinator_until = 0; tick = 0; last = len(opportunities)-1
-    def local_counts() -> Counter[int]: return Counter(bank for i in local for bank in transactions[i].banks)
-    def layer_count(pool: set[int], layer: int) -> int: return sum(transactions[i].layer == layer for i in pool)
+    def local_counts() -> Counter[int]: return local_count
+    def layer_count(pool: Counter[int], layer: int) -> int: return pool[layer]
     def can_local(i: int) -> bool:
-        counts = local_counts(); return all(counts[b] < LOCAL_CAPACITY for b in transactions[i].banks)
+        return all(local_count[b] < LOCAL_CAPACITY for b in transactions[i].banks)
+    def put_local(i: int) -> None:
+        local.add(i)
+        for bank in transactions[i].banks: local_count[bank] += 1
+    def remove_local(i: int) -> None:
+        if i in local:
+            local.remove(i)
+            for bank in transactions[i].banks: local_count[bank] -= 1
+    def put_queue(queue: dict[int, deque[int]], members_set: set[int], counts: Counter[int], i: int) -> None:
+        layer = transactions[i].layer; queue[layer].append(i); members_set.add(i); counts[layer] += 1
+    def pop_queue(queue: dict[int, deque[int]], members_set: set[int], counts: Counter[int], layer: int) -> int:
+        i = queue[layer].popleft(); members_set.remove(i); counts[layer] -= 1; return i
     def put_arrival(i: int) -> None:
         nonlocal bp_events
-        layer = transactions[i].layer
-        if can_local(i): local.add(i); location[i] = "local"; return
+        arrived.add(i); layer = transactions[i].layer
+        if can_local(i): put_local(i); return
         cap = org["shared_capacity_per_layer"]
-        if cap is None or layer_count(shared, layer) < cap: shared.add(i); location[i] = "shared"; return
-        if org["staging_capacity_per_layer"] and layer_count(staging, layer) < org["staging_capacity_per_layer"]: staging.add(i); location[i] = "staging"; return
-        held.add(i); location[i] = "held"; bp_events += 1
+        if cap is None or shared_count[layer] < cap: put_queue(shared, shared_members, shared_count, i); return
+        if org["staging_capacity_per_layer"] and staging_count[layer] < org["staging_capacity_per_layer"]: put_queue(staging, staging_members, staging_count, i); return
+        put_queue(held, held_members, held_count, i); bp_events += 1
     def advance_buffers() -> None:
-        # Stable transaction order; transfers never alter transaction identity or commit order.
+        # FIFO within each layer; per-layer queues avoid a full-backlog rescan.
         changed = True
         while changed:
             changed = False
-            for i in sorted(staging):
+            for layer in layers:
                 cap = org["shared_capacity_per_layer"]
-                if cap is None or layer_count(shared, transactions[i].layer) < cap:
-                    staging.remove(i); shared.add(i); location[i] = "shared"; changed = True
-            for i in sorted(held):
-                if org["staging_capacity_per_layer"] and layer_count(staging, transactions[i].layer) < org["staging_capacity_per_layer"]:
-                    held.remove(i); staging.add(i); location[i] = "staging"; changed = True
-            for i in sorted(shared):
-                if can_local(i): shared.remove(i); local.add(i); location[i] = "local"; changed = True
-    while tick <= last or local or shared or staging or held or active:
+                while staging[layer] and (cap is None or shared_count[layer] < cap):
+                    put_queue(shared, shared_members, shared_count, pop_queue(staging, staging_members, staging_count, layer)); changed = True
+                while held[layer] and org["staging_capacity_per_layer"] and staging_count[layer] < org["staging_capacity_per_layer"]:
+                    put_queue(staging, staging_members, staging_count, pop_queue(held, held_members, held_count, layer)); changed = True
+                while held[layer] and not org["staging_capacity_per_layer"] and (cap is None or shared_count[layer] < cap):
+                    put_queue(shared, shared_members, shared_count, pop_queue(held, held_members, held_count, layer)); changed = True
+                while shared[layer] and can_local(shared[layer][0]):
+                    put_local(pop_queue(shared, shared_members, shared_count, layer)); changed = True
+    while tick <= last or local or shared_members or staging_members or held_members or active:
         if tick > last + drain_limit: break
         for i in arrivals.get(tick, []): put_arrival(i)
         finished = [item for item in active if item[0] <= tick]; active = [item for item in active if item[0] > tick]
         for _, member in finished: completed[member.transaction_index].add(member)
         # The sole A4.7.1 commit boundary releases locks and all dependent work.
-        for i in sorted(set(location) - committed):
+        for i in sorted(active_groups):
             tx = transactions[i]
             if any(parent not in committed for parent in tx.predecessors) or len(completed[i]) != len(members[i]): continue
             if len(tx.banks) > 1 and candidate["commit_slots"] and coordinator_until > tick:
                 reasons["cross_bank_commit_coordination"] += 1; continue
             if len(tx.banks) > 1 and candidate["commit_slots"]: coordinator_until = tick + 1
-            committed.add(i); local.discard(i); shared.discard(i); staging.discard(i); held.discard(i)
+            committed.add(i); active_groups.remove(i); remove_local(i)
             for member in members[i]:
                 if locks.get(member.object_key) != i: raise AssertionError("commit without all member locks")
                 del locks[member.object_key]
         advance_buffers()
         counts = local_counts()
         for b in range(candidate["banks"]): local_samples[b].append(counts[b])
-        for layer in {tx.layer for tx in transactions}:
-            shared_samples[layer].append(layer_count(shared, layer)); staging_samples[layer].append(layer_count(staging, layer))
-        stranded_samples.append(sum(LOCAL_CAPACITY-value for value in counts.values()) if (shared or staging or held) else 0)
+        for layer in layers:
+            shared_samples[layer].append(shared_count[layer]); staging_samples[layer].append(staging_count[layer])
+        stranded_samples.append(sum(LOCAL_CAPACITY-counts[bank] for bank in range(candidate["banks"])) if (shared_members or staging_members or held_members) else 0)
         active_resource = Counter((m.bank, m.operation) for _, m in active)
         for i in sorted(local):
             tx = transactions[i]
@@ -144,9 +159,9 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
                 if owner is not None and owner != i: reasons["same_record_lock"] += 1; continue
                 field = {"read":"read_ports", "write":"write_ports", "rmw":"rmw_lanes"}[member.operation]
                 if active_resource[(member.bank, member.operation)] >= candidate[field]: reasons["bank_" + member.operation if member.operation != "rmw" else "rmw_lane"] += 1; continue
-                locks[member.object_key] = i; started[i].add(member); active.append((tick + micro_op_duration(member.operation), member)); active_resource[(member.bank, member.operation)] += 1
-                local.discard(i)  # Queue slot is released only on first internal start, matching A4.9.2 queue accounting.
-        held_samples.append(len(held)); bp_flags.append(bool(held)); active_samples.append(len(active)); tick += 1
+                locks[member.object_key] = i; started[i].add(member); active_groups.add(i); active.append((tick + micro_op_duration(member.operation), member)); active_resource[(member.bank, member.operation)] += 1
+                remove_local(i)  # Queue slot is released only on first internal start, matching A4.9.2 queue accounting.
+        held_samples.append(len(held_members)); bp_flags.append(bool(held_members)); active_samples.append(len(active)); tick += 1
     if any(owner in committed for owner in locks.values()): raise AssertionError("committed transaction retained a lock")
     if any(i in committed and any(parent not in committed for parent in tx.predecessors) for i, tx in enumerate(transactions)): raise AssertionError("commit released an unmet predecessor")
     longest = run = 0
@@ -159,7 +174,7 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
         "per_bank_local_occupancy":{str(bank):summary(values) for bank, values in enumerate(local_samples)}, "per_bank_peak_occupancy":summary(peak_local), "cross_bank_peak_skew":max(peak_local,default=0)-min(peak_local,default=0),
         "stranded_local_capacity_observations":sum(stranded_samples),
         "shared_overflow_per_layer_peak":summary(shared_peaks), "shared_overflow_total_peak":peak_shared, "shared_overflow_active_opportunities":sum(any(values) for values in zip(*shared_samples.values())) if shared_samples else 0,
-        "staging_per_layer_peak":summary(staging_peaks), "staging_total_peak":peak_staging, "backpressure_event_count":bp_events, "backpressure_active_opportunities":sum(bp_flags), "longest_backpressure_opportunity_run":longest, "held_transaction_high_water":max(held_samples,default=0), "trace_end_residual_backlog":len(local|shared|staging|held)+len(active),
+        "staging_per_layer_peak":summary(staging_peaks), "staging_total_peak":peak_staging, "backpressure_event_count":bp_events, "backpressure_active_opportunities":sum(bp_flags), "longest_backpressure_opportunity_run":longest, "held_transaction_high_water":max(held_samples,default=0), "trace_end_residual_backlog":len(local)+len(shared_members)+len(staging_members)+len(held_members)+len(active_groups),
         "active_micro_op_concurrency":summary(active_samples), "blocking_observation_counts":dict(reasons),
         "declared_queue_reference_word_bits":QUEUE_REFERENCE_WORD_BITS, "peak_modeled_queue_staging_bits":QUEUE_REFERENCE_WORD_BITS*(sum(peak_local)+peak_shared+peak_staging),
         "boundary":"Queue/staging references and abstract opportunities are declared model quantities, not FIFO/SRAM macro sizing, timing, traffic, throughput, energy, area, architecture, or RTL evidence."}
