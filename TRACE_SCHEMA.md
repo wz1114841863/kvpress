@@ -1514,6 +1514,29 @@ or imply ready groups, micro-op completion, bank ports, RMW completion, credit
 latency, ownership publication, physical commit timing, FIFO occupancy, or any
 hardware timing/capacity claim.
 
+### Route-A A4.12.0 metadata/control interface inventory
+
+`kvzap-route-a4120-metadata-interface-inventory-1.0` is a no-model provenance
+and logical-interface inventory. It SHA-256 binds only the accepted A4.9.1
+candidate-accounting report, A4.10 queue/credit contract, A4.11.2b
+external-storage binding, and both C5 direction records. It rejects a changed
+schema, incomplete source, altered frozen SHA-256, changed semantic guard, or
+changed core contract field.
+
+It records the HA8-wide requirement as eight head-affine banks with up to two
+read-class, two write-class, and two commit-coupled RMW issues per *abstract
+service opportunity*. These are declared service capabilities, never selected
+SRAM macro ports, physical RMW lanes, access latency, or throughput. Similarly,
+local32/shared256/staging512 remain logical queue/staging guarantees; they do
+not mean a physical SRAM is copied for every layer.
+
+The inventory separates A4.9.1's joint-safe semantic metadata fields from
+payload-dependent page-ID, offset, bank, and address/handle parameters. The
+latter are deliberately uninstantiated until A4.13 payload physicalization.
+It has no macro, cycle, timing, capacity provisioning, energy, area,
+architecture specification, or RTL result, and cannot authorize changing the
+frozen A4.8--A4.11 semantic, queue, scheduler, pruning, or admission contract.
+
 ### Route-A A4.8.1a causal readiness and root-cause propagation audit
 
 `kvzap-route-a481a-readiness-root-cause-1.0` hash-binds the completed A4.8.0
