@@ -104,10 +104,16 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
         layer = transactions[i].layer; queue[layer].append(i); members_set.add(i); counts[layer] += 1
     def pop_queue(queue: dict[int, deque[int]], members_set: set[int], counts: Counter[int], layer: int) -> int:
         i = queue[layer].popleft(); members_set.remove(i); counts[layer] -= 1; return i
+    def has_deferred_work(layer: int) -> bool:
+        return bool(shared[layer] or staging[layer] or held[layer])
     def put_arrival(i: int) -> None:
         nonlocal bp_events
         arrived.add(i); layer = transactions[i].layer
-        if can_local(i): put_local(i); return
+        # A fresh transaction may not bypass an older deferred transaction in
+        # this layer.  Otherwise children can occupy a parent's required local
+        # bank slots before that parent is granted, violating the fixed
+        # oldest-selection/dependency contract and creating artificial stalls.
+        if not has_deferred_work(layer) and can_local(i): put_local(i); return
         cap = org["shared_capacity_per_layer"]
         if cap is None or shared_count[layer] < cap: put_queue(shared, shared_members, shared_count, i); return
         if org["staging_capacity_per_layer"] and staging_count[layer] < org["staging_capacity_per_layer"]: put_queue(staging, staging_members, staging_count, i); return
@@ -129,7 +135,6 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
                     put_local(pop_queue(shared, shared_members, shared_count, layer)); changed = True
     while tick <= last or local or shared_members or staging_members or held_members or active:
         if tick > last + drain_limit: break
-        for i in arrivals.get(tick, []): put_arrival(i)
         finished = [item for item in active if item[0] <= tick]; active = [item for item in active if item[0] > tick]
         for _, member in finished: completed[member.transaction_index].add(member)
         # The sole A4.7.1 commit boundary releases locks and all dependent work.
@@ -143,6 +148,9 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
             for member in members[i]:
                 if locks.get(member.object_key) != i: raise AssertionError("commit without all member locks")
                 del locks[member.object_key]
+        # Existing delayed work has grant priority over this tick's arrivals.
+        advance_buffers()
+        for i in arrivals.get(tick, []): put_arrival(i)
         advance_buffers()
         counts = local_counts()
         for b in range(candidate["banks"]): local_samples[b].append(counts[b])
