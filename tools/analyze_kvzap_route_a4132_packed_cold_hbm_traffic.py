@@ -71,7 +71,10 @@ def source_state(event: dict[str, Any]) -> tuple[int, int, int, int, int, int]:
         raise ValueError("source order changed")
     counts = {row["source"]: int(row["record_count"]) for row in rows}
     page_count, full_count, tail = int(event.get("packed_page_count", -1)), int(event.get("packed_full_page_count", -1)), int(event.get("packed_tail_tokens", -1))
-    if any(value < 0 for value in (*counts.values(), page_count, full_count, tail)) or full_count > page_count or (page_count == 0 and tail != 0) or (page_count > 0 and not 0 < tail <= PAGE_TOKENS):
+    # The reference represents an exactly full final page as ``full == pages``
+    # and ``tail == 0``.  A nonempty tail therefore ranges 1..63 rather than
+    # being forced to contain a duplicate 64-token full page.
+    if any(value < 0 for value in (*counts.values(), page_count, full_count, tail)) or full_count > page_count or (page_count == 0 and tail != 0) or tail >= PAGE_TOKENS:
         raise ValueError("invalid packed page state")
     if counts["packed"] != full_count * PAGE_TOKENS + tail:
         raise ValueError("packed source count/page state disagree")

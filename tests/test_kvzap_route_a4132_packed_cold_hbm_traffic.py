@@ -45,3 +45,12 @@ def test_gqa_group_rejects_different_packed_page_state():
         assert "source/page state differs" in str(error)
     else:
         raise AssertionError("GQA grouping accepted unequal source state")
+
+
+def test_exact_full_packed_page_uses_zero_tail_encoding():
+    events = [event(query) for query in range(4)]
+    for row in events:
+        row["packed_full_page_count"] = 1
+        row["packed_tail_tokens"] = 0
+        row["source_decisions"][-1]["record_count"] = 64
+    assert metric(events)["packed_page_requests"] == 4
