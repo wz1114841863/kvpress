@@ -1542,6 +1542,25 @@ It has no macro, cycle, timing, capacity provisioning, energy, area,
 architecture specification, or RTL result, and cannot authorize changing the
 frozen A4.8--A4.11 semantic, queue, scheduler, pruning, or admission contract.
 
+### Route-A A4.12.1 metadata macro/area envelope
+
+`kvzap-route-a4121-metadata-macro-envelope-1.0` SHA-256 binds the accepted
+self-contained A4.12.0 `_02` interface inventory and evaluates exactly M1
+(banked SRAM plus pipelined-RMW hypothesis), M2 (replicated/duplicated control
+storage), and M3 (register hot state plus SRAM backing). It emits generated
+CACTI RAM configurations, raw CACTI output, public-source checkout provenance,
+and macro-instance area/access-energy characterizations.
+
+The public CACTI `0.032 um` point is an analytical technology proxy only, not
+a PDK, target technology, compiled macro, signoff estimate, or physical layout.
+The HA8-wide abstract 2/2/2 service requirement is not converted into a CACTI
+port count: every macro is modeled as a 1RW RAM and actual service realization
+is deferred to A4.12.2. Logical local32/shared256/staging512, conservative
+36-layer provisioning, CACTI padding, and unestimated M3 register state are
+separate report fields. Per-access energy is retained only as a later A4.12.2
+input; A4.12.1 reports no workload energy, cycle, throughput, architecture, or
+RTL result.
+
 ### Route-A A4.8.1a causal readiness and root-cause propagation audit
 
 `kvzap-route-a481a-readiness-root-cause-1.0` hash-binds the completed A4.8.0
