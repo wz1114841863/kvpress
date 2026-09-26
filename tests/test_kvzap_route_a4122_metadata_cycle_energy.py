@@ -1,6 +1,6 @@
 from collections import Counter
 
-from tools.simulate_kvzap_route_a4122_metadata_cycle_energy import access_plan, can_use, duration, resource_capacities
+from tools.simulate_kvzap_route_a4122_metadata_cycle_energy import access_plan, can_use, commit_ready_groups, duration, resource_capacities
 from tools.simulate_kvzap_route_a492_record_granular_engine import MicroOp
 
 
@@ -31,3 +31,10 @@ def test_m3_does_not_convert_hot_register_access_to_cacti_energy():
     capacities = resource_capacities("M3_register_hot_state_with_sram_backing")
     assert can_use(resources, Counter(), capacities)
     assert not can_use(resources, Counter({(3, "head_hot_register"): 2}), capacities)
+
+
+def test_frozen_ha8_wide_commit_gate_does_not_add_a_global_serial_slot():
+    tx = [type("Tx", (), {"predecessors": ()})(), type("Tx", (), {"predecessors": ()})()]
+    completed = {0: {member("head_control")}, 1: {member("span_owner")}}
+    members = {0: (member("head_control"),), 1: (member("span_owner"),)}
+    assert commit_ready_groups({0, 1}, completed, members, tx, set()) == [0, 1]

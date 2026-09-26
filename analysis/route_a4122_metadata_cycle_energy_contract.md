@@ -26,16 +26,20 @@ not derived from a clock target or CACTI access time.
 | M2 | Two 1RW `head_control` replicas plus one 1RW `span_owner` SRAM proxy per bank. Head reads select one free replica; head writes/RMW update both replicas atomically in this model. | Mirrored head writes/RMW charge two replica writes. Span accesses use its own A4.12.1 macro proxy. |
 | M3 | `head_control` uses two declared hot-register service slots per bank; `span_owner` uses one 1RW SRAM proxy. | Register accesses are counted but deliberately excluded from energy because A4.12.1 did not estimate register energy. Only span-SRAM accesses receive CACTI pJ/access. |
 
-All candidates serialize final publication through one declared oldest-ready
-commit slot per engine.  This is a transparent A4.12.2 controller assumption
-needed to report commit throughput; it preserves the existing single group
-commit boundary and does not claim a physical timing or implementation.
+Final publication remains the sole existing group commit boundary.  A4.9.2
+HA8-wide has no declared commit-slot serialization (`commit_slots=0`), so every
+group whose members and predecessors are complete may publish in the same
+service-model coordinate.  A4.12.2 does not invent a global commit controller,
+commit-port count, or physical contention.  The reported commit rate is an
+observation of this frozen semantic replay, not an implemented commit
+throughput.
 
 ## Outputs and boundaries
 
 For every frozen context/candidate, report drain, modeled cycles, latency
 coordinates, sustained issue rate, resource utilization, queue residence,
-commit throughput, macro access counts, and estimated SRAM dynamic energy.
+semantic commit publication rate, macro access counts, and estimated SRAM
+dynamic energy.
 
 CACTI ns values remain macro characterization fields.  CACTI pJ/access times
 the counted accesses is an **estimated SRAM dynamic energy**, excluding M3

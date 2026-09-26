@@ -153,6 +153,11 @@ def can_use(resources: tuple[tuple[int, str], ...], busy: Counter[tuple[int, str
     return all(busy[item] < capacities[item[1]] for item in resources)
 
 
+def commit_ready_groups(active_groups: set[int], completed: dict[int, set[MicroOp]], members: dict[int, tuple[MicroOp, ...]], transactions: list[Any], committed: set[int]) -> list[int]:
+    """Frozen A4.9.2 publication gate; deliberately no physical commit slot."""
+    return [index for index in sorted(active_groups) if len(completed[index]) == len(members[index]) and all(parent in committed for parent in transactions[index].predecessors)]
+
+
 def replay(transactions: list[Any], opportunities: list[tuple[str, int]], members: dict[int, tuple[MicroOp, ...]], candidate: str, macros: dict[str, dict[str, float]], drain_limit: int) -> dict[str, Any]:
     capacities = resource_capacities(candidate)
     arrivals: dict[int, list[int]] = defaultdict(list)
@@ -197,16 +202,17 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
         for item in finished:
             completed[item.member.transaction_index].add(item.member)
             if len(completed[item.member.transaction_index]) == len(members[item.member.transaction_index]): member_done_tick[item.member.transaction_index] = tick
-        # One oldest-ready publication slot is the declared A4.12.2 commit model.
-        ready = [i for i in sorted(active_groups) if len(completed[i]) == len(members[i]) and all(parent in committed for parent in transactions[i].predecessors)]
+        # The unchanged A4.9.2 HA8-wide candidate has commit_slots=0.  Preserve
+        # its single visibility boundary but do not synthesize a global serial
+        # controller: all groups ready at this coordinate publish together.
+        ready = commit_ready_groups(active_groups, completed, members, transactions, committed)
         committed_now = 0
-        if ready:
-            index = ready[0]; committed.add(index); active_groups.remove(index); commit_tick[index] = tick
+        for index in ready:
+            committed.add(index); active_groups.remove(index); commit_tick[index] = tick
             for member in members[index]:
                 if locks.get(member.object_key) != index: raise AssertionError("commit without fixed member lock")
                 del locks[member.object_key]
-            committed_now = 1
-        if len(ready) > 1: reasons["commit_publish_slot"] += len(ready) - 1
+            committed_now += 1
         committed_per_tick.append(committed_now)
         advance()
         for index in arrivals.get(tick, []): arrive(index)
@@ -243,10 +249,10 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
         "sustained_issue_rate_micro_ops_per_service_cycle":{"total_micro_ops":sum(issue_per_tick),"average":sum(issue_per_tick)/tick if tick else 0.0,"peak":max(issue_per_tick,default=0)},
         "bank_service_utilization":{"busy_resource_slot_cycles":sum(occupancy.values()),"available_resource_slot_cycles":slots*tick,"fraction":sum(occupancy.values())/(slots*tick) if tick else 0.0,"per_resource_slot_cycles":{f"bank{b}_{r}":occupancy[(b,r)] for b in range(BANKS) for r in capacities}},
         "queue_residence_service_model_cycles":{"first_micro_op_delay":summary([first_start[i]-transactions[i].arrival_ordinal for i in first_start]),"commit_delay":summary([commit_tick[i]-transactions[i].arrival_ordinal for i in commit_tick]),"member_done_to_commit_wait":summary([commit_tick[i]-member_done_tick[i] for i in commit_tick])},
-        "commit_throughput_groups_per_service_cycle":{"committed_groups":sum(committed_per_tick),"average":sum(committed_per_tick)/tick if tick else 0.0,"peak":max(committed_per_tick,default=0)},
+        "semantic_commit_publication_groups_per_service_cycle":{"committed_groups":sum(committed_per_tick),"average":sum(committed_per_tick)/tick if tick else 0.0,"peak":max(committed_per_tick,default=0),"boundary":"Observed frozen semantic publication rate only; A4.12.2 does not infer a physical commit controller or commit-port throughput."},
         "per_bank_local_occupancy":{str(b):summary(values) for b,values in enumerate(local_samples)}, "trace_end_residual_backlog":len(local)+len(active_groups)+sum(map(len,shared.values()))+sum(map(len,staging.values()))+sum(map(len,held.values()))+len(active),
         "blocking_observation_counts":dict(reasons), "macro_access_and_estimated_sram_dynamic_energy":estimate, "estimated_sram_dynamic_energy_pj_excluding_unestimated_registers":total_pj,
-        "boundary":"Service cycles, slots, and commit publication are declared A4.12.2 model coordinates, not measured timing, a selected macro port count, throughput, PDK, layout, RTL, or architecture evidence. CACTI energy is estimated only from counted SRAM accesses and excludes unestimated registers and all controller/payload costs."}
+        "boundary":"Service cycles and resource slots are declared A4.12.2 model coordinates, not measured timing, a selected macro port count, throughput, PDK, layout, RTL, or architecture evidence. The sole frozen semantic commit boundary is preserved without inventing a physical global commit controller. CACTI energy is estimated only from counted SRAM accesses and excludes unestimated registers and all controller/payload costs."}
 
 
 def main() -> None:
@@ -263,8 +269,8 @@ def main() -> None:
         members=build_micro_ops(groups,txs,ha8)
         for candidate in ("M1_banked_sram_pipelined_rmw","M2_replicated_or_duplicated_control_storage","M3_register_hot_state_with_sram_backing"):
             rows.append({"anchor":key[0],"workload":key[1],"evaluation_horizon_append_opportunities":key[2],"organization_label":key[3],"physical_candidate":candidate,"result":replay(txs,ops,members,candidate,checked["macros"],args.post_trace_cycle_limit)})
-    config={"stage":"A4.12.2","fixed_execution":"A4.9.2 record-granular HA8-wide only","queue_contract":"local32/shared256/staging512 only","physical_candidates":["M1_banked_sram_pipelined_rmw","M2_replicated_or_duplicated_control_storage","M3_register_hot_state_with_sram_backing"],"service_cycle":"declared arbitration/access coordinate; not CACTI ns or a clock period","commit_publish":"one oldest-ready group per engine per service cycle; declared controller model only"}
-    report={"schema_version":SCHEMA,"status":"complete","created_at":datetime.now(timezone.utc).isoformat(),"git_commit":get_git_commit(),"execution_classification":"fixed trace-driven declared metadata service/cycle model plus CACTI-access-count estimated SRAM dynamic energy; not hardware timing, throughput measurement, PDK, physical implementation, architecture, or RTL evidence","input_artifacts":{"a4120_report_sha256":A4120_SHA256,"a4121_report_sha256":A4121_SHA256,"a410_report_sha256":A410_SHA256,"a492_report_sha256":A492_SHA256,"a468220_trace_sha256":sha256_file(args.a468220_trace),"a471_trace_sha256":sha256_file(args.a471_trace)},"config":config,"config_hash":stable_hash(config),"candidate_context_rows":rows,"semantic_guards":{"only_m1_m2_m3_from_a4121_compared":True,"ha8_wide_record_granular_and_a410_queue_contract_fixed":True,"single_commit_boundary_fifo_ownership_and_dependency_release_remain_commit_gated":True,"no_pruning_admission_queue_or_execution_variant_introduced":True,"cacti_pj_per_access_multiplied_only_by_explicit_macro_access_counts":True,"m3_register_energy_not_invented":True,"no_hardware_measurement_or_rtl_claim":True},"boundaries":["A4.12.2 service cycles are declared model coordinates rather than CACTI ns, a clock period, timing closure, or measured throughput.","The one-slot commit publication model is an explicit controller assumption for reporting commit throughput; it preserves, but does not physically implement, the frozen single commit boundary.","Estimated SRAM dynamic energy excludes M3 register energy, arbitration, scoreboard, commit, leakage, wiring, clocking, layout, and all KV payload-path energy."]}
+    config={"stage":"A4.12.2","fixed_execution":"A4.9.2 record-granular HA8-wide only","queue_contract":"local32/shared256/staging512 only","physical_candidates":["M1_banked_sram_pipelined_rmw","M2_replicated_or_duplicated_control_storage","M3_register_hot_state_with_sram_backing"],"service_cycle":"declared arbitration/access coordinate; not CACTI ns or a clock period","commit_publish":"unchanged A4.9.2 single external boundary with no synthesized global commit slot; all same-coordinate ready groups publish together"}
+    report={"schema_version":SCHEMA,"status":"complete","created_at":datetime.now(timezone.utc).isoformat(),"git_commit":get_git_commit(),"execution_classification":"fixed trace-driven declared metadata service/cycle model plus CACTI-access-count estimated SRAM dynamic energy; not hardware timing, throughput measurement, PDK, physical implementation, architecture, or RTL evidence","input_artifacts":{"a4120_report_sha256":A4120_SHA256,"a4121_report_sha256":A4121_SHA256,"a410_report_sha256":A410_SHA256,"a492_report_sha256":A492_SHA256,"a468220_trace_sha256":sha256_file(args.a468220_trace),"a471_trace_sha256":sha256_file(args.a471_trace)},"config":config,"config_hash":stable_hash(config),"candidate_context_rows":rows,"semantic_guards":{"only_m1_m2_m3_from_a4121_compared":True,"ha8_wide_record_granular_and_a410_queue_contract_fixed":True,"single_commit_boundary_fifo_ownership_and_dependency_release_remain_commit_gated":True,"no_global_commit_slot_synthesized_when_a492_ha8_wide_declares_none":True,"no_pruning_admission_queue_or_execution_variant_introduced":True,"cacti_pj_per_access_multiplied_only_by_explicit_macro_access_counts":True,"m3_register_energy_not_invented":True,"no_hardware_measurement_or_rtl_claim":True},"boundaries":["A4.12.2 service cycles are declared model coordinates rather than CACTI ns, a clock period, timing closure, or measured throughput.","The frozen single semantic commit boundary is preserved, but no physical global commit controller or commit-port throughput is inferred when A4.9.2 HA8-wide declares no commit slot.","Estimated SRAM dynamic energy excludes M3 register energy, arbitration, scoreboard, commit, leakage, wiring, clocking, layout, and all KV payload-path energy."]}
     args.output_dir.mkdir(parents=True); output=args.output_dir/"a4122_metadata_cycle_energy_report.json"; output.write_text(json.dumps(report,indent=2,sort_keys=True)+"\n",encoding="utf-8")
     print(f"A4.12.2 complete: {output} sha256={hashlib.sha256(output.read_bytes()).hexdigest()} rows={len(rows)}")
 
