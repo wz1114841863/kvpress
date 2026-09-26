@@ -34,6 +34,11 @@ trace-end residual.  It does not invent ready-group, micro-op completion,
 bank-port, RMW completion, credit, ownership publication, or physical commit
 events.
 
+Per-head pending watermarks are reported directly. A per-layer pending
+watermark is the maximum, over that layer's append epochs, of the sum of the
+post-maturity pending counters across all selected KV heads in that epoch; it
+is not the largest individual-head watermark.
+
 For the declared A4.10 input replay, frozen replay-mask retained tokens are
 reconstructed from each observed maturity range, assigned to their logical
 64-token span, and lowered deterministically into one

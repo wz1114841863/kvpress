@@ -115,6 +115,21 @@ def mature_positions(event: dict[str, Any]) -> range:
     return range(first, last + 1) if first <= last else range(0)
 
 
+def per_layer_total_pending_after_maturity_max(events: list[dict[str, Any]]) -> dict[int, int]:
+    """Return each layer's maximum simultaneous logical pending-token total.
+
+    A lifecycle event is one append epoch for one layer and carries every
+    selected KV head. The layer watermark is therefore the sum across those
+    heads at that epoch, not the largest individual-head counter.
+    """
+    result: dict[int, int] = {}
+    for event in events:
+        layer = int(event["layer"])
+        total = sum(int(row["pending_tokens_after_maturity"]) for row in event["heads"])
+        result[layer] = max(result.get(layer, 0), total)
+    return result
+
+
 def direct_and_converted(events: list[dict[str, Any]], replay_events, candidate: dict[str, Any]) -> dict[str, Any]:
     """Reconstruct retained maturity from frozen masks and lower a fixed span group.
 
@@ -130,7 +145,7 @@ def direct_and_converted(events: list[dict[str, Any]], replay_events, candidate:
     arrivals = service = dropped = 0
     pending_after_maturity: list[int] = []; pending_after_service: list[int] = []
     packed_pages: list[int] = []; packed_full_pages: list[int] = []
-    per_layer_pending: Counter[int] = Counter()
+    per_layer_pending = per_layer_total_pending_after_maturity_max(events)
     for event in events:
         layer, ordinal = int(event["layer"]), int(event["logical_transition_sequence"])
         positions = list(mature_positions(event))
@@ -143,7 +158,6 @@ def direct_and_converted(events: list[dict[str, Any]], replay_events, candidate:
             arrivals += len(retained); dropped += rejected; service += int(row["admitted_tokens"])
             pending_after_maturity.append(int(row["pending_tokens_after_maturity"])); pending_after_service.append(int(row["pending_tokens_after_service"]))
             packed_pages.append(int(row["packed_page_count_after_service"])); packed_full_pages.append(int(row["packed_full_page_count_after_service"]))
-            per_layer_pending[layer] = max(per_layer_pending[layer], int(row["pending_tokens_after_maturity"]))
             by_span: dict[int, int] = Counter(position // PAGE_TOKENS for position in retained)
             for span, token_count in sorted(by_span.items()):
                 index = len(transactions); head_key = (layer, head)
