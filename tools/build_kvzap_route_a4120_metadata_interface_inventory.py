@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -16,11 +17,11 @@ SCHEMA = "kvzap-route-a4120-metadata-interface-inventory-1.0"
 # Inputs are frozen by content, not by location. A verified remote mirror is
 # acceptable; a later rerun is not.
 FROZEN_INPUTS = {
-    "a491": {"sha256": "ddf033d33234c4e1b0870cf8b9c3e775b30b1daca7ce43567f11dae6970be8b0", "schema": "kvzap-route-a491-candidate-metadata-engine-1.0"},
-    "a410": {"sha256": "97f9cec11c8ffff95ce8405d303f35ddf76ea2c4078512f0d98d38e6ec0ec9e4", "schema": "kvzap-route-a410-queue-staging-credit-contract-1.0"},
-    "a4112b": {"sha256": "57da81a6fb7e3a9540fad2d0a45ba28ae418ffc69d9e81ef2fbf02090dcdc3a3", "schema": "kvzap-route-a4112b-external-storage-binding-1.0"},
-    "c5": {"sha256": "f7f3aec661602e5ec8febb7a43418c16cdf3dfc27e84a808a084b737d3c06fff", "schema": "cross-frontend-c5-hardware-direction-decision-1.0"},
-    "c5_remote_replica": {"sha256": "1e45e60713ce6256df33c5efb06b5db93f1ecf6a630b9de7fb916b9d730868b3", "schema": "cross-frontend-c5-hardware-direction-decision-1.0"},
+    "a491": {"sha256": "ddf033d33234c4e1b0870cf8b9c3e775b30b1daca7ce43567f11dae6970be8b0", "schema": "kvzap-route-a491-candidate-metadata-engine-1.0", "canonical_origin_path": "analysis/experiments/route_a491_candidate_metadata_engine_02/a491_candidate_metadata_engine_report.json"},
+    "a410": {"sha256": "97f9cec11c8ffff95ce8405d303f35ddf76ea2c4078512f0d98d38e6ec0ec9e4", "schema": "kvzap-route-a410-queue-staging-credit-contract-1.0", "canonical_origin_path": "analysis/experiments/route_a410_queue_staging_credit_contract_04/a410_queue_staging_credit_contract_report.json"},
+    "a4112b": {"sha256": "57da81a6fb7e3a9540fad2d0a45ba28ae418ffc69d9e81ef2fbf02090dcdc3a3", "schema": "kvzap-route-a4112b-external-storage-binding-1.0", "canonical_origin_path": "analysis/experiments/route_a411_external_storage_lifecycle_binding_02/a4112b_external_storage_lifecycle_binding_report.json"},
+    "c5": {"sha256": "f7f3aec661602e5ec8febb7a43418c16cdf3dfc27e84a808a084b737d3c06fff", "schema": "cross-frontend-c5-hardware-direction-decision-1.0", "canonical_origin_path": "analysis/experiments/cross_frontend_c5_hardware_direction_decision_01/cross_frontend_c5_hardware_direction_decision_report.json"},
+    "c5_remote_replica": {"sha256": "1e45e60713ce6256df33c5efb06b5db93f1ecf6a630b9de7fb916b9d730868b3", "schema": "cross-frontend-c5-hardware-direction-decision-1.0", "canonical_origin_path": "analysis/experiments/cross_frontend_c5_hardware_direction_decision_remote_replica_01/cross_frontend_c5_hardware_direction_decision_report.json"},
 }
 REQUIRED_A491_GUARDS = ("a490_exit_and_hash_chain_validated", "fifo_ownership_and_commit_predecessors_reused_unchanged", "joint_safe_field_widths_fit_every_declared_word_padded_modeled_object", "candidate_queue_overflow_is_observed_never_dropped", "no_hardware_measurement_claim")
 REQUIRED_A410_GUARDS = ("a492_record_granular_execution_fixed_without_new_variant", "ha8_wide_primary_and_ha8_base_control_only", "lossless_credit_only_delays_transactions_without_drop_or_reorder", "transaction_fifo_ownership_and_single_commit_boundary_unchanged")
@@ -49,7 +50,7 @@ def read_frozen(path: Path, name: str) -> tuple[dict[str, Any], dict[str, str]]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict) or value.get("schema_version") != spec["schema"] or value.get("status") != "complete":
         raise ValueError(f"{name} is not a completed frozen {spec['schema']} artifact")
-    return value, {"path": str(path), "sha256": actual_sha, "schema_version": spec["schema"]}
+    return value, {"canonical_origin_path": spec["canonical_origin_path"], "resolved_input_path": str(path), "sha256": actual_sha, "schema_version": spec["schema"]}
 
 
 def require_guards(report: dict[str, Any], required: tuple[str, ...], name: str) -> None:
@@ -113,6 +114,18 @@ def build_report(paths: dict[str, Path]) -> dict[str, Any]:
     return {"schema_version": SCHEMA, "status": "complete", "created_at": datetime.now(timezone.utc).isoformat(), "git_commit": get_git_commit(), "execution_classification": "no-model provenance and logical-interface inventory; not a measured or modeled physical hardware result", "config": config, "config_hash": stable_hash(config), "input_artifacts": inputs, "interface_inventory": inventory, "semantic_guards": {"only_accepted_a491_a410_a4112b_and_c5_contents_are_bound": True, "ha8_wide_service_capability_not_relabelled_as_physical_sram_ports": True, "logical_queue_contract_not_relabelled_as_per_layer_physical_sram_provision": True, "payload_dependent_address_fields_remain_parameterized": True, "a412_does_not_reopen_execution_queue_scheduler_or_pruning_variants": True, "no_model_trace_replay_macro_cycle_area_or_energy_execution": True}, "boundaries": ["A4.12.0 freezes provenance and a logical metadata/control interface only. It selects neither macro organization nor physical capacity provisioning.", "The frozen HA8-wide 2/2/2 abstract capability is a service requirement, not a statement that an SRAM macro has 2R2W ports or two physical RMW lanes.", "Logical capacity, trace peak occupancy, and physical provisioned capacity are intentionally distinct. Only the first appears in this inventory.", "The report contains no cycle, timing, throughput, traffic, energy, area, architecture-specification, or RTL result."]}
 
 
+def materialize_inputs(paths: dict[str, Path], output_dir: Path, report: dict[str, Any]) -> None:
+    """Make a self-contained, hash-checked input copy beside the result."""
+    staging = output_dir / "input_artifacts"
+    staging.mkdir()
+    for name, source in paths.items():
+        destination = staging / f"{name}_source.json"
+        shutil.copyfile(source, destination)
+        if sha256_file(destination) != FROZEN_INPUTS[name]["sha256"]:
+            raise AssertionError(f"materialized {name} hash changed during copy")
+        report["input_artifacts"][name]["materialized_copy"] = str(destination)
+
+
 def main() -> None:
     args = parse_args()
     paths = {"a491": args.a491_report, "a410": args.a410_report, "a4112b": args.a4112b_report, "c5": args.c5_report, "c5_remote_replica": args.c5_remote_replica_report}
@@ -123,6 +136,7 @@ def main() -> None:
     if args.output_dir.exists():
         raise FileExistsError(f"A4.12.0 output directory already exists: {args.output_dir}")
     args.output_dir.mkdir(parents=True)
+    materialize_inputs(paths, args.output_dir, report)
     output = args.output_dir / "a4120_metadata_interface_inventory_report.json"
     output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"A4.12.0 complete: {output} sha256={sha256_file(output)}")

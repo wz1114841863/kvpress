@@ -1523,6 +1523,11 @@ external-storage binding, and both C5 direction records. It rejects a changed
 schema, incomplete source, altered frozen SHA-256, changed semantic guard, or
 changed core contract field.
 
+Each completed inventory materializes hash-checked source-report copies under
+its own `input_artifacts/` directory. The report retains both the canonical
+artifact origin and the resolved source path, so an input staged for a remote
+run never depends on a transient `/tmp` location for later inspection.
+
 It records the HA8-wide requirement as eight head-affine banks with up to two
 read-class, two write-class, and two commit-coupled RMW issues per *abstract
 service opportunity*. These are declared service capabilities, never selected

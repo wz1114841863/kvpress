@@ -12,6 +12,9 @@ RTL.
 The builder accepts a relocated mirror only when its bytes equal the accepted
 A4.9.1 `_02`, A4.10 `_04`, A4.11.2b binding `_02`, C5, and C5 remote-replica
 reports. A different rerun, even with a similar configuration, is rejected.
+Each non-preflight result materializes byte-identical copies of all five inputs
+under its own `input_artifacts/` directory, while retaining canonical origin
+and actual resolved-input paths in the report.
 
 | Interface input | Authority | Required interpretation |
 |---|---|---|

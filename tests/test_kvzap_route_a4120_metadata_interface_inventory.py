@@ -1,8 +1,9 @@
 from copy import deepcopy
+import hashlib
 
 import pytest
 
-from tools.build_kvzap_route_a4120_metadata_interface_inventory import validate_contracts
+from tools.build_kvzap_route_a4120_metadata_interface_inventory import FROZEN_INPUTS, materialize_inputs, validate_contracts
 
 
 def reports():
@@ -38,3 +39,17 @@ def test_inventory_rejects_c5_premature_rtl_authorization():
     c5_remote["c5_gate"]["rtl_authorized"] = True
     with pytest.raises(ValueError, match="incorrectly authorizes"):
         validate_contracts(a491, a410, a4112b, c5, c5_remote)
+
+
+def test_inventory_materializes_hash_checked_inputs_beside_result(tmp_path, monkeypatch):
+    source = tmp_path / "source.json"
+    source.write_text('{"frozen": true}\n', encoding="utf-8")
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    monkeypatch.setitem(FROZEN_INPUTS, "unit", {"sha256": digest, "schema": "unit", "canonical_origin_path": "canonical/unit.json"})
+    output = tmp_path / "result"
+    output.mkdir()
+    report = {"input_artifacts": {"unit": {"sha256": digest}}}
+    materialize_inputs({"unit": source}, output, report)
+    copied = output / "input_artifacts" / "unit_source.json"
+    assert copied.read_bytes() == source.read_bytes()
+    assert report["input_artifacts"]["unit"]["materialized_copy"] == str(copied)
