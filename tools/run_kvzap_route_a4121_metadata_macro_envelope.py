@@ -171,6 +171,10 @@ def parse_cacti_output(text: str) -> dict[str, float]:
 
 
 def run_cacti(binary: Path, source_dir: Path, output_dir: Path, request: dict[str, Any], node_um: float) -> dict[str, Any]:
+    # CACTI resolves its technology tables relative to its checkout.  Run with
+    # that checkout as cwd while passing an absolute generated config path.
+    # Otherwise the legacy binary can dereference missing technology state.
+    output_dir = output_dir.resolve()
     configs = output_dir / "cacti_configs"
     raw = output_dir / "cacti_raw"
     configs.mkdir(exist_ok=True)
@@ -180,7 +184,7 @@ def run_cacti(binary: Path, source_dir: Path, output_dir: Path, request: dict[st
     slug = f"{request['role']}_{size}B"
     config_path, raw_path = configs / f"{slug}.cfg", raw / f"{slug}.out"
     config_path.write_text(mutate_cacti_config(template, size, node_um), encoding="utf-8")
-    completed = subprocess.run([str(binary), "-infile", str(config_path)], check=True, text=True, capture_output=True)
+    completed = subprocess.run([str(binary.resolve()), "-infile", str(config_path.resolve())], cwd=source_dir.resolve(), check=True, text=True, capture_output=True)
     raw_path.write_text(completed.stdout, encoding="utf-8")
     parsed = parse_cacti_output(completed.stdout)
     return {**request, "config_path": str(config_path), "config_sha256": sha256_file(config_path), "raw_output_path": str(raw_path), "raw_output_sha256": sha256_file(raw_path), "per_instance_cacti_proxy": parsed, "aggregate_area_mm2": parsed["data_array_area_mm2"] * int(request["instances"]), "energy_boundary": "Per-access CACTI dynamic energy is retained only as a macro characterization input for A4.12.2. It is not aggregated into workload energy in A4.12.1."}

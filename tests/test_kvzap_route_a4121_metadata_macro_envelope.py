@@ -1,3 +1,7 @@
+from pathlib import Path
+from subprocess import CompletedProcess
+
+import tools.run_kvzap_route_a4121_metadata_macro_envelope as a4121
 from tools.run_kvzap_route_a4121_metadata_macro_envelope import candidate_templates, mutate_cacti_config, parse_cacti_output
 
 
@@ -24,3 +28,23 @@ def test_cacti_output_parser_keeps_energy_as_macro_characterization_only():
     parsed = parse_cacti_output(output)
     assert parsed["dynamic_read_energy_pj"] == 1.0
     assert parsed["data_array_area_mm2"] == .003
+
+
+def test_cacti_runner_uses_source_checkout_cwd_and_absolute_generated_config(tmp_path, monkeypatch):
+    source = tmp_path / "cacti"
+    source.mkdir()
+    template = "-size (bytes) 131072\n-block size (bytes) 64\n-associativity 2\n-read-write port 1\n-exclusive read port 0\n-exclusive write port 0\n-single ended read ports 0\n-UCA bank count 1\n-technology (u) 0.090\n-output/input bus width 512\n-cache type \"cache\"\n"
+    (source / "cache.cfg").write_text(template, encoding="utf-8")
+    binary = source / "cacti"
+    binary.write_text("", encoding="utf-8")
+    binary.chmod(0o755)
+    output = tmp_path / "result"
+    output.mkdir()
+    called = {}
+    def fake_run(args, **kwargs):
+        called.update(args=args, **kwargs)
+        return CompletedProcess(args, 0, stdout="Access time (ns): 0.15\nCycle time (ns): 0.12\nTotal dynamic read energy per access (nJ): 0.001\nTotal dynamic write energy per access (nJ): 0.002\nData array: Area (mm2): 0.003\n")
+    monkeypatch.setattr(a4121.subprocess, "run", fake_run)
+    a4121.run_cacti(binary, source, output, {"role": "unit", "instances": 1, "bytes_per_instance": 1024}, .032)
+    assert called["cwd"] == source.resolve()
+    assert Path(called["args"][-1]).is_absolute()
