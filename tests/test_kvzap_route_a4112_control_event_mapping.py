@@ -1,6 +1,6 @@
 import pytest
 
-from tools.validate_kvzap_route_a4112_control_event_mapping import mapping_contract, validate_lifecycle_events
+from tools.validate_kvzap_route_a4112_control_event_mapping import answer_relations, mapping_contract, validate_lifecycle_events
 
 
 def event(*, sequence=0, layer=0, start=0, phase="prefill", matured=3, admitted=2, count=129):
@@ -51,3 +51,17 @@ def test_a4112_rejects_trace_that_starts_after_prefill():
 def test_a4112_rejects_missing_prefill_pending_creation():
     with pytest.raises(ValueError, match="prefill-created retained pending"):
         validate_lifecycle_events([event(matured=0, admitted=0)], selected_layers=[0], selected_heads={0: [0]}, window=128)
+
+
+def test_a4112_records_but_does_not_reject_dense_route_a_answer_difference():
+    relations = answer_relations(
+        {
+            "full_kv_bypass_answer_sha256": "a" * 64,
+            "route_a_fast_path_answer_sha256": "b" * 64,
+        },
+        {"answer_sha256": "c" * 64},
+    )
+    assert relations == {
+        "full_kv_route_a_answer_equal": False,
+        "same_mask_dense_route_a_answer_equal": False,
+    }

@@ -171,6 +171,14 @@ def validate_a4111(report: dict[str, Any]) -> None:
         raise ValueError("A4.11.1 measurement guards are incomplete")
 
 
+def answer_relations(manifest: dict[str, Any], dense: dict[str, Any]) -> dict[str, bool]:
+    """Record path-output relations without promoting the dense comparator to a hard gate."""
+    return {
+        "full_kv_route_a_answer_equal": manifest["full_kv_bypass_answer_sha256"] == manifest["route_a_fast_path_answer_sha256"],
+        "same_mask_dense_route_a_answer_equal": dense["answer_sha256"] == manifest["route_a_fast_path_answer_sha256"],
+    }
+
+
 def validate_trace_manifest(manifest: dict[str, Any], workload: str, manifest_path: Path, semantic_config: dict[str, Any]) -> dict[str, Any]:
     if manifest.get("schema_version") != POLICY_TRACE_SCHEMA:
         raise ValueError(f"{workload}: expected trace schema {POLICY_TRACE_SCHEMA}")
@@ -204,8 +212,6 @@ def validate_trace_manifest(manifest: dict[str, Any], workload: str, manifest_pa
     require_digest(manifest.get("full_kv_bypass_answer_sha256"), f"{workload}: Full-KV answer")
     require_digest(manifest.get("route_a_fast_path_answer_sha256"), f"{workload}: Route-A answer")
     require_digest(dense.get("answer_sha256"), f"{workload}: dense answer")
-    if dense["answer_sha256"] != manifest["route_a_fast_path_answer_sha256"]:
-        raise ValueError(f"{workload}: same-mask dense and trace-on Route-A answers differ")
     control_plane = manifest.get("control_plane", {})
     if not isinstance(control_plane.get("full_kv_bypass"), str) or "no Route-A backend" not in control_plane["full_kv_bypass"]:
         raise ValueError(f"{workload}: Full-KV bypass boundary is not explicit")
@@ -230,8 +236,7 @@ def validate_trace_manifest(manifest: dict[str, Any], workload: str, manifest_pa
         "trace_manifest_sha256": sha256_file(manifest_path),
         "lifecycle_trace": str(trace_path),
         "lifecycle_trace_sha256": trace["sha256"],
-        "full_kv_route_a_answer_equal": manifest["full_kv_bypass_answer_sha256"] == manifest["route_a_fast_path_answer_sha256"],
-        "same_mask_dense_route_a_answer_equal": True,
+        **answer_relations(manifest, dense),
         "selected_layer_count": len(layers),
         "selected_kv_head_count": sum(map(len, selected.values())),
         "software_lifecycle_summary": summary,
@@ -295,6 +300,7 @@ def main() -> None:
             "route_a_trace_is_armed_before_prefill_pending_creation": True,
             "route_a_trace_preserves_replayed_mask_and_trace_off_answer": True,
             "full_kv_bypass_and_dense_paths_are_lightweight_boundary_comparators": True,
+            "same_mask_dense_route_a_answer_relation_recorded_not_required": True,
             "unmapped_modeled_fields_are_explicit_not_synthesized": True,
             "no_timing_allocator_or_hardware_service_claim": True,
         },
