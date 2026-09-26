@@ -1,0 +1,7 @@
+# Locally rebuilt third-party CACTI source and executable.  Their provenance
+# lock is tracked in source_lock.json; local hashes are recorded in the ignored
+# manifest and again in every experiment that uses the toolchain.
+/src/
+/bin/
+/toolchain_manifest.json
+/build.log

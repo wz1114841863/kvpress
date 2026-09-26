@@ -1,0 +1,11 @@
+{
+  "build_command": [
+    "make",
+    "-j2"
+  ],
+  "lock_schema_version": "route-a-cacti-toolchain-lock-1.0",
+  "source_commit": "1ffd8dfb10303d306ecd8d215320aea07651e878",
+  "source_url": "https://github.com/HewlettPackard/cacti.git",
+  "technology_proxy_default_um": 0.032,
+  "use_boundary": "Public CACTI is an analytical technology proxy only. It is not a foundry PDK, SRAM macro compiler, physical-layout, signoff, target-process, or RTL result."
+}
