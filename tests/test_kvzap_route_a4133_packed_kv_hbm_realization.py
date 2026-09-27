@@ -36,6 +36,9 @@ def test_fair_full_and_packed_gqa_group_accounting_uses_same_one_group():
     assert packed["page_fetches"] == 1
     assert packed["position_sidecar_bytes"] == POSITION_SIDECAR_BYTES_PER_PAGE
     assert full["page_rounded_payload_bytes"] == 2 * PAGE_BYTES
+    # A4.13.2 recorded the same causal source once per four query-head events;
+    # the A4.13.3 fair baseline keeps a single legal GQA representative.
+    assert 4 * full["useful_kv_bytes"] == 4 * 128 * 512
 
 
 def test_source_buffer_has_only_single_and_ping_pong_sensitivity():

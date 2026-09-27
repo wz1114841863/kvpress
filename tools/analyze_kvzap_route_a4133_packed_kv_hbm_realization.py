@@ -223,7 +223,7 @@ def verify_a4132_consistency(report: dict[str, Any], workload: str, groups: list
     route = summarize(groups, packed=True)
     old_full = row["full_kv_hbm_baseline"]
     old_route = row["packed_legal_gqa_reuse"]
-    if old_full["reference_attention_evaluations"] != len(groups) * GQA_GROUP or old_full["declared_hbm_transferred_bytes"] != full["useful_kv_bytes"]:
+    if old_full["reference_attention_evaluations"] != len(groups) * GQA_GROUP or old_full["declared_hbm_transferred_bytes"] != full["useful_kv_bytes"] * GQA_GROUP:
         raise ValueError(f"{workload}: Full-KV legal-GQA derivation no longer agrees with A4.13.2 no-reuse source trace")
     if old_route["reference_attention_evaluations"] != len(groups) or old_route["declared_hbm_transferred_bytes"] != route["page_rounded_payload_bytes"]:
         raise ValueError(f"{workload}: Route-A legal-GQA payload accounting no longer agrees with A4.13.2")
@@ -333,4 +333,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
