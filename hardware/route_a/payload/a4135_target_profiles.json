@@ -1,0 +1,29 @@
+{
+  "schema_version": "route-a4135-payload-target-service-profiles-1.0",
+  "classification": "Declared target-service proxy inputs for A4.13.5 only; not a vendor HBM specification, controller implementation, measured bandwidth/latency/energy, PDK, or architecture selection.",
+  "common": {
+    "modeled_hbm_transfer_transaction_bytes": 64,
+    "read_startup_model_cycles_per_request": 32,
+    "write_startup_model_cycles_per_declared_p3_batch": 32,
+    "hbm_read_energy_pj_per_byte": 8.0,
+    "hbm_write_energy_pj_per_byte": 10.0,
+    "source_buffer_consumer_internal_256B_beats_per_model_cycle": 1,
+    "source_buffer_cacti_proxy_node_um": 0.032,
+    "source_buffer_payload_depth_entries": 128,
+    "source_buffer_payload_width_bits": 2048,
+    "source_buffer_macro_ports": "one explicit 1RW proxy per 32KiB page buffer; S2 overlap uses separate fill and consume buffers, not a multiport macro claim"
+  },
+  "profiles": [
+    {
+      "profile_id": "primary_256B_per_model_cycle",
+      "role": "primary declared payload-service proxy",
+      "sustained_modeled_hbm_transfer_transactions_per_cycle": 4
+    },
+    {
+      "profile_id": "sensitivity_128B_per_model_cycle",
+      "role": "one-factor sustainable-HBM-bandwidth sensitivity; all other common fields are identical to primary",
+      "sustained_modeled_hbm_transfer_transactions_per_cycle": 2
+    }
+  ],
+  "sensitivity_rule": "The second profile may differ from primary only in sustained_modeled_hbm_transfer_transactions_per_cycle."
+}
