@@ -201,7 +201,7 @@ def verify_a4133(report: dict[str, Any], workload: str, groups: list[dict[str, A
     old_packed = prior["all_observed_phases_aggregate"]["route_a_packed_legal_gqa_reuse"]
     if full["legal_gqa_groups"] != old_full["legal_gqa_reference_attention_groups"] or full["action_counts"]["full_kv_payload_fill_actions"] != old_full["page_fetches"] or full["total_internal_interface_beats"] != old_full["declared_256B_transfer_beats"]:
         raise ValueError(f"{workload}: Full-KV action interface does not reproduce A4.13.3")
-    if packed["legal_gqa_groups"] != old_packed["reference_attention_evaluations"] or packed["action_counts"]["packed_payload_fill_actions"] != old_packed["page_fetches"] or packed["total_internal_interface_beats"] != old_packed["declared_256B_transfer_beats"]:
+    if packed["legal_gqa_groups"] != old_packed["legal_gqa_reference_attention_groups"] or packed["action_counts"]["packed_payload_fill_actions"] != old_packed["page_fetches"] or packed["total_internal_interface_beats"] != old_packed["declared_256B_transfer_beats"]:
         raise ValueError(f"{workload}: Route-A action interface does not reproduce A4.13.3")
 
 
@@ -328,4 +328,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

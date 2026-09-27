@@ -6,6 +6,7 @@ from tools.analyze_kvzap_route_a4134_page_source_reuse_interface import (
     blank_actions,
     frozen_interface,
     summarize,
+    verify_a4133,
 )
 
 
@@ -56,3 +57,26 @@ def test_interface_keeps_256b_internal_and_partial_state_pipeline_local():
     assert interface["partial_state"]["logical_placement"] == "pipeline-local from source initialization through final online merge"
     assert interface["partial_state"]["four_query_head_interface_bytes_if_fp32"] == PARTIAL_STATE_BYTES_FP32
     assert interface["internal_unit"]["sidecar_beats"] == SIDECAR_BYTES_PER_PAGE // 256
+
+
+def test_a4133_compatibility_guard_uses_current_legal_group_field_name():
+    groups = [event(0)]
+    full, packed = summarize(groups, packed=False), summarize(groups, packed=True)
+    report = {
+        "workload_rows": [{
+            "workload": "retrieval",
+            "all_observed_phases_aggregate": {
+                "fair_full_kv_legal_gqa_reuse": {
+                    "legal_gqa_reference_attention_groups": full["legal_gqa_groups"],
+                    "page_fetches": full["action_counts"]["full_kv_payload_fill_actions"],
+                    "declared_256B_transfer_beats": full["total_internal_interface_beats"],
+                },
+                "route_a_packed_legal_gqa_reuse": {
+                    "legal_gqa_reference_attention_groups": packed["legal_gqa_groups"],
+                    "page_fetches": packed["action_counts"]["packed_payload_fill_actions"],
+                    "declared_256B_transfer_beats": packed["total_internal_interface_beats"],
+                },
+            },
+        }],
+    }
+    verify_a4133(report, "retrieval", groups)
