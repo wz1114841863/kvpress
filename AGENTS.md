@@ -120,6 +120,25 @@ Route A 的 go/no-go 问题为：
 3. metadata、admission、scheduler 与 merge 开销后，net traffic 和 modeled latency
    是否仍显著优于 Full KV。
 
+### 1.6 Route-A A4 研究性 DSE 收口（2026-09-28）
+
+A4.11 已在 Qwen3-8B retrieval、summarization、reasoning 三个固定 workload 上通过
+external-storage Route-A 的 exact-token 与 prefill-armed lifecycle binding；A4.12--A4.13
+随后把已冻结的 metadata/control 与 packed-KV payload 分别推进到 public-CACTI proxy 和
+declared HBM/source-buffer service accounting。A4.14.0 将同一 lifecycle 映射到固定
+`HA8-wide + record-granular + local32/shared256/staging512` M2 metadata replay，三个
+workload 均无损 drain。
+
+最终 A4.14.1 报告
+`analysis/experiments/route_a4141_accounted_net_benefit_ledger_01/`
+（report SHA-256
+`0f43ec6dc30912210e4c565ebdd57554b02b7ca3f22326a498924e4cf1f2fdcb`）在公平 legal-GQA
+Full-KV 对照下通过 2x HBM engineering margin，并给出正的 differential omitted-cost
+budget。它授权**进入 architecture specification 编写**，不授权 RTL、PDK/PPA、真实 HBM
+controller、实测 speedup 或完整芯片结论。不得因为任何 proxy 结果不好看而回到 A4.8--A4.11
+改变 pruning、admission、queue、execution granularity、scheduler 或 atomic commit 语义；
+也不再增加 A4.14.x DSE 变体。
+
 ## 2. 研究边界
 
 ### 当前应做
@@ -460,10 +479,13 @@ results/
 9. **A3.20 状态**：短输出亏损机制已有 A3.15 反例与 A3.20 activation-dip/recovery
    曲线支持；除非目标是估计真实请求分布的风险比例，不再以寻找更多亏损长度为主线。
    Full-KV bypass 是严格性能安全对照，deferred admission 只能标为语义安全的投机策略。
-10. **当前主线 A4**：先实现 policy-on、语义校验的 packed-cold + pending-staging
-    attention reference（A4.0），再采集 allocator/profiler/runtime 的实际软件测量（A4.1），
-    最后收束 FIFO/page/bank/merge/scheduler/bypass 资源合同（A4.2）。contract 是可选软件
-    控制面接口，而不是隐含长度预测器。
-11. **RTL gate**：仅当 A4 同时验证语义、实测趋势、Full-KV fallback/control 以及跨模型/
-    workload 的稳定资源合同后，才冻结 architecture spec 并考虑 RTL。
+10. **已完成 A4 研究性 DSE**：A4.11 external-storage semantic/lifecycle binding、A4.12
+    metadata/control proxy、A4.13 packed-payload HBM/source-buffer accounting、A4.14
+    workload-aligned partial/final ledger 均已收口。唯一当前入口是 A4.14.1 的 conditional
+    architecture-spec disposition；它保留 Full-KV protection、same-mask dense comparator 和
+    所有冻结语义合同。
+11. **当前阶段是 architecture specification，不是 RTL**：规格必须显式处理共同 S2
+    infrastructure、Route-A M2/P3/packed-page/merge 增量模块、omitted-cost budget、未建立的
+    common clock/overlap 关系与仍未估能模块。只有规格冻结并为必要模块建立实现级接口、目标
+    macro/controller 假设和验证计划后，才单独重新评估 RTL gate。
 12. 任何会改变 mask 的结构化策略都必须回到独立精度评测，不能由 trace 直接推断准确率。

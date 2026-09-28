@@ -19,6 +19,25 @@ The current main hypothesis is:
 
 > KVzap's token-level pruning lacks sufficient regularity for direct coarse-grained block mapping, but the retained KV entries can be reorganized with very low capacity loss into per-head packed fixed-size pages. A dedicated architecture can therefore preserve the original pruning decisions while using streaming admission, variable-length page management, and load-balanced attention scheduling to convert logical compression into physical memory, bandwidth, and throughput gains.
 
+### 1.1 Current Route-A status (2026-09-28)
+
+The exploratory DSE described below has now closed through A4.14.1.  The
+accepted path is not “put all KV in SRAM”: it is HBM-resident packed cold KV,
+small on-chip staging/source buffering, legal GQA page reuse, and multi-source
+attention merge.  The frozen logical metadata service contract is HA8-wide,
+record-granular, `local32/shared256/staging512`; it remains a service contract,
+not a preselected SRAM port count or macro implementation.
+
+The final A4.14.1 ledger (`report SHA-256`
+`0f43ec6dc30912210e4c565ebdd57554b02b7ca3f22326a498924e4cf1f2fdcb`) shows,
+for the covered Qwen3-8B retrieval/summarization/reasoning workloads, fair
+legal-GQA HBM-byte reductions of `3.06x/3.20x/4.30x` including P3 admission.
+It has a conditional disposition to write an architecture specification.  The
+qualification matters: HBM service cycles are declared target-profile
+coordinates; CACTI is a public proxy; P3 macro/energy, queue/staging activity,
+partial merge, controller/interconnect and physical implementation remain
+unestimated.  No RTL or PPA claim follows.
+
 ---
 
 ## 2. Research Scope
@@ -967,6 +986,11 @@ It should define:
 - timing assumptions;
 - expected bandwidth;
 - PE interface.
+
+For the current Route-A entry, additionally preserve the A4.14.1 common versus
+incremental cost split, differential omitted-cost budget, separate metadata and
+payload service coordinates, and the rule that payload-dependent pointer widths
+remain parameters until a payload address-space realization is selected.
 
 ### Phase 8 — Implement RTL
 

@@ -22,6 +22,14 @@ The key design claim is conditional and must be tested, not assumed: packed
 per-head cold pages may retain KVzap's logical compression while converting it
 into physical capacity, traffic, and decode-performance benefit.
 
+### 2026-09-28 current completion status
+
+The historical A0--A3 and A4.0--A4.10 plans below remain provenance.  Their
+open-ended next-step language is superseded by the completed A4.11--A4.14
+closure recorded at the end of this document.  Route A is now authorized to
+write an architecture specification, not to begin RTL or relabel public-CACTI
+or declared HBM profiles as measured hardware evidence.
+
 ### 2026-09-02 staged status (A0--A3.19)
 
 `analysis/route_a_stage_archive_20260902.md` is the current consolidated
@@ -2641,3 +2649,50 @@ overflow, and finite local/shared staging with lossless credit. Report
 occupancy, skew, stranded capacity, shared/staging use, declared bits,
 backpressure, held work, residual, drain, and Llama reasoning separately.
 Full-KV is a protection classification, not a default queue remedy.
+
+### A4.11--A4.14 completed software-to-hardware evidence closure
+
+The following stages are closed research DSE gates, not an invitation to add
+new queue, execution, scheduler, payload, or pruning variants:
+
+1. **A4.11 / A4.11.2b — external-storage semantic and lifecycle binding.**
+   The Qwen3-8B Route-A external-cold backend, not the earlier policy reference,
+   passed exact generated-token digest guards against same-mask dense and
+   trace-off Route-A.  Prefill-armed scalar lifecycle events were bound to the
+   fixed token-to-span/group conversion.  Software observes maturity, pending,
+   packed pages and scalar final state; ready groups, micro-op completion,
+   physical commit, ports, and credit latency remain hardware-model fields.
+2. **A4.12 — metadata/control cost closure.**  The frozen logical contract is
+   HA8-wide record-granular execution with `local32/shared256/staging512`.
+   M1 unified 1RW is rejected; M2 replicated/duplicated control storage is the
+   complete public-CACTI proxy candidate; M3 register cost is unestimated.
+   A4.14.0 replayed only M2 on the same three external-storage workloads and
+   drained losslessly without changing the single commit boundary, FIFO,
+   ownership, or credit semantics.  Metadata service coordinates are not a
+   shared clock or additive latency with payload service.
+3. **A4.13 — HBM-resident packed payload closure.**  The fixed 64-token,
+   32-KiB packed page and two 32-KiB ping-pong source buffers implement the
+   declared GQA reuse boundary: one legal K/V fetch serves four query heads.
+   Full-KV and Route-A both receive that same legal reuse.  P3 is a fixed
+   1,179,648-B staging envelope, not a demonstrated SRAM implementation.
+4. **A4.14 — evidence-classified final ledger.**  A4.14.1 binds A4.13.1,
+   A4.13.3, A4.13.5 and A4.14.0.  It separates common S2 fixed area from
+   Route-A M2 fixed area and workload-dependent activity; it keeps P3,
+   queue/staging dynamic access, sidecar/merge/partial state, controller,
+   interconnect, clock/wire/leakage and HBM physical area explicitly
+   unestimated.  Its report SHA-256 is
+   `0f43ec6dc30912210e4c565ebdd57554b02b7ca3f22326a498924e4cf1f2fdcb`.
+
+For retrieval/summarization/reasoning, respectively, the final ledger reports
+Route-A/Full-KV resident ratios `0.323/0.313/0.228` and HBM-byte ratios
+`0.327/0.313/0.233`, including P3 admission.  Both declared target-service
+profiles retain comparable payload-service reduction.  The accounted-energy
+omitted-cost budgets are `27.646/40.498/167.442 mJ per request`; an energy
+advantage is conditional on Route-A's unestimated dynamic cost exceeding the
+Full-KV unestimated dynamic cost by less than the corresponding budget.
+
+The 2x HBM rule is an engineering margin, not a natural-law threshold.  A pass
+means the next artifact is an architecture specification that records exact
+interfaces, physical realization assumptions and unresolved-cost validation;
+it does not establish PPA, native HBM transactions, controller timing, measured
+speedup, a complete architecture freeze, or RTL authorization.

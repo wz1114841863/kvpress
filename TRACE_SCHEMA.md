@@ -1563,6 +1563,74 @@ separate report fields. Per-access energy is retained only as a later A4.12.2
 input; A4.12.1 reports no workload energy, cycle, throughput, architecture, or
 RTL result.
 
+### Route-A A4.12.2/A4.12.3 metadata service and partial ledger
+
+`kvzap-route-a4122-metadata-cycle-energy-1.0` binds the frozen A4.12.0
+inventory and A4.12.1 macro envelope, then evaluates only their declared M1,
+M2 and M3 realization assumptions.  It separates single-operation latency,
+sustained issue rate, bank/RMW utilization, queue residence and commit
+throughput.  The corrected closure removes an unintended global commit-slot
+serialization; it does not change the A4.7.1 atomic commit boundary.  M1 is
+rejected, M2 is the complete SRAM-proxy candidate, and M3 remains incomplete
+where register cost is unestimated.  Its cycles and CACTI pJ/access products
+are declared/public-proxy quantities, never timing, PPA, physical FIFO depth,
+architecture, or RTL evidence.
+
+`kvzap-route-a4123-metadata-partial-ledger-1.0` binds A4.11.2b, A4.12.0,
+A4.12.1 and A4.12.2.  It retains M1 as rejected and M3 as unestimated, joins
+logical potential to M2 proxy cost without numerically pairing mismatched
+workloads, and explicitly defers payload traffic and Route-A net benefit to
+A4.13/A4.14.
+
+### Route-A A4.13 packed-payload realization sequence
+
+`kvzap-route-a4130-payload-interface-inventory-1.0` freezes the payload-side
+interface parameters without changing the A4.10 metadata contract.
+`kvzap-route-a4131-payload-organization-envelope-1.0` binds the external
+storage lifecycle and compares only the fixed P2/P3 organization envelopes;
+P3 is a 1,179,648-B staging envelope, not an SRAM macro result.
+`kvzap-route-a4132-packed-cold-hbm-traffic-1.0` maps the fixed lifecycle/page
+state to three accounting baselines: Full-KV without reuse, packed without
+reuse, and packed with legal GQA reuse.  Its 256-B unit is an internal
+accounting sector, not an HBM protocol transaction.
+
+`kvzap-route-a4133-packed-kv-hbm-realization-1.0` adds the fair baseline that
+also grants Full-KV the same legal GQA reuse.  `kvzap-route-a4134-page-source-
+reuse-interface-1.0` freezes the 64-token/32-KiB page-source-buffer contract,
+four query-head consumers, online partial state and the conditional ping-pong
+rule `T_consume >= T_fill`.  `kvzap-route-a4135-target-payload-service-cost-1.0`
+then applies exactly one primary and one sustainable-bandwidth sensitivity
+target profile, plus public-CACTI source-buffer proxies.  These schemas report
+deterministic accounting and declared service/energy coordinates only; they do
+not measure HBM transactions, controller timing, native burst behavior, PPA,
+architecture, or RTL.
+
+### Route-A A4.14 workload-aligned ledger closure
+
+`kvzap-route-a4140-workload-aligned-metadata-cost-1.0` SHA-256 binds A4.11.2b,
+A4.12.0--A4.12.2 and A4.10.  It converts the exact external-storage lifecycle
+to fixed token/span transaction groups, replays only complete M2 under the
+fixed HA8-wide record-granular local32/shared256/staging512 contract, and
+requires lossless drain.  Lifecycle maturity is direct software observation;
+token-to-span conversion is deterministic; bank/queue/service fields are
+declared model values.  Its M2 fixed area is provisioned once and its reported
+dynamic energy covers only explicit head/span control entries, not pooled
+queue/staging access energy.
+
+`kvzap-route-a4141-accounted-net-benefit-ledger-1.0` SHA-256 binds the accepted
+A4.13.1, A4.13.3, A4.13.5 and A4.14.0 reports.  It requires the same
+workload-manifest binding, fair legal-GQA Full-KV/Route-A paths, separate
+metadata/payload service coordinates, exact final packed publication, and
+absolute/per-position/relative reporting.  Fixed S2 source-buffer area is
+common infrastructure; M2 is Route-A-specific fixed provision; P3 staging,
+queue/staging dynamic accesses, sidecar/page management, partial merge,
+controller/interconnect and physical implementation terms remain unestimated.
+
+The report's conditional disposition is governed by the engineering 2x HBM
+margin and the differential omitted-cost budget.  It is not a claim that
+unestimated cost is zero, a measured-energy/latency/PPA result, an architecture
+freeze, or RTL authorization.
+
 ### Route-A A4.8.1a causal readiness and root-cause propagation audit
 
 `kvzap-route-a481a-readiness-root-cause-1.0` hash-binds the completed A4.8.0

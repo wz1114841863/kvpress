@@ -72,6 +72,29 @@ wall-clock 或通用加速结论。无可信 continuation 信息时，Full-KV by
 predictor-only prefill trace 只能先支持静态 packing 和 scheduler DSE；admission
 break-even 与实测 end-to-end 仍需要后续安全的 decode-lifecycle trace 或独立测量。
 
+### A4 研究性 DSE 收口（2026-09-28）
+
+上述 2026-09-02 A0--A3 交接仍是历史入口；其后 A4.11--A4.14 已完成，不应再把
+“尚待 lifecycle/traffic 绑定”当作当前状态。Qwen3-8B 的 retrieval、summarization、
+reasoning 三个固定 workload 已在 external-storage Route-A backend 上通过 trace-off/
+trace-on 与 same-mask dense 的 exact generated-token digest guards，并由 prefill-armed
+lifecycle recorder 绑定到固定 A4.10 contract。
+
+研究性硬件证据的最终入口是
+`analysis/experiments/route_a4141_accounted_net_benefit_ledger_01/`
+（report SHA-256
+`0f43ec6dc30912210e4c565ebdd57554b02b7ca3f22326a498924e4cf1f2fdcb`）。在相同 legal-GQA
+reuse 规则下，Route-A（含 P3 admission）相对 Full-KV 的 resident reduction 为
+`3.10x/3.20x/4.38x`，HBM-byte reduction 为 `3.06x/3.20x/4.30x`，依次对应 retrieval/
+summarization/reasoning；这些是 trace-derived/deterministic accounting 与 declared
+target-service proxy 的组合，不是实测 HBM 或 speedup。所有 workload 均通过人为设定的
+2x HBM engineering margin，且 accounted-energy ledger 留有正的 omitted-cost budget。
+
+因此下一阶段是编写 `analysis/architecture_spec.md`，冻结模块接口、共同与增量成本、
+参数化 payload pointer fields、未估成本预算和验证计划；它**不是 RTL 许可**。P3 staging
+macro/energy、M2 pooled queue/staging dynamic access、partial-softmax/merge、controller/
+interconnect/clock/wire/leakage 仍未物理化，任何结论都不能越过这些边界。
+
 ### 路线 B：无训练的结构化稀疏（冻结的备选）
 
 使用官方 score，但将原始 token-head mask 转为：

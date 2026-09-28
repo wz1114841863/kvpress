@@ -6,9 +6,11 @@ keeps future payload-path and Chisel work separate.
 
 ## Status and authority
 
-The workspace is **pre-RTL**.  It does not change KVzap pruning, admission,
-transaction semantics, A4.9.2 record-granular execution, or the A4.10
-`HA8-wide + local32/shared256/staging512` logical contract.
+The workspace is **pre-RTL**.  A4.14.1 conditionally authorizes writing an
+architecture specification; it does not authorize Chisel, RTL, PDK/PPA, native
+HBM-controller, or measured-performance claims.  It does not change KVzap
+pruning, admission, transaction semantics, A4.9.2 record-granular execution,
+or the A4.10 `HA8-wide + local32/shared256/staging512` logical contract.
 
 The frozen A4.12.0 interface table is the input authority for this workspace:
 
@@ -18,12 +20,15 @@ The frozen A4.12.0 interface table is the input authority for this workspace:
 | `local32/shared256/staging512` | A4.10/A4.12.0 | Logical lossless resource contract, not automatic 36-layer physical replication. |
 | 59/50 raw and 64/64 padded metadata accounting | A4.9.1/A4.12.0 | Semantic entry accounting; payload pointer fields remain parameters for A4.13. |
 | token-to-span/group conversion and external-storage lifecycle binding | A4.11.2b/A4.12.0 | Software/binding evidence, not hardware ready/commit activity. |
+| 64-token packed page, 32-KiB source page buffer, legal four-query-head GQA reuse | A4.13.3--A4.13.5 | Declared payload dataflow/interface, not a native HBM transaction or controller schedule. |
+| M2 metadata proxy, P3 staging envelope and A4.14.1 omitted-cost budget | A4.12/A4.14 | M2 area is public-CACTI proxy; P3 and merge/control terms remain unestimated. |
 
-`mem/` provides a reproducible public-CACTI proxy runner.  `chisel/` is a
-documented future implementation boundary only.  A4.12 CACTI area and
-per-access numbers are estimates from a public technology model; they are not
-PDK, macro-compiler, synthesis, layout, timing, throughput, workload-energy,
-architecture, or RTL evidence.
+`mem/` provides a reproducible public-CACTI proxy runner.  `chisel/` remains a
+documented future implementation boundary until an architecture specification
+is actually reviewed and frozen.  A4.12 CACTI area and per-access numbers are
+estimates from a public technology model; they are not PDK, macro-compiler,
+synthesis, layout, timing, throughput, workload-energy, architecture, or RTL
+evidence.
 
 ## Layout
 
