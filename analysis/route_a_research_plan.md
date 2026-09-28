@@ -30,6 +30,11 @@ closure recorded at the end of this document.  Route A is now authorized to
 write an architecture specification, not to begin RTL or relabel public-CACTI
 or declared HBM profiles as measured hardware evidence.
 
+The resulting pre-RTL interface boundary is `analysis/architecture_spec.md`.
+It records frozen semantics, common versus incremental infrastructure,
+parameterized realization fields, omitted costs, and the separate RTL gate;
+it does not create an additional A4 DSE branch.
+
 ### 2026-09-02 staged status (A0--A3.19)
 
 `analysis/route_a_stage_archive_20260902.md` is the current consolidated

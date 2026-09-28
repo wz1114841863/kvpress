@@ -30,6 +30,12 @@ estimates from a public technology model; they are not PDK, macro-compiler,
 synthesis, layout, timing, throughput, workload-energy, architecture, or RTL
 evidence.
 
+The reviewed pre-RTL interface boundary is `analysis/architecture_spec.md`.
+It defines the common S2 versus Route-A incremental split, M2/P3/page/merge
+interfaces, parameterized realization fields, omitted costs, and the separate
+RTL gate.  It does not select a production macro, controller, clock, or RTL
+implementation.
+
 ## Layout
 
 ```text

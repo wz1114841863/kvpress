@@ -95,6 +95,9 @@ target-service proxy 的组合，不是实测 HBM 或 speedup。所有 workload 
 macro/energy、M2 pooled queue/staging dynamic access、partial-softmax/merge、controller/
 interconnect/clock/wire/leakage 仍未物理化，任何结论都不能越过这些边界。
 
+预 RTL 的接口与实现边界见 `analysis/architecture_spec.md`；其内容不替代上述冻结证据，
+也不构成新的 A4 DSE 或 RTL gate。
+
 ### 路线 B：无训练的结构化稀疏（冻结的备选）
 
 使用官方 score，但将原始 token-head mask 转为：

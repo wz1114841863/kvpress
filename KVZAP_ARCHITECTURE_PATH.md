@@ -38,6 +38,11 @@ coordinates; CACTI is a public proxy; P3 macro/energy, queue/staging activity,
 partial merge, controller/interconnect and physical implementation remain
 unestimated.  No RTL or PPA claim follows.
 
+The reviewed pre-RTL interface boundary is `analysis/architecture_spec.md`.
+It preserves this document's historical research path while recording the
+current common-versus-incremental split, parameterized payload realization,
+unestimated-cost budget, and separate RTL gate.
+
 ---
 
 ## 2. Research Scope
