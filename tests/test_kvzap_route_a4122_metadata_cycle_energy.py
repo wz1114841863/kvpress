@@ -1,6 +1,7 @@
 from collections import Counter
 
-from tools.simulate_kvzap_route_a4122_metadata_cycle_energy import access_plan, can_use, commit_ready_groups, duration, resource_capacities
+from tools.analyze_kvzap_route_a480_commit_aware_backlog import ScheduledTransaction
+from tools.simulate_kvzap_route_a4122_metadata_cycle_energy import access_plan, can_use, commit_ready_groups, duration, replay, resource_capacities
 from tools.simulate_kvzap_route_a492_record_granular_engine import MicroOp
 
 
@@ -38,3 +39,24 @@ def test_frozen_ha8_wide_commit_gate_does_not_add_a_global_serial_slot():
     completed = {0: {member("head_control")}, 1: {member("span_owner")}}
     members = {0: (member("head_control"),), 1: (member("span_owner"),)}
     assert commit_ready_groups({0, 1}, completed, members, tx, set()) == [0, 1]
+
+
+def test_replay_reports_declared_queue_high_water_without_changing_drain():
+    head = MicroOp(0, ("head_control", (0, 0)), 0, "rmw")
+    span = MicroOp(0, ("span_owner", (0, 0, 0)), 0, "rmw")
+    transaction = ScheduledTransaction(
+        index=0, phase="test", checkpoint=0, layer=0, head=0,
+        arrival_ordinal=0, predecessors=frozenset(),
+        demands=Counter((item.bank, item.operation) for item in (head, span)),
+        banks=frozenset({0}),
+    )
+    macros = {
+        "replicated_head_control": {"dynamic_read_energy_pj": 1.0, "dynamic_write_energy_pj": 1.0},
+        "span_owner_primary": {"dynamic_read_energy_pj": 1.0, "dynamic_write_energy_pj": 1.0},
+    }
+    result = replay([transaction], [("test", 0)], {0: (head, span)}, "M2_replicated_or_duplicated_control_storage", macros, 8)
+    assert result["drained_within_declared_bound"] is True
+    high_water = result["declared_queue_high_water_transaction_groups"]
+    assert high_water["local_per_bank"]["0"] == 1
+    assert high_water["shared_per_layer"]["0"] == 0
+    assert high_water["boundary"].startswith("Post-arrival/pre-service")

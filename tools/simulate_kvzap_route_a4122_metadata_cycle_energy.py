@@ -169,6 +169,17 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
     local_count: Counter[int] = Counter(); shared_count: Counter[int] = Counter(); staging_count: Counter[int] = Counter(); held_count: Counter[int] = Counter()
     layers = sorted({tx.layer for tx in transactions}); first_start: dict[int, int] = {}; commit_tick: dict[int, int] = {}; member_done_tick: dict[int, int] = {}
     reasons: Counter[str] = Counter(); access_counts: dict[str, Counter[str]] = defaultdict(Counter); committed_per_tick: list[int] = []; issue_per_tick: list[int] = []; occupancy: Counter[tuple[int, str]] = Counter(); local_samples: list[list[int]] = [[] for _ in range(BANKS)]
+    # These are declared transaction-group state samples, not physical FIFO
+    # measurements.  Keep them alongside the existing local samples so a later
+    # workload-aligned replay can report whether the frozen lossless contract
+    # actually used its shared/staging/held tiers without changing arbitration.
+    shared_peaks: Counter[int] = Counter(); staging_peaks: Counter[int] = Counter(); held_peaks: Counter[int] = Counter(); local_peaks: Counter[int] = Counter()
+    def sample_queue_high_water() -> None:
+        for bank in range(BANKS): local_peaks[bank] = max(local_peaks[bank], local_count[bank])
+        for layer in layers:
+            shared_peaks[layer] = max(shared_peaks[layer], shared_count[layer])
+            staging_peaks[layer] = max(staging_peaks[layer], staging_count[layer])
+            held_peaks[layer] = max(held_peaks[layer], held_count[layer])
     tick = 0; last = len(opportunities) - 1
     def can_local(index: int) -> bool: return all(local_count[b] < LOCAL_CAPACITY for b in transactions[index].banks)
     def put_local(index: int) -> None:
@@ -216,6 +227,10 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
         committed_per_tick.append(committed_now)
         advance()
         for index in arrivals.get(tick, []): arrive(index)
+        # Sample immediately after the fixed arrival/credit decision and before
+        # work is issued.  This preserves a lossless admission high-watermark
+        # even when ``advance`` can immediately promote a queue member.
+        sample_queue_high_water()
         advance()
         busy: Counter[tuple[int, str]] = Counter(resource for item in active for resource in item.resources)
         issued = 0
@@ -234,6 +249,7 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
                 active.append(Active(tick + duration(member.operation), member, resources)); busy.update(resources); issued += 1
         for resource, count in busy.items(): occupancy[resource] += count
         for bank in range(BANKS): local_samples[bank].append(local_count[bank])
+        sample_queue_high_water()
         issue_per_tick.append(issued); tick += 1
     if any(owner in committed for owner in locks.values()): raise AssertionError("committed group retained a lock")
     if any(i in committed and any(parent not in committed or commit_tick[parent] > commit_tick[i] for parent in transactions[i].predecessors) for i in committed): raise AssertionError("dependency released before commit")
@@ -250,7 +266,9 @@ def replay(transactions: list[Any], opportunities: list[tuple[str, int]], member
         "bank_service_utilization":{"busy_resource_slot_cycles":sum(occupancy.values()),"available_resource_slot_cycles":slots*tick,"fraction":sum(occupancy.values())/(slots*tick) if tick else 0.0,"per_resource_slot_cycles":{f"bank{b}_{r}":occupancy[(b,r)] for b in range(BANKS) for r in capacities}},
         "queue_residence_service_model_cycles":{"first_micro_op_delay":summary([first_start[i]-transactions[i].arrival_ordinal for i in first_start]),"commit_delay":summary([commit_tick[i]-transactions[i].arrival_ordinal for i in commit_tick]),"member_done_to_commit_wait":summary([commit_tick[i]-member_done_tick[i] for i in commit_tick])},
         "semantic_commit_publication_groups_per_service_cycle":{"committed_groups":sum(committed_per_tick),"average":sum(committed_per_tick)/tick if tick else 0.0,"peak":max(committed_per_tick,default=0),"boundary":"Observed frozen semantic publication rate only; A4.12.2 does not infer a physical commit controller or commit-port throughput."},
-        "per_bank_local_occupancy":{str(b):summary(values) for b,values in enumerate(local_samples)}, "trace_end_residual_backlog":len(local)+len(active_groups)+sum(map(len,shared.values()))+sum(map(len,staging.values()))+sum(map(len,held.values()))+len(active),
+        "per_bank_local_occupancy":{str(b):summary(values) for b,values in enumerate(local_samples)},
+        "declared_queue_high_water_transaction_groups":{"local_per_bank":{str(bank):local_peaks[bank] for bank in range(BANKS)},"shared_per_layer":{str(layer):shared_peaks[layer] for layer in layers},"staging_per_layer":{str(layer):staging_peaks[layer] for layer in layers},"held_per_layer":{str(layer):held_peaks[layer] for layer in layers},"boundary":"Post-arrival/pre-service and post-service maxima in the frozen lossless declared replay; not physical FIFO occupancy or provisioned SRAM depth."},
+        "trace_end_residual_backlog":len(local)+len(active_groups)+sum(map(len,shared.values()))+sum(map(len,staging.values()))+sum(map(len,held.values()))+len(active),
         "blocking_observation_counts":dict(reasons), "macro_access_and_estimated_sram_dynamic_energy":estimate, "estimated_sram_dynamic_energy_pj_excluding_unestimated_registers":total_pj,
         "boundary":"Service cycles and resource slots are declared A4.12.2 model coordinates, not measured timing, a selected macro port count, throughput, PDK, layout, RTL, or architecture evidence. The sole frozen semantic commit boundary is preserved without inventing a physical global commit controller. CACTI energy is estimated only from counted SRAM accesses and excludes unestimated registers and all controller/payload costs."}
 
