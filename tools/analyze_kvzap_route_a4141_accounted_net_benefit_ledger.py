@@ -132,11 +132,28 @@ def logical_cold(a4140: dict[str, Any], workload: str) -> dict[str, Any]:
     }
 
 
+def inferred_trace_end_pending_residual(lifecycle: dict[str, Any], workload: str) -> int:
+    """Prove final packed publication instead of inventing a missing trace field.
+
+    A4.13.1 reports the total admitted retained tokens and its final packed
+    state, but does not expose a field literally named ``trace_end_residual``.
+    Equality is therefore a deterministic finalization check: every admitted
+    retained token is published in a packed page and no logical pending token
+    remains.  It is not claimed to be a separately instrumented event.
+    """
+    admitted = int(lifecycle["admitted_retained_tokens"])
+    packed = int(lifecycle["final_packed_state"]["packed_tokens"])
+    if packed > admitted:
+        raise ValueError(f"{workload}: packed tokens exceed admitted retained tokens")
+    return admitted - packed
+
+
 def capacity_chain(a4131_row: dict[str, Any], a4140: dict[str, Any], workload: str) -> dict[str, Any]:
     page = a4131_row["deterministic_page_accounting"]
     lifecycle = a4131_row["direct_software_lifecycle"]
-    if int(lifecycle["trace_end_residual_pending_tokens"]) != 0:
-        raise ValueError(f"{workload}: pending residual is nonzero")
+    inferred_residual = inferred_trace_end_pending_residual(lifecycle, workload)
+    if inferred_residual != 0:
+        raise ValueError(f"{workload}: final packed state leaves {inferred_residual} admitted tokens unpublished")
     packed_payload = int(page["final_packed_page_payload_capacity_bytes"])
     sidecar = int(page["final_page_slot_position_sidecar_capacity_bytes"])
     hot = LAYERS * KV_HEADS * WINDOW * KV_WORD_BYTES
@@ -150,6 +167,11 @@ def capacity_chain(a4131_row: dict[str, Any], a4140: dict[str, Any], workload: s
             "packed_payload_utilization": page["final_packed_page_payload_utilization"],
             "tail_capacity_amplification": page["final_packed_page_capacity_amplification"],
             "evidence_class": "deterministic page accounting",
+        },
+        "trace_end_finalization_check": {
+            "inferred_pending_residual_tokens": inferred_residual,
+            "basis": "A4.13.1 admitted_retained_tokens minus final_packed_state.packed_tokens; not a separately recorded trace-end event",
+            "evidence_class": "deterministic accounting over directly observed lifecycle totals",
         },
         "final_resident": {
             "full_kv_payload_bytes": full,
