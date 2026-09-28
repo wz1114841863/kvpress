@@ -1,8 +1,9 @@
-from collections import Counter
+import hashlib
 
 from tools.analyze_kvzap_route_a4140_workload_aligned_metadata_cost import (
     PAGE_TOKENS,
     reconstruct_transactions,
+    sha256_file,
 )
 
 
@@ -44,3 +45,9 @@ def test_reconstruction_rejects_a_mask_that_disagrees_with_lifecycle_counts():
         assert "reconstructed frozen-mask maturity" in str(error)
     else:
         raise AssertionError("mismatched frozen-mask reconstruction was accepted")
+
+
+def test_imported_hash_function_is_available_to_exact_input_validation(tmp_path):
+    path = tmp_path / "artifact.json"
+    path.write_text("{}", encoding="utf-8")
+    assert sha256_file(path) == hashlib.sha256(b"{}").hexdigest()

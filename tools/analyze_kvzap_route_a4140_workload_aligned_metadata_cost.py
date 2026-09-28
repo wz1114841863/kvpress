@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from kvpress.route_a_replay import REPLAY_SOURCE_SCHEMA, load_replay_events, sha256_file as replay_sha256_file
+from kvpress.route_a_replay import REPLAY_SOURCE_SCHEMA, load_replay_events, sha256_file
 from tools.analyze_kvzap_route_a4721_metadata_physical_dse import bank_index
 from tools.export_kvzap_predictor_trace import get_git_commit, stable_hash
 from tools.simulate_kvzap_route_a410_queue_contract import LOCAL_CAPACITY, SHARED_CAPACITY, STAGING_CAPACITY
@@ -112,7 +112,7 @@ def replay_source(manifest: dict[str, Any]) -> dict[int, dict[tuple[int, int], t
     if source.get("schema_version") != REPLAY_SOURCE_SCHEMA or source.get("status") != "complete":
         raise ValueError("replay source is incomplete or schema-incompatible")
     event_path = source_dir / str(source.get("event_file", ""))
-    if replay_sha256_file(event_path) != source.get("event_file_sha256"):
+    if sha256_file(event_path) != source.get("event_file_sha256"):
         raise ValueError("replay event source SHA-256 mismatch")
     events = load_replay_events(event_path)
     if set(events) != set(range(36)) or sum(len(rows) for rows in events.values()) != source.get("event_count"):
