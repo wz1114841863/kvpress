@@ -2732,3 +2732,14 @@ exact hash/test binding is in `analysis/rtl_entry_hierarchy_owner_provenance_fre
 The next Gate-RTL0 step is complete port/parameter binding and
 manifest-to-Markdown consistency checking; it must preserve the frozen owner
 split and remains outside timing, controller, PPA, and performance work.
+
+### 2026-09-29 Gate-RTL0.2 port/parameter closure
+
+Gate-RTL0.2 now binds 21 cross-owner logical bundle ports in
+`analysis/rtl_entry_interface_manifest.json`.  The manifest is checked against
+the marked review matrix in `analysis/rtl_entry_port_parameter_contract.md`;
+unknown source paths and any matrix drift are preflight failures.  Exact anchor
+fields retain their cited widths, while opaque/control/controller fields remain
+symbolic parameters.  This is still no RTL and no timing/PPA/controller claim.
+The next task is the assumption/guarantee assertion traceability matrix,
+reference-scoreboard ownership plan, and directed/random/coverage planning.

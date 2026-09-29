@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from kvpress.rtl_entry_manifest import RTLEntryManifestError, load_manifest, validate_manifest
+from kvpress.rtl_entry_manifest import RTLEntryManifestError, load_manifest, validate_manifest, validate_markdown_matrix
 
 
 def parse_args() -> argparse.Namespace:
@@ -22,7 +22,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--require-interface-signals",
         action="store_true",
-        help="Require nonempty full port records; not valid for the hierarchy-only first step.",
+        help="Require the complete ports-bound manifest state.",
+    )
+    parser.add_argument(
+        "--markdown-matrix",
+        type=Path,
+        default=Path("analysis/rtl_entry_port_parameter_contract.md"),
+        help="Reviewed Markdown port matrix to compare when ports are bound (default: %(default)s).",
     )
     return parser.parse_args()
 
@@ -30,7 +36,10 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
-        validate_manifest(load_manifest(args.manifest), require_interface_signals=args.require_interface_signals)
+        manifest = load_manifest(args.manifest)
+        validate_manifest(manifest, require_interface_signals=args.require_interface_signals)
+        if manifest["status"] != "hierarchy_owner_frozen_ports_pending":
+            validate_markdown_matrix(manifest, args.markdown_matrix)
     except (OSError, ValueError, RTLEntryManifestError) as error:
         raise SystemExit(f"manifest validation failed: {error}") from error
     print(f"Gate-RTL0 hierarchy/owner manifest passed: {args.manifest}")

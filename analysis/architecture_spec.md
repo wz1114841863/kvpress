@@ -844,6 +844,21 @@ resource.  It intentionally has no signal records yet:
 later full per-port manifest without renaming or reassigning owners.  This
 closure is not synthesizable RTL or an RTL-correctness claim.
 
+#### Gate-RTL0.2 — logical bundle-port and parameter closure
+
+Gate-RTL0.2 is complete.  `analysis/rtl_entry_interface_manifest.json` now
+binds the frozen hierarchy to 21 cross-owner logical bundle ports, each with
+both endpoint names, direction, clock/reset, ready/valid handshake, field
+width/provenance, applicability, and contract reference.  The human-review
+matrix is `analysis/rtl_entry_port_parameter_contract.md`; the no-model
+preflight rejects a missing/unknown parameter source or any byte-level drift
+between its marked matrix and the manifest.  Bundle records are interface
+planning vocabulary, not physical aggregate-wire, HBM, SRAM, controller, or
+numeric-pipeline choices.  The next Gate-RTL0 work is the separate
+assumption/guarantee assertion traceability and scoreboard/coverage plan.  The
+hash binding and exact no-model result are frozen in
+`analysis/rtl_entry_port_parameter_provenance_freeze.md`.
+
 ### Gate B _ post-RTL implementation validation
 
 Gate B follows RTL and implementation work.  It requires macro mapping,

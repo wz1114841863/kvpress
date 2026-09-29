@@ -14,6 +14,8 @@ from typing import Any
 
 MANIFEST_SCHEMA = "kvzap-route-a-rtl-entry-interface-manifest-1.0"
 HIERARCHY_OWNER_STATUS = "hierarchy_owner_frozen_ports_pending"
+PORTS_BOUND_STATUS = "ports_parameter_bound_markdown_consistent"
+PORTS_BOUND_INTERFACE_STATUS = "complete_gate_rtl0_step_2"
 REQUIRED_SIGNAL_FIELDS = frozenset(
     {
         "module",
@@ -57,6 +59,33 @@ REQUIRED_OWNER_RESOURCES = frozenset(
         "global_retirement_acceptance_and_drain_ack",
     }
 )
+REQUIRED_PORT_RECORD_IDS = frozenset(
+    {
+        "if_frontend_lifecycle_req",
+        "if_runtime_retire_req",
+        "if_lifecycle_terminal_rsp",
+        "if_lifecycle_retire_ack",
+        "if_lifecycle_component_status",
+        "if_lifecycle_hot_control",
+        "if_lifecycle_s2_control",
+        "if_lifecycle_direct_pending_open",
+        "if_source_partial_to_merge",
+        "if_merge_source_commit",
+        "if_lifecycle_merge_req",
+        "if_merge_lifecycle_rsp",
+        "if_source_candidate_to_r2",
+        "if_r2_core_mem_req",
+        "if_r1_core_mem_rsp",
+        "if_r1_external_memory",
+        "if_r2_source_delivery",
+        "if_lifecycle_publish_req",
+        "if_r3_r5_publish_visibility",
+        "if_r5_r3_publish_ready",
+        "if_r3_lifecycle_publish_ack",
+    }
+)
+MATRIX_BEGIN = "<!-- BEGIN RTL_ENTRY_INTERFACE_MATRIX -->"
+MATRIX_END = "<!-- END RTL_ENTRY_INTERFACE_MATRIX -->"
 
 
 class RTLEntryManifestError(ValueError):
@@ -75,8 +104,9 @@ def validate_manifest(manifest: dict[str, Any], *, require_interface_signals: bo
     """Validate hierarchy/owner closure and, later, the signal-record shape."""
     if manifest.get("schema_version") != MANIFEST_SCHEMA:
         raise RTLEntryManifestError("unexpected manifest schema_version")
-    if manifest.get("status") != HIERARCHY_OWNER_STATUS:
-        raise RTLEntryManifestError("manifest status is not the Gate-RTL0.1 hierarchy/owner state")
+    status = manifest.get("status")
+    if status not in {HIERARCHY_OWNER_STATUS, PORTS_BOUND_STATUS}:
+        raise RTLEntryManifestError("unknown Gate-RTL0 manifest status")
 
     hierarchy = _object(manifest, "hierarchy")
     modules = _list(hierarchy, "modules")
@@ -135,12 +165,79 @@ def validate_manifest(manifest: dict[str, Any], *, require_interface_signals: bo
     if set(signal_fields or ()) != REQUIRED_SIGNAL_FIELDS:
         raise RTLEntryManifestError("required_signal_fields differs from the Gate-RTL0 contract")
     signals = _list(interface, "signals")
-    if require_interface_signals and not signals:
+    if status == HIERARCHY_OWNER_STATUS:
+        if signals:
+            raise RTLEntryManifestError("Gate-RTL0.1 hierarchy status requires an empty signal list")
+        if require_interface_signals:
+            raise RTLEntryManifestError("full interface validation requires a ports-bound manifest")
+        return
+    if interface.get("status") != PORTS_BOUND_INTERFACE_STATUS:
+        raise RTLEntryManifestError("ports-bound manifest has unexpected interface_records status")
+    if not signals:
         raise RTLEntryManifestError("full interface validation requires at least one signal record")
+    record_ids = _unique_strings(signals, "record_id", "port record")
+    if record_ids != REQUIRED_PORT_RECORD_IDS:
+        raise RTLEntryManifestError("ports-bound manifest does not contain the complete frozen port-record inventory")
+    known_nodes = module_names | endpoint_names
     for signal in signals:
         missing = sorted(REQUIRED_SIGNAL_FIELDS - set(signal))
         if missing:
             raise RTLEntryManifestError(f"signal record lacks required fields: {missing}")
+        for field in ("peer_port", "applicability", "contract_reference"):
+            if not isinstance(signal.get(field), str) or not signal[field]:
+                raise RTLEntryManifestError(f"signal record {signal['record_id']} lacks {field}")
+        if signal["module"] not in module_names:
+            raise RTLEntryManifestError(f"signal record {signal['record_id']} has non-DUT module")
+        if signal["producer"] not in known_nodes or signal["consumer"] not in known_nodes:
+            raise RTLEntryManifestError(f"signal record {signal['record_id']} has unknown endpoint")
+        if signal["direction"] == "output" and signal["module"] != signal["producer"]:
+            raise RTLEntryManifestError(f"output record {signal['record_id']} must name its producer module")
+        if signal["direction"] == "input" and signal["module"] != signal["consumer"]:
+            raise RTLEntryManifestError(f"input record {signal['record_id']} must name its consumer module")
+        if signal["direction"] not in {"input", "output"}:
+            raise RTLEntryManifestError(f"signal record {signal['record_id']} has unsupported direction")
+        _validate_parameter_source(signal["parameter_source"])
+        _validate_parameter_source(signal["contract_reference"])
+        fields = signal.get("fields")
+        if not isinstance(fields, list) or not fields:
+            raise RTLEntryManifestError(f"signal record {signal['record_id']} lacks fields")
+        for bundle_field in fields:
+            if not isinstance(bundle_field, dict) or not all(isinstance(bundle_field.get(key), str) and bundle_field[key] for key in ("name", "width", "parameter_source")):
+                raise RTLEntryManifestError(f"signal record {signal['record_id']} has malformed bundle field")
+            _validate_parameter_source(bundle_field["parameter_source"])
+
+
+def validate_markdown_matrix(manifest: dict[str, Any], matrix_path: str | Path) -> None:
+    """Require the reviewed Markdown matrix to exactly match manifest records."""
+    validate_manifest(manifest, require_interface_signals=True)
+    text = Path(matrix_path).read_text(encoding="utf-8")
+    if MATRIX_BEGIN not in text or MATRIX_END not in text:
+        raise RTLEntryManifestError("Markdown matrix markers are missing")
+    observed = text.split(MATRIX_BEGIN, 1)[1].split(MATRIX_END, 1)[0].strip()
+    expected = render_markdown_matrix(manifest).strip()
+    if observed != expected:
+        raise RTLEntryManifestError("Markdown interface matrix differs from manifest")
+
+
+def render_markdown_matrix(manifest: dict[str, Any]) -> str:
+    """Render the canonical review table; this is documentation, not RTL generation."""
+    rows = [
+        "| Record ID | Module.port | Direction | Producer -> consumer | Width | Clock/reset | Handshake | Parameter source | Contract reference |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    for signal in manifest["interface_records"]["signals"]:
+        rows.append(
+            "| {record_id} | {module}.{port} | {direction} | {producer} -> {consumer} | {width} | {clock} / {reset} | {handshake} | {parameter_source} | {contract_reference} |".format(**signal)
+        )
+    return "\n".join(rows)
+
+
+def _validate_parameter_source(source: str) -> None:
+    if not isinstance(source, str) or not source:
+        raise RTLEntryManifestError("parameter source must be nonempty")
+    path_text = source.split("#", 1)[0]
+    if not Path(path_text).is_file():
+        raise RTLEntryManifestError(f"parameter source does not exist: {path_text}")
 
 
 def _object(parent: dict[str, Any], key: str) -> dict[str, Any]:
