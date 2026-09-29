@@ -1,0 +1,7 @@
+# Local SBT/Scala IDE state and generated elaboration products.
+target/
+project/target/
+.bloop/
+.bsp/
+.metals/
+generated/

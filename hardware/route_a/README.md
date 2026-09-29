@@ -6,11 +6,13 @@ keeps future payload-path and Chisel work separate.
 
 ## Status and authority
 
-The workspace is **pre-RTL**.  A4.14.1 conditionally authorizes writing an
-architecture specification; it does not authorize Chisel, RTL, PDK/PPA, native
-HBM-controller, or measured-performance claims.  It does not change KVzap
-pruning, admission, transaction semantics, A4.9.2 record-granular execution,
-or the A4.10 `HA8-wide + local32/shared256/staging512` logical contract.
+The workspace has passed Gate-RTL0 and has entered the **RTL1 Chisel bootstrap**.
+`analysis/rtl1_phase_contract.md` authorizes this initial build/toolchain
+workspace and then staged control-first RTL; it does not establish functional
+RTL correctness, formal proof, PDK/PPA, native HBM-controller behavior,
+timing, or measured performance.  It does not change KVzap pruning, admission,
+transaction semantics, A4.9.2 record-granular execution, or the A4.10
+`HA8-wide + local32/shared256/staging512` logical contract.
 
 The frozen A4.12.0 interface table is the input authority for this workspace:
 
@@ -23,9 +25,9 @@ The frozen A4.12.0 interface table is the input authority for this workspace:
 | 64-token packed page, 32-KiB source page buffer, legal four-query-head GQA reuse | A4.13.3--A4.13.5 | Declared payload dataflow/interface, not a native HBM transaction or controller schedule. |
 | M2 metadata proxy, P3 staging envelope and A4.14.1 omitted-cost budget | A4.12/A4.14 | M2 area is public-CACTI proxy; P3 and merge/control terms remain unestimated. |
 
-`mem/` provides a reproducible public-CACTI proxy runner.  `chisel/` remains a
-documented future implementation boundary until an architecture specification
-is actually reviewed and frozen.  A4.12 CACTI area and per-access numbers are
+`mem/` provides a reproducible public-CACTI proxy runner.  `chisel/` is the
+isolated RTL1 build workspace; its initial smoke probe is not an architecture
+implementation.  A4.12 CACTI area and per-access numbers are
 estimates from a public technology model; they are not PDK, macro-compiler,
 synthesis, layout, timing, throughput, workload-energy, architecture, or RTL
 evidence.
@@ -41,7 +43,7 @@ implementation.
 ```text
 hardware/route_a/
   mem/                 generic MacroSpec and verified-CACTI runner
-  chisel/              future Chisel/RTL boundary; no RTL in A4.12
+  chisel/              RTL1 Chisel bootstrap and later staged RTL sources
   docs/                evidence and stage-boundary notes
 ```
 

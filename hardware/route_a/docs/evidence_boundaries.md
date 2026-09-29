@@ -51,9 +51,12 @@ clock/wire/leakage and HBM physical area remain unestimated.  Payload and
 metadata service coordinates have no shared timing/overlap model and must not
 be summed.
 
-The next artifact may freeze a reviewed architecture specification.  It may
-not silently add an A4.14 DSE variant or begin RTL until that specification
-defines the concrete implementation boundary and validation plan.
+The reviewed architecture specification and Gate-RTL0 are now complete. The
+RTL1 Chisel bootstrap may establish a pinned build environment and
+non-architectural elaboration preflight; subsequent RTL remains governed by
+`analysis/rtl1_phase_contract.md`. Neither activity may silently add an A4.14
+DSE variant, alter the frozen architecture boundary, or convert proxy evidence
+into timing/PPA/native-HBM claims.
 
 ## Non-backtracking rule
 
