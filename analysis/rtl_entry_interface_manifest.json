@@ -38,7 +38,7 @@
         "parent": "route_a_kv_subsystem_top",
         "classification": "route_a_incremental",
         "role": "Owns direct pending-delivery transport association and its stale-response exclusion.",
-        "contract_references": ["analysis/architecture_gate_a1_pending_delivery_contract.md", "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"]
+        "contract_references": ["analysis/architecture_gate_a1_pending_delivery_realization_closure.md", "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"]
       },
       {
         "name": "route_a_core_side_arbiter",
@@ -127,7 +127,7 @@
       "resource": "direct_pending_transport_association",
       "owner": "route_a_direct_pending_endpoint_v1",
       "kind": "state",
-      "contract_reference": "analysis/architecture_gate_a1_pending_delivery_contract.md",
+      "contract_reference": "analysis/architecture_gate_a1_pending_delivery_realization_closure.md",
       "transfer_boundary": "Pending delivery is direct only; stale response suppression is owned at this endpoint and cannot alter S2 state."
     },
     {
