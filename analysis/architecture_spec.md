@@ -876,6 +876,12 @@ reference in `analysis/rtl_entry_scoreboard_oracle_manifest.json`.  It freezes
 observable comparisons and prohibited semantic adapters; it does not make
 Python an RTL or numeric datapath implementation.
 
+#### Gate-RTL0.5 — final cross-artifact review
+
+Reviewer-01 PASS is recorded in `analysis/gate_rtl0_reviewer_01.md`.  It
+authorizes formal synthesizable skeleton/SVA/testbench entry only; it is not
+RTL correctness, implementation, timing, PPA, controller, or speedup evidence.
+
 ### Gate B _ post-RTL implementation validation
 
 Gate B follows RTL and implementation work.  It requires macro mapping,
