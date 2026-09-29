@@ -869,6 +869,13 @@ stale response, exactly-one terminal, and conditional progress.  It is a
 testbench/SVA planning artifact only; no SVA/RTL implementation, proof depth,
 latency, or performance result is selected.
 
+#### Gate-RTL0.4 — scoreboard-oracle closure
+
+Gate-RTL0.4 binds every RTL0.3 record to one existing Python event-level
+reference in `analysis/rtl_entry_scoreboard_oracle_manifest.json`.  It freezes
+observable comparisons and prohibited semantic adapters; it does not make
+Python an RTL or numeric datapath implementation.
+
 ### Gate B _ post-RTL implementation validation
 
 Gate B follows RTL and implementation work.  It requires macro mapping,

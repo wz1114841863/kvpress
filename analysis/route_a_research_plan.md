@@ -2751,3 +2751,9 @@ The safety/progress matrix and scoreboard ownership plan are now recorded in
 `analysis/rtl_entry_assertion_verification_contract.md`.  Progress is always
 conditioned on stated environment fairness and is not a timing claim.  The
 remaining RTL-entry work is review/closure of these artifacts, not RTL.
+
+### 2026-09-29 Gate-RTL0.4 scoreboard-oracle closure
+
+Each assertion matrix record now has one Python reference binding in
+`analysis/rtl_entry_scoreboard_oracle_manifest.json`.  This is an event-level
+golden-scoreboard plan, not RTL correctness or timing evidence.
