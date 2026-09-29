@@ -103,6 +103,10 @@ acceptance, fragment ordering, fault, backpressure, reset, epoch, and
 payload-durable-only checks.  They do not contain model/GPU execution, HBM
 commands, cycles, latency, bandwidth, controller arbitration, PPA, or RTL.
 
-R1 is a prerequisite for R2 arbitration/dependency closure.  It does not
-select R2 eligibility policy, M2/P3 wrappers, descriptor placement, numeric
-merge format, or top-level lifecycle adapter ports.
+R1 is a prerequisite for R2 arbitration/dependency closure.  Every selected
+HBM-resident object reaches the external adapter through this one core-facing
+boundary: pending payload, packed payload/sidecar, and the R5 descriptor
+region.  A descriptor maintenance line is exactly one 64-B R1 write fragment;
+its durable write completion is not metadata publication.  R1 does not select
+R2 eligibility policy, M2/P3 wrappers, descriptor placement, numeric merge
+format, or top-level lifecycle adapter ports.

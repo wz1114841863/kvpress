@@ -1,0 +1,34 @@
+# Gate-A Reviewer-02 provenance freeze
+
+## Scope
+
+This freeze binds the final Reviewer-02 architecture-contract review. It
+preserves the pre-Reviewer-02 test result and does not turn its pure-software
+evidence into a model/GPU, timing, PPA, RTL-correctness, or new-A4-DSE claim.
+
+```text
+repository: /home/wz/AI/kvpress
+branch: research/kvzap-latest
+base HEAD: 653e31b3e87ac4ca33fb1d9d686327e5c893aaaa
+review disposition: PASS — architecture contract complete; separate RTL gate may be defined
+focused no-model pytest: 76 passed in 3.79s
+```
+
+## SHA-256 bindings
+
+```text
+f904074a349d67f7735f17ac38af20ca1a9d0fb5304c3462d443edadf51e7b8d  analysis/architecture_spec.md
+c2aaeb1505b7f1d7b8a0162ea77a4c6768352bd4f8756ce5b3d5b1c8c27ff22a  analysis/architecture_gate_a_pre_reviewer_02_integration_audit.md
+9dfd637ba24921c82f6b2f447c21deb1f882b64fb8457cdd4d579b16aa15df80  analysis/architecture_gate_a_reviewer_02.md
+0817edf048f7651fdd76f3b06f28a07ecc81a8c5dd873b3e7fce83372d909aa9  analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md
+1c093357af0571c671f9fc8785c95700bb0f4b56cc911c0619db366461216f0b  analysis/architecture_gate_a_r2_arbitration_dependency_contract.md
+51d8ac6534f66742cf8f7b87a559b3b9fd31e1d82d35f22b95dd7ce5f6d68258  analysis/architecture_gate_a_r3_m2_p3_wrapper_contract.md
+068372d0dd6893a2e7ac3250c26a18f76bb5368b20700f212eea97edb6d2bd86  analysis/architecture_gate_a_r4_numeric_merge_contract.md
+964eb391d205bc4fba1962c4465df61ad29c3a3a7de9cc442e44860ba27f3849  analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md
+5d514f162b1e7926357216673d4e7ace2c3bff4f061eaedfb6d7d275769d7885  analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md
+39351be1207db8415b8d9bd654410c29e77102e1e3bdf2edc453a26e0ee49da9  kvpress/route_a_cross_closure_reference.py
+5043b2c9098b0b622502295635156b713389075b14ed898431c962c7ebe72a8c  tests/test_route_a_cross_closure_reference.py
+```
+
+The complete R1–R6 source/test binding is retained in
+`analysis/architecture_gate_a_pre_reviewer_02_provenance_freeze.md`.

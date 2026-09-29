@@ -73,9 +73,11 @@ mod 64`, with zero remainder meaning 64.
 ## Descriptor-maintenance interface and publication dependency
 
 R5 defines a separate page-manager maintenance client in the same `core_clk`
-domain.  It uses 64-B lines only because that is the already-selected R1
-core-facing fragment width.  It is not a native HBM request/burst, extra HBM
-port, or an R2 source/arbiter class.
+domain.  Every operation is one `desc_maint_write` FIFO-ordered maintenance
+request through R2 and the **same R1 `core_mem_if_v1` write boundary** used by
+payload paths.  It uses 64-B lines only because that is the already-selected
+R1 core-facing fragment width.  It is not a native HBM request/burst, extra
+HBM port, or a member of the frozen payload-read rotation.
 
 ```text
 descriptor_op_req {
@@ -89,11 +91,13 @@ descriptor_op_rsp { op_id, status={ok, fault} }
 At most two logical maintenance operations are live: one new-page descriptor
 and, when an append has a prior tail, one prior-tail link update.  This is a
 finite one-packer ownership bound, not two physical ports, a controller queue
-depth, or a service rate.  Descriptor maintenance may be backpressured only by
-delaying its own preparation/publication/retirement state; it cannot alter the
-R2 ordering of `s2_fill -> direct_pending -> pack_read`, a mask, an admission
-decision, source ownership, or a Full-KV decision.  External adapter
-arbitration between descriptor maintenance and data traffic remains Gate-B.
+depth, or a service rate.  Descriptor maintenance inherits R1 `(RID,
+incarnation)`, ready/valid, exactly-one terminal, reset-epoch, and fault
+rules.  It may be backpressured only by delaying its own
+preparation/publication/retirement state; it cannot alter the R2 ordering of
+`s2_fill -> direct_pending -> pack_read`, a mask, an admission decision, source
+ownership, or a Full-KV decision.  External adapter arbitration between
+descriptor maintenance and data traffic remains Gate-B.
 
 For one page append the mandatory event order is:
 
@@ -103,7 +107,7 @@ allocate PageRef / private stream ownership
   -> descriptor new-page write and, if needed, prior-tail link write durable
   -> descriptor_prepared (still inaccessible to attention)
   -> R3 M2 private members staged
-  -> one existing M2 atomic publication action
+  -> one `metadata_publish_commit` action
   -> M2 visibility + lifecycle pending->packed authority + R5 descriptor and
      stream visibility as one event-level boundary
 ```
@@ -148,8 +152,8 @@ reachable by a new session.
 
 ## Executable reference and evidence boundary
 
-`kvpress/route_a_page_manager_reference.py` and
-`tests/test_route_a_page_manager_reference.py` execute only descriptor packing,
+`kvpress/route_a_page_manager_reference.py`,
+`kvpress/route_a_cross_closure_reference.py`, and their tests execute only descriptor packing,
 address derivation, private-to-published visibility, fail-closed maintenance
 faults, retirement drain, invalidation-before-generation-advance, and reset
 init rules.  They use small finite tables for state-space tests and independently

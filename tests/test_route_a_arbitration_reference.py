@@ -2,6 +2,7 @@ import pytest
 
 from kvpress.route_a_arbitration_reference import (
     ArbitrationViolation,
+    DescriptorMaintenanceCandidate,
     ReadCandidate,
     RouteAArbitrationReference,
     WriteCandidate,
@@ -138,3 +139,23 @@ def test_faulted_write_never_enables_metadata_publication_and_invalid_source_own
     assert wrapper.receive_write_commit(candidate.identity, status=MemoryStatus.FAULT, adapter_epoch=0) == "fault"
     reference.record_write_commit("write", wrapper=wrapper, status=MemoryStatus.FAULT)
     assert not reference.metadata_publication_eligible("group0")
+
+
+def test_descriptor_maintenance_uses_one_r1_fragment_and_ready_low_does_not_advance_payload_rotation():
+    reference = RouteAArbitrationReference()
+    reference.register_descriptor_maintenance(
+        DescriptorMaintenanceCandidate("descriptor", TransactionIdentity(0, 0), "descriptor-line:7", 0)
+    )
+    reference.mark_descriptor_maintenance_ready("descriptor", fifo_ready=True, ownership_ready=True, credit_ready=True)
+    wrapper = _wrapper(initialized=False)
+    assert reference.read_cursor_class() == "s2_fill"
+    assert reference.grant_next_descriptor_maintenance(wrapper) is None
+    assert reference.descriptor_maintenance_is_eligible("descriptor")
+    assert reference.read_cursor_class() == "s2_fill"
+
+    wrapper.acknowledge_mem_init_done(adapter_epoch=0)
+    assert reference.grant_next_descriptor_maintenance(wrapper) == "descriptor"
+    wrapper.accept_write_data(CoreWriteData(TransactionIdentity(0, 0), 0, True, bytes(CORE_MEM_FRAGMENT_BYTES)))
+    assert wrapper.receive_write_commit(TransactionIdentity(0, 0), status=MemoryStatus.OK, adapter_epoch=0) == "payload_durable_only"
+    reference.record_descriptor_maintenance_terminal("descriptor", wrapper=wrapper, status=MemoryStatus.OK)
+    assert reference.descriptor_maintenance_terminal("descriptor") == "durable"

@@ -19,7 +19,7 @@ The current main hypothesis is:
 
 > KVzap's token-level pruning lacks sufficient regularity for direct coarse-grained block mapping, but the retained KV entries can be reorganized with very low capacity loss into per-head packed fixed-size pages. A dedicated architecture can therefore preserve the original pruning decisions while using streaming admission, variable-length page management, and load-balanced attention scheduling to convert logical compression into physical memory, bandwidth, and throughput gains.
 
-### 1.1 Current Route-A status (2026-09-28)
+### 1.1 Current Route-A status (2026-09-29)
 
 The exploratory DSE described below has now closed through A4.14.1.  The
 accepted path is not “put all KV in SRAM”: it is HBM-resident packed cold KV,
@@ -39,9 +39,12 @@ partial merge, controller/interconnect and physical implementation remain
 unestimated.  No RTL or PPA claim follows.
 
 The reviewed pre-RTL interface boundary is `analysis/architecture_spec.md`.
-It preserves this document's historical research path while recording the
-current common-versus-incremental split, parameterized payload realization,
-unestimated-cost budget, and separate RTL gate.
+Reviewer-02 has passed its R1--R6 cross-closure review; this permits definition
+of a separately reviewed RTL-entry design/verification gate, not RTL
+implementation or a physical/PPA claim. It preserves this document's historical
+research path while recording the current common-versus-incremental split,
+parameterized payload realization, unestimated-cost budget, and separate RTL
+gate. The current-document and frozen-evidence index is `analysis/README.md`.
 
 ---
 
@@ -997,14 +1000,14 @@ incremental cost split, differential omitted-cost budget, separate metadata and
 payload service coordinates, and the rule that payload-dependent pointer widths
 remain parameters until a payload address-space realization is selected.
 
-### Phase 8 — Implement RTL
+### Phase 8 — Superseded by the separate RTL-entry gate
 
-Priority:
-
-1. Admission/Packer
-2. Allocator/Metadata
-3. Scheduler
-4. Partial Reducer only if justified
+The earlier direct “Implement RTL” step is superseded. Before implementation,
+the project must pass a separately reviewed RTL-entry design/verification plan
+that maps the frozen interfaces to module ports, reset/fault behavior,
+scoreboards, assertions, and verification closure. It does not select an HBM
+controller, physical macro, clock/performance model, or PPA result. Only after
+that gate may a control-first RTL implementation begin.
 
 ### Phase 9 — Final synthesis and system projection
 

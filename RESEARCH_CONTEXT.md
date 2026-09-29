@@ -90,13 +90,15 @@ summarization/reasoning；这些是 trace-derived/deterministic accounting 与 d
 target-service proxy 的组合，不是实测 HBM 或 speedup。所有 workload 均通过人为设定的
 2x HBM engineering margin，且 accounted-energy ledger 留有正的 omitted-cost budget。
 
-因此下一阶段是编写 `analysis/architecture_spec.md`，冻结模块接口、共同与增量成本、
-参数化 payload pointer fields、未估成本预算和验证计划；它**不是 RTL 许可**。P3 staging
-macro/energy、M2 pooled queue/staging dynamic access、partial-softmax/merge、controller/
-interconnect/clock/wire/leakage 仍未物理化，任何结论都不能越过这些边界。
+Architecture specification 已完成并经 Reviewer-02 cross-closure review 通过。当前权威
+接口合同是 `analysis/architecture_spec.md`，审查结论与哈希绑定见
+`analysis/architecture_gate_a_reviewer_02.md` 及其 provenance freeze。该 PASS 只冻结
+architecture contract，并只允许定义单独的 RTL-entry design/verification gate；它**不是**
+RTL implementation、PPA、controller、native-HBM 或 speedup 许可。
 
-预 RTL 的接口与实现边界见 `analysis/architecture_spec.md`；其内容不替代上述冻结证据，
-也不构成新的 A4 DSE 或 RTL gate。
+P3 staging macro/energy、M2 pooled queue/staging dynamic access、partial-softmax/merge、
+controller/interconnect/clock/wire/leakage 仍未物理化，任何结论都不能越过这些边界。当前
+文档导航、活文档与冻结证据的分层见 `analysis/README.md`。
 
 ### 路线 B：无训练的结构化稀疏（冻结的备选）
 

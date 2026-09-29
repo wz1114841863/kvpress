@@ -134,13 +134,15 @@ R2 grants pending pack_read only with P3 RESERVED/owned
   -> R1 successful write_commit
   -> P3 DURABLE and M2 records r1_payload_durable
   -> both M2 RMW members private/staged
-  -> one m2_publish_req / m2_publish_ack linearization boundary
+  -> one `metadata_publish_commit` (m2_publish_req / m2_publish_ack) linearization boundary
   -> lifecycle pending -> packed authority transfer, metadata visible,
      P3 stage release
 ```
 
-The R3 executable reference invokes the existing A2 lifecycle publication
-action within the M2 publish event.  If that action rejects, no M2 published
+`metadata_publish_commit` is the sole architectural publication event.  The
+R3 executable reference invokes the existing A2 lifecycle publication action
+within that M2 event and binds R5 descriptor/stream visibility to the same
+action.  If that action rejects, no M2 published
 bit or P3 release occurs.  If `m2_commit_ready` is low, publication is delayed
 without mutation.  Thus successful R1 commit is payload durable only, and the
 single atomic metadata publication remains the unique pending-to-packed

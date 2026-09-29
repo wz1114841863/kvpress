@@ -47,6 +47,21 @@ class WriteCandidate:
     publication_group: str
 
 
+@dataclass(frozen=True)
+class DescriptorMaintenanceCandidate:
+    """One R5 descriptor-line write carried by the shared R1 write boundary.
+
+    This is deliberately separate from the frozen payload *read* rotation.
+    It has no descriptor-read class because the selected R5 reference creates
+    only new-page, tail-link, and invalidation line writes.
+    """
+
+    candidate_id: str
+    identity: TransactionIdentity
+    address_ref: str
+    arrival_ordinal: int
+
+
 @dataclass
 class _ReadState:
     candidate: ReadCandidate
@@ -74,6 +89,17 @@ class _WriteState:
     faulted: bool = False
 
 
+@dataclass
+class _DescriptorMaintenanceState:
+    candidate: DescriptorMaintenanceCandidate
+    fifo_ready: bool = False
+    ownership_ready: bool = False
+    credit_ready: bool = False
+    issued: bool = False
+    durable: bool = False
+    faulted: bool = False
+
+
 class RouteAArbitrationReference:
     """Dependency scoreboard plus deterministic, weakly fair read arbiter.
 
@@ -90,6 +116,7 @@ class RouteAArbitrationReference:
         self._writes: dict[str, _WriteState] = {}
         self._read_cursor = 0
         self._publication_groups: dict[str, set[str]] = {}
+        self._descriptor_maintenance: dict[str, _DescriptorMaintenanceState] = {}
 
     def register_read(self, candidate: ReadCandidate) -> None:
         self._require(candidate.candidate_id not in self._reads and candidate.candidate_id not in self._writes, "candidate_id is already registered")
@@ -108,6 +135,35 @@ class RouteAArbitrationReference:
         self._require(candidate.expected_fragments > 0 and bool(candidate.address_ref) and bool(candidate.publication_group), "write candidate has invalid finite fields")
         self._writes[candidate.candidate_id] = _WriteState(candidate)
         self._publication_groups.setdefault(candidate.publication_group, set()).add(candidate.candidate_id)
+
+    def register_descriptor_maintenance(self, candidate: DescriptorMaintenanceCandidate) -> None:
+        """Register one FIFO-ordered descriptor line write for the R1 path."""
+        self._require(
+            candidate.candidate_id not in self._reads
+            and candidate.candidate_id not in self._writes
+            and candidate.candidate_id not in self._descriptor_maintenance,
+            "candidate_id is already registered",
+        )
+        self._require(bool(candidate.address_ref) and candidate.arrival_ordinal >= 0, "descriptor maintenance candidate is invalid")
+        self._descriptor_maintenance[candidate.candidate_id] = _DescriptorMaintenanceState(candidate)
+
+    def mark_descriptor_maintenance_ready(
+        self,
+        candidate_id: str,
+        *,
+        fifo_ready: bool | None = None,
+        ownership_ready: bool | None = None,
+        credit_ready: bool | None = None,
+    ) -> None:
+        state = self._descriptor(candidate_id)
+        self._require(not state.issued, "issued descriptor maintenance cannot change eligibility")
+        for field_name, value in {
+            "fifo_ready": fifo_ready,
+            "ownership_ready": ownership_ready,
+            "credit_ready": credit_ready,
+        }.items():
+            if value is not None:
+                setattr(state, field_name, value)
 
     def mark_read_common_ready(
         self,
@@ -194,6 +250,10 @@ class RouteAArbitrationReference:
             )
         )
 
+    def descriptor_maintenance_is_eligible(self, candidate_id: str) -> bool:
+        state = self._descriptor(candidate_id)
+        return not state.issued and all((state.fifo_ready, state.ownership_ready, state.credit_ready))
+
     def grant_next_read(self, wrapper: CoreMemoryWrapperReference) -> str | None:
         """Grant exactly one eligible read only if R1 ready accepts it."""
         if not wrapper.can_accept_read():
@@ -234,6 +294,28 @@ class RouteAArbitrationReference:
         state.issued = True
         return True
 
+    def grant_next_descriptor_maintenance(self, wrapper: CoreMemoryWrapperReference) -> str | None:
+        """Issue one FIFO descriptor write through the same R1 write interface.
+
+        A legal R1 ready-low condition returns without changing this channel's
+        FIFO/issued state.  The frozen payload-read rotation is not inspected
+        or advanced by this maintenance-only grant.
+        """
+        if not wrapper.can_accept_write():
+            return None
+        candidates = [
+            state
+            for state in self._descriptor_maintenance.values()
+            if self.descriptor_maintenance_is_eligible(state.candidate.candidate_id)
+        ]
+        if not candidates:
+            return None
+        state = min(candidates, key=lambda item: (item.candidate.arrival_ordinal, item.candidate.candidate_id))
+        candidate = state.candidate
+        wrapper.accept_write(CoreWriteRequest(candidate.identity, candidate.address_ref, 1))
+        state.issued = True
+        return candidate.candidate_id
+
     def record_write_commit(
         self,
         candidate_id: str,
@@ -251,6 +333,32 @@ class RouteAArbitrationReference:
         else:
             raise ArbitrationViolation("write commit status is invalid")
 
+    def record_descriptor_maintenance_terminal(
+        self,
+        candidate_id: str,
+        *,
+        wrapper: CoreMemoryWrapperReference,
+        status: MemoryStatus,
+    ) -> None:
+        """Consume the exactly-one R1 terminal result for a descriptor line."""
+        state = self._descriptor(candidate_id)
+        self._require(state.issued and not state.durable and not state.faulted, "descriptor terminal requires one issued nonterminal write")
+        if status is MemoryStatus.OK:
+            self._require(wrapper.durable(state.candidate.identity), "descriptor success requires an R1 durable write commit")
+            state.durable = True
+        elif status is MemoryStatus.FAULT:
+            state.faulted = True
+        else:
+            raise ArbitrationViolation("descriptor terminal status is invalid")
+
+    def descriptor_maintenance_terminal(self, candidate_id: str) -> str | None:
+        state = self._descriptor(candidate_id)
+        if state.durable:
+            return "durable"
+        if state.faulted:
+            return "fault"
+        return None
+
     def metadata_publication_eligible(self, publication_group: str) -> bool:
         members = self._publication_groups.get(publication_group)
         self._require(members is not None and members, "unknown publication group")
@@ -267,6 +375,11 @@ class RouteAArbitrationReference:
     def _write(self, candidate_id: str) -> _WriteState:
         state = self._writes.get(candidate_id)
         self._require(state is not None, "unknown write candidate")
+        return state
+
+    def _descriptor(self, candidate_id: str) -> _DescriptorMaintenanceState:
+        state = self._descriptor_maintenance.get(candidate_id)
+        self._require(state is not None, "unknown descriptor maintenance candidate")
         return state
 
     @staticmethod

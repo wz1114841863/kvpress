@@ -3,7 +3,7 @@
 ## Status, authority, and disposition
 
 **Status:** `review_in_progress; semantic_pass; finite_anchor_pass;
-r1_r3_r5_closed; r4_r6_blocked; realization_sufficiency_blocked; gate_a_not_passed`.
+r1_r6_closed; reviewer_02_pending; gate_a_not_passed`.
 
 This is the first no-model Gate-A reviewer record after A0--A3.  It performs
 architecture/provenance review only.  It neither creates a new A4 DSE nor
@@ -20,8 +20,8 @@ generic algorithm, model, workload, or serving claim.
 |---|---|---|
 | Semantic consistency | **PASS** | The reviewed contracts retain the frozen mask/lifecycle/authority/order semantics. |
 | Finite anchor implementability | **PASS** | The selected 32K × 1 profile supplies finite checked identities, capacities, credits, and reclamation conditions. |
-| Realization sufficiency | **BLOCKED** | Several implementation-level architecture choices remain unselected; an RTL author would have to make them. |
-| Overall Gate A | **BLOCKED** | Gate A cannot authorize RTL until every blocker below receives a reviewable contract and executable verification plan. |
+| Realization closure | **COMPLETE** | R1--R6 now each have an implementation-boundary contract and executable reference. |
+| Overall Gate A | **BLOCKED** | Reviewer 02 must independently review the completed closure and provenance before any RTL authorization. |
 
 ## Reviewed evidence chain
 
@@ -98,9 +98,9 @@ reviewer must close them before a Gate-A PASS.
 | R1 | Core/HBM memory-wrapper request-response protocol, response ordering, terminal status, and clock/reset boundary | **CLOSED** by `architecture_gate_a_r1_core_memory_wrapper_contract.md` and its event-level reference. | 64-B core fragment is not HBM width; HBM timing/controller/CDC remain external and unmodeled. |
 | R2 | Deterministic arbitration/dependency policy among S2 fills, direct-pending reads, pack reads, and pack writes | **CLOSED** by `architecture_gate_a_r2_arbitration_dependency_contract.md` and its R1-integrated event-level reference. | Preserve frozen FIFO/ownership/dependency/backpressure; no external-HBM scheduler or performance claim. |
 | R3 | M2 wrapper and P3-stage wrapper contracts, including logical ports, reset/fault behavior, and ownership handshakes | **CLOSED** by `architecture_gate_a_r3_m2_p3_wrapper_contract.md` and its R1/R2-integrated event-level reference. | HA8-wide and `local32/shared256/staging512` remain logical service contracts, not physical ports/FIFOs or 36 macro copies. |
-| R4 | Finite numeric merge interface: operand/result formats, rounding/overflow/exception disposition, and comparison relation to the A2 mathematical reference | The current merge is a real-number functional reference; RTL cannot choose FP16/BF16/FP32 or a spill policy itself. | Preserve canonical source order; do not claim arbitrary reorder equivalence or numeric/PPA evidence. |
+| R4 | Finite numeric merge interface: operand/result formats, rounding/overflow/exception disposition, and comparison relation to the A2 mathematical reference | **CLOSED** by `architecture_gate_a_r4_numeric_merge_contract.md` and its binary32 event-level reference. | Canonical order is retained; exp implementation, internal precision, storage/spill, and numeric PPA remain unselected. |
 | R5 | Page-manager descriptor/allocator metadata placement, address-map ownership, and retirement/reclaim handshake with the external runtime | **CLOSED** by `architecture_gate_a_r5_page_manager_descriptor_contract.md` and its event-level descriptor/reclaim reference. | Pending/packed authority and atomic publication stay unchanged; descriptor region remains outside the 5-GiB pool and its service/energy remains unestimated. |
-| R6 | Explicit top-level module graph and generic lifecycle adapter ports | A parameter vocabulary is not yet an RTL module boundary. | Predictor score/threshold stays outside backend; anchor parameters remain values, not portability proof. |
+| R6 | Explicit top-level module graph and generic lifecycle adapter ports | **CLOSED** by `architecture_gate_a_r6_top_level_lifecycle_contract.md` and its event-level generic-adapter reference. | Predictor score/threshold stays outside backend; anchor parameters remain values, not portability proof. |
 
 ## Required ownership inventory for closing R1--R6
 

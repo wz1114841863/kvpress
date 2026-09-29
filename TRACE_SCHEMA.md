@@ -1,5 +1,29 @@
 # TRACE_SCHEMA.md
 
+## Living schema record and chronology
+
+This is the continuous, authoritative trace/schema record for the KVzap
+research track. Historical sections are retained verbatim for trace and
+provenance interpretation; new compatible schema/lifecycle additions are
+appended as dated, numbered sections rather than split into duplicate current
+documents. If a future continuation makes this volume impractical to navigate,
+the next volume will be named `TRACE_SCHEMA_02.md` and this section will link
+to it.
+
+The current reading order is:
+
+1. this file for trace/event schema and trace-to-model mapping;
+2. `analysis/route_a_research_plan.md` for the longitudinal Route-A progress
+   record, including A4.11--A4.14 completion;
+3. `analysis/architecture_spec.md` for the live pre-RTL interface contract;
+4. `analysis/README.md` for authority order and frozen-evidence navigation.
+
+The file contains A4.8.x semantic/service-replay records and A4.11.2
+prefill-armed lifecycle-to-model mapping. A4.12--A4.14 are accounting and
+realization-contract stages rather than new raw trace schemas; their immutable
+contracts are indexed from `analysis/README.md`. Gate-A is likewise an
+architecture-contract/verification stage, not a new trace schema.
+
 ## A4.1.5 external-storage profiler attribution
 
 `kvzap-route-a4148-qwen-external-storage-profiler-1.0` records one separate

@@ -35,6 +35,17 @@ It records frozen semantics, common versus incremental infrastructure,
 parameterized realization fields, omitted costs, and the separate RTL gate;
 it does not create an additional A4 DSE branch.
 
+### 2026-09-29 architecture-contract completion and document role
+
+Reviewer-02 has now passed the R1--R6 cross-closure review.  The current Route-A
+entry is therefore a separately reviewed RTL-entry design/verification plan,
+not immediate RTL implementation.  This document remains the longitudinal
+research-plan/progress record; `analysis/architecture_spec.md` is the live
+technical interface contract; and `analysis/README.md` is the authoritative
+navigation/index.  The A4.11--A4.14 contract files and Gate-A closure records
+remain immutable evidence attachments and must not be mistaken for parallel
+current plans.
+
 ### 2026-09-02 staged status (A0--A3.19)
 
 `analysis/route_a_stage_archive_20260902.md` is the current consolidated
@@ -2696,8 +2707,8 @@ omitted-cost budgets are `27.646/40.498/167.442 mJ per request`; an energy
 advantage is conditional on Route-A's unestimated dynamic cost exceeding the
 Full-KV unestimated dynamic cost by less than the corresponding budget.
 
-The 2x HBM rule is an engineering margin, not a natural-law threshold.  A pass
-means the next artifact is an architecture specification that records exact
-interfaces, physical realization assumptions and unresolved-cost validation;
-it does not establish PPA, native HBM transactions, controller timing, measured
-speedup, a complete architecture freeze, or RTL authorization.
+The 2x HBM rule is an engineering margin, not a natural-law threshold. The
+architecture specification and Reviewer-02 cross-closure review are now
+complete. The next artifact is a separately reviewed RTL-entry
+design/verification plan; it does not establish PPA, native HBM transactions,
+controller timing, measured speedup, or RTL implementation authorization.

@@ -234,7 +234,7 @@ class RouteAM2P3Reference:
         self._require(r1_payload_durable, "M2 durability dependency requires an R1 durable write commit")
         group.state = M2GroupState.DURABLE
 
-    def atomic_publish(self, group_id: str, *, publication_action: Callable[[], None]) -> bool:
+    def metadata_publish_commit(self, group_id: str, *, publication_action: Callable[[], None]) -> bool:
         """Perform the sole publication linearization boundary if commit is ready.
 
         ``publication_action`` is the lifecycle authority-transfer action (for
@@ -254,6 +254,10 @@ class RouteAM2P3Reference:
         self._require(stage.state is P3StageState.DURABLE, "published group lost its durable P3 stage")
         self._clear_stage(stage)
         return True
+
+    def atomic_publish(self, group_id: str, *, publication_action: Callable[[], None]) -> bool:
+        """Compatibility spelling for the sole ``metadata_publish_commit`` event."""
+        return self.metadata_publish_commit(group_id, publication_action=publication_action)
 
     def abort_faulted_group(self, group_id: str) -> None:
         """Release only a faulted, non-visible group; no retry/fallback is selected."""

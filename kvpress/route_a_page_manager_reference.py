@@ -305,7 +305,7 @@ class RouteAPageManagerReference:
         pending = self._pending.get(ref)
         return pending is not None and set(pending.operations) == pending.completed and self._state is PageManagerState.ACTIVE
 
-    def atomic_metadata_publish(self, ref: PageRef, *, publication_action: Callable[[], None]) -> None:
+    def metadata_publish_commit(self, ref: PageRef, *, publication_action: Callable[[], None]) -> None:
         """Atomically bind prepared descriptor visibility to the existing M2 publication action."""
         self._require_active()
         pending = self._pending.get(ref)
@@ -322,6 +322,10 @@ class RouteAPageManagerReference:
         stream.page_count += 1
         stream.total_valid_tokens += pending.valid_count
         del self._pending[ref]
+
+    def atomic_metadata_publish(self, ref: PageRef, *, publication_action: Callable[[], None]) -> None:
+        """Compatibility spelling for the sole ``metadata_publish_commit`` event."""
+        self.metadata_publish_commit(ref, publication_action=publication_action)
 
     def visible_descriptor(self, ref: PageRef) -> PackedPageDescriptor:
         self._resolve(ref)
