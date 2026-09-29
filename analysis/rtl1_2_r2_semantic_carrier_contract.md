@@ -96,6 +96,12 @@ throughput policy. Descriptor candidates are constrained to one expected
 64-B fragment (`expected_fragment_count=1`, data fragment index zero, and
 `last=1`); their durable terminal remains descriptor-only.
 
+The same existing ordinal/id relation resolves a simultaneous rotating-read
+winner and write winner at the single `core_mem_req` carrier. A read cursor
+advances only if that read is the accepted winner; a write never advances it.
+This serializes one logical carrier only and does not select HBM/controller
+arbitration, latency, service rate, or a new Route-A scheduler.
+
 ## RTL1.2 verification binding
 
 RTL1.2 shall bind the existing R2 records as follows:
