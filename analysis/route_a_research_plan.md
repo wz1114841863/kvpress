@@ -2710,5 +2710,25 @@ Full-KV unestimated dynamic cost by less than the corresponding budget.
 The 2x HBM rule is an engineering margin, not a natural-law threshold. The
 architecture specification and Reviewer-02 cross-closure review are now
 complete. The next artifact is a separately reviewed RTL-entry
-design/verification plan; it does not establish PPA, native HBM transactions,
-controller timing, measured speedup, or RTL implementation authorization.
+design/verification plan.  Its required closure now includes a
+machine-readable interface manifest with parameter provenance, a
+manifest-to-Markdown preflight, an assumption-versus-DUT-guarantee assertion
+matrix, assumption-guarded protocol-progress coverage, and a replaceable R4
+merge boundary/stub.  Gate-RTL0 may create only non-implementational
+interface/schema/testbench-planning artifacts; it does not establish PPA,
+native HBM transactions, controller timing, measured speedup, or RTL
+implementation authorization.  Official synthesizable module skeletons begin
+only after Gate-RTL0 PASS.
+
+### 2026-09-29 Gate-RTL0.1 hierarchy/owner closure
+
+The first RTL-entry planning closure is complete.  It freezes the planned DUT
+hierarchy and unique mutable-resource owners in
+`analysis/rtl_entry_hierarchy_owner_contract.md`, with a machine-readable
+companion at `analysis/rtl_entry_interface_manifest.json`.  The manifest is
+explicitly `hierarchy_owner_frozen_ports_pending`: it validates module/owner
+inventory only and contains no per-signal ports or synthesizable RTL.  The
+exact hash/test binding is in `analysis/rtl_entry_hierarchy_owner_provenance_freeze.md`.
+The next Gate-RTL0 step is complete port/parameter binding and
+manifest-to-Markdown consistency checking; it must preserve the frozen owner
+split and remains outside timing, controller, PPA, and performance work.

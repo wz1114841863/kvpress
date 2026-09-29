@@ -16,9 +16,10 @@ deleting or rewriting frozen evidence.
 | 6 | [`architecture_spec.md`](architecture_spec.md) | **Current technical authority**: frozen pre-RTL interface contract. |
 
 **Current disposition:** A4.11--A4.14 research DSE is closed; Reviewer-02
-passed the R1--R6 architecture cross-closure. The next artifact is a separate
-RTL-entry design/verification plan. It is not RTL implementation, PPA,
-controller, native-HBM, or performance authorization.
+passed the R1--R6 architecture cross-closure. Gate-RTL0.1 has frozen the
+non-implementational hierarchy/unique-owner split; the next artifact is its
+full port/parameter binding and consistency preflight. This is not RTL
+implementation, PPA, controller, native-HBM, or performance authorization.
 
 ## Current architecture and verification records
 
@@ -31,6 +32,7 @@ Read these only when the corresponding level of detail is required:
 | Cross-closure matrix and integration amendments | [`architecture_gate_a_pre_reviewer_02_integration_audit.md`](architecture_gate_a_pre_reviewer_02_integration_audit.md) |
 | Exact byte bindings for the final review | [`architecture_gate_a_reviewer_02_provenance_freeze.md`](architecture_gate_a_reviewer_02_provenance_freeze.md) |
 | Route-A RTL/profile anchor | [`architecture_gate_a3_plan.md`](architecture_gate_a3_plan.md) and `architecture_gate_a3_rtl_entry_qwen3_8b_32k_s1_v1.json` |
+| Gate-RTL0 hierarchy and sole-owner split | [`rtl_entry_hierarchy_owner_contract.md`](rtl_entry_hierarchy_owner_contract.md), [`rtl_entry_interface_manifest.json`](rtl_entry_interface_manifest.json), and [`rtl_entry_hierarchy_owner_provenance_freeze.md`](rtl_entry_hierarchy_owner_provenance_freeze.md) |
 
 The R1--R6 contracts and their Python references remain the precise executable
 attachments to the specification. They are not parallel living architecture

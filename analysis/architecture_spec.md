@@ -753,6 +753,97 @@ RTL correctness or select a physical implementation:
 6. a native or explicit controller/interconnect interface with common clock,
    request/response dependencies, arbitration, and overlap.
 
+### Gate-RTL0 _ RTL-entry design and verification closure (planned)
+
+Gate-RTL0 is the next separately reviewed gate.  It converts the frozen
+architecture contract into an implementation-neutral interface and verification
+package; it does **not** create synthesizable RTL, select a controller/macro,
+or establish a clock, latency, throughput, PPA, native-HBM, or speedup claim.
+It must neither reopen an A4 DSE nor turn a previously parameterized field into
+an implementation choice without a separately reviewed contract change.
+
+During Gate-RTL0, non-implementational interface/schema and testbench-planning
+artifacts are allowed.  In particular, it must create and validate
+`analysis/rtl_entry_interface_manifest.json`.  The manifest is the
+machine-readable port-binding companion to this specification, not a
+replacement for its semantic contracts.  Every manifest signal record shall
+contain at least:
+
+```text
+module, port, direction, width, clock, reset, handshake,
+producer, consumer, parameter source
+```
+
+It shall additionally carry a stable interface/record identifier, an
+applicability condition for optional parameterized fields, and a contract
+reference.  A width may be a symbolic parameter expression, but its
+`parameter source` must resolve to the A3 anchor profile or to a named
+parameter in this specification.  The manifest must not silently choose an
+HBM port count, physical SRAM port organization, address map, clock frequency,
+or service rate.  A schema/consistency preflight must compare the manifest with
+the Markdown port/connection matrix before Gate-RTL0 can pass.  Any new
+validator CLI must support `--help`.
+
+Gate-RTL0 shall produce an assertion traceability matrix with, at minimum, the
+following columns:
+
+| Contract invariant | RTL owner | SVA/property | Directed test | Random scenario | Environment assumption | Coverage bin |
+|---|---|---|---|---|---|---|
+
+The matrix must bind, rather than leave to an RTL implementer, the
+Reviewer-02 cross-closure requirements: the unique descriptor memory path,
+`metadata_publish_commit` linearization, ready-low nonmutation, descriptor
+invalidation-before-free, the R6 `numeric_fault` consumer, reset stale-state
+exclusion, and global retirement-drain membership.  It must also bind the
+existing authority, FIFO ordinal, ownership, credit, GQA release, stale
+response, and exactly-one-terminal-outcome invariants.
+
+Properties shall be classified explicitly as either an **environment
+assumption** or a **DUT guarantee**.  For example, eventual completion of an
+accepted external-memory request and eventual consumer acceptance are
+environment fairness assumptions; no duplication, loss, misattribution, or
+ready-low payload/state mutation are DUT guarantees.  Gate-RTL0 must include
+assumption-guarded progress properties for accepted-request to terminal
+outcome, retirement request to retirement acknowledgement after eventual
+external completions, and reserved credit to return on every terminal path.
+It must also state that publication can never precede all of its prerequisites.
+These are protocol-progress obligations over a finite formal/test abstraction,
+not cycle bounds, memory latency claims, or an assertion that an unconstrained
+environment must make progress.  The chosen finite proof depth and fairness
+stimulus are verification parameters, not architectural timing values.
+
+R4 remains deferred only with respect to exp implementation, internal numeric
+precision, storage, and pipeline realization.  Gate-RTL0 must nevertheless
+freeze a replaceable merge boundary/stub with named, parameterized bindings for
+`merge_req`, `merge_partial_header`, `merge_value_fragment`, `merge_rsp`, and
+`numeric_fault`.  It must preserve the R4 binary32 observable packet,
+canonical source order, normalization guard, and R6 fault consumer.  The Gate
+may use a non-synthesizable reference/stub for planning and scoreboard binding;
+it may not claim that stub is a numeric datapath implementation or use it to
+change the top-level interface later.
+
+Gate-RTL0 PASS requires the manifest/schema preflight, port/parameter
+traceability, explicit assumption/guarantee partition, safety and
+assumption-guarded progress matrix, reference-scoreboard ownership plan,
+directed and fixed-seed randomized scenario plan, and coverage closure criteria
+to be reviewed against the frozen contracts.  Only after PASS may the project
+create official synthesizable module skeletons and begin control-first RTL.
+
+#### Gate-RTL0.1 — hierarchy and unique-owner closure
+
+Gate-RTL0.1 is complete as a non-implementational planning closure.  Its
+authority is `analysis/rtl_entry_hierarchy_owner_contract.md`; its
+machine-readable companion is `analysis/rtl_entry_interface_manifest.json`,
+with hash binding and exact no-model regression in
+`analysis/rtl_entry_hierarchy_owner_provenance_freeze.md`.
+The manifest freezes the top integration shell, R6 lifecycle adapter, common
+hot/S2/R1/R2 infrastructure, Route-A direct-pending/R3/R5/R4 components, their
+environment endpoints, and a sole owner for each mutable architectural
+resource.  It intentionally has no signal records yet:
+`hierarchy_owner_frozen_ports_pending` means Gate-RTL0.2 must populate the
+later full per-port manifest without renaming or reassigning owners.  This
+closure is not synthesizable RTL or an RTL-correctness claim.
+
 ### Gate B _ post-RTL implementation validation
 
 Gate B follows RTL and implementation work.  It requires macro mapping,

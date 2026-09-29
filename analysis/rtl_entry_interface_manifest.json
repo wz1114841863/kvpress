@@ -1,0 +1,278 @@
+{
+  "schema_version": "kvzap-route-a-rtl-entry-interface-manifest-1.0",
+  "status": "hierarchy_owner_frozen_ports_pending",
+  "scope": "Gate-RTL0.1 hierarchy and unique-owner closure only; no synthesizable RTL, timing, controller, macro, or PPA selection.",
+  "hierarchy": {
+    "top_module": "route_a_kv_subsystem_top",
+    "modules": [
+      {
+        "name": "route_a_kv_subsystem_top",
+        "parent": null,
+        "classification": "integration_shell",
+        "role": "Composes frozen children and exports only the later manifest-defined boundaries; owns no duplicate protocol state.",
+        "contract_references": ["analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md", "analysis/architecture_spec.md"]
+      },
+      {
+        "name": "route_a_lifecycle_adapter",
+        "parent": "route_a_kv_subsystem_top",
+        "classification": "route_a_incremental",
+        "role": "Owns post-decision lifecycle authority, source dispatch, terminal association, init gating, and retirement coordination.",
+        "contract_references": ["analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"]
+      },
+      {
+        "name": "route_a_hot_source_path",
+        "parent": "route_a_kv_subsystem_top",
+        "classification": "common_infrastructure",
+        "role": "Owns hot-source residency and serves the hot input to the common source/merge path.",
+        "contract_references": ["analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md", "analysis/architecture_spec.md"]
+      },
+      {
+        "name": "route_a_s2_gqa_source_wrapper",
+        "parent": "route_a_kv_subsystem_top",
+        "classification": "common_infrastructure",
+        "role": "Owns two S2 slot identities, generations, READY state, and four-consumer GQA release accounting.",
+        "contract_references": ["analysis/architecture_gate_a2_executable_contract.md", "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"]
+      },
+      {
+        "name": "route_a_direct_pending_endpoint_v1",
+        "parent": "route_a_kv_subsystem_top",
+        "classification": "route_a_incremental",
+        "role": "Owns direct pending-delivery transport association and its stale-response exclusion.",
+        "contract_references": ["analysis/architecture_gate_a1_pending_delivery_contract.md", "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"]
+      },
+      {
+        "name": "route_a_core_side_arbiter",
+        "parent": "route_a_kv_subsystem_top",
+        "classification": "common_infrastructure",
+        "role": "Owns frozen dependency predicates, eligible-class selection, FIFO ordinal preservation, and the grant cursor.",
+        "contract_references": ["analysis/architecture_gate_a_r2_arbitration_dependency_contract.md"]
+      },
+      {
+        "name": "route_a_core_mem_if_v1",
+        "parent": "route_a_kv_subsystem_top",
+        "classification": "common_infrastructure",
+        "role": "Owns core-side memory transaction identity, fragment ordering, terminal status, reset epoch, and external-memory boundary.",
+        "contract_references": ["analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md"]
+      },
+      {
+        "name": "route_a_m2_p3_wrapper",
+        "parent": "route_a_kv_subsystem_top",
+        "classification": "route_a_incremental",
+        "role": "Owns M2 private groups, P3 stage generations/state, sidecar binding, payload-durable dependency, and publication request/ack handshakes.",
+        "contract_references": ["analysis/architecture_gate_a_r3_m2_p3_wrapper_contract.md"]
+      },
+      {
+        "name": "route_a_page_manager",
+        "parent": "route_a_kv_subsystem_top",
+        "classification": "route_a_incremental",
+        "role": "Owns active stream descriptors, allocator availability, page generation, descriptor maintenance preparation, visibility, and per-page reclaim.",
+        "contract_references": ["analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md"]
+      },
+      {
+        "name": "route_a_merge_boundary",
+        "parent": "route_a_kv_subsystem_top",
+        "classification": "route_a_incremental_replaceable_stub",
+        "role": "Owns only observable merge packet state and numeric-fault production behind the frozen replaceable R4 boundary.",
+        "contract_references": ["analysis/architecture_gate_a_r4_numeric_merge_contract.md", "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"]
+      }
+    ]
+  },
+  "environment_endpoints": [
+    {
+      "name": "frontend_post_decision_adapter",
+      "role": "Supplies score-free immutable lifecycle events; it is outside the Route-A DUT hierarchy.",
+      "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"
+    },
+    {
+      "name": "external_memory_adapter",
+      "role": "Terminates core_mem_if_v1 and owns native controller/CDC behavior outside the Route-A DUT hierarchy.",
+      "contract_reference": "analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md"
+    },
+    {
+      "name": "runtime_session_manager",
+      "role": "Supplies logical session retirement and receives retirement acknowledgement outside the Route-A DUT hierarchy.",
+      "contract_reference": "analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md"
+    }
+  ],
+  "owner_claims": [
+    {
+      "resource": "top_level_composition_only",
+      "owner": "route_a_kv_subsystem_top",
+      "kind": "integration",
+      "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md",
+      "transfer_boundary": "No mutable architecture state is replicated in the top shell."
+    },
+    {
+      "resource": "lifecycle_authority_and_terminal_association",
+      "owner": "route_a_lifecycle_adapter",
+      "kind": "state_and_terminal_result",
+      "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md",
+      "transfer_boundary": "Only maturity disposition and metadata_publish_commit may change authority; R4 numeric_fault is consumed here as the one outward terminal fault."
+    },
+    {
+      "resource": "hot_source_residency",
+      "owner": "route_a_hot_source_path",
+      "kind": "state",
+      "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md",
+      "transfer_boundary": "Lifecycle accepts arrival/maturity events; hot service leaves only through the source wrapper/merge boundary."
+    },
+    {
+      "resource": "s2_slot_generation_and_gqa_release",
+      "owner": "route_a_s2_gqa_source_wrapper",
+      "kind": "state_and_credit",
+      "contract_reference": "analysis/architecture_gate_a2_executable_contract.md",
+      "transfer_boundary": "A slot reaches READY only for its current identity/generation and releases only after all four consumer updates commit."
+    },
+    {
+      "resource": "direct_pending_transport_association",
+      "owner": "route_a_direct_pending_endpoint_v1",
+      "kind": "state",
+      "contract_reference": "analysis/architecture_gate_a1_pending_delivery_contract.md",
+      "transfer_boundary": "Pending delivery is direct only; stale response suppression is owned at this endpoint and cannot alter S2 state."
+    },
+    {
+      "resource": "r2_dependency_scoreboard_and_grant_cursor",
+      "owner": "route_a_core_side_arbiter",
+      "kind": "state_and_order",
+      "contract_reference": "analysis/architecture_gate_a_r2_arbitration_dependency_contract.md",
+      "transfer_boundary": "R2 issues only accepted eligible requests to R1; ready-low does not advance cursor, candidate, ownership, credit, mask, or admission."
+    },
+    {
+      "resource": "r1_core_memory_transaction_identity",
+      "owner": "route_a_core_mem_if_v1",
+      "kind": "transaction_and_reset_epoch",
+      "contract_reference": "analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md",
+      "transfer_boundary": "All pending/packed payload, sidecar, and descriptor-region traffic uses this one external-memory path."
+    },
+    {
+      "resource": "r3_m2_private_groups_and_p3_stage_state",
+      "owner": "route_a_m2_p3_wrapper",
+      "kind": "state",
+      "contract_reference": "analysis/architecture_gate_a_r3_m2_p3_wrapper_contract.md",
+      "transfer_boundary": "R1 write commit is payload durable only; R3 accepts publication prerequisites but does not own page visibility or lifecycle authority."
+    },
+    {
+      "resource": "r4_observable_merge_state_and_numeric_fault",
+      "owner": "route_a_merge_boundary",
+      "kind": "replaceable_boundary_state",
+      "contract_reference": "analysis/architecture_gate_a_r4_numeric_merge_contract.md",
+      "transfer_boundary": "R4 exposes the frozen packet/fault boundary only; it cannot release sources, change authority, or produce an outward terminal outcome itself."
+    },
+    {
+      "resource": "r5_stream_descriptor_allocator_and_descriptor_visibility",
+      "owner": "route_a_page_manager",
+      "kind": "state_and_reclaim",
+      "contract_reference": "analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md",
+      "transfer_boundary": "R5 prepares and reclaims descriptors; visibility changes only inside metadata_publish_commit and physical reuse follows durable invalidation."
+    },
+    {
+      "resource": "global_retirement_acceptance_and_drain_ack",
+      "owner": "route_a_lifecycle_adapter",
+      "kind": "state_and_protocol",
+      "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md",
+      "transfer_boundary": "The lifecycle adapter owns retire acceptance and the one global drain predicate; R5 alone performs per-page reclaim after that predicate holds."
+    }
+  ],
+  "connections": [
+    {
+      "id": "frontend_to_lifecycle",
+      "producer": "frontend_post_decision_adapter",
+      "consumer": "route_a_lifecycle_adapter",
+      "purpose": "Score-free session, arrival, maturity, attention, and retirement events.",
+      "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"
+    },
+    {
+      "id": "lifecycle_to_hot",
+      "producer": "route_a_lifecycle_adapter",
+      "consumer": "route_a_hot_source_path",
+      "purpose": "Hot arrival/maturity ownership handoff and hot-source service selection.",
+      "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"
+    },
+    {
+      "id": "source_paths_to_s2",
+      "producer": "route_a_s2_gqa_source_wrapper",
+      "consumer": "route_a_core_side_arbiter",
+      "purpose": "Packed-source S2 fill requests under frozen GQA ownership and release rules.",
+      "contract_reference": "analysis/architecture_gate_a_r2_arbitration_dependency_contract.md"
+    },
+    {
+      "id": "pending_endpoint_to_arbiter",
+      "producer": "route_a_direct_pending_endpoint_v1",
+      "consumer": "route_a_core_side_arbiter",
+      "purpose": "Direct pending delivery request under the R2 direct_pending class.",
+      "contract_reference": "analysis/architecture_gate_a_r2_arbitration_dependency_contract.md"
+    },
+    {
+      "id": "m2_p3_to_arbiter",
+      "producer": "route_a_m2_p3_wrapper",
+      "consumer": "route_a_core_side_arbiter",
+      "purpose": "P3 readiness/ownership predicates for pack read and write requests.",
+      "contract_reference": "analysis/architecture_gate_a_r3_m2_p3_wrapper_contract.md"
+    },
+    {
+      "id": "page_manager_to_arbiter",
+      "producer": "route_a_page_manager",
+      "consumer": "route_a_core_side_arbiter",
+      "purpose": "Descriptor maintenance requests using the separate FIFO-ordered R2 client.",
+      "contract_reference": "analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md"
+    },
+    {
+      "id": "arbiter_to_core_memory",
+      "producer": "route_a_core_side_arbiter",
+      "consumer": "route_a_core_mem_if_v1",
+      "purpose": "Only selected and accepted core-side read/write transactions reach R1.",
+      "contract_reference": "analysis/architecture_gate_a_r2_arbitration_dependency_contract.md"
+    },
+    {
+      "id": "core_memory_to_environment",
+      "producer": "route_a_core_mem_if_v1",
+      "consumer": "external_memory_adapter",
+      "purpose": "One core-side memory boundary for payload, sidecar, and descriptor traffic.",
+      "contract_reference": "analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md"
+    },
+    {
+      "id": "publication_triplet",
+      "producer": "route_a_m2_p3_wrapper",
+      "consumer": "route_a_page_manager",
+      "purpose": "R3 outer metadata_publish_commit includes R5 descriptor visibility and lifecycle authority transfer.",
+      "contract_reference": "analysis/architecture_gate_a_pre_reviewer_02_integration_audit.md"
+    },
+    {
+      "id": "sources_to_merge",
+      "producer": "route_a_s2_gqa_source_wrapper",
+      "consumer": "route_a_merge_boundary",
+      "purpose": "Committed hot/pending/packed partials enter the canonical R4 merge boundary.",
+      "contract_reference": "analysis/architecture_gate_a_r4_numeric_merge_contract.md"
+    },
+    {
+      "id": "merge_to_lifecycle",
+      "producer": "route_a_merge_boundary",
+      "consumer": "route_a_lifecycle_adapter",
+      "purpose": "Merge response or numeric_fault becomes the one outward terminal result only after GQA commit.",
+      "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"
+    },
+    {
+      "id": "runtime_retire_to_lifecycle",
+      "producer": "runtime_session_manager",
+      "consumer": "route_a_lifecycle_adapter",
+      "purpose": "External logical retirement request and matching acknowledgement boundary.",
+      "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"
+    }
+  ],
+  "interface_records": {
+    "status": "ports_pending_gate_rtl0_step_2",
+    "required_signal_fields": [
+      "module",
+      "port",
+      "direction",
+      "width",
+      "clock",
+      "reset",
+      "handshake",
+      "producer",
+      "consumer",
+      "parameter_source"
+    ],
+    "signals": []
+  }
+}

@@ -1005,9 +1005,15 @@ remain parameters until a payload address-space realization is selected.
 The earlier direct “Implement RTL” step is superseded. Before implementation,
 the project must pass a separately reviewed RTL-entry design/verification plan
 that maps the frozen interfaces to module ports, reset/fault behavior,
-scoreboards, assertions, and verification closure. It does not select an HBM
-controller, physical macro, clock/performance model, or PPA result. Only after
-that gate may a control-first RTL implementation begin.
+scoreboards, assertions, and verification closure.  The plan must include a
+machine-readable interface manifest, a manifest-to-Markdown consistency check,
+an assumption-versus-DUT-guarantee partition, safety plus
+assumption-guarded protocol-progress properties, and a replaceable R4 merge
+boundary/stub.  It does not select an HBM controller, physical macro,
+clock/performance model, or PPA result.  Gate work may create only
+non-implementational interface/schema/testbench-planning artifacts; only after
+that gate may official synthesizable module skeletons and control-first RTL be
+created.
 
 ### Phase 9 — Final synthesis and system projection
 
