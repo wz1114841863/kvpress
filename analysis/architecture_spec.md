@@ -753,9 +753,9 @@ RTL correctness or select a physical implementation:
 6. a native or explicit controller/interconnect interface with common clock,
    request/response dependencies, arbitration, and overlap.
 
-### Gate-RTL0 _ RTL-entry design and verification closure (planned)
+### Gate-RTL0 _ RTL-entry design and verification closure (passed)
 
-Gate-RTL0 is the next separately reviewed gate.  It converts the frozen
+Gate-RTL0 converted the frozen
 architecture contract into an implementation-neutral interface and verification
 package; it does **not** create synthesizable RTL, select a controller/macro,
 or establish a clock, latency, throughput, PPA, native-HBM, or speedup claim.
@@ -826,8 +826,9 @@ Gate-RTL0 PASS requires the manifest/schema preflight, port/parameter
 traceability, explicit assumption/guarantee partition, safety and
 assumption-guarded progress matrix, reference-scoreboard ownership plan,
 directed and fixed-seed randomized scenario plan, and coverage closure criteria
-to be reviewed against the frozen contracts.  Only after PASS may the project
-create official synthesizable module skeletons and begin control-first RTL.
+to be reviewed against the frozen contracts.  PASS authorizes RTL1: official
+synthesizable module skeletons, SVA/testbench infrastructure, and then staged
+control-first behavioral RTL; it does not establish RTL functional correctness.
 
 #### Gate-RTL0.1 — hierarchy and unique-owner closure
 

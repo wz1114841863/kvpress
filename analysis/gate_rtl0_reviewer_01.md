@@ -15,7 +15,7 @@ R4 remains a replaceable packet boundary; no exp/pipeline/precision choice was
 introduced.  CDC/HBM adapter, macro/port count, queue physicalization,
 frequency, timing, and PPA remain Gate-B/implementation work.
 
-**PASS authorizes only:** formal synthesizable module skeletons, SVA source,
-and a testbench harness that implements the frozen interfaces and scoreboards.
-It does not establish RTL correctness, formal proof, synthesis, timing, PPA,
-native HBM behavior, or performance.
+**PASS authorizes RTL1 in two stages:** official synthesizable module
+skeletons/SVA/testbench infrastructure, then staged control-first behavioral
+RTL. It does not establish RTL correctness, formal proof, synthesis, timing,
+PPA, native HBM behavior, or performance.
