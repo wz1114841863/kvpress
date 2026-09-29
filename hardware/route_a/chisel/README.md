@@ -55,6 +55,8 @@ chisel/
     structural/                     current elaboration/port-structure tests
     r1/ r2/ r3_r5/ s2/ r6/ merge/   reserved RTL1 verification ownership areas
   src/test/resources/               non-frozen test fixtures only
+    sva/                            non-synthesizable assertion binding registry
+  testbench/                        read-only Python oracle binding adapter
   docs/                             local build and layout notes
 ```
 
@@ -95,8 +97,25 @@ workload, Route-A experiment, or performance measurement. Verilator is
 available for a later explicitly scoped simulation step, but RTL1.0.a does not
 use it.
 
+## RTL1.0.b verification binding
+
+`src/test/resources/rtl1_0_verification_binding.json` is a read-only bridge
+from the 15 frozen Gate-RTL0 assertion records to this skeleton hierarchy, the
+SVA binding registry, fairness-versus-DUT responsibility, and the existing
+Python oracle manifest. Its companion under `testbench/` exposes each oracle's
+exact path, entry-point labels, observation, and forbidden adapter condition.
+It does not translate or execute any event before owner behavior exists.
+
+The SVA resource is a zero-port `bind` registry at the frozen top. It provides
+a stable formal/testbench attachment location, but every safety property is
+marked `owner_state_pending` and every progress property
+`owner_event_pending`. This is intentional: no R1--R6 state exists yet from
+which to assert semantic behavior, and environment fairness remains a
+testbench assumption rather than DUT logic.
+
 ## Next authorized step
 
-Complete RTL1.0.b according to `analysis/rtl1_phase_contract.md`: bind the
-already-planned SVA/testbench/scoreboard infrastructure to this skeleton. Do
-not begin R1--R6 behavior merely because structural elaboration passes.
+Proceed to RTL1.1 only under the R1 core-memory-wrapper contract. It must
+replace only R1's inert shell with owner behavior and then implement/bind the
+R1-owned assertion bodies and oracle events. Do not begin R2--R6 behavior,
+select a controller, or infer timing/PPA from the completed bindings.
