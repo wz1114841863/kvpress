@@ -26,8 +26,9 @@ The frozen A4.12.0 interface table is the input authority for this workspace:
 | M2 metadata proxy, P3 staging envelope and A4.14.1 omitted-cost budget | A4.12/A4.14 | M2 area is public-CACTI proxy; P3 and merge/control terms remain unestimated. |
 
 `mem/` provides a reproducible public-CACTI proxy runner.  `chisel/` is the
-isolated RTL1 build workspace; its initial smoke probe is not an architecture
-implementation.  A4.12 CACTI area and per-access numbers are
+isolated RTL1 workspace; RTL1.0.a has a nonfunctional structural skeleton,
+while verification attachment and all control behavior remain pending. A4.12
+CACTI area and per-access numbers are
 estimates from a public technology model; they are not PDK, macro-compiler,
 synthesis, layout, timing, throughput, workload-energy, architecture, or RTL
 evidence.

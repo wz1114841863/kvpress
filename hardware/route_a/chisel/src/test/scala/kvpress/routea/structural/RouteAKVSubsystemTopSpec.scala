@@ -1,0 +1,108 @@
+package kvpress.routea.structural
+
+import circt.stage.ChiselStage
+import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
+import kvpress.routea.top.RouteAKVSubsystemTop
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
+
+/**
+  * RTL1.0 structural check only. The opaque widths below are elaboration-local
+  * test values, not a deployed encoding, queue depth, controller parameter, or
+  * revision of the RTL0.2 logical port contract.
+  */
+final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
+  private val structuralTestParameters = RouteASkeletonParameters(
+    frontendEventKindWidth = 3,
+    componentStatusNameWidth = 4,
+    hotControlKindWidth = 2,
+    pendingDescriptorRefWidth = 1,
+    pendingValidityWidth = 1,
+    candidateClassWidth = 3,
+    candidateOrdinalWidth = 1,
+    candidateIdWidth = 1,
+    candidatePredicateWidth = 1,
+    coreMemoryRequestKindWidth = 3,
+    coreMemoryDestinationWidth = 2,
+    coreMemoryAddressRefWidth = 1,
+    coreMemoryFragmentCountWidth = 1,
+    coreMemoryFragmentIndexWidth = 1,
+    sourceDeliveryOpaqueWidth = 1,
+    transactionGroupTagWidth = 1,
+    p3StageGenerationWidth = 1,
+  )
+
+  behavior of "RouteAKVSubsystemTop RTL1.0 structural skeleton"
+
+  it should "elaborate every frozen hierarchy module without sequential architecture state" in {
+    val chirrtl = ChiselStage.emitCHIRRTL(new RouteAKVSubsystemTop(structuralTestParameters))
+    val systemVerilog = ChiselStage.emitSystemVerilog(new RouteAKVSubsystemTop(structuralTestParameters))
+
+    Seq(
+      "route_a_kv_subsystem_top",
+      "route_a_lifecycle_adapter",
+      "route_a_hot_source_path",
+      "route_a_s2_gqa_source_wrapper",
+      "route_a_direct_pending_endpoint_v1",
+      "route_a_core_side_arbiter",
+      "route_a_core_mem_if_v1",
+      "route_a_m2_p3_wrapper",
+      "route_a_page_manager",
+      "route_a_merge_boundary",
+    ).foreach { moduleName =>
+      chirrtl should include(s"module $moduleName")
+    }
+
+    Seq(
+      "frontend_lifecycle_req",
+      "runtime_retire_req",
+      "attention_terminal_rsp",
+      "session_retire_ack",
+      "component_status_in",
+      "hot_control_out",
+      "s2_service_req",
+      "direct_pending_open",
+      "source_partial_to_merge",
+      "consumer_partial_commit",
+      "merge_req",
+      "merge_rsp_or_numeric_fault",
+      "source_candidate_to_r2",
+      "core_mem_req",
+      "core_mem_rsp",
+      "external_core_mem_if_v1",
+      "source_delivery_out",
+      "metadata_publish_req",
+      "metadata_publish_visibility_apply",
+      "metadata_publish_visibility_ack",
+      "m2_publish_ack",
+    ).foreach { manifestPortName =>
+      chirrtl should include(manifestPortName)
+    }
+
+    systemVerilog should include("core_clk")
+    systemVerilog should include("destructive_reset")
+    systemVerilog should include("frontend_lifecycle_req_valid")
+    systemVerilog should include("runtime_retire_req_valid")
+    systemVerilog should include("attention_terminal_rsp_valid")
+    systemVerilog should include("session_retire_ack_valid")
+    systemVerilog should include("external_core_mem_if_v1_request_valid")
+    systemVerilog should not include "always_ff"
+  }
+
+  it should "preserve the selected, non-opaque Route-A anchor widths" in {
+    RouteAAnchorWidths.RequestIdWidth shouldBe 3
+    RouteAAnchorWidths.IncarnationWidth shouldBe 2
+    RouteAAnchorWidths.PageIdWidth shouldBe 18
+    RouteAAnchorWidths.PageGenerationWidth shouldBe 8
+    RouteAAnchorWidths.CoreDataWidth shouldBe 512
+    RouteAAnchorWidths.MergePartialHeaderWidth shouldBe 128
+    RouteAAnchorWidths.MergeValueFragmentWidth shouldBe 512
+    RouteAAnchorWidths.NormalizedValueWidth shouldBe 4096
+  }
+
+  it should "reject an unspecified opaque logical-field width" in {
+    an[IllegalArgumentException] should be thrownBy {
+      structuralTestParameters.copy(transactionGroupTagWidth = 0)
+    }
+  }
+}

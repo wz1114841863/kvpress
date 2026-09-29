@@ -85,6 +85,11 @@ docs/_build/
 .pybuilder/
 target/
 
+# Chisel/SBT local IDE state may be created at the repository root.
+.bloop/
+.bsp/
+.metals/
+
 # Jupyter Notebook
 .ipynb_checkpoints
 

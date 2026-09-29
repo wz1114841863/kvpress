@@ -18,3 +18,25 @@ format, or physical realization parameters.
 
 CDC/HBM adapter, macro/port count, physical queues, frequency, timing, PPA,
 and speedup remain outside RTL1 and require later implementation/Gate-B evidence.
+
+## RTL1.0 progress
+
+**RTL1.0.a structural skeleton: complete.** The Chisel implementation at
+`hardware/route_a/chisel/` elaborates the frozen top and nine direct children,
+the RTL0.2 logical ready/valid carrier bundles, `core_clk`,
+`destructive_reset`, and the sole R1 external-memory carrier. It contains no
+registers or mutable architectural state. The required opaque logical fields
+have no deployment defaults: only the structural test supplies local values
+needed to elaborate a finite carrier shape.
+
+The no-model evidence is the Chisel structural test
+`RouteAKVSubsystemTopSpec`; it checks the ten-module hierarchy in CHIRRTL, the
+external top port names in in-memory SystemVerilog, the selected anchor widths,
+and absence of sequential RTL. CIRCT may optimize inert child shells out of its
+final SystemVerilog; that is why hierarchy is checked at the elaborated CHIRRTL
+stage rather than by adding non-architectural logic to defeat optimization.
+
+**RTL1.0.b verification attachment: pending.** No SVA, formal property,
+testbench, Python-scoreboard connection, directed protocol test, or randomized
+scenario has yet been implemented. Consequently RTL1.0.a is not a functional
+RTL pass and does not authorize R1--R6 behavior.
