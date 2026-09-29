@@ -1,0 +1,63 @@
+{
+  "schema_version": "route-a-rtl-boundary-profile-1",
+  "profile_id": "verification_small_v1",
+  "profile_class": "verification_only",
+  "profile_scope": {
+    "semantic_interface": "retention_kv_semantic_interface_v1",
+    "evidence_scope": "route_a_qwen3_8b_anchor_only"
+  },
+  "frozen_interface": {
+    "page_tokens": 64,
+    "s2_slots": 2,
+    "gqa_consumers": 4,
+    "pending_delivery": "direct_pending_endpoint_v1"
+  },
+  "transaction_identity": {
+    "mode": "epoch_reuse",
+    "rid_width": 2,
+    "incarnation_width": 2,
+    "max_live": 2,
+    "live_rid_unique": true,
+    "wrap_quiescence": [
+      "no_live_request",
+      "no_outstanding_old_response",
+      "no_s2_old_association",
+      "no_direct_pending_old_association"
+    ]
+  },
+  "allocator": {
+    "page_pool_pages": 4,
+    "page_id_width": 2,
+    "generation_width": 2,
+    "max_live_refs": 2,
+    "reclamation": "explicit_no_live_reference_then_generation_advance",
+    "generation_wrap_quiescence": [
+      "no_live_page_reference",
+      "no_outstanding_old_page_response",
+      "no_s2_old_page_association",
+      "no_direct_pending_old_page_association",
+      "no_metadata_old_page_reference"
+    ],
+    "logical_retirement_owner": "external_runtime_session_manager",
+    "physical_reclamation_owner": "kv_subsystem_after_quiescence"
+  },
+  "direct_pending_endpoint": {
+    "transport_endpoint_credit": 2,
+    "max_live_fragments": 2,
+    "max_records_in_flight": 1,
+    "fragment_bytes": 64,
+    "core_data_width_bits": 512,
+    "holding_owner": "transport_endpoint",
+    "full_action": "backpressure_only"
+  },
+  "clock_wrapper": {
+    "boundary": "abstract_core_clk",
+    "claim": "no_hbm_timing_or_controller_model"
+  },
+  "fault": {
+    "policy": "fail_closed",
+    "upward_status": true,
+    "full_kv_fallback": false
+  },
+  "evidence_class": "verification_only_pure_software_rtl_boundary_contract"
+}

@@ -21,6 +21,39 @@ The Gate-A0 local provenance declaration for this document is
 input identities, the functional reference source-order lock, and any pending
 byte-level report verification without promoting a missing artifact to a pass.
 
+Gate-A1 closes `pending_delivery_realization` as
+`direct_pending_endpoint_v1`; its architecture-choice rationale and finite
+interface are recorded in
+`analysis/architecture_gate_a1_pending_delivery_realization_closure.md`.
+This closure is not retroactive evidence that A4 selected a physical endpoint.
+Its revision-specific byte bindings are frozen in
+`analysis/architecture_gate_a1_provenance_freeze.md`.
+
+Gate-A2 makes the selected ownership, request, S2, and publication assertions
+executable in the pure-software reference described by
+`analysis/architecture_gate_a2_executable_contract.md`.  It is a
+scoreboard/golden-reference seed, not RTL or timing evidence.
+Its revision-specific byte bindings are frozen in
+`analysis/architecture_gate_a2_provenance_freeze.md`.
+
+Gate-A3 completes finite RTL-boundary parameter closure in
+`analysis/architecture_gate_a3_plan.md`.  Its selected
+`rtl_entry_qwen3_8b_32k_s1_v1` profile is an engineering anchor
+instantiation, not an architecture definition; the profile validator and
+provenance freeze remain pure-software evidence.  A3 does not pass Gate A and
+cannot convert deployment-profile assumptions into performance, PPA, or
+portability claims.
+
+The current overall reviewer disposition is recorded in
+`analysis/architecture_gate_a_reviewer_01.md`: semantic consistency and the
+finite anchor pass review, while realization sufficiency remains blocked on
+numeric merge and top-level lifecycle-interface contracts.  R1--R3 and R5
+close the core-memory, arbitration/dependency, M2/P3, and page-manager
+logical-wrapper boundaries without authorizing RTL.  This
+review record is byte-bound by
+`analysis/architecture_gate_a_reviewer_01_provenance_freeze.md`; it is not a
+Gate-A PASS or RTL authorization.
+
 ## 2. Provenance and evidence boundary
 
 The report hashes below are accepted input identities, not hashes of this
@@ -72,8 +105,8 @@ pipeline, controller schedule, or latency.
                                            |             |
                                   packing read           +-- attention read
                                            v                         |
-                                   P3 payload-stage page       pending delivery realization
-                                           |                    (Gate-A choice: direct or S2)
+                                   P3 payload-stage page       direct pending endpoint
+                                           |                    (Gate-A1 architecture closure)
                                            v                         |
                                     Page manager                  +--+
                                            |                          |
@@ -98,10 +131,11 @@ but the graph does not assert a physical M2-to-HBM control path.  S2 payload
 slots and the four-head GQA fanout are distinct common-infrastructure modules:
 S2 is a page-source buffer, while the mux/fanout accepts hot, pending, and
 packed sources.  The packed sidecar, packed-page manager, P3, M2, and
-multi-source merge control are Route-A incremental.  `pending_delivery_realization`
-is a Gate-A blocking choice; no existing A4 evidence selects
-direct delivery, reuse of S2, or a separate pending buffer.  Every graph edge
-becomes a concrete interface only after the corresponding Gate-A parameter and
+multi-source merge control are Route-A incremental.  Gate-A1 selects the
+direct pending endpoint because it preserves A4.13.4's logical direct-source
+action without adding a pending page/buffer contract; this is an architecture
+choice, not an A4 physical realization result.  Every graph edge becomes a
+concrete interface only after the corresponding Gate-A parameter and
 dependency contract are frozen.
 
 ## 5. Frozen lifecycle
@@ -134,41 +168,46 @@ The sidecar maps compact rank to logical position.  It is neither a selected
 physical PTE/address/latch representation nor free storage; replacement needs
 separate semantic and cost validation.
 
-`payload_page_id`, `next_page_id` or page-list index, payload address/handle,
-generation/valid tag, bank/address mapping, and physical address widths are
-required **parameters**.  `tail_page_id`, `page_count`, `valid_count`, and
-`total_valid_tokens` remain semantic descriptor state, not a prescribed header
-layout.  These payload fields are outside the A4.9.1 59/50 raw and 64/64
-padded metadata accounting and must not be backfilled into those widths.
+R5 freezes the Qwen-anchor page reference as
+`PageRef = (page_id[17:0], generation[7:0])`, a 128-bit packed-page descriptor
+in a separate HBM metadata region, and a 96-bit on-chip active
+`StreamDescriptor`.  The descriptor table index is `page_id`, so its payload
+and sidecar handles derive from the disjoint cold-payload base plus
+`page_id * 33,280 B`; the sidecar is at payload offset `32,768 B`.  The
+descriptor region is exactly 2,350,080 B for 146,880 entries and is not inside
+the 5-GiB cold-payload pool.  Base-address width/mapping and physical HBM
+implementation remain external parameters.
+
+These fields are outside the A4.9.1 59/50 raw and 64/64 padded metadata
+accounting and must not be backfilled into those widths.
 
 ### Normative logical descriptors
 
-The following is a logical state schema.  It establishes required state, not
-bit widths, a SRAM layout, a linked-list implementation, or an allocator ABI.
-Every field marked `PARAMETER` requires a frozen implementation value at Gate
-A.
+The following is the R5 anchor schema.  It fixes logical bit fields and
+ownership, not an SRAM macro, HBM controller map, physical layout, or ABI.
 
 ```text
 PackedPageDescriptor {
-    owner_layer, owner_kv_head,       // semantic owner; field widths PARAMETER
-    payload_page_id, payload_handle,  // PARAMETER
-    position_sidecar_handle,          // PARAMETER; separate from payload capacity
-    next_ref,                         // PARAMETER: next-page ID or page-list reference
-    valid_count,                      // frozen semantic range: 0..64
-    generation_or_validity_tag,       // PARAMETER
-    valid                             // frozen semantic state
+    state[1:0], owner_layer[5:0], owner_kv_head[2:0],
+    valid_count[6:0], next_page_id[17:0], next_generation[7:0],
+    page_generation[7:0], reserved_zero[75:0]
 }
 
 StreamDescriptor {
-    owner_layer, owner_kv_head,       // semantic owner; field widths PARAMETER
-    first_page_ref, tail_page_ref,    // PARAMETER reference encoding
-    page_count, total_valid_tokens    // frozen semantic counters
+    owner_layer[5:0], owner_kv_head[2:0],
+    first_page_ref[25:0], tail_page_ref[25:0],
+    page_count[8:0], total_valid_tokens[14:0], reserved_zero[10:0]
 }
 ```
 
-An allocated packed page has exactly one stream owner.  A stale reference must
-not designate a reallocated live page; an implementation may enforce this with
-a generation, a validity discipline, or another Gate-A-frozen equivalent.
+An allocated packed page has exactly one stream owner.  `next_page_id=all
+ones` means no successor.  A stale reference must not designate a reallocated
+live page: the selected R5 rule is the 8-bit PageRef generation plus A3's
+complete quiescence predicate before wrap.  The full placement, descriptor-line
+map, retirement, reset, and maintenance interface are in
+`analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md`; the
+revision-specific R5 binding is
+`analysis/architecture_gate_a_r5_provenance_freeze.md`.
 
 ## 7. Admission, P3, and page manager
 
@@ -208,8 +247,63 @@ This is not 36 chosen SRAM macros or a physical 1,179,648-B macro.  Staging
 macro organization, access schedule, physical location, and energy remain
 unestimated.  The page manager semantically owns free-page allocation,
 per-stream list/tail updates, append page creation, and release; allocator
-timing, queue topology, reclamation, address translation, and physical page
-count remain parameters.
+timing, descriptor-maintenance service, physical HBM address mapping, and
+macro organization remain unestimated.
+
+### Gate-A R3 P3 logical-stage wrapper
+
+R3 binds the per-layer P3 stage to a finite event-level wrapper: exactly 36
+logical layer-indexed slots, each with one owner, `valid_records` in `1..64`,
+at most 32,768 B payload, and eight ordered 64-B fragments per retained
+512-B K+V record.  A sidecar binding supplies one logical 8-B position for
+each valid record before the stage becomes write-ready; it is not included in
+P3's 32-KiB payload capacity and R3 selects no sidecar latch or macro.
+
+P3 accepts one logical pending-to-stage fill stream and one logical
+stage-to-packed write stream for the one-packer anchor.  Those streams are
+decoupled ownership interfaces, not physical SRAM ports, an arbitration
+schedule, or service guarantee.  `RESERVED` grants the existing R2
+`p3_stage_ready/owned` predicate for a pending pack read; `COMPLETE` requires
+all ordered payload fragments and sidecar bindings and grants the existing R2
+`p3_stage_complete/owned` predicate for a pack write.  P3 is transient in all
+states and is never an authoritative residency.
+
+After a successful R1 write commit, P3 becomes `DURABLE` only with the R1
+payload-durable indication.  It remains non-authoritative until the one M2
+atomic publication.  Publication then makes metadata visible, invokes the
+existing lifecycle pending-to-packed handoff, and releases the P3 stage as one
+event-level linearization boundary.  The exact interface/reset/fault contract
+is in `analysis/architecture_gate_a_r3_m2_p3_wrapper_contract.md`; it leaves
+P3 macro organization, physical ports, dynamic energy, and timing unestimated.
+The revision-specific R3 binding is
+`analysis/architecture_gate_a_r3_provenance_freeze.md`.
+
+### Gate-A R5 page-manager and descriptor wrapper
+
+R5 selects 288 96-bit on-chip active stream descriptors, an 18,360-B
+on-chip page-availability bitmap, and a separate 2,350,080-B HBM metadata
+region containing 146,880 128-bit packed-page descriptors.  This descriptor
+region is excluded from the 5-GiB cold payload pool; the fixed accounting is a
+storage-interface capacity only, not an HBM area/energy/performance result.
+Each descriptor line is four 16-B entries in one 64-B core-facing maintenance
+line.  The selected table-index/handle derivation, entry layout, and
+maintenance interface are in
+`analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md`.
+
+R5 permits at most two logical descriptor maintenance operations for one
+packer append: the new page entry and, if present, the old tail's next-link.
+They are private until the existing M2 atomic publication, at which one
+event-level action makes the M2 state, page-manager descriptor/stream state,
+and pending-to-packed authority transition visible.  Maintenance backpressure
+can delay publication or retirement only; it cannot form a new R2 data-plane
+arbiter class, change the fixed grant order, or alter a mask/admission result.
+
+The runtime requests retirement using the finite A3 `(request_id,
+incarnation)` identity.  R5 stops new work, drains all preexisting ownership,
+requires A3 page quiescence, durably invalidates each descriptor, then advances
+generation/frees the allocator bit before returning the matching `retire_ack`.
+Destructive reset invalidates local reachability but does not erase HBM bytes;
+R1 response suppression and a new R5 init handshake remain mandatory.
 
 ## 8. M2 metadata/control interface
 
@@ -232,6 +326,27 @@ logical queue/credit contract.  They are not 36-layer physical replication;
 simultaneous physical layer concurrency, FIFO depths, topology, and access
 timing are not established.
 
+### Gate-A R3 M2 logical wrapper
+
+R3 gives the selected M2 semantic storage a decoupled logical interface:
+`m2_op_req/op_rsp` carry an operation identity, the eight-bank head-affine
+bank identity, `head_control` or `span_owner` object identity, `read/write/rmw`
+kind, opaque address reference, owner, and (where applicable) transaction
+group/member tag.  A group has exactly the frozen private members
+`head_control_rmw` and `span_owner_rmw`; both must return `ok` before the group
+is staged.  The M2 `m2_publish_req/ack` is accepted only after that state and
+the matching P3/R1 payload-durable dependency, and is the same single atomic
+publication boundary described above.
+
+M2 ready-low delays `op_req` or publication without state mutation.  A member
+fault makes the group non-publishable; it cannot cause Full-KV fallback, a
+retry policy, a mask/admission change, or a partial group visibility.  The
+logical atomic `head_control` replica update does not select a coherence
+protocol, macro port count, SRAM layout, service rate, or CACTI-derived cycle.
+R3's destructive reset invalidates local M2/P3 ownership and accepts no new
+traffic until R1's `mem_init_done` has enabled the R3 init handshake; it does
+not erase HBM or relax R1 stale-response suppression.
+
 ## 9. S2 source buffer, memory transport, GQA multicast, and merge
 
 Each of the two logical S2 slots has 32,768-B **payload** storage.  For a
@@ -241,55 +356,117 @@ plus slot identity, generation/validity, and consumer-completion state.  The
 payload buffer remains common Full-KV/Route-A infrastructure; Route-A sidecar
 and its management are incremental and unestimated.
 
-### Abstract memory transport contract
+### Core-side memory transport contract
 
-The following is an architectural interface requirement, not a selected
-AXI/HBM protocol, native transaction format, controller, address width, or
-outstanding-request limit:
+Gate-A R1 selects `core_mem_if_v1` as the synchronous core-side boundary.  It
+places lifecycle/M2/P3/S2/page-manager/direct-pending/merge control and this
+interface in one `core_clk` domain.  The HBM controller, PHY, and any CDC are
+outside the KV subsystem and must be adapted without weakening this contract.
+The selected 512-bit/64-B fragment is core-facing only; it is not an HBM bus
+or burst width and is not the frozen 256-B accounting beat.
+
+The following is an architectural core-side requirement, not a selected
+AXI/HBM protocol, native transaction format, controller command/address, or
+timing/service-rate assumption:
 
 ```text
 page_read_req {
-    request_id, source_kind, payload_handle_or_address, valid_count,
-    expected_generation_or_validity, destination_endpoint
+    request_id, incarnation, source_kind, payload_handle_or_address,
+    valid_count, expected_generation_or_validity, destination_endpoint,
+    expected_fragment_count
 }
 page_read_rsp {
-    request_id, destination_endpoint, observed_generation_or_validity,
-    beat_index, payload_or_sidecar_data, last, status
+    request_id, incarnation, destination_endpoint,
+    observed_generation_or_validity, fragment_index,
+    payload_or_sidecar_data[511:0], last, status
 }
-page_write_req { request_id, destination_payload_handle_or_address, valid_count }
-page_write_data { request_id, beat_index, payload_or_sidecar_data, last }
-page_write_commit { request_id, resulting_page_reference, status }
+page_write_req {
+    request_id, incarnation, destination_payload_handle_or_address,
+    valid_count, expected_fragment_count
+}
+page_write_data {
+    request_id, incarnation, fragment_index, payload_or_sidecar_data[511:0], last
+}
+page_write_commit { request_id, incarnation, resulting_page_reference, status }
 ```
 
-`destination_endpoint` is either an S2 slot or a direct-source endpoint.  A
-packed-page read targets S2.  `pending_delivery_realization` is the Gate-A
-choice that assigns a pending-HBM read to an S2 slot or a direct-source
-endpoint; no other pending payload path is implied.  For an S2-targeted read,
+For one accepted `(request_id, incarnation)`, successful fragments are ordered
+from zero through the declared terminal count; different live identities may
+return in any relative order.  A terminal fault carries no valid payload and
+cannot be followed by a successful response for that identity.  The selected
+anchor permits four live reads and one live write at this boundary; its sixth
+global A3 identity is a local source-group association, not another memory
+request slot.  `payload_handle_or_address` is an opaque core-side reference,
+not an HBM physical address or page-table format.
+
+R1 defines destructive local reset: after reset, the subsystem accepts no
+core-memory traffic until the external adapter acknowledges `mem_init_done`.
+That adapter must drain or suppress pre-reset responses/commits; the
+software-only R1 reference models the obligation with an adapter epoch that is
+not a core-side data wire.  Reset invalidates local/session/descriptor
+ownership; it does not claim to erase HBM data.
+
+The complete R1 contract and executable reference binding are in
+`analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md`, with the
+revision-specific snapshot in `analysis/architecture_gate_a_r1_provenance_freeze.md`.
+R1 does not select a controller implementation, HBM timing, a physical clock
+crossing, retry/timeout policy, or sustained issue rate.
+
+### Core-side eligibility and issue contract
+
+Gate-A R2 selects an event-level dependency scoreboard before the R1 read
+request channel.  Every candidate first satisfies frozen FIFO predecessor,
+ownership, dependency, and credit predicates.  It additionally satisfies its
+source-specific predicate: packed S2 fill requires metadata publication;
+direct-pending and pack reads require pending authority; pack read also
+requires P3-stage readiness/ownership; and the one pack write requires page
+allocation plus complete, owned P3 data.  A successful R1 write commit makes
+the related metadata group eligible only as **payload durable**; the existing
+M2 atomic publication is still the authority handoff.
+
+Eligible read classes rotate deterministically as
+`s2_fill -> direct_pending -> pack_read`; the oldest eligible candidate within
+one class wins.  The cursor advances only after R1 accepts a request.  This is
+weak fairness among continuously eligible classes at accepted grant
+opportunities, not a latency, progress, bandwidth, or external-HBM-scheduler
+claim.  R2 cannot reorder a frozen FIFO predecessor, alter a mask/admission
+disposition, drop work, or substitute Full-KV.  Its complete contract and
+reference are in `analysis/architecture_gate_a_r2_arbitration_dependency_contract.md`,
+with the revision-specific snapshot in
+`analysis/architecture_gate_a_r2_provenance_freeze.md`.
+
+`destination_endpoint` is either an S2 slot or the Gate-A1 direct pending
+endpoint.  A packed-page read targets S2; a pending-HBM read targets only the
+direct pending endpoint defined by the Gate-A1 closure.  S2 reuse and a
+separate pending buffer are outside this specification.  For an S2-targeted read,
 `READY` is legal only after a matching successful response has delivered all
-required payload beats and, for packed Route-A, the sidecar.  For a direct
-pending delivery, Gate A must define the corresponding source-mux deliverable
-event without treating it as an S2 `READY` event.  For a write, packed-page
+required payload beats and, for packed Route-A, the sidecar.  A direct pending
+delivery uses `direct_pending_source_deliverable`, not an S2 `READY` event, as
+defined by the Gate-A1 closure.  For a write, packed-page
 metadata publication is legal only after a matching successful
 `page_write_commit` and the frozen metadata transaction-group requirements.
-`request_id`, endpoint encoding, handle/address encoding, generation encoding,
-maximum outstanding operations, response ordering, and transport backpressure
-are Gate-A parameters.  `status` reserves a fault boundary; retry, timeout,
-ECC, error recovery, and fallback policy are not selected here and may not
-change the mask or admission semantics.
+The anchor freezes request-ID/epoch bounds, four read/one write core-memory
+limits, response ordering per identity, and R1/R2 backpressure behavior.
+Endpoint, handle/address, and generation encodings remain selected-profile
+fields; their concrete controller mapping is not an HBM implementation claim.
+`status` reserves a fault boundary; retry, timeout, ECC, error recovery, and
+fallback policy are not selected here and may not change the mask or admission
+semantics.
 
 ### Request lifetime and stale-response contract
 
-An accepted `request_id` becomes live and remains live until exactly one
-terminal outcome: a successful terminal read response, a terminal fault status,
-or (for a write) one `page_write_commit`.  Every response beat must belong to
-exactly one live request.  A live `request_id` may not be reallocated.  A slot
-targeted by a live read request cannot be reassigned.  The slot's fill
-association is the live request identity together with its expected
-generation/validity; a late or stale response that does not match that
-association cannot make a reused slot `READY`.  A write commit uniquely
-terminates its matching live write request.  Gate A must additionally freeze
-whether terminal ID reuse relies on a transport no-late-response guarantee or
-on an explicit request epoch carried by every response.
+An accepted `(request_id, incarnation)` becomes live and remains live until
+exactly one terminal outcome: a successful terminal read response, a terminal
+fault status, or (for a write) one `page_write_commit`.  Every response beat
+must belong to exactly one live identity.  A live `request_id` may not acquire
+another incarnation; terminal reuse requires a new incarnation and the A3
+wrap-quiescence predicate.  A slot targeted by a live read request cannot be
+reassigned.  The slot's fill association is the live identity together with
+its expected generation/validity; a late or stale response that does not match
+that association cannot make a reused slot `READY`.  A write commit uniquely
+terminates its matching live write request.  Gate-A3 selects explicit epoch
+carriage, rather than a transport no-late-response assumption, for the anchor
+profile.
 
 These are request-lifetime invariants, not a selection of request-ID width,
 response ordering, transport retry, or controller microarchitecture.
@@ -320,8 +497,8 @@ two sidecar beats/page; it is not an HBM transaction or burst.
 
 Hot, pending, and packed sources feed the same GQA fanout.  Every source path
 must emit one `source_deliverable_event` before fanout consumer tracking is
-initialized.  For an S2 source, that event is `READY`; for a direct pending
-source, it is the Gate-A-defined direct-delivery completion.  At that event,
+initialized.  For an S2 source, that event is `READY`; for pending it is the
+Gate-A1 `direct_pending_source_deliverable` event.  At that event,
 the Qwen anchor initializes `consumer_pending[3:0] = 4'b1111` for the exact
 four verified query-head members.  Consumer `i` clears its bit only when that
 consumer's partial-state update is committed; reading the source payload alone
@@ -374,9 +551,11 @@ clock with M2 nor demonstrates a physical SRAM port implementation.
    choose a coherence protocol or memory primitive.
 4. A source page remains owned through all four GQA completions and partial
    updates; release cannot race a consumer or merge dependency.
-5. Payload and metadata publication need an explicit dependency edge in any
-   implementation.  This document does not choose its handshake, cycle,
-   scoreboarding, or HBM-completion realization.
+5. R3 selects an event-level payload/metadata handshake:
+   `R1 payload durable -> P3 DURABLE + M2 private group staged -> one M2
+   publish request/ack -> lifecycle authority transfer + P3 release`.
+   It does not select a cycle, controller completion implementation,
+   scoreboarding microarchitecture, or overlap schedule.
 6. A packed-cold payload read may not start before its associated metadata
    publication is visible.  This condition does not constrain direct hot or
    pending-source delivery.
@@ -392,9 +571,9 @@ a global commit controller or physical contention claim.
 
 ## 11. Assertion and conservation contract
 
-The interface reference model and any later RTL verification environment shall
-be able to express the following invariants.  They are semantic assertions,
-not claims that an existing A4 trace observed hardware signals.
+The Gate-A2 interface reference model and any later RTL verification environment
+shall be able to express the following invariants.  They are semantic
+assertions, not claims that an existing A4 trace observed hardware signals.
 
 ```text
 no_partial_group_visible
@@ -419,13 +598,63 @@ S2 source-buffer copies: they may mirror an authoritative payload but cannot
 become an independent logical residency.  DROP tokens have no pending or
 packed authoritative residency after their maturity disposition.
 
+Gate-A2 additionally executes the canonical mathematical source-partial merge,
+the hot/maturity/DROP authority path, and lossless semantic stalls.  Its strict
+non-reuse request-ID profile is the baseline; its optional epoch-reuse profile
+is only a stale-response refinement and does not select request width or an
+outstanding-operation bound.
+
 ## 12. Parameters, unestimated costs, and timing boundary
 
 | Category | Treatment |
 |---|---|
-| Frozen | Original mask; window 128; page 64; Qwen-anchor 512-B K+V/token; 32-KiB page; 8-B sidecar; four legal GQA consumers; canonical functional source order `hot -> pending -> packed`; 256-B beat; two S2 buffers; eight banks; HA8-wide abstract capability; frozen A4.10 `local32/shared256/staging512`, named here `metadata_control_local32/shared256/staging512`; M2; FIFO/ownership/dependency/credit; one atomic commit boundary. |
-| Parameters | Model/layer count; non-anchor bytes/token; page population; page-ID/pointer/handle/address/tag/generation/bank/offset widths; macro/port organization; allocator capacity/mapping; `pending_delivery_realization`; request-ID, epoch/reuse, and outstanding-operation bounds; HBM command/address mapping; fault policy; common clock, arbitration, and overlap schedule. |
-| Unestimated | `p3_payload_stage_page` physical realization/dynamic energy; M2 queue/staging dynamic accesses; sidecar/page manager; partial-state storage/spill; merge arithmetic; controller/interconnect; clock/wire/leakage; HBM physical area/energy. |
+| Frozen | Original mask; window 128; page 64; Qwen-anchor 512-B K+V/token; 32-KiB page; 8-B sidecar; four legal GQA consumers; canonical functional source order `hot -> pending -> packed`; 256-B beat; two S2 buffers; eight banks; HA8-wide abstract capability; frozen A4.10 `local32/shared256/staging512`, named here `metadata_control_local32/shared256/staging512`; M2; FIFO/ownership/dependency/credit; one atomic commit boundary; Gate-A1 `direct_pending_endpoint_v1`; R3 fail-closed M2/P3 fault/nonpublication and reset-init boundary; R5 18-bit page ID/8-bit generation, 128-bit descriptor, separate descriptor HBM region, and retirement/reclaim order. |
+| Parameters | Model/layer count; non-anchor bytes/token; page population; macro/port organization; non-anchor allocator capacity/mapping; descriptor/payload HBM base-address and controller mapping; request-ID, epoch/reuse, and outstanding-operation bounds; HBM error-detail/ECC realization; common clock, arbitration, and overlap schedule. |
+| Unestimated | `p3_payload_stage_page` physical realization/dynamic energy; M2 queue/staging dynamic accesses; direct-pending endpoint transport/control; R5 descriptor maintenance traffic/dynamic energy and on-chip macro cost; sidecar/page manager physical implementation; partial-state storage/spill; merge arithmetic; controller/interconnect; clock/wire/leakage; HBM physical area/energy. |
+
+### A3 selected RTL-entry anchor
+
+Gate-A3 materializes one finite engineering anchor at
+`analysis/architecture_gate_a3_rtl_entry_qwen3_8b_32k_s1_v1.json`.  It uses a
+32,768-token, one-concurrent-sequence Qwen3-8B Route-A instantiation; one
+pending endpoint; one pack engine; one active KV-head group; `4` live reads
+(`2` S2 fills, `1` direct-pending, `1` pack read); one live write; and a
+512-bit/64-B core fragment.  The entry profile's field schema names an
+abstract retention-KV semantic interface, but its declared evidence scope is
+only this Route-A Qwen3-8B anchor, not cross-algorithm portability.
+
+Its 5-GiB cold-KV HBM pool is a shared pending/packed address pool with
+distinct authority tags, rather than two separately provisioned 5-GiB
+regions.  It is sized with a keep-all cold-record guard, one packed-page
+migration reserve before atomic publication, 18-bit page IDs, and finite
+request/page generation quiescence.  `MAX_PENDING_RESIDENT_RECORDS` is the
+HBM-resident authority bound; the one live pending transaction is a separate
+endpoint bound.  This only closes finite address/resource interfaces.  It
+does not model HBM allocation timing, claim capacity sufficiency outside this
+anchor, or alter M2/P3/S2/FIFO/atomic-publication semantics.
+
+The 5-GiB pool includes only cold K/V payload, the 8-B/token position sidecar,
+and one 64-token payload-plus-sidecar migration reserve.  It excludes page
+descriptor/allocator metadata, M2 control metadata, `p3_payload_stage_page`,
+direct-endpoint transient fragments, partial merge state, ECC/alignment, and
+HBM-controller overhead.  The page manager owns the excluded descriptor/allocator
+state in the R5-selected separate HBM descriptor region plus on-chip active
+state.  The
+listed exclusions must not be silently charged to the pool or treated as
+covered capacity; R5 descriptor traffic/dynamic energy and on-chip macro cost
+remain unestimated.
+
+The selected 512-bit/64-B fragment is solely a core-facing internal interface
+choice.  It is not an HBM channel width, burst width, or reinterpretation of
+the frozen 256-B accounting beat.  Any mapping between this interface and a
+later HBM controller belongs to the Gate-A memory-wrapper contract and Gate-B
+implementation evidence.
+
+Logical session retirement is requested by the external runtime/session
+manager.  The KV subsystem then drains live work, checks quiescence, reclaims
+physical pages, and advances validity/generation.  A page-generation wrap
+requires no old live page reference, response, S2 association, direct-endpoint
+association, or metadata reference.
 
 The A4.14.1 ledger keeps payload and metadata service coordinates separate.
 They must not be added into latency, cycles, throughput, or tokens/s until a
@@ -452,23 +681,22 @@ review this document for source split, parameter fields, omitted costs, and
 non-additive service coordinates.  A missing ignored artifact is a provenance
 gap, not a pass and not authorization to overwrite a frozen artifact.
 
-### Gate A — RTL-entry architecture freeze
+### Gate A _ RTL-entry architecture freeze
 
 Gate A is separate and not passed.  It authorizes RTL work only after review
 freezes the following executable architecture contract:
 
 1. the top-level module graph, ownership boundaries, abstract S2 state machine,
-   memory request/response and lifetime contract, pending-delivery realization,
-   and metadata/payload dependency edges;
+   memory request/response and lifetime contract, Gate-A1 direct-pending
+   endpoint, R3 M2/P3 logical wrapper, and metadata/payload dependency edges;
 2. finite parameter values or allowed ranges for request IDs, epoch/reuse,
-   outstanding work, `pending_delivery_realization`, macro/controller
+   outstanding work, macro/controller
    assumptions, fault behavior, common-clock/arbitration/overlap, and
    backpressure; and
 3. a candidate macro/controller/port/replication assumption sufficient to
    define interfaces, without claiming final physical PPA;
-4. an RTL-visible implementation page/address/allocator schema derived from
-   those frozen parameter choices, including widths, validity/generation
-   semantics, and reclamation;
+4. the R5-selected page/address/allocator schema, including descriptor-region
+   ownership, widths, validity/generation semantics, and reclamation;
 5. an executable interface reference plus the assertion/conservation contract
    above, directed tests, and randomized tests for maturity, tail sealing,
    atomic publication, FIFO/ownership, credits, four-head release, and
@@ -476,7 +704,7 @@ freezes the following executable architecture contract:
 6. a native or explicit controller/interconnect interface with common clock,
    request/response dependencies, arbitration, and overlap.
 
-### Gate B — post-RTL implementation validation
+### Gate B _ post-RTL implementation validation
 
 Gate B follows RTL and implementation work.  It requires macro mapping,
 synthesis and timing results, area and power validation, realized controller

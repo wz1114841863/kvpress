@@ -1,0 +1,84 @@
+{
+  "schema_version": "route-a-rtl-boundary-profile-1",
+  "profile_id": "rtl_entry_qwen3_8b_32k_s1_v1",
+  "profile_class": "rtl_entry",
+  "profile_scope": {
+    "semantic_interface": "retention_kv_semantic_interface_v1",
+    "evidence_scope": "route_a_qwen3_8b_anchor_only"
+  },
+  "frozen_interface": {
+    "page_tokens": 64,
+    "s2_slots": 2,
+    "gqa_consumers": 4,
+    "pending_delivery": "direct_pending_endpoint_v1"
+  },
+  "transaction_identity": {
+    "mode": "epoch_reuse",
+    "rid_width": 3,
+    "incarnation_width": 2,
+    "max_live": 6,
+    "live_rid_unique": true,
+    "wrap_quiescence": [
+      "no_live_request",
+      "no_outstanding_old_response",
+      "no_s2_old_association",
+      "no_direct_pending_old_association"
+    ]
+  },
+  "allocator": {
+    "page_pool_pages": 146880,
+    "page_id_width": 18,
+    "generation_width": 8,
+    "max_live_refs": 2,
+    "reclamation": "explicit_no_live_reference_then_generation_advance",
+    "generation_wrap_quiescence": [
+      "no_live_page_reference",
+      "no_outstanding_old_page_response",
+      "no_s2_old_page_association",
+      "no_direct_pending_old_page_association",
+      "no_metadata_old_page_reference"
+    ],
+    "logical_retirement_owner": "external_runtime_session_manager",
+    "physical_reclamation_owner": "kv_subsystem_after_quiescence"
+  },
+  "direct_pending_endpoint": {
+    "transport_endpoint_credit": 8,
+    "max_live_fragments": 8,
+    "max_records_in_flight": 1,
+    "fragment_bytes": 64,
+    "core_data_width_bits": 512,
+    "holding_owner": "transport_endpoint",
+    "full_action": "backpressure_only"
+  },
+  "clock_wrapper": {
+    "boundary": "abstract_core_clk",
+    "claim": "no_hbm_timing_or_controller_model"
+  },
+  "fault": {
+    "policy": "fail_closed",
+    "upward_status": true,
+    "full_kv_fallback": false
+  },
+  "deployment_envelope": {
+    "max_context_tokens": 32768,
+    "max_concurrent_sequences": 1,
+    "num_layers": 36,
+    "num_kv_heads": 8,
+    "max_packed_page_population": 64,
+    "hot_window_tokens": 128,
+    "kv_payload_bytes_per_token": 512,
+    "position_sidecar_bytes_per_token": 8,
+    "cold_capacity_policy": "keep_all_cold_records",
+    "max_pending_resident_records": 9400320,
+    "max_live_pending_transactions": 1,
+    "max_inflight_migration_pages": 1,
+    "max_live_read_requests": 4,
+    "max_live_write_requests": 1,
+    "max_live_source_groups": 1,
+    "num_pending_endpoints": 1,
+    "num_pack_engines": 1,
+    "kv_head_group_parallelism": 1,
+    "total_cold_kv_hbm_pool_bytes": 5368709120
+  },
+  "evidence_class": "rtl_boundary_parameter_contract_no_performance_or_ppa_claim"
+}
