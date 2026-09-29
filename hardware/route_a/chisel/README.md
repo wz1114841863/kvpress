@@ -152,6 +152,13 @@ Route-A memory path. The frozen R3→R5 publication triplet remains unchanged,
 and the top ties these carriers inactive until their owning integration paths
 are implemented. See `analysis/rtl1_3_r3_r5_semantic_carrier_contract.md`.
 
+RTL1.4.0 adds only module-local S2/direct-pending control carriers: S2 fill
+and sidecar completion, source generation, direct record-terminal ordinal,
+and generation-bearing GQA commit/release. The top keeps these inactive until
+their owner modules gain RTL1.4 behavior. They neither instantiate the two
+32-KiB source buffers nor create a direct pending buffer or source mux. See
+`analysis/rtl1_4_s2_direct_pending_semantic_carrier_contract.md`.
+
 ## Next authorized step
 
 RTL1.3 now implements module-scoped R3/R5 control: P3 state/generation and

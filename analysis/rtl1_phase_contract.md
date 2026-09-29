@@ -1,6 +1,6 @@
 # RTL1 — Interface / Control Skeleton Bring-up
 
-**Status:** `rtl1_2_r2_arbiter_complete_at_module_scope; rtl1_3_0_r3_r5_carriers_complete; top_integration_and_remaining_owner_phases_pending`.
+**Status:** `rtl1_3_r3_r5_publication_control_complete_at_module_scope; rtl1_4_0_s2_direct_carriers_complete; top_integration_and_remaining_owner_phases_pending`.
 
 RTL1 may not change frozen owners, ports, assertions, oracles, pruning,
 admission, scheduler semantics, page size, S2 count, outstanding bounds, merge
@@ -18,6 +18,17 @@ format, or physical realization parameters.
 
 CDC/HBM adapter, macro/port count, physical queues, frequency, timing, PPA,
 and speedup remain outside RTL1 and require later implementation/Gate-B evidence.
+
+## RTL1.4.0 progress
+
+**RTL1.4.0 S2/direct-pending semantic-carrier closure: complete.**
+`analysis/rtl1_4_s2_direct_pending_semantic_carrier_contract.md` freezes the
+module-local S2 fill/sidecar/generation and direct record-terminal/ordinal
+carriers, plus generation-bearing local GQA commit/release. The frozen
+top-level lifecycle, R1, R2, R4, and R6 ports/owners are unchanged. The top
+ties the new carrier endpoints inactive pending RTL1.4 producer integration;
+there is no source mux, numeric merge, physical source buffer, or direct
+pending payload buffer in this carrier-only step.
 
 ## RTL1.3.0 progress
 

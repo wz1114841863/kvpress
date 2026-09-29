@@ -44,6 +44,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     p3StageGenerationWidth = 1,
     r5AllocatorEntries = 8,
     r5StreamSlots = 8,
+    sourceGenerationWidth = 2,
   )
 
   behavior of "RouteAKVSubsystemTop RTL1.0 structural skeleton"

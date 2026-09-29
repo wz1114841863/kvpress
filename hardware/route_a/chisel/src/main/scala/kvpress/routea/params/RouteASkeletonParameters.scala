@@ -37,6 +37,7 @@ final case class RouteASkeletonParameters(
   p3StageGenerationWidth: Int,
   r5AllocatorEntries: Int,
   r5StreamSlots: Int,
+  sourceGenerationWidth: Int,
 ) {
   private val allOpaqueWidths = Seq(
     frontendEventKindWidth,
@@ -56,6 +57,7 @@ final case class RouteASkeletonParameters(
     sourceDeliveryOpaqueWidth,
     transactionGroupTagWidth,
     p3StageGenerationWidth,
+    sourceGenerationWidth,
   )
 
   require(allOpaqueWidths.forall(_ > 0), "Every opaque logical-field width must be supplied and positive")

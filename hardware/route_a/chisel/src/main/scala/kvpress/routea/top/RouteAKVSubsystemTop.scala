@@ -31,7 +31,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
   withClockAndReset(core_clk, destructive_reset) {
     val lifecycle = Module(new RouteALifecycleAdapter(p))
     val hot = Module(new RouteAHotSourcePath(p))
-    val s2 = Module(new RouteAS2GqaSourceWrapper)
+    val s2 = Module(new RouteAS2GqaSourceWrapper(p))
     val direct_pending = Module(new RouteADirectPendingEndpointV1(p))
     val arbiter = Module(new RouteACoreSideArbiter(p))
     val core_memory = Module(new RouteACoreMemIfV1(p))
@@ -49,8 +49,27 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     lifecycle.io.component_status_in <> component_status_in
 
     hot.io.lifecycle_control_in <> lifecycle.io.hot_control_out
+    s2.io.mem_init_done := false.B
     s2.io.service_req_in <> lifecycle.io.s2_service_req
+    val s2_fill_open = Wire(RouteAChannels.s2_fill_open(p)); StructuralTieOff.source(s2_fill_open)
+    val s2_fill_terminal = Wire(RouteAChannels.s2_fill_terminal(p)); StructuralTieOff.source(s2_fill_terminal)
+    val s2_sidecar_complete = Wire(RouteAChannels.s2_sidecar_complete(p)); StructuralTieOff.source(s2_sidecar_complete)
+    val s2_gqa_commit = Wire(RouteAChannels.gqa_consumer_commit(p)); StructuralTieOff.source(s2_gqa_commit)
+    val s2_release = Wire(RouteAChannels.source_release(p)); StructuralTieOff.sink(s2_release)
+    s2.io.s2_fill_open_in <> s2_fill_open
+    s2.io.s2_fill_terminal_in <> s2_fill_terminal
+    s2.io.s2_sidecar_complete_in <> s2_sidecar_complete
+    s2.io.gqa_consumer_commit_in <> s2_gqa_commit
+    s2_release <> s2.io.s2_release_out
+    s2.io.s2_observe_slot := 0.U
+    direct_pending.io.mem_init_done := false.B
     direct_pending.io.pending_source_open_in <> lifecycle.io.direct_pending_open
+    val direct_record_terminal = Wire(RouteAChannels.direct_pending_record_terminal(p)); StructuralTieOff.source(direct_record_terminal)
+    val direct_gqa_commit = Wire(RouteAChannels.gqa_consumer_commit(p)); StructuralTieOff.source(direct_gqa_commit)
+    val direct_release = Wire(RouteAChannels.source_release(p)); StructuralTieOff.sink(direct_release)
+    direct_pending.io.direct_pending_record_terminal_in <> direct_record_terminal
+    direct_pending.io.gqa_consumer_commit_in <> direct_gqa_commit
+    direct_release <> direct_pending.io.direct_release_out
 
     val source_partial_to_merge = Wire(RouteAChannels.source_partial)
     StructuralTieOff.source(source_partial_to_merge)

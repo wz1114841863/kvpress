@@ -22,6 +22,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     sourceDeliveryOpaqueWidth = 1, transactionGroupTagWidth = 2, p3StageGenerationWidth = 2,
     r5AllocatorEntries = 8,
     r5StreamSlots = 8,
+    sourceGenerationWidth = 2,
   )
 
   private def initR3(dut: RouteAM2P3Wrapper): Unit = {

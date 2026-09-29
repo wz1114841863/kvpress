@@ -16,15 +16,31 @@ final class RouteAHotSourcePath(p: RouteASkeletonParameters) extends Module {
   StructuralTieOff.sink(io.lifecycle_control_in)
 }
 
-/** RTL1.0 structural shell only; no S2 state, generation, or GQA behavior exists here. */
-final class RouteAS2GqaSourceWrapper extends Module {
+/** RTL1.4.0 carrier shell; no S2 storage, generation, or GQA behavior exists here yet. */
+final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_s2_gqa_source_wrapper"
 
   val io = IO(new Bundle {
+    val mem_init_done = Input(Bool())
     val service_req_in = Flipped(RouteAChannels.s2_service_req)
+    val s2_fill_open_in = Flipped(RouteAChannels.s2_fill_open(p))
+    val s2_fill_terminal_in = Flipped(RouteAChannels.s2_fill_terminal(p))
+    val s2_sidecar_complete_in = Flipped(RouteAChannels.s2_sidecar_complete(p))
+    val gqa_consumer_commit_in = Flipped(RouteAChannels.gqa_consumer_commit(p))
+    val s2_release_out = RouteAChannels.source_release(p)
+    val s2_observe_slot = Input(UInt(RouteAAnchorWidths.S2SlotWidth.W))
+    val s2_observe_state = Output(UInt(3.W))
+    val s2_observe_generation = Output(UInt(p.sourceGenerationWidth.W))
   })
 
   StructuralTieOff.sink(io.service_req_in)
+  StructuralTieOff.sink(io.s2_fill_open_in)
+  StructuralTieOff.sink(io.s2_fill_terminal_in)
+  StructuralTieOff.sink(io.s2_sidecar_complete_in)
+  StructuralTieOff.sink(io.gqa_consumer_commit_in)
+  StructuralTieOff.source(io.s2_release_out)
+  io.s2_observe_state := 0.U
+  io.s2_observe_generation := 0.U
 }
 
 /** RTL1.2 R2 eligibility, lossless candidate storage, and accepted-grant control. */

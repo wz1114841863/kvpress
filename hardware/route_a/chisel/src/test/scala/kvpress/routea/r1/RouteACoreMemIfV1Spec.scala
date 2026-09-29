@@ -44,6 +44,7 @@ final class RouteACoreMemIfV1Spec extends AnyFunSpec with ChiselSim {
     p3StageGenerationWidth = 1,
     r5AllocatorEntries = 8,
     r5StreamSlots = 8,
+    sourceGenerationWidth = 2,
   )
 
   private def driveRequest(

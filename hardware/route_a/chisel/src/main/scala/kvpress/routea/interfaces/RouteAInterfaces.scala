@@ -100,6 +100,59 @@ final class DirectPendingOpen(p: RouteASkeletonParameters) extends Bundle {
   val expected_generation_or_validity = UInt(p.pendingValidityWidth.W)
 }
 
+/** Local S2 fill-control association; never a physical source-buffer port. */
+final class S2FillOpen(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val page_ref = new PageRef
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val expected_fragment_count = UInt(10.W)
+  val requires_sidecar = Bool()
+}
+
+/** Local R2/R1 delivery observation for an S2 fill, without payload storage. */
+final class S2FillTerminal(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val fragment_index = UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W)
+  val last = Bool()
+  val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
+}
+
+final class S2SidecarComplete(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+}
+
+/** Local direct-pending deliverability/close observation; K/V is not stored here. */
+final class DirectPendingRecordTerminal(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val endpoint_generation = UInt(p.sourceGenerationWidth.W)
+  val ordinal = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
+  val last = Bool()
+  val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
+  val explicit_empty = Bool()
+}
+
+/** Generation-bearing local refinement of the later R4 consumer-commit event. */
+final class GqaConsumerCommit(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val source_is_direct = Bool()
+  val source_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val consumer_id = UInt(RouteAAnchorWidths.ConsumerIdWidth.W)
+}
+
+/** Local release notification; it is not an R6 terminal outcome or credit return. */
+final class SourceRelease(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val source_is_direct = Bool()
+  val source_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+}
+
 final class SourcePartial extends Bundle {
   val source_kind = UInt(RouteAAnchorWidths.SourceKindWidth.W)
   val merge_partial_header = UInt(RouteAAnchorWidths.MergePartialHeaderWidth.W)
@@ -285,6 +338,12 @@ object RouteAChannels {
   def hot_control(p: RouteASkeletonParameters) = Decoupled(new HotControl(p))
   def s2_service_req = Decoupled(new S2ServiceRequest)
   def direct_pending_open(p: RouteASkeletonParameters) = Decoupled(new DirectPendingOpen(p))
+  def s2_fill_open(p: RouteASkeletonParameters) = Decoupled(new S2FillOpen(p))
+  def s2_fill_terminal(p: RouteASkeletonParameters) = Decoupled(new S2FillTerminal(p))
+  def s2_sidecar_complete(p: RouteASkeletonParameters) = Decoupled(new S2SidecarComplete(p))
+  def direct_pending_record_terminal(p: RouteASkeletonParameters) = Decoupled(new DirectPendingRecordTerminal(p))
+  def gqa_consumer_commit(p: RouteASkeletonParameters) = Decoupled(new GqaConsumerCommit(p))
+  def source_release(p: RouteASkeletonParameters) = Decoupled(new SourceRelease(p))
   def source_partial = Decoupled(new SourcePartial)
   def consumer_partial_commit = Decoupled(new ConsumerPartialCommit)
   def merge_req = Decoupled(new MergeRequest)

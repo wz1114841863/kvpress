@@ -41,15 +41,26 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   StructuralTieOff.sink(io.metadata_publish_ack_in)
 }
 
-/** RTL1.0 structural shell only; no pending transport state or stale filtering exists here. */
+/** RTL1.4.0 carrier shell; direct pending remains unimplemented until RTL1.4. */
 final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_direct_pending_endpoint_v1"
 
   val io = IO(new Bundle {
+    val mem_init_done = Input(Bool())
     val pending_source_open_in = Flipped(RouteAChannels.direct_pending_open(p))
+    val direct_pending_record_terminal_in = Flipped(RouteAChannels.direct_pending_record_terminal(p))
+    val gqa_consumer_commit_in = Flipped(RouteAChannels.gqa_consumer_commit(p))
+    val direct_release_out = RouteAChannels.source_release(p)
+    val direct_observe_generation = Output(UInt(p.sourceGenerationWidth.W))
+    val direct_observe_active = Output(Bool())
   })
 
   StructuralTieOff.sink(io.pending_source_open_in)
+  StructuralTieOff.sink(io.direct_pending_record_terminal_in)
+  StructuralTieOff.sink(io.gqa_consumer_commit_in)
+  StructuralTieOff.source(io.direct_release_out)
+  io.direct_observe_generation := 0.U
+  io.direct_observe_active := false.B
 }
 
 /** RTL1.3 R3 control state: no P3 payload macro, M2 macro, or HBM controller. */
