@@ -79,7 +79,26 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     source_delivery <> arbiter.io.source_delivery_out
     StructuralTieOff.sink(source_delivery)
 
+    m2_p3.io.mem_init_done := false.B
+    val p3_claim = Wire(RouteAChannels.p3_claim(p)); StructuralTieOff.source(p3_claim)
+    val p3_fragment = Wire(RouteAChannels.p3_pending_fragment(p)); StructuralTieOff.source(p3_fragment)
+    val p3_sidecar = Wire(RouteAChannels.p3_sidecar_bind(p)); StructuralTieOff.source(p3_sidecar)
+    val p3_write_terminal = Wire(RouteAChannels.p3_packed_write_terminal(p)); StructuralTieOff.source(p3_write_terminal)
+    val m2_group_member_rsp = Wire(RouteAChannels.m2_group_member_rsp(p)); StructuralTieOff.source(m2_group_member_rsp)
+    m2_p3.io.p3_claim_in <> p3_claim
+    m2_p3.io.p3_pending_fragment_in <> p3_fragment
+    m2_p3.io.p3_sidecar_bind_in <> p3_sidecar
+    m2_p3.io.p3_packed_write_terminal_in <> p3_write_terminal
+    m2_p3.io.m2_group_member_rsp_in <> m2_group_member_rsp
+    m2_p3.io.p3_observe_layer := 0.U
     m2_p3.io.m2_publish_req_in <> lifecycle.io.metadata_publish_req
+    page_manager.io.mem_init_done := false.B
+    val page_allocation_req = Wire(RouteAChannels.page_allocation_req(p)); StructuralTieOff.source(page_allocation_req)
+    val page_allocation_rsp = Wire(RouteAChannels.page_allocation_rsp(p)); StructuralTieOff.sink(page_allocation_rsp)
+    val descriptor_maintenance_terminal = Wire(RouteAChannels.descriptor_maintenance_terminal(p)); StructuralTieOff.source(descriptor_maintenance_terminal)
+    page_manager.io.page_allocation_req_in <> page_allocation_req
+    page_allocation_rsp <> page_manager.io.page_allocation_rsp
+    page_manager.io.descriptor_maintenance_terminal_in <> descriptor_maintenance_terminal
     page_manager.io.metadata_publish_visibility_in <> m2_p3.io.metadata_publish_visibility_apply
     m2_p3.io.metadata_publish_visibility_ack_in <> page_manager.io.metadata_publish_visibility_ack
     lifecycle.io.metadata_publish_ack_in <> m2_p3.io.m2_publish_ack

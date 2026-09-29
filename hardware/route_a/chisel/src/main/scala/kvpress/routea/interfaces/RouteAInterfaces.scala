@@ -195,6 +195,75 @@ final class MetadataPublishAck(p: RouteASkeletonParameters) extends Bundle {
   val status = UInt(RouteAAnchorWidths.PublicationStatusWidth.W)
 }
 
+/** RTL1.3.0 local P3 claim carrier; never an HBM command or P3 macro port. */
+final class P3Claim(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val owner = UInt(RouteAAnchorWidths.RequestIdWidth.W)
+  val page_ref = new PageRef
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+}
+
+/** Control-only observation of a delivered 64-B pending fragment. */
+final class P3PendingFragment(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val fragment_index = UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W)
+  val last = Bool()
+  val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
+}
+
+/** Position-sidecar completion carrier; position payload storage remains unselected. */
+final class P3SidecarBind(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val record_ordinal = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+}
+
+/** Associates an R1 packed-write terminal with a P3 stage/group, control only. */
+final class P3PackedWriteTerminal(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
+  val r1_payload_durable = Bool()
+}
+
+/** A private result for one of the two fixed semantic M2 RMW members. */
+final class M2GroupMemberResponse(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val member = UInt(1.W)
+  val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
+}
+
+/** R5-local allocation request; no physical descriptor/HBM command is implied. */
+final class PageAllocationRequest(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+}
+
+final class PageAllocationResponse(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val page_ref = new PageRef
+  val requires_tail_link = Bool()
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+}
+
+/** R5 observes only the terminal fact from the frozen R2/R1 maintenance path. */
+final class DescriptorMaintenanceTerminal(p: RouteASkeletonParameters) extends Bundle {
+  val kind = UInt(2.W)
+  val page_ref = new PageRef
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
+  val r1_descriptor_durable = Bool()
+}
+
 object RouteAChannels {
   def frontend_lifecycle_req(p: RouteASkeletonParameters) = Decoupled(new FrontendLifecycleRequest(p))
   def runtime_retire_req = Decoupled(new RuntimeRetireRequest)
@@ -216,4 +285,12 @@ object RouteAChannels {
   def metadata_publish_visibility(p: RouteASkeletonParameters) = Decoupled(new MetadataPublishVisibility(p))
   def metadata_publish_visibility_ack = Decoupled(new MetadataPublishVisibilityAck)
   def metadata_publish_ack(p: RouteASkeletonParameters) = Decoupled(new MetadataPublishAck(p))
+  def p3_claim(p: RouteASkeletonParameters) = Decoupled(new P3Claim(p))
+  def p3_pending_fragment(p: RouteASkeletonParameters) = Decoupled(new P3PendingFragment(p))
+  def p3_sidecar_bind(p: RouteASkeletonParameters) = Decoupled(new P3SidecarBind(p))
+  def p3_packed_write_terminal(p: RouteASkeletonParameters) = Decoupled(new P3PackedWriteTerminal(p))
+  def m2_group_member_rsp(p: RouteASkeletonParameters) = Decoupled(new M2GroupMemberResponse(p))
+  def page_allocation_req(p: RouteASkeletonParameters) = Decoupled(new PageAllocationRequest(p))
+  def page_allocation_rsp(p: RouteASkeletonParameters) = Decoupled(new PageAllocationResponse(p))
+  def descriptor_maintenance_terminal(p: RouteASkeletonParameters) = Decoupled(new DescriptorMaintenanceTerminal(p))
 }

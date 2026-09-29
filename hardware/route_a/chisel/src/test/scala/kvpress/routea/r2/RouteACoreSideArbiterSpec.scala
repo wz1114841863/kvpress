@@ -21,6 +21,7 @@ final class RouteACoreSideArbiterSpec extends AnyFunSpec with ChiselSim {
     coreMemoryReadRequestCode = 0, coreMemoryWriteRequestCode = 1, coreMemoryWriteDataCode = 2,
     coreMemoryOkStatusCode = 0, coreMemoryFaultStatusCode = 1,
     sourceDeliveryOpaqueWidth = 1, transactionGroupTagWidth = 1, p3StageGenerationWidth = 1,
+    r5AllocatorEntries = 8,
   )
   private val commonRead = (1 << RouteAR2PredicateBits.FifoPredecessor) |
     (1 << RouteAR2PredicateBits.Ownership) | (1 << RouteAR2PredicateBits.SourceCredit) |

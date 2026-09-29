@@ -35,6 +35,7 @@ final case class RouteASkeletonParameters(
   sourceDeliveryOpaqueWidth: Int,
   transactionGroupTagWidth: Int,
   p3StageGenerationWidth: Int,
+  r5AllocatorEntries: Int,
 ) {
   private val allOpaqueWidths = Seq(
     frontendEventKindWidth,
@@ -91,6 +92,8 @@ final case class RouteASkeletonParameters(
     "Every R1 terminal-status code must fit the selected terminal-status width",
   )
   require(coreMemoryOkStatusCode != coreMemoryFaultStatusCode, "R1 OK and fault status codes must differ")
+  require(r5AllocatorEntries > 0 && r5AllocatorEntries <= 146880,
+    "R5 allocator control bound must be positive and no larger than the selected logical anchor")
 }
 
 /** Selected Route-A anchor widths, sourced from the Gate-A3/R4/R5 contracts. */
@@ -115,4 +118,24 @@ object RouteAAnchorWidths {
   final val NormalizedValueWidth = 128 * 32
   final val TerminalStatusWidth = 1
   final val PublicationStatusWidth = 1
+  final val P3ValidRecordsWidth = 7
+  final val P3FragmentIndexWidth = 9
+  final val P3StateWidth = 3
+}
+
+/** Fixed semantic encodings, not physical controller/M2/P3 encodings. */
+object RouteAPublicationStatus {
+  final val Published = 0
+  final val Fault = 1
+}
+
+object RouteAM2GroupMember {
+  final val HeadControlRmw = 0
+  final val SpanOwnerRmw = 1
+}
+
+object RouteADescriptorOperationKind {
+  final val NewPage = 0
+  final val TailLink = 1
+  final val Invalidate = 2
 }

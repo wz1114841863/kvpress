@@ -1,6 +1,6 @@
 # RTL1 — Interface / Control Skeleton Bring-up
 
-**Status:** `rtl1_1_r1_core_wrapper_complete_at_module_scope; top_integration_and_remaining_owner_phases_pending`.
+**Status:** `rtl1_2_r2_arbiter_complete_at_module_scope; rtl1_3_0_r3_r5_carriers_complete; top_integration_and_remaining_owner_phases_pending`.
 
 RTL1 may not change frozen owners, ports, assertions, oracles, pruning,
 admission, scheduler semantics, page size, S2 count, outstanding bounds, merge
@@ -18,6 +18,17 @@ format, or physical realization parameters.
 
 CDC/HBM adapter, macro/port count, physical queues, frequency, timing, PPA,
 and speedup remain outside RTL1 and require later implementation/Gate-B evidence.
+
+## RTL1.3.0 progress
+
+**RTL1.3.0 R3/R5 semantic-carrier closure: complete.**
+`analysis/rtl1_3_r3_r5_semantic_carrier_contract.md` freezes the local
+control-only P3 claim/fragment/sidecar/write-terminal, two-member M2 result,
+R5 allocation, and descriptor-terminal carriers. The frozen external
+publication triplet and the sole R1 external-memory carrier are unchanged.
+The top keeps these local carriers inactive until their producer-owner phases
+exist, so this step contains no P3/M2/R5 behavior or authority change. The
+structural Chisel elaboration test passed after the carrier addition.
 
 ## RTL1.0 progress
 

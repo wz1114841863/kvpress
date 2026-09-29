@@ -2,7 +2,7 @@ package kvpress.routea.incremental
 
 import chisel3._
 import kvpress.routea.interfaces._
-import kvpress.routea.params.RouteASkeletonParameters
+import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
 
 /**
   * RTL1.0 structural shell only. Authority, terminal association, and global
@@ -51,32 +51,55 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
   StructuralTieOff.sink(io.pending_source_open_in)
 }
 
-/** RTL1.0 structural shell only; no M2/P3 state, durability, or publication exists here. */
+/** RTL1.3.0 carrier shell; local inputs remain inactive until RTL1.3 control state. */
 final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_m2_p3_wrapper"
 
   val io = IO(new Bundle {
+    val mem_init_done = Input(Bool())
+    val p3_claim_in = Flipped(RouteAChannels.p3_claim(p))
+    val p3_pending_fragment_in = Flipped(RouteAChannels.p3_pending_fragment(p))
+    val p3_sidecar_bind_in = Flipped(RouteAChannels.p3_sidecar_bind(p))
+    val p3_packed_write_terminal_in = Flipped(RouteAChannels.p3_packed_write_terminal(p))
+    val m2_group_member_rsp_in = Flipped(RouteAChannels.m2_group_member_rsp(p))
+    val p3_observe_layer = Input(UInt(RouteAAnchorWidths.LayerWidth.W))
+    val p3_observe_state = Output(UInt(RouteAAnchorWidths.P3StateWidth.W))
+    val p3_observe_generation = Output(UInt(p.p3StageGenerationWidth.W))
     val m2_publish_req_in = Flipped(RouteAChannels.metadata_publish_req(p))
     val metadata_publish_visibility_apply = RouteAChannels.metadata_publish_visibility(p)
     val metadata_publish_visibility_ack_in = Flipped(RouteAChannels.metadata_publish_visibility_ack)
     val m2_publish_ack = RouteAChannels.metadata_publish_ack(p)
   })
 
+  StructuralTieOff.sink(io.p3_claim_in)
+  StructuralTieOff.sink(io.p3_pending_fragment_in)
+  StructuralTieOff.sink(io.p3_sidecar_bind_in)
+  StructuralTieOff.sink(io.p3_packed_write_terminal_in)
+  StructuralTieOff.sink(io.m2_group_member_rsp_in)
+  io.p3_observe_state := 0.U
+  io.p3_observe_generation := 0.U
   StructuralTieOff.sink(io.m2_publish_req_in)
   StructuralTieOff.source(io.metadata_publish_visibility_apply)
   StructuralTieOff.sink(io.metadata_publish_visibility_ack_in)
   StructuralTieOff.source(io.m2_publish_ack)
 }
 
-/** RTL1.0 structural shell only; no descriptor/allocator/reclaim state exists here. */
+/** RTL1.3.0 carrier shell; descriptor HBM traffic remains on the frozen R2/R1 path. */
 final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_page_manager"
 
   val io = IO(new Bundle {
+    val mem_init_done = Input(Bool())
+    val page_allocation_req_in = Flipped(RouteAChannels.page_allocation_req(p))
+    val page_allocation_rsp = RouteAChannels.page_allocation_rsp(p)
+    val descriptor_maintenance_terminal_in = Flipped(RouteAChannels.descriptor_maintenance_terminal(p))
     val metadata_publish_visibility_in = Flipped(RouteAChannels.metadata_publish_visibility(p))
     val metadata_publish_visibility_ack = RouteAChannels.metadata_publish_visibility_ack
   })
 
+  StructuralTieOff.sink(io.page_allocation_req_in)
+  StructuralTieOff.source(io.page_allocation_rsp)
+  StructuralTieOff.sink(io.descriptor_maintenance_terminal_in)
   StructuralTieOff.sink(io.metadata_publish_visibility_in)
   StructuralTieOff.source(io.metadata_publish_visibility_ack)
 }

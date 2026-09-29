@@ -142,6 +142,16 @@ cursor advance, ready-low stability, response association, and descriptor
 terminal release. Its transport reservation is distinct from credits owned by
 R3/R5/R6, so progress remains an environment-fairness obligation.
 
+## RTL1.3.0 R3/R5 carrier closure
+
+RTL1.3.0 adds module-local control carriers for later R3/R5 behavior: P3
+claim/fragment/sidecar/write-terminal facts, the two M2 group-member results,
+R5 allocation, and descriptor-maintenance terminals. They are deliberately
+not external HBM commands, P3/SRAM macros, descriptor data writes, or a second
+Route-A memory path. The frozen R3→R5 publication triplet remains unchanged,
+and the top ties these carriers inactive until their owning integration paths
+are implemented. See `analysis/rtl1_3_r3_r5_semantic_carrier_contract.md`.
+
 ## Next authorized step
 
 Proceed to RTL1.3 only under the coupled R3/R5 P3/descriptor/atomic-publication
