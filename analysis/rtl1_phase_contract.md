@@ -90,3 +90,12 @@ rejection, the four-read bound, ordered write fragments, successful terminal
 write commit, early-commit terminal fault, and pre-init stale response
 suppression. They make no HBM controller, CDC, timing, bandwidth, PPA, model,
 GPU, performance, or complete RTL-correctness claim.
+
+## RTL1.2.0 progress
+
+**RTL1.2.0 R2 semantic-carrier realization: complete.**
+`analysis/rtl1_2_r2_semantic_carrier_contract.md` resolves the RTL1.0 opaque
+candidate and source-delivery records into the existing-port R2 request,
+predicate, response-association, and parameter boundary. It neither adds a
+top-level channel nor chooses a physical queue/FIFO depth. RTL1.2 may now
+implement the R2 owner behavior only against that carrier contract.

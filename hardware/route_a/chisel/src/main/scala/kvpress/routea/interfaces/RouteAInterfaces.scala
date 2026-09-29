@@ -109,11 +109,16 @@ final class MergeTerminalResponse extends Bundle {
   val normalized_value = UInt(RouteAAnchorWidths.NormalizedValueWidth.W)
 }
 
+/**
+  * Existing RTL0.2 R2 candidate port, refined by RTL1.2.0. The nested request
+  * is a core-side logical R1 carrier, not an HBM/controller command.
+  */
 final class SourceCandidate(p: RouteASkeletonParameters) extends Bundle {
   val candidate_class = UInt(p.candidateClassWidth.W)
   val arrival_ordinal = UInt(p.candidateOrdinalWidth.W)
   val candidate_id = UInt(p.candidateIdWidth.W)
-  val ownership_credit_dependency_ready = UInt(p.candidatePredicateWidth.W)
+  val eligibility_snapshot = UInt(p.candidatePredicateWidth.W)
+  val r1_request = new CoreMemoryRequest(p)
 }
 
 /**
@@ -147,9 +152,12 @@ final class CoreMemoryExternalPort(p: RouteASkeletonParameters) extends Bundle {
   val response = Flipped(Decoupled(new CoreMemoryResponse(p)))
 }
 
+/** Existing RTL0.2 routed-response port, refined by RTL1.2.0. */
 final class SourceDelivery(p: RouteASkeletonParameters) extends Bundle {
-  val transaction_identity = new TransactionIdentity
-  val destination_fragment_terminal = UInt(p.sourceDeliveryOpaqueWidth.W)
+  val candidate_id = UInt(p.candidateIdWidth.W)
+  val candidate_class = UInt(p.candidateClassWidth.W)
+  val destination = UInt(p.coreMemoryDestinationWidth.W)
+  val r1_response = new CoreMemoryResponse(p)
 }
 
 final class MetadataPublishRequest(p: RouteASkeletonParameters) extends Bundle {

@@ -15,6 +15,13 @@ final case class RouteASkeletonParameters(
   candidateOrdinalWidth: Int,
   candidateIdWidth: Int,
   candidatePredicateWidth: Int,
+  r2S2FullClassCode: Int,
+  r2S2PackedClassCode: Int,
+  r2DirectPendingClassCode: Int,
+  r2PackReadClassCode: Int,
+  r2PackWriteClassCode: Int,
+  r2DescriptorMaintenanceClassCode: Int,
+  r2CandidateSlotsPerClass: Int,
   coreMemoryRequestKindWidth: Int,
   coreMemoryDestinationWidth: Int,
   coreMemoryAddressRefWidth: Int,
@@ -50,6 +57,22 @@ final case class RouteASkeletonParameters(
   )
 
   require(allOpaqueWidths.forall(_ > 0), "Every opaque logical-field width must be supplied and positive")
+
+  require(candidatePredicateWidth >= 10, "R2 eligibility snapshot requires its ten frozen semantic bits")
+  private val candidateClassLimit = 1 << candidateClassWidth
+  private val r2ClassCodes = Seq(
+    r2S2FullClassCode,
+    r2S2PackedClassCode,
+    r2DirectPendingClassCode,
+    r2PackReadClassCode,
+    r2PackWriteClassCode,
+    r2DescriptorMaintenanceClassCode,
+  )
+  require(
+    r2ClassCodes.forall(code => code >= 0 && code < candidateClassLimit) && r2ClassCodes.distinct.size == r2ClassCodes.size,
+    "Every R2 candidate-class code must fit the supplied width and be distinct",
+  )
+  require(r2CandidateSlotsPerClass > 0, "R2 candidate storage bound must be supplied and positive")
 
   private val requestKindLimit = 1 << coreMemoryRequestKindWidth
   require(
