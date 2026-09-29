@@ -126,6 +126,10 @@ final class CoreMemoryRequest(p: RouteASkeletonParameters) extends Bundle {
   val destination = UInt(p.coreMemoryDestinationWidth.W)
   val address_ref = UInt(p.coreMemoryAddressRefWidth.W)
   val expected_fragment_count = UInt(p.coreMemoryFragmentCountWidth.W)
+  // Used only by the R1 write-data variant. Read/write-request variants leave
+  // these fields at their caller-defined inert values.
+  val fragment_index = UInt(p.coreMemoryFragmentIndexWidth.W)
+  val last = Bool()
   val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
 }
 

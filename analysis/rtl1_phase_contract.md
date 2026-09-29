@@ -1,6 +1,6 @@
 # RTL1 — Interface / Control Skeleton Bring-up
 
-**Status:** `authorized_by_gate_rtl0_pass; not_functional_rtl_pass`.
+**Status:** `rtl1_1_r1_core_wrapper_complete_at_module_scope; top_integration_and_remaining_owner_phases_pending`.
 
 RTL1 may not change frozen owners, ports, assertions, oracles, pruning,
 admission, scheduler semantics, page size, S2 count, outstanding bounds, merge
@@ -47,9 +47,46 @@ behavior or assertion body. The Python
 entry-point labels, observation description, and forbidden adapter rule without
 dispatching an event or running a model.
 
-Every safety body is explicitly `owner_state_pending`; every progress body is
-`owner_event_pending`. This is required because RTL1.0.a has no owner state or
-event transitions to observe. The registry proves binding inventory/ownership
-consistency only; it is not an SVA/formal proof, Python-scoreboard execution,
-directed protocol test, randomized scenario, or RTL functional pass.
-Consequently RTL1.0.b does not authorize R1--R6 behavior by itself.
+At RTL1.0.b completion every safety body was explicitly
+`owner_state_pending` and every progress body `owner_event_pending`. That was
+required because RTL1.0.a had no owner state or event transitions to observe.
+The registry proves binding inventory/ownership consistency only; it is not an
+SVA/formal proof, Python-scoreboard execution, directed protocol test,
+randomized scenario, or RTL functional pass. Consequently RTL1.0.b alone did
+not authorize R1--R6 behavior.
+
+## RTL1.1 progress
+
+**RTL1.1 R1 core-memory wrapper: complete at module scope.**
+`RouteACoreMemIfV1` replaces only the R1 inert shell with the selected
+`core_mem_if_v1` transaction state: four live reads, one live write,
+`(RID[2:0], incarnation[1:0])` live/retired identity discipline, ordered
+512-bit fragments, fail-closed malformed or early-write-commit handling, and
+one terminal removal. Its write commit reports payload durability only; it
+does not create publication, page authority, a packed read, or any R3/R5
+behavior.
+
+`mem_init_done` is a module-local adapter acknowledgement. After destructive
+reset, R1 will not accept or emit traffic until it is observed. The adapter
+must suppress/drain pre-reset replies before acknowledging it; because the
+adapter epoch is explicitly not a core-side wire, R1 cannot distinguish an
+adapter-violating old response from a new response with the same numeric
+identity after that acknowledgement. The still-inert top ties this local input
+low until the lifecycle/reset owner phase integrates the handshake. Therefore
+this is an R1 module pass, not a functional top-level Route-A pass.
+
+The binding manifest now marks the three R1-owned safety records
+`a_descriptor_unique_memory_path`, `a_reset_stale_exclusion`, and
+`a_stale_response` as `owner_chisel_assert_bound`; all other safety and
+progress records remain pending. The zero-port SVA registry remains only the
+frozen top-level attachment; these three bodies are Chisel assertions, not an
+SVA/formal proof. The frozen Python scoreboard association is still read-only
+inventory binding, not an event-dispatch adapter or an RTL/Python equivalence
+claim.
+
+No-model ChiselSim directed tests cover reset-init gating, stalled read
+fragment forwarding, terminal stale suppression, same-epoch identity reuse
+rejection, the four-read bound, ordered write fragments, successful terminal
+write commit, early-commit terminal fault, and pre-init stale response
+suppression. They make no HBM controller, CDC, timing, bandwidth, PPA, model,
+GPU, performance, or complete RTL-correctness claim.

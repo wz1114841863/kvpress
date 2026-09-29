@@ -27,6 +27,11 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     coreMemoryAddressRefWidth = 1,
     coreMemoryFragmentCountWidth = 1,
     coreMemoryFragmentIndexWidth = 1,
+    coreMemoryReadRequestCode = 0,
+    coreMemoryWriteRequestCode = 1,
+    coreMemoryWriteDataCode = 2,
+    coreMemoryOkStatusCode = 0,
+    coreMemoryFaultStatusCode = 1,
     sourceDeliveryOpaqueWidth = 1,
     transactionGroupTagWidth = 1,
     p3StageGenerationWidth = 1,
@@ -34,7 +39,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
 
   behavior of "RouteAKVSubsystemTop RTL1.0 structural skeleton"
 
-  it should "elaborate every frozen hierarchy module without sequential architecture state" in {
+  it should "elaborate every frozen hierarchy module after the R1 behavioral replacement" in {
     val chirrtl = ChiselStage.emitCHIRRTL(new RouteAKVSubsystemTop(structuralTestParameters))
     val systemVerilog = ChiselStage.emitSystemVerilog(new RouteAKVSubsystemTop(structuralTestParameters))
 
@@ -86,7 +91,6 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     systemVerilog should include("attention_terminal_rsp_valid")
     systemVerilog should include("session_retire_ack_valid")
     systemVerilog should include("external_core_mem_if_v1_request_valid")
-    systemVerilog should not include "always_ff"
   }
 
   it should "preserve the selected, non-opaque Route-A anchor widths" in {

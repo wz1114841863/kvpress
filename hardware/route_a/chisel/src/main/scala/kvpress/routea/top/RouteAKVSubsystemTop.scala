@@ -69,6 +69,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
 
     core_memory.io.core_mem_req_in <> arbiter.io.core_mem_req
     arbiter.io.core_mem_rsp_in <> core_memory.io.core_mem_rsp
+    // RTL1.1 verifies R1 in isolation. The top-level lifecycle/reset adapter
+    // has not yet acquired its owner phase, so it deliberately cannot release
+    // R1 traffic in this still nonfunctional integration skeleton.
+    core_memory.io.mem_init_done := false.B
     external_core_mem_if_v1 <> core_memory.io.external_core_mem_if_v1
 
     val source_delivery = Wire(RouteAChannels.source_delivery(p))

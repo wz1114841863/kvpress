@@ -4,7 +4,7 @@ This directory is the isolated Chisel/SBT workspace for Route-A RTL1. It was
 created only after Gate-RTL0 passed. Its authority and phase boundary are
 `analysis/rtl1_phase_contract.md` and `analysis/architecture_spec.md`.
 
-## Current RTL1.0.a scope
+## Current implementation scope
 
 The project contains the RTL1.0.a structural skeleton and its no-model test:
 the frozen `route_a_kv_subsystem_top` plus all nine frozen children elaborate
@@ -13,16 +13,15 @@ R1 external-memory carrier; all other RTL0.2 records are internal logical
 ready/valid channels. Inert source/sink tie-offs exist only to make the ports
 and connections elaboratable before their owner phases add behavior.
 
-This skeleton does **not** introduce functional architecture behavior, control
-FSMs, mutable architectural state, M2/P3 storage, a memory controller, SVA, a
-scoreboard binding, or a performance/PPA claim. RTL1.0.b remains responsible
-for the planned SVA/testbench/scoreboard attachment; R1--R6 behavior remains
-in their later RTL1 phases.
+The top remains an integration skeleton: other than R1 it contains no
+functional architecture behavior, M2/P3 storage, controller, CDC, SVA/formal
+proof, or performance/PPA claim. RTL1.0.b provides the matrix/testbench/
+scoreboard attachment; R2--R6 remain in their later RTL1 phases.
 
-The structural top exposes `destructive_reset` as a single-bit carrier. Since
-RTL1.0 has no sequential state, this does not select synchronous versus
-asynchronous reset behavior; a later stateful phase must bind that realization
-explicitly instead of inferring it from this shell.
+The structural top exposes `destructive_reset` as a single-bit carrier. R1
+uses it for local transaction state; it still does not select a subsystem
+CDC/controller reset sequence or a physical reset implementation. A later
+lifecycle/reset owner must bind the top-level `mem_init_done` integration.
 
 ## Pinned build contract
 
@@ -91,11 +90,10 @@ env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch test
 ```
 
 The first invocation may download pinned Maven dependencies and Chisel's
-managed elaboration tool. `test` checks the full hierarchy in CHIRRTL and the
-top-level ports in in-memory SystemVerilog; it does not invoke a model, GPU
-workload, Route-A experiment, or performance measurement. Verilator is
-available for a later explicitly scoped simulation step, but RTL1.0.a does not
-use it.
+managed elaboration tool. `test` checks the full hierarchy in CHIRRTL, the
+top-level ports in in-memory SystemVerilog, and the RTL1.1 R1 directed
+ChiselSim suite; it does not invoke a model, GPU workload, Route-A experiment,
+or performance measurement.
 
 ## RTL1.0.b verification binding
 
@@ -107,15 +105,31 @@ exact path, entry-point labels, observation, and forbidden adapter condition.
 It does not translate or execute any event before owner behavior exists.
 
 The SVA resource is a zero-port `bind` registry at the frozen top. It provides
-a stable formal/testbench attachment location, but every safety property is
-marked `owner_state_pending` and every progress property
-`owner_event_pending`. This is intentional: no R1--R6 state exists yet from
-which to assert semantic behavior, and environment fairness remains a
-testbench assumption rather than DUT logic.
+a stable formal/testbench attachment location. All non-R1 safety properties
+remain `owner_state_pending`, and every progress property remains
+`owner_event_pending`; environment fairness remains a testbench assumption
+rather than DUT logic.
+
+## RTL1.1 R1 implementation
+
+`common/RouteACommonSkeletons.scala` now implements R1 alone:
+
+- finite four-read/one-write live identity tracking with `RID[2:0]` plus
+  `incarnation[1:0]`, including same-epoch identical-identity rejection;
+- exact ordered 512-bit fragment forwarding and `last` enforcement;
+- write-data-before-write-commit ordering, terminal-fault fail-closed behavior,
+  and payload-durable-only scope;
+- reset-to-`mem_init_done` traffic gating and unmatched/stale-response
+  suppression at R1's sole external-memory carrier.
+
+`RouteACoreMemIfV1Spec` is a ChiselSim directed test suite for those module
+semantics. It does not connect a controller, replace the frozen Python oracle
+with an event adapter, prove SVA/formal properties, or establish end-to-end
+Route-A behavior. The top binds R1's local `mem_init_done` low until the later
+lifecycle/reset phase, intentionally leaving top-level traffic inactive.
 
 ## Next authorized step
 
-Proceed to RTL1.1 only under the R1 core-memory-wrapper contract. It must
-replace only R1's inert shell with owner behavior and then implement/bind the
-R1-owned assertion bodies and oracle events. Do not begin R2--R6 behavior,
-select a controller, or infer timing/PPA from the completed bindings.
+Proceed to RTL1.2 only under the R2 eligibility/FIFO/credit/grant-on-accept
+contract. Do not begin R3--R6 behavior, select a controller, or infer
+timing/PPA from the completed R1 bindings.

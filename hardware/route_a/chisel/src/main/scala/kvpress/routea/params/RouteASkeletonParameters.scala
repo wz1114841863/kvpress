@@ -20,6 +20,11 @@ final case class RouteASkeletonParameters(
   coreMemoryAddressRefWidth: Int,
   coreMemoryFragmentCountWidth: Int,
   coreMemoryFragmentIndexWidth: Int,
+  coreMemoryReadRequestCode: Int,
+  coreMemoryWriteRequestCode: Int,
+  coreMemoryWriteDataCode: Int,
+  coreMemoryOkStatusCode: Int,
+  coreMemoryFaultStatusCode: Int,
   sourceDeliveryOpaqueWidth: Int,
   transactionGroupTagWidth: Int,
   p3StageGenerationWidth: Int,
@@ -45,6 +50,24 @@ final case class RouteASkeletonParameters(
   )
 
   require(allOpaqueWidths.forall(_ > 0), "Every opaque logical-field width must be supplied and positive")
+
+  private val requestKindLimit = 1 << coreMemoryRequestKindWidth
+  require(
+    Seq(coreMemoryReadRequestCode, coreMemoryWriteRequestCode, coreMemoryWriteDataCode)
+      .forall(code => code >= 0 && code < requestKindLimit),
+    "Every R1 request-kind code must fit the supplied opaque request-kind width",
+  )
+  require(
+    Set(coreMemoryReadRequestCode, coreMemoryWriteRequestCode, coreMemoryWriteDataCode).size == 3,
+    "R1 read/write-request/write-data codes must be distinct",
+  )
+  private val terminalStatusLimit = 1 << RouteAAnchorWidths.TerminalStatusWidth
+  require(
+    Seq(coreMemoryOkStatusCode, coreMemoryFaultStatusCode)
+      .forall(code => code >= 0 && code < terminalStatusLimit),
+    "Every R1 terminal-status code must fit the selected terminal-status width",
+  )
+  require(coreMemoryOkStatusCode != coreMemoryFaultStatusCode, "R1 OK and fault status codes must differ")
 }
 
 /** Selected Route-A anchor widths, sourced from the Gate-A3/R4/R5 contracts. */

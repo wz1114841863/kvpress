@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate RTL1.0.b skeleton-to-matrix/SVA/oracle binding without RTL claims."""
+"""Validate RTL1.0.b attachment plus incremental owner assertion binding."""
 
 from __future__ import annotations
 
@@ -23,8 +23,8 @@ def validate(repo_root: Path, binding_path: Path) -> None:
     """Check binding identity/ownership; never elaborate RTL or execute an oracle."""
 
     binding = _load(binding_path)
-    if binding.get("schema_version") != "kvzap-route-a-rtl1-0-verification-binding-1.0":
-        raise VerificationBindingError("unexpected RTL1.0.b binding schema")
+    if binding.get("schema_version") != "kvzap-route-a-rtl1-0-verification-binding-1.1":
+        raise VerificationBindingError("unexpected RTL1.0/RTL1.1 binding schema")
     matrix = _load(repo_root / str(binding["assertion_matrix"]))
     oracle = _load(repo_root / str(binding["scoreboard_oracle_manifest"]))
     matrix_records = {record["id"]: record for record in matrix["records"]}
@@ -64,8 +64,18 @@ def validate(repo_root: Path, binding_path: Path) -> None:
         if record.get("scoreboard_observation_api") != "RouteAScoreboardOracleBindingRegistry":
             raise VerificationBindingError(f"scoreboard adapter drift for {assertion_id}")
 
-    if any(record_by_id[item].get("sva_binding_status") not in {"owner_state_pending", "owner_event_pending"} for item in record_by_id):
-        raise VerificationBindingError("RTL1.0.b must not claim stateful SVA implementation")
+    r1_bound = {
+        "a_descriptor_unique_memory_path",
+        "a_reset_stale_exclusion",
+        "a_stale_response",
+    }
+    for assertion_id, record in record_by_id.items():
+        status = record.get("sva_binding_status")
+        if assertion_id in r1_bound:
+            if status != "owner_chisel_assert_bound":
+                raise VerificationBindingError(f"RTL1.1 R1 assertion binding missing for {assertion_id}")
+        elif status not in {"owner_state_pending", "owner_event_pending"}:
+            raise VerificationBindingError(f"unexpected non-R1 assertion binding for {assertion_id}")
 
     sva_path = repo_root / str(binding["sva_binding_source"])
     sva_text = sva_path.read_text(encoding="utf-8")
@@ -74,18 +84,21 @@ def validate(repo_root: Path, binding_path: Path) -> None:
     for assertion_id in matrix_records:
         if f"assertion-id: {assertion_id}" not in sva_text:
             raise VerificationBindingError(f"SVA registry lacks marker for {assertion_id}")
+    for assertion_id in r1_bound:
+        if f"r1-chisel-assertion: {assertion_id}" not in sva_text:
+            raise VerificationBindingError(f"SVA registry lacks RTL1.1 R1 binding marker for {assertion_id}")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Validate RTL1.0.b matrix/SVA/oracle binding; no model, GPU, RTL proof, timing, or PPA claim."
+        description="Validate RTL1.0.b matrix/SVA/oracle attachment plus RTL1.1 R1 Chisel-assert binding; no model, GPU, formal proof, timing, or PPA claim."
     )
     parser.add_argument("--repo-root", type=Path, default=Path("."), help="Repository root (default: %(default)s).")
     parser.add_argument(
         "--binding-manifest",
         type=Path,
         default=Path("hardware/route_a/chisel/src/test/resources/rtl1_0_verification_binding.json"),
-        help="RTL1.0.b binding manifest relative to repo root (default: %(default)s).",
+        help="RTL1.0/RTL1.1 binding manifest relative to repo root (default: %(default)s).",
     )
     args = parser.parse_args()
     try:
@@ -94,7 +107,7 @@ def main() -> int:
         validate(repo_root, binding_path)
     except (KeyError, OSError, TypeError, json.JSONDecodeError, VerificationBindingError) as error:
         raise SystemExit(f"RTL1.0.b verification binding failed: {error}") from error
-    print(f"RTL1.0.b verification binding passed: {binding_path}")
+    print(f"RTL1.0/RTL1.1 verification binding passed: {binding_path}")
     return 0
 
 
