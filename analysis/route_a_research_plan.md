@@ -2743,3 +2743,11 @@ fields retain their cited widths, while opaque/control/controller fields remain
 symbolic parameters.  This is still no RTL and no timing/PPA/controller claim.
 The next task is the assumption/guarantee assertion traceability matrix,
 reference-scoreboard ownership plan, and directed/random/coverage planning.
+
+### 2026-09-29 Gate-RTL0.3 assertion planning closure
+
+The safety/progress matrix and scoreboard ownership plan are now recorded in
+`analysis/rtl_entry_assertion_matrix.json` and
+`analysis/rtl_entry_assertion_verification_contract.md`.  Progress is always
+conditioned on stated environment fairness and is not a timing claim.  The
+remaining RTL-entry work is review/closure of these artifacts, not RTL.

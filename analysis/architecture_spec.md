@@ -859,6 +859,16 @@ assumption/guarantee assertion traceability and scoreboard/coverage plan.  The
 hash binding and exact no-model result are frozen in
 `analysis/rtl_entry_port_parameter_provenance_freeze.md`.
 
+#### Gate-RTL0.3 — assertion and verification planning closure
+
+Gate-RTL0.3 binds safety and assumption-guarded progress intent in
+`analysis/rtl_entry_assertion_matrix.json` and
+`analysis/rtl_entry_assertion_verification_contract.md`.  It covers the
+Reviewer-02 non-choice requirements plus authority, FIFO/credit, GQA release,
+stale response, exactly-one terminal, and conditional progress.  It is a
+testbench/SVA planning artifact only; no SVA/RTL implementation, proof depth,
+latency, or performance result is selected.
+
 ### Gate B _ post-RTL implementation validation
 
 Gate B follows RTL and implementation work.  It requires macro mapping,
