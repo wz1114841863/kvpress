@@ -81,13 +81,17 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
 
     m2_p3.io.mem_init_done := false.B
     val p3_claim = Wire(RouteAChannels.p3_claim(p)); StructuralTieOff.source(p3_claim)
+    val p3_claim_ack = Wire(RouteAChannels.p3_claim_ack(p)); StructuralTieOff.sink(p3_claim_ack)
     val p3_fragment = Wire(RouteAChannels.p3_pending_fragment(p)); StructuralTieOff.source(p3_fragment)
     val p3_sidecar = Wire(RouteAChannels.p3_sidecar_bind(p)); StructuralTieOff.source(p3_sidecar)
+    val p3_write_issue = Wire(RouteAChannels.p3_packed_write_issue(p)); StructuralTieOff.source(p3_write_issue)
     val p3_write_terminal = Wire(RouteAChannels.p3_packed_write_terminal(p)); StructuralTieOff.source(p3_write_terminal)
     val m2_group_member_rsp = Wire(RouteAChannels.m2_group_member_rsp(p)); StructuralTieOff.source(m2_group_member_rsp)
     m2_p3.io.p3_claim_in <> p3_claim
+    p3_claim_ack <> m2_p3.io.p3_claim_ack
     m2_p3.io.p3_pending_fragment_in <> p3_fragment
     m2_p3.io.p3_sidecar_bind_in <> p3_sidecar
+    m2_p3.io.p3_packed_write_issue_in <> p3_write_issue
     m2_p3.io.p3_packed_write_terminal_in <> p3_write_terminal
     m2_p3.io.m2_group_member_rsp_in <> m2_group_member_rsp
     m2_p3.io.p3_observe_layer := 0.U

@@ -43,6 +43,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     transactionGroupTagWidth = 1,
     p3StageGenerationWidth = 1,
     r5AllocatorEntries = 8,
+    r5StreamSlots = 8,
   )
 
   behavior of "RouteAKVSubsystemTop RTL1.0 structural skeleton"

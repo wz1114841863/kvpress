@@ -205,6 +205,11 @@ final class P3Claim(p: RouteASkeletonParameters) extends Bundle {
   val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
 }
 
+final class P3ClaimAck(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val stage_generation = UInt(p.p3StageGenerationWidth.W)
+}
+
 /** Control-only observation of a delivered 64-B pending fragment. */
 final class P3PendingFragment(p: RouteASkeletonParameters) extends Bundle {
   val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
@@ -228,6 +233,13 @@ final class P3PackedWriteTerminal(p: RouteASkeletonParameters) extends Bundle {
   val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
   val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
   val r1_payload_durable = Bool()
+}
+
+/** Records an accepted R2 pack-write launch before its later R1 terminal. */
+final class P3PackedWriteIssue(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
 }
 
 /** A private result for one of the two fixed semantic M2 RMW members. */
@@ -286,9 +298,11 @@ object RouteAChannels {
   def metadata_publish_visibility_ack = Decoupled(new MetadataPublishVisibilityAck)
   def metadata_publish_ack(p: RouteASkeletonParameters) = Decoupled(new MetadataPublishAck(p))
   def p3_claim(p: RouteASkeletonParameters) = Decoupled(new P3Claim(p))
+  def p3_claim_ack(p: RouteASkeletonParameters) = Decoupled(new P3ClaimAck(p))
   def p3_pending_fragment(p: RouteASkeletonParameters) = Decoupled(new P3PendingFragment(p))
   def p3_sidecar_bind(p: RouteASkeletonParameters) = Decoupled(new P3SidecarBind(p))
   def p3_packed_write_terminal(p: RouteASkeletonParameters) = Decoupled(new P3PackedWriteTerminal(p))
+  def p3_packed_write_issue(p: RouteASkeletonParameters) = Decoupled(new P3PackedWriteIssue(p))
   def m2_group_member_rsp(p: RouteASkeletonParameters) = Decoupled(new M2GroupMemberResponse(p))
   def page_allocation_req(p: RouteASkeletonParameters) = Decoupled(new PageAllocationRequest(p))
   def page_allocation_rsp(p: RouteASkeletonParameters) = Decoupled(new PageAllocationResponse(p))

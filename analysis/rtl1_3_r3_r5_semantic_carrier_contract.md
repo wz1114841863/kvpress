@@ -2,7 +2,7 @@
 
 ## Status and boundary
 
-**Status:** `complete_nonphysical_internal_carrier_closure; RTL1.3_behavior_pending`.
+**Status:** `complete_nonphysical_internal_carrier_closure; rtl1_3_control_complete_at_module_scope`.
 
 This record freezes the module-local, control-only carriers required to turn
 the already-closed R3/R5 publication dependency into synthesizable control
@@ -37,6 +37,7 @@ events are:
 p3_claim
   -> p3_pending_fragment { fragment_index, last, status }
   -> p3_sidecar_bind { record_ordinal }
+  -> p3_packed_write_issue
   -> p3_packed_write_terminal { status, r1_payload_durable }
   -> two m2_group_member_rsp { member=head_control_rmw|span_owner_rmw,
                                status }
@@ -81,10 +82,11 @@ descriptor_maintenance_terminal {
 ```
 
 The allocation response is a private `PageRef` produced from the selected
-18-bit page-ID / 8-bit generation space.  RTL1.3 uses a caller-supplied small
-allocator-entry bound only for control-state elaboration and directed tests;
-the selected 146,880-entry anchor is preserved as the intended integration
-binding.  This is not a physical bitmap/macro decision.
+18-bit page-ID / 8-bit generation space. RTL1.3 uses caller-supplied small
+allocator-entry and active-stream control bounds only for elaboration and
+directed tests; the selected 146,880-entry allocator and 288 active-stream
+anchors are preserved as the intended integration binding. This is not a
+physical bitmap/macro decision.
 
 For each active `(layer, kv_head)` append, R5 requires one durable `new_page`
 descriptor operation and, only when an already-visible tail exists, one
@@ -125,3 +127,18 @@ boundary.
 This is RTL-entry interface/control planning only.  It is not model/GPU
 evidence, a timing/throughput claim, PPA claim, RTL correctness result, or a
 new A4 DSE.
+
+## RTL1.3 implementation binding
+
+`RouteAM2P3Wrapper` implements the stated state/association checks without
+storing fragment payload data. `RouteAPageManager` implements private append
+allocation, durable descriptor facts, and nested visibility acknowledgement
+without emitting a descriptor HBM command. `RouteAR3R5PublicationSpec` is the
+directed no-model module-level check: it covers successful durable publication,
+ready-low stability at both nested handshakes, P3 fault nonpublication,
+descriptor-private inaccessibility, tail-link dependency, descriptor-fault
+nonpublication, and premature invalidation rejection.
+
+Only `a_metadata_publish_commit` is bound in this phase. Page invalidation
+before free, authority conservation, lifecycle terminal behavior, and global
+retirement remain explicitly deferred to later R5/R6 owner work.

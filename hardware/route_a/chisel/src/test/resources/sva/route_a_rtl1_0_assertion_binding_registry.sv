@@ -12,6 +12,7 @@ module route_a_rtl1_0_assertion_binding_registry;
   // assertion-id: a_descriptor_unique_memory_path
   // r1-chisel-assertion: a_descriptor_unique_memory_path
   // assertion-id: a_metadata_publish_commit
+  // r3-chisel-assertion: a_metadata_publish_commit
   // assertion-id: a_ready_low_nonmutation
   // r2-chisel-assertion: a_ready_low_nonmutation
   // assertion-id: a_descriptor_invalidate_before_free

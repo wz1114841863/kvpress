@@ -154,6 +154,12 @@ are implemented. See `analysis/rtl1_3_r3_r5_semantic_carrier_contract.md`.
 
 ## Next authorized step
 
-Proceed to RTL1.3 only under the coupled R3/R5 P3/descriptor/atomic-publication
-contracts. Do not begin R4/R6 behavior, select a controller, or infer
-timing/PPA from the completed R1/R2 bindings.
+RTL1.3 now implements module-scoped R3/R5 control: P3 state/generation and
+completion bookkeeping, payload-durable association, two private M2 results,
+private descriptor preparation, and the existing nested atomic-publication
+handshake. It intentionally stores no P3 payload data and implements no M2
+macro or descriptor HBM command. `RouteAR3R5PublicationSpec` exercises the
+positive durable/publication order and negative P3/descriptor gates.
+
+Do not begin R4/R6 behavior, select a controller, or infer timing/PPA from
+the completed R1/R2/R3/R5 control bindings.

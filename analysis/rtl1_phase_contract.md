@@ -30,6 +30,24 @@ The top keeps these local carriers inactive until their producer-owner phases
 exist, so this step contains no P3/M2/R5 behavior or authority change. The
 structural Chisel elaboration test passed after the carrier addition.
 
+## RTL1.3 progress
+
+**RTL1.3 coupled R3/R5 publication control: complete at module scope.**
+`route_a_m2_p3_wrapper` now tracks only P3 control state and the two private
+M2 group results: it does not store P3 payload fragments or instantiate an M2
+macro. `route_a_page_manager` tracks private append allocation and required
+descriptor-durable facts; it exposes a page only through the existing nested
+R3 publication handshake. The test-local allocator/stream bounds are required
+at elaboration and are not selected physical bitmap/macro instances; the
+146,880-entry allocator and 288-stream logical anchors remain intended
+integration bindings.
+
+The bound R3 assertion is `a_metadata_publish_commit`: publication visibility
+requires a durable P3 write, both M2 members, and the nested R5 acknowledgement.
+R5 invalidation-before-free and global authority/retirement assertions remain
+pending for R5-later/R6. This module-level result is no-model control-contract
+evidence only, not a P3 payload-memory, HBM-controller, timing, or PPA claim.
+
 ## RTL1.0 progress
 
 **RTL1.0.a structural skeleton: complete.** The Chisel implementation at

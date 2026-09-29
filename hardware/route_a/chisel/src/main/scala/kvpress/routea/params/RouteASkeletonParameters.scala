@@ -36,6 +36,7 @@ final case class RouteASkeletonParameters(
   transactionGroupTagWidth: Int,
   p3StageGenerationWidth: Int,
   r5AllocatorEntries: Int,
+  r5StreamSlots: Int,
 ) {
   private val allOpaqueWidths = Seq(
     frontendEventKindWidth,
@@ -94,6 +95,8 @@ final case class RouteASkeletonParameters(
   require(coreMemoryOkStatusCode != coreMemoryFaultStatusCode, "R1 OK and fault status codes must differ")
   require(r5AllocatorEntries > 0 && r5AllocatorEntries <= 146880,
     "R5 allocator control bound must be positive and no larger than the selected logical anchor")
+  require(r5StreamSlots > 0 && r5StreamSlots <= 288,
+    "R5 stream control bound must be positive and no larger than the selected logical anchor")
 }
 
 /** Selected Route-A anchor widths, sourced from the Gate-A3/R4/R5 contracts. */
