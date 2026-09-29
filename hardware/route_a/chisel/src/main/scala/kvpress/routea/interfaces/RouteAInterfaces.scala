@@ -16,6 +16,20 @@ object StructuralTieOff {
   }
 }
 
+/** Fixed semantic positions in the RTL1.2 R2 eligibility snapshot. */
+object RouteAR2PredicateBits {
+  final val FifoPredecessor = 0
+  final val Ownership = 1
+  final val SourceCredit = 2
+  final val DestinationReady = 3
+  final val PackedMetadataPublished = 4
+  final val PendingAuthoritative = 5
+  final val P3StageReadyOwned = 6
+  final val PageAllocated = 7
+  final val P3StageComplete = 8
+  final val P3StageOwned = 9
+}
+
 final class TransactionIdentity extends Bundle {
   val request_id = UInt(RouteAAnchorWidths.RequestIdWidth.W)
   val incarnation = UInt(RouteAAnchorWidths.IncarnationWidth.W)

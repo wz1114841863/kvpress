@@ -69,11 +69,12 @@ def validate(repo_root: Path, binding_path: Path) -> None:
         "a_reset_stale_exclusion",
         "a_stale_response",
     }
+    r2_bound = {"a_ready_low_nonmutation", "a_fifo_credit_losslessness"}
     for assertion_id, record in record_by_id.items():
         status = record.get("sva_binding_status")
-        if assertion_id in r1_bound:
+        if assertion_id in r1_bound | r2_bound:
             if status != "owner_chisel_assert_bound":
-                raise VerificationBindingError(f"RTL1.1 R1 assertion binding missing for {assertion_id}")
+                raise VerificationBindingError(f"owner Chisel assertion binding missing for {assertion_id}")
         elif status not in {"owner_state_pending", "owner_event_pending"}:
             raise VerificationBindingError(f"unexpected non-R1 assertion binding for {assertion_id}")
 
@@ -87,18 +88,21 @@ def validate(repo_root: Path, binding_path: Path) -> None:
     for assertion_id in r1_bound:
         if f"r1-chisel-assertion: {assertion_id}" not in sva_text:
             raise VerificationBindingError(f"SVA registry lacks RTL1.1 R1 binding marker for {assertion_id}")
+    for assertion_id in r2_bound:
+        if f"r2-chisel-assertion: {assertion_id}" not in sva_text:
+            raise VerificationBindingError(f"SVA registry lacks RTL1.2 R2 binding marker for {assertion_id}")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Validate RTL1.0.b matrix/SVA/oracle attachment plus RTL1.1 R1 Chisel-assert binding; no model, GPU, formal proof, timing, or PPA claim."
+        description="Validate RTL1.0.b matrix/SVA/oracle attachment plus RTL1.1/R2 Chisel-assert bindings; no model, GPU, formal proof, timing, or PPA claim."
     )
     parser.add_argument("--repo-root", type=Path, default=Path("."), help="Repository root (default: %(default)s).")
     parser.add_argument(
         "--binding-manifest",
         type=Path,
         default=Path("hardware/route_a/chisel/src/test/resources/rtl1_0_verification_binding.json"),
-        help="RTL1.0/RTL1.1 binding manifest relative to repo root (default: %(default)s).",
+        help="RTL1.0/RTL1.1/RTL1.2 binding manifest relative to repo root (default: %(default)s).",
     )
     args = parser.parse_args()
     try:
@@ -107,7 +111,7 @@ def main() -> int:
         validate(repo_root, binding_path)
     except (KeyError, OSError, TypeError, json.JSONDecodeError, VerificationBindingError) as error:
         raise SystemExit(f"RTL1.0.b verification binding failed: {error}") from error
-    print(f"RTL1.0/RTL1.1 verification binding passed: {binding_path}")
+    print(f"RTL1.0/RTL1.1/RTL1.2 verification binding passed: {binding_path}")
     return 0
 
 

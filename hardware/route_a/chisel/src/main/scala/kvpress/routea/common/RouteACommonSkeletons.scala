@@ -1,7 +1,7 @@
 package kvpress.routea.common
 
 import chisel3._
-import chisel3.util.{PopCount, UIntToOH}
+import chisel3.util.{MuxCase, PopCount, PriorityEncoder, RegEnable, UIntToOH, log2Ceil}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
 
@@ -27,7 +27,7 @@ final class RouteAS2GqaSourceWrapper extends Module {
   StructuralTieOff.sink(io.service_req_in)
 }
 
-/** RTL1.0 structural shell only; no R2 eligibility, credit, FIFO, or grant state exists here. */
+/** RTL1.2 R2 eligibility, lossless candidate storage, and accepted-grant control. */
 final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_core_side_arbiter"
 
@@ -38,10 +38,191 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
     val source_delivery_out = RouteAChannels.source_delivery(p)
   })
 
-  StructuralTieOff.sink(io.candidate_in)
-  StructuralTieOff.source(io.core_mem_req)
-  StructuralTieOff.sink(io.core_mem_rsp_in)
-  StructuralTieOff.source(io.source_delivery_out)
+  private val readGroups = 3
+  private val totalSlots = 6 * p.r2CandidateSlotsPerClass
+  private val slotIndexWidth = math.max(1, log2Ceil(totalSlots))
+  private val requestIdSlots = 1 << RouteAAnchorWidths.RequestIdWidth
+
+  val slotValid = RegInit(VecInit(Seq.fill(totalSlots)(false.B)))
+  val slots = Reg(Vec(totalSlots, new SourceCandidate(p)))
+  val readCursor = RegInit(0.U(2.W))
+  val outstandingValid = RegInit(VecInit(Seq.fill(requestIdSlots)(false.B)))
+  val outstanding = Reg(Vec(requestIdSlots, new SourceCandidate(p)))
+
+  private def predicate(candidate: SourceCandidate, bit: Int): Bool =
+    candidate.eligibility_snapshot(bit)
+
+  private def commonReadReady(candidate: SourceCandidate): Bool =
+    predicate(candidate, RouteAR2PredicateBits.FifoPredecessor) &&
+      predicate(candidate, RouteAR2PredicateBits.Ownership) &&
+      predicate(candidate, RouteAR2PredicateBits.SourceCredit) &&
+      predicate(candidate, RouteAR2PredicateBits.DestinationReady)
+
+  private def commonWriteReady(candidate: SourceCandidate): Bool =
+    predicate(candidate, RouteAR2PredicateBits.FifoPredecessor) &&
+      predicate(candidate, RouteAR2PredicateBits.Ownership) &&
+      predicate(candidate, RouteAR2PredicateBits.SourceCredit)
+
+  private def isReadClass(candidate: SourceCandidate): Bool =
+    candidate.candidate_class === p.r2S2FullClassCode.U ||
+      candidate.candidate_class === p.r2S2PackedClassCode.U ||
+      candidate.candidate_class === p.r2DirectPendingClassCode.U ||
+      candidate.candidate_class === p.r2PackReadClassCode.U
+
+  private def isWriteClass(candidate: SourceCandidate): Bool =
+    candidate.candidate_class === p.r2PackWriteClassCode.U ||
+      candidate.candidate_class === p.r2DescriptorMaintenanceClassCode.U
+
+  private def readGroup(candidate: SourceCandidate): UInt = Mux(
+    candidate.candidate_class === p.r2DirectPendingClassCode.U,
+    1.U,
+    Mux(candidate.candidate_class === p.r2PackReadClassCode.U, 2.U, 0.U),
+  )
+
+  private def isLaunchRequest(candidate: SourceCandidate): Bool =
+    candidate.r1_request.request_kind === p.coreMemoryReadRequestCode.U ||
+      candidate.r1_request.request_kind === p.coreMemoryWriteRequestCode.U
+
+  private def matchingOutstanding(candidate: SourceCandidate): Bool = {
+    val rid = candidate.r1_request.transaction_identity.request_id
+    outstandingValid(rid) &&
+      outstanding(rid).r1_request.transaction_identity.incarnation === candidate.r1_request.transaction_identity.incarnation
+  }
+
+  private def protocolCompatible(candidate: SourceCandidate): Bool = {
+    val kind = candidate.r1_request.request_kind
+    val readCompatible = isReadClass(candidate) && kind === p.coreMemoryReadRequestCode.U
+    val writeCompatible = isWriteClass(candidate) && (
+      kind === p.coreMemoryWriteRequestCode.U || kind === p.coreMemoryWriteDataCode.U
+    )
+    val descriptorFragment = candidate.r1_request.expected_fragment_count === 1.U &&
+      candidate.r1_request.fragment_index === 0.U && candidate.r1_request.last
+    !(candidate.candidate_class === p.r2DescriptorMaintenanceClassCode.U) || descriptorFragment ||
+      kind === p.coreMemoryWriteRequestCode.U && candidate.r1_request.expected_fragment_count === 1.U
+  }
+
+  private def candidateEligible(candidate: SourceCandidate): Bool = {
+    val c = candidate.candidate_class
+    val sourceReady = MuxCase(
+      false.B,
+      Seq(
+        (c === p.r2S2FullClassCode.U) -> commonReadReady(candidate),
+        (c === p.r2S2PackedClassCode.U) -> (commonReadReady(candidate) && predicate(candidate, RouteAR2PredicateBits.PackedMetadataPublished)),
+        (c === p.r2DirectPendingClassCode.U) -> (commonReadReady(candidate) && predicate(candidate, RouteAR2PredicateBits.PendingAuthoritative)),
+        (c === p.r2PackReadClassCode.U) -> (commonReadReady(candidate) && predicate(candidate, RouteAR2PredicateBits.PendingAuthoritative) && predicate(candidate, RouteAR2PredicateBits.P3StageReadyOwned)),
+        (c === p.r2PackWriteClassCode.U) -> (commonWriteReady(candidate) && predicate(candidate, RouteAR2PredicateBits.PageAllocated) && predicate(candidate, RouteAR2PredicateBits.P3StageComplete) && predicate(candidate, RouteAR2PredicateBits.P3StageOwned)),
+        (c === p.r2DescriptorMaintenanceClassCode.U) -> commonWriteReady(candidate),
+      ),
+    )
+    val rid = candidate.r1_request.transaction_identity.request_id
+    val launchAllowed = !isLaunchRequest(candidate) || !outstandingValid(rid)
+    val writeDataAllowed = candidate.r1_request.request_kind =/= p.coreMemoryWriteDataCode.U || matchingOutstanding(candidate)
+    sourceReady && protocolCompatible(candidate) && launchAllowed && writeDataAllowed
+  }
+
+  private def earlier(left: SourceCandidate, right: SourceCandidate): Bool =
+    left.arrival_ordinal < right.arrival_ordinal ||
+      (left.arrival_ordinal === right.arrival_ordinal && left.candidate_id < right.candidate_id)
+
+  def choose(predicateForSlot: Int => Bool): (Bool, UInt) = {
+    var found: Bool = false.B
+    var selected: UInt = 0.U(slotIndexWidth.W)
+    var bestCandidate: SourceCandidate = 0.U.asTypeOf(new SourceCandidate(p))
+    for (index <- 0 until totalSlots) {
+      val matchSlot = predicateForSlot(index)
+      val take = matchSlot && (!found || earlier(slots(index), bestCandidate))
+      selected = Mux(take, index.U(slotIndexWidth.W), selected)
+      bestCandidate = Mux(take, slots(index), bestCandidate)
+      found = found || matchSlot
+    }
+    (found, selected)
+  }
+
+  var rotatingReadFound: Bool = false.B
+  var rotatingReadIndex: UInt = 0.U(slotIndexWidth.W)
+  for (offset <- 0 until readGroups) {
+    val group = (readCursor + offset.U) % readGroups.U
+    val (found, index) = choose(slot => slotValid(slot) && candidateEligible(slots(slot)) && isReadClass(slots(slot)) && readGroup(slots(slot)) === group)
+    rotatingReadIndex = Mux(!rotatingReadFound && found, index, rotatingReadIndex)
+    rotatingReadFound = rotatingReadFound || found
+  }
+  val (writeFound, writeIndex) = choose(slot => slotValid(slot) && candidateEligible(slots(slot)) && isWriteClass(slots(slot)))
+  val selectedFound = rotatingReadFound || writeFound
+  val selectedIndex = Mux(rotatingReadFound, rotatingReadIndex, writeIndex)
+  val selectedCandidate = slots(selectedIndex)
+  val selectedIsRead = rotatingReadFound
+  // A single logical R1 request carrier serializes a simultaneous read/write
+  // offer by the frozen ordinal/id order. This never advances read rotation
+  // for a write and makes no controller throughput claim.
+  val globalWinnerIsRead = WireDefault(selectedIsRead)
+  when(rotatingReadFound && writeFound && earlier(slots(writeIndex), slots(rotatingReadIndex))) {
+    globalWinnerIsRead := false.B
+  }
+  val finalIndex = Mux(globalWinnerIsRead, rotatingReadIndex, writeIndex)
+  val finalCandidate = slots(finalIndex)
+  val finalFound = Mux(globalWinnerIsRead, rotatingReadFound, writeFound)
+
+  io.core_mem_req.valid := finalFound
+  io.core_mem_req.bits := finalCandidate.r1_request
+
+  val selectedRequestStalled = io.core_mem_req.valid && !io.core_mem_req.ready
+  val inputClassCount = PopCount((0 until totalSlots).map { slot =>
+    slotValid(slot) && slots(slot).candidate_class === io.candidate_in.bits.candidate_class
+  })
+  val inputEligible = candidateEligible(io.candidate_in.bits)
+  val anyFreeSlot = !slotValid.reduce(_ && _)
+  io.candidate_in.ready := !selectedRequestStalled && inputEligible && anyFreeSlot && inputClassCount < p.r2CandidateSlotsPerClass.U
+
+  when(io.candidate_in.fire) {
+    val freeIndex = PriorityEncoder(VecInit(slotValid.map(! _)))
+    slotValid(freeIndex) := true.B
+    slots(freeIndex) := io.candidate_in.bits
+  }
+
+  when(io.core_mem_req.fire) {
+    slotValid(finalIndex) := false.B
+    when(isLaunchRequest(finalCandidate)) {
+      val rid = finalCandidate.r1_request.transaction_identity.request_id
+      outstandingValid(rid) := true.B
+      outstanding(rid) := finalCandidate
+    }
+    when(globalWinnerIsRead) {
+      readCursor := (readGroup(finalCandidate) + 1.U) % readGroups.U
+    }
+  }
+
+  val response = io.core_mem_rsp_in.bits
+  val responseRid = response.transaction_identity.request_id
+  val matchingResponse = outstandingValid(responseRid) &&
+    outstanding(responseRid).r1_request.transaction_identity.incarnation === response.transaction_identity.incarnation
+  io.source_delivery_out.valid := io.core_mem_rsp_in.valid && matchingResponse
+  io.source_delivery_out.bits.candidate_id := outstanding(responseRid).candidate_id
+  io.source_delivery_out.bits.candidate_class := outstanding(responseRid).candidate_class
+  io.source_delivery_out.bits.destination := outstanding(responseRid).r1_request.destination
+  io.source_delivery_out.bits.r1_response := response
+  io.core_mem_rsp_in.ready := !matchingResponse || io.source_delivery_out.ready
+
+  when(io.source_delivery_out.fire && response.last) {
+    outstandingValid(responseRid) := false.B
+  }
+
+  // a_ready_low_nonmutation: grant cursor and selected request do not move on
+  // valid-without-ready. Candidate intake is explicitly backpressured there.
+  val priorStall = RegNext(selectedRequestStalled, false.B)
+  val heldCursor = RegEnable(readCursor, selectedRequestStalled)
+  val heldRequest = RegEnable(io.core_mem_req.bits, selectedRequestStalled)
+  when(priorStall) {
+    assert(readCursor === heldCursor)
+    assert(io.core_mem_req.bits.asUInt === heldRequest.asUInt)
+  }
+  // a_fifo_credit_losslessness: each issue arises from an eligible stored
+  // candidate; a reservation is represented by exactly one outstanding RID.
+  when(io.core_mem_req.fire) {
+    assert(candidateEligible(finalCandidate))
+  }
+  when(io.source_delivery_out.fire && response.last) {
+    assert(matchingResponse)
+  }
 }
 
 /**

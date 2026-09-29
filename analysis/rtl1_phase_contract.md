@@ -99,3 +99,23 @@ candidate and source-delivery records into the existing-port R2 request,
 predicate, response-association, and parameter boundary. It neither adds a
 top-level channel nor chooses a physical queue/FIFO depth. RTL1.2 may now
 implement the R2 owner behavior only against that carrier contract.
+
+## RTL1.2 progress
+
+**RTL1.2 R2 arbiter: complete at module scope.** `RouteACoreSideArbiter`
+implements parameterized candidate storage, class-specific eligibility checks,
+the frozen read rotation and ordinal/id selection, accepted-grant-only cursor
+advance, a separate descriptor/write path, R1 response association, and one
+transport reservation per live R1 identity. It does not implement source
+owners, metadata publication, semantic-credit return, an HBM controller, or
+top-level traffic integration. The existing top remains inert until its later
+owner phases connect candidate producers and `mem_init_done`.
+
+The binding registry marks `a_ready_low_nonmutation` and
+`a_fifo_credit_losslessness` as `owner_chisel_assert_bound`; `p_credit_return`
+remains an environment-fairness progress obligation because publication/source
+credits belong to later R3/R5/R6 owners. ChiselSim directed tests cover
+ineligible backpressure, stalled grant stability, accepted cursor advancement,
+matched terminal routing, and separate descriptor terminal release. This is
+no-model functional-module evidence only, not SVA/formal proof, controller,
+timing, throughput, PPA, or end-to-end RTL correctness evidence.

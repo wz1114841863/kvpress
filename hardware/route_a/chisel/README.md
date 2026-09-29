@@ -128,8 +128,22 @@ with an event adapter, prove SVA/formal properties, or establish end-to-end
 Route-A behavior. The top binds R1's local `mem_init_done` low until the later
 lifecycle/reset phase, intentionally leaving top-level traffic inactive.
 
+## RTL1.2 R2 implementation
+
+`RouteACoreSideArbiter` now realizes the frozen R2 eligibility and grant
+boundary at module scope. Its candidate/storage bound and class encodings are
+required elaboration parameters with no deployment defaults. It implements no
+controller scheduling, source owner, publication, semantic-credit return, or
+top-level traffic: the top's candidate source remains inactive until later
+owner phases connect it.
+
+The R2 ChiselSim suite checks ineligible backpressure, accepted-grant-only
+cursor advance, ready-low stability, response association, and descriptor
+terminal release. Its transport reservation is distinct from credits owned by
+R3/R5/R6, so progress remains an environment-fairness obligation.
+
 ## Next authorized step
 
-Proceed to RTL1.2 only under the R2 eligibility/FIFO/credit/grant-on-accept
-contract. Do not begin R3--R6 behavior, select a controller, or infer
-timing/PPA from the completed R1 bindings.
+Proceed to RTL1.3 only under the coupled R3/R5 P3/descriptor/atomic-publication
+contracts. Do not begin R4/R6 behavior, select a controller, or infer
+timing/PPA from the completed R1/R2 bindings.
