@@ -1,0 +1,23 @@
+{
+  "schema_version": "kvzap-route-a-rtl1-i4-reclaim-manifest-1.0",
+  "status": "rtl1_i4_0_reclaim_transport_contract_frozen",
+  "scope": "R6 two-pass drain/reclaim permit, R5 one-line-at-a-time durable invalidation, and existing R2/R1 descriptor write transport only.",
+  "carriers": [
+    {"name":"ReclaimPermit","producer":"route_a_lifecycle_adapter","consumer":"route_a_page_manager","fields":["retire transaction_identity"],"handshake":"ready_valid","forbidden":["page authority transfer","new reclaim owner","physical drain schedule"]},
+    {"name":"R5 reclaim SourceCandidate","producer":"route_a_page_manager","consumer":"route_a_core_side_arbiter","fields":["descriptor-maintenance class","FIFO/ownership/credit predicates","one-live delivery_context_ref","R1 write request or final write-data","opaque descriptor-line address_ref"],"handshake":"ready_valid","forbidden":["descriptor-read class","second memory path","payload scheduling change"]},
+    {"name":"R5 reclaim SourceDelivery","producer":"route_a_core_side_arbiter","consumer":"route_a_page_manager","fields":["candidate class","delivery_context_ref","R1 terminal response"],"handshake":"ready_valid","forbidden":["unmatched terminal free","fault retry","authority transfer"]},
+    {"name":"R5 reclaim completion","producer":"route_a_page_manager","consumer":"route_a_lifecycle_adapter / status collector","fields":["reclaim active/complete phase fact"],"handshake":"level control","forbidden":["R5 allocator ownership transfer","new global drain owner","physical queue claim"]}
+  ],
+  "line_invalidation": {
+    "fragment_bytes": 64,
+    "descriptor_lanes_per_line": 4,
+    "participant_rule":"all currently allocated lanes in one selected descriptor line; nonparticipants remain FREE with current generation",
+    "free_rule":"only matching durable R1 terminal advances participants and frees their allocator bits",
+    "address_rule":"logical descriptor_line_index through opaque core address_ref; no HBM mapping"
+  },
+  "environment_assumptions": [
+    "after a terminal and before identical identity wrap reuse, no old response remains possible",
+    "accepted external R1 request eventually receives one terminal response for progress only"
+  ],
+  "evidence_label": ["pure synthesizable control contract","no model/GPU","no timing/throughput claim","no PPA claim","no RTL numeric-correctness claim","no new A4 DSE"]
+}

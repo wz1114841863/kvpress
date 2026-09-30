@@ -39,6 +39,7 @@ Read these only when the corresponding level of detail is required:
 | Gate-RTL0 logical port/parameter matrix | [`rtl_entry_port_parameter_contract.md`](rtl_entry_port_parameter_contract.md), [`rtl_entry_port_parameter_provenance_freeze.md`](rtl_entry_port_parameter_provenance_freeze.md), and `tools/validate_rtl_entry_interface_manifest.py` |
 | Gate-RTL0 assertion/scoreboard/coverage plan | [`rtl_entry_assertion_verification_contract.md`](rtl_entry_assertion_verification_contract.md) and [`rtl_entry_assertion_matrix.json`](rtl_entry_assertion_matrix.json) |
 | RTL1-I3 source/R4/R6 control composition | [`rtl1_i3_delivery_source_contract.md`](rtl1_i3_delivery_source_contract.md) and [`rtl1_i3_interface_manifest.json`](rtl1_i3_interface_manifest.json) |
+| RTL1-I4 reclaim transport contract | [`rtl1_i4_reclaim_contract.md`](rtl1_i4_reclaim_contract.md) and [`rtl1_i4_interface_manifest.json`](rtl1_i4_interface_manifest.json) |
 
 The R1--R6 contracts and their Python references remain the precise executable
 attachments to the specification. They are not parallel living architecture
