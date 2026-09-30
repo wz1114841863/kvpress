@@ -30,6 +30,18 @@ ties the new carrier endpoints inactive pending RTL1.4 producer integration;
 there is no source mux, numeric merge, physical source buffer, or direct
 pending payload buffer in this carrier-only step.
 
+## RTL1.4 progress
+
+**RTL1.4 S2/direct-pending/GQA control: complete at module scope.**
+S2 now owns the two-slot generation, fill/sidecar-complete to READY control,
+and four-consumer release bitmap. The direct endpoint owns its one pending
+source association, strict ordinal/close/fault control, and a matching local
+four-consumer release rule. Both remain payload-storage-free and top-inert:
+there is no physical S2/direct buffer, source mux, R4 numeric merge, R6
+terminal result, controller, timing, or PPA claim. `a_gqa_release` is now
+Chisel-bound at the frozen S2 owner; R6 terminal/retirement properties remain
+pending.
+
 ## RTL1.3.0 progress
 
 **RTL1.3.0 R3/R5 semantic-carrier closure: complete.**

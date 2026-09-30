@@ -1,7 +1,7 @@
 package kvpress.routea.incremental
 
 import chisel3._
-import chisel3.util.{Cat, PriorityEncoder, log2Ceil}
+import chisel3.util.{Cat, PriorityEncoder, RegEnable, log2Ceil}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteADescriptorOperationKind, RouteAM2GroupMember, RouteAPublicationStatus, RouteASkeletonParameters}
 
@@ -41,7 +41,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   StructuralTieOff.sink(io.metadata_publish_ack_in)
 }
 
-/** RTL1.4.0 carrier shell; direct pending remains unimplemented until RTL1.4. */
+/** RTL1.4 direct-pending control only; no pending page/buffer or K/V storage. */
 final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_direct_pending_endpoint_v1"
 
@@ -55,12 +55,85 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
     val direct_observe_active = Output(Bool())
   })
 
-  StructuralTieOff.sink(io.pending_source_open_in)
-  StructuralTieOff.sink(io.direct_pending_record_terminal_in)
-  StructuralTieOff.sink(io.gqa_consumer_commit_in)
-  StructuralTieOff.source(io.direct_release_out)
-  io.direct_observe_generation := 0.U
-  io.direct_observe_active := false.B
+  val initialized = RegInit(false.B)
+  when(io.mem_init_done) { initialized := true.B }
+  val active = RegInit(false.B)
+  val endpointGeneration = RegInit(0.U(p.sourceGenerationWidth.W))
+  val identity = Reg(new TransactionIdentity)
+  val expectedOrdinal = RegInit(0.U(RouteAAnchorWidths.LogicalPositionWidth.W))
+  val deliverable = RegInit(false.B)
+  val sourceClosed = RegInit(false.B)
+  val faulted = RegInit(false.B)
+  val consumerMask = RegInit(0.U(4.W))
+
+  val open = io.pending_source_open_in.bits
+  io.pending_source_open_in.ready := initialized && !active
+  when(io.pending_source_open_in.fire) {
+    active := true.B
+    endpointGeneration := endpointGeneration + 1.U
+    identity := open.transaction_identity
+    expectedOrdinal := 0.U
+    deliverable := false.B
+    sourceClosed := false.B
+    faulted := false.B
+    consumerMask := 0.U
+  }
+
+  val record = io.direct_pending_record_terminal_in.bits
+  val recordMatches = initialized && active && !faulted && !sourceClosed &&
+    endpointGeneration === record.endpoint_generation && identity.asUInt === record.transaction_identity.asUInt
+  val recordOk = record.status === p.coreMemoryOkStatusCode.U
+  val recordFault = record.status === p.coreMemoryFaultStatusCode.U
+  val emptyLegal = !record.explicit_empty || (record.ordinal === 0.U && record.last)
+  io.direct_pending_record_terminal_in.ready := recordMatches &&
+    (recordFault || (recordOk && record.ordinal === expectedOrdinal && emptyLegal))
+  when(io.direct_pending_record_terminal_in.fire) {
+    when(recordFault) {
+      faulted := true.B
+    }.otherwise {
+      expectedOrdinal := expectedOrdinal + 1.U
+      when(!deliverable) {
+        deliverable := true.B
+        consumerMask := "b1111".U
+      }
+      when(record.last) { sourceClosed := true.B }
+    }
+  }
+
+  val consumerCommit = io.gqa_consumer_commit_in.bits
+  val commitBit = (1.U(4.W) << consumerCommit.consumer_id)(3, 0)
+  val commitMatches = initialized && active && deliverable && !faulted && consumerCommit.source_is_direct &&
+    consumerCommit.source_generation === endpointGeneration && identity.asUInt === consumerCommit.transaction_identity.asUInt &&
+    consumerCommit.consumer_id < 4.U && (consumerMask & commitBit) =/= 0.U
+  io.gqa_consumer_commit_in.ready := commitMatches
+  when(io.gqa_consumer_commit_in.fire) {
+    consumerMask := consumerMask & ~commitBit
+  }
+
+  val releaseEligible = active && deliverable && sourceClosed && !faulted && consumerMask === 0.U
+  io.direct_release_out.valid := releaseEligible
+  io.direct_release_out.bits.transaction_identity := identity
+  io.direct_release_out.bits.source_is_direct := true.B
+  io.direct_release_out.bits.source_slot := 0.U
+  io.direct_release_out.bits.source_generation := endpointGeneration
+  when(io.direct_release_out.fire) {
+    active := false.B
+    deliverable := false.B
+    sourceClosed := false.B
+    consumerMask := 0.U
+  }
+
+  when(io.direct_release_out.valid) {
+    assert(sourceClosed && consumerMask === 0.U && !faulted)
+  }
+  val releaseStalled = io.direct_release_out.valid && !io.direct_release_out.ready
+  val heldRelease = RegEnable(io.direct_release_out.bits, releaseStalled)
+  when(RegNext(releaseStalled, false.B)) {
+    assert(io.direct_release_out.bits.asUInt === heldRelease.asUInt)
+  }
+
+  io.direct_observe_generation := endpointGeneration
+  io.direct_observe_active := active
 }
 
 /** RTL1.3 R3 control state: no P3 payload macro, M2 macro, or HBM controller. */

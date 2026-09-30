@@ -2,7 +2,7 @@
 
 ## Status and boundary
 
-**Status:** `complete_nonphysical_s2_direct_control_carrier_closure; RTL1.4_behavior_pending`.
+**Status:** `complete_nonphysical_s2_direct_control_carrier_closure; rtl1_4_control_complete_at_module_scope`.
 
 This record freezes only the module-local control carriers needed for the
 already-selected two-slot common S2/GQA wrapper and the Gate-A1
@@ -108,3 +108,19 @@ stateful source mux or infer that source reordering is numerically equivalent.
 This is a no-model RTL-entry control-interface closure. It makes no model/GPU,
 timing/throughput, controller/HBM, numeric-datapath, PPA, end-to-end RTL
 correctness, or new A4-DSE claim.
+
+## RTL1.4 implementation binding
+
+`RouteAS2GqaSourceWrapper` implements only two-slot identity/generation,
+fill/sidecar completion, READY, four-bit GQA completion, and release control.
+`RouteADirectPendingEndpointV1` implements only one direct endpoint's
+identity/generation, FIFO ordinal/close/fault, four-bit completion, and
+release control. Neither module stores source payload/sidecar bytes or
+connects to R4/R6.
+
+`RouteAS2DirectPendingSpec` is the directed no-model module-level check. It
+covers packed sidecar-before-READY, all-four-commit release, ready-low release
+stability, reused-S2 stale terminal rejection, direct FIFO ordinal, direct
+stale terminal rejection, and direct fault nonrelease. `a_gqa_release` is
+bound at its frozen S2 owner; direct endpoint checks the corresponding local
+safety condition without changing matrix ownership.

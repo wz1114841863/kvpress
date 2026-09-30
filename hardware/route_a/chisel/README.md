@@ -159,6 +159,13 @@ their owner modules gain RTL1.4 behavior. They neither instantiate the two
 32-KiB source buffers nor create a direct pending buffer or source mux. See
 `analysis/rtl1_4_s2_direct_pending_semantic_carrier_contract.md`.
 
+RTL1.4 implements the corresponding module-scoped control state: S2 slot
+generation, fill/sidecar completion, READY and four-consumer release; and
+direct-pending endpoint generation, FIFO terminal order, close/fault and
+four-consumer release. `RouteAS2DirectPendingSpec` checks these control
+properties without storing source payload data or connecting a merge/source
+mux.
+
 ## Next authorized step
 
 RTL1.3 now implements module-scoped R3/R5 control: P3 state/generation and

@@ -24,6 +24,7 @@ module route_a_rtl1_0_assertion_binding_registry;
   // assertion-id: a_fifo_credit_losslessness
   // r2-chisel-assertion: a_fifo_credit_losslessness
   // assertion-id: a_gqa_release
+  // s2-chisel-assertion: a_gqa_release
   // assertion-id: a_stale_response
   // r1-chisel-assertion: a_stale_response
   // assertion-id: a_exactly_one_terminal

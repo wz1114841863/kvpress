@@ -16,7 +16,7 @@ final class RouteAHotSourcePath(p: RouteASkeletonParameters) extends Module {
   StructuralTieOff.sink(io.lifecycle_control_in)
 }
 
-/** RTL1.4.0 carrier shell; no S2 storage, generation, or GQA behavior exists here yet. */
+/** RTL1.4 S2 control only; payload/sidecar macros and source mux remain unimplemented. */
 final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_s2_gqa_source_wrapper"
 
@@ -33,14 +33,134 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     val s2_observe_generation = Output(UInt(p.sourceGenerationWidth.W))
   })
 
-  StructuralTieOff.sink(io.service_req_in)
-  StructuralTieOff.sink(io.s2_fill_open_in)
-  StructuralTieOff.sink(io.s2_fill_terminal_in)
-  StructuralTieOff.sink(io.s2_sidecar_complete_in)
-  StructuralTieOff.sink(io.gqa_consumer_commit_in)
-  StructuralTieOff.source(io.s2_release_out)
-  io.s2_observe_state := 0.U
-  io.s2_observe_generation := 0.U
+  private val slots = 2
+  private val StateEmpty = 0.U(3.W)
+  private val StateFilling = 1.U(3.W)
+  private val StateReady = 2.U(3.W)
+  private val StateFaulted = 3.U(3.W)
+
+  val initialized = RegInit(false.B)
+  when(io.mem_init_done) { initialized := true.B }
+  val slotState = RegInit(VecInit(Seq.fill(slots)(StateEmpty)))
+  val slotGeneration = RegInit(VecInit(Seq.fill(slots)(0.U(p.sourceGenerationWidth.W))))
+  val slotIdentity = Reg(Vec(slots, new TransactionIdentity))
+  val slotPageRef = Reg(Vec(slots, new PageRef))
+  val fillOpened = RegInit(VecInit(Seq.fill(slots)(false.B)))
+  val expectedFragments = Reg(Vec(slots, UInt(10.W)))
+  val nextFragment = RegInit(VecInit(Seq.fill(slots)(0.U(10.W))))
+  val requiresSidecar = RegInit(VecInit(Seq.fill(slots)(false.B)))
+  val sidecarComplete = RegInit(VecInit(Seq.fill(slots)(false.B)))
+  val consumerMask = RegInit(VecInit(Seq.fill(slots)(0.U(4.W))))
+
+  val service = io.service_req_in.bits
+  val serviceSlot = service.s2_slot
+  io.service_req_in.ready := initialized && slotState(serviceSlot) === StateEmpty
+  when(io.service_req_in.fire) {
+    slotState(serviceSlot) := StateFilling
+    slotGeneration(serviceSlot) := slotGeneration(serviceSlot) + 1.U
+    slotIdentity(serviceSlot) := service.transaction_identity
+    slotPageRef(serviceSlot) := service.page_ref
+    fillOpened(serviceSlot) := false.B
+    nextFragment(serviceSlot) := 0.U
+    requiresSidecar(serviceSlot) := false.B
+    sidecarComplete(serviceSlot) := false.B
+    consumerMask(serviceSlot) := 0.U
+  }
+
+  val fillOpen = io.s2_fill_open_in.bits
+  val fillSlot = fillOpen.s2_slot
+  val fillOpenMatches = initialized && slotState(fillSlot) === StateFilling && !fillOpened(fillSlot) &&
+    slotGeneration(fillSlot) === fillOpen.source_generation &&
+    slotIdentity(fillSlot).asUInt === fillOpen.transaction_identity.asUInt &&
+    slotPageRef(fillSlot).asUInt === fillOpen.page_ref.asUInt &&
+    fillOpen.expected_fragment_count =/= 0.U && fillOpen.expected_fragment_count <= 512.U
+  io.s2_fill_open_in.ready := fillOpenMatches
+  when(io.s2_fill_open_in.fire) {
+    fillOpened(fillSlot) := true.B
+    expectedFragments(fillSlot) := fillOpen.expected_fragment_count
+    nextFragment(fillSlot) := 0.U
+    requiresSidecar(fillSlot) := fillOpen.requires_sidecar
+    sidecarComplete(fillSlot) := false.B
+  }
+
+  val fillTerminal = io.s2_fill_terminal_in.bits
+  val terminalSlot = fillTerminal.s2_slot
+  val terminalMatches = initialized && slotState(terminalSlot) === StateFilling && fillOpened(terminalSlot) &&
+    slotGeneration(terminalSlot) === fillTerminal.source_generation &&
+    slotIdentity(terminalSlot).asUInt === fillTerminal.transaction_identity.asUInt
+  val terminalOk = fillTerminal.status === p.coreMemoryOkStatusCode.U
+  val terminalFault = fillTerminal.status === p.coreMemoryFaultStatusCode.U
+  val terminalOrdinalOk = nextFragment(terminalSlot) < expectedFragments(terminalSlot) &&
+    fillTerminal.fragment_index === nextFragment(terminalSlot)(8, 0)
+  val terminalLastExpected = nextFragment(terminalSlot) + 1.U === expectedFragments(terminalSlot)
+  io.s2_fill_terminal_in.ready := terminalMatches &&
+    ((terminalOk && terminalOrdinalOk && fillTerminal.last === terminalLastExpected) || terminalFault)
+  when(io.s2_fill_terminal_in.fire) {
+    when(terminalFault) {
+      slotState(terminalSlot) := StateFaulted
+    }.otherwise {
+      val next = nextFragment(terminalSlot) + 1.U
+      nextFragment(terminalSlot) := next
+      when(fillTerminal.last && (!requiresSidecar(terminalSlot) || sidecarComplete(terminalSlot))) {
+        slotState(terminalSlot) := StateReady
+        consumerMask(terminalSlot) := "b1111".U
+      }
+    }
+  }
+
+  val sidecar = io.s2_sidecar_complete_in.bits
+  val sidecarSlot = sidecar.s2_slot
+  val sidecarMatches = initialized && slotState(sidecarSlot) === StateFilling && fillOpened(sidecarSlot) &&
+    requiresSidecar(sidecarSlot) && slotGeneration(sidecarSlot) === sidecar.source_generation &&
+    slotIdentity(sidecarSlot).asUInt === sidecar.transaction_identity.asUInt
+  io.s2_sidecar_complete_in.ready := sidecarMatches
+  when(io.s2_sidecar_complete_in.fire) {
+    sidecarComplete(sidecarSlot) := true.B
+    when(nextFragment(sidecarSlot) === expectedFragments(sidecarSlot)) {
+      slotState(sidecarSlot) := StateReady
+      consumerMask(sidecarSlot) := "b1111".U
+    }
+  }
+
+  val consumerCommit = io.gqa_consumer_commit_in.bits
+  val commitSlot = consumerCommit.source_slot
+  val commitBit = (1.U(4.W) << consumerCommit.consumer_id)(3, 0)
+  val commitMatches = initialized && !consumerCommit.source_is_direct && slotState(commitSlot) === StateReady &&
+    slotGeneration(commitSlot) === consumerCommit.source_generation &&
+    slotIdentity(commitSlot).asUInt === consumerCommit.transaction_identity.asUInt &&
+    consumerCommit.consumer_id < 4.U && (consumerMask(commitSlot) & commitBit) =/= 0.U
+  io.gqa_consumer_commit_in.ready := commitMatches
+  when(io.gqa_consumer_commit_in.fire) {
+    consumerMask(commitSlot) := consumerMask(commitSlot) & ~commitBit
+  }
+
+  val releaseEligible = VecInit((0 until slots).map(slot => slotState(slot) === StateReady && consumerMask(slot) === 0.U))
+  val releaseAny = releaseEligible.asUInt.orR
+  val releaseSlot = PriorityEncoder(releaseEligible)
+  io.s2_release_out.valid := releaseAny
+  io.s2_release_out.bits.transaction_identity := slotIdentity(releaseSlot)
+  io.s2_release_out.bits.source_is_direct := false.B
+  io.s2_release_out.bits.source_slot := releaseSlot
+  io.s2_release_out.bits.source_generation := slotGeneration(releaseSlot)
+  when(io.s2_release_out.fire) {
+    slotState(releaseSlot) := StateEmpty
+    fillOpened(releaseSlot) := false.B
+    consumerMask(releaseSlot) := 0.U
+  }
+
+  // a_gqa_release: an S2 slot cannot free/reuse until all four matching commits.
+  when(io.s2_release_out.valid) {
+    assert(slotState(releaseSlot) === StateReady)
+    assert(consumerMask(releaseSlot) === 0.U)
+  }
+  val releaseStalled = io.s2_release_out.valid && !io.s2_release_out.ready
+  val heldRelease = RegEnable(io.s2_release_out.bits, releaseStalled)
+  when(RegNext(releaseStalled, false.B)) {
+    assert(io.s2_release_out.bits.asUInt === heldRelease.asUInt)
+  }
+
+  io.s2_observe_state := slotState(io.s2_observe_slot)
+  io.s2_observe_generation := slotGeneration(io.s2_observe_slot)
 }
 
 /** RTL1.2 R2 eligibility, lossless candidate storage, and accepted-grant control. */
