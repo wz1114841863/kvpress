@@ -1,6 +1,6 @@
 # RTL1 — Interface / Control Skeleton Bring-up
 
-**Status:** `rtl1_owner_local_control_and_replaceable_r4_boundary_complete; top_integration_numeric_core_and_composed_proof_pending`.
+**Status:** `rtl1_owner_local_control_and_replaceable_r4_boundary_complete; rtl1_i0_cross_owner_contract_frozen; behavioral_top_integration_numeric_core_and_composed_proof_pending`.
 
 RTL1 may not change frozen owners, ports, assertions, oracles, pruning,
 admission, scheduler semantics, page size, S2 count, outstanding bounds, merge
@@ -18,6 +18,21 @@ format, or physical realization parameters.
 
 CDC/HBM adapter, macro/port count, physical queues, frequency, timing, PPA,
 and speedup remain outside RTL1 and require later implementation/Gate-B evidence.
+
+## RTL1-I0 progress
+
+**RTL1-I0 cross-owner integration contract: complete; no behavioral wiring.**
+`analysis/rtl1_i_cross_owner_integration_contract.md` and its machine-readable
+manifest freeze the top-inert inventory and the only permitted later
+associations: per-record R3 publication membership, R2/R1 delivery context,
+R4 source-instance sideband, named init/drain facts, and R5 reclaim. They
+preserve the sole `metadata_publish_commit`, the sole R1 external path, the
+frozen R4 header, and top composition-only ownership.
+
+RTL1-I0 adds no Chisel module or top-level behavior. RTL1-I1 must first close
+external R1 init acknowledgement and named drain-status composition; later
+I2--I4 may then close publication/authority, source/R4/R6, and reclaim under
+the frozen I0 contract. Numeric-core realization remains a separate gate.
 
 ## RTL1.6.0 progress
 

@@ -1,0 +1,66 @@
+{
+  "schema_version": "kvzap-route-a-rtl1-i-integration-manifest-1.0",
+  "status": "rtl1_i0_contract_frozen_no_behavioral_wiring",
+  "scope": "Machine-readable cross-owner association planning only. No Chisel behavior, controller, physical queue, storage macro, numeric datapath, timing, throughput, PPA, model/GPU, or new A4 DSE claim.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md",
+    "analysis/rtl1_3_r3_r5_semantic_carrier_contract.md",
+    "analysis/rtl1_4_s2_direct_pending_semantic_carrier_contract.md",
+    "analysis/rtl1_5_r6_lifecycle_semantic_carrier_contract.md",
+    "analysis/rtl1_6_r4_packet_boundary_contract.md",
+    "analysis/rtl1_i_cross_owner_integration_contract.md",
+    "analysis/rtl1_i_composed_assertion_plan.md"
+  ],
+  "top_inert_inventory": [
+    {"id":"component_status_to_r6","producer":"integration_status_collect","consumer":"route_a_lifecycle_adapter","current_state":"source_tied_inactive","closure_step":"rtl1_i1","required_fact":"named init and drain acknowledgements"},
+    {"id":"r6_authority_out","producer":"route_a_lifecycle_adapter","consumer":"hot_and_admission_owners","current_state":"sink_tied_inactive","closure_step":"rtl1_i2","required_fact":"arrival and maturity authority events"},
+    {"id":"r3_authority_to_r6","producer":"route_a_m2_p3_wrapper","consumer":"route_a_lifecycle_adapter","current_state":"source_tied_inactive","closure_step":"rtl1_i2","required_fact":"per-record pending-to-packed observation after atomic publication"},
+    {"id":"r6_merge_ready","producer":"source_completion_owners","consumer":"route_a_lifecycle_adapter","current_state":"source_tied_inactive","closure_step":"rtl1_i3","required_fact":"all selected sources released after four commits"},
+    {"id":"s2_mem_init","producer":"route_a_core_mem_if_v1","consumer":"route_a_s2_gqa_source_wrapper","current_state":"constant_false","closure_step":"rtl1_i1","required_fact":"R1 init acknowledgement"},
+    {"id":"s2_fill_and_commit","producer":"r2_delivery_context_owner_and_r4","consumer":"route_a_s2_gqa_source_wrapper","current_state":"source_tied_inactive","closure_step":"rtl1_i3","required_fact":"generation-bearing fill, sidecar, and consumer commits"},
+    {"id":"s2_release","producer":"route_a_s2_gqa_source_wrapper","consumer":"route_a_lifecycle_adapter","current_state":"sink_tied_inactive","closure_step":"rtl1_i3","required_fact":"current source-instance release"},
+    {"id":"direct_mem_init","producer":"route_a_core_mem_if_v1","consumer":"route_a_direct_pending_endpoint_v1","current_state":"constant_false","closure_step":"rtl1_i1","required_fact":"R1 init acknowledgement"},
+    {"id":"direct_terminal_and_commit","producer":"r2_delivery_context_owner_and_r4","consumer":"route_a_direct_pending_endpoint_v1","current_state":"source_tied_inactive","closure_step":"rtl1_i3","required_fact":"generation-bearing record terminal and consumer commits"},
+    {"id":"direct_release","producer":"route_a_direct_pending_endpoint_v1","consumer":"route_a_lifecycle_adapter","current_state":"sink_tied_inactive","closure_step":"rtl1_i3","required_fact":"current endpoint release"},
+    {"id":"r4_packet_inputs","producer":"source_service_packet_adapter","consumer":"route_a_merge_boundary","current_state":"source_tied_inactive","closure_step":"rtl1_i3","required_fact":"header, fragments, and source-instance sideband"},
+    {"id":"r4_result_or_fault","producer":"future_replaceable_r4_numeric_core_or_test_stub","consumer":"route_a_merge_boundary","current_state":"source_tied_inactive","closure_step":"deferred_numeric_gate","required_fact":"matching result or numeric fault; no numeric implementation in RTL1-I"},
+    {"id":"r4_consumer_commit","producer":"route_a_merge_boundary","consumer":"matching_hot_s2_or_direct_owner","current_state":"sink_tied_inactive","closure_step":"rtl1_i3","required_fact":"source-instance-safe consumer completion"},
+    {"id":"r2_candidate","producer":"admission_and_source_owners","consumer":"route_a_core_side_arbiter","current_state":"source_tied_inactive","closure_step":"rtl1_i2_then_i3","required_fact":"immutable delivery context and frozen eligibility"},
+    {"id":"r1_mem_init","producer":"external_core_memory_adapter","consumer":"route_a_core_mem_if_v1","current_state":"constant_false","closure_step":"rtl1_i1","required_fact":"explicit adapter init acknowledgement"},
+    {"id":"r2_source_delivery","producer":"route_a_core_side_arbiter","consumer":"source_or_admission_owner","current_state":"sink_tied_inactive","closure_step":"rtl1_i3","required_fact":"preserved delivery context"},
+    {"id":"r3_mem_init_and_ingress","producer":"r1_init_and_admission_owner","consumer":"route_a_m2_p3_wrapper","current_state":"constant_false_and_source_tied_inactive","closure_step":"rtl1_i1_then_i2","required_fact":"P3 claim, fragments, sidecars, write terminals, and M2 members"},
+    {"id":"r5_mem_init_and_ingress","producer":"r1_init_and_admission_owner","consumer":"route_a_page_manager","current_state":"constant_false_and_source_tied_inactive","closure_step":"rtl1_i1_then_i2","required_fact":"allocation, descriptor terminals, and later reclaim"},
+    {"id":"r3_r5_lifecycle_publish_chain","producer":"route_a_lifecycle_adapter_and_r3_r5","consumer":"route_a_m2_p3_wrapper_and_route_a_lifecycle_adapter","current_state":"wired_but_no_producer","closure_step":"rtl1_i2","required_fact":"one publication request/ack and authority observation"}
+  ],
+  "association_records": [
+    {"id":"admission_context","producer_owner":"hot_admission_owner","consumer_owner":"route_a_m2_p3_wrapper_and_route_a_page_manager","identity_fields":["entry_id","layer","kv_head","logical_position","immutable_payload_association","transaction_group_tag"],"atomic_boundary":"none_before_existing_metadata_publish_commit","cardinality":"one immutable context per retained admission; group population at most 64","forbidden":["reconsider DROP/RETAIN","source scheduling","payload macro selection"],"implementation_step":"rtl1_i2"},
+    {"id":"publication_membership_and_authority_observation","producer_owner":"route_a_m2_p3_wrapper","consumer_owner":"route_a_lifecycle_adapter_and_verification_monitor","identity_fields":["transaction_group_tag","p3_layer","stage_generation","page_ref","record_ordinal","entry_id"],"atomic_boundary":"existing metadata_publish_commit only","cardinality":"at most 64 record members per page group","forbidden":["first_entry_plus_count span substitution","second commit","new authority owner"],"implementation_step":"rtl1_i2"},
+    {"id":"delivery_context","producer_owner":"source_or_admission_owner","consumer_owner":"route_a_core_side_arbiter_then_matching_source_owner","identity_fields":["transaction_identity","delivery_context_ref","candidate_class","destination"],"atomic_boundary":"R1 accepted request and matching terminal only","cardinality":"one context per live R1 identity; reuse-safe","forbidden":["alternate R1 path","R2 ownership of source generation","physical FIFO width selection"],"implementation_step":"rtl1_i3"},
+    {"id":"r4_source_instance_sideband","producer_owner":"source_service_packet_adapter","consumer_owner":"route_a_merge_boundary_then_matching_source_owner","identity_fields":["transaction_identity","route_source_kind","source_instance_coordinate","source_generation","consumer_id"],"atomic_boundary":"none; R4 packet protocol is unchanged","cardinality":"one current source instance per emitted partial packet","forbidden":["modify frozen 128-bit R4 header","treat hot as S2","R4 source allocation"],"implementation_step":"rtl1_i3"},
+    {"id":"init_and_drain_status","producer_owner":"external_R1_adapter_and_named_local_owners","consumer_owner":"route_a_lifecycle_adapter","identity_fields":["acknowledgement_name","asserted"],"atomic_boundary":"none; status is an observation only","cardinality":"three init and eight drain facts from existing R6 contract","forbidden":["response_as_init","timeout_as_drain","fabricated status"],"implementation_step":"rtl1_i1"},
+    {"id":"reclaim_and_generation_reuse","producer_owner":"route_a_page_manager","consumer_owner":"route_a_core_side_arbiter_then_route_a_core_mem_if_v1","identity_fields":["page_ref","generation","descriptor_invalidate_operation","durable_terminal"],"atomic_boundary":"durable descriptor invalidation before allocator reuse","cardinality":"one reclaim transition per live page generation","forbidden":["free_on_reset","free_on_source_release","descriptor bypass"],"implementation_step":"rtl1_i4"}
+  ],
+  "composed_assertions": [
+    "a_metadata_publish_commit",
+    "a_authority_conservation",
+    "a_gqa_release",
+    "a_numeric_fault_consumer",
+    "a_reset_stale_exclusion",
+    "a_descriptor_invalidate_before_free",
+    "a_global_retirement_membership",
+    "p_accepted_to_terminal",
+    "p_retire_to_ack",
+    "p_credit_return"
+  ],
+  "hierarchy_control": {
+    "rtl1_i0_behavioral_modules_added": false,
+    "top_remains_composition_only": true,
+    "future_status_collection": "requires a separately reviewed hierarchy amendment before any synthesizable collector is introduced",
+    "future_numeric_core": "deferred to the separate R4 numeric realization gate"
+  },
+  "verification": {
+    "evidence_labels":["pure-software planning manifest","no model/GPU","no cycle/timing/throughput claim","no PPA claim","no RTL correctness claim","no new A4 DSE"],
+    "required_preflight":".venv/bin/python -m pytest tests/test_rtl1_i_integration_manifest.py -q"
+  }
+}

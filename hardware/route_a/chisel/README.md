@@ -197,6 +197,13 @@ binary32 fields or value fragments, implement `exp`/FP arithmetic, retain
 partial payloads, choose a source schedule, or integrate the top. The no-model
 directed evidence is `RouteAMergeBoundarySpec`.
 
+RTL1-I0 is a documentation/manifest freeze only. It records why the current
+top-level ties cannot yet be replaced by direct wiring: R3 publication needs
+per-record membership for authority observation, R2 delivery needs a
+reuse-safe context, R4 commits need a source-instance sideband, and init/drain
+facts need explicit producers. It adds no Chisel behavior or hierarchy node.
+See `analysis/rtl1_i_cross_owner_integration_contract.md`.
+
 ## Completed R3/R5 scope
 
 RTL1.3 now implements module-scoped R3/R5 control: P3 state/generation and
