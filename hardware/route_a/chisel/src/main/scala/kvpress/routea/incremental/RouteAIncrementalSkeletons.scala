@@ -714,21 +714,29 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
 }
 
 /**
-  * Replaceable R4 boundary shell only. It does not implement merge arithmetic,
-  * partial state, numeric-fault detection, source release, or terminal policy.
+  * RTL1.6.0 R4 carrier shell. Packet parsing, numeric implementation, source
+  * release, and terminal association remain absent until the RTL1.6 behavior.
   */
-final class RouteAMergeBoundary extends Module {
+final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_merge_boundary"
 
   val io = IO(new Bundle {
     val source_partial_in = Flipped(RouteAChannels.source_partial)
     val consumer_partial_commit = RouteAChannels.consumer_partial_commit
     val merge_req_in = Flipped(RouteAChannels.merge_req)
+    val r4_partial_header_in = Flipped(RouteAChannels.r4_partial_header)
+    val r4_value_fragment_in = Flipped(RouteAChannels.r4_value_fragment)
+    val r4_result_stub_in = Flipped(RouteAChannels.r4_result_stub)
+    val r4_numeric_fault_in = Flipped(RouteAChannels.r4_numeric_fault)
     val merge_rsp_or_numeric_fault = RouteAChannels.merge_terminal_rsp
   })
 
   StructuralTieOff.sink(io.source_partial_in)
   StructuralTieOff.source(io.consumer_partial_commit)
   StructuralTieOff.sink(io.merge_req_in)
+  StructuralTieOff.sink(io.r4_partial_header_in)
+  StructuralTieOff.sink(io.r4_value_fragment_in)
+  StructuralTieOff.sink(io.r4_result_stub_in)
+  StructuralTieOff.sink(io.r4_numeric_fault_in)
   StructuralTieOff.source(io.merge_rsp_or_numeric_fault)
 }

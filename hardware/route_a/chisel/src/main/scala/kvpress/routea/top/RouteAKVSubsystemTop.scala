@@ -37,7 +37,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val core_memory = Module(new RouteACoreMemIfV1(p))
     val m2_p3 = Module(new RouteAM2P3Wrapper(p))
     val page_manager = Module(new RouteAPageManager(p))
-    val merge = Module(new RouteAMergeBoundary)
+    val merge = Module(new RouteAMergeBoundary(p))
 
     lifecycle.io.frontend_lifecycle_req <> frontend_lifecycle_req
     lifecycle.io.runtime_retire_req <> runtime_retire_req
@@ -80,6 +80,15 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val source_partial_to_merge = Wire(RouteAChannels.source_partial)
     StructuralTieOff.source(source_partial_to_merge)
     merge.io.source_partial_in <> source_partial_to_merge
+
+    val r4_partial_header = Wire(RouteAChannels.r4_partial_header); StructuralTieOff.source(r4_partial_header)
+    val r4_value_fragment = Wire(RouteAChannels.r4_value_fragment); StructuralTieOff.source(r4_value_fragment)
+    val r4_result_stub = Wire(RouteAChannels.r4_result_stub); StructuralTieOff.source(r4_result_stub)
+    val r4_numeric_fault = Wire(RouteAChannels.r4_numeric_fault); StructuralTieOff.source(r4_numeric_fault)
+    merge.io.r4_partial_header_in <> r4_partial_header
+    merge.io.r4_value_fragment_in <> r4_value_fragment
+    merge.io.r4_result_stub_in <> r4_result_stub
+    merge.io.r4_numeric_fault_in <> r4_numeric_fault
 
     val merge_source_commit = Wire(RouteAChannels.consumer_partial_commit)
     merge_source_commit <> merge.io.consumer_partial_commit

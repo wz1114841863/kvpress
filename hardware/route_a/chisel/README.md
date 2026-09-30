@@ -182,6 +182,13 @@ into a source mux, create an authority table, connect R3 publication, or
 implement R4 numeric behavior. `RouteALifecycleAdapterSpec` is a no-model
 directed ChiselSim suite for this control scope.
 
+RTL1.6.0 adds the identity-bearing R4 header/fragment/result/fault carriers
+needed by the frozen packet boundary. They deliberately do not repurpose the
+older opaque `SourcePartial` record. The top ties every new carrier inactive;
+no exp/FP implementation, partial storage, source mux, numeric claim, or
+terminal integration is present. See
+`analysis/rtl1_6_r4_packet_boundary_contract.md`.
+
 ## Completed R3/R5 scope
 
 RTL1.3 now implements module-scoped R3/R5 control: P3 state/generation and

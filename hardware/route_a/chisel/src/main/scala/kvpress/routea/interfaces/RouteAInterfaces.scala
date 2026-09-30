@@ -206,6 +206,31 @@ final class MergeTerminalResponse extends Bundle {
   val normalized_value = UInt(RouteAAnchorWidths.NormalizedValueWidth.W)
 }
 
+/** R4 local packet header with the identity absent from the legacy opaque carrier. */
+final class R4PartialHeader extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val header = UInt(RouteAAnchorWidths.MergePartialHeaderWidth.W)
+}
+
+/** One ordered logical 64-B R4 value fragment; never an HBM transaction. */
+final class R4ValueFragment extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val fragment_index = UInt(3.W)
+  val last = Bool()
+  val data = UInt(RouteAAnchorWidths.MergeValueFragmentWidth.W)
+}
+
+/** Replaceable numeric-core success slot; R4 boundary forwards it without arithmetic. */
+final class R4ResultStub extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val normalized_value = UInt(RouteAAnchorWidths.NormalizedValueWidth.W)
+}
+
+/** Explicit R4 fail-closed numeric-fault slot; R6 receives the existing fault status. */
+final class R4NumericFault extends Bundle {
+  val transaction_identity = new TransactionIdentity
+}
+
 /**
   * Existing RTL0.2 R2 candidate port, refined by RTL1.2.0. The nested request
   * is a core-side logical R1 carrier, not an HBM/controller command.
@@ -380,6 +405,10 @@ object RouteAChannels {
   def consumer_partial_commit = Decoupled(new ConsumerPartialCommit)
   def merge_req = Decoupled(new MergeRequest)
   def merge_terminal_rsp = Decoupled(new MergeTerminalResponse)
+  def r4_partial_header = Decoupled(new R4PartialHeader)
+  def r4_value_fragment = Decoupled(new R4ValueFragment)
+  def r4_result_stub = Decoupled(new R4ResultStub)
+  def r4_numeric_fault = Decoupled(new R4NumericFault)
   def source_candidate(p: RouteASkeletonParameters) = Decoupled(new SourceCandidate(p))
   def core_mem_req(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryRequest(p))
   def core_mem_rsp(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryResponse(p))

@@ -1,6 +1,6 @@
 # RTL1 — Interface / Control Skeleton Bring-up
 
-**Status:** `rtl1_3_r3_r5_publication_control_complete_at_module_scope; rtl1_4_s2_direct_control_complete; rtl1_5_r6_lifecycle_control_complete_at_module_scope; top_integration_and_remaining_owner_phases_pending`.
+**Status:** `rtl1_3_r3_r5_publication_control_complete_at_module_scope; rtl1_4_s2_direct_control_complete; rtl1_5_r6_lifecycle_control_complete_at_module_scope; rtl1_6_0_r4_carriers_complete; top_integration_and_remaining_owner_phases_pending`.
 
 RTL1 may not change frozen owners, ports, assertions, oracles, pruning,
 admission, scheduler semantics, page size, S2 count, outstanding bounds, merge
@@ -18,6 +18,15 @@ format, or physical realization parameters.
 
 CDC/HBM adapter, macro/port count, physical queues, frequency, timing, PPA,
 and speedup remain outside RTL1 and require later implementation/Gate-B evidence.
+
+## RTL1.6.0 progress
+
+**RTL1.6.0 R4 packet/fault carrier closure: complete.**
+`analysis/rtl1_6_r4_packet_boundary_contract.md` freezes identity-bearing R4
+header/fragment/result/fault carriers without reinterpreting the legacy opaque
+`SourcePartial` bundle. The top ties them inactive. No numeric merge,
+binary32 arithmetic, exp, partial-state storage, source-mux, source schedule,
+or terminal integration is implemented at this carrier step.
 
 ## RTL1.5.0 progress
 
