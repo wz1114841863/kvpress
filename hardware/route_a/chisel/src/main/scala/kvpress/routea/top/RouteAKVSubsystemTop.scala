@@ -85,7 +85,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     merge.io.r4_result_stub_in <> r4_result_stub
     merge.io.r4_numeric_fault_in <> r4_numeric_fault
 
-    val merge_source_commit = Wire(RouteAChannels.consumer_partial_commit)
+    val merge_source_commit = Wire(RouteAChannels.consumer_partial_commit(p))
     merge_source_commit <> merge.io.consumer_partial_commit
     StructuralTieOff.sink(merge_source_commit)
 

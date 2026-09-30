@@ -234,10 +234,37 @@ final class SourcePartial extends Bundle {
   val merge_value_fragment = UInt(RouteAAnchorWidths.MergeValueFragmentWidth.W)
 }
 
-final class ConsumerPartialCommit extends Bundle {
+/** Fixed semantic Route-A source codes; never a physical mux encoding. */
+object RouteASourceKind {
+  final val Hot = 0
+  final val Pending = 1
+  final val Packed = 2
+}
+
+/**
+  * Source-owner identity that survives the R4 partial/commit round trip.
+  * `instance_coordinate` uses the selected logical entry-coordinate width:
+  * S2 encodes its slot there, direct encodes its one endpoint, and hot uses
+  * its hot-owner coordinate.  It is not an address or payload reference.
+  */
+final class SourceInstance(p: RouteASkeletonParameters) extends Bundle {
+  val source_kind = UInt(RouteAAnchorWidths.SourceKindWidth.W)
+  val instance_coordinate = UInt(RouteAAnchorWidths.EntryIdWidth.W)
+  val generation = UInt(p.sourceGenerationWidth.W)
+}
+
+/** Separate source-instance sideband for the frozen 128-bit R4 header. */
+final class R4SourceInstanceSideband(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val source_instance = new SourceInstance(p)
+  val consumer_id = UInt(RouteAAnchorWidths.ConsumerIdWidth.W)
+}
+
+final class ConsumerPartialCommit(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
   val consumer_id = UInt(RouteAAnchorWidths.ConsumerIdWidth.W)
   val source_kind = UInt(RouteAAnchorWidths.SourceKindWidth.W)
+  val source_instance = new SourceInstance(p)
 }
 
 final class MergeRequest extends Bundle {
@@ -285,6 +312,8 @@ final class SourceCandidate(p: RouteASkeletonParameters) extends Bundle {
   val arrival_ordinal = UInt(p.candidateOrdinalWidth.W)
   val candidate_id = UInt(p.candidateIdWidth.W)
   val eligibility_snapshot = UInt(p.candidatePredicateWidth.W)
+  // Opaque producer-owned context. R2 transports it but never resolves it.
+  val delivery_context_ref = UInt(p.sourceDeliveryOpaqueWidth.W)
   val r1_request = new CoreMemoryRequest(p)
 }
 
@@ -337,6 +366,7 @@ final class SourceDelivery(p: RouteASkeletonParameters) extends Bundle {
   val candidate_id = UInt(p.candidateIdWidth.W)
   val candidate_class = UInt(p.candidateClassWidth.W)
   val destination = UInt(p.coreMemoryDestinationWidth.W)
+  val delivery_context_ref = UInt(p.sourceDeliveryOpaqueWidth.W)
   val r1_response = new CoreMemoryResponse(p)
 }
 
@@ -463,7 +493,8 @@ object RouteAChannels {
   def gqa_consumer_commit(p: RouteASkeletonParameters) = Decoupled(new GqaConsumerCommit(p))
   def source_release(p: RouteASkeletonParameters) = Decoupled(new SourceRelease(p))
   def source_partial = Decoupled(new SourcePartial)
-  def consumer_partial_commit = Decoupled(new ConsumerPartialCommit)
+  def consumer_partial_commit(p: RouteASkeletonParameters) = Decoupled(new ConsumerPartialCommit(p))
+  def r4_source_instance_sideband(p: RouteASkeletonParameters) = Decoupled(new R4SourceInstanceSideband(p))
   def merge_req = Decoupled(new MergeRequest)
   def merge_terminal_rsp = Decoupled(new MergeTerminalResponse)
   def r4_partial_header = Decoupled(new R4PartialHeader)

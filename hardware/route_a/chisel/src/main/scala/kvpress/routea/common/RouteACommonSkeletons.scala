@@ -348,6 +348,7 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   io.source_delivery_out.bits.candidate_id := outstanding(responseRid).candidate_id
   io.source_delivery_out.bits.candidate_class := outstanding(responseRid).candidate_class
   io.source_delivery_out.bits.destination := outstanding(responseRid).r1_request.destination
+  io.source_delivery_out.bits.delivery_context_ref := outstanding(responseRid).delivery_context_ref
   io.source_delivery_out.bits.r1_response := response
   io.core_mem_rsp_in.ready := !matchingResponse || io.source_delivery_out.ready
 

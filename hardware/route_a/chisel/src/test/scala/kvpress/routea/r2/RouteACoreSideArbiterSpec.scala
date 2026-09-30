@@ -34,6 +34,7 @@ final class RouteACoreSideArbiterSpec extends AnyFunSpec with ChiselSim {
     val bits = dut.io.candidate_in.bits
     bits.candidate_class.poke(cls.U); bits.candidate_id.poke(id.U); bits.arrival_ordinal.poke(ordinal.U)
     bits.eligibility_snapshot.poke(predicates.U)
+    bits.delivery_context_ref.poke((id & 1).U)
     bits.r1_request.transaction_identity.request_id.poke(rid.U); bits.r1_request.transaction_identity.incarnation.poke(0.U)
     bits.r1_request.request_kind.poke(p.coreMemoryReadRequestCode.U); bits.r1_request.destination.poke(1.U)
     bits.r1_request.address_ref.poke((16 + id).U); bits.r1_request.expected_fragment_count.poke(1.U)
@@ -82,6 +83,7 @@ final class RouteACoreSideArbiterSpec extends AnyFunSpec with ChiselSim {
       dut.io.core_mem_rsp_in.bits.transaction_identity.request_id.poke(4.U)
       dut.io.core_mem_rsp_in.valid.poke(true.B); dut.io.source_delivery_out.valid.expect(true.B)
       dut.io.source_delivery_out.bits.candidate_id.expect(4.U); dut.io.source_delivery_out.bits.destination.expect(1.U)
+      dut.io.source_delivery_out.bits.delivery_context_ref.expect(0.U)
       dut.clock.step(); dut.io.core_mem_rsp_in.valid.poke(false.B)
     }
   }
@@ -105,6 +107,20 @@ final class RouteACoreSideArbiterSpec extends AnyFunSpec with ChiselSim {
       driveCandidate(dut, p.r2S2FullClassCode, 7, 1, 6, commonRead)
       dut.io.candidate_in.bits.r1_request.transaction_identity.incarnation.poke(1.U)
       dut.io.candidate_in.ready.expect(true.B)
+    }
+  }
+
+  it("preserves the opaque delivery context through a stalled matched R1 response") {
+    simulate(new RouteACoreSideArbiter(p)) { dut =>
+      init(dut)
+      driveCandidate(dut, p.r2S2FullClassCode, 1, 0, 1, commonRead)
+      dut.io.candidate_in.bits.delivery_context_ref.poke(1.U); enqueue(dut)
+      dut.io.core_mem_req.ready.poke(true.B); dut.clock.step()
+      dut.io.core_mem_rsp_in.bits.transaction_identity.request_id.poke(1.U)
+      dut.io.source_delivery_out.ready.poke(false.B); dut.io.core_mem_rsp_in.valid.poke(true.B)
+      dut.io.source_delivery_out.valid.expect(true.B); dut.io.source_delivery_out.bits.delivery_context_ref.expect(1.U)
+      dut.clock.step(); dut.io.source_delivery_out.valid.expect(true.B); dut.io.source_delivery_out.bits.delivery_context_ref.expect(1.U)
+      dut.io.source_delivery_out.ready.poke(true.B); dut.clock.step(); dut.io.core_mem_rsp_in.valid.poke(false.B)
     }
   }
 }

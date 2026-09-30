@@ -1,0 +1,11 @@
+{
+  "schema_version": "kvzap-route-a-rtl1-i3-delivery-source-manifest-1.0",
+  "status": "rtl1_i3_0_carrier_closure_complete",
+  "scope": "Opaque R2 delivery-context preservation and separately carried R4 source-instance identity only.",
+  "carriers": [
+    {"name":"delivery_context_ref","producer":"source/admission owner","transport":"route_a_core_side_arbiter","consumer":"matching source/admission owner","width":"sourceDeliveryOpaqueWidth parameter","handshake":"ready_valid","forbidden":["R2 context decode","source/page/payload ownership","physical FIFO selection"]},
+    {"name":"SourceInstance","producer":"source owner","consumer":"R4 then matching source owner","fields":["source_kind hot|pending|packed","instance_coordinate EntryIdWidth","generation sourceGenerationWidth"],"handshake":"ready_valid","forbidden":["header reinterpretation","physical source mux","payload address"]},
+    {"name":"R4SourceInstanceSideband","producer":"source packet adapter","consumer":"route_a_merge_boundary","fields":["transaction_identity","SourceInstance","consumer_id"],"handshake":"ready_valid","forbidden":["128-bit header change","numeric implementation selection","source reorder claim"]}
+  ],
+  "evidence_label":["pure synthesizable control carrier","no model/GPU","no timing/throughput claim","no PPA claim","no new A4 DSE"]
+}

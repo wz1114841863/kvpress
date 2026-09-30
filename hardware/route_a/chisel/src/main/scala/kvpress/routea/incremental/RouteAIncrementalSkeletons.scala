@@ -910,7 +910,7 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   val io = IO(new Bundle {
     val drain_collection_enable = Input(Bool())
     val source_partial_in = Flipped(RouteAChannels.source_partial)
-    val consumer_partial_commit = RouteAChannels.consumer_partial_commit
+    val consumer_partial_commit = RouteAChannels.consumer_partial_commit(p)
     val merge_req_in = Flipped(RouteAChannels.merge_req)
     val r4_partial_header_in = Flipped(RouteAChannels.r4_partial_header)
     val r4_value_fragment_in = Flipped(RouteAChannels.r4_value_fragment)
@@ -988,6 +988,7 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   io.consumer_partial_commit.bits.transaction_identity := commitIdentity
   io.consumer_partial_commit.bits.consumer_id := commitConsumer
   io.consumer_partial_commit.bits.source_kind := commitSource
+  io.consumer_partial_commit.bits.source_instance := 0.U.asTypeOf(new SourceInstance(p))
   when(io.consumer_partial_commit.fire) {
     commitPending := false.B
   }
