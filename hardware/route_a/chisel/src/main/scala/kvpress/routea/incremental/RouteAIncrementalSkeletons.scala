@@ -714,8 +714,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
 }
 
 /**
-  * RTL1.6.0 R4 carrier shell. Packet parsing, numeric implementation, source
-  * release, and terminal association remain absent until the RTL1.6 behavior.
+  * RTL1.6 packet/control boundary only. This parses frozen packet structure and
+  * maps a replaceable result/fault slot to R6; it performs no numeric merge.
   */
 final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_merge_boundary"
@@ -731,12 +731,133 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
     val merge_rsp_or_numeric_fault = RouteAChannels.merge_terminal_rsp
   })
 
+  val packetActive = RegInit(false.B)
+  val packetIdentity = Reg(new TransactionIdentity)
+  val packetSource = Reg(UInt(RouteAAnchorWidths.SourceKindWidth.W))
+  val packetConsumer = Reg(UInt(RouteAAnchorWidths.ConsumerIdWidth.W))
+  val nextFragment = RegInit(0.U(3.W))
+  val commitPending = RegInit(false.B)
+  val commitIdentity = Reg(new TransactionIdentity)
+  val commitSource = Reg(UInt(RouteAAnchorWidths.SourceKindWidth.W))
+  val commitConsumer = Reg(UInt(RouteAAnchorWidths.ConsumerIdWidth.W))
+
+  val mergeActive = RegInit(false.B)
+  val mergeIdentity = Reg(new TransactionIdentity)
+  val terminalPending = RegInit(false.B)
+  val terminalIdentity = Reg(new TransactionIdentity)
+  val terminalStatus = Reg(UInt(RouteAAnchorWidths.TerminalStatusWidth.W))
+  val terminalValue = Reg(UInt(RouteAAnchorWidths.NormalizedValueWidth.W))
+
+  private def identityMatches(left: TransactionIdentity, right: TransactionIdentity): Bool =
+    left.asUInt === right.asUInt
+
+  val header = io.r4_partial_header_in.bits.header
+  val headerSource = header(65, 64)
+  val headerConsumer = header(67, 66)
+  val headerMergeInstance = header(68)
+  val headerPresent = header(69)
+  val headerFragmentCount = header(73, 70)
+  val headerReserved = header(127, 74)
+  val headerSourceLegal = headerSource <= 2.U
+  val absentIdentity = header(31, 0) === "hff800000".U && header(63, 32) === 0.U
+  val headerStructureLegal = headerSourceLegal && !headerMergeInstance && headerReserved === 0.U &&
+    Mux(headerPresent, headerFragmentCount === 8.U, headerFragmentCount === 0.U && absentIdentity)
+  io.r4_partial_header_in.ready := !packetActive && !commitPending && headerStructureLegal
+  when(io.r4_partial_header_in.fire) {
+    when(headerPresent) {
+      packetActive := true.B
+      packetIdentity := io.r4_partial_header_in.bits.transaction_identity
+      packetSource := headerSource
+      packetConsumer := headerConsumer
+      nextFragment := 0.U
+    }.otherwise {
+      commitPending := true.B
+      commitIdentity := io.r4_partial_header_in.bits.transaction_identity
+      commitSource := headerSource
+      commitConsumer := headerConsumer
+    }
+  }
+
+  val fragment = io.r4_value_fragment_in.bits
+  val finalFragment = nextFragment === 7.U
+  val fragmentMatches = packetActive && identityMatches(packetIdentity, fragment.transaction_identity) &&
+    fragment.fragment_index === nextFragment && fragment.last === finalFragment
+  io.r4_value_fragment_in.ready := fragmentMatches && !commitPending
+  when(io.r4_value_fragment_in.fire) {
+    when(finalFragment) {
+      packetActive := false.B
+      commitPending := true.B
+      commitIdentity := packetIdentity
+      commitSource := packetSource
+      commitConsumer := packetConsumer
+    }.otherwise {
+      nextFragment := nextFragment + 1.U
+    }
+  }
+
+  io.consumer_partial_commit.valid := commitPending
+  io.consumer_partial_commit.bits.transaction_identity := commitIdentity
+  io.consumer_partial_commit.bits.consumer_id := commitConsumer
+  io.consumer_partial_commit.bits.source_kind := commitSource
+  when(io.consumer_partial_commit.fire) {
+    commitPending := false.B
+  }
+
+  io.merge_req_in.ready := !mergeActive && !terminalPending && io.merge_req_in.bits.source_presence.orR
+  when(io.merge_req_in.fire) {
+    mergeActive := true.B
+    mergeIdentity := io.merge_req_in.bits.transaction_identity
+  }
+
+  val resultMatches = mergeActive && !terminalPending &&
+    identityMatches(mergeIdentity, io.r4_result_stub_in.bits.transaction_identity)
+  val faultMatches = mergeActive && !terminalPending &&
+    identityMatches(mergeIdentity, io.r4_numeric_fault_in.bits.transaction_identity)
+  // A simultaneous success and fault is an upstream protocol violation; neither
+  // slot is accepted, so the boundary cannot manufacture a terminal outcome.
+  io.r4_result_stub_in.ready := resultMatches && !io.r4_numeric_fault_in.valid
+  io.r4_numeric_fault_in.ready := faultMatches && !io.r4_result_stub_in.valid
+  when(io.r4_result_stub_in.fire) {
+    terminalPending := true.B
+    terminalIdentity := io.r4_result_stub_in.bits.transaction_identity
+    terminalStatus := p.coreMemoryOkStatusCode.U
+    terminalValue := io.r4_result_stub_in.bits.normalized_value
+  }
+  when(io.r4_numeric_fault_in.fire) {
+    terminalPending := true.B
+    terminalIdentity := io.r4_numeric_fault_in.bits.transaction_identity
+    terminalStatus := p.coreMemoryFaultStatusCode.U
+    terminalValue := 0.U
+  }
+
+  io.merge_rsp_or_numeric_fault.valid := terminalPending
+  io.merge_rsp_or_numeric_fault.bits.transaction_identity := terminalIdentity
+  io.merge_rsp_or_numeric_fault.bits.status := terminalStatus
+  io.merge_rsp_or_numeric_fault.bits.normalized_value := terminalValue
+  when(io.merge_rsp_or_numeric_fault.fire) {
+    assert(mergeActive && identityMatches(mergeIdentity, terminalIdentity))
+    mergeActive := false.B
+    terminalPending := false.B
+  }
+
+  // The only R4 state checks here are packet/terminal association checks; no
+  // arithmetic, finite-value classification, normalization, or source reorder is inferred.
+  when(io.r4_result_stub_in.fire) {
+    assert(resultMatches && !io.r4_numeric_fault_in.valid)
+  }
+  when(io.r4_numeric_fault_in.fire) {
+    assert(faultMatches && !io.r4_result_stub_in.valid)
+  }
+  val heldCommit = RegEnable(io.consumer_partial_commit.bits,
+    io.consumer_partial_commit.valid && !io.consumer_partial_commit.ready)
+  when(RegNext(io.consumer_partial_commit.valid && !io.consumer_partial_commit.ready, false.B)) {
+    assert(io.consumer_partial_commit.bits.asUInt === heldCommit.asUInt)
+  }
+  val heldTerminal = RegEnable(io.merge_rsp_or_numeric_fault.bits,
+    io.merge_rsp_or_numeric_fault.valid && !io.merge_rsp_or_numeric_fault.ready)
+  when(RegNext(io.merge_rsp_or_numeric_fault.valid && !io.merge_rsp_or_numeric_fault.ready, false.B)) {
+    assert(io.merge_rsp_or_numeric_fault.bits.asUInt === heldTerminal.asUInt)
+  }
+
   StructuralTieOff.sink(io.source_partial_in)
-  StructuralTieOff.source(io.consumer_partial_commit)
-  StructuralTieOff.sink(io.merge_req_in)
-  StructuralTieOff.sink(io.r4_partial_header_in)
-  StructuralTieOff.sink(io.r4_value_fragment_in)
-  StructuralTieOff.sink(io.r4_result_stub_in)
-  StructuralTieOff.sink(io.r4_numeric_fault_in)
-  StructuralTieOff.source(io.merge_rsp_or_numeric_fault)
 }

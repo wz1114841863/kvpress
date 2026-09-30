@@ -2,7 +2,7 @@
 
 ## Status and boundary
 
-**Status:** `rtl1_6_0_local_packet_carriers_complete; packet_boundary_control_pending`.
+**Status:** `complete_r4_packet_boundary_control_at_module_scope; top_integration_and_numeric_core_pending`.
 
 RTL1.6 closes only the replaceable R4 packet/result/fault boundary selected by
 Gate-A R4. It does not implement online-softmax arithmetic, `exp`, binary32
@@ -57,7 +57,30 @@ future numeric implementation and Python oracle.
 ## Evidence and next step
 
 RTL1.6.0 is synthesizable-interface and elaboration evidence only. RTL1.6
-behavior will add a control-only parser, one active merge association, stable
-commit/terminal outputs, and directed no-model ChiselSim. It will bind no
-numeric quality, binary32 arithmetic, cycle, latency, controller, PPA, or
-end-to-end top-level claim.
+adds a control-only parser, one active merge association, stable
+commit/terminal outputs, and directed no-model ChiselSim. It binds no numeric
+quality, binary32 arithmetic, cycle, latency, controller, PPA, or end-to-end
+top-level claim.
+
+## RTL1.6 module-control binding
+
+`RouteAMergeBoundary` accepts an absent header only when it encodes the frozen
+absent identity exactly. It accepts a present header only when it declares
+eight fragments, then accepts exactly fragment ordinals `0..7` with `last` on
+fragment seven alone. A structurally malformed header or fragment remains
+unaccepted; it does not create a commit or a terminal outcome. The module
+retains packet control only: it neither stores nor interprets the binary32
+`m/l` fields or the 128-bit value lanes.
+
+For a nonempty `merge_req`, a matching `r4_result_stub` or
+`r4_numeric_fault` may create exactly one existing R6-facing terminal response.
+The former forwards the frozen success status and the latter forwards the
+frozen numeric-fault status with a zero result payload. Empty, stale,
+duplicate, or simultaneous terminal facts are unaccepted. R6 remains the
+unique outward terminal consumer.
+
+`RouteAMergeBoundarySpec` is the no-model directed ChiselSim evidence for
+positive absent/present packets, malformed headers/fragments, stable
+backpressure, and result/fault association across all nonempty source-presence
+masks. The Python numeric reference remains the golden source for binary32
+merge semantics; this module is not numeric RTL.

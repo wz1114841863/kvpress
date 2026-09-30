@@ -20,7 +20,7 @@ def test_ports_bound_manifest_is_valid_and_matches_the_markdown_matrix():
     manifest = load_manifest(MANIFEST)
     validate_manifest(manifest, require_interface_signals=True)
     validate_markdown_matrix(manifest, MATRIX)
-    assert len(manifest["interface_records"]["signals"]) == 21
+    assert len(manifest["interface_records"]["signals"]) == 25
     assert manifest["interface_records"]["status"] == "complete_gate_rtl0_step_2"
 
 

@@ -189,6 +189,14 @@ no exp/FP implementation, partial storage, source mux, numeric claim, or
 terminal integration is present. See
 `analysis/rtl1_6_r4_packet_boundary_contract.md`.
 
+RTL1.6 completes module-local R4 packet/result/fault control in
+`RouteAMergeBoundary`: frozen absent/present packet structure, one active
+merge identity, stable consumer commits, and a single matching result-or-fault
+mapping to the existing R6-facing terminal channel. It does not evaluate
+binary32 fields or value fragments, implement `exp`/FP arithmetic, retain
+partial payloads, choose a source schedule, or integrate the top. The no-model
+directed evidence is `RouteAMergeBoundarySpec`.
+
 ## Completed R3/R5 scope
 
 RTL1.3 now implements module-scoped R3/R5 control: P3 state/generation and
@@ -198,5 +206,5 @@ handshake. It intentionally stores no P3 payload data and implements no M2
 macro or descriptor HBM command. `RouteAR3R5PublicationSpec` exercises the
 positive durable/publication order and negative P3/descriptor gates.
 
-R4 remains a replaceable boundary only. Do not select a controller or infer
+R4 remains a replaceable numeric boundary. Do not select a controller or infer
 timing/PPA from the completed owner-local control bindings.

@@ -1,6 +1,6 @@
 # RTL1 — Interface / Control Skeleton Bring-up
 
-**Status:** `rtl1_3_r3_r5_publication_control_complete_at_module_scope; rtl1_4_s2_direct_control_complete; rtl1_5_r6_lifecycle_control_complete_at_module_scope; rtl1_6_0_r4_carriers_complete; top_integration_and_remaining_owner_phases_pending`.
+**Status:** `rtl1_owner_local_control_and_replaceable_r4_boundary_complete; top_integration_numeric_core_and_composed_proof_pending`.
 
 RTL1 may not change frozen owners, ports, assertions, oracles, pruning,
 admission, scheduler semantics, page size, S2 count, outstanding bounds, merge
@@ -27,6 +27,20 @@ header/fragment/result/fault carriers without reinterpreting the legacy opaque
 `SourcePartial` bundle. The top ties them inactive. No numeric merge,
 binary32 arithmetic, exp, partial-state storage, source-mux, source schedule,
 or terminal integration is implemented at this carrier step.
+
+## RTL1.6 progress
+
+**RTL1.6 R4 packet/fault boundary: complete at module scope.**
+`RouteAMergeBoundary` checks the frozen absent/present header and fragment
+structure, emits the matching per-consumer commit, and maps exactly one
+identity-matching replaceable result or numeric fault to the existing R6-facing
+terminal channel. It contains no arithmetic and rejects malformed, empty,
+stale, duplicate, or simultaneous terminal facts.
+
+This completes RTL1's owner-local control and replaceable R4 boundary. It does
+not connect actual sources, R3 publication, S2/direct delivery, R6 lifecycle,
+or a numeric core at the top. The next required action is an RTL1 cross-owner
+integration review, not synthesis, timing, PPA, or a new DSE.
 
 ## RTL1.5.0 progress
 
