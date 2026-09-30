@@ -3,7 +3,7 @@ package kvpress.routea.r1
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
 import kvpress.routea.common.RouteACoreMemIfV1
-import kvpress.routea.params.RouteASkeletonParameters
+import kvpress.routea.params.{RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
 
 /**
@@ -45,6 +45,7 @@ final class RouteACoreMemIfV1Spec extends AnyFunSpec with ChiselSim {
     r5AllocatorEntries = 8,
     r5StreamSlots = 8,
     sourceGenerationWidth = 2,
+    r6 = RouteAR6Encoding.testOnlyAnchor,
   )
 
   private def driveRequest(

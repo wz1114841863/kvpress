@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
 import kvpress.routea.common.RouteAS2GqaSourceWrapper
 import kvpress.routea.incremental.RouteADirectPendingEndpointV1
-import kvpress.routea.params.RouteASkeletonParameters
+import kvpress.routea.params.{RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
 
 /** RTL1.4 directed source-control checks; no payload SRAM, controller, or merge model. */
@@ -22,6 +22,7 @@ final class RouteAS2DirectPendingSpec extends AnyFunSpec with ChiselSim {
     coreMemoryOkStatusCode = 0, coreMemoryFaultStatusCode = 1,
     sourceDeliveryOpaqueWidth = 1, transactionGroupTagWidth = 2, p3StageGenerationWidth = 2,
     r5AllocatorEntries = 8, r5StreamSlots = 8, sourceGenerationWidth = 2,
+    r6 = RouteAR6Encoding.testOnlyAnchor,
   )
 
   private def initS2(dut: RouteAS2GqaSourceWrapper): Unit = {

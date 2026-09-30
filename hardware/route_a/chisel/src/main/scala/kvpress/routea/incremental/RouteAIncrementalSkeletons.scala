@@ -19,6 +19,9 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     val session_retire_ack = RouteAChannels.session_retire_ack
     val component_status_in = Flipped(RouteAChannels.component_status(p))
     val hot_control_out = RouteAChannels.hot_control(p)
+    val authority_transition_out = RouteAChannels.r6_authority_transition(p)
+    val authority_transition_in = Flipped(RouteAChannels.r6_authority_transition(p))
+    val merge_ready_in = Flipped(RouteAChannels.r6_merge_ready)
     val s2_service_req = RouteAChannels.s2_service_req
     val direct_pending_open = RouteAChannels.direct_pending_open(p)
     val merge_req = RouteAChannels.merge_req
@@ -33,6 +36,9 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   StructuralTieOff.source(io.session_retire_ack)
   StructuralTieOff.sink(io.component_status_in)
   StructuralTieOff.source(io.hot_control_out)
+  StructuralTieOff.source(io.authority_transition_out)
+  StructuralTieOff.sink(io.authority_transition_in)
+  StructuralTieOff.sink(io.merge_ready_in)
   StructuralTieOff.source(io.s2_service_req)
   StructuralTieOff.source(io.direct_pending_open)
   StructuralTieOff.source(io.merge_req)

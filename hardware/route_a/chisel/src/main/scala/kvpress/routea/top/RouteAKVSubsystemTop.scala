@@ -49,6 +49,12 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     lifecycle.io.component_status_in <> component_status_in
 
     hot.io.lifecycle_control_in <> lifecycle.io.hot_control_out
+    val r6_authority_transition_out = Wire(RouteAChannels.r6_authority_transition(p)); StructuralTieOff.sink(r6_authority_transition_out)
+    val r6_authority_transition_in = Wire(RouteAChannels.r6_authority_transition(p)); StructuralTieOff.source(r6_authority_transition_in)
+    val r6_merge_ready = Wire(RouteAChannels.r6_merge_ready); StructuralTieOff.source(r6_merge_ready)
+    r6_authority_transition_out <> lifecycle.io.authority_transition_out
+    lifecycle.io.authority_transition_in <> r6_authority_transition_in
+    lifecycle.io.merge_ready_in <> r6_merge_ready
     s2.io.mem_init_done := false.B
     s2.io.service_req_in <> lifecycle.io.s2_service_req
     val s2_fill_open = Wire(RouteAChannels.s2_fill_open(p)); StructuralTieOff.source(s2_fill_open)

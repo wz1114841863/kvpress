@@ -166,6 +166,13 @@ four-consumer release. `RouteAS2DirectPendingSpec` checks these control
 properties without storing source payload data or connecting a merge/source
 mux.
 
+RTL1.5.0 freezes the local R6 authority-transition and GQA-complete
+merge-ready carriers, plus explicit elaboration-only logical encodings for
+frontend events, component status names, and hot controls. These are neither
+new top-level ports nor a deployment outstanding limit. The top ties them
+inactive until lifecycle behavior is implemented. See
+`analysis/rtl1_5_r6_lifecycle_semantic_carrier_contract.md`.
+
 ## Next authorized step
 
 RTL1.3 now implements module-scoped R3/R5 control: P3 state/generation and

@@ -3,7 +3,7 @@ package kvpress.routea.r3_r5
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
 import kvpress.routea.incremental.{RouteAM2P3Wrapper, RouteAPageManager}
-import kvpress.routea.params.{RouteADescriptorOperationKind, RouteAM2GroupMember, RouteAPublicationStatus, RouteASkeletonParameters}
+import kvpress.routea.params.{RouteADescriptorOperationKind, RouteAM2GroupMember, RouteAPublicationStatus, RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
 
 /** RTL1.3 directed control-contract checks; no payload macro/controller/PPA model. */
@@ -23,6 +23,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     r5AllocatorEntries = 8,
     r5StreamSlots = 8,
     sourceGenerationWidth = 2,
+    r6 = RouteAR6Encoding.testOnlyAnchor,
   )
 
   private def initR3(dut: RouteAM2P3Wrapper): Unit = {

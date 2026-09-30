@@ -1,7 +1,7 @@
 package kvpress.routea.structural
 
 import circt.stage.ChiselStage
-import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
+import kvpress.routea.params.{RouteAAnchorWidths, RouteAR6Encoding, RouteASkeletonParameters}
 import kvpress.routea.top.RouteAKVSubsystemTop
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -45,6 +45,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     r5AllocatorEntries = 8,
     r5StreamSlots = 8,
     sourceGenerationWidth = 2,
+    r6 = RouteAR6Encoding.testOnlyAnchor,
   )
 
   behavior of "RouteAKVSubsystemTop RTL1.0 structural skeleton"

@@ -1,6 +1,6 @@
 # RTL1 — Interface / Control Skeleton Bring-up
 
-**Status:** `rtl1_3_r3_r5_publication_control_complete_at_module_scope; rtl1_4_0_s2_direct_carriers_complete; top_integration_and_remaining_owner_phases_pending`.
+**Status:** `rtl1_3_r3_r5_publication_control_complete_at_module_scope; rtl1_4_s2_direct_control_complete; rtl1_5_0_r6_carriers_complete; top_integration_and_remaining_owner_phases_pending`.
 
 RTL1 may not change frozen owners, ports, assertions, oracles, pruning,
 admission, scheduler semantics, page size, S2 count, outstanding bounds, merge
@@ -18,6 +18,17 @@ format, or physical realization parameters.
 
 CDC/HBM adapter, macro/port count, physical queues, frequency, timing, PPA,
 and speedup remain outside RTL1 and require later implementation/Gate-B evidence.
+
+## RTL1.5.0 progress
+
+**RTL1.5.0 R6 lifecycle semantic-carrier closure: complete.**
+`analysis/rtl1_5_r6_lifecycle_semantic_carrier_contract.md` freezes the local
+authority-transition and GQA-complete merge-ready carriers, and requires
+explicit logical event/status/control encodings plus a parameterized
+attention-tracker capacity at elaboration. No top-level port changes, source
+mux, R3/R4 integration, lifecycle behavior, physical queue, controller, or
+deployment outstanding bound is selected. The top ties the new local endpoints
+inactive until `route_a_lifecycle_adapter` gains RTL1.5 behavior.
 
 ## RTL1.4.0 progress
 

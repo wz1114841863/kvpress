@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
 import kvpress.routea.common.RouteACoreSideArbiter
 import kvpress.routea.interfaces.RouteAR2PredicateBits
-import kvpress.routea.params.RouteASkeletonParameters
+import kvpress.routea.params.{RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
 
 /** RTL1.2 directed, no-model R2 protocol checks; not a controller/PPA test. */
@@ -24,6 +24,7 @@ final class RouteACoreSideArbiterSpec extends AnyFunSpec with ChiselSim {
     r5AllocatorEntries = 8,
     r5StreamSlots = 8,
     sourceGenerationWidth = 2,
+    r6 = RouteAR6Encoding.testOnlyAnchor,
   )
   private val commonRead = (1 << RouteAR2PredicateBits.FifoPredecessor) |
     (1 << RouteAR2PredicateBits.Ownership) | (1 << RouteAR2PredicateBits.SourceCredit) |

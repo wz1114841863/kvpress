@@ -38,6 +38,7 @@ final case class RouteASkeletonParameters(
   r5AllocatorEntries: Int,
   r5StreamSlots: Int,
   sourceGenerationWidth: Int,
+  r6: RouteAR6Encoding,
 ) {
   private val allOpaqueWidths = Seq(
     frontendEventKindWidth,
@@ -99,6 +100,94 @@ final case class RouteASkeletonParameters(
     "R5 allocator control bound must be positive and no larger than the selected logical anchor")
   require(r5StreamSlots > 0 && r5StreamSlots <= 288,
     "R5 stream control bound must be positive and no larger than the selected logical anchor")
+
+  private def fits(width: Int, value: Int): Boolean = value >= 0 && value < (1 << width)
+  require(
+    Seq(
+      r6.sessionStartEventCode,
+      r6.kvArrivalEventCode,
+      r6.maturityDispositionEventCode,
+      r6.attentionServiceEventCode,
+    ).forall(fits(frontendEventKindWidth, _)) &&
+      r6.frontendEventCodes.distinct.size == r6.frontendEventCodes.size,
+    "R6 frontend event codes must fit the supplied width and be distinct",
+  )
+  require(
+    Seq(r6.hotArrivalControlCode, r6.hotDropControlCode, r6.hotRetainControlCode)
+      .forall(fits(hotControlKindWidth, _)) &&
+      r6.hotControlCodes.distinct.size == r6.hotControlCodes.size,
+    "R6 hot-control codes must fit the supplied width and be distinct",
+  )
+  require(
+    r6.componentStatusCodes.forall(fits(componentStatusNameWidth, _)) &&
+      r6.componentStatusCodes.distinct.size == r6.componentStatusCodes.size,
+    "R6 component-status codes must fit the supplied width and be distinct",
+  )
+  require(r6.attentionTrackerEntries > 0 && r6.attentionTrackerEntries <= 32,
+    "R6 attention tracker entries must be positive and fit the selected A3 identity namespace")
+}
+
+/**
+  * Logical R6 encodings supplied by a concrete integration/test instantiation.
+  * They do not select an external wire protocol or a physical controller
+  * encoding. Deployment values remain a later integration parameter.
+  */
+final case class RouteAR6Encoding(
+  sessionStartEventCode: Int,
+  kvArrivalEventCode: Int,
+  maturityDispositionEventCode: Int,
+  attentionServiceEventCode: Int,
+  hotArrivalControlCode: Int,
+  hotDropControlCode: Int,
+  hotRetainControlCode: Int,
+  memInitDoneStatusCode: Int,
+  m2P3InitDoneStatusCode: Int,
+  pageManagerInitDoneStatusCode: Int,
+  r1MemoryDrainedStatusCode: Int,
+  r2PayloadDrainedStatusCode: Int,
+  r2DescriptorDrainedStatusCode: Int,
+  r3M2P3DrainedStatusCode: Int,
+  r5PageManagerDrainedStatusCode: Int,
+  s2GqaDrainedStatusCode: Int,
+  directPendingDrainedStatusCode: Int,
+  mergeDrainedStatusCode: Int,
+  attentionTrackerEntries: Int,
+) {
+  def frontendEventCodes: Seq[Int] = Seq(
+    sessionStartEventCode, kvArrivalEventCode, maturityDispositionEventCode, attentionServiceEventCode,
+  )
+  def hotControlCodes: Seq[Int] = Seq(hotArrivalControlCode, hotDropControlCode, hotRetainControlCode)
+  def componentStatusCodes: Seq[Int] = Seq(
+    memInitDoneStatusCode, m2P3InitDoneStatusCode, pageManagerInitDoneStatusCode,
+    r1MemoryDrainedStatusCode, r2PayloadDrainedStatusCode, r2DescriptorDrainedStatusCode,
+    r3M2P3DrainedStatusCode, r5PageManagerDrainedStatusCode, s2GqaDrainedStatusCode,
+    directPendingDrainedStatusCode, mergeDrainedStatusCode,
+  )
+}
+
+object RouteAR6Encoding {
+  /** Concrete test elaboration only; not a selected deployment configuration. */
+  val testOnlyAnchor: RouteAR6Encoding = RouteAR6Encoding(
+    sessionStartEventCode = 0,
+    kvArrivalEventCode = 1,
+    maturityDispositionEventCode = 2,
+    attentionServiceEventCode = 3,
+    hotArrivalControlCode = 0,
+    hotDropControlCode = 1,
+    hotRetainControlCode = 2,
+    memInitDoneStatusCode = 0,
+    m2P3InitDoneStatusCode = 1,
+    pageManagerInitDoneStatusCode = 2,
+    r1MemoryDrainedStatusCode = 3,
+    r2PayloadDrainedStatusCode = 4,
+    r2DescriptorDrainedStatusCode = 5,
+    r3M2P3DrainedStatusCode = 6,
+    r5PageManagerDrainedStatusCode = 7,
+    s2GqaDrainedStatusCode = 8,
+    directPendingDrainedStatusCode = 9,
+    mergeDrainedStatusCode = 10,
+    attentionTrackerEntries = 4,
+  )
 }
 
 /** Selected Route-A anchor widths, sourced from the Gate-A3/R4/R5 contracts. */

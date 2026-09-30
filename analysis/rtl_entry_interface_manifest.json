@@ -189,6 +189,20 @@
       "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"
     },
     {
+      "id": "r6_authority_transition",
+      "producer": "route_a_lifecycle_adapter",
+      "consumer": "route_a_hot_source_path",
+      "purpose": "Event-level none-to-hot/hot-to-drop-or-pending lifecycle handoff; no duplicate residency table or new commit boundary.",
+      "contract_reference": "analysis/rtl1_5_r6_lifecycle_semantic_carrier_contract.md"
+    },
+    {
+      "id": "r3_authority_transition_to_r6",
+      "producer": "route_a_m2_p3_wrapper",
+      "consumer": "route_a_lifecycle_adapter",
+      "purpose": "R3-confirmed pending-to-packed association carries the published entry/group relation without making a metadata acknowledgement imply an entry identity.",
+      "contract_reference": "analysis/rtl1_5_r6_lifecycle_semantic_carrier_contract.md"
+    },
+    {
       "id": "source_paths_to_s2",
       "producer": "route_a_s2_gqa_source_wrapper",
       "consumer": "route_a_core_side_arbiter",
@@ -250,6 +264,27 @@
       "consumer": "route_a_lifecycle_adapter",
       "purpose": "Merge response or numeric_fault becomes the one outward terminal result only after GQA commit.",
       "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"
+    },
+    {
+      "id": "s2_to_r6_merge_ready",
+      "producer": "route_a_s2_gqa_source_wrapper",
+      "consumer": "route_a_lifecycle_adapter",
+      "purpose": "Reports canonical nonempty source membership only after four GQA consumer commits; no payload or source-mux owner moves into the top.",
+      "contract_reference": "analysis/rtl1_5_r6_lifecycle_semantic_carrier_contract.md"
+    },
+    {
+      "id": "direct_pending_to_r6_merge_ready",
+      "producer": "route_a_direct_pending_endpoint_v1",
+      "consumer": "route_a_lifecycle_adapter",
+      "purpose": "Reports canonical nonempty source membership only after four GQA consumer commits; no payload or source-mux owner moves into the top.",
+      "contract_reference": "analysis/rtl1_5_r6_lifecycle_semantic_carrier_contract.md"
+    },
+    {
+      "id": "hot_to_r6_merge_ready",
+      "producer": "route_a_hot_source_path",
+      "consumer": "route_a_lifecycle_adapter",
+      "purpose": "Reports canonical nonempty source membership only after four GQA consumer commits; no payload or source-mux owner moves into the top.",
+      "contract_reference": "analysis/rtl1_5_r6_lifecycle_semantic_carrier_contract.md"
     },
     {
       "id": "runtime_retire_to_lifecycle",

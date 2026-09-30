@@ -86,6 +86,36 @@ final class HotControl(p: RouteASkeletonParameters) extends Bundle {
   val disposition = Bool()
 }
 
+/** Logical authority state codes for the R6 control carrier, not a storage encoding. */
+object RouteAAuthorityStateCode {
+  final val None = 0
+  final val Hot = 1
+  final val Pending = 2
+  final val Packed = 3
+}
+
+/**
+  * Lifecycle-originated or R3-confirmed authority handoff. This carries only
+  * the event-level semantic association; it is not a second token-residency
+  * table, M2 record, or packed-page payload interface.
+  */
+final class R6AuthorityTransition(p: RouteASkeletonParameters) extends Bundle {
+  val entry_id = UInt(RouteAAnchorWidths.EntryIdWidth.W)
+  val from_authority = UInt(2.W)
+  val to_authority = UInt(2.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+}
+
+/**
+  * Source-service evidence that the selected canonical source set has
+  * completed all four GQA consumer updates and may enter R4. Bit positions are
+  * the frozen hot/pending/packed order; there is deliberately no Full-KV bit.
+  */
+final class R6MergeReady extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val source_presence = UInt(RouteAAnchorWidths.SourcePresenceWidth.W)
+}
+
 final class S2ServiceRequest extends Bundle {
   val transaction_identity = new TransactionIdentity
   val page_ref = new PageRef
@@ -336,6 +366,8 @@ object RouteAChannels {
   def session_retire_ack = Decoupled(new SessionRetireAck)
   def component_status(p: RouteASkeletonParameters) = Decoupled(new ComponentStatus(p))
   def hot_control(p: RouteASkeletonParameters) = Decoupled(new HotControl(p))
+  def r6_authority_transition(p: RouteASkeletonParameters) = Decoupled(new R6AuthorityTransition(p))
+  def r6_merge_ready = Decoupled(new R6MergeReady)
   def s2_service_req = Decoupled(new S2ServiceRequest)
   def direct_pending_open(p: RouteASkeletonParameters) = Decoupled(new DirectPendingOpen(p))
   def s2_fill_open(p: RouteASkeletonParameters) = Decoupled(new S2FillOpen(p))
