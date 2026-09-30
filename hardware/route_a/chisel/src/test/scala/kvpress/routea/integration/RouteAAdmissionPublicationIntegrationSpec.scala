@@ -37,6 +37,7 @@ private final class RouteAAdmissionPublicationHarness(p: RouteASkeletonParameter
   StructuralTieOff.source(lifecycle.io.runtime_retire_req)
   StructuralTieOff.sink(lifecycle.io.attention_terminal_rsp)
   StructuralTieOff.sink(lifecycle.io.session_retire_ack)
+  StructuralTieOff.sink(lifecycle.io.reclaim_permit_out)
   lifecycle.io.hot_control_out.ready := true.B
   StructuralTieOff.source(lifecycle.io.merge_ready_in)
   StructuralTieOff.source(lifecycle.io.source_completion_plan_in)

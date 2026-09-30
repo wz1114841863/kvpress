@@ -56,6 +56,7 @@ final class RouteALifecycleAdapterSpec extends AnyFunSpec with ChiselSim {
     dut.io.admission_context_out.ready.poke(true.B)
     dut.io.merge_req.ready.poke(true.B); dut.io.attention_terminal_rsp.ready.poke(true.B)
     dut.io.session_retire_ack.ready.poke(true.B); dut.io.s2_service_req.ready.poke(true.B)
+    dut.io.reclaim_permit_out.ready.poke(true.B)
     dut.io.direct_pending_open.ready.poke(true.B); dut.io.metadata_publish_req.ready.poke(true.B)
     dut.io.metadata_publish_ack_in.valid.poke(false.B)
     dut.io.r5_reclaim_complete_in.poke(false.B)
@@ -151,7 +152,7 @@ final class RouteALifecycleAdapterSpec extends AnyFunSpec with ChiselSim {
     }
   }
 
-  it("blocks retirement until terminal delivery and every named drain member, then holds matching ack stable") {
+  it("requires a two-pass R5 reclaim drain before matching retirement ack") {
     simulate(new RouteALifecycleAdapter(p)) { dut =>
       init(dut); initializeSession(dut); sendAttention(dut, 2, 0)
       dut.io.runtime_retire_req.bits.session_id.poke(false.B); dut.io.runtime_retire_req.bits.transaction_identity.request_id.poke(3.U)
@@ -164,8 +165,21 @@ final class RouteALifecycleAdapterSpec extends AnyFunSpec with ChiselSim {
         p.r6.r3M2P3DrainedStatusCode, p.r6.r5PageManagerDrainedStatusCode, p.r6.s2GqaDrainedStatusCode,
         p.r6.directPendingDrainedStatusCode, p.r6.mergeDrainedStatusCode,
       )
-      drains.dropRight(1).foreach(sendStatus(dut, _)); dut.io.session_retire_ack.valid.expect(false.B)
-      sendStatus(dut, drains.last); dut.io.session_retire_ack.valid.expect(true.B)
+      drains.foreach(sendStatus(dut, _)); dut.io.session_retire_ack.valid.expect(false.B); dut.clock.step()
+      dut.io.reclaim_permit_out.valid.expect(true.B)
+      dut.io.reclaim_permit_out.ready.poke(false.B); dut.clock.step()
+      dut.io.reclaim_permit_out.valid.expect(true.B)
+      dut.io.reclaim_permit_out.bits.transaction_identity.request_id.expect(3.U)
+      dut.io.reclaim_permit_out.ready.poke(true.B); dut.clock.step() // permit is accepted before R5 may report completion
+      // The final R1/R2-descriptor facts are intentionally suppressed until
+      // R5 reports its durable line invalidation sequence complete.
+      dut.io.component_status_in.bits.acknowledgement_name.poke(p.r6.r1MemoryDrainedStatusCode.U)
+      dut.io.component_status_in.bits.asserted.poke(true.B); dut.io.component_status_in.valid.poke(true.B)
+      dut.io.component_status_in.ready.expect(false.B); dut.io.component_status_in.valid.poke(false.B)
+      dut.io.r5_reclaim_complete_in.poke(true.B); dut.clock.step(); dut.io.r5_reclaim_complete_in.poke(false.B)
+      sendStatus(dut, p.r6.r2DescriptorDrainedStatusCode)
+      sendStatus(dut, p.r6.r1MemoryDrainedStatusCode)
+      dut.io.session_retire_ack.valid.expect(true.B)
       dut.io.session_retire_ack.ready.poke(false.B); dut.clock.step(); dut.io.session_retire_ack.bits.transaction_identity.request_id.expect(3.U)
       dut.io.session_retire_ack.bits.transaction_identity.incarnation.expect(1.U); dut.io.session_retire_ack.ready.poke(true.B); dut.clock.step()
     }

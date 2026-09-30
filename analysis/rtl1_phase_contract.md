@@ -74,12 +74,15 @@ direct-record, and payload ingress remain top-inert; it selects no source
 scheduler/mux, source buffer payload, R4 arithmetic/precision, HBM/controller,
 cycle behavior, timing, throughput, PPA, or end-to-end Route-A proof.
 
-**RTL1-I4.0 reclaim transport contract: frozen; behavioral closure pending.**
-`analysis/rtl1_i4_reclaim_contract.md` freezes a two-pass retirement drain so
-the post-drain R5 invalidation writes cannot be mistaken for pre-reclaim empty
-state. It also fixes one 64-B descriptor-line-at-a-time invalidation image,
-the existing R2/R1 write route, post-terminal-only allocator reuse, and the
-A3 identity-wrap environment obligation. No reclaim RTL is present at I4.0.
+**RTL1-I4 reclaim control composition: complete.**
+`analysis/rtl1_i4_reclaim_contract.md` records the implemented R6 two-pass
+retirement drain and identity-bearing permit, R5 one-64-B-line-at-a-time
+invalidation image, R2's retirement-only descriptor ingress, and the unique
+R1 request/data/terminal route. R5 releases allocator bits and advances a
+generation only after the matching durable terminal; a fault remains live and
+blocks retirement. R6 clears pre-reclaim R1/R2-descriptor facts and requires
+their fresh final replay before its sole ack. The A3 identity-wrap rule remains
+an external no-old-response quiescence assumption, not new hardware state.
 
 ## RTL1.6.0 progress
 

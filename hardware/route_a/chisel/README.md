@@ -117,7 +117,9 @@ rather than DUT logic.
 `common/RouteACommonSkeletons.scala` now implements R1 alone:
 
 - finite four-read/one-write live identity tracking with `RID[2:0]` plus
-  `incarnation[1:0]`, including same-epoch identical-identity rejection;
+  `incarnation[1:0]`, rejecting live-RID overlap while permitting post-terminal
+  finite reuse only under the A3 external no-old-response/wrap-quiescence
+  assumption;
 - exact ordered 512-bit fragment forwarding and `last` enforcement;
 - write-data-before-write-commit ordering, terminal-fault fail-closed behavior,
   and payload-durable-only scope;
@@ -167,6 +169,18 @@ The top's source-plan/packet ingress remains structurally inactive, and the
 test-only composition harness supplies directed logical stimuli. This is not a
 payload/source-mux implementation, numeric merge, source scheduling choice,
 or timing/PPA claim. See `analysis/rtl1_i3_delivery_source_contract.md`.
+
+## RTL1-I4 R5 reclaim/R2/R1/R6 composition
+
+RTL1-I4 adds the retirement-only, identity-bearing R6 reclaim permit, then
+uses the existing R5 -> R2 -> unique R1 descriptor-maintenance route to write
+one complete logical 64-B descriptor line at a time. R5 writes FREE plus the
+next generation only for allocated lanes, frees those lanes only after the
+matching terminal `ok`, and blocks retirement on a fault. R6 requires a fresh
+post-reclaim R2-descriptor/R1 drain replay before its sole retirement ack.
+This remains control-only: `address_ref` is opaque, there is no descriptor
+read/cache/RMW, physical HBM realization, payload ingress, timing, or PPA
+claim. See `analysis/rtl1_i4_reclaim_contract.md`.
 
 ## RTL1.2 R2 implementation
 

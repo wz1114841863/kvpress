@@ -77,6 +77,11 @@ final class SessionRetireAck extends Bundle {
   val transaction_identity = new TransactionIdentity
 }
 
+/** Retirement-only R6-to-R5 association; it is not an allocator grant. */
+final class ReclaimPermit extends Bundle {
+  val transaction_identity = new TransactionIdentity
+}
+
 final class ComponentStatus(p: RouteASkeletonParameters) extends Bundle {
   val acknowledgement_name = UInt(p.componentStatusNameWidth.W)
   val asserted = Bool()
@@ -492,6 +497,7 @@ object RouteAChannels {
   def runtime_retire_req = Decoupled(new RuntimeRetireRequest)
   def attention_terminal_rsp = Decoupled(new AttentionTerminalResponse)
   def session_retire_ack = Decoupled(new SessionRetireAck)
+  def reclaim_permit = Decoupled(new ReclaimPermit)
   def component_status(p: RouteASkeletonParameters) = Decoupled(new ComponentStatus(p))
   def hot_control(p: RouteASkeletonParameters) = Decoupled(new HotControl(p))
   def hot_source_open(p: RouteASkeletonParameters) = Decoupled(new HotSourceOpen(p))

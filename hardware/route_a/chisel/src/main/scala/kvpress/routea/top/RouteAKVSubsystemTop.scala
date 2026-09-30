@@ -172,7 +172,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     m2_p3.io.publication_member_observation.ready := true.B
     page_manager.io.mem_init_done := core_memory.io.r1_init_complete
     page_manager.io.drain_collection_enable := lifecycle.io.drain_collection_enable
-    page_manager.io.reclaim_permit_in := lifecycle.io.reclaim_permit_out
+    page_manager.io.reclaim_permit_in <> lifecycle.io.reclaim_permit_out
     lifecycle.io.r5_reclaim_complete_in := page_manager.io.reclaim_complete
     val page_allocation_req = Wire(RouteAChannels.page_allocation_req(p)); StructuralTieOff.source(page_allocation_req)
     val page_allocation_rsp = Wire(RouteAChannels.page_allocation_rsp(p)); StructuralTieOff.sink(page_allocation_rsp)

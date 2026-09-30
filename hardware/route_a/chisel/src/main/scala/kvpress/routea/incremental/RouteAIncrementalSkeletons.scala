@@ -22,7 +22,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     val drain_collection_enable = Output(Bool())
     // Retirement-only permit for R5 descriptor invalidation. It is neither an
     // allocation grant nor a memory-controller schedule.
-    val reclaim_permit_out = Output(Bool())
+    val reclaim_permit_out = RouteAChannels.reclaim_permit
     val reclaim_maintenance_enable = Output(Bool())
     val reclaim_drain_restart = Output(Bool())
     val reclaim_final_drain_enable = Output(Bool())
@@ -59,13 +59,15 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val drainAcks = RegInit(0.U(8.W))
   val retireIdentity = Reg(new TransactionIdentity)
   val reclaimPermitIssued = RegInit(false.B)
+  val reclaimPermitAccepted = RegInit(false.B)
   val reclaimComplete = RegInit(false.B)
 
   // This is a lifecycle phase fact, not a timeout or scheduling grant. Local
   // owners use it only to quiesce new ingress and offer their named drain fact.
   io.drain_collection_enable := state === StateRetiring
-  io.reclaim_permit_out := state === StateRetiring && reclaimPermitIssued && !reclaimComplete
-  io.reclaim_maintenance_enable := io.reclaim_permit_out
+  io.reclaim_permit_out.valid := state === StateRetiring && reclaimPermitIssued && !reclaimPermitAccepted && !reclaimComplete
+  io.reclaim_permit_out.bits.transaction_identity := retireIdentity
+  io.reclaim_maintenance_enable := reclaimPermitAccepted && !reclaimComplete
   io.reclaim_final_drain_enable := state === StateRetiring && (!reclaimPermitIssued || reclaimComplete)
   io.reclaim_drain_restart := false.B
 
@@ -363,6 +365,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     retireIdentity := io.runtime_retire_req.bits.transaction_identity
     drainAcks := 0.U
     reclaimPermitIssued := false.B
+    reclaimPermitAccepted := false.B
     reclaimComplete := false.B
     state := StateRetiring
   }
@@ -377,6 +380,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     drainAcks := drainAcks & "b11111010".U
     io.reclaim_drain_restart := true.B
   }
+  when(io.reclaim_permit_out.fire) { reclaimPermitAccepted := true.B }
   when(state === StateRetiring && reclaimPermitIssued && !reclaimComplete && io.r5_reclaim_complete_in) {
     reclaimComplete := true.B
   }
@@ -415,6 +419,11 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val heldRetire = RegEnable(io.session_retire_ack.bits, io.session_retire_ack.valid && !io.session_retire_ack.ready)
   when(RegNext(io.session_retire_ack.valid && !io.session_retire_ack.ready, false.B)) {
     assert(io.session_retire_ack.bits.asUInt === heldRetire.asUInt)
+  }
+  val heldReclaimPermit = RegEnable(io.reclaim_permit_out.bits,
+    io.reclaim_permit_out.valid && !io.reclaim_permit_out.ready)
+  when(RegNext(io.reclaim_permit_out.valid && !io.reclaim_permit_out.ready, false.B)) {
+    assert(io.reclaim_permit_out.bits.asUInt === heldReclaimPermit.asUInt)
   }
 
   StructuralTieOff.source(io.s2_service_req)
@@ -871,7 +880,7 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val io = IO(new Bundle {
     val mem_init_done = Input(Bool())
     val drain_collection_enable = Input(Bool())
-    val reclaim_permit_in = Input(Bool())
+    val reclaim_permit_in = Flipped(RouteAChannels.reclaim_permit)
     val reclaim_candidate_out = RouteAChannels.source_candidate(p)
     val reclaim_delivery_in = Flipped(RouteAChannels.source_delivery(p))
     val reclaim_complete = Output(Bool())
@@ -912,6 +921,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val visibilityAckPending = RegInit(false.B)
   val visibilityAckPageRef = Reg(new PageRef)
   val visibilityAckSlot = Reg(UInt(streamIndexWidth.W))
+  val allocationRspValid = RegInit(false.B)
+  val allocationRsp = Reg(new PageAllocationResponse(p))
   val reclaimPermitted = RegInit(false.B)
   val reclaimState = RegInit(ReclaimIdle)
   val reclaimLine = Reg(UInt(descriptorLineWidth.W))
@@ -931,7 +942,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     identity
   }
   private def descriptorLaneImage(lane: Int): UInt = {
-    val pageIndex = reclaimLine * 4.U + lane.U
+    val pageIndexWide = reclaimLine * 4.U + lane.U
+    val pageIndex = pageIndexWide(log2Ceil(p.r5AllocatorEntries) - 1, 0)
     val nextGeneration = Mux(allocated(pageIndex), generations(pageIndex) + 1.U, generations(pageIndex))
     // [1:0]=FREE; [51:44]=page generation; all other descriptor fields zero.
     Cat(0.U(76.W), nextGeneration, 0.U(44.W))
@@ -942,7 +954,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val reclaimActive = reclaimState =/= ReclaimIdle
   val reclaimLocalSafe = !buildActive.asUInt.orR && !allocationRspValid && !visibilityAckPending
 
-  when(io.reclaim_permit_in && !reclaimPermitted && reclaimLocalSafe) {
+  io.reclaim_permit_in.ready := initialized && !reclaimPermitted && reclaimLocalSafe
+  when(io.reclaim_permit_in.fire) {
     reclaimPermitted := true.B
   }
   when(reclaimPermitted && reclaimState === ReclaimIdle && anyAllocatedLine && !reclaimFaulted) {
@@ -1009,8 +1022,6 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   io.reclaim_complete := reclaimPermitted && !reclaimActive && !anyAllocatedLine && !reclaimFaulted
 
   def streamIndexWide(layer: UInt, head: UInt): UInt = Cat(layer, head)
-  val allocationRspValid = RegInit(false.B)
-  val allocationRsp = Reg(new PageAllocationResponse(p))
   io.page_allocation_rsp.valid := allocationRspValid
   io.page_allocation_rsp.bits := allocationRsp
   when(io.page_allocation_rsp.fire) { allocationRspValid := false.B }

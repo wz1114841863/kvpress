@@ -1,6 +1,6 @@
 {
   "schema_version": "kvzap-route-a-rtl1-i4-reclaim-manifest-1.0",
-  "status": "rtl1_i4_0_reclaim_transport_contract_frozen",
+  "status": "complete_rtl1_i4_r5_reclaim_r2_r1_r6_control_composition",
   "scope": "R6 two-pass drain/reclaim permit, R5 one-line-at-a-time durable invalidation, and existing R2/R1 descriptor write transport only.",
   "carriers": [
     {"name":"ReclaimPermit","producer":"route_a_lifecycle_adapter","consumer":"route_a_page_manager","fields":["retire transaction_identity"],"handshake":"ready_valid","forbidden":["page authority transfer","new reclaim owner","physical drain schedule"]},

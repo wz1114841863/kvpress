@@ -124,4 +124,19 @@ final class RouteACoreSideArbiterSpec extends AnyFunSpec with ChiselSim {
       dut.io.source_delivery_out.ready.poke(true.B); dut.clock.step(); dut.io.core_mem_rsp_in.valid.poke(false.B)
     }
   }
+
+  it("admits only the R6-permitted descriptor maintenance carrier during retirement") {
+    simulate(new RouteACoreSideArbiter(p)) { dut =>
+      init(dut)
+      val writeReady = (1 << RouteAR2PredicateBits.FifoPredecessor) |
+        (1 << RouteAR2PredicateBits.Ownership) | (1 << RouteAR2PredicateBits.SourceCredit)
+      driveCandidate(dut, p.r2DescriptorMaintenanceClassCode, 0, 0, 0, writeReady)
+      dut.io.candidate_in.bits.r1_request.request_kind.poke(p.coreMemoryWriteRequestCode.U)
+      dut.io.candidate_in.bits.r1_request.expected_fragment_count.poke(1.U)
+      dut.io.drain_collection_enable.poke(true.B); dut.io.candidate_in.valid.poke(true.B)
+      dut.io.candidate_in.ready.expect(false.B)
+      dut.io.reclaim_maintenance_enable.poke(true.B)
+      dut.io.candidate_in.ready.expect(true.B)
+    }
+  }
 }

@@ -17,12 +17,11 @@ deleting or rewriting frozen evidence.
 
 **Current disposition:** A4.11--A4.14 research DSE is closed; Reviewer-02
 passed the R1--R6 architecture cross-closure; Gate-RTL0 passed and RTL1
-owner-local control is complete. RTL1-I1--I3 have subsequently closed safe
-start/empty retirement, retained-record publication association, and the
-source-instance/R6 completion control association. Remaining work is the
-reviewed cross-owner closure for real ingress, authority/reclaim composition,
-and end-to-end verification—not PPA, controller, native-HBM, or performance
-work.
+owner-local control is complete. RTL1-I1--I4 have subsequently closed safe
+start/empty retirement, retained-record publication association,
+source-instance/R6 completion, and R5 reclaim through the unique R2/R1 path.
+Remaining work is production ingress binding and end-to-end verification—not
+PPA, controller, native-HBM, or performance work.
 
 ## Current architecture and verification records
 

@@ -1,6 +1,6 @@
 # RTL1-I4 — R5 descriptor invalidation, reclaim, and reuse contract
 
-**Status:** `rtl1_i4_0_reclaim_transport_contract_frozen; behavioral_closure_pending`.
+**Status:** `complete_rtl1_i4_r5_reclaim_r2_r1_r6_control_composition`.
 
 RTL1-I4 completes only the existing R5 retirement/reclaim path. It preserves
 the original KVzap mask, DROP/RETAIN disposition, 64-token page format, M2/P3
@@ -112,9 +112,16 @@ legal-stall sequence. The tests are no-model protocol evidence only; they are
 not formal proof, full-system correctness, controller behavior, or a
 performance/PPA result.
 
-## I4.0 disposition
+## I4 disposition
 
-This contract authorizes only the I4 behavioral implementation of the frozen
-reclaim path. It does not authorize a production payload/admission ingress,
-descriptor cache, descriptor read/RMW path, physical memory realization, or a
-claim that all top-inert producer paths are complete.
+The behavioral closure implements the stated R6 two-pass permit/replay, R5
+one-line-at-a-time FREE/next-generation image, R2 retirement-only descriptor
+ingress, and unique R1 write/request/data/terminal route. Directed ChiselSim
+evidence covers success, ready-low issue stability, terminal-only free, fault
+no-free, permit association, and fresh final drain replay.
+
+It does not authorize a production payload/admission ingress, descriptor
+cache, descriptor read/RMW path, physical memory realization, or a claim that
+all top-inert producer paths are complete. The existing S2/direct/R3 drain
+facts establish the R5 permit precondition; I4 adds no page-reference state to
+those owners and therefore does not claim per-owner reused-PageRef simulation.
