@@ -55,7 +55,10 @@ a long-lived token residency owner.
 ## I2 evidence and limits
 
 The required ChiselSim tests cover a retained non-contiguous group, duplicate
-member rejection, fault/non-publication, and an atomic-visibility sequence.
+member rejection, fault/non-publication, an atomic-visibility sequence, and a
+test-only R6--R3 composition harness that uses the same carrier edges as the
+production top.  That harness deliberately exposes P3/M2 ingress as stimulus:
+it does not claim those later R2/R1 payload/claim/publish producers exist.
 They are directed functional protocol evidence only.  They make no RTL
 correctness proof, timing, throughput, PPA, model/GPU, HBM, or new A4 DSE
 claim.  The following later work remains explicitly out of scope: R2/R1

@@ -1,10 +1,10 @@
 {
   "schema_version": "kvzap-route-a-rtl1-i2-admission-publication-manifest-1.0",
-  "status": "rtl1_i2_carrier_contract_frozen",
+  "status": "rtl1_i2_admission_publication_behavior_complete",
   "scope": "Immutable post-decision admission context, bounded logical R3 membership association, and post-atomic-publication observation carriers only.",
   "evidence_label": [
     "pure synthesizable control contract",
-    "directed ChiselSim protocol evidence pending",
+    "directed ChiselSim protocol evidence",
     "no timing or throughput claim",
     "no PPA claim",
     "no model/GPU",
