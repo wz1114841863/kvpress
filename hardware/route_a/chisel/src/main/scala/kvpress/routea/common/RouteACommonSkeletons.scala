@@ -15,9 +15,41 @@ final class RouteAHotSourcePath(p: RouteASkeletonParameters) extends Module {
 
   val io = IO(new Bundle {
     val lifecycle_control_in = Flipped(RouteAChannels.hot_control(p))
+    val hot_source_open_in = Flipped(RouteAChannels.hot_source_open(p))
+    val gqa_consumer_commit_in = Flipped(RouteAChannels.gqa_consumer_commit(p))
+    val hot_release_out = RouteAChannels.source_release(p)
   })
 
   io.lifecycle_control_in.ready := true.B
+  val active = RegInit(false.B)
+  val identity = Reg(new TransactionIdentity)
+  val instance = Reg(new SourceInstance(p))
+  val consumerMask = RegInit(0.U(4.W))
+  val open = io.hot_source_open_in.bits
+  val openLegal = open.source_instance.source_kind === RouteASourceKind.Hot.U
+  io.hot_source_open_in.ready := !active && openLegal
+  when(io.hot_source_open_in.fire) {
+    active := true.B
+    identity := open.transaction_identity
+    instance := open.source_instance
+    consumerMask := "b1111".U
+  }
+  val commit = io.gqa_consumer_commit_in.bits
+  val commitBit = (1.U(4.W) << commit.consumer_id)(3, 0)
+  val commitMatches = active && commit.source_instance.asUInt === instance.asUInt &&
+    commit.transaction_identity.asUInt === identity.asUInt && commit.consumer_id < 4.U &&
+    (consumerMask & commitBit) =/= 0.U
+  io.gqa_consumer_commit_in.ready := commitMatches
+  when(io.gqa_consumer_commit_in.fire) { consumerMask := consumerMask & ~commitBit }
+  io.hot_release_out.valid := active && consumerMask === 0.U
+  io.hot_release_out.bits.transaction_identity := identity
+  io.hot_release_out.bits.source_instance := instance
+  when(io.hot_release_out.fire) { active := false.B; consumerMask := 0.U }
+  when(io.hot_release_out.valid) { assert(active && consumerMask === 0.U) }
+  val heldRelease = RegEnable(io.hot_release_out.bits, io.hot_release_out.valid && !io.hot_release_out.ready)
+  when(RegNext(io.hot_release_out.valid && !io.hot_release_out.ready, false.B)) {
+    assert(io.hot_release_out.bits.asUInt === heldRelease.asUInt)
+  }
 }
 
 /** RTL1.4 S2 control only; payload/sidecar macros and source mux remain unimplemented. */
@@ -129,10 +161,11 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   }
 
   val consumerCommit = io.gqa_consumer_commit_in.bits
-  val commitSlot = consumerCommit.source_slot
+  val commitSlot = consumerCommit.source_instance.instance_coordinate(RouteAAnchorWidths.S2SlotWidth - 1, 0)
   val commitBit = (1.U(4.W) << consumerCommit.consumer_id)(3, 0)
-  val commitMatches = initialized && !consumerCommit.source_is_direct && slotState(commitSlot) === StateReady &&
-    slotGeneration(commitSlot) === consumerCommit.source_generation &&
+  val commitMatches = initialized && consumerCommit.source_instance.source_kind === RouteASourceKind.Packed.U &&
+    slotState(commitSlot) === StateReady &&
+    slotGeneration(commitSlot) === consumerCommit.source_instance.generation &&
     slotIdentity(commitSlot).asUInt === consumerCommit.transaction_identity.asUInt &&
     consumerCommit.consumer_id < 4.U && (consumerMask(commitSlot) & commitBit) =/= 0.U
   io.gqa_consumer_commit_in.ready := commitMatches
@@ -145,9 +178,9 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   val releaseSlot = PriorityEncoder(releaseEligible)
   io.s2_release_out.valid := releaseAny
   io.s2_release_out.bits.transaction_identity := slotIdentity(releaseSlot)
-  io.s2_release_out.bits.source_is_direct := false.B
-  io.s2_release_out.bits.source_slot := releaseSlot
-  io.s2_release_out.bits.source_generation := slotGeneration(releaseSlot)
+  io.s2_release_out.bits.source_instance.source_kind := RouteASourceKind.Packed.U
+  io.s2_release_out.bits.source_instance.instance_coordinate := releaseSlot
+  io.s2_release_out.bits.source_instance.generation := slotGeneration(releaseSlot)
   when(io.s2_release_out.fire) {
     slotState(releaseSlot) := StateEmpty
     fillOpened(releaseSlot) := false.B

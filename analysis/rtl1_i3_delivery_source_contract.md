@@ -1,6 +1,6 @@
 # RTL1-I3 — delivery-context and source-instance contract
 
-**Status:** `rtl1_i3_0_carrier_closure_complete; source_completion_behavior_pending`.
+**Status:** `rtl1_i3_1_delivery_and_source_instance_behavior_complete; source-plan/R6 composition_pending`.
 
 RTL1-I3 closes the transport association that was deliberately absent from the
 owner-local RTL1 modules.  It may preserve post-decision source facts and bind
@@ -34,6 +34,24 @@ arithmetic or claim arbitrary source reordering.
 
 ## Evidence boundary
 
-This carrier step has a directed R2 preservation/stall test only.  It is
-no-model, no-GPU, no-new-A4-DSE, no timing/throughput/PPA, and no end-to-end
-RTL correctness evidence.
+## I3.1 implementation binding
+
+R2 now retains `delivery_context_ref` in the same finite outstanding record
+that already guards RID/incarnation response matching. A matched response
+returns the exact stored value, including while its delivery peer holds
+ready-low. R2 does not inspect the value.
+
+The R4 boundary now performs an atomic ready/valid join of one header and one
+matching `R4SourceInstanceSideband`. The 128-bit header remains unchanged; the
+sideband must agree on identity, source kind and consumer ID, is latched with
+the packet, and is returned unchanged with `ConsumerPartialCommit`. S2 accepts
+only `{packed, slot, current-generation}` commits; direct accepts only
+`{pending, endpoint=0, current-generation}` commits. The hot owner now has an
+explicit control-only activation/current-instance/release state, with no hot
+K/V storage or service implementation. Each owner still requires four distinct
+matching consumers before a sole release.
+
+Directed tests cover R2 preservation under ready-low, R4 sideband mismatch
+rejection and round-trip, S2/direct current-generation filtering, and hot
+current-generation four-commit release. This is no-model, no-GPU, no-new-A4
+DSE, no timing/throughput/PPA, and no end-to-end RTL correctness evidence.

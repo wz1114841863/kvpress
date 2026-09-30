@@ -28,12 +28,16 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
     dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
     dut.io.source_partial_in.valid.poke(false.B); dut.io.consumer_partial_commit.ready.poke(true.B)
     dut.io.merge_req_in.valid.poke(false.B); dut.io.r4_partial_header_in.valid.poke(false.B)
+    dut.io.r4_source_instance_in.valid.poke(false.B)
     dut.io.r4_value_fragment_in.valid.poke(false.B); dut.io.r4_result_stub_in.valid.poke(false.B)
     dut.io.r4_numeric_fault_in.valid.poke(false.B); dut.io.merge_rsp_or_numeric_fault.ready.poke(true.B)
     dut.io.merge_req_in.bits.transaction_identity.request_id.poke(0.U); dut.io.merge_req_in.bits.transaction_identity.incarnation.poke(0.U)
     dut.io.merge_req_in.bits.source_presence.poke(0.U)
     dut.io.r4_partial_header_in.bits.transaction_identity.request_id.poke(0.U); dut.io.r4_partial_header_in.bits.transaction_identity.incarnation.poke(0.U)
     dut.io.r4_partial_header_in.bits.header.poke(0.U)
+    dut.io.r4_source_instance_in.bits.transaction_identity.request_id.poke(0.U); dut.io.r4_source_instance_in.bits.transaction_identity.incarnation.poke(0.U)
+    dut.io.r4_source_instance_in.bits.source_instance.source_kind.poke(0.U); dut.io.r4_source_instance_in.bits.source_instance.instance_coordinate.poke(0.U)
+    dut.io.r4_source_instance_in.bits.source_instance.generation.poke(0.U); dut.io.r4_source_instance_in.bits.consumer_id.poke(0.U)
     dut.io.r4_value_fragment_in.bits.transaction_identity.request_id.poke(0.U); dut.io.r4_value_fragment_in.bits.transaction_identity.incarnation.poke(0.U)
     dut.io.r4_value_fragment_in.bits.fragment_index.poke(0.U); dut.io.r4_value_fragment_in.bits.last.poke(false.B); dut.io.r4_value_fragment_in.bits.data.poke(0.U)
     dut.io.r4_result_stub_in.bits.transaction_identity.request_id.poke(0.U); dut.io.r4_result_stub_in.bits.transaction_identity.incarnation.poke(0.U)
@@ -49,10 +53,16 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
   }
 
   private def sendHeader(dut: RouteAMergeBoundary, rid: Int, incarnation: Int, word: BigInt): Unit = {
+    val source = (word >> 64).toInt & 3
+    val consumer = (word >> 66).toInt & 3
     dut.io.r4_partial_header_in.bits.transaction_identity.request_id.poke(rid.U)
     dut.io.r4_partial_header_in.bits.transaction_identity.incarnation.poke(incarnation.U)
     dut.io.r4_partial_header_in.bits.header.poke(word.U); dut.io.r4_partial_header_in.valid.poke(true.B)
-    dut.io.r4_partial_header_in.ready.expect(true.B); dut.clock.step(); dut.io.r4_partial_header_in.valid.poke(false.B)
+    dut.io.r4_source_instance_in.bits.transaction_identity.request_id.poke(rid.U); dut.io.r4_source_instance_in.bits.transaction_identity.incarnation.poke(incarnation.U)
+    dut.io.r4_source_instance_in.bits.source_instance.source_kind.poke(source.U); dut.io.r4_source_instance_in.bits.source_instance.instance_coordinate.poke((16 + source).U)
+    dut.io.r4_source_instance_in.bits.source_instance.generation.poke(1.U); dut.io.r4_source_instance_in.bits.consumer_id.poke(consumer.U)
+    dut.io.r4_source_instance_in.valid.poke(true.B)
+    dut.io.r4_partial_header_in.ready.expect(true.B); dut.io.r4_source_instance_in.ready.expect(true.B); dut.clock.step(); dut.io.r4_partial_header_in.valid.poke(false.B); dut.io.r4_source_instance_in.valid.poke(false.B)
   }
 
   private def sendMergeRequest(dut: RouteAMergeBoundary, rid: Int, incarnation: Int, presence: Int): Unit = {
@@ -68,6 +78,7 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
       dut.io.consumer_partial_commit.valid.expect(true.B); dut.io.consumer_partial_commit.ready.poke(false.B); dut.clock.step()
       dut.io.consumer_partial_commit.bits.transaction_identity.request_id.expect(1.U)
       dut.io.consumer_partial_commit.bits.source_kind.expect(1.U); dut.io.consumer_partial_commit.bits.consumer_id.expect(2.U)
+      dut.io.consumer_partial_commit.bits.source_instance.instance_coordinate.expect(17.U)
       dut.io.consumer_partial_commit.ready.poke(true.B); dut.clock.step()
 
       sendHeader(dut, 2, 1, headerWord(source = 2, consumer = 3, present = true))
@@ -85,6 +96,12 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
   it("rejects malformed packet structure and out-of-order value fragments without a numeric fallback") {
     simulate(new RouteAMergeBoundary(p)) { dut =>
       init(dut)
+      dut.io.r4_partial_header_in.bits.header.poke(headerWord(source = 0, consumer = 0, present = false).U)
+      dut.io.r4_partial_header_in.valid.poke(true.B)
+      dut.io.r4_source_instance_in.bits.source_instance.source_kind.poke(1.U)
+      dut.io.r4_source_instance_in.bits.consumer_id.poke(0.U); dut.io.r4_source_instance_in.valid.poke(true.B)
+      dut.io.r4_partial_header_in.ready.expect(false.B); dut.io.r4_source_instance_in.ready.expect(false.B)
+      dut.io.r4_partial_header_in.valid.poke(false.B); dut.io.r4_source_instance_in.valid.poke(false.B)
       dut.io.r4_partial_header_in.bits.header.poke(headerWord(source = 3, consumer = 0, present = false).U)
       dut.io.r4_partial_header_in.valid.poke(true.B); dut.io.r4_partial_header_in.ready.expect(false.B)
       dut.io.r4_partial_header_in.bits.header.poke(headerWord(source = 0, consumer = 0, present = false, reserved = 1).U)

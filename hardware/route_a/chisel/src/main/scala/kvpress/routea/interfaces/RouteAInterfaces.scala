@@ -211,21 +211,23 @@ final class DirectPendingRecordTerminal(p: RouteASkeletonParameters) extends Bun
   val explicit_empty = Bool()
 }
 
+/** Control-only activation for the hot owner; it carries no hot K/V payload. */
+final class HotSourceOpen(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val source_instance = new SourceInstance(p)
+}
+
 /** Generation-bearing local refinement of the later R4 consumer-commit event. */
 final class GqaConsumerCommit(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
-  val source_is_direct = Bool()
-  val source_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
-  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val source_instance = new SourceInstance(p)
   val consumer_id = UInt(RouteAAnchorWidths.ConsumerIdWidth.W)
 }
 
 /** Local release notification; it is not an R6 terminal outcome or credit return. */
 final class SourceRelease(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
-  val source_is_direct = Bool()
-  val source_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
-  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val source_instance = new SourceInstance(p)
 }
 
 final class SourcePartial extends Bundle {
@@ -479,6 +481,7 @@ object RouteAChannels {
   def session_retire_ack = Decoupled(new SessionRetireAck)
   def component_status(p: RouteASkeletonParameters) = Decoupled(new ComponentStatus(p))
   def hot_control(p: RouteASkeletonParameters) = Decoupled(new HotControl(p))
+  def hot_source_open(p: RouteASkeletonParameters) = Decoupled(new HotSourceOpen(p))
   def r6_authority_transition(p: RouteASkeletonParameters) = Decoupled(new R6AuthorityTransition(p))
   def admission_context(p: RouteASkeletonParameters) = Decoupled(new AdmissionContext(p))
   def publication_commit_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationCommitObservation(p))

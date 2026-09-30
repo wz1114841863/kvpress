@@ -63,7 +63,8 @@ final class RouteAS2DirectPendingSpec extends AnyFunSpec with ChiselSim {
   private def commitS2(dut: RouteAS2GqaSourceWrapper, rid: Int, generation: Int, consumer: Int): Unit = {
     val commit = dut.io.gqa_consumer_commit_in.bits
     commit.transaction_identity.request_id.poke(rid.U); commit.transaction_identity.incarnation.poke(0.U)
-    commit.source_is_direct.poke(false.B); commit.source_slot.poke(0.U); commit.source_generation.poke(generation.U); commit.consumer_id.poke(consumer.U)
+    commit.source_instance.source_kind.poke(2.U); commit.source_instance.instance_coordinate.poke(0.U)
+    commit.source_instance.generation.poke(generation.U); commit.consumer_id.poke(consumer.U)
     dut.io.gqa_consumer_commit_in.valid.poke(true.B); dut.io.gqa_consumer_commit_in.ready.expect(true.B); dut.clock.step(); dut.io.gqa_consumer_commit_in.valid.poke(false.B)
   }
 
@@ -108,7 +109,8 @@ final class RouteAS2DirectPendingSpec extends AnyFunSpec with ChiselSim {
   private def commitDirect(dut: RouteADirectPendingEndpointV1, rid: Int, generation: Int, consumer: Int): Unit = {
     val commit = dut.io.gqa_consumer_commit_in.bits
     commit.transaction_identity.request_id.poke(rid.U); commit.transaction_identity.incarnation.poke(0.U)
-    commit.source_is_direct.poke(true.B); commit.source_slot.poke(0.U); commit.source_generation.poke(generation.U); commit.consumer_id.poke(consumer.U)
+    commit.source_instance.source_kind.poke(1.U); commit.source_instance.instance_coordinate.poke(0.U)
+    commit.source_instance.generation.poke(generation.U); commit.consumer_id.poke(consumer.U)
     dut.io.gqa_consumer_commit_in.valid.poke(true.B); dut.io.gqa_consumer_commit_in.ready.expect(true.B); dut.clock.step(); dut.io.gqa_consumer_commit_in.valid.poke(false.B)
   }
 

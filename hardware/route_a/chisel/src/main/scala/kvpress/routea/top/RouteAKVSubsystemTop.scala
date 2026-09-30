@@ -48,6 +48,12 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     lifecycle.io.component_status_in <> status_collector.io.component_status_out
 
     hot.io.lifecycle_control_in <> lifecycle.io.hot_control_out
+    val hot_source_open = Wire(RouteAChannels.hot_source_open(p)); StructuralTieOff.source(hot_source_open)
+    val hot_gqa_commit = Wire(RouteAChannels.gqa_consumer_commit(p)); StructuralTieOff.source(hot_gqa_commit)
+    val hot_release = Wire(RouteAChannels.source_release(p)); StructuralTieOff.sink(hot_release)
+    hot.io.hot_source_open_in <> hot_source_open
+    hot.io.gqa_consumer_commit_in <> hot_gqa_commit
+    hot_release <> hot.io.hot_release_out
     val r6_merge_ready = Wire(RouteAChannels.r6_merge_ready); StructuralTieOff.source(r6_merge_ready)
     lifecycle.io.merge_ready_in <> r6_merge_ready
     s2.io.drain_collection_enable := lifecycle.io.drain_collection_enable
@@ -77,10 +83,12 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     merge.io.source_partial_in <> source_partial_to_merge
 
     val r4_partial_header = Wire(RouteAChannels.r4_partial_header); StructuralTieOff.source(r4_partial_header)
+    val r4_source_instance = Wire(RouteAChannels.r4_source_instance_sideband(p)); StructuralTieOff.source(r4_source_instance)
     val r4_value_fragment = Wire(RouteAChannels.r4_value_fragment); StructuralTieOff.source(r4_value_fragment)
     val r4_result_stub = Wire(RouteAChannels.r4_result_stub); StructuralTieOff.source(r4_result_stub)
     val r4_numeric_fault = Wire(RouteAChannels.r4_numeric_fault); StructuralTieOff.source(r4_numeric_fault)
     merge.io.r4_partial_header_in <> r4_partial_header
+    merge.io.r4_source_instance_in <> r4_source_instance
     merge.io.r4_value_fragment_in <> r4_value_fragment
     merge.io.r4_result_stub_in <> r4_result_stub
     merge.io.r4_numeric_fault_in <> r4_numeric_fault

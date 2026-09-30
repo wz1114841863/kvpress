@@ -389,8 +389,10 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
 
   val consumerCommit = io.gqa_consumer_commit_in.bits
   val commitBit = (1.U(4.W) << consumerCommit.consumer_id)(3, 0)
-  val commitMatches = initialized && active && deliverable && !faulted && consumerCommit.source_is_direct &&
-    consumerCommit.source_generation === endpointGeneration && identity.asUInt === consumerCommit.transaction_identity.asUInt &&
+  val commitMatches = initialized && active && deliverable && !faulted &&
+    consumerCommit.source_instance.source_kind === RouteASourceKind.Pending.U &&
+    consumerCommit.source_instance.instance_coordinate === 0.U &&
+    consumerCommit.source_instance.generation === endpointGeneration && identity.asUInt === consumerCommit.transaction_identity.asUInt &&
     consumerCommit.consumer_id < 4.U && (consumerMask & commitBit) =/= 0.U
   io.gqa_consumer_commit_in.ready := commitMatches
   when(io.gqa_consumer_commit_in.fire) {
@@ -400,9 +402,9 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
   val releaseEligible = active && deliverable && sourceClosed && !faulted && consumerMask === 0.U
   io.direct_release_out.valid := releaseEligible
   io.direct_release_out.bits.transaction_identity := identity
-  io.direct_release_out.bits.source_is_direct := true.B
-  io.direct_release_out.bits.source_slot := 0.U
-  io.direct_release_out.bits.source_generation := endpointGeneration
+  io.direct_release_out.bits.source_instance.source_kind := RouteASourceKind.Pending.U
+  io.direct_release_out.bits.source_instance.instance_coordinate := 0.U
+  io.direct_release_out.bits.source_instance.generation := endpointGeneration
   when(io.direct_release_out.fire) {
     active := false.B
     deliverable := false.B
@@ -913,6 +915,7 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
     val consumer_partial_commit = RouteAChannels.consumer_partial_commit(p)
     val merge_req_in = Flipped(RouteAChannels.merge_req)
     val r4_partial_header_in = Flipped(RouteAChannels.r4_partial_header)
+    val r4_source_instance_in = Flipped(RouteAChannels.r4_source_instance_sideband(p))
     val r4_value_fragment_in = Flipped(RouteAChannels.r4_value_fragment)
     val r4_result_stub_in = Flipped(RouteAChannels.r4_result_stub)
     val r4_numeric_fault_in = Flipped(RouteAChannels.r4_numeric_fault)
@@ -923,11 +926,13 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   val packetActive = RegInit(false.B)
   val packetIdentity = Reg(new TransactionIdentity)
   val packetSource = Reg(UInt(RouteAAnchorWidths.SourceKindWidth.W))
+  val packetSourceInstance = Reg(new SourceInstance(p))
   val packetConsumer = Reg(UInt(RouteAAnchorWidths.ConsumerIdWidth.W))
   val nextFragment = RegInit(0.U(3.W))
   val commitPending = RegInit(false.B)
   val commitIdentity = Reg(new TransactionIdentity)
   val commitSource = Reg(UInt(RouteAAnchorWidths.SourceKindWidth.W))
+  val commitSourceInstance = Reg(new SourceInstance(p))
   val commitConsumer = Reg(UInt(RouteAAnchorWidths.ConsumerIdWidth.W))
 
   val mergeActive = RegInit(false.B)
@@ -951,18 +956,27 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   val absentIdentity = header(31, 0) === "hff800000".U && header(63, 32) === 0.U
   val headerStructureLegal = headerSourceLegal && !headerMergeInstance && headerReserved === 0.U &&
     Mux(headerPresent, headerFragmentCount === 8.U, headerFragmentCount === 0.U && absentIdentity)
-  io.r4_partial_header_in.ready := !packetActive && !commitPending && headerStructureLegal
+  val sourceSideband = io.r4_source_instance_in.bits
+  val sidebandMatchesHeader = sourceSideband.transaction_identity.asUInt === io.r4_partial_header_in.bits.transaction_identity.asUInt &&
+    sourceSideband.source_instance.source_kind === headerSource && sourceSideband.consumer_id === headerConsumer &&
+    sourceSideband.source_instance.source_kind <= RouteASourceKind.Packed.U
+  val headerAndSidebandReady = !packetActive && !commitPending && headerStructureLegal && sidebandMatchesHeader
+  io.r4_partial_header_in.ready := headerAndSidebandReady && io.r4_source_instance_in.valid
+  io.r4_source_instance_in.ready := headerAndSidebandReady && io.r4_partial_header_in.valid
   when(io.r4_partial_header_in.fire) {
+    assert(io.r4_source_instance_in.fire)
     when(headerPresent) {
       packetActive := true.B
       packetIdentity := io.r4_partial_header_in.bits.transaction_identity
       packetSource := headerSource
+      packetSourceInstance := sourceSideband.source_instance
       packetConsumer := headerConsumer
       nextFragment := 0.U
     }.otherwise {
       commitPending := true.B
       commitIdentity := io.r4_partial_header_in.bits.transaction_identity
       commitSource := headerSource
+      commitSourceInstance := sourceSideband.source_instance
       commitConsumer := headerConsumer
     }
   }
@@ -978,6 +992,7 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
       commitPending := true.B
       commitIdentity := packetIdentity
       commitSource := packetSource
+      commitSourceInstance := packetSourceInstance
       commitConsumer := packetConsumer
     }.otherwise {
       nextFragment := nextFragment + 1.U
@@ -988,7 +1003,7 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   io.consumer_partial_commit.bits.transaction_identity := commitIdentity
   io.consumer_partial_commit.bits.consumer_id := commitConsumer
   io.consumer_partial_commit.bits.source_kind := commitSource
-  io.consumer_partial_commit.bits.source_instance := 0.U.asTypeOf(new SourceInstance(p))
+  io.consumer_partial_commit.bits.source_instance := commitSourceInstance
   when(io.consumer_partial_commit.fire) {
     commitPending := false.B
   }
