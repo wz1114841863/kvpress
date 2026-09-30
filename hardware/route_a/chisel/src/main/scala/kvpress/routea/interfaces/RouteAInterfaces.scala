@@ -161,6 +161,19 @@ final class R6MergeReady extends Bundle {
   val source_presence = UInt(RouteAAnchorWidths.SourcePresenceWidth.W)
 }
 
+/**
+  * Immutable attention-local source expectation.  Presence bits use the
+  * frozen canonical hot/pending/packed order; each descriptor is meaningful
+  * only when its matching bit is set.  This is not a source scheduler.
+  */
+final class SourceCompletionPlan(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val source_presence = UInt(RouteAAnchorWidths.SourcePresenceWidth.W)
+  val hot_instance = new SourceInstance(p)
+  val pending_instance = new SourceInstance(p)
+  val packed_instance = new SourceInstance(p)
+}
+
 final class S2ServiceRequest extends Bundle {
   val transaction_identity = new TransactionIdentity
   val page_ref = new PageRef
@@ -487,6 +500,7 @@ object RouteAChannels {
   def publication_commit_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationCommitObservation(p))
   def publication_member_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationMemberObservation(p))
   def r6_merge_ready = Decoupled(new R6MergeReady)
+  def source_completion_plan(p: RouteASkeletonParameters) = Decoupled(new SourceCompletionPlan(p))
   def s2_service_req = Decoupled(new S2ServiceRequest)
   def direct_pending_open(p: RouteASkeletonParameters) = Decoupled(new DirectPendingOpen(p))
   def s2_fill_open(p: RouteASkeletonParameters) = Decoupled(new S2FillOpen(p))

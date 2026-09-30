@@ -25,6 +25,10 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     val admission_context_out = RouteAChannels.admission_context(p)
     val authority_transition_in = Flipped(RouteAChannels.r6_authority_transition(p))
     val merge_ready_in = Flipped(RouteAChannels.r6_merge_ready)
+    val source_completion_plan_in = Flipped(RouteAChannels.source_completion_plan(p))
+    val hot_source_release_in = Flipped(RouteAChannels.source_release(p))
+    val pending_source_release_in = Flipped(RouteAChannels.source_release(p))
+    val packed_source_release_in = Flipped(RouteAChannels.source_release(p))
     val s2_service_req = RouteAChannels.s2_service_req
     val direct_pending_open = RouteAChannels.direct_pending_open(p)
     val merge_req = RouteAChannels.merge_req
@@ -72,6 +76,12 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val attentionValid = RegInit(VecInit(Seq.fill(trackerEntries)(false.B)))
   val attentionIdentity = Reg(Vec(trackerEntries, new TransactionIdentity))
   val attentionStage = RegInit(VecInit(Seq.fill(trackerEntries)(AwaitMergeReady)))
+  val sourcePlanValid = RegInit(VecInit(Seq.fill(trackerEntries)(false.B)))
+  val sourcePlanPresence = Reg(Vec(trackerEntries, UInt(RouteAAnchorWidths.SourcePresenceWidth.W)))
+  val sourcePlanReleased = RegInit(VecInit(Seq.fill(trackerEntries)(0.U(RouteAAnchorWidths.SourcePresenceWidth.W))))
+  val sourcePlanHot = Reg(Vec(trackerEntries, new SourceInstance(p)))
+  val sourcePlanPending = Reg(Vec(trackerEntries, new SourceInstance(p)))
+  val sourcePlanPacked = Reg(Vec(trackerEntries, new SourceInstance(p)))
   val mergePending = RegInit(false.B)
   val mergeIdentity = Reg(new TransactionIdentity)
   val mergePresence = Reg(UInt(RouteAAnchorWidths.SourcePresenceWidth.W))
@@ -167,6 +177,8 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
       attentionValid(freeAttentionSlot) := true.B
       attentionIdentity(freeAttentionSlot) := lifecycle.transaction_identity
       attentionStage(freeAttentionSlot) := AwaitMergeReady
+      sourcePlanValid(freeAttentionSlot) := false.B
+      sourcePlanReleased(freeAttentionSlot) := 0.U
     }
   }
 
@@ -220,9 +232,64 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     assert(publicationTransition)
   }
 
+  val sourcePlan = io.source_completion_plan_in.bits
+  val sourcePlanMatches = VecInit((0 until trackerEntries).map(slot =>
+    attentionValid(slot) && attentionStage(slot) === AwaitMergeReady && !sourcePlanValid(slot) &&
+      identityMatches(attentionIdentity(slot), sourcePlan.transaction_identity),
+  ))
+  val sourcePlanSlot = PriorityEncoder(sourcePlanMatches)
+  val sourcePlanKindsLegal = sourcePlan.source_presence.orR &&
+    sourcePlan.hot_instance.source_kind === RouteASourceKind.Hot.U &&
+    sourcePlan.pending_instance.source_kind === RouteASourceKind.Pending.U &&
+    sourcePlan.packed_instance.source_kind === RouteASourceKind.Packed.U
+  io.source_completion_plan_in.ready := (state === StateActive || state === StateRetiring) &&
+    sourcePlanKindsLegal && sourcePlanMatches.asUInt.orR
+  when(io.source_completion_plan_in.fire) {
+    sourcePlanValid(sourcePlanSlot) := true.B
+    sourcePlanPresence(sourcePlanSlot) := sourcePlan.source_presence
+    sourcePlanReleased(sourcePlanSlot) := 0.U
+    sourcePlanHot(sourcePlanSlot) := sourcePlan.hot_instance
+    sourcePlanPending(sourcePlanSlot) := sourcePlan.pending_instance
+    sourcePlanPacked(sourcePlanSlot) := sourcePlan.packed_instance
+  }
+
+  private def releaseMatches(release: SourceRelease, expectedKind: Int, expected: Int => SourceInstance) =
+    VecInit((0 until trackerEntries).map(slot =>
+      attentionValid(slot) && attentionStage(slot) === AwaitMergeReady && sourcePlanValid(slot) &&
+        identityMatches(attentionIdentity(slot), release.transaction_identity) &&
+        sourcePlanPresence(slot)(expectedKind) && !sourcePlanReleased(slot)(expectedKind) &&
+        release.source_instance.asUInt === expected(slot).asUInt,
+    ))
+  private def applyRelease(matches: Vec[Bool], releaseKind: Int): Unit = {
+    val slot = PriorityEncoder(matches)
+    val nextReleased = sourcePlanReleased(slot) | (1.U(RouteAAnchorWidths.SourcePresenceWidth.W) << releaseKind)
+    when(matches.asUInt.orR) {
+      sourcePlanReleased(slot) := nextReleased
+      when(nextReleased === sourcePlanPresence(slot)) {
+        mergePending := true.B
+        mergeIdentity := attentionIdentity(slot)
+        mergePresence := sourcePlanPresence(slot)
+        mergeTrackerSlot := slot
+        sourcePlanValid(slot) := false.B
+      }
+    }
+  }
+  val hotReleaseMatches = releaseMatches(io.hot_source_release_in.bits, RouteASourceKind.Hot, sourcePlanHot)
+  val pendingReleaseMatches = releaseMatches(io.pending_source_release_in.bits, RouteASourceKind.Pending, sourcePlanPending)
+  val packedReleaseMatches = releaseMatches(io.packed_source_release_in.bits, RouteASourceKind.Packed, sourcePlanPacked)
+  val sourceReleaseEnabled = (state === StateActive || state === StateRetiring) && !mergePending && !terminalPending
+  io.hot_source_release_in.ready := sourceReleaseEnabled && hotReleaseMatches.asUInt.orR
+  io.pending_source_release_in.ready := sourceReleaseEnabled && !hotReleaseMatches.asUInt.orR && pendingReleaseMatches.asUInt.orR
+  io.packed_source_release_in.ready := sourceReleaseEnabled && !hotReleaseMatches.asUInt.orR &&
+    !pendingReleaseMatches.asUInt.orR && packedReleaseMatches.asUInt.orR
+  when(io.hot_source_release_in.fire) { applyRelease(hotReleaseMatches, RouteASourceKind.Hot) }
+  when(io.pending_source_release_in.fire) { applyRelease(pendingReleaseMatches, RouteASourceKind.Pending) }
+  when(io.packed_source_release_in.fire) { applyRelease(packedReleaseMatches, RouteASourceKind.Packed) }
+
   val mergeReady = io.merge_ready_in.bits
   val mergeReadyMatches = VecInit((0 until trackerEntries).map(slot =>
     attentionValid(slot) && attentionStage(slot) === AwaitMergeReady &&
+      !sourcePlanValid(slot) &&
       identityMatches(attentionIdentity(slot), mergeReady.transaction_identity),
   ))
   val mergeReadySlot = PriorityEncoder(mergeReadyMatches)
@@ -271,6 +338,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     // a_exactly_one_terminal: only the one matching live tracker may retire here.
     assert(attentionValid(terminalTrackerSlot) && attentionStage(terminalTrackerSlot) === MergeIssued)
     attentionValid(terminalTrackerSlot) := false.B
+    sourcePlanValid(terminalTrackerSlot) := false.B
     terminalPending := false.B
   }
 
