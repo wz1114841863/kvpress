@@ -1,6 +1,6 @@
 # RTL1-I2 — Admission / publication association contract
 
-**Status:** `rtl1_i2_carrier_contract_frozen; behavior_pending`.
+**Status:** `rtl1_i2_admission_publication_behavior_complete; later delivery/source/reclaim integration_pending`.
 
 RTL1-I2 closes only the cross-owner control association from a previously
 accepted `RETAIN` maturity to R3's bounded record membership, and the
@@ -61,3 +61,23 @@ correctness proof, timing, throughput, PPA, model/GPU, HBM, or new A4 DSE
 claim.  The following later work remains explicitly out of scope: R2/R1
 delivery, P3 payload fragments, R4/source completion, R5 invalidation/reuse,
 and physical queue/macro realization.
+
+## Implemented RTL1-I2 closure
+
+`RouteALifecycleAdapter` stages the immutable context together with the same
+RETAIN maturity's `hot -> pending` event; it holds both under ready-low and
+does not clear the lifecycle event until hot control, authority handoff, and
+context have all been accepted.  The three group fields enter through the
+existing frontend tagged union only for an accepted RETAIN maturity.  They are
+opaque, upstream-frozen group association values, not an R6 policy decision.
+
+`RouteAM2P3Wrapper` joins those two R6 facts atomically, validates the exact
+coordinate and matching live P3 claim, records explicit ordinals in its
+bounded logical ledger, and adds membership completion to the pre-existing
+publication prerequisites.  A successful existing publication acknowledgement
+first creates one group observation, then emits one record observation and one
+matching R6 `pending -> packed` event per ordinal.  A failed P3/publication
+path produces no successful observation.  The production top wires the
+R6--R3--R6 carriers but still has no P3-claim/payload publisher; the directed
+R3/R5 harness supplies those later-owner inputs solely to test the frozen
+association.

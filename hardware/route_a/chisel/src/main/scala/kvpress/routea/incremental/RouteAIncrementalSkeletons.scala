@@ -1,7 +1,7 @@
 package kvpress.routea.incremental
 
 import chisel3._
-import chisel3.util.{Cat, MuxCase, PriorityEncoder, RegEnable, log2Ceil}
+import chisel3.util.{Cat, MuxCase, PopCount, PriorityEncoder, RegEnable, log2Ceil}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteADescriptorOperationKind, RouteAM2GroupMember, RouteAPublicationStatus, RouteASkeletonParameters}
 
@@ -22,6 +22,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     val drain_collection_enable = Output(Bool())
     val hot_control_out = RouteAChannels.hot_control(p)
     val authority_transition_out = RouteAChannels.r6_authority_transition(p)
+    val admission_context_out = RouteAChannels.admission_context(p)
     val authority_transition_in = Flipped(RouteAChannels.r6_authority_transition(p))
     val merge_ready_in = Flipped(RouteAChannels.r6_merge_ready)
     val s2_service_req = RouteAChannels.s2_service_req
@@ -59,9 +60,14 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val controlLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
   val controlHead = Reg(UInt(RouteAAnchorWidths.KvHeadWidth.W))
   val controlPosition = Reg(UInt(RouteAAnchorWidths.LogicalPositionWidth.W))
+  val controlPayloadRef = Reg(UInt(RouteAAnchorWidths.PayloadRefWidth.W))
   val controlRetain = RegInit(false.B)
+  val controlAdmissionGroupTag = Reg(UInt(p.transactionGroupTagWidth.W))
+  val controlAdmissionMemberOrdinal = Reg(UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W))
+  val controlAdmissionGroupValidRecords = Reg(UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W))
   val hotControlSent = RegInit(false.B)
   val authoritySent = RegInit(false.B)
+  val admissionContextSent = RegInit(false.B)
 
   val attentionValid = RegInit(VecInit(Seq.fill(trackerEntries)(false.B)))
   val attentionIdentity = Reg(Vec(trackerEntries, new TransactionIdentity))
@@ -149,9 +155,14 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
       controlLayer := lifecycle.layer
       controlHead := lifecycle.kv_head
       controlPosition := lifecycle.logical_position
+      controlPayloadRef := lifecycle.payload_ref
       controlRetain := lifecycle.disposition
+      controlAdmissionGroupTag := lifecycle.admission_group_tag
+      controlAdmissionMemberOrdinal := lifecycle.admission_member_ordinal
+      controlAdmissionGroupValidRecords := lifecycle.admission_group_valid_records
       hotControlSent := false.B
       authoritySent := false.B
+      admissionContextSent := false.B
     }.elsewhen(isAttention) {
       attentionValid(freeAttentionSlot) := true.B
       attentionIdentity(freeAttentionSlot) := lifecycle.transaction_identity
@@ -175,13 +186,29 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   io.authority_transition_out.bits.to_authority := Mux(controlIsArrival,
     RouteAAuthorityStateCode.Hot.U,
     Mux(controlRetain, RouteAAuthorityStateCode.Pending.U, RouteAAuthorityStateCode.None.U))
-  io.authority_transition_out.bits.transaction_group_tag := 0.U
+  io.authority_transition_out.bits.transaction_group_tag := Mux(
+    !controlIsArrival && controlRetain,
+    controlAdmissionGroupTag,
+    0.U,
+  )
+
+  io.admission_context_out.valid := controlPending && !controlIsArrival && controlRetain && !admissionContextSent
+  io.admission_context_out.bits.entry_id := controlEntryId
+  io.admission_context_out.bits.layer := controlLayer
+  io.admission_context_out.bits.kv_head := controlHead
+  io.admission_context_out.bits.logical_position := controlPosition
+  io.admission_context_out.bits.payload_ref := controlPayloadRef
+  io.admission_context_out.bits.transaction_group_tag := controlAdmissionGroupTag
+  io.admission_context_out.bits.group_member_ordinal := controlAdmissionMemberOrdinal
+  io.admission_context_out.bits.group_valid_records := controlAdmissionGroupValidRecords
   when(controlPending) {
     when(io.hot_control_out.fire) { hotControlSent := true.B }
     when(io.authority_transition_out.fire) { authoritySent := true.B }
+    when(io.admission_context_out.fire) { admissionContextSent := true.B }
     val hotDone = hotControlSent || io.hot_control_out.fire
     val authorityDone = authoritySent || io.authority_transition_out.fire
-    when(hotDone && authorityDone) { controlPending := false.B }
+    val admissionDone = controlIsArrival || !controlRetain || admissionContextSent || io.admission_context_out.fire
+    when(hotDone && authorityDone && admissionDone) { controlPending := false.B }
   }
 
   val authorityIn = io.authority_transition_in.bits
@@ -274,6 +301,10 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   when(RegNext(io.authority_transition_out.valid && !io.authority_transition_out.ready, false.B)) {
     assert(io.authority_transition_out.bits.asUInt === heldAuthority.asUInt)
   }
+  val heldAdmission = RegEnable(io.admission_context_out.bits, io.admission_context_out.valid && !io.admission_context_out.ready)
+  when(RegNext(io.admission_context_out.valid && !io.admission_context_out.ready, false.B)) {
+    assert(io.admission_context_out.bits.asUInt === heldAdmission.asUInt)
+  }
   val heldMerge = RegEnable(io.merge_req.bits, io.merge_req.valid && !io.merge_req.ready)
   when(RegNext(io.merge_req.valid && !io.merge_req.ready, false.B)) {
     assert(io.merge_req.bits.asUInt === heldMerge.asUInt)
@@ -290,7 +321,9 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   StructuralTieOff.source(io.s2_service_req)
   StructuralTieOff.source(io.direct_pending_open)
   StructuralTieOff.source(io.metadata_publish_req)
-  StructuralTieOff.sink(io.metadata_publish_ack_in)
+  // R6 observes this as a completed R3/R5 publication fact only.  It does not
+  // issue a second commit or retain publication membership.
+  io.metadata_publish_ack_in.ready := state === StateActive || state === StateRetiring
 }
 
 /** RTL1.4 direct-pending control only; no pending page/buffer or K/V storage. */
@@ -402,6 +435,11 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     val drain_collection_enable = Input(Bool())
     val p3_claim_in = Flipped(RouteAChannels.p3_claim(p))
     val p3_claim_ack = RouteAChannels.p3_claim_ack(p)
+    val admission_context_in = Flipped(RouteAChannels.admission_context(p))
+    val admission_authority_in = Flipped(RouteAChannels.r6_authority_transition(p))
+    val authority_transition_out = RouteAChannels.r6_authority_transition(p)
+    val publication_commit_observation = RouteAChannels.publication_commit_observation(p)
+    val publication_member_observation = RouteAChannels.publication_member_observation(p)
     val p3_pending_fragment_in = Flipped(RouteAChannels.p3_pending_fragment(p))
     val p3_sidecar_bind_in = Flipped(RouteAChannels.p3_sidecar_bind(p))
     val p3_packed_write_issue_in = Flipped(RouteAChannels.p3_packed_write_issue(p))
@@ -435,8 +473,18 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val stageFragmentNext = RegInit(VecInit(Seq.fill(stages)(0.U(10.W))))
   val stageSidecarNext = RegInit(VecInit(Seq.fill(stages)(0.U(RouteAAnchorWidths.P3ValidRecordsWidth.W))))
   val stagePageRef = Reg(Vec(stages, new PageRef))
+  val stageHead = Reg(Vec(stages, UInt(RouteAAnchorWidths.KvHeadWidth.W)))
   val stageTag = Reg(Vec(stages, UInt(p.transactionGroupTagWidth.W)))
   val stageM2Members = RegInit(VecInit(Seq.fill(stages)(0.U(2.W))))
+  // The following is a logical, per-record association ledger.  It contains
+  // sidecar/payload references only, never K/V data or authoritative residency.
+  val membershipPresent = RegInit(VecInit(Seq.fill(stages)(0.U(64.W))))
+  val membershipEntries = Reg(Vec(stages, Vec(64, new AdmissionContext(p))))
+  val observationActive = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  val observationCommitSent = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  val observationMemberOrdinal = RegInit(VecInit(Seq.fill(stages)(0.U(RouteAAnchorWidths.P3ValidRecordsWidth.W))))
+  val observationMemberSent = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  val observationAuthoritySent = RegInit(VecInit(Seq.fill(stages)(false.B)))
 
   val claimAckValid = RegInit(false.B)
   val claimAckLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
@@ -449,7 +497,8 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val claim = io.p3_claim_in.bits
   val claimLayer = claim.layer
   val validClaimRecords = claim.valid_records =/= 0.U && claim.valid_records <= 64.U
-  io.p3_claim_in.ready := initialized && !claimAckValid && validClaimRecords && stageState(claimLayer) === StateEmpty
+  io.p3_claim_in.ready := initialized && !claimAckValid && validClaimRecords &&
+    stageState(claimLayer) === StateEmpty && !observationActive(claimLayer)
   when(io.p3_claim_in.fire) {
     val nextGeneration = stageGeneration(claimLayer) + 1.U
     stageGeneration(claimLayer) := nextGeneration
@@ -458,11 +507,45 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     stageFragmentNext(claimLayer) := 0.U
     stageSidecarNext(claimLayer) := 0.U
     stagePageRef(claimLayer) := claim.page_ref
+    stageHead(claimLayer) := claim.kv_head
     stageTag(claimLayer) := claim.transaction_group_tag
     stageM2Members(claimLayer) := 0.U
+    membershipPresent(claimLayer) := 0.U
     claimAckValid := true.B
     claimAckLayer := claimLayer
     claimAckGeneration := nextGeneration
+  }
+
+  // A retained maturity may enter the R3 ledger only together with its exact
+  // hot->pending transition.  The ready signals form one lossless join: either
+  // both immutable facts are accepted or neither is.  This has no payload path.
+  val admission = io.admission_context_in.bits
+  val admissionLayer = admission.layer
+  val admissionAuthority = io.admission_authority_in.bits
+  val admissionCoordinate = admission.logical_position * 288.U + admission.layer * 8.U + admission.kv_head
+  val admissionOrdinalMask = 1.U(64.W) << admission.group_member_ordinal
+  val admissionAuthorityMatches = admissionAuthority.entry_id === admission.entry_id &&
+    admissionAuthority.from_authority === RouteAAuthorityStateCode.Hot.U &&
+    admissionAuthority.to_authority === RouteAAuthorityStateCode.Pending.U &&
+    admissionAuthority.transaction_group_tag === admission.transaction_group_tag
+  val admissionStageMatches = initialized && !observationActive(admissionLayer) &&
+    (stageState(admissionLayer) === StateReserved || stageState(admissionLayer) === StateFilling ||
+      stageState(admissionLayer) === StateComplete || stageState(admissionLayer) === StateWriteIssued ||
+      stageState(admissionLayer) === StateDurable) &&
+    stageHead(admissionLayer) === admission.kv_head &&
+    stageTag(admissionLayer) === admission.transaction_group_tag &&
+    stageValidRecords(admissionLayer) === admission.group_valid_records &&
+    admission.group_valid_records =/= 0.U && admission.group_valid_records <= 64.U &&
+    admission.group_member_ordinal < admission.group_valid_records &&
+    admission.entry_id === admissionCoordinate &&
+    (membershipPresent(admissionLayer) & admissionOrdinalMask) === 0.U
+  val admissionJoinReady = admissionStageMatches && admissionAuthorityMatches
+  io.admission_context_in.ready := admissionJoinReady && io.admission_authority_in.valid
+  io.admission_authority_in.ready := admissionJoinReady && io.admission_context_in.valid
+  when(io.admission_context_in.fire) {
+    assert(io.admission_authority_in.fire)
+    membershipPresent(admissionLayer) := membershipPresent(admissionLayer) | admissionOrdinalMask
+    membershipEntries(admissionLayer)(admission.group_member_ordinal(5, 0)) := admission
   }
 
   def expectedFragments(layer: UInt): UInt = Cat(stageValidRecords(layer), 0.U(3.W))
@@ -549,10 +632,11 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val publicationTag = Reg(UInt(p.transactionGroupTagWidth.W))
   val publicationPageRef = Reg(new PageRef)
   val publish = io.m2_publish_req_in.bits
+  val membershipComplete = PopCount(membershipPresent(publish.p3_layer)) === stageValidRecords(publish.p3_layer)
   val publishPrerequisites = initialized && stageState(publish.p3_layer) === StateDurable &&
     stageGeneration(publish.p3_layer) === publish.p3_stage_generation &&
     stageTag(publish.p3_layer) === publish.transaction_group_tag &&
-    stageM2Members(publish.p3_layer) === 3.U
+    stageM2Members(publish.p3_layer) === 3.U && membershipComplete
   io.m2_publish_req_in.ready := !publicationActive && publishPrerequisites
   when(io.m2_publish_req_in.fire) {
     publicationActive := true.B
@@ -583,6 +667,11 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     when(publishAckStatus === RouteAPublicationStatus.Published.U) {
       stageState(publicationLayer) := StateEmpty
       stageM2Members(publicationLayer) := 0.U
+      observationActive(publicationLayer) := true.B
+      observationCommitSent(publicationLayer) := false.B
+      observationMemberOrdinal(publicationLayer) := 0.U
+      observationMemberSent(publicationLayer) := false.B
+      observationAuthoritySent(publicationLayer) := false.B
     }.otherwise {
       stageState(publicationLayer) := StateFaulted
     }
@@ -596,15 +685,71 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   when(io.metadata_publish_visibility_apply.valid) {
     assert(stageState(publicationLayer) === StateDurable)
     assert(stageM2Members(publicationLayer) === 3.U)
+    assert(PopCount(membershipPresent(publicationLayer)) === stageValidRecords(publicationLayer))
   }
   when(io.m2_publish_ack.valid && io.m2_publish_ack.bits.status === RouteAPublicationStatus.Published.U) {
     assert(publicationAwaitingVisibilityAck)
   }
 
+  // Publication observations report the one completed atomic boundary.  They
+  // are intentionally post-commit and can be held under ready-low without
+  // changing membership, page visibility, or authority linearization.
+  val anyObservationActive = observationActive.asUInt.orR
+  val observationLayer = PriorityEncoder(observationActive)
+  val observationEntry = membershipEntries(observationLayer)(observationMemberOrdinal(observationLayer)(5, 0))
+  io.publication_commit_observation.valid := anyObservationActive && !observationCommitSent(observationLayer)
+  io.publication_commit_observation.bits.p3_layer := observationLayer
+  io.publication_commit_observation.bits.p3_stage_generation := stageGeneration(observationLayer)
+  io.publication_commit_observation.bits.page_ref := stagePageRef(observationLayer)
+  io.publication_commit_observation.bits.transaction_group_tag := stageTag(observationLayer)
+  io.publication_commit_observation.bits.valid_records := stageValidRecords(observationLayer)
+  when(io.publication_commit_observation.fire) {
+    observationCommitSent(observationLayer) := true.B
+  }
+
+  val memberObservationValid = anyObservationActive && observationCommitSent(observationLayer) &&
+    observationMemberOrdinal(observationLayer) < stageValidRecords(observationLayer)
+  io.publication_member_observation.valid := memberObservationValid && !observationMemberSent(observationLayer)
+  io.publication_member_observation.bits.entry_id := observationEntry.entry_id
+  io.publication_member_observation.bits.layer := observationEntry.layer
+  io.publication_member_observation.bits.kv_head := observationEntry.kv_head
+  io.publication_member_observation.bits.logical_position := observationEntry.logical_position
+  io.publication_member_observation.bits.payload_ref := observationEntry.payload_ref
+  io.publication_member_observation.bits.transaction_group_tag := stageTag(observationLayer)
+  io.publication_member_observation.bits.group_member_ordinal := observationMemberOrdinal(observationLayer)
+  io.authority_transition_out.valid := memberObservationValid && !observationAuthoritySent(observationLayer)
+  io.authority_transition_out.bits.entry_id := observationEntry.entry_id
+  io.authority_transition_out.bits.from_authority := RouteAAuthorityStateCode.Pending.U
+  io.authority_transition_out.bits.to_authority := RouteAAuthorityStateCode.Packed.U
+  io.authority_transition_out.bits.transaction_group_tag := stageTag(observationLayer)
+  when(io.publication_member_observation.fire) {
+    observationMemberSent(observationLayer) := true.B
+  }
+  when(io.authority_transition_out.fire) {
+    observationAuthoritySent(observationLayer) := true.B
+  }
+  val memberObservationDone = observationMemberSent(observationLayer) || io.publication_member_observation.fire
+  val authorityObservationDone = observationAuthoritySent(observationLayer) || io.authority_transition_out.fire
+  when(memberObservationValid && memberObservationDone && authorityObservationDone) {
+    val nextOrdinal = observationMemberOrdinal(observationLayer) + 1.U
+    observationMemberOrdinal(observationLayer) := nextOrdinal
+    observationMemberSent(observationLayer) := false.B
+    observationAuthoritySent(observationLayer) := false.B
+    when(nextOrdinal === stageValidRecords(observationLayer)) {
+      observationActive(observationLayer) := false.B
+      observationCommitSent(observationLayer) := false.B
+      membershipPresent(observationLayer) := 0.U
+    }
+  }
+  when(io.authority_transition_out.valid) {
+    assert(io.authority_transition_out.bits.from_authority === RouteAAuthorityStateCode.Pending.U)
+    assert(io.authority_transition_out.bits.to_authority === RouteAAuthorityStateCode.Packed.U)
+  }
+
   io.p3_observe_state := stageState(io.p3_observe_layer)
   io.p3_observe_generation := stageGeneration(io.p3_observe_layer)
   val stagesEmpty = VecInit((0 until stages).map(stage => stageState(stage) === StateEmpty)).asUInt.andR
-  val locallyDrained = stagesEmpty && !claimAckValid && !publicationActive &&
+  val locallyDrained = stagesEmpty && !observationActive.asUInt.orR && !claimAckValid && !publicationActive &&
     !publicationAwaitingVisibilityAck && !publishAckValid
   val initStatusPending = initialized && !initStatusReported
   io.component_status_out.valid := initStatusPending ||

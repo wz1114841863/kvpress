@@ -42,6 +42,8 @@ final class RouteALifecycleAdapterSpec extends AnyFunSpec with ChiselSim {
     bits.entry_id.poke(entry.U); bits.layer.poke(layer.U); bits.kv_head.poke(head.U); bits.logical_position.poke(position.U)
     bits.payload_ref.poke(position.U); bits.disposition.poke(retain.B)
     bits.transaction_identity.request_id.poke(rid.U); bits.transaction_identity.incarnation.poke(incarnation.U)
+    bits.admission_group_tag.poke(1.U); bits.admission_member_ordinal.poke(0.U)
+    bits.admission_group_valid_records.poke(1.U)
   }
 
   private def init(dut: RouteALifecycleAdapter): Unit = {
@@ -49,6 +51,7 @@ final class RouteALifecycleAdapterSpec extends AnyFunSpec with ChiselSim {
     dut.io.component_status_in.valid.poke(false.B); dut.io.authority_transition_in.valid.poke(false.B)
     dut.io.merge_ready_in.valid.poke(false.B); dut.io.merge_terminal_in.valid.poke(false.B)
     dut.io.hot_control_out.ready.poke(true.B); dut.io.authority_transition_out.ready.poke(true.B)
+    dut.io.admission_context_out.ready.poke(true.B)
     dut.io.merge_req.ready.poke(true.B); dut.io.attention_terminal_rsp.ready.poke(true.B)
     dut.io.session_retire_ack.ready.poke(true.B); dut.io.s2_service_req.ready.poke(true.B)
     dut.io.direct_pending_open.ready.poke(true.B); dut.io.metadata_publish_req.ready.poke(true.B)

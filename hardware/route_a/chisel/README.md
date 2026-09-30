@@ -142,6 +142,17 @@ empty-session retirement only; admission/publication/source/reclaim top wiring
 remains the later I2--I4 scope. See
 `analysis/rtl1_i1_init_drain_carrier_contract.md`.
 
+## RTL1-I2 admission/publication association
+
+RTL1-I2 joins an accepted RETAIN maturity's immutable record context with its
+matching `hot -> pending` handoff at R3, records explicit member ordinals for
+one already-formed `1..64` record group, and emits observations only after the
+existing atomic publication acknowledgement.  The group tag/ordinal/population
+remain opaque upstream association fields; this does not choose admission,
+page packing, payload storage, HBM traffic, scheduling, physical memory, or
+PPA.  The top wires R6--R3--R6 but intentionally lacks the later P3/R2
+producer path.  See `analysis/rtl1_i2_admission_publication_contract.md`.
+
 ## RTL1.2 R2 implementation
 
 `RouteACoreSideArbiter` now realizes the frozen R2 eligibility and grant

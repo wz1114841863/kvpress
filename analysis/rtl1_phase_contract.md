@@ -46,6 +46,17 @@ have drained. It proves safe startup and empty-session retirement only; I2
 must next bind admission/per-record publication authority without revisiting
 the frozen commit boundary.
 
+**RTL1-I2 admission/publication composition: complete at the R6--R3 boundary.**
+`analysis/rtl1_i2_admission_publication_contract.md` freezes and implements
+the immutable retained-record context, explicit non-contiguous member ledger,
+and post-atomic-publication observation sequence.  R6 supplies a context only
+with its matching `hot -> pending` transition; R3 validates it against a live
+claimed group and emits `pending -> packed` only after the existing nested
+publication acknowledgement.  The top contains that carrier wiring, but does
+not yet provide the R2/R1/P3 payload/claim/publish producer.  This is a
+control-association closure, not a new page-packing policy, payload movement,
+physical memory realization, timing/PPA result, or end-to-end top proof.
+
 ## RTL1.6.0 progress
 
 **RTL1.6.0 R4 packet/fault carrier closure: complete.**

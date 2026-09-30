@@ -48,11 +48,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     lifecycle.io.component_status_in <> status_collector.io.component_status_out
 
     hot.io.lifecycle_control_in <> lifecycle.io.hot_control_out
-    val r6_authority_transition_out = Wire(RouteAChannels.r6_authority_transition(p)); StructuralTieOff.sink(r6_authority_transition_out)
-    val r6_authority_transition_in = Wire(RouteAChannels.r6_authority_transition(p)); StructuralTieOff.source(r6_authority_transition_in)
     val r6_merge_ready = Wire(RouteAChannels.r6_merge_ready); StructuralTieOff.source(r6_merge_ready)
-    r6_authority_transition_out <> lifecycle.io.authority_transition_out
-    lifecycle.io.authority_transition_in <> r6_authority_transition_in
     lifecycle.io.merge_ready_in <> r6_merge_ready
     s2.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     s2.io.service_req_in <> lifecycle.io.s2_service_req
@@ -118,6 +114,14 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
 
     m2_p3.io.mem_init_done := core_memory.io.r1_init_complete
     m2_p3.io.drain_collection_enable := lifecycle.io.drain_collection_enable
+    // Only a retained hot->pending event joins its immutable post-decision
+    // context at R3.  Arrival/drop transitions remain local hot control facts.
+    val r6ToPending = lifecycle.io.authority_transition_out.bits.from_authority === RouteAAuthorityStateCode.Hot.U &&
+      lifecycle.io.authority_transition_out.bits.to_authority === RouteAAuthorityStateCode.Pending.U
+    m2_p3.io.admission_authority_in.valid := lifecycle.io.authority_transition_out.valid && r6ToPending
+    m2_p3.io.admission_authority_in.bits := lifecycle.io.authority_transition_out.bits
+    lifecycle.io.authority_transition_out.ready := Mux(r6ToPending, m2_p3.io.admission_authority_in.ready, true.B)
+    m2_p3.io.admission_context_in <> lifecycle.io.admission_context_out
     val p3_claim = Wire(RouteAChannels.p3_claim(p)); StructuralTieOff.source(p3_claim)
     val p3_claim_ack = Wire(RouteAChannels.p3_claim_ack(p)); StructuralTieOff.sink(p3_claim_ack)
     val p3_fragment = Wire(RouteAChannels.p3_pending_fragment(p)); StructuralTieOff.source(p3_fragment)
@@ -134,6 +138,11 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     m2_p3.io.m2_group_member_rsp_in <> m2_group_member_rsp
     m2_p3.io.p3_observe_layer := 0.U
     m2_p3.io.m2_publish_req_in <> lifecycle.io.metadata_publish_req
+    lifecycle.io.authority_transition_in <> m2_p3.io.authority_transition_out
+    // These are non-authoritative monitor attachment points.  I2's directed
+    // harness attaches to them; the inert production top has no group source.
+    m2_p3.io.publication_commit_observation.ready := true.B
+    m2_p3.io.publication_member_observation.ready := true.B
     page_manager.io.mem_init_done := core_memory.io.r1_init_complete
     page_manager.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     val page_allocation_req = Wire(RouteAChannels.page_allocation_req(p)); StructuralTieOff.source(page_allocation_req)

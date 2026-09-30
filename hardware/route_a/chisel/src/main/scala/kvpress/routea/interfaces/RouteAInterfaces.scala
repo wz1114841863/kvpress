@@ -55,6 +55,11 @@ final class FrontendLifecycleRequest(p: RouteASkeletonParameters) extends Bundle
   val payload_ref = UInt(RouteAAnchorWidths.PayloadRefWidth.W)
   val disposition = Bool()
   val transaction_identity = new TransactionIdentity
+  // These fields are meaningful only on an accepted RETAIN maturity.  They
+  // carry an upstream-frozen page-group association; R6 never chooses it.
+  val admission_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val admission_member_ordinal = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val admission_group_valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
 }
 
 final class RuntimeRetireRequest extends Bundle {

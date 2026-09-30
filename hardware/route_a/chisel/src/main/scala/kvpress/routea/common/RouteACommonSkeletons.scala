@@ -5,7 +5,11 @@ import chisel3.util.{MuxCase, PopCount, PriorityEncoder, RegEnable, UIntToOH, lo
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
 
-/** RTL1.0 structural shell only; hot-residency behavior begins in a later phase. */
+/**
+  * The hot-residency data path remains unimplemented.  RTL1-I2 permits this
+  * owner-local control acknowledgement so the already-decided lifecycle event
+  * can reach R3; accepting it neither stores a token nor services a request.
+  */
 final class RouteAHotSourcePath(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_hot_source_path"
 
@@ -13,7 +17,7 @@ final class RouteAHotSourcePath(p: RouteASkeletonParameters) extends Module {
     val lifecycle_control_in = Flipped(RouteAChannels.hot_control(p))
   })
 
-  StructuralTieOff.sink(io.lifecycle_control_in)
+  io.lifecycle_control_in.ready := true.B
 }
 
 /** RTL1.4 S2 control only; payload/sidecar macros and source mux remain unimplemented. */
