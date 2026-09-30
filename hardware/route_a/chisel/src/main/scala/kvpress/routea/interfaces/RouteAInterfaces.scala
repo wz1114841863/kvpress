@@ -107,6 +107,46 @@ final class R6AuthorityTransition(p: RouteASkeletonParameters) extends Bundle {
 }
 
 /**
+  * Immutable, post-decision association for one retained record.  The group
+  * fields are supplied by the admission owner; R3 validates and records them,
+  * but neither re-runs KVzap admission nor substitutes a contiguous span.
+  * This is a control association, never a payload transfer or authority copy.
+  */
+final class AdmissionContext(p: RouteASkeletonParameters) extends Bundle {
+  val entry_id = UInt(RouteAAnchorWidths.EntryIdWidth.W)
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val logical_position = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
+  val payload_ref = UInt(RouteAAnchorWidths.PayloadRefWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val group_member_ordinal = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val group_valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+}
+
+/**
+  * Control observation emitted only after the existing atomic metadata
+  * publication acknowledgement.  It is not a second publication command.
+  */
+final class PublicationCommitObservation(p: RouteASkeletonParameters) extends Bundle {
+  val p3_layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val p3_stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val page_ref = new PageRef
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+}
+
+/** Per-record observation associated with one completed publication group. */
+final class PublicationMemberObservation(p: RouteASkeletonParameters) extends Bundle {
+  val entry_id = UInt(RouteAAnchorWidths.EntryIdWidth.W)
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val logical_position = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
+  val payload_ref = UInt(RouteAAnchorWidths.PayloadRefWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val group_member_ordinal = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+}
+
+/**
   * Source-service evidence that the selected canonical source set has
   * completed all four GQA consumer updates and may enter R4. Bit positions are
   * the frozen hot/pending/packed order; there is deliberately no Full-KV bit.
@@ -405,6 +445,9 @@ object RouteAChannels {
   def component_status(p: RouteASkeletonParameters) = Decoupled(new ComponentStatus(p))
   def hot_control(p: RouteASkeletonParameters) = Decoupled(new HotControl(p))
   def r6_authority_transition(p: RouteASkeletonParameters) = Decoupled(new R6AuthorityTransition(p))
+  def admission_context(p: RouteASkeletonParameters) = Decoupled(new AdmissionContext(p))
+  def publication_commit_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationCommitObservation(p))
+  def publication_member_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationMemberObservation(p))
   def r6_merge_ready = Decoupled(new R6MergeReady)
   def s2_service_req = Decoupled(new S2ServiceRequest)
   def direct_pending_open(p: RouteASkeletonParameters) = Decoupled(new DirectPendingOpen(p))

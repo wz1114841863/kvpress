@@ -1,0 +1,49 @@
+{
+  "schema_version": "kvzap-route-a-rtl1-i2-admission-publication-manifest-1.0",
+  "status": "rtl1_i2_carrier_contract_frozen",
+  "scope": "Immutable post-decision admission context, bounded logical R3 membership association, and post-atomic-publication observation carriers only.",
+  "evidence_label": [
+    "pure synthesizable control contract",
+    "directed ChiselSim protocol evidence pending",
+    "no timing or throughput claim",
+    "no PPA claim",
+    "no model/GPU",
+    "no new A4 DSE"
+  ],
+  "carriers": [
+    {
+      "name": "AdmissionContext",
+      "producer": "hot/admission lifecycle owner",
+      "consumer": "route_a_m2_p3_wrapper",
+      "clock": "core_clk",
+      "reset": "destructive_reset",
+      "handshake": "ready_valid",
+      "fields": ["entry_id", "layer", "kv_head", "logical_position", "payload_ref", "transaction_group_tag", "group_member_ordinal", "group_valid_records"],
+      "parameter_sources": ["RouteAAnchorWidths", "transactionGroupTagWidth"],
+      "forbidden": ["contiguous-span inference", "payload transfer", "new admission decision", "new authority owner"]
+    },
+    {
+      "name": "PublicationCommitObservation",
+      "producer": "route_a_m2_p3_wrapper",
+      "consumer": "verification monitor / integration sink",
+      "clock": "core_clk",
+      "reset": "destructive_reset",
+      "handshake": "ready_valid",
+      "fields": ["p3_layer", "p3_stage_generation", "page_ref", "transaction_group_tag", "valid_records"],
+      "parameter_sources": ["RouteAAnchorWidths", "p3StageGenerationWidth", "transactionGroupTagWidth"],
+      "forbidden": ["second metadata commit", "authority handoff before atomic publication"]
+    },
+    {
+      "name": "PublicationMemberObservation",
+      "producer": "route_a_m2_p3_wrapper",
+      "consumer": "verification monitor",
+      "clock": "core_clk",
+      "reset": "destructive_reset",
+      "handshake": "ready_valid",
+      "fields": ["entry_id", "layer", "kv_head", "logical_position", "payload_ref", "transaction_group_tag", "group_member_ordinal"],
+      "parameter_sources": ["RouteAAnchorWidths", "transactionGroupTagWidth"],
+      "forbidden": ["member omission", "member duplication", "new authority owner"]
+    }
+  ],
+  "authority_boundary": "Only the existing metadata_publish_commit effects the pending-to-packed handoff. Observation carriers report that one event after the fact and never re-linearize it."
+}
