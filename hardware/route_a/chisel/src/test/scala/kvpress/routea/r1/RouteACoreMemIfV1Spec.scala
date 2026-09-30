@@ -145,11 +145,18 @@ final class RouteACoreMemIfV1Spec extends AnyFunSpec with ChiselSim {
       dut.io.external_core_mem_if_v1.response.ready.expect(true.B)
       dut.io.external_core_mem_if_v1.response.valid.poke(false.B)
 
-      // The same identity is retired for this adapter epoch, while the next
-      // incarnation is eligible after its predecessor's terminal outcome.
+      // Selected finite reuse permits the same identity after its terminal
+      // outcome.  The external-memory environment owns the accompanying
+      // no-old-response/wrap-quiescence assumption; R1 still rejects live RID
+      // overlap.
       driveRequest(dut, requestId = 0, incarnation = 1, kind = p.coreMemoryReadRequestCode, expectedFragments = 1)
       dut.io.core_mem_req_in.valid.poke(true.B)
-      dut.io.core_mem_req_in.ready.expect(false.B)
+      dut.io.core_mem_req_in.ready.expect(true.B)
+      dut.clock.step()
+      dut.io.core_mem_req_in.valid.poke(false.B)
+      driveResponse(dut, requestId = 0, incarnation = 1, fragmentIndex = 0, last = true, status = p.coreMemoryOkStatusCode)
+      dut.io.external_core_mem_if_v1.response.valid.poke(true.B); dut.io.core_mem_rsp.ready.poke(true.B); dut.clock.step()
+      dut.io.external_core_mem_if_v1.response.valid.poke(false.B)
       driveRequest(dut, requestId = 0, incarnation = 2, kind = p.coreMemoryReadRequestCode, expectedFragments = 1)
       acceptRequest(dut)
     }

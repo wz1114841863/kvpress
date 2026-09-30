@@ -44,6 +44,7 @@ final class RouteACoreSideArbiterSpec extends AnyFunSpec with ChiselSim {
     dut.io.candidate_in.valid.poke(false.B); dut.io.core_mem_req.ready.poke(false.B)
     dut.io.core_mem_rsp_in.valid.poke(false.B); dut.io.source_delivery_out.ready.poke(true.B)
     dut.io.drain_collection_enable.poke(false.B)
+    dut.io.reclaim_maintenance_enable.poke(false.B)
     dut.io.payload_drain_status_out.ready.poke(true.B)
     dut.io.descriptor_drain_status_out.ready.poke(true.B)
     driveCandidate(dut, p.r2S2FullClassCode, 0, 0, 0, commonRead)

@@ -160,6 +160,7 @@ final class RouteAComponentStatusCollectorSpec extends AnyFunSpec with ChiselSim
 
   private def init(dut: RouteAComponentStatusCollector): Unit = {
     dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
+    dut.io.reclaim_drain_restart.poke(false.B); dut.io.reclaim_final_drain_enable.poke(true.B)
     (0 until 8).foreach(source => driveSource(dut, source, valid = false, code = 0))
   }
 

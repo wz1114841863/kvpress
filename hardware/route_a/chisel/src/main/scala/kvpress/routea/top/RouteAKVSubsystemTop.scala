@@ -120,14 +120,15 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     merge.io.merge_req_in <> lifecycle.io.merge_req
     lifecycle.io.merge_terminal_in <> merge.io.merge_rsp_or_numeric_fault
 
-    val source_candidate_to_r2 = Wire(RouteAChannels.source_candidate(p))
-    StructuralTieOff.source(source_candidate_to_r2)
-    arbiter.io.candidate_in <> source_candidate_to_r2
+    // RTL1-I4: R5 is the only active source during retirement, and only after
+    // R6's permit.  R2 remains the unique core-side issuer for this carrier.
+    arbiter.io.candidate_in <> page_manager.io.reclaim_candidate_out
 
     core_memory.io.core_mem_req_in <> arbiter.io.core_mem_req
     arbiter.io.core_mem_rsp_in <> core_memory.io.core_mem_rsp
     external_core_mem_if_v1 <> core_memory.io.external_core_mem_if_v1
     arbiter.io.drain_collection_enable := lifecycle.io.drain_collection_enable
+    arbiter.io.reclaim_maintenance_enable := lifecycle.io.reclaim_maintenance_enable
     core_memory.io.r1_drain_permitted := status_collector.io.r1_drain_permitted
 
     // The R1 reset-epoch acknowledgement is the sole local init fanout. It
@@ -136,9 +137,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     s2.io.mem_init_done := core_memory.io.r1_init_complete
     direct_pending.io.mem_init_done := core_memory.io.r1_init_complete
 
-    val source_delivery = Wire(RouteAChannels.source_delivery(p))
-    source_delivery <> arbiter.io.source_delivery_out
-    StructuralTieOff.sink(source_delivery)
+    page_manager.io.reclaim_delivery_in <> arbiter.io.source_delivery_out
 
     m2_p3.io.mem_init_done := core_memory.io.r1_init_complete
     m2_p3.io.drain_collection_enable := lifecycle.io.drain_collection_enable
@@ -173,6 +172,8 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     m2_p3.io.publication_member_observation.ready := true.B
     page_manager.io.mem_init_done := core_memory.io.r1_init_complete
     page_manager.io.drain_collection_enable := lifecycle.io.drain_collection_enable
+    page_manager.io.reclaim_permit_in := lifecycle.io.reclaim_permit_out
+    lifecycle.io.r5_reclaim_complete_in := page_manager.io.reclaim_complete
     val page_allocation_req = Wire(RouteAChannels.page_allocation_req(p)); StructuralTieOff.source(page_allocation_req)
     val page_allocation_rsp = Wire(RouteAChannels.page_allocation_rsp(p)); StructuralTieOff.sink(page_allocation_rsp)
     val descriptor_maintenance_terminal = Wire(RouteAChannels.descriptor_maintenance_terminal(p)); StructuralTieOff.source(descriptor_maintenance_terminal)
@@ -185,6 +186,8 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
 
     merge.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     status_collector.io.drain_collection_enable := lifecycle.io.drain_collection_enable
+    status_collector.io.reclaim_drain_restart := lifecycle.io.reclaim_drain_restart
+    status_collector.io.reclaim_final_drain_enable := lifecycle.io.reclaim_final_drain_enable
     status_collector.io.status_sources(0) <> core_memory.io.component_status_out
     status_collector.io.status_sources(1) <> arbiter.io.payload_drain_status_out
     status_collector.io.status_sources(2) <> arbiter.io.descriptor_drain_status_out

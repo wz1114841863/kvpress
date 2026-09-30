@@ -216,6 +216,9 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
     val core_mem_rsp_in = Flipped(RouteAChannels.core_mem_rsp(p))
     val source_delivery_out = RouteAChannels.source_delivery(p)
     val drain_collection_enable = Input(Bool())
+    // R6 opens this only for the retirement descriptor-invalidating carrier.
+    // It never reopens ordinary data-path candidate ingress during drain.
+    val reclaim_maintenance_enable = Input(Bool())
     val payload_drain_status_out = RouteAChannels.component_status(p)
     val descriptor_drain_status_out = RouteAChannels.component_status(p)
   })
@@ -353,7 +356,10 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   })
   val inputEligible = candidateEligible(io.candidate_in.bits)
   val anyFreeSlot = !slotValid.reduce(_ && _)
-  io.candidate_in.ready := !io.drain_collection_enable && !selectedRequestStalled && inputEligible && anyFreeSlot && inputClassCount < p.r2CandidateSlotsPerClass.U
+  val reclaimDescriptorCandidate = io.candidate_in.bits.candidate_class === p.r2DescriptorMaintenanceClassCode.U
+  val candidateIngressAllowed = !io.drain_collection_enable ||
+    (io.reclaim_maintenance_enable && reclaimDescriptorCandidate)
+  io.candidate_in.ready := candidateIngressAllowed && !selectedRequestStalled && inputEligible && anyFreeSlot && inputClassCount < p.r2CandidateSlotsPerClass.U
 
   when(io.candidate_in.fire) {
     val freeIndex = PriorityEncoder(VecInit(slotValid.map(! _)))
@@ -389,10 +395,11 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
     outstandingValid(responseRid) := false.B
   }
 
-  // R2 is the only upstream issuer for R1. During retirement it first stops
-  // candidate acceptance but continues draining already accepted candidates
-  // and responses. The two named facts retain the frozen payload/descriptor
-  // distinction; no physical FIFO or service-rate interpretation is implied.
+  // R2 is the only upstream issuer for R1. During retirement ordinary
+  // candidate acceptance stops; I4 permits only R5's descriptor-invalidating
+  // maintenance carrier after R6's explicit permit. The two named facts retain
+  // the frozen payload/descriptor distinction; no physical FIFO or service-rate
+  // interpretation is implied.
   val payloadSlotsLive = VecInit((0 until totalSlots).map(slot =>
     slotValid(slot) && slots(slot).candidate_class =/= p.r2DescriptorMaintenanceClassCode.U,
   )).asUInt.orR
@@ -476,18 +483,11 @@ final class RouteACoreMemIfV1(p: RouteASkeletonParameters) extends Module {
   val writeExpectedFragments = Reg(Vec(requestIdSlots, UInt(p.coreMemoryFragmentCountWidth.W)))
   val writeNextFragment = Reg(Vec(requestIdSlots, UInt(p.coreMemoryFragmentIndexWidth.W)))
   val writeDataComplete = RegInit(VecInit(Seq.fill(requestIdSlots)(false.B)))
-  // Within one adapter epoch an identical identity is never reused after a
-  // terminal outcome. The finite incarnation namespace is renewed only by
-  // destructive reset plus the external adapter's init_ack handshake.
-  private val incarnationSlots = 1 << RouteAAnchorWidths.IncarnationWidth
-  val seenIncarnations = RegInit(VecInit(Seq.fill(requestIdSlots)(0.U(incarnationSlots.W))))
 
   val req = io.core_mem_req_in.bits
   val reqRequestId = req.transaction_identity.request_id
   val reqIncarnation = req.transaction_identity.incarnation
   val reqIdentitySlotBusy = readLive(reqRequestId) || writeLive(reqRequestId)
-  val reqIdentitySeen = seenIncarnations(reqRequestId)(reqIncarnation)
-  val reqIncarnationMask = UIntToOH(reqIncarnation, incarnationSlots)
   val readSlotsAvailable = PopCount(readLive) < maximumLiveReads.U
   val writeSlotsAvailable = PopCount(writeLive) < maximumLiveWrites.U
   val nonzeroExpectedCount = req.expected_fragment_count =/= 0.U
@@ -504,8 +504,8 @@ final class RouteACoreMemIfV1(p: RouteASkeletonParameters) extends Module {
     req.last === expectedWriteLast
 
   val legalIncomingRequest = initialized && (
-    (isReadRequest && !reqIdentitySlotBusy && !reqIdentitySeen && readSlotsAvailable && nonzeroExpectedCount) ||
-      (isWriteRequest && !reqIdentitySlotBusy && !reqIdentitySeen && writeSlotsAvailable && nonzeroExpectedCount) ||
+    (isReadRequest && !reqIdentitySlotBusy && readSlotsAvailable && nonzeroExpectedCount) ||
+      (isWriteRequest && !reqIdentitySlotBusy && writeSlotsAvailable && nonzeroExpectedCount) ||
       (isWriteData && legalWriteData)
   )
 
@@ -530,14 +530,12 @@ final class RouteACoreMemIfV1(p: RouteASkeletonParameters) extends Module {
       readIncarnation(reqRequestId) := reqIncarnation
       readExpectedFragments(reqRequestId) := req.expected_fragment_count
       readNextFragment(reqRequestId) := 0.U
-      seenIncarnations(reqRequestId) := seenIncarnations(reqRequestId) | reqIncarnationMask
     }.elsewhen(isWriteRequest) {
       writeLive(reqRequestId) := true.B
       writeIncarnation(reqRequestId) := reqIncarnation
       writeExpectedFragments(reqRequestId) := req.expected_fragment_count
       writeNextFragment(reqRequestId) := 0.U
       writeDataComplete(reqRequestId) := false.B
-      seenIncarnations(reqRequestId) := seenIncarnations(reqRequestId) | reqIncarnationMask
     }.otherwise { // legalWriteData is the only remaining legal operation.
       writeNextFragment(reqRequestId) := writeNextFragment(reqRequestId) + 1.U
       when(req.last) {

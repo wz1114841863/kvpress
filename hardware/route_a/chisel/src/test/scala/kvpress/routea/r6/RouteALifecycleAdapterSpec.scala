@@ -58,6 +58,7 @@ final class RouteALifecycleAdapterSpec extends AnyFunSpec with ChiselSim {
     dut.io.session_retire_ack.ready.poke(true.B); dut.io.s2_service_req.ready.poke(true.B)
     dut.io.direct_pending_open.ready.poke(true.B); dut.io.metadata_publish_req.ready.poke(true.B)
     dut.io.metadata_publish_ack_in.valid.poke(false.B)
+    dut.io.r5_reclaim_complete_in.poke(false.B)
     driveFrontend(dut, p.r6.sessionStartEventCode, contextTokens = 32768)
     dut.io.runtime_retire_req.bits.session_id.poke(false.B)
     dut.io.runtime_retire_req.bits.transaction_identity.request_id.poke(0.U)

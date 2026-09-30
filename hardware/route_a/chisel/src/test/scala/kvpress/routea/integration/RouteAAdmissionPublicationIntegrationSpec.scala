@@ -63,6 +63,7 @@ private final class RouteAAdmissionPublicationHarness(p: RouteASkeletonParameter
   r3.io.metadata_publish_visibility_apply.ready := io.visibility_apply_ready
   r3.io.metadata_publish_visibility_ack_in <> io.visibility_ack
   lifecycle.io.metadata_publish_ack_in <> r3.io.m2_publish_ack
+  lifecycle.io.r5_reclaim_complete_in := false.B
   StructuralTieOff.sink(r3.io.component_status_out)
 
   val r6ToPending = lifecycle.io.authority_transition_out.bits.from_authority === RouteAAuthorityStateCode.Hot.U &&
