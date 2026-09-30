@@ -16,10 +16,13 @@ deleting or rewriting frozen evidence.
 | 6 | [`architecture_spec.md`](architecture_spec.md) | **Current technical authority**: frozen pre-RTL interface contract. |
 
 **Current disposition:** A4.11--A4.14 research DSE is closed; Reviewer-02
-passed the R1--R6 architecture cross-closure. Gate-RTL0.1/0.2 have frozen the
-non-implementational hierarchy/unique-owner split and logical port/parameter
-matrix; the next artifact is assertion/scoreboard/coverage planning. This is not RTL
-implementation, PPA, controller, native-HBM, or performance authorization.
+passed the R1--R6 architecture cross-closure; Gate-RTL0 passed and RTL1
+owner-local control is complete. RTL1-I1--I3 have subsequently closed safe
+start/empty retirement, retained-record publication association, and the
+source-instance/R6 completion control association. Remaining work is the
+reviewed cross-owner closure for real ingress, authority/reclaim composition,
+and end-to-end verification—not PPA, controller, native-HBM, or performance
+work.
 
 ## Current architecture and verification records
 
@@ -35,6 +38,7 @@ Read these only when the corresponding level of detail is required:
 | Gate-RTL0 hierarchy and sole-owner split | [`rtl_entry_hierarchy_owner_contract.md`](rtl_entry_hierarchy_owner_contract.md), [`rtl_entry_interface_manifest.json`](rtl_entry_interface_manifest.json), and [`rtl_entry_hierarchy_owner_provenance_freeze.md`](rtl_entry_hierarchy_owner_provenance_freeze.md) |
 | Gate-RTL0 logical port/parameter matrix | [`rtl_entry_port_parameter_contract.md`](rtl_entry_port_parameter_contract.md), [`rtl_entry_port_parameter_provenance_freeze.md`](rtl_entry_port_parameter_provenance_freeze.md), and `tools/validate_rtl_entry_interface_manifest.py` |
 | Gate-RTL0 assertion/scoreboard/coverage plan | [`rtl_entry_assertion_verification_contract.md`](rtl_entry_assertion_verification_contract.md) and [`rtl_entry_assertion_matrix.json`](rtl_entry_assertion_matrix.json) |
+| RTL1-I3 source/R4/R6 control composition | [`rtl1_i3_delivery_source_contract.md`](rtl1_i3_delivery_source_contract.md) and [`rtl1_i3_interface_manifest.json`](rtl1_i3_interface_manifest.json) |
 
 The R1--R6 contracts and their Python references remain the precise executable
 attachments to the specification. They are not parallel living architecture

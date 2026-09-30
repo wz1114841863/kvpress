@@ -153,6 +153,21 @@ page packing, payload storage, HBM traffic, scheduling, physical memory, or
 PPA.  The top wires R6--R3--R6 but intentionally lacks the later P3/R2
 producer path.  See `analysis/rtl1_i2_admission_publication_contract.md`.
 
+## RTL1-I3 delivery/source/R6 completion association
+
+RTL1-I3 completes the frozen cross-owner control association from an R4
+consumer commit to its sole hot/direct-pending/S2 owner, then from that owner's
+generation-bearing four-consumer release to R6. `SourceCompletionPlan` gives
+R6 the immutable nonempty expected hot/pending/packed source set for a live
+attention identity; R6 emits the existing merge request only after exactly the
+planned releases. R2 still treats `delivery_context_ref` as opaque, and the
+R4 `SourceInstance` sideband stays separate from the frozen 128-bit header.
+
+The top's source-plan/packet ingress remains structurally inactive, and the
+test-only composition harness supplies directed logical stimuli. This is not a
+payload/source-mux implementation, numeric merge, source scheduling choice,
+or timing/PPA claim. See `analysis/rtl1_i3_delivery_source_contract.md`.
+
 ## RTL1.2 R2 implementation
 
 `RouteACoreSideArbiter` now realizes the frozen R2 eligibility and grant

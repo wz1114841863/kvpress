@@ -57,6 +57,23 @@ not yet provide the R2/R1/P3 payload/claim/publish producer.  This is a
 control-association closure, not a new page-packing policy, payload movement,
 physical memory realization, timing/PPA result, or end-to-end top proof.
 
+**RTL1-I3 delivery/source/R6 completion composition: complete for the frozen
+control association.** `analysis/rtl1_i3_delivery_source_contract.md` freezes
+R2's opaque delivery-context preservation, the separate R4 `SourceInstance`
+sideband, and the finite R6 expected/released source-completion association.
+The top demultiplexes an R4 commit to its sole hot/direct/S2 owner; only that
+owner can emit its exact generation-bearing release after four distinct
+consumer commits. R6 accepts all and only releases named by a nonempty
+per-request completion plan, then emits the existing merge request; the
+existing R4 fault/result path remains the only outward terminal route through
+R6. Directed tests cover all seven nonempty source masks, stale generation
+rejection, and a representative hot--R4--R6 fault path.
+
+This is a control-association closure only. Source-plan, packet, S2 fill,
+direct-record, and payload ingress remain top-inert; it selects no source
+scheduler/mux, source buffer payload, R4 arithmetic/precision, HBM/controller,
+cycle behavior, timing, throughput, PPA, or end-to-end Route-A proof.
+
 ## RTL1.6.0 progress
 
 **RTL1.6.0 R4 packet/fault carrier closure: complete.**

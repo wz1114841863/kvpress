@@ -1,6 +1,6 @@
 # RTL1-I3 — delivery-context and source-instance contract
 
-**Status:** `rtl1_i3_1_delivery_and_source_instance_behavior_complete; source-plan/R6 composition_pending`.
+**Status:** `complete_rtl1_i3_delivery_source_and_r6_completion_composition`.
 
 RTL1-I3 closes the transport association that was deliberately absent from the
 owner-local RTL1 modules.  It may preserve post-decision source facts and bind
@@ -27,10 +27,52 @@ can name a hot owner while also representing S2's finite slot or the direct
 endpoint.  It is not an address, payload pointer, or physical mux encoding.
 
 `R4SourceInstanceSideband` is separate from the frozen 128-bit R4 header and
-carries `{transaction_identity, SourceInstance, consumer_id}`.  Later I3
-behavior will require it to match the header source/consumer and return it
+carries `{transaction_identity, SourceInstance, consumer_id}`. I3 behavior
+requires it to match the header source/consumer and return it
 unchanged in `ConsumerPartialCommit`.  This carrier does not select numeric
 arithmetic or claim arbitrary source reordering.
+
+## R6 source-completion plan
+
+`SourceCompletionPlan` is an internal R6-facing, per-attention-identity
+control carrier. It contains a nonempty three-bit `source_presence` mask and
+one exact `SourceInstance` for each canonical kind in the frozen order
+`hot -> pending -> packed`. The mask is a source-set declaration, not a source
+scheduler, data mux, payload pointer, or a claim that arbitrary source order
+is numerically equivalent.
+
+R6 stores only the expected/released association for its existing finite
+attention tracker. A release is accepted only when all of the following hold:
+
+- the request identity names a live `AwaitMergeReady` tracker;
+- the completion plan was accepted for that tracker;
+- the corresponding mask bit is present and not previously released; and
+- the full `{kind, coordinate, generation}` exactly matches the planned
+  `SourceInstance`.
+
+When and only when the released bitmap equals the planned nonempty presence
+mask, R6 emits the already-frozen `merge_req`. This does not give R6 hot,
+pending, packed, S2, direct-endpoint, page, or payload ownership; it is a
+finite completion association. The prior external `R6MergeReady` carrier is
+kept as a compatibility input only for an identity without an accepted plan;
+the RTL1-I3 owner path uses the plan plus per-owner releases and cannot be
+short-circuited by that older carrier.
+
+## I3.2 implementation binding
+
+The production top demultiplexes `ConsumerPartialCommit` by the returned
+`SourceInstance.source_kind` to the sole owner: hot, direct-pending, or S2.
+The owner accepts four distinct matching consumers before emitting its one
+generation-bearing release. Those releases enter R6, which performs the exact
+plan comparison above before creating `merge_req`; the existing R4 boundary
+then maps an identity-matching numeric fault or replaceable result into R6's
+one outward terminal path.
+
+The production top deliberately leaves source-plan, hot-open, S2 fill, direct
+record, and R4 packet ingress structurally inactive: their future packet and
+payload adapters are not selected by I3. Test-only composition harnesses may
+drive them as directed logical stimuli. This is not a claim of source-mux
+realization, payload movement, numeric correctness, or an end-to-end top pass.
 
 ## Evidence boundary
 
@@ -53,5 +95,8 @@ matching consumers before a sole release.
 
 Directed tests cover R2 preservation under ready-low, R4 sideband mismatch
 rejection and round-trip, S2/direct current-generation filtering, and hot
-current-generation four-commit release. This is no-model, no-GPU, no-new-A4
-DSE, no timing/throughput/PPA, and no end-to-end RTL correctness evidence.
+current-generation four-commit release. I3.2 additionally checks every one of
+the seven nonempty hot/pending/packed masks, stale-generation release
+rejection, and a representative hot -> R4 -> R6 numeric-fault terminal path.
+This is no-model, no-GPU, no-new-A4 DSE, no timing/throughput/PPA, no numeric
+datapath evidence, and no end-to-end Route-A RTL correctness evidence.
