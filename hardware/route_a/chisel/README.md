@@ -16,7 +16,8 @@ and connections elaboratable before their owner phases add behavior.
 The top remains an integration skeleton: other than R1 it contains no
 functional architecture behavior, M2/P3 storage, controller, CDC, SVA/formal
 proof, or performance/PPA claim. RTL1.0.b provides the matrix/testbench/
-scoreboard attachment; R2--R6 remain in their later RTL1 phases.
+scoreboard attachment; this paragraph describes the bootstrap boundary rather
+than the later owner-local RTL1 implementations below.
 
 The structural top exposes `destructive_reset` as a single-bit carrier. R1
 uses it for local transaction state; it still does not select a subsystem
@@ -105,9 +106,10 @@ exact path, entry-point labels, observation, and forbidden adapter condition.
 It does not translate or execute any event before owner behavior exists.
 
 The SVA resource is a zero-port `bind` registry at the frozen top. It provides
-a stable formal/testbench attachment location. All non-R1 safety properties
-remain `owner_state_pending`, and every progress property remains
-`owner_event_pending`; environment fairness remains a testbench assumption
+a stable formal/testbench attachment location. R1/R2/R3/S2 and selected R6
+safety records are owner-Chisel-bound; descriptor reclaim and composed global
+authority remain pending, and every progress property remains
+`owner_event_pending`. Environment fairness remains a testbench assumption
 rather than DUT logic.
 
 ## RTL1.1 R1 implementation
@@ -173,7 +175,14 @@ new top-level ports nor a deployment outstanding limit. The top ties them
 inactive until lifecycle behavior is implemented. See
 `analysis/rtl1_5_r6_lifecycle_semantic_carrier_contract.md`.
 
-## Next authorized step
+RTL1.5 implements only the R6 module control: init/session gates, staged hot
+and authority events, finite attention identity/merge terminal association,
+and eight-member retirement drain acknowledgement. It does not turn the top
+into a source mux, create an authority table, connect R3 publication, or
+implement R4 numeric behavior. `RouteALifecycleAdapterSpec` is a no-model
+directed ChiselSim suite for this control scope.
+
+## Completed R3/R5 scope
 
 RTL1.3 now implements module-scoped R3/R5 control: P3 state/generation and
 completion bookkeeping, payload-durable association, two private M2 results,
@@ -182,5 +191,5 @@ handshake. It intentionally stores no P3 payload data and implements no M2
 macro or descriptor HBM command. `RouteAR3R5PublicationSpec` exercises the
 positive durable/publication order and negative P3/descriptor gates.
 
-Do not begin R4/R6 behavior, select a controller, or infer timing/PPA from
-the completed R1/R2/R3/R5 control bindings.
+R4 remains a replaceable boundary only. Do not select a controller or infer
+timing/PPA from the completed owner-local control bindings.

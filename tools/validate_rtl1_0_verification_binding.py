@@ -72,9 +72,14 @@ def validate(repo_root: Path, binding_path: Path) -> None:
     r2_bound = {"a_ready_low_nonmutation", "a_fifo_credit_losslessness"}
     r3_bound = {"a_metadata_publish_commit"}
     s2_bound = {"a_gqa_release"}
+    r6_bound = {
+        "a_numeric_fault_consumer",
+        "a_global_retirement_membership",
+        "a_exactly_one_terminal",
+    }
     for assertion_id, record in record_by_id.items():
         status = record.get("sva_binding_status")
-        if assertion_id in r1_bound | r2_bound | r3_bound | s2_bound:
+        if assertion_id in r1_bound | r2_bound | r3_bound | s2_bound | r6_bound:
             if status != "owner_chisel_assert_bound":
                 raise VerificationBindingError(f"owner Chisel assertion binding missing for {assertion_id}")
         elif status not in {"owner_state_pending", "owner_event_pending"}:
@@ -99,11 +104,14 @@ def validate(repo_root: Path, binding_path: Path) -> None:
     for assertion_id in s2_bound:
         if f"s2-chisel-assertion: {assertion_id}" not in sva_text:
             raise VerificationBindingError(f"SVA registry lacks RTL1.4 S2 binding marker for {assertion_id}")
+    for assertion_id in r6_bound:
+        if f"r6-chisel-assertion: {assertion_id}" not in sva_text:
+            raise VerificationBindingError(f"SVA registry lacks RTL1.5 R6 binding marker for {assertion_id}")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Validate RTL1.0.b matrix/SVA/oracle attachment plus RTL1.1/R2/R3/S2 Chisel-assert bindings; no model, GPU, formal proof, timing, or PPA claim."
+        description="Validate RTL1.0.b matrix/SVA/oracle attachment plus RTL1.1/R2/R3/S2/R6 Chisel-assert bindings; no model, GPU, formal proof, timing, or PPA claim."
     )
     parser.add_argument("--repo-root", type=Path, default=Path("."), help="Repository root (default: %(default)s).")
     parser.add_argument(
@@ -119,7 +127,7 @@ def main() -> int:
         validate(repo_root, binding_path)
     except (KeyError, OSError, TypeError, json.JSONDecodeError, VerificationBindingError) as error:
         raise SystemExit(f"RTL1.0.b verification binding failed: {error}") from error
-    print(f"RTL1.0/RTL1.1/RTL1.2/RTL1.3/RTL1.4 verification binding passed: {binding_path}")
+    print(f"RTL1.0/RTL1.1/RTL1.2/RTL1.3/RTL1.4/RTL1.5 verification binding passed: {binding_path}")
     return 0
 
 

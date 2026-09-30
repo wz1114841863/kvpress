@@ -1,13 +1,14 @@
 package kvpress.routea.incremental
 
 import chisel3._
-import chisel3.util.{Cat, PriorityEncoder, RegEnable, log2Ceil}
+import chisel3.util.{Cat, MuxCase, PriorityEncoder, RegEnable, log2Ceil}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteADescriptorOperationKind, RouteAM2GroupMember, RouteAPublicationStatus, RouteASkeletonParameters}
 
 /**
-  * RTL1.0 structural shell only. Authority, terminal association, and global
-  * retirement behavior remain unimplemented until their respective RTL1 phases.
+  * RTL1.5 R6 lifecycle control. It owns only session/attention/terminal/drain
+  * associations; long-lived hot/pending/packed state remains at its frozen
+  * owners and crosses this wrapper as event-level authority transitions.
   */
 final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_lifecycle_adapter"
@@ -30,19 +31,259 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     val metadata_publish_ack_in = Flipped(RouteAChannels.metadata_publish_ack(p))
   })
 
-  StructuralTieOff.sink(io.frontend_lifecycle_req)
-  StructuralTieOff.sink(io.runtime_retire_req)
-  StructuralTieOff.source(io.attention_terminal_rsp)
-  StructuralTieOff.source(io.session_retire_ack)
-  StructuralTieOff.sink(io.component_status_in)
-  StructuralTieOff.source(io.hot_control_out)
-  StructuralTieOff.source(io.authority_transition_out)
-  StructuralTieOff.sink(io.authority_transition_in)
-  StructuralTieOff.sink(io.merge_ready_in)
+  private val StateReset = 0.U(3.W)
+  private val StateIdle = 1.U(3.W)
+  private val StateActive = 2.U(3.W)
+  private val StateRetiring = 3.U(3.W)
+  private val StateRetired = 4.U(3.W)
+  private val AwaitMergeReady = 0.U(1.W)
+  private val MergeIssued = 1.U(1.W)
+  private val trackerEntries = p.r6.attentionTrackerEntries
+  private val trackerIndexWidth = math.max(1, log2Ceil(trackerEntries))
+
+  val state = RegInit(StateReset)
+  val initAcks = RegInit(0.U(3.W))
+  val drainAcks = RegInit(0.U(8.W))
+  val retireIdentity = Reg(new TransactionIdentity)
+
+  // One lifecycle event remains stable until both independently-owned local
+  // observations have accepted it. This is event staging, not a token table.
+  val controlPending = RegInit(false.B)
+  val controlIsArrival = RegInit(false.B)
+  val controlEntryId = Reg(UInt(RouteAAnchorWidths.EntryIdWidth.W))
+  val controlLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
+  val controlHead = Reg(UInt(RouteAAnchorWidths.KvHeadWidth.W))
+  val controlPosition = Reg(UInt(RouteAAnchorWidths.LogicalPositionWidth.W))
+  val controlRetain = RegInit(false.B)
+  val hotControlSent = RegInit(false.B)
+  val authoritySent = RegInit(false.B)
+
+  val attentionValid = RegInit(VecInit(Seq.fill(trackerEntries)(false.B)))
+  val attentionIdentity = Reg(Vec(trackerEntries, new TransactionIdentity))
+  val attentionStage = RegInit(VecInit(Seq.fill(trackerEntries)(AwaitMergeReady)))
+  val mergePending = RegInit(false.B)
+  val mergeIdentity = Reg(new TransactionIdentity)
+  val mergePresence = Reg(UInt(RouteAAnchorWidths.SourcePresenceWidth.W))
+  val mergeTrackerSlot = Reg(UInt(trackerIndexWidth.W))
+  val terminalPending = RegInit(false.B)
+  val terminalIdentity = Reg(new TransactionIdentity)
+  val terminalStatus = Reg(UInt(RouteAAnchorWidths.TerminalStatusWidth.W))
+  val terminalTrackerSlot = Reg(UInt(trackerIndexWidth.W))
+
+  private def identityMatches(left: TransactionIdentity, right: TransactionIdentity): Bool =
+    left.asUInt === right.asUInt
+
+  val status = io.component_status_in.bits
+  val initCode = status.acknowledgement_name === p.r6.memInitDoneStatusCode.U ||
+    status.acknowledgement_name === p.r6.m2P3InitDoneStatusCode.U ||
+    status.acknowledgement_name === p.r6.pageManagerInitDoneStatusCode.U
+  val drainCode = status.acknowledgement_name === p.r6.r1MemoryDrainedStatusCode.U ||
+    status.acknowledgement_name === p.r6.r2PayloadDrainedStatusCode.U ||
+    status.acknowledgement_name === p.r6.r2DescriptorDrainedStatusCode.U ||
+    status.acknowledgement_name === p.r6.r3M2P3DrainedStatusCode.U ||
+    status.acknowledgement_name === p.r6.r5PageManagerDrainedStatusCode.U ||
+    status.acknowledgement_name === p.r6.s2GqaDrainedStatusCode.U ||
+    status.acknowledgement_name === p.r6.directPendingDrainedStatusCode.U ||
+    status.acknowledgement_name === p.r6.mergeDrainedStatusCode.U
+  io.component_status_in.ready := status.asserted &&
+    ((state === StateReset && initCode) || (state === StateRetiring && drainCode))
+  when(io.component_status_in.fire && state === StateReset) {
+    val initBit = WireDefault(0.U(3.W))
+    when(status.acknowledgement_name === p.r6.memInitDoneStatusCode.U) { initBit := "b001".U }
+    when(status.acknowledgement_name === p.r6.m2P3InitDoneStatusCode.U) { initBit := "b010".U }
+    when(status.acknowledgement_name === p.r6.pageManagerInitDoneStatusCode.U) { initBit := "b100".U }
+    val nextInitAcks = initAcks | initBit
+    initAcks := nextInitAcks
+    when(nextInitAcks === "b111".U) { state := StateIdle }
+  }
+  when(io.component_status_in.fire && state === StateRetiring) {
+    val drainBit = WireDefault(0.U(8.W))
+    when(status.acknowledgement_name === p.r6.r1MemoryDrainedStatusCode.U) { drainBit := "b00000001".U }
+    when(status.acknowledgement_name === p.r6.r2PayloadDrainedStatusCode.U) { drainBit := "b00000010".U }
+    when(status.acknowledgement_name === p.r6.r2DescriptorDrainedStatusCode.U) { drainBit := "b00000100".U }
+    when(status.acknowledgement_name === p.r6.r3M2P3DrainedStatusCode.U) { drainBit := "b00001000".U }
+    when(status.acknowledgement_name === p.r6.r5PageManagerDrainedStatusCode.U) { drainBit := "b00010000".U }
+    when(status.acknowledgement_name === p.r6.s2GqaDrainedStatusCode.U) { drainBit := "b00100000".U }
+    when(status.acknowledgement_name === p.r6.directPendingDrainedStatusCode.U) { drainBit := "b01000000".U }
+    when(status.acknowledgement_name === p.r6.mergeDrainedStatusCode.U) { drainBit := "b10000000".U }
+    drainAcks := drainAcks | drainBit
+  }
+
+  val lifecycle = io.frontend_lifecycle_req.bits
+  val isSessionStart = lifecycle.event_kind === p.r6.sessionStartEventCode.U
+  val isArrival = lifecycle.event_kind === p.r6.kvArrivalEventCode.U
+  val isMaturity = lifecycle.event_kind === p.r6.maturityDispositionEventCode.U
+  val isAttention = lifecycle.event_kind === p.r6.attentionServiceEventCode.U
+  val derivedEntryId = lifecycle.logical_position * 288.U + lifecycle.layer * 8.U + lifecycle.kv_head
+  val anchorCoordinate = lifecycle.layer < 36.U && lifecycle.kv_head < 8.U &&
+    lifecycle.entry_id === derivedEntryId
+  val freeMask = VecInit((0 until trackerEntries).map(slot => !attentionValid(slot)))
+  val freeAttentionSlot = PriorityEncoder(freeMask)
+  val attentionIdentitySeen = VecInit((0 until trackerEntries).map(slot =>
+    attentionValid(slot) && identityMatches(attentionIdentity(slot), lifecycle.transaction_identity),
+  )).asUInt.orR
+  val sessionStartLegal = state === StateIdle && !lifecycle.session_id &&
+    lifecycle.context_tokens === 32768.U
+  val controlLegal = state === StateActive && !controlPending && !lifecycle.session_id && anchorCoordinate
+  val attentionLegal = state === StateActive && !lifecycle.session_id && anchorCoordinate &&
+    freeMask.asUInt.orR && !attentionIdentitySeen
+  io.frontend_lifecycle_req.ready := MuxCase(false.B, Seq(
+    isSessionStart -> sessionStartLegal,
+    isArrival -> controlLegal,
+    isMaturity -> controlLegal,
+    isAttention -> attentionLegal,
+  ))
+  when(io.frontend_lifecycle_req.fire) {
+    when(isSessionStart) {
+      state := StateActive
+      drainAcks := 0.U
+    }.elsewhen(isArrival || isMaturity) {
+      controlPending := true.B
+      controlIsArrival := isArrival
+      controlEntryId := lifecycle.entry_id
+      controlLayer := lifecycle.layer
+      controlHead := lifecycle.kv_head
+      controlPosition := lifecycle.logical_position
+      controlRetain := lifecycle.disposition
+      hotControlSent := false.B
+      authoritySent := false.B
+    }.elsewhen(isAttention) {
+      attentionValid(freeAttentionSlot) := true.B
+      attentionIdentity(freeAttentionSlot) := lifecycle.transaction_identity
+      attentionStage(freeAttentionSlot) := AwaitMergeReady
+    }
+  }
+
+  io.hot_control_out.valid := controlPending && !hotControlSent
+  io.hot_control_out.bits.control_kind := Mux(controlIsArrival, p.r6.hotArrivalControlCode.U,
+    Mux(controlRetain, p.r6.hotRetainControlCode.U, p.r6.hotDropControlCode.U))
+  io.hot_control_out.bits.entry_id := controlEntryId
+  io.hot_control_out.bits.layer := controlLayer
+  io.hot_control_out.bits.kv_head := controlHead
+  io.hot_control_out.bits.logical_position := controlPosition
+  io.hot_control_out.bits.disposition := controlRetain
+
+  io.authority_transition_out.valid := controlPending && !authoritySent
+  io.authority_transition_out.bits.entry_id := controlEntryId
+  io.authority_transition_out.bits.from_authority := Mux(controlIsArrival,
+    RouteAAuthorityStateCode.None.U, RouteAAuthorityStateCode.Hot.U)
+  io.authority_transition_out.bits.to_authority := Mux(controlIsArrival,
+    RouteAAuthorityStateCode.Hot.U,
+    Mux(controlRetain, RouteAAuthorityStateCode.Pending.U, RouteAAuthorityStateCode.None.U))
+  io.authority_transition_out.bits.transaction_group_tag := 0.U
+  when(controlPending) {
+    when(io.hot_control_out.fire) { hotControlSent := true.B }
+    when(io.authority_transition_out.fire) { authoritySent := true.B }
+    val hotDone = hotControlSent || io.hot_control_out.fire
+    val authorityDone = authoritySent || io.authority_transition_out.fire
+    when(hotDone && authorityDone) { controlPending := false.B }
+  }
+
+  val authorityIn = io.authority_transition_in.bits
+  val publicationTransition = authorityIn.from_authority === RouteAAuthorityStateCode.Pending.U &&
+    authorityIn.to_authority === RouteAAuthorityStateCode.Packed.U
+  io.authority_transition_in.ready := (state === StateActive || state === StateRetiring) && publicationTransition
+  when(io.authority_transition_in.fire) {
+    // a_authority_conservation: the only R3-confirmed incoming handoff is pending -> packed.
+    assert(publicationTransition)
+  }
+
+  val mergeReady = io.merge_ready_in.bits
+  val mergeReadyMatches = VecInit((0 until trackerEntries).map(slot =>
+    attentionValid(slot) && attentionStage(slot) === AwaitMergeReady &&
+      identityMatches(attentionIdentity(slot), mergeReady.transaction_identity),
+  ))
+  val mergeReadySlot = PriorityEncoder(mergeReadyMatches)
+  io.merge_ready_in.ready := (state === StateActive || state === StateRetiring) && !mergePending &&
+    mergeReady.source_presence.orR && mergeReadyMatches.asUInt.orR
+  when(io.merge_ready_in.fire) {
+    mergePending := true.B
+    mergeIdentity := mergeReady.transaction_identity
+    mergePresence := mergeReady.source_presence
+    mergeTrackerSlot := mergeReadySlot
+  }
+
+  io.merge_req.valid := mergePending
+  io.merge_req.bits.transaction_identity := mergeIdentity
+  io.merge_req.bits.source_presence := mergePresence
+  when(io.merge_req.fire) {
+    attentionStage(mergeTrackerSlot) := MergeIssued
+    mergePending := false.B
+  }
+
+  val mergeTerminal = io.merge_terminal_in.bits
+  val terminalMatches = VecInit((0 until trackerEntries).map(slot =>
+    attentionValid(slot) && attentionStage(slot) === MergeIssued &&
+      identityMatches(attentionIdentity(slot), mergeTerminal.transaction_identity),
+  ))
+  val terminalMatchSlot = PriorityEncoder(terminalMatches)
+  val terminalStatusKnown = mergeTerminal.status === p.coreMemoryOkStatusCode.U ||
+    mergeTerminal.status === p.coreMemoryFaultStatusCode.U
+  io.merge_terminal_in.ready := (state === StateActive || state === StateRetiring) && !terminalPending &&
+    terminalStatusKnown && terminalMatches.asUInt.orR
+  when(io.merge_terminal_in.fire) {
+    when(mergeTerminal.status === p.coreMemoryFaultStatusCode.U) {
+      // a_numeric_fault_consumer: fault is accepted only after merge-ready/GQA completion.
+      assert(terminalMatches.asUInt.orR && !terminalPending)
+    }
+    terminalPending := true.B
+    terminalIdentity := mergeTerminal.transaction_identity
+    terminalStatus := mergeTerminal.status
+    terminalTrackerSlot := terminalMatchSlot
+  }
+
+  io.attention_terminal_rsp.valid := terminalPending
+  io.attention_terminal_rsp.bits.transaction_identity := terminalIdentity
+  io.attention_terminal_rsp.bits.terminal_status := terminalStatus
+  when(io.attention_terminal_rsp.fire) {
+    // a_exactly_one_terminal: only the one matching live tracker may retire here.
+    assert(attentionValid(terminalTrackerSlot) && attentionStage(terminalTrackerSlot) === MergeIssued)
+    attentionValid(terminalTrackerSlot) := false.B
+    terminalPending := false.B
+  }
+
+  io.runtime_retire_req.ready := state === StateActive && !io.runtime_retire_req.bits.session_id
+  when(io.runtime_retire_req.fire) {
+    retireIdentity := io.runtime_retire_req.bits.transaction_identity
+    drainAcks := 0.U
+    state := StateRetiring
+  }
+  val trackerEmpty = !attentionValid.asUInt.orR
+  val retireReady = state === StateRetiring && trackerEmpty && !controlPending && !mergePending &&
+    !terminalPending && drainAcks === "hff".U
+  io.session_retire_ack.valid := retireReady
+  io.session_retire_ack.bits.session_id := false.B
+  io.session_retire_ack.bits.transaction_identity := retireIdentity
+  when(io.session_retire_ack.fire) {
+    // a_global_retirement_membership: this is the only R6 global-drain acknowledgement point.
+    assert(trackerEmpty && drainAcks === "hff".U)
+    state := StateRetired
+  }
+
+  // Decoupled outputs are state/payload-stable while their peer holds ready low.
+  val heldHot = RegEnable(io.hot_control_out.bits, io.hot_control_out.valid && !io.hot_control_out.ready)
+  when(RegNext(io.hot_control_out.valid && !io.hot_control_out.ready, false.B)) {
+    assert(io.hot_control_out.bits.asUInt === heldHot.asUInt)
+  }
+  val heldAuthority = RegEnable(io.authority_transition_out.bits, io.authority_transition_out.valid && !io.authority_transition_out.ready)
+  when(RegNext(io.authority_transition_out.valid && !io.authority_transition_out.ready, false.B)) {
+    assert(io.authority_transition_out.bits.asUInt === heldAuthority.asUInt)
+  }
+  val heldMerge = RegEnable(io.merge_req.bits, io.merge_req.valid && !io.merge_req.ready)
+  when(RegNext(io.merge_req.valid && !io.merge_req.ready, false.B)) {
+    assert(io.merge_req.bits.asUInt === heldMerge.asUInt)
+  }
+  val heldTerminal = RegEnable(io.attention_terminal_rsp.bits, io.attention_terminal_rsp.valid && !io.attention_terminal_rsp.ready)
+  when(RegNext(io.attention_terminal_rsp.valid && !io.attention_terminal_rsp.ready, false.B)) {
+    assert(io.attention_terminal_rsp.bits.asUInt === heldTerminal.asUInt)
+  }
+  val heldRetire = RegEnable(io.session_retire_ack.bits, io.session_retire_ack.valid && !io.session_retire_ack.ready)
+  when(RegNext(io.session_retire_ack.valid && !io.session_retire_ack.ready, false.B)) {
+    assert(io.session_retire_ack.bits.asUInt === heldRetire.asUInt)
+  }
+
   StructuralTieOff.source(io.s2_service_req)
   StructuralTieOff.source(io.direct_pending_open)
-  StructuralTieOff.source(io.merge_req)
-  StructuralTieOff.sink(io.merge_terminal_in)
   StructuralTieOff.source(io.metadata_publish_req)
   StructuralTieOff.sink(io.metadata_publish_ack_in)
 }

@@ -2,10 +2,10 @@
 
 ## Status and boundary
 
-**Status:** `complete_nonbehavioral_r6_carrier_and_parameter_closure; rtl1_5_control_pending`.
+**Status:** `complete_r6_carrier_and_module_scope_control_closure; top_integration_pending`.
 
-This record materializes only the local Chisel carriers required before the
-frozen R6 lifecycle adapter can gain control behavior. It consumes the
+This record materializes the local Chisel carriers and module-scope control
+required by the frozen R6 lifecycle adapter. It consumes the
 existing score-free lifecycle, authority, merge-terminal, reset/init, and
 retirement contracts. It changes no top-level environment port and makes no
 controller/FSM, payload storage, source-mux, merge datapath, timing,
@@ -61,17 +61,46 @@ Full-KV bit, fallback, source reordering, payload, or numeric field exists.
 Only after this carrier may R6 issue the existing `merge_req`. R4 still owns
 the replaceable numeric boundary and R6 alone consumes its terminal/fault.
 
+## RTL1.5 module-control binding
+
+`RouteALifecycleAdapter` now has only the finite R6 control state: reset/init
+acknowledgements, session state, staged lifecycle event delivery, a
+parameterized live-attention identity tracker, merge-ready-to-merge-request
+association, one outward terminal staging register, and the eight-member
+retirement drain predicate. It explicitly does **not** create a permanent
+per-token authority table. Long-lived hot/pending/packed residency remains at
+the hot/M2/R3/R5 owners; R6 carries and checks only the selected event-level
+handoff forms.
+
+An attention identity becomes merge-eligible only after accepted
+`r6_merge_ready`; the existing R4 terminal is then accepted exactly once and
+becomes one outward ok/fault response. Thus a numeric fault cannot terminalize
+before the source service has reported the four-commit condition, and no
+Full-KV fallback or retry exists. Retire stops new frontend lifecycle accepts,
+but permits already live attention and named R1/R2/R3/R5/S2/direct/R4 drain
+members to complete before the matching acknowledgement.
+
+`RouteALifecycleAdapterSpec` is the directed no-model module check. It covers
+init gating, ready-low event stability, authority-transition forms, nonempty
+canonical merge-ready, unique terminal delivery, stale duplicate rejection,
+all eight retirement members, and local destructive-reset reinitialization.
+The Chisel assertions bind `a_numeric_fault_consumer`,
+`a_global_retirement_membership`, and `a_exactly_one_terminal`. The full
+cross-owner `a_authority_conservation` remains a composed scoreboard/SVA
+property until R3/source/top integration exists; this module does not falsely
+claim to prove every long-lived token's distributed residency.
+
 ## Integration status
 
 The new carrier endpoints are module-local and top-tied inactive in RTL1.5.0.
 They do not connect R3 publication, source service, S2/direct, or R4 at the
-top. RTL1.5 behavior may test them directly at the lifecycle owner. A later
+top. RTL1.5 tests them directly at the lifecycle owner. A later
 top-integration phase must connect the named owners without moving state into
 the top shell or changing the frozen architecture ports.
 
 ## Evidence boundary
 
-This closure is synthesizable-interface preparation plus compile/elaboration
-evidence only. It establishes neither R6 behavioral correctness, RTL proof,
-source service, physical storage/controller behavior, latency, frequency,
-energy, area, nor speedup.
+This closure is no-model module-scope control evidence, not an RTL proof or
+complete Route-A behavior claim. It establishes neither source service,
+top-level integration, physical storage/controller behavior, latency,
+frequency, energy, area, nor speedup.

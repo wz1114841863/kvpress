@@ -1,6 +1,6 @@
 # RTL1 — Interface / Control Skeleton Bring-up
 
-**Status:** `rtl1_3_r3_r5_publication_control_complete_at_module_scope; rtl1_4_s2_direct_control_complete; rtl1_5_0_r6_carriers_complete; top_integration_and_remaining_owner_phases_pending`.
+**Status:** `rtl1_3_r3_r5_publication_control_complete_at_module_scope; rtl1_4_s2_direct_control_complete; rtl1_5_r6_lifecycle_control_complete_at_module_scope; top_integration_and_remaining_owner_phases_pending`.
 
 RTL1 may not change frozen owners, ports, assertions, oracles, pruning,
 admission, scheduler semantics, page size, S2 count, outstanding bounds, merge
@@ -27,8 +27,26 @@ authority-transition and GQA-complete merge-ready carriers, and requires
 explicit logical event/status/control encodings plus a parameterized
 attention-tracker capacity at elaboration. No top-level port changes, source
 mux, R3/R4 integration, lifecycle behavior, physical queue, controller, or
-deployment outstanding bound is selected. The top ties the new local endpoints
-inactive until `route_a_lifecycle_adapter` gains RTL1.5 behavior.
+deployment outstanding bound is selected. The top continues to tie the new
+local endpoints inactive; RTL1.5 behavior is verified at the lifecycle module
+until a later top-integration phase connects their frozen owners.
+
+## RTL1.5 progress
+
+**RTL1.5 R6 lifecycle/terminal/retirement control: complete at module scope.**
+The lifecycle adapter now gates session start on three named init
+acknowledgements, stages score-free arrival/maturity control and the matching
+event-level authority transition, tracks a parameterized finite set of live
+attention identities, accepts R4 terminal only after GQA-complete merge-ready,
+and returns retirement acknowledgement only after terminal delivery and all
+eight named drains. It clears local reachability on destructive reset.
+
+The result is deliberately not top integration: it does not route an actual
+source mux, discover source membership, create publication requests, duplicate
+M2/P3 authority state, or implement R4 numeric logic. `a_numeric_fault_consumer`,
+`a_global_retirement_membership`, and `a_exactly_one_terminal` are
+owner-Chisel-bound; global per-token authority conservation and both fairness
+progress properties remain composed verification obligations.
 
 ## RTL1.4.0 progress
 
