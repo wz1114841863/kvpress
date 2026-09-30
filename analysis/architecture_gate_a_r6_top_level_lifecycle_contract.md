@@ -86,10 +86,12 @@ terminal fault, with no retry, Full-KV fallback, mask/admission change, or
 early source release. No path may retry, substitute
 Full-KV, drop/reorder work, or alter mask/admission semantics.
 
-After destructive reset, `session_start_req` waits for `mem_init_done`,
-`m2_p3_init_done`, and `page_manager_init_done`. S2/direct/merge local
-associations reset in `core_clk`; R1 still requires external suppression of
-pre-reset responses. Reset does not erase HBM or relax authority/generation.
+After destructive reset, `session_start_req` waits for R1's named
+`mem_init_done`, `m2_p3_init_done`, and `page_manager_init_done`. The first is
+emitted only after the dedicated external R1 `init_ack` handshake, never from
+ordinary response traffic. S2/direct/merge local associations reset in
+`core_clk`; R1 still requires external suppression of pre-reset responses.
+Reset does not erase HBM or relax authority/generation.
 
 Retire stops new arrival/maturity/attention acceptance. Existing attention can
 reach its single terminal result. Matching `session_retire_ack` waits for the

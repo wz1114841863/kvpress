@@ -28,6 +28,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
 
   private def initR3(dut: RouteAM2P3Wrapper): Unit = {
     dut.io.mem_init_done.poke(false.B); dut.io.p3_observe_layer.poke(0.U)
+    dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
     dut.io.p3_claim_in.valid.poke(false.B); dut.io.p3_claim_ack.ready.poke(true.B)
     dut.io.p3_pending_fragment_in.valid.poke(false.B); dut.io.p3_sidecar_bind_in.valid.poke(false.B)
     dut.io.p3_packed_write_issue_in.valid.poke(false.B); dut.io.p3_packed_write_terminal_in.valid.poke(false.B)
@@ -108,6 +109,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
 
   private def initR5(dut: RouteAPageManager): Unit = {
     dut.io.mem_init_done.poke(false.B); dut.io.page_allocation_req_in.valid.poke(false.B)
+    dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
     dut.io.page_allocation_rsp.ready.poke(true.B); dut.io.descriptor_maintenance_terminal_in.valid.poke(false.B)
     dut.io.metadata_publish_visibility_in.valid.poke(false.B); dut.io.metadata_publish_visibility_ack.ready.poke(true.B)
     dut.io.mem_init_done.poke(true.B); dut.clock.step()

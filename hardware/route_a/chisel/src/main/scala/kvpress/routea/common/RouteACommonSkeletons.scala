@@ -22,6 +22,7 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
 
   val io = IO(new Bundle {
     val mem_init_done = Input(Bool())
+    val drain_collection_enable = Input(Bool())
     val service_req_in = Flipped(RouteAChannels.s2_service_req)
     val s2_fill_open_in = Flipped(RouteAChannels.s2_fill_open(p))
     val s2_fill_terminal_in = Flipped(RouteAChannels.s2_fill_terminal(p))
@@ -31,6 +32,7 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     val s2_observe_slot = Input(UInt(RouteAAnchorWidths.S2SlotWidth.W))
     val s2_observe_state = Output(UInt(3.W))
     val s2_observe_generation = Output(UInt(p.sourceGenerationWidth.W))
+    val component_status_out = RouteAChannels.component_status(p)
   })
 
   private val slots = 2
@@ -161,6 +163,10 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
 
   io.s2_observe_state := slotState(io.s2_observe_slot)
   io.s2_observe_generation := slotGeneration(io.s2_observe_slot)
+  val locallyDrained = VecInit((0 until slots).map(slot => slotState(slot) === StateEmpty)).asUInt.andR
+  io.component_status_out.valid := initialized && io.drain_collection_enable && locallyDrained
+  io.component_status_out.bits.acknowledgement_name := p.r6.s2GqaDrainedStatusCode.U
+  io.component_status_out.bits.asserted := true.B
 }
 
 /** RTL1.2 R2 eligibility, lossless candidate storage, and accepted-grant control. */
@@ -172,6 +178,9 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
     val core_mem_req = RouteAChannels.core_mem_req(p)
     val core_mem_rsp_in = Flipped(RouteAChannels.core_mem_rsp(p))
     val source_delivery_out = RouteAChannels.source_delivery(p)
+    val drain_collection_enable = Input(Bool())
+    val payload_drain_status_out = RouteAChannels.component_status(p)
+    val descriptor_drain_status_out = RouteAChannels.component_status(p)
   })
 
   private val readGroups = 3
@@ -307,7 +316,7 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   })
   val inputEligible = candidateEligible(io.candidate_in.bits)
   val anyFreeSlot = !slotValid.reduce(_ && _)
-  io.candidate_in.ready := !selectedRequestStalled && inputEligible && anyFreeSlot && inputClassCount < p.r2CandidateSlotsPerClass.U
+  io.candidate_in.ready := !io.drain_collection_enable && !selectedRequestStalled && inputEligible && anyFreeSlot && inputClassCount < p.r2CandidateSlotsPerClass.U
 
   when(io.candidate_in.fire) {
     val freeIndex = PriorityEncoder(VecInit(slotValid.map(! _)))
@@ -342,6 +351,31 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
     outstandingValid(responseRid) := false.B
   }
 
+  // R2 is the only upstream issuer for R1. During retirement it first stops
+  // candidate acceptance but continues draining already accepted candidates
+  // and responses. The two named facts retain the frozen payload/descriptor
+  // distinction; no physical FIFO or service-rate interpretation is implied.
+  val payloadSlotsLive = VecInit((0 until totalSlots).map(slot =>
+    slotValid(slot) && slots(slot).candidate_class =/= p.r2DescriptorMaintenanceClassCode.U,
+  )).asUInt.orR
+  val descriptorSlotsLive = VecInit((0 until totalSlots).map(slot =>
+    slotValid(slot) && slots(slot).candidate_class === p.r2DescriptorMaintenanceClassCode.U,
+  )).asUInt.orR
+  val payloadOutstandingLive = VecInit((0 until requestIdSlots).map(rid =>
+    outstandingValid(rid) && outstanding(rid).candidate_class =/= p.r2DescriptorMaintenanceClassCode.U,
+  )).asUInt.orR
+  val descriptorOutstandingLive = VecInit((0 until requestIdSlots).map(rid =>
+    outstandingValid(rid) && outstanding(rid).candidate_class === p.r2DescriptorMaintenanceClassCode.U,
+  )).asUInt.orR
+  val payloadDrained = !payloadSlotsLive && !payloadOutstandingLive
+  val descriptorDrained = !descriptorSlotsLive && !descriptorOutstandingLive
+  io.payload_drain_status_out.valid := io.drain_collection_enable && payloadDrained
+  io.payload_drain_status_out.bits.acknowledgement_name := p.r6.r2PayloadDrainedStatusCode.U
+  io.payload_drain_status_out.bits.asserted := true.B
+  io.descriptor_drain_status_out.valid := io.drain_collection_enable && descriptorDrained
+  io.descriptor_drain_status_out.bits.acknowledgement_name := p.r6.r2DescriptorDrainedStatusCode.U
+  io.descriptor_drain_status_out.bits.asserted := true.B
+
   // a_ready_low_nonmutation: grant cursor and selected request do not move on
   // valid-without-ready. Candidate intake is explicitly backpressured there.
   val priorStall = RegNext(selectedRequestStalled, false.B)
@@ -365,33 +399,34 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   * RTL1.1 R1 core-memory transaction wrapper.
   *
   * This is deliberately a core-clock ready/valid wrapper, not an HBM command,
-  * controller, CDC, timing, or PPA implementation. `mem_init_done` is the
-  * adapter's reset-epoch acknowledgement: the adapter must suppress pre-reset
-  * replies before it raises this local signal.
+  * controller, CDC, timing, or PPA implementation. The dedicated external
+  * `init_ack` is the adapter's reset-epoch acknowledgement: the adapter must
+  * suppress pre-reset replies before it accepts that handshake.
   */
 final class RouteACoreMemIfV1(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_core_mem_if_v1"
 
   val io = IO(new Bundle {
-    val mem_init_done = Input(Bool())
     val core_mem_req_in = Flipped(RouteAChannels.core_mem_req(p))
     val core_mem_rsp = RouteAChannels.core_mem_rsp(p)
     val external_core_mem_if_v1 = new CoreMemoryExternalPort(p)
+    val r1_init_complete = Output(Bool())
+    val r1_drain_permitted = Input(Bool())
+    val component_status_out = RouteAChannels.component_status(p)
   })
-
-  // I1.0 carries the dedicated external init acknowledgement but leaves the
-  // frozen local init gate unchanged until I1 behavioral composition. A
-  // response may never serve as an initialization surrogate.
-  StructuralTieOff.sink(io.external_core_mem_if_v1.init_ack)
 
   private val requestIdSlots = 1 << RouteAAnchorWidths.RequestIdWidth
   private val maximumLiveReads = 4
   private val maximumLiveWrites = 1
 
   val initialized = RegInit(false.B)
-  when(io.mem_init_done) {
+  io.external_core_mem_if_v1.init_ack.ready := !initialized &&
+    io.external_core_mem_if_v1.init_ack.bits.adapter_epoch_ready
+  when(io.external_core_mem_if_v1.init_ack.fire) {
     initialized := true.B
   }
+  io.r1_init_complete := initialized
+  val initStatusReported = RegInit(false.B)
 
   val readLive = RegInit(VecInit(Seq.fill(requestIdSlots)(false.B)))
   val readIncarnation = Reg(Vec(requestIdSlots, UInt(RouteAAnchorWidths.IncarnationWidth.W)))
@@ -405,7 +440,7 @@ final class RouteACoreMemIfV1(p: RouteASkeletonParameters) extends Module {
   val writeDataComplete = RegInit(VecInit(Seq.fill(requestIdSlots)(false.B)))
   // Within one adapter epoch an identical identity is never reused after a
   // terminal outcome. The finite incarnation namespace is renewed only by
-  // destructive reset plus the external adapter's mem_init_done handshake.
+  // destructive reset plus the external adapter's init_ack handshake.
   private val incarnationSlots = 1 << RouteAAnchorWidths.IncarnationWidth
   val seenIncarnations = RegInit(VecInit(Seq.fill(requestIdSlots)(0.U(incarnationSlots.W))))
 
@@ -538,5 +573,18 @@ final class RouteACoreMemIfV1(p: RouteASkeletonParameters) extends Module {
         writeDataComplete(responseRequestId) := false.B
       }
     }
+  }
+
+  val locallyDrained = !readLive.asUInt.orR && !writeLive.asUInt.orR
+  val initStatusPending = initialized && !initStatusReported
+  io.component_status_out.valid := initStatusPending || (io.r1_drain_permitted && locallyDrained)
+  io.component_status_out.bits.acknowledgement_name := Mux(
+    initStatusPending,
+    p.r6.memInitDoneStatusCode.U,
+    p.r6.r1MemoryDrainedStatusCode.U,
+  )
+  io.component_status_out.bits.asserted := true.B
+  when(io.component_status_out.fire && initStatusPending) {
+    initStatusReported := true.B
   }
 }

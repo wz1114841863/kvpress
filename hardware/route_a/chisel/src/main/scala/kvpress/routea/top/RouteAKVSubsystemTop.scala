@@ -38,15 +38,14 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val m2_p3 = Module(new RouteAM2P3Wrapper(p))
     val page_manager = Module(new RouteAPageManager(p))
     val merge = Module(new RouteAMergeBoundary(p))
+    val status_collector = Module(new RouteAComponentStatusCollector(p))
 
     lifecycle.io.frontend_lifecycle_req <> frontend_lifecycle_req
     lifecycle.io.runtime_retire_req <> runtime_retire_req
     attention_terminal_rsp <> lifecycle.io.attention_terminal_rsp
     session_retire_ack <> lifecycle.io.session_retire_ack
 
-    val component_status_in = Wire(RouteAChannels.component_status(p))
-    StructuralTieOff.source(component_status_in)
-    lifecycle.io.component_status_in <> component_status_in
+    lifecycle.io.component_status_in <> status_collector.io.component_status_out
 
     hot.io.lifecycle_control_in <> lifecycle.io.hot_control_out
     val r6_authority_transition_out = Wire(RouteAChannels.r6_authority_transition(p)); StructuralTieOff.sink(r6_authority_transition_out)
@@ -55,7 +54,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     r6_authority_transition_out <> lifecycle.io.authority_transition_out
     lifecycle.io.authority_transition_in <> r6_authority_transition_in
     lifecycle.io.merge_ready_in <> r6_merge_ready
-    s2.io.mem_init_done := false.B
+    s2.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     s2.io.service_req_in <> lifecycle.io.s2_service_req
     val s2_fill_open = Wire(RouteAChannels.s2_fill_open(p)); StructuralTieOff.source(s2_fill_open)
     val s2_fill_terminal = Wire(RouteAChannels.s2_fill_terminal(p)); StructuralTieOff.source(s2_fill_terminal)
@@ -68,7 +67,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     s2.io.gqa_consumer_commit_in <> s2_gqa_commit
     s2_release <> s2.io.s2_release_out
     s2.io.s2_observe_slot := 0.U
-    direct_pending.io.mem_init_done := false.B
+    direct_pending.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     direct_pending.io.pending_source_open_in <> lifecycle.io.direct_pending_open
     val direct_record_terminal = Wire(RouteAChannels.direct_pending_record_terminal(p)); StructuralTieOff.source(direct_record_terminal)
     val direct_gqa_commit = Wire(RouteAChannels.gqa_consumer_commit(p)); StructuralTieOff.source(direct_gqa_commit)
@@ -103,17 +102,22 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
 
     core_memory.io.core_mem_req_in <> arbiter.io.core_mem_req
     arbiter.io.core_mem_rsp_in <> core_memory.io.core_mem_rsp
-    // RTL1.1 verifies R1 in isolation. The top-level lifecycle/reset adapter
-    // has not yet acquired its owner phase, so it deliberately cannot release
-    // R1 traffic in this still nonfunctional integration skeleton.
-    core_memory.io.mem_init_done := false.B
     external_core_mem_if_v1 <> core_memory.io.external_core_mem_if_v1
+    arbiter.io.drain_collection_enable := lifecycle.io.drain_collection_enable
+    core_memory.io.r1_drain_permitted := status_collector.io.r1_drain_permitted
+
+    // The R1 reset-epoch acknowledgement is the sole local init fanout. It
+    // enables no data source path by itself and ordinary R1 responses are not
+    // interpreted as init acknowledgements.
+    s2.io.mem_init_done := core_memory.io.r1_init_complete
+    direct_pending.io.mem_init_done := core_memory.io.r1_init_complete
 
     val source_delivery = Wire(RouteAChannels.source_delivery(p))
     source_delivery <> arbiter.io.source_delivery_out
     StructuralTieOff.sink(source_delivery)
 
-    m2_p3.io.mem_init_done := false.B
+    m2_p3.io.mem_init_done := core_memory.io.r1_init_complete
+    m2_p3.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     val p3_claim = Wire(RouteAChannels.p3_claim(p)); StructuralTieOff.source(p3_claim)
     val p3_claim_ack = Wire(RouteAChannels.p3_claim_ack(p)); StructuralTieOff.sink(p3_claim_ack)
     val p3_fragment = Wire(RouteAChannels.p3_pending_fragment(p)); StructuralTieOff.source(p3_fragment)
@@ -130,7 +134,8 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     m2_p3.io.m2_group_member_rsp_in <> m2_group_member_rsp
     m2_p3.io.p3_observe_layer := 0.U
     m2_p3.io.m2_publish_req_in <> lifecycle.io.metadata_publish_req
-    page_manager.io.mem_init_done := false.B
+    page_manager.io.mem_init_done := core_memory.io.r1_init_complete
+    page_manager.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     val page_allocation_req = Wire(RouteAChannels.page_allocation_req(p)); StructuralTieOff.source(page_allocation_req)
     val page_allocation_rsp = Wire(RouteAChannels.page_allocation_rsp(p)); StructuralTieOff.sink(page_allocation_rsp)
     val descriptor_maintenance_terminal = Wire(RouteAChannels.descriptor_maintenance_terminal(p)); StructuralTieOff.source(descriptor_maintenance_terminal)
@@ -140,5 +145,16 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     page_manager.io.metadata_publish_visibility_in <> m2_p3.io.metadata_publish_visibility_apply
     m2_p3.io.metadata_publish_visibility_ack_in <> page_manager.io.metadata_publish_visibility_ack
     lifecycle.io.metadata_publish_ack_in <> m2_p3.io.m2_publish_ack
+
+    merge.io.drain_collection_enable := lifecycle.io.drain_collection_enable
+    status_collector.io.drain_collection_enable := lifecycle.io.drain_collection_enable
+    status_collector.io.status_sources(0) <> core_memory.io.component_status_out
+    status_collector.io.status_sources(1) <> arbiter.io.payload_drain_status_out
+    status_collector.io.status_sources(2) <> arbiter.io.descriptor_drain_status_out
+    status_collector.io.status_sources(3) <> m2_p3.io.component_status_out
+    status_collector.io.status_sources(4) <> page_manager.io.component_status_out
+    status_collector.io.status_sources(5) <> s2.io.component_status_out
+    status_collector.io.status_sources(6) <> direct_pending.io.component_status_out
+    status_collector.io.status_sources(7) <> merge.io.component_status_out
   }
 }

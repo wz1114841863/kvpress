@@ -25,6 +25,7 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
   )
 
   private def init(dut: RouteAMergeBoundary): Unit = {
+    dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
     dut.io.source_partial_in.valid.poke(false.B); dut.io.consumer_partial_commit.ready.poke(true.B)
     dut.io.merge_req_in.valid.poke(false.B); dut.io.r4_partial_header_in.valid.poke(false.B)
     dut.io.r4_value_fragment_in.valid.poke(false.B); dut.io.r4_result_stub_in.valid.poke(false.B)

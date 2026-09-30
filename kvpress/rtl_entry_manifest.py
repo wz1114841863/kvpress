@@ -42,6 +42,7 @@ REQUIRED_MODULES = frozenset(
         "route_a_m2_p3_wrapper",
         "route_a_page_manager",
         "route_a_merge_boundary",
+        "route_a_component_status_collector",
     }
 )
 REQUIRED_OWNER_RESOURCES = frozenset(
@@ -57,6 +58,7 @@ REQUIRED_OWNER_RESOURCES = frozenset(
         "r4_observable_merge_state_and_numeric_fault",
         "r5_stream_descriptor_allocator_and_descriptor_visibility",
         "global_retirement_acceptance_and_drain_ack",
+        "integration_named_status_serialization",
     }
 )
 REQUIRED_PORT_RECORD_IDS = frozenset(
@@ -81,6 +83,7 @@ REQUIRED_PORT_RECORD_IDS = frozenset(
         "if_r2_core_mem_req",
         "if_r1_core_mem_rsp",
         "if_r1_external_memory",
+        "if_r1_external_init_ack",
         "if_r2_source_delivery",
         "if_lifecycle_publish_req",
         "if_r3_r5_publish_visibility",

@@ -87,9 +87,12 @@ final class RouteACoreMemIfV1Spec extends AnyFunSpec with ChiselSim {
   }
 
   private def initialize(dut: RouteACoreMemIfV1): Unit = {
-    dut.io.mem_init_done.poke(false.B)
     dut.io.core_mem_req_in.valid.poke(false.B)
     dut.io.core_mem_rsp.ready.poke(false.B)
+    dut.io.r1_drain_permitted.poke(false.B)
+    dut.io.component_status_out.ready.poke(false.B)
+    dut.io.external_core_mem_if_v1.init_ack.valid.poke(false.B)
+    dut.io.external_core_mem_if_v1.init_ack.bits.adapter_epoch_ready.poke(false.B)
     dut.io.external_core_mem_if_v1.request.ready.poke(true.B)
     dut.io.external_core_mem_if_v1.response.valid.poke(false.B)
     driveRequest(dut, requestId = 0, incarnation = 0, kind = p.coreMemoryReadRequestCode)
@@ -97,9 +100,11 @@ final class RouteACoreMemIfV1Spec extends AnyFunSpec with ChiselSim {
   }
 
   private def releaseInitialization(dut: RouteACoreMemIfV1): Unit = {
-    dut.io.mem_init_done.poke(true.B)
+    dut.io.external_core_mem_if_v1.init_ack.bits.adapter_epoch_ready.poke(true.B)
+    dut.io.external_core_mem_if_v1.init_ack.valid.poke(true.B)
+    dut.io.external_core_mem_if_v1.init_ack.ready.expect(true.B)
     dut.clock.step()
-    dut.io.mem_init_done.poke(false.B)
+    dut.io.external_core_mem_if_v1.init_ack.valid.poke(false.B)
   }
 
   private def acceptRequest(dut: RouteACoreMemIfV1): Unit = {
@@ -208,7 +213,7 @@ final class RouteACoreMemIfV1Spec extends AnyFunSpec with ChiselSim {
       dut.reset.poke(true.B)
       dut.clock.step()
       dut.reset.poke(false.B)
-      dut.io.mem_init_done.poke(false.B)
+      dut.io.external_core_mem_if_v1.init_ack.valid.poke(false.B)
       driveResponse(dut, requestId = 1, incarnation = 3, fragmentIndex = 0, last = true, status = p.coreMemoryOkStatusCode)
       dut.io.external_core_mem_if_v1.response.valid.poke(true.B)
       dut.io.core_mem_rsp.valid.expect(false.B)

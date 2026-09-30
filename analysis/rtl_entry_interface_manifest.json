@@ -74,6 +74,13 @@
         "classification": "route_a_incremental_replaceable_stub",
         "role": "Owns only observable packet control and result/fault terminal association behind the frozen replaceable R4 boundary.",
         "contract_references": ["analysis/architecture_gate_a_r4_numeric_merge_contract.md", "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"]
+      },
+      {
+        "name": "route_a_component_status_collector",
+        "parent": "route_a_kv_subsystem_top",
+        "classification": "integration_protocol_serialization_only",
+        "role": "Losslessly serializes named owner-local init/drain facts to R6; owns no token, page, source, publication, R1 transaction, or lifecycle terminal state.",
+        "contract_references": ["analysis/rtl1_i1_init_drain_carrier_contract.md", "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"]
       }
     ]
   },
@@ -171,6 +178,13 @@
       "kind": "state_and_protocol",
       "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md",
       "transfer_boundary": "The lifecycle adapter owns retire acceptance and the one global drain predicate; R5 alone performs per-page reclaim after that predicate holds."
+    },
+    {
+      "resource": "integration_named_status_serialization",
+      "owner": "route_a_component_status_collector",
+      "kind": "protocol_serialization_only",
+      "contract_reference": "analysis/rtl1_i1_init_drain_carrier_contract.md",
+      "transfer_boundary": "The collector may stage and serialize asserted named init/drain facts but cannot create, merge, drop, or own any architecture resource."
     }
   ],
   "connections": [
@@ -327,7 +341,7 @@
         "record_id": "if_lifecycle_retire_ack", "module": "route_a_lifecycle_adapter", "port": "session_retire_ack", "peer_port": "session_retire_ack_in", "direction": "output", "width": "session_id[0:0] + transaction_identity[4:0]", "clock": "core_clk", "reset": "destructive_reset", "handshake": "ready_valid", "producer": "route_a_lifecycle_adapter", "consumer": "runtime_session_manager", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md", "applicability": "only after global drain and R5 reclaim sequence", "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md", "fields": [{"name": "session_id", "width": "1", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "transaction_identity", "width": "5", "parameter_source": "analysis/architecture_gate_a3_rtl_entry_qwen3_8b_32k_s1_v1.json#/transaction_identity"}]
       },
       {
-        "record_id": "if_lifecycle_component_status", "module": "route_a_lifecycle_adapter", "port": "component_status_in", "peer_port": "component_status_out", "direction": "input", "width": "logical named acknowledgement set; no physical vector encoding selected", "clock": "core_clk", "reset": "destructive_reset", "handshake": "ready_valid", "producer": "route_a_kv_subsystem_top", "consumer": "route_a_lifecycle_adapter", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md", "applicability": "mem_init_done, r3_init_done, page_manager_init_done and all R6 drain members", "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md", "fields": [{"name": "acknowledgement_name", "width": "named logical token", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "asserted", "width": "1", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}]
+        "record_id": "if_lifecycle_component_status", "module": "route_a_lifecycle_adapter", "port": "component_status_in", "peer_port": "component_status_out", "direction": "input", "width": "logical named acknowledgement set; no physical vector encoding selected", "clock": "core_clk", "reset": "destructive_reset", "handshake": "ready_valid", "producer": "route_a_component_status_collector", "consumer": "route_a_lifecycle_adapter", "parameter_source": "analysis/rtl1_i1_init_drain_carrier_contract.md", "applicability": "R1 init_ack-derived mem_init_done, R3/R5 init facts, and all eight R6 drain members", "contract_reference": "analysis/rtl1_i1_init_drain_carrier_contract.md", "fields": [{"name": "acknowledgement_name", "width": "named logical token", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "asserted", "width": "1", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}]
       },
       {
         "record_id": "if_lifecycle_hot_control", "module": "route_a_lifecycle_adapter", "port": "hot_control_out", "peer_port": "lifecycle_control_in", "direction": "output", "width": "entry coordinate/control bundle", "clock": "core_clk", "reset": "destructive_reset", "handshake": "ready_valid", "producer": "route_a_lifecycle_adapter", "consumer": "route_a_hot_source_path", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md", "applicability": "arrival, maturity, and hot-source service", "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md", "fields": [{"name": "entry_id", "width": "24", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "layer/kv_head/logical_position", "width": "6+3+15", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "disposition", "width": "1 when mature", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}]
@@ -373,6 +387,9 @@
       },
       {
         "record_id": "if_r1_external_memory", "module": "route_a_core_mem_if_v1", "port": "external_core_mem_if_v1", "peer_port": "core_mem_if_v1", "direction": "output", "width": "same selected core-side request/response bundles; native translation external", "clock": "core_clk at Route-A boundary", "reset": "destructive_reset + external pre-reset response suppression", "handshake": "ready_valid", "producer": "route_a_core_mem_if_v1", "consumer": "external_memory_adapter", "parameter_source": "analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md", "applicability": "sole Route-A external-memory path for payload, sidecar, and descriptor traffic", "contract_reference": "analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md", "fields": [{"name": "core_read_req/core_read_rsp", "width": "R1 logical bundle", "parameter_source": "analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md"}, {"name": "core_write_req/core_write_data/core_write_commit", "width": "R1 logical bundle; data=512", "parameter_source": "analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md"}]
+      },
+      {
+        "record_id": "if_r1_external_init_ack", "module": "route_a_core_mem_if_v1", "port": "external_core_mem_if_v1.init_ack", "peer_port": "init_ack", "direction": "input", "width": "adapter_epoch_ready[0]", "clock": "core_clk at Route-A boundary", "reset": "destructive_reset; adapter suppresses/drains pre-reset responses before acknowledgement", "handshake": "ready_valid", "producer": "external_memory_adapter", "consumer": "route_a_core_mem_if_v1", "parameter_source": "analysis/rtl1_i1_init_drain_carrier_contract.md", "applicability": "dedicated adapter reset-epoch acknowledgement; ordinary R1 response is never initialization", "contract_reference": "analysis/rtl1_i1_init_drain_carrier_contract.md", "fields": [{"name": "adapter_epoch_ready", "width": "1", "parameter_source": "analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md"}]
       },
       {
         "record_id": "if_r2_source_delivery", "module": "route_a_core_side_arbiter", "port": "source_delivery_out", "peer_port": "source_delivery_in", "direction": "output", "width": "candidate association + destination + routed R1 fragment/terminal bundle", "clock": "core_clk", "reset": "destructive_reset", "handshake": "ready_valid", "producer": "route_a_core_side_arbiter", "consumer": "route_a_kv_subsystem_top", "parameter_source": "analysis/rtl1_2_r2_semantic_carrier_contract.md", "applicability": "top shell routes only to current S2, direct-pending, R3, or R5 owner association", "contract_reference": "analysis/architecture_gate_a_r2_arbitration_dependency_contract.md", "fields": [{"name": "candidate_id/candidate_class/destination", "width": "parameterized association", "parameter_source": "analysis/rtl1_2_r2_semantic_carrier_contract.md"}, {"name": "r1_response", "width": "identity + fragment_index + last + status + data[511:0]", "parameter_source": "analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md"}]

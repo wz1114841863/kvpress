@@ -132,12 +132,14 @@ lifecycle/reset phase, intentionally leaving top-level traffic inactive.
 
 ## RTL1-I1.0 init/drain carrier closure
 
-`external_core_mem_if_v1` now includes a dedicated decoupled `init_ack`
-carrier from the external R1 adapter. It is deliberately distinct from memory
-responses and currently remains tied not-ready while I1.0 keeps the top inert.
-The next RTL1-I1 behavioral commit will bind it to R1's reset gate and route
-eight owner-local named init/drain facts through the reviewed integration-only
-collector. That collector is not a physical FIFO or an authority owner; see
+`external_core_mem_if_v1` includes a dedicated decoupled `init_ack` carrier
+from the external R1 adapter. It is deliberately distinct from memory
+responses. RTL1-I1 accepts it only at R1, fans its initialized fact to the
+local reset-gated wrappers, and routes the three init/eight drain facts through
+the reviewed integration-only collector to R6. The collector is not a physical
+FIFO or an authority owner. This currently supports safe start and
+empty-session retirement only; admission/publication/source/reclaim top wiring
+remains the later I2--I4 scope. See
 `analysis/rtl1_i1_init_drain_carrier_contract.md`.
 
 ## RTL1.2 R2 implementation

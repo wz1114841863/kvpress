@@ -362,8 +362,10 @@ retry policy, a mask/admission change, or a partial group visibility.  The
 logical atomic `head_control` replica update does not select a coherence
 protocol, macro port count, SRAM layout, service rate, or CACTI-derived cycle.
 R3's destructive reset invalidates local M2/P3 ownership and accepts no new
-traffic until R1's `mem_init_done` has enabled the R3 init handshake; it does
-not erase HBM or relax R1 stale-response suppression.
+traffic until the dedicated external R1 `init_ack.adapter_epoch_ready` has
+become R1's named `mem_init_done` status and enabled the R3 init handshake; it
+does not erase HBM or relax R1 stale-response suppression.  An ordinary R1
+response is never an initialization surrogate.
 
 ## 9. S2 source buffer, memory transport, GQA multicast, and merge
 
@@ -418,11 +420,13 @@ request slot.  `payload_handle_or_address` is an opaque core-side reference,
 not an HBM physical address or page-table format.
 
 R1 defines destructive local reset: after reset, the subsystem accepts no
-core-memory traffic until the external adapter acknowledges `mem_init_done`.
-That adapter must drain or suppress pre-reset responses/commits; the
-software-only R1 reference models the obligation with an adapter epoch that is
-not a core-side data wire.  Reset invalidates local/session/descriptor
-ownership; it does not claim to erase HBM data.
+core-memory traffic until the external adapter's dedicated
+`init_ack.adapter_epoch_ready` handshake.  R1 then emits the named logical
+`mem_init_done` fact used by lifecycle/R3/R5; ordinary R1 responses cannot be
+reinterpreted as that fact.  The adapter must drain or suppress pre-reset
+responses/commits; the software-only R1 reference models the obligation with
+an adapter epoch that is not a core-side data wire.  Reset invalidates
+local/session/descriptor ownership; it does not claim to erase HBM data.
 
 The complete R1 contract and executable reference binding are in
 `analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md`, with the

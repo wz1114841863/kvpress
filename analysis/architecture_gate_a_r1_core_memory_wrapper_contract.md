@@ -83,11 +83,14 @@ descriptor, and generation ownership is invalidated by the later lifecycle
 contracts.
 
 After reset, `core_mem_if_v1` accepts no traffic until the external adapter
-raises `mem_init_done`.  The adapter must drain or suppress every pre-reset
-response/commit before asserting that handshake.  The pure-software reference
-models this obligation with an adapter epoch solely for verification; adapter
-epoch is not a new core-side data wire.  A pre-reset response is rejected even
-if its numeric `(request_id, incarnation)` would otherwise collide with a new
+accepts its dedicated `init_ack { adapter_epoch_ready=1 }` handshake.  The
+adapter must drain or suppress every pre-reset response/commit before asserting
+that handshake.  R1 alone turns the accepted acknowledgement into its named
+logical `mem_init_done` status for lifecycle/R3/R5; an ordinary response or
+commit is never an init surrogate.  The pure-software reference models this
+obligation with an adapter epoch solely for verification; adapter epoch is not
+a new core-side data wire.  A pre-reset response is rejected even if its
+numeric `(request_id, incarnation)` would otherwise collide with a new
 post-reset request.
 
 Reset does not select retry, timeout, recovery, HBM initialization, physical

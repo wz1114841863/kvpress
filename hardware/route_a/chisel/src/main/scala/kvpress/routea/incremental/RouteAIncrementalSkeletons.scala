@@ -19,6 +19,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     val attention_terminal_rsp = RouteAChannels.attention_terminal_rsp
     val session_retire_ack = RouteAChannels.session_retire_ack
     val component_status_in = Flipped(RouteAChannels.component_status(p))
+    val drain_collection_enable = Output(Bool())
     val hot_control_out = RouteAChannels.hot_control(p)
     val authority_transition_out = RouteAChannels.r6_authority_transition(p)
     val authority_transition_in = Flipped(RouteAChannels.r6_authority_transition(p))
@@ -45,6 +46,10 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val initAcks = RegInit(0.U(3.W))
   val drainAcks = RegInit(0.U(8.W))
   val retireIdentity = Reg(new TransactionIdentity)
+
+  // This is a lifecycle phase fact, not a timeout or scheduling grant. Local
+  // owners use it only to quiesce new ingress and offer their named drain fact.
+  io.drain_collection_enable := state === StateRetiring
 
   // One lifecycle event remains stable until both independently-owned local
   // observations have accepted it. This is event staging, not a token table.
@@ -294,12 +299,14 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
 
   val io = IO(new Bundle {
     val mem_init_done = Input(Bool())
+    val drain_collection_enable = Input(Bool())
     val pending_source_open_in = Flipped(RouteAChannels.direct_pending_open(p))
     val direct_pending_record_terminal_in = Flipped(RouteAChannels.direct_pending_record_terminal(p))
     val gqa_consumer_commit_in = Flipped(RouteAChannels.gqa_consumer_commit(p))
     val direct_release_out = RouteAChannels.source_release(p)
     val direct_observe_generation = Output(UInt(p.sourceGenerationWidth.W))
     val direct_observe_active = Output(Bool())
+    val component_status_out = RouteAChannels.component_status(p)
   })
 
   val initialized = RegInit(false.B)
@@ -381,6 +388,9 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
 
   io.direct_observe_generation := endpointGeneration
   io.direct_observe_active := active
+  io.component_status_out.valid := initialized && io.drain_collection_enable && !active
+  io.component_status_out.bits.acknowledgement_name := p.r6.directPendingDrainedStatusCode.U
+  io.component_status_out.bits.asserted := true.B
 }
 
 /** RTL1.3 R3 control state: no P3 payload macro, M2 macro, or HBM controller. */
@@ -389,6 +399,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
 
   val io = IO(new Bundle {
     val mem_init_done = Input(Bool())
+    val drain_collection_enable = Input(Bool())
     val p3_claim_in = Flipped(RouteAChannels.p3_claim(p))
     val p3_claim_ack = RouteAChannels.p3_claim_ack(p)
     val p3_pending_fragment_in = Flipped(RouteAChannels.p3_pending_fragment(p))
@@ -403,6 +414,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     val metadata_publish_visibility_apply = RouteAChannels.metadata_publish_visibility(p)
     val metadata_publish_visibility_ack_in = Flipped(RouteAChannels.metadata_publish_visibility_ack)
     val m2_publish_ack = RouteAChannels.metadata_publish_ack(p)
+    val component_status_out = RouteAChannels.component_status(p)
   })
 
   private val stages = 36
@@ -416,6 +428,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
 
   val initialized = RegInit(false.B)
   when(io.mem_init_done) { initialized := true.B }
+  val initStatusReported = RegInit(false.B)
   val stageState = RegInit(VecInit(Seq.fill(stages)(StateEmpty)))
   val stageGeneration = RegInit(VecInit(Seq.fill(stages)(0.U(p.p3StageGenerationWidth.W))))
   val stageValidRecords = Reg(Vec(stages, UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)))
@@ -590,6 +603,19 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
 
   io.p3_observe_state := stageState(io.p3_observe_layer)
   io.p3_observe_generation := stageGeneration(io.p3_observe_layer)
+  val stagesEmpty = VecInit((0 until stages).map(stage => stageState(stage) === StateEmpty)).asUInt.andR
+  val locallyDrained = stagesEmpty && !claimAckValid && !publicationActive &&
+    !publicationAwaitingVisibilityAck && !publishAckValid
+  val initStatusPending = initialized && !initStatusReported
+  io.component_status_out.valid := initStatusPending ||
+    (initialized && initStatusReported && io.drain_collection_enable && locallyDrained)
+  io.component_status_out.bits.acknowledgement_name := Mux(
+    initStatusPending,
+    p.r6.m2P3InitDoneStatusCode.U,
+    p.r6.r3M2P3DrainedStatusCode.U,
+  )
+  io.component_status_out.bits.asserted := true.B
+  when(io.component_status_out.fire && initStatusPending) { initStatusReported := true.B }
 }
 
 /** RTL1.3 R5 control state; descriptor payload/HBM traffic remains on R2/R1. */
@@ -598,17 +624,20 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
 
   val io = IO(new Bundle {
     val mem_init_done = Input(Bool())
+    val drain_collection_enable = Input(Bool())
     val page_allocation_req_in = Flipped(RouteAChannels.page_allocation_req(p))
     val page_allocation_rsp = RouteAChannels.page_allocation_rsp(p)
     val descriptor_maintenance_terminal_in = Flipped(RouteAChannels.descriptor_maintenance_terminal(p))
     val metadata_publish_visibility_in = Flipped(RouteAChannels.metadata_publish_visibility(p))
     val metadata_publish_visibility_ack = RouteAChannels.metadata_publish_visibility_ack
+    val component_status_out = RouteAChannels.component_status(p)
   })
 
   private val streamSlots = p.r5StreamSlots
   private val streamIndexWidth = math.max(1, log2Ceil(streamSlots))
   val initialized = RegInit(false.B)
   when(io.mem_init_done) { initialized := true.B }
+  val initStatusReported = RegInit(false.B)
   val allocated = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))
   val generations = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(0.U(RouteAAnchorWidths.PageGenerationWidth.W))))
   val buildActive = RegInit(VecInit(Seq.fill(streamSlots)(false.B)))
@@ -711,6 +740,19 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   when(io.metadata_publish_visibility_in.fire) {
     assert(visibilityAnyMatch)
   }
+  val allocatorEmpty = !allocated.asUInt.orR
+  val buildsEmpty = !buildActive.asUInt.orR
+  val locallyDrained = allocatorEmpty && buildsEmpty && !allocationRspValid && !visibilityAckPending
+  val initStatusPending = initialized && !initStatusReported
+  io.component_status_out.valid := initStatusPending ||
+    (initialized && initStatusReported && io.drain_collection_enable && locallyDrained)
+  io.component_status_out.bits.acknowledgement_name := Mux(
+    initStatusPending,
+    p.r6.pageManagerInitDoneStatusCode.U,
+    p.r6.r5PageManagerDrainedStatusCode.U,
+  )
+  io.component_status_out.bits.asserted := true.B
+  when(io.component_status_out.fire && initStatusPending) { initStatusReported := true.B }
 }
 
 /**
@@ -721,6 +763,7 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_merge_boundary"
 
   val io = IO(new Bundle {
+    val drain_collection_enable = Input(Bool())
     val source_partial_in = Flipped(RouteAChannels.source_partial)
     val consumer_partial_commit = RouteAChannels.consumer_partial_commit
     val merge_req_in = Flipped(RouteAChannels.merge_req)
@@ -729,6 +772,7 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
     val r4_result_stub_in = Flipped(RouteAChannels.r4_result_stub)
     val r4_numeric_fault_in = Flipped(RouteAChannels.r4_numeric_fault)
     val merge_rsp_or_numeric_fault = RouteAChannels.merge_terminal_rsp
+    val component_status_out = RouteAChannels.component_status(p)
   })
 
   val packetActive = RegInit(false.B)
@@ -860,4 +904,8 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   }
 
   StructuralTieOff.sink(io.source_partial_in)
+  val locallyDrained = !packetActive && !commitPending && !mergeActive && !terminalPending
+  io.component_status_out.valid := io.drain_collection_enable && locallyDrained
+  io.component_status_out.bits.acknowledgement_name := p.r6.mergeDrainedStatusCode.U
+  io.component_status_out.bits.asserted := true.B
 }

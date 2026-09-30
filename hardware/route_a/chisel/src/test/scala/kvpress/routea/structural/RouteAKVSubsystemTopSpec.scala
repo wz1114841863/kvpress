@@ -65,6 +65,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
       "route_a_m2_p3_wrapper",
       "route_a_page_manager",
       "route_a_merge_boundary",
+      "route_a_component_status_collector",
     ).foreach { moduleName =>
       chirrtl should include(s"module $moduleName")
     }
