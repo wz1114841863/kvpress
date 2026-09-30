@@ -101,6 +101,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     systemVerilog should include("runtime_retire_req_valid")
     systemVerilog should include("attention_terminal_rsp_valid")
     systemVerilog should include("session_retire_ack_valid")
+    systemVerilog should include("external_core_mem_if_v1_init_ack_ready")
     systemVerilog should include("external_core_mem_if_v1_request_valid")
   }
 

@@ -34,6 +34,14 @@ external R1 init acknowledgement and named drain-status composition; later
 I2--I4 may then close publication/authority, source/R4/R6, and reclaim under
 the frozen I0 contract. Numeric-core realization remains a separate gate.
 
+**RTL1-I1.0 init/drain carrier closure: complete; behavior pending.**
+`analysis/rtl1_i1_init_drain_carrier_contract.md` adds the dedicated external
+R1 reset-epoch acknowledgement carrier and records the reviewed
+`route_a_component_status_collector` hierarchy amendment plus its eight named
+owner-local facts. The carrier step leaves top behavior inert: it does not
+accept the acknowledgement, replace the R1 local test gate, or emit a status.
+RTL1-I1 behavior is the next permitted step.
+
 ## RTL1.6.0 progress
 
 **RTL1.6.0 R4 packet/fault carrier closure: complete.**

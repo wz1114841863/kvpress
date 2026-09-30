@@ -379,6 +379,11 @@ final class RouteACoreMemIfV1(p: RouteASkeletonParameters) extends Module {
     val external_core_mem_if_v1 = new CoreMemoryExternalPort(p)
   })
 
+  // I1.0 carries the dedicated external init acknowledgement but leaves the
+  // frozen local init gate unchanged until I1 behavioral composition. A
+  // response may never serve as an initialization surrogate.
+  StructuralTieOff.sink(io.external_core_mem_if_v1.init_ack)
+
   private val requestIdSlots = 1 << RouteAAnchorWidths.RequestIdWidth
   private val maximumLiveReads = 4
   private val maximumLiveWrites = 1

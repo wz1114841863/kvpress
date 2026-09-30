@@ -268,8 +268,21 @@ final class CoreMemoryResponse(p: RouteASkeletonParameters) extends Bundle {
   val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
 }
 
+/**
+  * Reset-epoch acknowledgement emitted only by the external R1 adapter.
+  *
+  * This is deliberately distinct from an ordinary CoreMemoryResponse: the
+  * latter is a live-transaction fragment/terminal carrier and can never be
+  * reinterpreted as initialization. It selects neither native-controller
+  * reset sequencing nor a CDC implementation.
+  */
+final class CoreMemoryInitAcknowledgement extends Bundle {
+  val adapter_epoch_ready = Bool()
+}
+
 /** The only top-level Route-A-to-external-memory carrier; CDC/controller remain outside. */
 final class CoreMemoryExternalPort(p: RouteASkeletonParameters) extends Bundle {
+  val init_ack = Flipped(Decoupled(new CoreMemoryInitAcknowledgement))
   val request = Decoupled(new CoreMemoryRequest(p))
   val response = Flipped(Decoupled(new CoreMemoryResponse(p)))
 }

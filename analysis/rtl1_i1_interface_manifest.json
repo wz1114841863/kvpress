@@ -1,0 +1,26 @@
+{
+  "schema_version": "kvzap-route-a-rtl1-i1-init-drain-carrier-manifest-1.0",
+  "status": "complete_carrier_only_top_behavior_still_inert",
+  "scope": "Dedicated external R1 reset-epoch acknowledgement and planned named-status serialization only; no controller, CDC, physical FIFO, timing, PPA, model/GPU, new A4 DSE, or RTL correctness claim.",
+  "hierarchy_amendment": {
+    "parent": "route_a_kv_subsystem_top",
+    "module": "route_a_component_status_collector",
+    "classification": "integration_protocol_serialization_only",
+    "authority_exclusion": ["token", "page", "source", "R1 transaction", "publication", "lifecycle terminal"]
+  },
+  "external_init_ack": {
+    "module": "route_a_core_mem_if_v1",
+    "port": "external_core_mem_if_v1.init_ack",
+    "direction": "adapter_to_r1",
+    "clock": "core_clk",
+    "reset": "destructive_reset",
+    "handshake": "ready_valid",
+    "fields": [{"name": "adapter_epoch_ready", "width": "1"}],
+    "parameter_source": "analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md",
+    "forbidden_interpretation": "ordinary R1 response is initialization"
+  },
+  "status_sources": [
+    "r1_init_and_drain", "r2_payload_drain", "r2_descriptor_drain", "r3_init_and_drain",
+    "r5_init_and_drain", "s2_drain", "direct_pending_drain", "merge_drain"
+  ]
+}

@@ -130,6 +130,16 @@ with an event adapter, prove SVA/formal properties, or establish end-to-end
 Route-A behavior. The top binds R1's local `mem_init_done` low until the later
 lifecycle/reset phase, intentionally leaving top-level traffic inactive.
 
+## RTL1-I1.0 init/drain carrier closure
+
+`external_core_mem_if_v1` now includes a dedicated decoupled `init_ack`
+carrier from the external R1 adapter. It is deliberately distinct from memory
+responses and currently remains tied not-ready while I1.0 keeps the top inert.
+The next RTL1-I1 behavioral commit will bind it to R1's reset gate and route
+eight owner-local named init/drain facts through the reviewed integration-only
+collector. That collector is not a physical FIFO or an authority owner; see
+`analysis/rtl1_i1_init_drain_carrier_contract.md`.
+
 ## RTL1.2 R2 implementation
 
 `RouteACoreSideArbiter` now realizes the frozen R2 eligibility and grant
