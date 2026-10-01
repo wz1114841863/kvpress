@@ -79,11 +79,15 @@ def validate(repo_root: Path, binding_path: Path) -> None:
         "a_authority_conservation",
         "a_exactly_one_terminal",
     }
+    progress_bound = {"p_accepted_to_terminal", "p_retire_to_ack", "p_credit_return"}
     for assertion_id, record in record_by_id.items():
         status = record.get("sva_binding_status")
         if assertion_id in r1_bound | r2_bound | r3_bound | s2_bound | r5_bound | r6_bound:
             if status != "owner_chisel_assert_bound":
                 raise VerificationBindingError(f"owner Chisel assertion binding missing for {assertion_id}")
+        elif assertion_id in progress_bound:
+            if status != "testbench_fairness_harness_bound":
+                raise VerificationBindingError(f"RTL1-V fairness harness binding missing for {assertion_id}")
         elif status not in {"owner_state_pending", "owner_event_pending"}:
             raise VerificationBindingError(f"unexpected non-R1 assertion binding for {assertion_id}")
 
@@ -112,6 +116,9 @@ def validate(repo_root: Path, binding_path: Path) -> None:
     for assertion_id in r6_bound:
         if f"r6-chisel-assertion: {assertion_id}" not in sva_text:
             raise VerificationBindingError(f"SVA registry lacks RTL1.5 R6 binding marker for {assertion_id}")
+    for assertion_id in progress_bound:
+        if f"testbench-fairness-harness: {assertion_id}" not in sva_text:
+            raise VerificationBindingError(f"SVA registry lacks RTL1-V fairness marker for {assertion_id}")
 
 
 def main() -> int:

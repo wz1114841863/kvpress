@@ -34,8 +34,11 @@ module route_a_rtl1_0_assertion_binding_registry;
   // assertion-id: a_exactly_one_terminal
   // r6-chisel-assertion: a_exactly_one_terminal
   // assertion-id: p_accepted_to_terminal
+  // testbench-fairness-harness: p_accepted_to_terminal
   // assertion-id: p_retire_to_ack
+  // testbench-fairness-harness: p_retire_to_ack
   // assertion-id: p_credit_return
+  // testbench-fairness-harness: p_credit_return
 endmodule
 
 // The zero-port bind intentionally adds no implementation behavior. It gives

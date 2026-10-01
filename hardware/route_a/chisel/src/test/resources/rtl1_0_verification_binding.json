@@ -1,7 +1,7 @@
 {
   "schema_version": "kvzap-route-a-rtl1-0-verification-binding-1.1",
-  "status": "rtl1_0_binding_complete_rtl1_1_to_rtl1_5_and_rtl1_v_owner_safety_incrementally_bound",
-  "scope": "RTL1.0.b traceability, SVA-registry, environment-role, and Python-oracle attachment, incrementally refined by R1/R2/R3/S2/R5/R6 module-level Chisel safety assertions; no semantic SVA/formal proof, complete top integration, cycle bound, timing, PPA, or performance claim.",
+  "status": "rtl1_0_binding_complete_rtl1_1_to_rtl1_5_and_rtl1_v_safety_and_fairness_harness_bound",
+  "scope": "RTL1.0.b traceability, SVA-registry, environment-role, and Python-oracle attachment, incrementally refined by R1/R2/R3/S2/R5/R6 module-level Chisel safety assertions and finite RTL1-V environment-fairness witnesses; no semantic SVA/formal proof, complete top integration, cycle bound, timing, PPA, or performance claim.",
   "assertion_matrix": "analysis/rtl_entry_assertion_matrix.json",
   "scoreboard_oracle_manifest": "analysis/rtl_entry_scoreboard_oracle_manifest.json",
   "sva_binding_source": "hardware/route_a/chisel/src/test/resources/sva/route_a_rtl1_0_assertion_binding_registry.sv",
@@ -30,8 +30,8 @@
     {"assertion_id": "a_gqa_release", "rtl_owner": "route_a_s2_gqa_source_wrapper", "environment_role": "dut_guarantee", "sva_binding_status": "owner_chisel_assert_bound", "scoreboard_observation_api": "RouteAScoreboardOracleBindingRegistry"},
     {"assertion_id": "a_stale_response", "rtl_owner": "route_a_core_mem_if_v1", "environment_role": "dut_guarantee", "sva_binding_status": "owner_chisel_assert_bound", "scoreboard_observation_api": "RouteAScoreboardOracleBindingRegistry"},
     {"assertion_id": "a_exactly_one_terminal", "rtl_owner": "route_a_lifecycle_adapter", "environment_role": "dut_guarantee", "sva_binding_status": "owner_chisel_assert_bound", "scoreboard_observation_api": "RouteAScoreboardOracleBindingRegistry"},
-    {"assertion_id": "p_accepted_to_terminal", "rtl_owner": "route_a_lifecycle_adapter", "environment_role": "environment_fairness_assumption", "sva_binding_status": "owner_event_pending", "scoreboard_observation_api": "RouteAScoreboardOracleBindingRegistry"},
-    {"assertion_id": "p_retire_to_ack", "rtl_owner": "route_a_lifecycle_adapter", "environment_role": "environment_fairness_assumption", "sva_binding_status": "owner_event_pending", "scoreboard_observation_api": "RouteAScoreboardOracleBindingRegistry"},
-    {"assertion_id": "p_credit_return", "rtl_owner": "route_a_core_side_arbiter", "environment_role": "environment_fairness_assumption", "sva_binding_status": "owner_event_pending", "scoreboard_observation_api": "RouteAScoreboardOracleBindingRegistry"}
+    {"assertion_id": "p_accepted_to_terminal", "rtl_owner": "route_a_lifecycle_adapter", "environment_role": "environment_fairness_assumption", "sva_binding_status": "testbench_fairness_harness_bound", "scoreboard_observation_api": "RouteAScoreboardOracleBindingRegistry"},
+    {"assertion_id": "p_retire_to_ack", "rtl_owner": "route_a_lifecycle_adapter", "environment_role": "environment_fairness_assumption", "sva_binding_status": "testbench_fairness_harness_bound", "scoreboard_observation_api": "RouteAScoreboardOracleBindingRegistry"},
+    {"assertion_id": "p_credit_return", "rtl_owner": "route_a_core_side_arbiter", "environment_role": "environment_fairness_assumption", "sva_binding_status": "testbench_fairness_harness_bound", "scoreboard_observation_api": "RouteAScoreboardOracleBindingRegistry"}
   ]
 }
