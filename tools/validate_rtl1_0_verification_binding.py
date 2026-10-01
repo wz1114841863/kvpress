@@ -72,14 +72,16 @@ def validate(repo_root: Path, binding_path: Path) -> None:
     r2_bound = {"a_ready_low_nonmutation", "a_fifo_credit_losslessness"}
     r3_bound = {"a_metadata_publish_commit"}
     s2_bound = {"a_gqa_release"}
+    r5_bound = {"a_descriptor_invalidate_before_free"}
     r6_bound = {
         "a_numeric_fault_consumer",
         "a_global_retirement_membership",
+        "a_authority_conservation",
         "a_exactly_one_terminal",
     }
     for assertion_id, record in record_by_id.items():
         status = record.get("sva_binding_status")
-        if assertion_id in r1_bound | r2_bound | r3_bound | s2_bound | r6_bound:
+        if assertion_id in r1_bound | r2_bound | r3_bound | s2_bound | r5_bound | r6_bound:
             if status != "owner_chisel_assert_bound":
                 raise VerificationBindingError(f"owner Chisel assertion binding missing for {assertion_id}")
         elif status not in {"owner_state_pending", "owner_event_pending"}:
@@ -104,6 +106,9 @@ def validate(repo_root: Path, binding_path: Path) -> None:
     for assertion_id in s2_bound:
         if f"s2-chisel-assertion: {assertion_id}" not in sva_text:
             raise VerificationBindingError(f"SVA registry lacks RTL1.4 S2 binding marker for {assertion_id}")
+    for assertion_id in r5_bound:
+        if f"r5-chisel-assertion: {assertion_id}" not in sva_text:
+            raise VerificationBindingError(f"SVA registry lacks RTL1-V R5 binding marker for {assertion_id}")
     for assertion_id in r6_bound:
         if f"r6-chisel-assertion: {assertion_id}" not in sva_text:
             raise VerificationBindingError(f"SVA registry lacks RTL1.5 R6 binding marker for {assertion_id}")

@@ -100,4 +100,21 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
       dut.io.reclaim_complete.expect(true.B)
     }
   }
+
+  it("rejects a stale reclaim terminal and leaves the allocated line live") {
+    simulate(new RouteAPageManager(p)) { dut =>
+      init(dut); publishOne(dut); issueLine(dut)
+      val rsp = dut.io.reclaim_delivery_in.bits
+      rsp.candidate_id.poke(1.U); rsp.candidate_class.poke(p.r2DescriptorMaintenanceClassCode.U)
+      rsp.destination.poke(0.U); rsp.delivery_context_ref.poke(0.U)
+      rsp.r1_response.transaction_identity.request_id.poke(0.U); rsp.r1_response.transaction_identity.incarnation.poke(0.U)
+      rsp.r1_response.fragment_index.poke(0.U); rsp.r1_response.last.poke(true.B)
+      rsp.r1_response.status.poke(p.coreMemoryOkStatusCode.U); rsp.r1_response.data.poke(0.U)
+      dut.io.reclaim_delivery_in.valid.poke(true.B); dut.io.reclaim_delivery_in.ready.expect(false.B)
+      dut.io.reclaim_delivery_in.valid.poke(false.B)
+      dut.io.reclaim_complete.expect(false.B)
+      terminalLine(dut, fault = false)
+      dut.io.reclaim_complete.expect(true.B)
+    }
+  }
 }

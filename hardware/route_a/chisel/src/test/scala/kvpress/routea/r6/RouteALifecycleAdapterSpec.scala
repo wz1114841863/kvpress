@@ -152,6 +152,22 @@ final class RouteALifecycleAdapterSpec extends AnyFunSpec with ChiselSim {
     }
   }
 
+  it("emits only the frozen hot-to-drop authority edge for a DROP maturity") {
+    simulate(new RouteALifecycleAdapter(p)) { dut =>
+      init(dut); initializeSession(dut)
+      driveFrontend(dut, p.r6.kvArrivalEventCode, entry = 0, position = 0)
+      dut.io.frontend_lifecycle_req.valid.poke(true.B); dut.io.frontend_lifecycle_req.ready.expect(true.B)
+      dut.clock.step(); dut.io.frontend_lifecycle_req.valid.poke(false.B)
+      dut.clock.step() // hot and none->hot events are accepted by the ready-high peers.
+      driveFrontend(dut, p.r6.maturityDispositionEventCode, entry = 0, position = 0, retain = false)
+      dut.io.frontend_lifecycle_req.valid.poke(true.B); dut.io.frontend_lifecycle_req.ready.expect(true.B)
+      dut.clock.step(); dut.io.frontend_lifecycle_req.valid.poke(false.B)
+      dut.io.authority_transition_out.valid.expect(true.B)
+      dut.io.authority_transition_out.bits.from_authority.expect(RouteAAuthorityStateCode.Hot.U)
+      dut.io.authority_transition_out.bits.to_authority.expect(RouteAAuthorityStateCode.None.U)
+    }
+  }
+
   it("requires a two-pass R5 reclaim drain before matching retirement ack") {
     simulate(new RouteALifecycleAdapter(p)) { dut =>
       init(dut); initializeSession(dut); sendAttention(dut, 2, 0)

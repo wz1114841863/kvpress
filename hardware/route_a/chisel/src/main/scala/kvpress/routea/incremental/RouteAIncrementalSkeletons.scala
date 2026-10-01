@@ -246,8 +246,22 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     authorityIn.to_authority === RouteAAuthorityStateCode.Packed.U
   io.authority_transition_in.ready := (state === StateActive || state === StateRetiring) && publicationTransition
   when(io.authority_transition_in.fire) {
-    // a_authority_conservation: the only R3-confirmed incoming handoff is pending -> packed.
+    // a_authority_conservation: the only R3-confirmed incoming handoff is
+    // pending -> packed. R6 intentionally carries no duplicate token table;
+    // exact per-entry cardinality stays in the transaction scoreboard.
     assert(publicationTransition)
+  }
+  when(io.authority_transition_out.valid) {
+    val arrivalEdge = controlIsArrival &&
+      io.authority_transition_out.bits.from_authority === RouteAAuthorityStateCode.None.U &&
+      io.authority_transition_out.bits.to_authority === RouteAAuthorityStateCode.Hot.U
+    val retainEdge = !controlIsArrival && controlRetain &&
+      io.authority_transition_out.bits.from_authority === RouteAAuthorityStateCode.Hot.U &&
+      io.authority_transition_out.bits.to_authority === RouteAAuthorityStateCode.Pending.U
+    val dropEdge = !controlIsArrival && !controlRetain &&
+      io.authority_transition_out.bits.from_authority === RouteAAuthorityStateCode.Hot.U &&
+      io.authority_transition_out.bits.to_authority === RouteAAuthorityStateCode.None.U
+    assert(arrivalEdge || retainEdge || dropEdge)
   }
 
   val sourcePlan = io.source_completion_plan_in.bits
@@ -907,6 +921,12 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val initStatusReported = RegInit(false.B)
   val allocated = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))
   val generations = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(0.U(RouteAAnchorWidths.PageGenerationWidth.W))))
+  // Verification-only assertion shadow: it is not a descriptor cache, a
+  // second allocator, or an additional authority owner. It records that a
+  // previously allocated lane has crossed the one accepted durable invalidate
+  // terminal before its allocator bit may remain free.
+  val allocationSeen = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))
+  val durableInvalidation = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))
   val buildActive = RegInit(VecInit(Seq.fill(streamSlots)(false.B)))
   val buildFault = RegInit(VecInit(Seq.fill(streamSlots)(false.B)))
   val buildPageId = Reg(Vec(streamSlots, UInt(RouteAAnchorWidths.PageIdWidth.W)))
@@ -1006,6 +1026,7 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     }.otherwise {
       for (line <- 0 until descriptorLines; lane <- 0 until 4) {
         when(reclaimLine === line.U && allocated(line * 4 + lane)) {
+          durableInvalidation(line * 4 + lane) := true.B
           allocated(line * 4 + lane) := false.B
           generations(line * 4 + lane) := generations(line * 4 + lane) + 1.U
         }
@@ -1017,7 +1038,20 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   // A fault intentionally leaves the matching line allocated and blocks final
   // retirement.  A stalled delivery leaves the candidate/line association intact.
   when(io.reclaim_delivery_in.fire && reclaimDelivery.r1_response.status === p.coreMemoryOkStatusCode.U) {
+    // a_descriptor_invalidate_before_free: this is the only free/generation
+    // advance site, and it is guarded by R6's existing retirement permit plus
+    // the matching terminal R1 descriptor response.
     assert(reclaimDeliveryMatches)
+    assert(reclaimPermitted)
+    assert(lineAllocated(reclaimLine))
+  }
+  for (page <- 0 until p.r5AllocatorEntries) {
+    when(!allocated(page) && allocationSeen(page)) {
+      assert(durableInvalidation(page))
+    }
+    when(allocated(page)) {
+      assert(!durableInvalidation(page))
+    }
   }
   io.reclaim_complete := reclaimPermitted && !reclaimActive && !anyAllocatedLine && !reclaimFaulted
 
@@ -1036,6 +1070,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     allocStreamWide < streamSlots.U && !buildActive(allocStream) && freeExists
   when(io.page_allocation_req_in.fire) {
     allocated(freeIndex) := true.B
+    allocationSeen(freeIndex) := true.B
+    durableInvalidation(freeIndex) := false.B
     buildActive(allocStream) := true.B
     buildFault(allocStream) := false.B
     buildPageId(allocStream) := freeIndex

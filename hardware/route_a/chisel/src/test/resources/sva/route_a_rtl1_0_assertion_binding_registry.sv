@@ -16,6 +16,7 @@ module route_a_rtl1_0_assertion_binding_registry;
   // assertion-id: a_ready_low_nonmutation
   // r2-chisel-assertion: a_ready_low_nonmutation
   // assertion-id: a_descriptor_invalidate_before_free
+  // r5-chisel-assertion: a_descriptor_invalidate_before_free
   // assertion-id: a_numeric_fault_consumer
   // r6-chisel-assertion: a_numeric_fault_consumer
   // assertion-id: a_reset_stale_exclusion
@@ -23,6 +24,7 @@ module route_a_rtl1_0_assertion_binding_registry;
   // assertion-id: a_global_retirement_membership
   // r6-chisel-assertion: a_global_retirement_membership
   // assertion-id: a_authority_conservation
+  // r6-chisel-assertion: a_authority_conservation
   // assertion-id: a_fifo_credit_losslessness
   // r2-chisel-assertion: a_fifo_credit_losslessness
   // assertion-id: a_gqa_release
