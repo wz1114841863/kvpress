@@ -17,6 +17,7 @@ numeric datapath, timing, throughput, PPA, or RTL formal proof.
 | `c4fe02e61f389da774a41b3c046bfb73f306d56f61cd736f6756075a8458be09` | `hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala` |
 | `97932341d2d9a7f50c64f54d5e3fa69b36e6383fcd2d22661a84789df39a3b1c` | `hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAFairReclaimIntegrationSpec.scala` |
 | `bd35f833ec0cee69bcf06d4b889b0936a90a3697be47061b0d7c384e8524718a` | `hardware/route_a/chisel/testbench/route_a_scoreboard_event_adapter.py` |
+| `d556a6441a583faf6b190d162cac0a48d0b4a1003ca62180ed4dd346650b2ce5` | `tests/test_rtl1_v_scoreboard_event_adapter.py` |
 | `fbcca99898330c0f89985a30c5ed4e1bc3b191bb6aa61a4c74423a344f519237` | `hardware/route_a/chisel/src/test/resources/rtl1_0_verification_binding.json` |
 | `167a7280aa6c036f2aa2fcca2493ae96964838e678f88187482e2d44776db6fe` | `tools/validate_rtl1_0_verification_binding.py` |
 
