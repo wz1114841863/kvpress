@@ -1,7 +1,7 @@
 {
   "schema_version": "kvzap-route-a-rtl-entry-scoreboard-oracle-1.0",
-  "status": "complete_gate_rtl0_step_4_planning_only",
-  "scope": "Future RTL scoreboard oracle binding only; Python references are event-level golden semantics, not RTL, SVA, timing, or PPA evidence.",
+  "status": "complete_gate_rtl0_inventory_with_rtl1_v_subset_executable_adapter",
+  "scope": "The complete Gate-RTL0 binding inventory remains planning-only. RTL1-V adds a testbench-only executable transaction adapter for its authority/reclaim/lifecycle subset; Python references are event-level golden semantics, not RTL, SVA, timing, PPA, or cycle-by-cycle equivalence evidence.",
   "assertion_matrix": "analysis/rtl_entry_assertion_matrix.json",
   "bindings": [
     {"assertion_id":"a_descriptor_unique_memory_path","rtl_owner":"route_a_core_mem_if_v1","oracle":"kvpress/route_a_cross_closure_reference.py","entry_points":["DescriptorMaintenanceTransportReference.bind","grant_next","terminal"],"observe":"R5 descriptor and payload requests share R2 then R1; durable is not publication","forbidden_adapter":"do not create a descriptor bypass or native-HBM command model"},

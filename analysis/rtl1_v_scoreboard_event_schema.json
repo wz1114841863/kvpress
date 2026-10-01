@@ -23,6 +23,7 @@
     {"domain": "reclaim", "event": "finish_reclaim", "required_fields": ["ref"]},
     {"domain": "lifecycle", "event": "ack_init", "required_fields": ["acknowledgement"]},
     {"domain": "lifecycle", "event": "session_start", "required_fields": ["session_id", "context_tokens"]},
+    {"domain": "lifecycle", "event": "kv_arrival", "required_fields": ["entry_id", "layer", "kv_head", "logical_position", "payload_ref"]},
     {"domain": "lifecycle", "event": "attention_accept", "required_fields": ["request_id", "incarnation", "layer", "kv_head", "query_position"]},
     {"domain": "lifecycle", "event": "gqa_complete", "required_fields": ["request_id", "incarnation"]},
     {"domain": "lifecycle", "event": "terminal", "required_fields": ["request_id", "incarnation", "success"]},

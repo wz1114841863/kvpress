@@ -1,6 +1,6 @@
 # Gate-RTL0.4 — Python scoreboard-oracle closure
 
-**Status:** `complete_non_implementational_scoreboard_oracle_binding; rtl_entry_review_pending`.
+**Status:** `complete_non_implementational_scoreboard_oracle_binding; rtl1_v_subset_event_adapter_in_progress`.
 
 `rtl_entry_scoreboard_oracle_manifest.json` binds every RTL0.3 property to one
 existing Python oracle and its event-level observable state.  The testbench
@@ -16,6 +16,9 @@ cross-closure for the shared publication nesting.  Python host arithmetic and
 containers are golden semantic references only; they are not RTL datapaths,
 microarchitectures, proof engines, or performance models.
 
-Every RTL0.3 record has exactly one binding.  Progress bindings consume only a
+Every RTL0.3 record has exactly one binding. RTL1-V's separate frozen event
+schema and host-side adapter execute only its authority/reclaim/lifecycle
+subset; the inventory registry remains the source of truth for every other
+future testbench mapping. Progress bindings consume only a
 finite fair event stimulus described by their matrix assumption; they do not
 assert an unconstrained environment, a cycle deadline, or throughput.
