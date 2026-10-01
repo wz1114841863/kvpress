@@ -54,6 +54,12 @@ selected deliberately inert producer paths. Its first slice must emit the same
 transaction event schema to the scoreboard; it may not bypass the adapter or
 reinterpret the frozen records.
 
+The authorized RTL2 activation order, its separate read/write delivery
+classes, replaceable functional-storage boundary, and required completion
+review are frozen in [`rtl2_phase_contract.md`](rtl2_phase_contract.md).
+RTL1-V's event schema remains a historical completed-coverage record; RTL2.0
+must create a versioned extension rather than silently rewrite that provenance.
+
 ## RTL1-I0 progress
 
 **RTL1-I0 cross-owner integration contract: complete; no behavioral wiring.**

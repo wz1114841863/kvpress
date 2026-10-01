@@ -19,9 +19,12 @@ deleting or rewriting frozen evidence.
 passed the R1--R6 architecture cross-closure; Gate-RTL0 passed and RTL1
 owner-local control is complete. RTL1-I1--I4 have subsequently closed safe
 start/empty retirement, retained-record publication association,
-source-instance/R6 completion, and R5 reclaim through the unique R2/R1 path.
-Remaining work is production ingress binding and end-to-end verification—not
-PPA, controller, native-HBM, or performance work.
+source-instance/R6 completion, and R5 reclaim through the unique R2/R1 path;
+RTL1-V subsequently closed the remaining bounded verification/scoreboard
+bindings. RTL2 planning is frozen, but its production ingress activation and
+completion review have not started. Remaining work is production ingress
+binding and end-to-end transaction/dataflow verification—not PPA, controller,
+native-HBM, numeric realization, or performance work.
 
 ## Current architecture and verification records
 
@@ -37,6 +40,8 @@ Read these only when the corresponding level of detail is required:
 | Gate-RTL0 hierarchy and sole-owner split | [`rtl_entry_hierarchy_owner_contract.md`](rtl_entry_hierarchy_owner_contract.md), [`rtl_entry_interface_manifest.json`](rtl_entry_interface_manifest.json), and [`rtl_entry_hierarchy_owner_provenance_freeze.md`](rtl_entry_hierarchy_owner_provenance_freeze.md) |
 | Gate-RTL0 logical port/parameter matrix | [`rtl_entry_port_parameter_contract.md`](rtl_entry_port_parameter_contract.md), [`rtl_entry_port_parameter_provenance_freeze.md`](rtl_entry_port_parameter_provenance_freeze.md), and `tools/validate_rtl_entry_interface_manifest.py` |
 | Gate-RTL0 assertion/scoreboard/coverage plan | [`rtl_entry_assertion_verification_contract.md`](rtl_entry_assertion_verification_contract.md) and [`rtl_entry_assertion_matrix.json`](rtl_entry_assertion_matrix.json) |
+| RTL1-V executable verification closure | [`rtl1_v_verification_completion_contract.md`](rtl1_v_verification_completion_contract.md), [`rtl1_v_scoreboard_event_schema.json`](rtl1_v_scoreboard_event_schema.json), and [`rtl1_v_provenance_freeze.md`](rtl1_v_provenance_freeze.md) |
+| RTL2 production transaction/dataflow activation plan | [`rtl2_phase_contract.md`](rtl2_phase_contract.md) |
 | RTL1-I3 source/R4/R6 control composition | [`rtl1_i3_delivery_source_contract.md`](rtl1_i3_delivery_source_contract.md) and [`rtl1_i3_interface_manifest.json`](rtl1_i3_interface_manifest.json) |
 | RTL1-I4 reclaim transport contract | [`rtl1_i4_reclaim_contract.md`](rtl1_i4_reclaim_contract.md) and [`rtl1_i4_interface_manifest.json`](rtl1_i4_interface_manifest.json) |
 
