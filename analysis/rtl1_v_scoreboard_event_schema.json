@@ -1,6 +1,6 @@
 {
   "schema_version": "kvzap-route-a-rtl1-v-scoreboard-event-1.0",
-  "status": "contract_frozen_implementation_in_progress",
+  "status": "rtl1_v_subset_adapter_complete",
   "scope": "Testbench-only accepted transaction events for Python semantic scoreboarding; no cycle, timing, PPA, numeric datapath, controller, model, GPU, or RTL equivalence claim.",
   "canonical_domains": ["authority", "reclaim", "lifecycle"],
   "event_records": [

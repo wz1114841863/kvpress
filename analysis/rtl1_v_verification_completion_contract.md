@@ -1,6 +1,6 @@
 # RTL1-V — assertion, fairness, and scoreboard verification completion
 
-**Status:** `contract_frozen_implementation_in_progress`.
+**Status:** `rtl1_v_verification_completion_complete`.
 
 RTL1-V closes verification evidence intentionally left after RTL1-I0--I4. It
 does not revise a Route-A architecture choice: it does not connect top-inert
@@ -40,9 +40,10 @@ equivalence, model execution, numeric arithmetic, or Full-KV fallback.
 
 ## Required evidence and disposition
 
-RTL1-V completes only when it has: (1) the R5/R6 owner assertions and negative
+RTL1-V completes with: (1) the R5/R6 owner assertions and negative
 directed tests, (2) a fixed-seed legal-stall R1→R2→R5/R6 composition, (3) an
 adapter test for authority, reclaim, and finite-fair lifecycle traces, and
 (4) updated manifest/SVA validation. PASS authorizes RTL2 production-dataflow
 planning and its first control/event slice, not an HBM controller, numeric RTL,
-timing, PPA, or speedup claim.
+timing, PPA, or speedup claim. The provenance-bound no-model evidence is
+recorded in `analysis/rtl1_v_provenance_freeze.md`.

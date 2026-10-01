@@ -114,6 +114,19 @@ a scoreboard observation because R6 must not create a second authority table.
 Every progress property remains an environment-fairness testbench obligation
 rather than DUT logic.
 
+## RTL1-V verification completion
+
+RTL1-V now binds R5's durable-invalidation-before-free assertion and R6's
+authority-edge conservation assertion. It adds a fixed-seed legal-stall,
+test-only R1→R2→R5/R6 reclaim composition and a host-side transaction adapter
+for the frozen Python authority/reclaim/lifecycle references. The latter is an
+event-level semantic scoreboard, not a cycle-level co-simulation or an RTL
+equivalence proof. The three progress records are explicitly testbench
+fairness witnesses: eventual external completion/drain release is an
+environment assumption, never a DUT latency claim. See
+`analysis/rtl1_v_verification_completion_contract.md` and
+`analysis/rtl1_v_provenance_freeze.md`.
+
 ## RTL1.1 R1 implementation
 
 `common/RouteACommonSkeletons.scala` now implements R1 alone:

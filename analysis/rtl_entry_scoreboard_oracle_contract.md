@@ -1,6 +1,6 @@
 # Gate-RTL0.4 — Python scoreboard-oracle closure
 
-**Status:** `complete_non_implementational_scoreboard_oracle_binding; rtl1_v_subset_event_adapter_in_progress`.
+**Status:** `complete_non_implementational_scoreboard_oracle_binding; rtl1_v_subset_event_adapter_complete`.
 
 `rtl_entry_scoreboard_oracle_manifest.json` binds every RTL0.3 property to one
 existing Python oracle and its event-level observable state.  The testbench

@@ -1,6 +1,6 @@
 # RTL1 — Interface / Control Skeleton Bring-up
 
-**Status:** `rtl1_owner_local_control_and_replaceable_r4_boundary_complete; rtl1_i0_to_i4_cross_owner_control_complete; rtl1_v_verification_completion_in_progress; production_dataflow_and_numeric_core_pending`.
+**Status:** `rtl1_owner_local_control_and_replaceable_r4_boundary_complete; rtl1_i0_to_i4_cross_owner_control_complete; rtl1_v_verification_completion_complete; rtl2_production_dataflow_planning_authorized; numeric_core_pending`.
 
 RTL1 may not change frozen owners, ports, assertions, oracles, pruning,
 admission, scheduler semantics, page size, S2 count, outstanding bounds, merge
@@ -21,8 +21,8 @@ and speedup remain outside RTL1 and require later implementation/Gate-B evidence
 
 ## RTL1-V verification-completion gate
 
-**Status:** `in_progress; no production dataflow integration authorized by this
-section alone`.
+**Status:** `complete; RTL2 production-dataflow planning is authorized, but no
+numeric, controller, timing, PPA, or speedup claim is authorized`.
 
 RTL1-I0--I4 close the currently selected cross-owner *control associations*.
 They do not by themselves make the RTL1 verification evidence complete. RTL1-V
