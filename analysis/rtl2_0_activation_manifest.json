@@ -1,0 +1,95 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-0-activation-manifest-1.0",
+  "status": "rtl2_0_inventory_complete_reviewed_hierarchy_interface_amendments_required",
+  "scope": "Machine-readable RTL2.0 producer/consumer and event-schema activation inventory. No payload behavior, storage realization, numeric RTL, controller, timing, throughput, PPA, model/GPU, or new A4 DSE claim.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl_entry_interface_manifest.json",
+    "analysis/rtl1_i3_delivery_source_contract.md",
+    "analysis/rtl1_i4_reclaim_contract.md",
+    "analysis/rtl1_v_verification_completion_contract.md"
+  ],
+  "top_rule": {
+    "top_module": "route_a_kv_subsystem_top",
+    "composition_only": true,
+    "forbidden": [
+      "top-generated source plan",
+      "top-reconstructed delivery context",
+      "top-manufactured terminal",
+      "top authority ownership",
+      "adapter-created authority transition"
+    ]
+  },
+  "scoreboard_schema": {
+    "path": "analysis/rtl2_scoreboard_event_schema.json",
+    "state": "required_before_first_behavioral_activation",
+    "adapter": "testbench_route_a_scoreboard_event_adapter_v2",
+    "forbidden": [
+      "infer architectural event from arbitrary internal state",
+      "rewrite frozen rtl1_v_scoreboard_event_schema.json",
+      "raw HBM byte observation",
+      "cycle or latency annotation"
+    ]
+  },
+  "event_records": [
+    {"event":"request_accept","emitter_owner":"route_a_core_mem_if_v1","carrier_ids":["r2_to_r1_accepted_request"],"identity_fields":["request_id","incarnation","reset_epoch","delivery_context_ref"],"adapter_mapping":"r1.accepted_request","activation_phase":"rtl2_1b"},
+    {"event":"fragment_deliver","emitter_owner":"route_a_core_side_arbiter","carrier_ids":["r2_to_typed_delivery_router"],"identity_fields":["request_id","incarnation","reset_epoch","delivery_context_ref","fragment_index","last"],"adapter_mapping":"r2.accepted_response_delivery","activation_phase":"rtl2_2"},
+    {"event":"write_commit","emitter_owner":"route_a_core_mem_if_v1","carrier_ids":["r1_to_r3_packed_write_terminal","r1_to_r5_descriptor_terminal"],"identity_fields":["request_id","incarnation","reset_epoch","delivery_context_ref","operation_kind","status"],"adapter_mapping":"r1.write_terminal","activation_phase":"rtl2_1b"},
+    {"event":"descriptor_durable","emitter_owner":"route_a_page_manager","carrier_ids":["r5_descriptor_durable_to_r3"],"identity_fields":["page_ref","generation","layer","kv_head","descriptor_operation"],"adapter_mapping":"r5.descriptor_durable","activation_phase":"rtl2_1b"},
+    {"event":"metadata_publish_commit","emitter_owner":"route_a_m2_p3_wrapper","carrier_ids":["r3_nested_publication_to_r5","r3_publication_ack_to_r6"],"identity_fields":["transaction_group_tag","entry_id","record_ordinal","page_ref","generation"],"adapter_mapping":"r3.metadata_publish_commit","activation_phase":"rtl2_1c"},
+    {"event":"authority_transition","emitter_owners":["route_a_lifecycle_adapter","route_a_m2_p3_wrapper"],"carrier_ids":["r6_to_r3_admission_context","r3_publication_ack_to_r6"],"identity_fields":["entry_id","transaction_group_tag","from_authority","to_authority"],"adapter_mapping":"authority.carrier_specific_transition","activation_phase":"rtl2_1a"},
+    {"event":"source_deliverable","emitter_owners":["route_a_hot_source_path","route_a_direct_pending_endpoint_v1","route_a_s2_gqa_source_wrapper"],"carrier_ids":["source_owner_to_packet_adapter"],"identity_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation"],"adapter_mapping":"source.source_kind_specific_deliverable","activation_phase":"rtl2_4"},
+    {"event":"consumer_partial_commit","emitter_owner":"route_a_merge_boundary","carrier_ids":["r4_to_matching_source_commit"],"identity_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation","consumer_id"],"adapter_mapping":"r4.consumer_partial_commit","activation_phase":"rtl2_4"},
+    {"event":"source_release","emitter_owners":["route_a_hot_source_path","route_a_direct_pending_endpoint_v1","route_a_s2_gqa_source_wrapper"],"carrier_ids":["source_owner_release_to_r6"],"identity_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation"],"adapter_mapping":"source.source_kind_specific_release","activation_phase":"rtl2_4"},
+    {"event":"merge_request","emitter_owner":"route_a_lifecycle_adapter","carrier_ids":["r6_to_r4_merge_request"],"identity_fields":["request_id","incarnation","source_presence"],"adapter_mapping":"r6.merge_request","activation_phase":"rtl2_5"},
+    {"event":"attention_terminal","emitter_owner":"route_a_merge_boundary","carrier_ids":["r4_to_r6_terminal"],"identity_fields":["request_id","incarnation","terminal_status"],"adapter_mapping":"r4.attention_terminal","activation_phase":"rtl2_5"},
+    {"event":"descriptor_invalidate","emitter_owner":"route_a_page_manager","carrier_ids":["r5_to_r2_descriptor_reclaim_candidate"],"identity_fields":["page_ref","generation","descriptor_operation","delivery_context_ref"],"adapter_mapping":"r5.descriptor_invalidate","activation_phase":"rtl2_6"},
+    {"event":"page_free","emitter_owner":"route_a_page_manager","carrier_ids":["r5_allocator_release"],"identity_fields":["page_ref","generation"],"adapter_mapping":"r5.page_free","activation_phase":"rtl2_6"},
+    {"event":"retire_ack","emitter_owner":"route_a_lifecycle_adapter","carrier_ids":["r6_to_runtime_retire_ack"],"identity_fields":["session_id","request_id","incarnation"],"adapter_mapping":"r6.retire_ack","activation_phase":"rtl2_6"}
+  ],
+  "carrier_records": [
+    {"id":"r6_to_r3_admission_context","producer":"route_a_lifecycle_adapter","consumer":"route_a_m2_p3_wrapper","current_state":"wired_control_only","activation_phase":"rtl2_1a","semantic_event":"authority_transition","identity_fields":["entry_id","transaction_group_tag","record_ordinal"],"amendment_id":null},
+    {"id":"hot_to_admission_payload_ingress","producer":"route_a_hot_source_path","consumer":"route_a_admission_publication_ingress_adapter","current_state":"absent_from_frozen_interface","activation_phase":"rtl2_1a","semantic_event":"fragment_deliver","identity_fields":["entry_id","layer","kv_head","logical_position","transaction_group_tag"],"amendment_id":"hot_payload_egress_interface"},
+    {"id":"admission_to_r3_p3_claim","producer":"route_a_admission_publication_ingress_adapter","consumer":"route_a_m2_p3_wrapper","current_state":"top_inert","activation_phase":"rtl2_1a","semantic_event":"authority_transition","identity_fields":["layer","stage_generation","transaction_group_tag","valid_records"],"amendment_id":"admission_publication_ingress_adapter"},
+    {"id":"admission_to_r5_allocation_request","producer":"route_a_admission_publication_ingress_adapter","consumer":"route_a_page_manager","current_state":"top_inert","activation_phase":"rtl2_1a","semantic_event":"descriptor_durable","identity_fields":["layer","kv_head","transaction_group_tag","valid_records"],"amendment_id":"admission_publication_ingress_adapter"},
+    {"id":"r3_to_r2_packed_write_candidate","producer":"route_a_m2_p3_wrapper","consumer":"route_a_core_side_arbiter","current_state":"absent_from_frozen_interface","activation_phase":"rtl2_1b","semantic_event":"request_accept","identity_fields":["candidate_id","candidate_class","delivery_context_ref","transaction_group_tag"],"amendment_id":"r2_multi_producer_ingress_interface"},
+    {"id":"r2_to_r1_accepted_request","producer":"route_a_core_side_arbiter","consumer":"route_a_core_mem_if_v1","current_state":"wired_reclaim_only","activation_phase":"rtl2_1b","semantic_event":"request_accept","identity_fields":["request_id","incarnation","reset_epoch","delivery_context_ref"],"amendment_id":null},
+    {"id":"r1_to_r3_packed_write_terminal","producer":"route_a_core_mem_if_v1","consumer":"route_a_m2_p3_wrapper","current_state":"top_inert","activation_phase":"rtl2_1b","semantic_event":"write_commit","identity_fields":["request_id","incarnation","reset_epoch","delivery_context_ref","stage_generation"],"amendment_id":"typed_delivery_router"},
+    {"id":"r1_to_r5_descriptor_terminal","producer":"route_a_core_mem_if_v1","consumer":"route_a_page_manager","current_state":"top_inert_except_reclaim","activation_phase":"rtl2_1b","semantic_event":"write_commit","identity_fields":["request_id","incarnation","reset_epoch","delivery_context_ref","descriptor_operation"],"amendment_id":"typed_delivery_router"},
+    {"id":"r5_descriptor_durable_to_r3","producer":"route_a_page_manager","consumer":"route_a_m2_p3_wrapper","current_state":"absent_from_frozen_interface","activation_phase":"rtl2_1b","semantic_event":"descriptor_durable","identity_fields":["page_ref","generation","layer","kv_head"],"amendment_id":"r3_r5_durability_prerequisite_interface"},
+    {"id":"r3_nested_publication_to_r5","producer":"route_a_m2_p3_wrapper","consumer":"route_a_page_manager","current_state":"wired_control_only","activation_phase":"rtl2_1c","semantic_event":"metadata_publish_commit","identity_fields":["transaction_group_tag","page_ref","generation"],"amendment_id":null},
+    {"id":"r3_publication_ack_to_r6","producer":"route_a_m2_p3_wrapper","consumer":"route_a_lifecycle_adapter","current_state":"wired_control_only","activation_phase":"rtl2_1c","semantic_event":"metadata_publish_commit","identity_fields":["transaction_group_tag","entry_id","record_ordinal","from_authority","to_authority"],"amendment_id":null},
+    {"id":"r2_to_typed_delivery_router","producer":"route_a_core_side_arbiter","consumer":"route_a_typed_delivery_router","current_state":"absent_from_frozen_hierarchy","activation_phase":"rtl2_2","semantic_event":"fragment_deliver","identity_fields":["request_id","incarnation","reset_epoch","delivery_context_ref","candidate_class"],"amendment_id":"typed_delivery_router"},
+    {"id":"source_owner_to_packet_adapter","producer":"route_a_source_service_packet_adapter","consumer":"route_a_merge_boundary","current_state":"top_inert","activation_phase":"rtl2_4","semantic_event":"source_deliverable","identity_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation"],"amendment_id":"source_service_packet_adapter"},
+    {"id":"r4_to_matching_source_commit","producer":"route_a_merge_boundary","consumer":"matching_source_owner","current_state":"wired_demux_control_only","activation_phase":"rtl2_4","semantic_event":"consumer_partial_commit","identity_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation","consumer_id"],"amendment_id":"source_service_packet_adapter"},
+    {"id":"source_owner_release_to_r6","producer":"matching_source_owner","consumer":"route_a_lifecycle_adapter","current_state":"wired_control_only","activation_phase":"rtl2_4","semantic_event":"source_release","identity_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation"],"amendment_id":"source_service_packet_adapter"},
+    {"id":"r6_to_r4_merge_request","producer":"route_a_lifecycle_adapter","consumer":"route_a_merge_boundary","current_state":"wired_control_only","activation_phase":"rtl2_5","semantic_event":"merge_request","identity_fields":["request_id","incarnation","source_presence"],"amendment_id":null},
+    {"id":"r4_to_r6_terminal","producer":"route_a_merge_boundary","consumer":"route_a_lifecycle_adapter","current_state":"wired_control_only","activation_phase":"rtl2_5","semantic_event":"attention_terminal","identity_fields":["request_id","incarnation","terminal_status"],"amendment_id":"r4_result_stub_provider"},
+    {"id":"r5_to_r2_descriptor_reclaim_candidate","producer":"route_a_page_manager","consumer":"route_a_core_side_arbiter","current_state":"wired_reclaim_only","activation_phase":"rtl2_6","semantic_event":"descriptor_invalidate","identity_fields":["page_ref","generation","delivery_context_ref"],"amendment_id":null},
+    {"id":"r5_allocator_release","producer":"route_a_page_manager","consumer":"route_a_page_manager","current_state":"owner_local_behavior_complete","activation_phase":"rtl2_6","semantic_event":"page_free","identity_fields":["page_ref","generation"],"amendment_id":null},
+    {"id":"r6_to_runtime_retire_ack","producer":"route_a_lifecycle_adapter","consumer":"runtime_session_manager","current_state":"wired_control_only","activation_phase":"rtl2_6","semantic_event":"retire_ack","identity_fields":["session_id","request_id","incarnation"],"amendment_id":null}
+  ],
+  "required_amendments": [
+    {"id":"hot_payload_egress_interface","kind":"interface","owner":"route_a_hot_source_path","purpose":"Expose only identity-bearing matured payload/sidecar handoff to its non-authoritative admission ingress consumer.","forbidden":["hot residency duplication","admission re-decision","physical hot macro selection"]},
+    {"id":"admission_publication_ingress_adapter","kind":"hierarchy","owner":"route_a_admission_publication_ingress_adapter","purpose":"Protocol-only fanout of immutable retained context to R3 claim/P3 inputs and R5 allocation prerequisites; owns neither authority nor payload residency.","forbidden":["admission policy","metadata publication","page visibility","physical queue selection"]},
+    {"id":"r2_multi_producer_ingress_interface","kind":"interface","owner":"route_a_core_side_arbiter","purpose":"Accept independently owned production candidates without introducing a top-level selector; R2 retains FIFO/dependency/credit/grant ownership.","forbidden":["second R1 path","external arbitration policy","new scheduler"]},
+    {"id":"typed_delivery_router","kind":"hierarchy","owner":"route_a_typed_delivery_router","purpose":"Route an R2-preserved delivery context to exactly one named read-fragment or write-terminal endpoint; owns no request identity, authority, or terminal creation.","forbidden":["response reinterpretation","source scheduling","second memory port","authority transfer"]},
+    {"id":"r3_r5_durability_prerequisite_interface","kind":"interface","owner":"route_a_page_manager","purpose":"Report exact descriptor durability to R3 before the existing nested publication commit.","forbidden":["descriptor visibility outside metadata_publish_commit","duplicate commit","page free"]},
+    {"id":"source_service_packet_adapter","kind":"hierarchy","owner":"route_a_source_service_packet_adapter","purpose":"Packetize owner-provided hot/direct/S2 source facts in frozen canonical order and carry SourceInstance sideband to R4; owns no source residency, release, or numeric result.","forbidden":["source-plan synthesis at top","source reorder equivalence claim","numeric merge","physical source mux selection"]},
+    {"id":"r4_result_stub_provider","kind":"testbench_boundary","owner":"testbench_route_a_r4_result_stub_provider","purpose":"Provide identity-matching deterministic success/fault facts through the frozen R4 boundary during RTL2.5 verification only.","forbidden":["numeric implementation claim","outward terminal bypass","cycle/latency claim"]}
+  ],
+  "review_disposition": {
+    "rtl2_0_pass": false,
+    "reason":"Five hierarchy/interface amendments are required before any inert production carrier can be behaviorally activated. The manifest deliberately records them instead of permitting top-level temporary producers.",
+    "next_action":"Review and explicitly authorize or revise each required amendment; only then create the versioned RTL2 scoreboard schema and the first behaviorally active RTL2.1a slice."
+  },
+  "evidence_labels": [
+    "pure-software machine-readable activation contract",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}

@@ -15,6 +15,18 @@ does not reopen pruning, admission policy, page size, M2 organization, P3
 mapping, S2 count, GQA legality, scheduler semantics, or the one atomic
 metadata-publication boundary.
 
+## RTL2.0 progress
+
+**Status:** `inventory_complete; behavior_not_started;
+hierarchy_interface_amendment_review_required`.
+
+[`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and its
+machine-readable manifest complete the fail-closed owner/event inventory.  It
+finds seven explicit hierarchy/interface/testbench-boundary amendments needed
+to activate production carriers without making the top a producer or a second
+authority owner.  This does not pass RTL2.0: the amendments require separate
+review before any top-inert production wire or payload behavior is changed.
+
 ## Entry conditions and common rules
 
 RTL2 begins from the RTL1-V completion state.  Every activated carrier must
