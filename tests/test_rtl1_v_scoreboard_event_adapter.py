@@ -36,6 +36,7 @@ def test_adapter_checks_authority_reclaim_and_finite_fair_progress_without_model
     ]: adapter.dispatch(event)
     assert adapter.authority.authority("t0") == "packed"
     assert adapter.authority.authoritative_count("t0") == 1
+    assert adapter.authority.credit_state() == (1, 0)
 
     ref = adapter.dispatch(_event(module, "reclaim", "allocate", ref="p0", layer=0, kv_head=0))
     adapter.dispatch(_event(module, "reclaim", "payload_write_commit", ref="p0"))
