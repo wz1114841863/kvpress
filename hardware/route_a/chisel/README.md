@@ -106,10 +106,12 @@ exact path, entry-point labels, observation, and forbidden adapter condition.
 It does not translate or execute any event before owner behavior exists.
 
 The SVA resource is a zero-port `bind` registry at the frozen top. It provides
-a stable formal/testbench attachment location. R1/R2/R3/S2 and selected R6
-safety records are owner-Chisel-bound; descriptor reclaim and composed global
-authority remain pending, and every progress property remains
-`owner_event_pending`. Environment fairness remains a testbench assumption
+a stable formal/testbench attachment location. R1/R2/R3/S2 and the selected
+R6 safety records are owner-Chisel-bound, including global retirement
+membership. R5 descriptor reclaim and R6 authority-edge conservation are the
+scoped RTL1-V additions; exact global per-token authority cardinality remains
+a scoreboard observation because R6 must not create a second authority table.
+Every progress property remains an environment-fairness testbench obligation
 rather than DUT logic.
 
 ## RTL1.1 R1 implementation

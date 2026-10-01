@@ -1,6 +1,6 @@
 # RTL1 — Interface / Control Skeleton Bring-up
 
-**Status:** `rtl1_owner_local_control_and_replaceable_r4_boundary_complete; rtl1_i0_cross_owner_contract_frozen; behavioral_top_integration_numeric_core_and_composed_proof_pending`.
+**Status:** `rtl1_owner_local_control_and_replaceable_r4_boundary_complete; rtl1_i0_to_i4_cross_owner_control_complete; rtl1_v_verification_completion_in_progress; production_dataflow_and_numeric_core_pending`.
 
 RTL1 may not change frozen owners, ports, assertions, oracles, pruning,
 admission, scheduler semantics, page size, S2 count, outstanding bounds, merge
@@ -18,6 +18,41 @@ format, or physical realization parameters.
 
 CDC/HBM adapter, macro/port count, physical queues, frequency, timing, PPA,
 and speedup remain outside RTL1 and require later implementation/Gate-B evidence.
+
+## RTL1-V verification-completion gate
+
+**Status:** `in_progress; no production dataflow integration authorized by this
+section alone`.
+
+RTL1-I0--I4 close the currently selected cross-owner *control associations*.
+They do not by themselves make the RTL1 verification evidence complete. RTL1-V
+is the deliberately small closure between that result and later production
+dataflow integration. It may add only owner-local assertions, deterministic
+legal-stall tests, a testbench-only environment-fairness harness, and a
+transaction-level Python-scoreboard adapter. It may not add a P3 payload path,
+S2/direct producer, R4 arithmetic, controller, timing model, physical queue,
+or any performance/PPA claim.
+
+RTL1-V must close all of the following:
+
+1. R5 `a_descriptor_invalidate_before_free`: a free allocator lane with a
+   nonzero generation is reachable only after the matching durable invalidation
+   terminal under the existing R6 permit/quiescence precondition.
+2. R6 `a_authority_conservation`: R6 accepts/emits only the frozen
+   `none->hot`, `hot->none`, `hot->pending`, and `pending->packed` authority
+   linearization edges. It does not create a second per-token authority table;
+   exact per-token cardinality remains an executable-scoreboard observation.
+3. The three progress records have a finite, explicitly fair testbench
+   harness. Fairness releases legal stalls eventually; it is not a latency,
+   timeout, throughput, or DUT guarantee.
+4. The existing Python references consume a frozen transaction event schema
+   through a testbench-only adapter. This is semantic comparison support, not
+   RTL/Python co-simulation, an RTL numeric model, or an end-to-end proof.
+
+Only after RTL1-V passes may `RTL2 — production dataflow integration` replace
+selected deliberately inert producer paths. Its first slice must emit the same
+transaction event schema to the scoreboard; it may not bypass the adapter or
+reinterpret the frozen records.
 
 ## RTL1-I0 progress
 
@@ -254,8 +289,9 @@ inventory binding, not an event-dispatch adapter or an RTL/Python equivalence
 claim.
 
 No-model ChiselSim directed tests cover reset-init gating, stalled read
-fragment forwarding, terminal stale suppression, same-epoch identity reuse
-rejection, the four-read bound, ordered write fragments, successful terminal
+fragment forwarding, terminal stale suppression, live-identity overlap
+rejection and post-terminal finite reuse only under the external
+no-old-response/wrap-quiescence assumption, the four-read bound, ordered write fragments, successful terminal
 write commit, early-commit terminal fault, and pre-init stale response
 suppression. They make no HBM controller, CDC, timing, bandwidth, PPA, model,
 GPU, performance, or complete RTL-correctness claim.
