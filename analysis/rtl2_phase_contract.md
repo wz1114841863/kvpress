@@ -27,6 +27,13 @@ to activate production carriers without making the top a producer or a second
 authority owner.  This does not pass RTL2.0: the amendments require separate
 review before any top-inert production wire or payload behavior is changed.
 
+**RTL2.0a payload interface/owner closure: complete; behavior pending.**
+[`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md)
+freezes the logical 8x64-B materialization and retained-maturity egress
+transactions at the sole hot owner.  It creates no Chisel payload backing or
+production behavior; the next required review is the finite admission/group
+builder contract.
+
 ## Entry conditions and common rules
 
 RTL2 begins from the RTL1-V completion state.  Every activated carrier must

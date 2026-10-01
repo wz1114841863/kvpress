@@ -1,6 +1,6 @@
 # RTL2.0 — Producer/consumer activation inventory
 
-**Status:** `inventory_complete; behavior_not_started; hierarchy_interface_amendment_review_required`.
+**Status:** `inventory_complete; rtl2_0a_payload_interface_owner_closed; behavior_not_started; hierarchy_interface_amendment_review_required`.
 
 This is the first executable planning slice of RTL2.  It creates a
 machine-readable activation inventory and validates it with no-model Python
@@ -40,7 +40,7 @@ before their associated carrier is activated:
 
 | Amendment | Why it is necessary | Explicitly not authorized here |
 |---|---|---|
-| `hot_payload_egress_interface` | The sole hot owner currently has no identity-bearing matured payload/sidecar egress for the non-authoritative admission ingress. | Duplicating hot residency or selecting a physical hot macro. |
+| `hot_payload_egress_interface` | **Closed at interface/owner level by [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md).** It now names frontend materialization plus hot maturity egress, while behavior remains deferred. | Duplicating hot residency or selecting a physical hot macro. |
 | `admission_publication_ingress_adapter` | A non-authoritative protocol adapter is needed to fan out immutable retained context to R3 and R5. | Re-deciding admission, publishing metadata, or owning authority. |
 | `r2_multi_producer_ingress_interface` | Production candidates need independent ingress while R2 retains FIFO/dependency/credit/grant ownership. | A top-level selector, a second R1 path, or a new scheduler. |
 | `typed_delivery_router` | R2-preserved delivery context needs exactly one typed read-fragment or write-terminal endpoint. | Generic response reinterpretation, authority transfer, or a second memory port. |
@@ -51,8 +51,9 @@ before their associated carrier is activated:
 Accordingly, RTL2.0 is deliberately **not PASS**.  This is the intended
 fail-closed result of the RTL2 phase contract: a new producer, hierarchy child,
 or interface endpoint cannot be quietly introduced as an implementation
-convenience.  No behavior should begin until these amendments have been
-reviewed and accepted as a bounded hierarchy/interface closure.
+convenience.  RTL2.0a resolves only the first interface/owner boundary; no
+behavior should begin until its remaining amendments have been reviewed and
+accepted as a bounded hierarchy/interface closure.
 
 ## Validation
 

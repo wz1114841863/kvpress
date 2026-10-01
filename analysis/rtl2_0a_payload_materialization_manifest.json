@@ -1,0 +1,91 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-0a-payload-materialization-1.0",
+  "status": "rtl2_0a_payload_interface_owner_closed_behavior_pending",
+  "scope": "Logical frontend payload materialization and hot-owner maturity-egress contract only. No payload storage implementation, SRAM macro, physical port count, HBM mapping, controller, cycle/timing/throughput, PPA, model/GPU, or new A4 DSE claim.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md",
+    "analysis/architecture_gate_a_r3_m2_p3_wrapper_contract.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_0_activation_contract.md"
+  ],
+  "anchor_payload_contract": {
+    "record_payload_bytes": 512,
+    "fragment_bytes": 64,
+    "fragments_per_record": 8,
+    "fragment_data_width_bits": 512,
+    "position_sidecar_bytes": 8,
+    "payload_ref_width_bits": 64,
+    "logical_page_records": 64,
+    "forbidden_interpretations": [
+      "frontend payload materialization is an HBM transaction",
+      "payload_ref is a physical address",
+      "logical fragment count selects a storage port count or latency",
+      "logical payload envelope selects an SRAM macro"
+    ]
+  },
+  "owners": [
+    {"resource":"frontend_payload_materialization","owner":"frontend_payload_materializer","kind":"environment_transport_only","forbidden":["hot authority","admission decision","packed authority","physical address selection"]},
+    {"resource":"hot_payload_residency_and_maturity_egress","owner":"route_a_hot_source_path","kind":"logical_payload_and_provenance","forbidden":["admission re-decision","pending_or_packed authority","P3 publication","physical macro selection"]},
+    {"resource":"retained_group_payload_request_context","owner":"route_a_admission_publication_ingress_adapter","kind":"future_non_authoritative_protocol","forbidden":["payload residency","authority transition","metadata publication","source scheduler"]}
+  ],
+  "transactions": [
+    {
+      "id":"frontend_hot_payload_fragment",
+      "producer":"frontend_payload_materializer",
+      "consumer":"route_a_hot_source_path",
+      "handshake":"decoupled_ready_valid",
+      "fields":["entry_id","layer","kv_head","logical_position","payload_ref","fragment_index","last","data_512b"],
+      "identity_fields":["entry_id","layer","kv_head","logical_position","payload_ref"],
+      "ordering":"exactly eight fragments per record, indices 0..7 in order, last only at index 7",
+      "authority_effect":"none",
+      "completion_effect":"hot payload becomes materialized for the exact opaque payload_ref; no maturity or publication event is emitted"
+    },
+    {
+      "id":"hot_mature_payload_read_request",
+      "producer":"route_a_admission_publication_ingress_adapter",
+      "consumer":"route_a_hot_source_path",
+      "handshake":"decoupled_ready_valid",
+      "fields":["entry_id","layer","kv_head","logical_position","payload_ref","transaction_group_tag","group_member_ordinal"],
+      "identity_fields":["entry_id","layer","kv_head","logical_position","payload_ref","transaction_group_tag","group_member_ordinal"],
+      "ordering":"legal only after the matching immutable RETAIN maturity disposition and only once for that retained record",
+      "authority_effect":"none",
+      "completion_effect":"requests a transient, non-authoritative copy for later P3 staging"
+    },
+    {
+      "id":"hot_mature_payload_fragment",
+      "producer":"route_a_hot_source_path",
+      "consumer":"route_a_admission_publication_ingress_adapter",
+      "handshake":"decoupled_ready_valid",
+      "fields":["entry_id","layer","kv_head","logical_position","payload_ref","transaction_group_tag","group_member_ordinal","fragment_index","last","data_512b"],
+      "identity_fields":["entry_id","layer","kv_head","logical_position","payload_ref","transaction_group_tag","group_member_ordinal"],
+      "ordering":"exactly eight fragments per accepted read request, indices 0..7 in order, last only at index 7",
+      "authority_effect":"none",
+      "completion_effect":"the ingress adapter may subsequently form P3 fragment/sidecar transactions; this response alone cannot claim, write, publish, or release a page"
+    }
+  ],
+  "environment_assumptions": [
+    "for each accepted kv_arrival, the frontend materializer presents one matching complete eight-fragment payload transaction before it presents the matching immutable maturity disposition",
+    "the frontend does not reuse a payload_ref for a different live entry identity",
+    "while valid is asserted and ready is low, every transaction payload field remains stable"
+  ],
+  "dut_guarantees_for_later_behavior": [
+    "the hot owner accepts a fragment only for its matching live hot entry and rejects stale, duplicate, out-of-order, or mismatched-payload_ref fragments",
+    "an incomplete or faulted materialization cannot satisfy a hot maturity egress request",
+    "a hot maturity egress response is an exact copy associated with one accepted retained request and never changes authoritative residency",
+    "DROP cannot create an admission egress request and no payload materialization event changes mask or admission disposition"
+  ],
+  "required_follow_on": {
+    "behavioral_phase":"rtl2_1a",
+    "requires":"A later functional-hot-storage wrapper may use simulation/reference backing only until the separately planned memory-realization gate. It must implement these transactions without representing its backing as a selected SRAM realization.",
+    "not_authorized":"No Chisel payload store, P3 staging write, R2 candidate, R1 request, page allocation, metadata publish, or source packet behavior is enabled by this interface closure."
+  },
+  "evidence_labels": [
+    "pure-software machine-readable interface contract",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}

@@ -71,7 +71,7 @@
     {"id":"r6_to_runtime_retire_ack","producer":"route_a_lifecycle_adapter","consumer":"runtime_session_manager","current_state":"wired_control_only","activation_phase":"rtl2_6","semantic_event":"retire_ack","identity_fields":["session_id","request_id","incarnation"],"amendment_id":null}
   ],
   "required_amendments": [
-    {"id":"hot_payload_egress_interface","kind":"interface","owner":"route_a_hot_source_path","purpose":"Expose only identity-bearing matured payload/sidecar handoff to its non-authoritative admission ingress consumer.","forbidden":["hot residency duplication","admission re-decision","physical hot macro selection"]},
+    {"id":"hot_payload_egress_interface","kind":"interface","owner":"route_a_hot_source_path","purpose":"Expose only identity-bearing matured payload/sidecar handoff to its non-authoritative admission ingress consumer.","closure_status":"interface_owner_closed_behavior_pending","closure_artifact":"analysis/rtl2_0a_payload_materialization_contract.md","forbidden":["hot residency duplication","admission re-decision","physical hot macro selection"]},
     {"id":"admission_publication_ingress_adapter","kind":"hierarchy","owner":"route_a_admission_publication_ingress_adapter","purpose":"Protocol-only fanout of immutable retained context to R3 claim/P3 inputs and R5 allocation prerequisites; owns neither authority nor payload residency.","forbidden":["admission policy","metadata publication","page visibility","physical queue selection"]},
     {"id":"r2_multi_producer_ingress_interface","kind":"interface","owner":"route_a_core_side_arbiter","purpose":"Accept independently owned production candidates without introducing a top-level selector; R2 retains FIFO/dependency/credit/grant ownership.","forbidden":["second R1 path","external arbitration policy","new scheduler"]},
     {"id":"typed_delivery_router","kind":"hierarchy","owner":"route_a_typed_delivery_router","purpose":"Route an R2-preserved delivery context to exactly one named read-fragment or write-terminal endpoint; owns no request identity, authority, or terminal creation.","forbidden":["response reinterpretation","source scheduling","second memory port","authority transfer"]},
@@ -81,8 +81,8 @@
   ],
   "review_disposition": {
     "rtl2_0_pass": false,
-    "reason":"Five hierarchy/interface amendments are required before any inert production carrier can be behaviorally activated. The manifest deliberately records them instead of permitting top-level temporary producers.",
-    "next_action":"Review and explicitly authorize or revise each required amendment; only then create the versioned RTL2 scoreboard schema and the first behaviorally active RTL2.1a slice."
+    "reason":"Six hierarchy/interface amendments and one testbench-boundary amendment are required before production behavior can be activated. RTL2.0a has closed only the hot-payload interface/owner contract; the manifest deliberately records the remaining amendments instead of permitting top-level temporary producers.",
+    "next_action":"Review and explicitly authorize or revise the remaining amendments; only then create the versioned RTL2 scoreboard schema and the first behaviorally active RTL2.1a slice."
   },
   "evidence_labels": [
     "pure-software machine-readable activation contract",
