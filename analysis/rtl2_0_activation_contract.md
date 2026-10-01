@@ -41,7 +41,7 @@ before their associated carrier is activated:
 | Amendment | Why it is necessary | Explicitly not authorized here |
 |---|---|---|
 | `hot_payload_egress_interface` | **Closed at interface/owner level by [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md).** It now names frontend materialization plus hot maturity egress, while behavior remains deferred. | Duplicating hot residency or selecting a physical hot macro. |
-| `admission_publication_ingress_adapter` | A non-authoritative protocol adapter is needed to fan out immutable retained context to R3 and R5. | Re-deciding admission, publishing metadata, or owning authority. |
+| `admission_publication_ingress_adapter` | **Closed at interface/owner level by [`rtl2_0b_admission_group_builder_contract.md`](rtl2_0b_admission_group_builder_contract.md).** It is a finite 64-member group builder, not a fanout; Chisel behavior remains deferred. | Re-deciding admission, publishing metadata, or owning authority. |
 | `r2_multi_producer_ingress_interface` | Production candidates need independent ingress while R2 retains FIFO/dependency/credit/grant ownership. | A top-level selector, a second R1 path, or a new scheduler. |
 | `typed_delivery_router` | R2-preserved delivery context needs exactly one typed read-fragment or write-terminal endpoint. | Generic response reinterpretation, authority transfer, or a second memory port. |
 | `r3_r5_durability_prerequisite_interface` | R5 must report exact descriptor durability before the existing nested publish commit. | Visibility outside `metadata_publish_commit`. |

@@ -1,0 +1,55 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-0b-admission-group-builder-1.0",
+  "status": "rtl2_0b_group_builder_interface_owner_closed_behavior_pending",
+  "scope": "Finite retained-group assembly and R5-allocation/P3-claim/R3-join transaction contract only. No P3 payload movement, R2 candidate, R1 request, descriptor write, metadata publication, storage macro, timing, PPA, model/GPU, or new A4 DSE claim.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/architecture_gate_a_r3_m2_p3_wrapper_contract.md",
+    "analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md",
+    "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md",
+    "analysis/rtl2_0a_payload_materialization_contract.md",
+    "analysis/rtl2_phase_contract.md"
+  ],
+  "anchor": {
+    "max_group_members": 64,
+    "active_kv_head_groups": 1,
+    "pack_engines": 1,
+    "p3_reservation_owner_value": 0,
+    "p3_reservation_owner_meaning":"single-packer-local reservation label only; not an R1 request ID, external address, scheduler decision, or authority owner",
+    "forbidden":["contiguous first-entry-plus-count reconstruction","admission re-decision","multiple active group selection","physical queue or macro selection"]
+  },
+  "child": {
+    "name":"route_a_admission_publication_ingress_adapter",
+    "parent":"route_a_kv_subsystem_top",
+    "classification":"route_a_incremental_protocol_only",
+    "owns":["one finite immutable group assembly association","R5 allocation-to-P3-claim dependency association","one-shot relay of exact R6 authority/context facts to R3"],
+    "does_not_own":["hot/pending/packed authority","payload residency","R2 selection/FIFO/credit","R1 transaction identity","metadata publication","R5 allocator","P3 stage state"]
+  },
+  "carriers": [
+    {"id":"r6_retained_member_in","producer":"route_a_lifecycle_adapter","consumer":"route_a_admission_publication_ingress_adapter","fields":["AdmissionContext","R6AuthorityTransition"],"identity_fields":["entry_id","layer","kv_head","logical_position","payload_ref","transaction_group_tag","group_member_ordinal","group_valid_records"],"rule":"accept the two facts atomically; only hot-to-pending RETAIN is legal","authority_effect":"already-owned R6 hot_to_pending event only"},
+    {"id":"adapter_to_r5_allocate","producer":"route_a_admission_publication_ingress_adapter","consumer":"route_a_page_manager","fields":["layer","kv_head","valid_records","transaction_group_tag"],"identity_fields":["layer","kv_head","valid_records","transaction_group_tag"],"rule":"issue exactly once only after every ordinal 0..valid_records-1 is present","authority_effect":"none"},
+    {"id":"r5_allocation_to_adapter","producer":"route_a_page_manager","consumer":"route_a_admission_publication_ingress_adapter","fields":["layer","kv_head","page_ref","requires_tail_link","transaction_group_tag"],"identity_fields":["layer","kv_head","page_ref","transaction_group_tag"],"rule":"accept exactly one matching response; a mismatch/fault cannot claim P3","authority_effect":"none"},
+    {"id":"adapter_to_r3_p3_claim","producer":"route_a_admission_publication_ingress_adapter","consumer":"route_a_m2_p3_wrapper","fields":["layer","kv_head","owner","page_ref","valid_records","transaction_group_tag"],"identity_fields":["layer","kv_head","page_ref","valid_records","transaction_group_tag"],"rule":"issue once after matching R5 allocation; owner is the anchor-local reservation value 0","authority_effect":"none"},
+    {"id":"r3_claim_ack_to_adapter","producer":"route_a_m2_p3_wrapper","consumer":"route_a_admission_publication_ingress_adapter","fields":["layer","stage_generation"],"identity_fields":["layer","stage_generation","transaction_group_tag"],"rule":"acknowledge exactly one matching claim before any relay to R3","authority_effect":"none"},
+    {"id":"adapter_to_r3_member_join","producer":"route_a_admission_publication_ingress_adapter","consumer":"route_a_m2_p3_wrapper","fields":["AdmissionContext","R6AuthorityTransition"],"identity_fields":["entry_id","layer","kv_head","logical_position","payload_ref","transaction_group_tag","group_member_ordinal","group_valid_records"],"rule":"relay every exact stored ordinal once after claim acknowledgement; never synthesize a span","authority_effect":"the original R6 hot_to_pending transition is relayed without duplication or change"}
+  ],
+  "state_and_order": [
+    "first accepted member fixes group tag, layer, kv_head, and valid-record count",
+    "each ordinal is unique and must be less than valid_records; non-contiguous entry_id values are legal and retained verbatim",
+    "the group is complete only when every ordinal in 0..valid_records-1 is present",
+    "R5 allocation precedes P3 claim; P3 claim acknowledgement precedes every R3 member join",
+    "each stored member and its matching R6 authority event relay exactly once",
+    "stall may delay a carrier but cannot mutate a held member, alter disposition, omit a member, or transfer authority"
+  ],
+  "fault_and_reset": [
+    "an R5 allocation mismatch, R3 claim mismatch, or destructive reset discards only the transient builder association and emits no P3 publication or authority transition",
+    "after reset, stale allocation/claim responses cannot match a new group association",
+    "a partially assembled group has no P3 claim, no R1 work, no visible descriptor, and no packed authority"
+  ],
+  "required_follow_on": {
+    "behavioral_phase":"rtl2_1a",
+    "requires":"Add the reviewed protocol-only child and wire existing R6/R5/R3 carriers through it; use the frozen logical 64-member bound but claim no physical queue depth.",
+    "not_authorized":"Do not add payload transfer, P3 functional backing, R2/R1 work, descriptor terminal, M2 member result, metadata_publish_commit, or source-service behavior."
+  },
+  "evidence_labels":["pure-software machine-readable interface contract","no model/GPU","no cycle/timing/throughput claim","no PPA claim","no RTL correctness claim","no new A4 DSE"]
+}

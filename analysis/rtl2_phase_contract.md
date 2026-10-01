@@ -34,6 +34,12 @@ transactions at the sole hot owner.  It creates no Chisel payload backing or
 production behavior; the next required review is the finite admission/group
 builder contract.
 
+**RTL2.0b admission-group interface/owner closure: complete; behavior pending.**
+[`rtl2_0b_admission_group_builder_contract.md`](rtl2_0b_admission_group_builder_contract.md)
+defines the single-packer, 64-member retained-group association and exact
+R5-allocation/P3-claim/R3-relay order.  It adds no child, payload behavior, or
+publication activity; next review is the R2 multi-producer ingress contract.
+
 ## Entry conditions and common rules
 
 RTL2 begins from the RTL1-V completion state.  Every activated carrier must
