@@ -1,0 +1,138 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-0f-source-service-packet-adapter-1.0",
+  "status": "rtl2_0f_source_service_packet_interface_owner_closed_behavior_pending",
+  "scope": "Logical source-service packet and SourceInstance association contract only. No Chisel packet behavior, source payload storage, attention arithmetic, R4 numeric merge, physical source mux, controller behavior, timing, throughput, PPA, model/GPU, RTL correctness, or new A4 DSE claim.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/architecture_gate_a1_pending_delivery_realization_closure.md",
+    "analysis/architecture_gate_a_r4_numeric_merge_contract.md",
+    "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md",
+    "analysis/rtl1_6_r4_packet_boundary_contract.md",
+    "analysis/rtl1_i3_delivery_source_contract.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_0_activation_contract.md"
+  ],
+  "child": {
+    "name": "route_a_source_service_packet_adapter",
+    "parent": "route_a_kv_subsystem_top",
+    "classification": "integration_protocol_packetization_only",
+    "consumes": [
+      "copy of R6-accepted SourceCompletionPlan",
+      "owner-provided SourceServicePartialOffer",
+      "owner-provided SourceServiceValueFragment"
+    ],
+    "produces": [
+      "atomic R4PartialHeader plus R4SourceInstanceSideband",
+      "ordered R4ValueFragment"
+    ],
+    "owns": [
+      "hold exact accepted source packet association until R4 handshake",
+      "validate plan/source/header/fragment structural association",
+      "forward immutable owner-provided packet fields"
+    ],
+    "does_not_own": [
+      "source plan discovery or source presence",
+      "hot direct-pending or S2 residency",
+      "payload storage or source attention computation",
+      "R4 numeric arithmetic or absent-source identity generation",
+      "consumer commit counting or source release",
+      "R6 merge request or attention terminal",
+      "authority transition metadata publication or page management"
+    ],
+    "forbidden": [
+      "top-generated source plan",
+      "source replacement or S2-for-direct substitution",
+      "adapter-generated absent-source packet",
+      "source reorder equivalence claim",
+      "header or data mutation",
+      "numeric merge",
+      "physical source mux selection"
+    ]
+  },
+  "canonical_source_order": {
+    "ordered_kinds": ["hot", "pending", "packed"],
+    "codes": {"hot": 0, "pending": 1, "packed": 2},
+    "rule": "the adapter accepts/offers source kinds only in this present-subset order for one accepted plan; this is merge-semantic order, not an execution schedule or arbitrary-reordering equivalence claim",
+    "consumer_order": "unselected; consumer_id remains a distinct 0..3 owner/R4 association"
+  },
+  "source_owners": [
+    {"source_kind": "hot", "producer": "route_a_hot_source_path", "plan_instance_field": "hot_instance"},
+    {"source_kind": "pending", "producer": "route_a_direct_pending_endpoint_v1", "plan_instance_field": "pending_instance"},
+    {"source_kind": "packed", "producer": "route_a_s2_gqa_source_wrapper", "plan_instance_field": "packed_instance"}
+  ],
+  "accepted_plan_copy": {
+    "producer": "route_a_lifecycle_adapter",
+    "consumer": "route_a_source_service_packet_adapter",
+    "fields": ["transaction_identity", "source_presence", "hot_instance", "pending_instance", "packed_instance"],
+    "rule": "only an R6-accepted nonempty plan may be copied; adapter validates but never modifies it",
+    "forbidden": ["adapter plan creation", "adapter source_presence mutation", "empty plan acceptance"]
+  },
+  "source_packet_ingress": {
+    "offer_name": "SourceServicePartialOffer",
+    "offer_fields": ["transaction_identity", "source_instance", "consumer_id", "r4_header_128b", "partial_present"],
+    "fragment_name": "SourceServiceValueFragment",
+    "fragment_fields": ["transaction_identity", "source_instance", "consumer_id", "fragment_index_3b", "last", "data_512b"],
+    "identity_fields": ["transaction_identity", "source_instance.source_kind", "source_instance.instance_coordinate", "source_instance.generation", "consumer_id"],
+    "offer_rule": "an offer is legal only from the sole owner of one present planned source instance; partial_present must be true and no absent source may offer",
+    "present_fragment_rule": "partial_present=true requires exactly fragments 0..7, with last true only at fragment 7",
+    "absent_rule": "the adapter does not synthesize an absent partial; R4 absent-source semantics remain governed by the frozen source_presence contract"
+  },
+  "r4_packet_egress": {
+    "header_sideband_handshake": "atomic ready_valid pair",
+    "header_fields": ["R4PartialHeader.transaction_identity", "R4PartialHeader.header_128b", "R4SourceInstanceSideband.transaction_identity", "R4SourceInstanceSideband.source_instance", "R4SourceInstanceSideband.consumer_id"],
+    "fragment_fields": ["R4ValueFragment.transaction_identity", "R4ValueFragment.fragment_index_3b", "R4ValueFragment.last", "R4ValueFragment.data_512b"],
+    "forwarding_rule": "adapter forwards exact owner-provided header and data without mutation",
+    "structural_checks": [
+      "header source ordinal equals source_instance.source_kind",
+      "header consumer ID equals consumer_id",
+      "merge instance is zero",
+      "reserved header bits are zero",
+      "present header declares eight fragments",
+      "absent header declares zero fragments and frozen absent identity"
+    ]
+  },
+  "commit_release_association": {
+    "r4_commit_producer": "route_a_merge_boundary",
+    "commit_consumer": "matching source owner through existing top demultiplexer",
+    "rule": "adapter does not consume ConsumerPartialCommit; matching source owner alone counts four distinct current-generation consumers and emits SourceRelease",
+    "r6_rule": "R6 alone compares exact SourceRelease instances with its nonempty accepted plan before merge_req"
+  },
+  "rejection_and_stall": {
+    "reject_without_mutation": [
+      "unknown or stale transaction identity",
+      "stale source generation",
+      "source instance mismatch with accepted plan",
+      "offer from absent source-plan bit",
+      "wrong owner for source kind",
+      "header source or consumer mismatch",
+      "duplicate consumer association",
+      "malformed fragment ordinal or last",
+      "post-reset association"
+    ],
+    "ready_low_rule": "while an ingress or egress valid is high and its peer ready is low, every held identity, source instance, consumer, header, fragment, and data field remains unchanged; no source ownership, release, authority, or terminal state changes"
+  },
+  "excluded_paths": [
+    "functional hot direct-pending or S2 payload storage",
+    "source attention partial computation",
+    "P3/S2 macro or port realization",
+    "R4 binary32 arithmetic",
+    "adapter-generated absent source identity",
+    "ConsumerPartialCommit consumption or SourceRelease creation",
+    "R6 merge request or outward terminal creation",
+    "authority transition metadata publication or page reclaim",
+    "physical source mux or service schedule"
+  ],
+  "required_follow_on": {
+    "behavioral_phase": "rtl2_4",
+    "requires": "Add the protocol-only adapter, an R6 accepted-plan copy, source-owner packet ingress, and R4 header/sideband/fragment bindings; test all seven nonempty source masks plus stale, malformed, fault, and legal-stall cases.",
+    "not_authorized": "No payload backing, source attention arithmetic, R4 numeric implementation, source scheduler, physical mux, controller behavior, timing, throughput, PPA, or performance result."
+  },
+  "evidence_labels": [
+    "pure-software machine-readable interface contract",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}

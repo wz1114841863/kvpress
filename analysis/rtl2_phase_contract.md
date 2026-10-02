@@ -59,6 +59,13 @@ freezes R5's one aggregate `new_page` plus conditional `tail_link` result to
 R3. An accepted success is a necessary private prerequisite, never descriptor
 visibility or authority transfer; it selects no descriptor storage realization.
 
+**RTL2.0f source-service packet-adapter closure: complete; behavior pending.**
+[`rtl2_0f_source_service_packet_adapter_contract.md`](rtl2_0f_source_service_packet_adapter_contract.md)
+freezes the R6 accepted-plan copy, the three source-owner packet offers, and
+the atomic R4 header/sideband plus fragment egress. It preserves canonical
+`hot -> pending -> packed` source order without choosing source computation,
+consumer ordering, or numeric implementation.
+
 ## Entry conditions and common rules
 
 RTL2 begins from the RTL1-V completion state.  Every activated carrier must

@@ -110,6 +110,12 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         or durability_amendment.get("closure_artifact") != "analysis/rtl2_0e_r3_r5_durability_prerequisite_contract.md"
     ):
         raise RTL2ActivationManifestError("R3/R5 durability prerequisite must bind the RTL2.0e closure")
+    source_adapter_amendment = next(record for record in amendments if record["id"] == "source_service_packet_adapter")
+    if (
+        source_adapter_amendment.get("closure_status") != "source_service_packet_interface_owner_closed_behavior_pending"
+        or source_adapter_amendment.get("closure_artifact") != "analysis/rtl2_0f_source_service_packet_adapter_contract.md"
+    ):
+        raise RTL2ActivationManifestError("source-service packet adapter must bind the RTL2.0f closure")
 
     carriers = _records(manifest, "carrier_records")
     if _unique_ids(carriers, "carrier") != REQUIRED_CARRIERS:
@@ -134,6 +140,13 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         or not {"page_ref", "generation", "layer", "kv_head", "transaction_group_tag"}.issubset(_string_list(durability_carrier, "identity_fields"))
     ):
         raise RTL2ActivationManifestError("R5 descriptor-durable carrier must retain the RTL2.0e exact association")
+    source_carrier = carrier_by_id["source_owner_to_packet_adapter"]
+    if (
+        source_carrier.get("producer") != "matching_source_owner"
+        or source_carrier.get("consumer") != "route_a_source_service_packet_adapter"
+        or source_carrier.get("current_state") != "interface_owner_closed_behavior_pending"
+    ):
+        raise RTL2ActivationManifestError("source-service carrier must retain the RTL2.0f source-owner ingress")
 
     events = _records(manifest, "event_records")
     if _unique_ids(events, "event") != REQUIRED_EVENTS:

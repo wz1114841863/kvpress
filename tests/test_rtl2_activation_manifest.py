@@ -67,6 +67,14 @@ def test_r3_r5_durability_prerequisite_must_bind_exact_rtl2_0e_closure():
         validate_manifest(manifest)
 
 
+def test_source_packet_adapter_must_bind_exact_rtl2_0f_source_owner_ingress():
+    manifest = copy.deepcopy(load_manifest(MANIFEST))
+    carrier = next(record for record in manifest["carrier_records"] if record["id"] == "source_owner_to_packet_adapter")
+    carrier["producer"] = "route_a_source_service_packet_adapter"
+    with pytest.raises(RTL2ActivationManifestError, match="RTL2.0f source-owner ingress"):
+        validate_manifest(manifest)
+
+
 def test_validator_cli_supports_help_and_default_manifest():
     help_result = subprocess.run([sys.executable, str(VALIDATOR), "--help"], cwd=ROOT, text=True, capture_output=True, check=True)
     assert "--manifest" in help_result.stdout
