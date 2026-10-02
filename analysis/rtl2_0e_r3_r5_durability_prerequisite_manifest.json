@@ -1,0 +1,129 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-0e-r3-r5-durability-prerequisite-1.0",
+  "status": "rtl2_0e_descriptor_durability_interface_owner_closed_behavior_pending",
+  "scope": "Logical R5-to-R3 descriptor-durability prerequisite contract only. No Chisel carrier behavior, descriptor write, R1 request, metadata publication, authority transfer, physical descriptor storage, HBM/controller behavior, timing, throughput, PPA, model/GPU, RTL correctness, or new A4 DSE claim.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md",
+    "analysis/architecture_gate_a_r2_arbitration_dependency_contract.md",
+    "analysis/architecture_gate_a_r3_m2_p3_wrapper_contract.md",
+    "analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md",
+    "analysis/rtl1_3_r3_r5_semantic_carrier_contract.md",
+    "analysis/rtl2_0d_typed_delivery_router_contract.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_0_activation_contract.md"
+  ],
+  "logical_operation_mask": {
+    "width_bits": 2,
+    "bits": [
+      {"bit": 0, "name": "new_page", "required_rule": "required for every allocated append"},
+      {"bit": 1, "name": "tail_link", "required_rule": "required exactly when the matching R5 allocation requires_tail_link"}
+    ],
+    "forbidden_interpretations": [
+      "physical descriptor encoding",
+      "R1 request kind",
+      "R2 arbitration class",
+      "physical FIFO depth",
+      "physical port count"
+    ]
+  },
+  "result_type": {
+    "name": "DescriptorDurabilityPrerequisite",
+    "producer": "route_a_page_manager",
+    "consumer": "route_a_m2_p3_wrapper",
+    "handshake": "decoupled_ready_valid",
+    "fields": [
+      "layer",
+      "kv_head",
+      "page_ref.page_id",
+      "page_ref.generation",
+      "transaction_group_tag",
+      "required_descriptor_operation_mask",
+      "durable_descriptor_operation_mask",
+      "descriptor_prepared",
+      "status"
+    ],
+    "identity_fields": [
+      "layer",
+      "kv_head",
+      "page_ref.page_id",
+      "page_ref.generation",
+      "transaction_group_tag"
+    ],
+    "producer_owns": [
+      "private descriptor-operation aggregation",
+      "requires_tail_link determination from its matching allocation",
+      "one final aggregate result per live append association"
+    ],
+    "consumer_owns": [
+      "match to current P3 stage/group association",
+      "successful prerequisite recording",
+      "nonpublication of a matched fault"
+    ],
+    "neither_owns": [
+      "R1 request identity or terminal status creation",
+      "descriptor visibility",
+      "pending-to-packed authority transfer",
+      "allocator free or generation reuse",
+      "metadata_publish_commit"
+    ]
+  },
+  "success_rule": {
+    "status": "OK",
+    "descriptor_prepared": true,
+    "mask_rule": "durable_descriptor_operation_mask == required_descriptor_operation_mask and required mask includes new_page",
+    "effect": "R3 may record only the matching private descriptor-durability prerequisite; this is necessary but insufficient for metadata_publish_commit"
+  },
+  "fault_rule": {
+    "status": "FAULT",
+    "descriptor_prepared": false,
+    "effect": "R5 retains fail-closed private fault association and R3 marks only the matching group non-publishable; no retry, fallback, visibility, authority transfer, page free, or second terminal path",
+    "one_way_rule": "a faulted association cannot later emit successful descriptor_prepared without explicit cleanup or destructive reset"
+  },
+  "ordering_and_acceptance": [
+    "R5 allocation fixes page_ref, generation, layer, kv_head, transaction_group_tag, and whether tail_link is required",
+    "only exact accepted final DescriptorMaintenanceTerminal facts contribute to R5 durable mask",
+    "R5 emits one aggregate prerequisite only after every required operation has either become durable or a fault has terminalized the association",
+    "R3 accepts only a matching result for its current private P3 stage/group/page association",
+    "R3 must have accepted an exact success prerequisite before it may accept the existing metadata publish request for that association",
+    "successful prerequisite does not itself emit metadata_publish_visibility_apply, M2 visibility, lifecycle authority transition, P3 release, or source deliverability",
+    "the existing nested R3-to-R5 metadata_publish_visibility_apply/ack remains inside the one metadata_publish_commit boundary"
+  ],
+  "rejection_and_stall": {
+    "reject_without_mutation": [
+      "unknown association",
+      "stale page generation",
+      "layer or kv_head mismatch",
+      "transaction group tag mismatch",
+      "duplicate result",
+      "unexpected required mask",
+      "durable mask mismatch on success",
+      "result after reset or release"
+    ],
+    "ready_low_rule": "while result valid is high and R3 ready is low, every result field and both owners' prerequisite/publication state remain unchanged"
+  },
+  "excluded_paths": [
+    "individual DescriptorMaintenanceTerminal delivery to R3",
+    "descriptor visibility before metadata_publish_commit",
+    "R3 reconstruction from payload durable or allocation alone",
+    "authority transition before metadata_publish_commit",
+    "R5 allocator free or generation reuse",
+    "P3 payload/sidecar storage",
+    "R2 scheduler or R1 memory path",
+    "R4 numeric processing",
+    "R6 terminal and retirement handling"
+  ],
+  "required_follow_on": {
+    "behavioral_phase": "rtl2_1b_then_rtl2_1c",
+    "requires": "Add the exact R5-to-R3 decoupled carrier and bind R3 publish acceptance to the accepted success prerequisite; preserve the existing nested visibility apply/ack rather than replacing it.",
+    "not_authorized": "No descriptor maintenance behavior, P3 payload behavior, publication behavior, physical descriptor realization, controller behavior, timing, throughput, PPA, or performance result."
+  },
+  "evidence_labels": [
+    "pure-software machine-readable interface contract",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}

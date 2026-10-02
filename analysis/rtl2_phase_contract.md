@@ -53,6 +53,12 @@ explicitly separates the unchanged 512-bit logical read payload envelope from
 existing control-only endpoint observations; it selects neither payload storage
 nor router behavior.
 
+**RTL2.0e R3/R5 descriptor-durability prerequisite closure: complete; behavior pending.**
+[`rtl2_0e_r3_r5_durability_prerequisite_contract.md`](rtl2_0e_r3_r5_durability_prerequisite_contract.md)
+freezes R5's one aggregate `new_page` plus conditional `tail_link` result to
+R3. An accepted success is a necessary private prerequisite, never descriptor
+visibility or authority transfer; it selects no descriptor storage realization.
+
 ## Entry conditions and common rules
 
 RTL2 begins from the RTL1-V completion state.  Every activated carrier must

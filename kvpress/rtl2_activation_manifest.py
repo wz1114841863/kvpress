@@ -104,6 +104,12 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         or router_amendment.get("closure_artifact") != "analysis/rtl2_0d_typed_delivery_router_contract.md"
     ):
         raise RTL2ActivationManifestError("typed delivery router must bind the RTL2.0d endpoint-descriptor closure")
+    durability_amendment = next(record for record in amendments if record["id"] == "r3_r5_durability_prerequisite_interface")
+    if (
+        durability_amendment.get("closure_status") != "descriptor_durability_interface_owner_closed_behavior_pending"
+        or durability_amendment.get("closure_artifact") != "analysis/rtl2_0e_r3_r5_durability_prerequisite_contract.md"
+    ):
+        raise RTL2ActivationManifestError("R3/R5 durability prerequisite must bind the RTL2.0e closure")
 
     carriers = _records(manifest, "carrier_records")
     if _unique_ids(carriers, "carrier") != REQUIRED_CARRIERS:
@@ -122,6 +128,12 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
             raise RTL2ActivationManifestError(f"carrier names unknown amendment: {carrier['id']}")
         if carrier["current_state"] in {"top_inert", "absent_from_frozen_interface", "absent_from_frozen_hierarchy"} and amendment_id is None:
             raise RTL2ActivationManifestError(f"inactive carrier lacks an explicit amendment: {carrier['id']}")
+    durability_carrier = carrier_by_id["r5_descriptor_durable_to_r3"]
+    if (
+        durability_carrier.get("current_state") != "interface_owner_closed_behavior_pending"
+        or not {"page_ref", "generation", "layer", "kv_head", "transaction_group_tag"}.issubset(_string_list(durability_carrier, "identity_fields"))
+    ):
+        raise RTL2ActivationManifestError("R5 descriptor-durable carrier must retain the RTL2.0e exact association")
 
     events = _records(manifest, "event_records")
     if _unique_ids(events, "event") != REQUIRED_EVENTS:

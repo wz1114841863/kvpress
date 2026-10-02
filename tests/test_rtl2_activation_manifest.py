@@ -59,6 +59,14 @@ def test_typed_router_must_bind_exact_rtl2_0d_endpoint_closure():
         validate_manifest(manifest)
 
 
+def test_r3_r5_durability_prerequisite_must_bind_exact_rtl2_0e_closure():
+    manifest = copy.deepcopy(load_manifest(MANIFEST))
+    durability = next(record for record in manifest["required_amendments"] if record["id"] == "r3_r5_durability_prerequisite_interface")
+    durability["closure_status"] = "unreviewed"
+    with pytest.raises(RTL2ActivationManifestError, match="RTL2.0e closure"):
+        validate_manifest(manifest)
+
+
 def test_validator_cli_supports_help_and_default_manifest():
     help_result = subprocess.run([sys.executable, str(VALIDATOR), "--help"], cwd=ROOT, text=True, capture_output=True, check=True)
     assert "--manifest" in help_result.stdout
