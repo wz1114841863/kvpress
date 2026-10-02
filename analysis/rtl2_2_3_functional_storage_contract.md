@@ -1,11 +1,11 @@
-# RTL2.3 — replaceable P3/S2 functional-storage boundary
+# RTL2.2.3 — replaceable P3/S2 functional-storage boundary
 
 **Status:** implemented and directed tested for the existing R3 P3 backing and
 the new owner-local S2 reference backing.  This is functional storage evidence,
 not an SRAM, HBM, controller, timing, throughput, energy, PPA, model/GPU, or
 numeric-RTL result.
 
-RTL2.3 closes only the first functional-storage prerequisite for later
+RTL2.2.3 closes only the first functional-storage prerequisite for later
 read-delivery/source-service work.  It does not activate an R2 read candidate,
 attach the typed read-router output to an endpoint, or offer a source packet to
 GQA/R4.  The production top therefore continues to hold the new S2 ingress and
@@ -74,7 +74,7 @@ low; stale or reused-slot requests/fragments are rejected and cannot mutate the
 slot.  S2 remains a transient copy and does not enter authoritative-residency
 accounting.
 
-Existing four-consumer completion and release logic is unchanged.  RTL2.3 does
+Existing four-consumer completion and release logic is unchanged.  RTL2.2.3 does
 not itself emit source-deliverable packets, execute GQA fanout, route a direct
 pending payload, compose hot/pending/packed sources, or invoke R4.
 

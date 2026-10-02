@@ -1,0 +1,52 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-2-4-read-delivery-context-1.0",
+  "status": "contract_closed_implementation_and_directed_test_closure_in_progress",
+  "scope": "Immutable read expected-fragment-count capture and propagation through the existing producer, allocation bridge, registry, and typed router. No read producer, endpoint payload deposition, source service, physical memory, timing, throughput, PPA, model/GPU, numeric RTL, or new A4 DSE behavior.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_0c_r2_ingress_delivery_context_contract.md",
+    "analysis/rtl2_0d_typed_delivery_router_contract.md",
+    "analysis/rtl2_2_0_delivery_context_reconciliation_contract.md",
+    "analysis/rtl2_2_2_typed_delivery_router_contract.md",
+    "analysis/rtl2_2_3_functional_storage_contract.md",
+    "analysis/rtl2_phase_numbering_reconciliation.md"
+  ],
+  "field": {
+    "name": "expected_fragment_count",
+    "source": "SourceCandidate.r1_request.expected_fragment_count",
+    "allocation_owner": "route_a_delivery_context_registry",
+    "capture_owner": "route_a_delivery_context_allocation_bridge",
+    "consumer": "future registry-resolved owner-local read endpoint",
+    "semantic_use": "validate accepted read fragment ordinal/last coverage and initialize an S2 fill without response-derived reconstruction",
+    "not_a_claim": ["physical port", "FIFO depth", "SRAM macro", "HBM controller", "service rate", "timing", "throughput", "PPA"]
+  },
+  "required_invariants": [
+    "The allocation acknowledgement exactly echoes the bridge-captured expected_fragment_count before R2 exposure.",
+    "A registry-resolved read handoff preserves expected_fragment_count under ready-low backpressure.",
+    "Identity, target kind, target generation, release, and stale-incarnation rules apply to the complete allocation record.",
+    "No endpoint may reconstruct expected_fragment_count from a response, address, or candidate identifier."
+  ],
+  "explicitly_not_activated": [
+    "R2 read-candidate production",
+    "typed read-fragment endpoint deposition",
+    "P3 or S2 payload/sidecar mutation",
+    "S2 READY or direct-pending source deliverability",
+    "source packet/GQA/R4 behavior",
+    "RTL2 fragment_deliver scoreboard event emission"
+  ],
+  "tests": [
+    "RouteADeliveryContextRegistrySpec",
+    "RouteADeliveryContextAllocationBridgeSpec",
+    "RouteATypedDeliveryRouterSpec",
+    "RouteAKVSubsystemTopSpec"
+  ],
+  "evidence_labels": [
+    "synthesizable protocol/context evidence",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL numeric-correctness claim",
+    "no new A4 DSE"
+  ]
+}

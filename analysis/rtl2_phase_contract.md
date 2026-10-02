@@ -3,7 +3,8 @@
 **Status:** `rtl2_1a_to_1c_atomic_publication_implemented_directed_tested;
 rtl2_2_0_provenance_reconciled; rtl2_2_1_registry_association_implemented_directed_tested;
 rtl2_2_2_typed_write_delivery_implemented_directed_tested;
-rtl2_3_functional_storage_implemented_directed_tested`.
+rtl2_2_3_functional_storage_implemented_directed_tested;
+rtl2_2_4_read_delivery_context_in_progress`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -206,6 +207,25 @@ uses only the registry-held descriptor and releases a ref only after exact
 final endpoint acceptance. Its typed read-fragment output remains top-inert:
 S2/direct/P3-read deposition and source service are still later work.
 
+**RTL2.2.3 replaceable P3/S2 functional-storage prerequisite: implemented and
+directed tested.**
+[`rtl2_2_3_functional_storage_contract.md`](rtl2_2_3_functional_storage_contract.md)
+records the existing sole R3 P3 reference backing and the new owner-local S2
+payload/sidecar reference backing.  A packed S2 slot reaches `READY` only after
+matching payload, sidecar, and existing control completion facts.  The top
+continues to keep its new S2 ingress/read carriers inactive: no R2 read
+producer, typed read deposition, source service, GQA packet, or R4 work is
+implicitly activated.
+
+**RTL2.2.4 read-delivery context completion: implementation in progress.**
+[`rtl2_2_4_read_delivery_context_contract.md`](rtl2_2_4_read_delivery_context_contract.md)
+and its machine-readable manifest preserve the producer-originated
+`expected_fragment_count` in the immutable registry allocation.  This closes
+the count/`last` context needed by a future read endpoint without inventing it
+from a response.  It is deliberately not a read producer or deposit path:
+the top's typed read output remains inactive, so there is still no P3/S2/direct
+payload mutation, source deliverability, or `fragment_deliver` event.
+
 RTL2.2 has two intentionally separate transaction classes.  They must not be
 implemented as a generic response demultiplexer.
 
@@ -240,40 +260,10 @@ channel through the unique R1 boundary.  It is not a member of the payload-read
 rotation and does not imply a second memory port.  Its terminal facts feed
 RTL2.1b/RTL2.1c prerequisites rather than S2/direct read delivery.
 
-## RTL2.3 — Replaceable functional P3/S2 storage boundary
+The complete canonical numbering map, including historical manifest labels, is
+[`rtl2_phase_numbering_reconciliation.md`](rtl2_phase_numbering_reconciliation.md).
 
-**Status:** implemented and directed tested.
-[`rtl2_3_functional_storage_contract.md`](rtl2_3_functional_storage_contract.md)
-records the existing sole R3 P3 reference backing and the new owner-local S2
-payload/sidecar reference backing.  A packed S2 slot reaches `READY` only after
-matching payload, sidecar, and existing control completion facts.  The top
-continues to keep its new S2 ingress/read carriers inactive: no R2 read
-producer, typed read deposition, source service, GQA packet, or R4 work is
-implicitly activated.
-
-P3 and S2 payload handling is introduced only behind a replaceable functional
-storage interface:
-
-```text
-functional storage interface
-        |
-        +-- simulation/reference backing
-        |
-        +-- future SRAM realization
-```
-
-The present backing may verify fragment write/read, byte/sidecar preservation,
-validity, identity/generation, and owner-only access.  It is not an SRAM macro
-selection disguised as an implementation.  In particular, an arbitrary
-register `Vec` backing must not be documented or treated as the eventual macro,
-port count, latency, dynamic access energy, leakage, or physical layout.
-
-The 32-KiB S2 payload capacity and its sidecar are logical resource contracts;
-the P3 envelope is likewise a logical service/placement contract.  Neither
-authorizes a physical macro, port count, or timing claim.  P3/S2/direct
-transport copies never count as authoritative residency.
-
-## RTL2.4 — Source service and multi-source composition
+## RTL2.3 — Source service and multi-source composition
 
 Connect owner-produced hot, direct-pending, and packed/S2 source facts to the
 frozen source-instance and four-consumer protocol.  A source becomes
@@ -285,7 +275,7 @@ the RTL must not claim that arbitrary source reordering is bitwise equivalent.
 The result is a functional source packet/fragment path, not a source scheduler,
 HBM bandwidth model, or numeric merge implementation.
 
-## RTL2.5 — R4 boundary activation with replaceable result stub
+## RTL2.4 — R4 boundary activation with replaceable result stub
 
 Activate the existing R4 packet/result/fault boundary using a deterministic
 verification result stub.  The stub may issue an identity-matching success or
@@ -298,7 +288,7 @@ The frozen R4 boundary remains the replaceable contract for
 `merge_req`, partial header/value fragments, `merge_rsp`, and `numeric_fault`.
 The actual numerical implementation is a later realization sub-gate.
 
-## RTL2.6 — Active-state reset, fault, retirement, and reclaim
+## RTL2.5 — Active-state reset, fault, retirement, and reclaim
 
 Exercise active retained/publication/source transactions through destructive
 reset, terminal fault, retirement drain, descriptor invalidation, and page
@@ -313,9 +303,9 @@ fairness-constrained interleavings.  It is not a proof that hardware is
 deadlock-free, a latency guarantee, or a service-rate claim.  A stronger
 liveness statement requires a later formal proof with explicit assumptions.
 
-## RTL2 completion review
+## RTL2.6 — completion / integration review
 
-RTL2.0--RTL2.6 passing individually does not by itself complete production
+RTL2.0--RTL2.5 passing individually does not by itself complete production
 dataflow integration.  A separate completion review must consume the explicit
 scoreboard events and demonstrate at least one complete retained transaction:
 
@@ -337,7 +327,7 @@ RETAIN
   -> reclaim
 ```
 
-The success branch may use the RTL2.5 result stub; no real floating-point merge
+The success branch may use the RTL2.4 result stub; no real floating-point merge
 is required for this review.  The review must also show a representative fault,
 stale-response, and legal-stall path, with exactly-once terminal behavior,
 authority conservation, invalidation-before-free, and final `retire_ack`.
