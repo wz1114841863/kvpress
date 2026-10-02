@@ -40,6 +40,12 @@ defines the single-packer, 64-member retained-group association and exact
 R5-allocation/P3-claim/R3-relay order.  It adds no child, payload behavior, or
 publication activity; next review is the R2 multi-producer ingress contract.
 
+**RTL2.0c R2 ingress/context interface-owner closure: complete; behavior pending.**
+[`rtl2_0c_r2_ingress_delivery_context_contract.md`](rtl2_0c_r2_ingress_delivery_context_contract.md)
+freezes six class-labelled logical producer endpoints and a separate opaque
+delivery-context registry.  R2 retains all arbitration/credit/FIFO ownership;
+the future typed router may only consume registry-resolved target descriptors.
+
 ## Entry conditions and common rules
 
 RTL2 begins from the RTL1-V completion state.  Every activated carrier must

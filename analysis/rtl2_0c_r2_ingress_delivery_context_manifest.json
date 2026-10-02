@@ -1,0 +1,66 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-0c-r2-ingress-delivery-context-1.0",
+  "status": "rtl2_0c_r2_ingress_and_delivery_context_owner_closed_behavior_pending",
+  "scope": "Logical multi-producer R2 candidate ingress and opaque delivery-context ownership contract. No behavioral R2 rewrite, physical ingress port count, FIFO depth, scheduler, R1 path, payload movement, controller, timing, PPA, model/GPU, or new A4 DSE claim.",
+  "contract_references":[
+    "analysis/architecture_spec.md",
+    "analysis/architecture_gate_a_r2_arbitration_dependency_contract.md",
+    "analysis/rtl1_i3_delivery_source_contract.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_0_activation_contract.md"
+  ],
+  "r2_owner_boundary": {
+    "owner":"route_a_core_side_arbiter",
+    "retains":["per-class FIFO predecessor enforcement","eligibility/dependency/credit checks","oldest (arrival_ordinal,candidate_id) selection within class","s2_fill -> direct_pending -> pack_read accepted-grant rotation","grant cursor advance only on R1 acceptance","one logical R1 request/output path"],
+    "does_not_own":["candidate payload/address/context construction","delivery-context decode","source generation/page ownership","external/controller arbitration","metadata publication","physical queue or port realization"]
+  },
+  "candidate_classes":[
+    {"class":"s2_full","code_source":"r2S2FullClassCode","producer_owner":"full_kv_baseline_source_adapter","activation":"not_route_a_production_activated","read_rotation_member":true},
+    {"class":"s2_packed","code_source":"r2S2PackedClassCode","producer_owner":"route_a_packed_source_service_owner","activation":"future_rtl2_3","read_rotation_member":true},
+    {"class":"direct_pending","code_source":"r2DirectPendingClassCode","producer_owner":"route_a_direct_pending_endpoint_v1","activation":"future_rtl2_3","read_rotation_member":true},
+    {"class":"pack_read","code_source":"r2PackReadClassCode","producer_owner":"route_a_m2_p3_wrapper","activation":"future_rtl2_1b","read_rotation_member":true},
+    {"class":"pack_write","code_source":"r2PackWriteClassCode","producer_owner":"route_a_m2_p3_wrapper","activation":"future_rtl2_1b","read_rotation_member":false},
+    {"class":"descriptor_maintenance","code_source":"r2DescriptorMaintenanceClassCode","producer_owner":"route_a_page_manager","activation":"rtl1_i4_reclaim_only_then_future_rtl2_1b","read_rotation_member":false}
+  ],
+  "logical_ingress": {
+    "name":"R2CandidateIngressByClass",
+    "producer_to_consumer":"one class-labelled producer endpoint -> route_a_core_side_arbiter per frozen class",
+    "candidate_fields":["candidate_class","arrival_ordinal","candidate_id","eligibility_snapshot","delivery_context_ref","CoreMemoryRequest"],
+    "context_rule":"a producer obtains and binds one immutable delivery_context_ref before presenting a candidate; R2 transports but never decodes it",
+    "same_opportunity_rule":"when more than one eligible logical ingress is presented at one abstract acceptance opportunity, R2 selects only by the existing frozen candidate ordering and predicates; no top/adapter selection is permitted",
+    "physical_boundary":"the six class-labelled logical ingress records do not select a physical FIFO count, bus count, arbitration microarchitecture, service rate, or port count"
+  },
+  "delivery_context_registry": {
+    "name":"route_a_delivery_context_registry",
+    "parent":"route_a_kv_subsystem_top",
+    "classification":"integration_protocol_association_only",
+    "owner":"route_a_delivery_context_registry",
+    "owns":["one live immutable delivery context for each R2-presented candidate","opaque ref allocation/reuse exclusion","R1 identity/incarnation/reset-epoch association","exact target descriptor until final R1 terminal or destructive reset"],
+    "does_not_own":["R2 eligibility/FIFO/credit/cursor","R1 request identity allocation","payload data","page/source/authority state","response status creation","endpoint behavior","scheduler or arbitration"],
+    "context_fields":["delivery_context_ref","candidate_class","transaction_identity","reset_epoch","destination","target_kind","target_identity_generation","fragment_ordinal_rule","last_rule","operation_kind"],
+    "lifetime":"allocate before candidate presentation; immutable through R2/R1; resolve only after matching R1 terminal; free only after target acceptance or destructive reset",
+    "forbidden":["R2 context decode","context reconstruction from response fields","ref reuse while live","stale response match after reuse","authority transfer","second R1 path"]
+  },
+  "carriers":[
+    {"id":"producer_to_context_allocate","producer":"class-specific candidate producer","consumer":"route_a_delivery_context_registry","fields":["candidate_class","transaction_identity","reset_epoch","destination","target_kind","target_identity_generation","fragment_ordinal_rule","last_rule","operation_kind"],"rule":"registry returns a fresh opaque ref only while no live identical identity/ref association exists"},
+    {"id":"context_bound_candidate_to_r2","producer":"class-specific candidate producer","consumer":"route_a_core_side_arbiter","fields":["SourceCandidate with delivery_context_ref"],"rule":"candidate is immutable and contains the ref returned by its registry allocation"},
+    {"id":"r2_to_r1_request","producer":"route_a_core_side_arbiter","consumer":"route_a_core_mem_if_v1","fields":["CoreMemoryRequest","delivery_context_ref retained internally by R2"],"rule":"only accepted eligible R2 candidate reaches the sole R1 path"},
+    {"id":"r2_to_delivery_resolution","producer":"route_a_core_side_arbiter","consumer":"route_a_typed_delivery_router","fields":["SourceDelivery"],"rule":"R2 emits the exact opaque ref and matching R1 response; no endpoint routing occurs in R2"},
+    {"id":"router_to_context_resolve","producer":"route_a_typed_delivery_router","consumer":"route_a_delivery_context_registry","fields":["delivery_context_ref","transaction_identity","reset_epoch","r1_response"],"rule":"registry resolves one exact live target; mismatch/stale/duplicate response is rejected without target mutation"},
+    {"id":"context_to_exact_target","producer":"route_a_delivery_context_registry","consumer":"one target named by target_kind","fields":["typed target descriptor","r1_response"],"rule":"the registry never synthesizes a terminal and releases its ref only after target acceptance"}
+  ],
+  "invariants":[
+    "candidate_class is one of the six frozen logical classes and cannot be reclassified after producer presentation",
+    "arrival_ordinal and candidate_id are producer-originated immutable ordering fields; R2 alone applies the existing ordering rule",
+    "R2 ready-low cannot mutate an ingress candidate, context, cursor, ownership, credit, admission, or mask",
+    "a live delivery_context_ref is unique and cannot be reallocated until exact terminal target acceptance or destructive reset",
+    "a stale/unknown/mismatched response cannot resolve context, mutate S2/direct/P3/R5, make READY, or create terminal outcome",
+    "descriptor maintenance remains one FIFO-ordered 64-B write class through the same R1 path and never joins the read rotation"
+  ],
+  "required_follow_on": {
+    "behavioral_phase":"rtl2_1b_then_rtl2_2",
+    "requires":"Add reviewed R2 logical class-ingress and context-registry interfaces before activating the R3 pack-write producer. The typed router later consumes only registry-resolved target descriptors.",
+    "not_authorized":"No physical ingress lanes/FIFO depths, cross-class performance arbitration, R1 controller behavior, endpoint payload storage, or typed delivery routing behavior is enabled by this closure."
+  },
+  "evidence_labels":["pure-software machine-readable interface contract","no model/GPU","no cycle/timing/throughput claim","no PPA claim","no RTL correctness claim","no new A4 DSE"]
+}
