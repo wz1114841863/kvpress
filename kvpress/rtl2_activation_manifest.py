@@ -98,6 +98,12 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
             raise RTL2ActivationManifestError(f"unsupported amendment kind: {amendment['id']}")
         if not _string_list(amendment, "forbidden"):
             raise RTL2ActivationManifestError(f"amendment lacks forbidden constraints: {amendment['id']}")
+    router_amendment = next(record for record in amendments if record["id"] == "typed_delivery_router")
+    if (
+        router_amendment.get("closure_status") != "endpoint_descriptor_contract_closed_router_behavior_pending"
+        or router_amendment.get("closure_artifact") != "analysis/rtl2_0d_typed_delivery_router_contract.md"
+    ):
+        raise RTL2ActivationManifestError("typed delivery router must bind the RTL2.0d endpoint-descriptor closure")
 
     carriers = _records(manifest, "carrier_records")
     if _unique_ids(carriers, "carrier") != REQUIRED_CARRIERS:

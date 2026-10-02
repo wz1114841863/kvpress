@@ -51,6 +51,14 @@ def test_inert_carrier_without_amendment_and_premature_pass_are_rejected():
         validate_manifest(manifest)
 
 
+def test_typed_router_must_bind_exact_rtl2_0d_endpoint_closure():
+    manifest = copy.deepcopy(load_manifest(MANIFEST))
+    router = next(record for record in manifest["required_amendments"] if record["id"] == "typed_delivery_router")
+    router["closure_artifact"] = "analysis/rtl2_0c_r2_ingress_delivery_context_contract.md"
+    with pytest.raises(RTL2ActivationManifestError, match="RTL2.0d endpoint-descriptor closure"):
+        validate_manifest(manifest)
+
+
 def test_validator_cli_supports_help_and_default_manifest():
     help_result = subprocess.run([sys.executable, str(VALIDATOR), "--help"], cwd=ROOT, text=True, capture_output=True, check=True)
     assert "--manifest" in help_result.stdout

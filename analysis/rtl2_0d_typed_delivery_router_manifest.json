@@ -1,0 +1,91 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-0d-typed-delivery-router-1.0",
+  "status": "rtl2_0d_endpoint_descriptor_contract_closed_router_behavior_pending",
+  "scope": "Logical typed delivery-router endpoint descriptor contract only. No router behavior, payload storage realization, physical port or FIFO count, HBM/controller behavior, scheduler, source plan, numeric datapath, timing, throughput, PPA, model/GPU, RTL correctness, or new A4 DSE claim.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/architecture_gate_a_r2_arbitration_dependency_contract.md",
+    "analysis/rtl1_i3_delivery_source_contract.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_0c_r2_ingress_delivery_context_contract.md",
+    "analysis/rtl2_0_activation_contract.md"
+  ],
+  "router": {
+    "name": "route_a_typed_delivery_router",
+    "parent": "route_a_kv_subsystem_top",
+    "classification": "integration_protocol_transport_only",
+    "input": "SourceDelivery from route_a_core_side_arbiter",
+    "descriptor_provider": "route_a_delivery_context_registry",
+    "owns": [
+      "hold exact registry-resolved typed delivery until exact endpoint acceptance",
+      "forward immutable R1 response fields and registry descriptor without reinterpretation",
+      "return exact final-endpoint acceptance to registry"
+    ],
+    "does_not_own": [
+      "delivery_context_ref allocation or decode",
+      "R1 request identity or response status creation",
+      "payload storage or direct-pending buffering",
+      "R2 eligibility FIFO credit cursor or read rotation",
+      "source READY deliverable release or four-consumer completion",
+      "authority transition metadata publication or descriptor durability",
+      "R4 numeric result or R6 terminal lifecycle"
+    ],
+    "forbidden": [
+      "target reconstruction from response fields",
+      "generic untyped response demultiplexing",
+      "response data mutation",
+      "source scheduling",
+      "second R1 or memory path",
+      "authority transfer",
+      "S2 READY creation",
+      "outward terminal creation"
+    ]
+  },
+  "registry_resolution": {
+    "owner": "route_a_delivery_context_registry",
+    "match_fields": ["delivery_context_ref", "transaction_identity", "reset_epoch", "candidate_class", "target_identity_generation"],
+    "reject_without_endpoint_mutation": ["unknown_ref", "stale_epoch", "identity_mismatch", "class_mismatch", "generation_mismatch", "duplicate_or_released_ref"],
+    "release_rule": "release only after exact target accepts the final R1 read fragment or write terminal, or destructive reset; retain the ref across accepted non-final read fragments"
+  },
+  "typed_read_fragment": {
+    "name": "TypedReadFragment",
+    "fields": ["delivery_context_ref", "transaction_identity", "reset_epoch", "candidate_class", "target_kind", "target_identity_generation", "fragment_index", "last", "status", "data_512b"],
+    "ok_rule": "on status==OK, forward data_512b unchanged to exactly the descriptor-selected replaceable functional payload or transport endpoint",
+    "fault_rule": "on non-OK status, do not deposit payload; forward exact owner-local control fault observation without READY, source-deliverable, authority, retry, or fallback creation",
+    "control_after_payload_accept": "the matching control-only P3PendingFragment, S2FillTerminal, or DirectPendingRecordTerminal observation may occur only after the endpoint accepts the matching typed handoff"
+  },
+  "typed_write_terminal": {
+    "name": "TypedWriteTerminal",
+    "fields": ["delivery_context_ref", "transaction_identity", "reset_epoch", "candidate_class", "target_kind", "target_identity_generation", "status", "last"],
+    "no_read_data": true,
+    "final_only": true,
+    "fault_rule": "forward exact status with durable=false; no visibility, authority, retry, or fallback"
+  },
+  "read_targets": [
+    {"candidate_class": "pack_read", "target_kind": "p3_pending_read", "endpoint": "route_a_m2_p3_wrapper.functional_p3_payload_endpoint", "descriptor_fields": ["p3_layer", "p3_stage_generation"], "control_observation": "P3PendingFragment", "requires_sidecar": "not_applicable"},
+    {"candidate_class": "s2_full", "target_kind": "s2_full_fill", "endpoint": "route_a_s2_gqa_source_wrapper.functional_s2_payload_endpoint", "descriptor_fields": ["transaction_identity", "page_ref", "s2_slot", "source_generation", "requires_sidecar=false"], "control_observation": "S2FillTerminal", "requires_sidecar": false},
+    {"candidate_class": "s2_packed", "target_kind": "s2_packed_fill", "endpoint": "route_a_s2_gqa_source_wrapper.functional_s2_payload_endpoint", "descriptor_fields": ["transaction_identity", "page_ref", "s2_slot", "source_generation", "requires_sidecar=true"], "control_observation": "S2FillTerminal", "requires_sidecar": true},
+    {"candidate_class": "direct_pending", "target_kind": "direct_pending_read", "endpoint": "route_a_direct_pending_endpoint_v1.functional_pending_transport_endpoint", "descriptor_fields": ["transaction_identity", "endpoint_generation", "ordinal", "explicit_empty"], "control_observation": "DirectPendingRecordTerminal", "requires_sidecar": "not_applicable"}
+  ],
+  "write_targets": [
+    {"candidate_class": "pack_write", "target_kind": "packed_write_terminal", "endpoint": "route_a_m2_p3_wrapper", "descriptor_fields": ["p3_layer", "p3_stage_generation", "transaction_group_tag"], "control_observation": "P3PackedWriteTerminal", "durable_field": "r1_payload_durable", "durable_rule": "last && status==OK"},
+    {"candidate_class": "descriptor_maintenance", "target_kind": "descriptor_maintenance_terminal", "endpoint": "route_a_page_manager", "descriptor_fields": ["kind", "page_ref", "transaction_group_tag"], "control_observation": "DescriptorMaintenanceTerminal", "durable_field": "r1_descriptor_durable", "durable_rule": "last && status==OK"}
+  ],
+  "excluded_paths": [
+    "P3SidecarBind",
+    "M2GroupMemberResponse",
+    "R5 page allocation",
+    "metadata publication",
+    "authority handoff",
+    "S2 READY",
+    "GQA consumer completion",
+    "R4 packetization and numeric result",
+    "R6 lifecycle retirement"
+  ],
+  "required_follow_on": {
+    "behavioral_phase": "rtl2_2",
+    "requires": "Bind the registry and router to these exact descriptors, introduce owner-local replaceable functional payload/transport wrappers, and test endpoint acceptance plus stale/fault/stall cases before activating any top-inert delivery carrier.",
+    "not_authorized": "No physical data storage, macro/port choice, controller behavior, endpoint scheduling, source-deliverable behavior, numeric datapath, timing, throughput, PPA, or performance result."
+  },
+  "evidence_labels": ["pure-software machine-readable interface contract", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL correctness claim", "no new A4 DSE"]
+}

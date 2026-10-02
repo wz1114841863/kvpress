@@ -46,6 +46,13 @@ freezes six class-labelled logical producer endpoints and a separate opaque
 delivery-context registry.  R2 retains all arbitration/credit/FIFO ownership;
 the future typed router may only consume registry-resolved target descriptors.
 
+**RTL2.0d typed delivery-router endpoint closure: complete; behavior pending.**
+[`rtl2_0d_typed_delivery_router_contract.md`](rtl2_0d_typed_delivery_router_contract.md)
+freezes four exact read-fragment and two final write-terminal descriptors. It
+explicitly separates the unchanged 512-bit logical read payload envelope from
+existing control-only endpoint observations; it selects neither payload storage
+nor router behavior.
+
 ## Entry conditions and common rules
 
 RTL2 begins from the RTL1-V completion state.  Every activated carrier must
