@@ -1,0 +1,58 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-0-completion-review-1.0",
+  "status": "rtl2_0_completion_review_pass_pre_behavior",
+  "scope": "Machine-readable cross-owner completion review for RTL2.0. It verifies bounded closure artifacts and top composition-only scope before the first named behavioral phase; it does not activate dataflow or establish RTL functional, timing, throughput, PPA, numeric, model/GPU, or A4-DSE evidence.",
+  "activation_manifest": "analysis/rtl2_0_activation_manifest.json",
+  "scoreboard_schema": "analysis/rtl2_scoreboard_event_schema.json",
+  "top_source": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",
+  "required_pre_behavior_tie_offs": [
+    "StructuralTieOff.source(source_completion_plan)",
+    "StructuralTieOff.source(p3_claim)",
+    "StructuralTieOff.source(r4_result_stub)",
+    "StructuralTieOff.source(r4_numeric_fault)"
+  ],
+  "review_checks": {
+    "all_seven_amendments_closed": true,
+    "top_composition_only": true,
+    "behavioral_activation_started": false,
+    "top_forbidden_owners": [
+      "top-generated source plan",
+      "top-reconstructed delivery context",
+      "top-manufactured terminal",
+      "top authority ownership",
+      "adapter-created authority transition"
+    ],
+    "next_authorized_phase": "rtl2_1a_only"
+  },
+  "amendment_closures": [
+    {"id":"hot_payload_egress_interface","closure_status":"interface_owner_closed_behavior_pending","artifact":"analysis/rtl2_0a_payload_materialization_contract.md"},
+    {"id":"admission_publication_ingress_adapter","closure_status":"interface_owner_closed_behavior_pending","artifact":"analysis/rtl2_0b_admission_group_builder_contract.md"},
+    {"id":"r2_multi_producer_ingress_interface","closure_status":"interface_owner_closed_behavior_pending","artifact":"analysis/rtl2_0c_r2_ingress_delivery_context_contract.md"},
+    {"id":"typed_delivery_router","closure_status":"endpoint_descriptor_contract_closed_router_behavior_pending","artifact":"analysis/rtl2_0d_typed_delivery_router_contract.md"},
+    {"id":"r3_r5_durability_prerequisite_interface","closure_status":"descriptor_durability_interface_owner_closed_behavior_pending","artifact":"analysis/rtl2_0e_r3_r5_durability_prerequisite_contract.md"},
+    {"id":"source_service_packet_adapter","closure_status":"source_service_packet_interface_owner_closed_behavior_pending","artifact":"analysis/rtl2_0f_source_service_packet_adapter_contract.md"},
+    {"id":"r4_result_stub_provider","closure_status":"r4_result_stub_interface_owner_closed_testbench_behavior_pending","artifact":"analysis/rtl2_0g_r4_result_stub_provider_contract.md"}
+  ],
+  "required_event_count": 14,
+  "required_carrier_count": 20,
+  "disposition": {
+    "rtl2_0_pass": true,
+    "pass_scope": "Authorizes only RTL2.1a immutable retained-group/admission behavior under the already frozen contracts and the RTL2 scoreboard schema.",
+    "not_authorized": [
+      "RTL2.1b payload-write or descriptor-durability behavior",
+      "RTL2.1c metadata_publish_commit behavior",
+      "RTL2.2 or later behavior",
+      "numeric RTL",
+      "physical memory or HBM controller selection",
+      "cycle, timing, throughput, PPA, model/GPU, or new A4 DSE claim"
+    ]
+  },
+  "evidence_labels": [
+    "pure-software machine-readable completion review",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}

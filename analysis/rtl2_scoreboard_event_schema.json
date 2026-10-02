@@ -1,0 +1,50 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-scoreboard-event-1.0",
+  "status": "declared_pre_behavior_no_events_emittable",
+  "scope": "Versioned testbench-only architectural-event vocabulary for RTL2. It binds future owner-emitted events to the Python scoreboard without activating a carrier or inferring an event from arbitrary internal state. It makes no cycle, timing, throughput, PPA, numeric-datapath, model/GPU, RTL-correctness, or new A4 DSE claim.",
+  "extends": {
+    "historical_schema": "analysis/rtl1_v_scoreboard_event_schema.json",
+    "mode": "versioned_non_mutating_extension",
+    "rule": "RTL1-V remains historical and unchanged; this schema neither rewrites nor reinterprets its records."
+  },
+  "activation_manifest": "analysis/rtl2_0_activation_manifest.json",
+  "adapter": {
+    "name": "testbench_route_a_scoreboard_event_adapter_v2",
+    "state": "schema_only_not_implemented",
+    "rule": "A future adapter may emit only named owner/carrier events after that carrier's named behavioral phase; it must preserve the listed required fields."
+  },
+  "event_records": [
+    {"event":"request_accept","emitter_owners":["route_a_core_mem_if_v1"],"carrier_ids":["r2_to_r1_accepted_request"],"activation_phase":"rtl2_1b","required_fields":["request_id","incarnation","reset_epoch","delivery_context_ref","candidate_class"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"fragment_deliver","emitter_owners":["route_a_core_side_arbiter"],"carrier_ids":["r2_to_typed_delivery_router"],"activation_phase":"rtl2_2","required_fields":["request_id","incarnation","reset_epoch","delivery_context_ref","fragment_index","last","status"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"write_commit","emitter_owners":["route_a_core_mem_if_v1"],"carrier_ids":["r1_to_r3_packed_write_terminal","r1_to_r5_descriptor_terminal"],"activation_phase":"rtl2_1b","required_fields":["request_id","incarnation","reset_epoch","delivery_context_ref","operation_kind","status","r1_durable"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"descriptor_durable","emitter_owners":["route_a_page_manager"],"carrier_ids":["r5_descriptor_durable_to_r3"],"activation_phase":"rtl2_1b","required_fields":["page_ref","generation","layer","kv_head","transaction_group_tag","required_mask","durable_mask"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"metadata_publish_commit","emitter_owners":["route_a_m2_p3_wrapper"],"carrier_ids":["r3_nested_publication_to_r5","r3_publication_ack_to_r6"],"activation_phase":"rtl2_1c","required_fields":["transaction_group_tag","entry_id","record_ordinal","page_ref","generation","publication_status"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"authority_transition","emitter_owners":["route_a_lifecycle_adapter","route_a_m2_p3_wrapper"],"carrier_ids":["r6_to_r3_admission_context","r3_publication_ack_to_r6"],"activation_phase":"rtl2_1a","required_fields":["entry_id","transaction_group_tag","from_authority","to_authority"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"source_deliverable","emitter_owners":["route_a_hot_source_path","route_a_direct_pending_endpoint_v1","route_a_s2_gqa_source_wrapper"],"carrier_ids":["source_owner_to_packet_adapter"],"activation_phase":"rtl2_4","required_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation","source_valid"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"consumer_partial_commit","emitter_owners":["route_a_merge_boundary"],"carrier_ids":["r4_to_matching_source_commit"],"activation_phase":"rtl2_4","required_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation","consumer_id"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"source_release","emitter_owners":["route_a_hot_source_path","route_a_direct_pending_endpoint_v1","route_a_s2_gqa_source_wrapper"],"carrier_ids":["source_owner_release_to_r6"],"activation_phase":"rtl2_4","required_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation","all_four_consumers_committed"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"merge_request","emitter_owners":["route_a_lifecycle_adapter"],"carrier_ids":["r6_to_r4_merge_request"],"activation_phase":"rtl2_5","required_fields":["request_id","incarnation","source_presence"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"attention_terminal","emitter_owners":["route_a_merge_boundary"],"carrier_ids":["r4_to_r6_terminal"],"activation_phase":"rtl2_5","required_fields":["request_id","incarnation","terminal_status"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"descriptor_invalidate","emitter_owners":["route_a_page_manager"],"carrier_ids":["r5_to_r2_descriptor_reclaim_candidate"],"activation_phase":"rtl2_6","required_fields":["page_ref","generation","descriptor_operation","delivery_context_ref"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"page_free","emitter_owners":["route_a_page_manager"],"carrier_ids":["r5_allocator_release"],"activation_phase":"rtl2_6","required_fields":["page_ref","generation"],"emission_state":"not_emittable_until_named_behavioral_phase"},
+    {"event":"retire_ack","emitter_owners":["route_a_lifecycle_adapter"],"carrier_ids":["r6_to_runtime_retire_ack"],"activation_phase":"rtl2_6","required_fields":["session_id","request_id","incarnation"],"emission_state":"not_emittable_until_named_behavioral_phase"}
+  ],
+  "forbidden": [
+    "event emission before its named behavioral phase",
+    "infer architectural event from arbitrary internal state",
+    "implicit identity or generation default",
+    "rewrite frozen rtl1_v_scoreboard_event_schema.json",
+    "raw HBM byte observation",
+    "cycle or latency annotation",
+    "Full-KV fallback event",
+    "arbitrary source-order reinterpretation"
+  ],
+  "evidence_labels": [
+    "pure-software machine-readable scoreboard schema",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}

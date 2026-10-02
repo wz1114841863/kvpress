@@ -1,6 +1,6 @@
 # RTL2.0 — Producer/consumer activation inventory
 
-**Status:** `inventory_complete; rtl2_0a_to_0g_interface_owner_closed; behavior_not_started; completion_review_required`.
+**Status:** `rtl2_0_pass_pre_behavior; rtl2_0a_to_0g_interface_owner_closed; behavior_not_started; rtl2_1a_only_authorized`.
 
 This is the first executable planning slice of RTL2.  It creates a
 machine-readable activation inventory and validates it with no-model Python
@@ -12,9 +12,10 @@ The companion [machine-readable manifest](rtl2_0_activation_manifest.json)
 has 14 required scoreboard events and 20 concrete carrier records.  Every
 record names a producer, consumer, identity fields, later activation phase,
 and either its current safe wiring state or a specific required amendment.
-The planned versioned RTL2 scoreboard schema is intentionally not created yet:
-it must be created immediately before the first behaviorally active carrier,
-not populated with events that this RTL cannot yet emit.
+The versioned RTL2 scoreboard schema is now created and validated before the
+first behaviorally active carrier. It is intentionally `schema_only_not_implemented`:
+it names no emitted events and cannot be used to infer facts from arbitrary RTL
+internal state.
 
 ## Resolved existing ownership
 
@@ -48,13 +49,17 @@ before their associated carrier is activated:
 | `source_service_packet_adapter` | **Exact plan-copy, source-owner ingress, R4 header/sideband, and fragment boundary is closed by [`rtl2_0f_source_service_packet_adapter_contract.md`](rtl2_0f_source_service_packet_adapter_contract.md).** It transports only matching planned source facts in `hot -> pending -> packed` order; commit/release remain with source owners and R6. Behavior remains deferred. | Top-generated source plan, absent-packet synthesis, numeric merge, source release, or source-reorder claim. |
 | `r4_result_stub_provider` | **Verification-only exact success/fault provider is closed by [`rtl2_0g_r4_result_stub_provider_contract.md`](rtl2_0g_r4_result_stub_provider_contract.md).** It binds one explicit testbench scenario after a nonempty R6 merge request and still leaves R4→R6 as the only terminal chain. | An FP/exp/online-merge, terminal bypass, or latency claim. |
 
-Accordingly, RTL2.0 is deliberately **not PASS**.  This is the intended
-fail-closed result of the RTL2 phase contract: a new producer, hierarchy child,
-or interface endpoint cannot be quietly introduced as an implementation
-convenience. RTL2.0a through RTL2.0g resolve all seven bounded interface/owner
-amendments. No behavior begins until a separate completion review confirms
-their cross-owner consistency, retains the composition-only top, and creates
-the required versioned RTL2 scoreboard event schema.
+## Completion-review disposition
+
+[`rtl2_0_completion_review.md`](rtl2_0_completion_review.md) and its
+machine-readable manifest confirm the exact seven closure artifacts, verify
+the top remains composition-only, and bind
+[`rtl2_scoreboard_event_schema.json`](rtl2_scoreboard_event_schema.json)
+without modifying the frozen RTL1-V schema. The review is a narrow
+**PASS_FOR_RTL2_1A_BEHAVIORAL_ENTRY**: it authorizes only immutable retained
+group/admission-context behavior. No payload write, descriptor-durability,
+publication, read delivery, source packet, R4 result, physical realization, or
+performance behavior has begun or is authorized by this PASS.
 
 ## Validation
 
@@ -62,6 +67,8 @@ Run from the repository root:
 
 ```bash
 .venv/bin/python tools/validate_rtl2_activation_manifest.py --help
+.venv/bin/python tools/validate_rtl2_scoreboard_event_schema.py --help
+.venv/bin/python tools/validate_rtl2_completion_review.py --help
 .venv/bin/python -m pytest tests/test_rtl2_activation_manifest.py -q
 ```
 

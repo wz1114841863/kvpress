@@ -13,7 +13,7 @@ from typing import Any
 
 
 MANIFEST_SCHEMA = "kvzap-route-a-rtl2-0-activation-manifest-1.0"
-MANIFEST_STATUS = "rtl2_0_inventory_complete_reviewed_hierarchy_interface_amendments_required"
+MANIFEST_STATUS = "rtl2_0_all_amendments_closed_pre_behavior_pass"
 REQUIRED_EVENTS = frozenset(
     {
         "request_accept", "fragment_deliver", "write_commit", "descriptor_durable",
@@ -59,7 +59,7 @@ def load_manifest(path: str | Path) -> dict[str, Any]:
 
 
 def validate_manifest(manifest: dict[str, Any]) -> None:
-    """Check the planning inventory; this intentionally cannot PASS RTL2.0."""
+    """Check the review-pass inventory without claiming carrier behavior."""
     if manifest.get("schema_version") != MANIFEST_SCHEMA:
         raise RTL2ActivationManifestError("unexpected RTL2.0 activation schema_version")
     if manifest.get("status") != MANIFEST_STATUS:
@@ -83,8 +83,8 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
     schema = _object(manifest, "scoreboard_schema")
     if schema.get("path") != "analysis/rtl2_scoreboard_event_schema.json":
         raise RTL2ActivationManifestError("RTL2 must reserve a versioned scoreboard schema path")
-    if schema.get("state") != "required_before_first_behavioral_activation":
-        raise RTL2ActivationManifestError("RTL2 schema must precede behavioral activation")
+    if schema.get("state") != "declared_pre_behavior_schema_validated":
+        raise RTL2ActivationManifestError("RTL2 schema must be validated before behavioral activation")
     if schema.get("adapter") != "testbench_route_a_scoreboard_event_adapter_v2":
         raise RTL2ActivationManifestError("RTL2 schema must name its testbench adapter")
 
@@ -140,6 +140,8 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
             raise RTL2ActivationManifestError(f"carrier names unknown amendment: {carrier['id']}")
         if carrier["current_state"] in {"top_inert", "absent_from_frozen_interface", "absent_from_frozen_hierarchy"} and amendment_id is None:
             raise RTL2ActivationManifestError(f"inactive carrier lacks an explicit amendment: {carrier['id']}")
+        if carrier["current_state"] == "behavior_active":
+            raise RTL2ActivationManifestError("RTL2.0 review must complete before any behavior_active carrier")
     durability_carrier = carrier_by_id["r5_descriptor_durable_to_r3"]
     if (
         durability_carrier.get("current_state") != "interface_owner_closed_behavior_pending"
@@ -180,12 +182,26 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
             if not {"r1_to_r3_packed_write_terminal", "r1_to_r5_descriptor_terminal"}.issubset(carrier_ids):
                 raise RTL2ActivationManifestError("write commit must distinguish R3 payload and R5 descriptor terminals")
 
+    completion = _object(manifest, "completion_review")
+    _required_strings(completion, "artifact", "manifest", "next_authorized_phase")
+    if completion.get("all_seven_amendments_closed") is not True or completion.get("top_composition_only") is not True:
+        raise RTL2ActivationManifestError("completion review must close all seven amendments and retain top composition-only scope")
+    if completion.get("behavioral_activation_started") is not False:
+        raise RTL2ActivationManifestError("completion review must precede behavioral activation")
+    if completion.get("next_authorized_phase") != "rtl2_1a_only":
+        raise RTL2ActivationManifestError("completion review may authorize only RTL2.1a")
+    for key in ("artifact", "manifest"):
+        if not Path(completion[key]).is_file():
+            raise RTL2ActivationManifestError(f"completion review {key} does not exist: {completion[key]!r}")
+
     review = _object(manifest, "review_disposition")
-    if review.get("rtl2_0_pass") is not False:
-        raise RTL2ActivationManifestError("RTL2.0 must not pass while amendments remain unreviewed")
-    _required_strings(review, "reason", "next_action")
-    if "top-level temporary producers" not in review["reason"]:
-        raise RTL2ActivationManifestError("review disposition must explain why temporary top producers are prohibited")
+    if review.get("rtl2_0_pass") is not True:
+        raise RTL2ActivationManifestError("RTL2.0 completion review must pass only after all amendments close")
+    _required_strings(review, "reason", "next_action", "pass_scope")
+    if "composition-only top" not in review["reason"]:
+        raise RTL2ActivationManifestError("review disposition must preserve the composition-only top boundary")
+    if "RTL2.1a only" not in review["pass_scope"]:
+        raise RTL2ActivationManifestError("review PASS must remain limited to RTL2.1a")
 
     labels = set(_string_list(manifest, "evidence_labels"))
     if not {"no model/GPU", "no PPA claim", "no RTL correctness claim", "no new A4 DSE"}.issubset(labels):

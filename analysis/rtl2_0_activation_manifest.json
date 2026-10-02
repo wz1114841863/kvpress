@@ -1,6 +1,6 @@
 {
   "schema_version": "kvzap-route-a-rtl2-0-activation-manifest-1.0",
-  "status": "rtl2_0_inventory_complete_reviewed_hierarchy_interface_amendments_required",
+  "status": "rtl2_0_all_amendments_closed_pre_behavior_pass",
   "scope": "Machine-readable RTL2.0 producer/consumer and event-schema activation inventory. No payload behavior, storage realization, numeric RTL, controller, timing, throughput, PPA, model/GPU, or new A4 DSE claim.",
   "contract_references": [
     "analysis/architecture_spec.md",
@@ -9,9 +9,15 @@
     "analysis/rtl1_i3_delivery_source_contract.md",
     "analysis/rtl1_i4_reclaim_contract.md",
     "analysis/rtl1_v_verification_completion_contract.md",
+    "analysis/rtl2_0a_payload_materialization_contract.md",
+    "analysis/rtl2_0b_admission_group_builder_contract.md",
+    "analysis/rtl2_0c_r2_ingress_delivery_context_contract.md",
+    "analysis/rtl2_0d_typed_delivery_router_contract.md",
     "analysis/rtl2_0e_r3_r5_durability_prerequisite_contract.md",
     "analysis/rtl2_0f_source_service_packet_adapter_contract.md",
-    "analysis/rtl2_0g_r4_result_stub_provider_contract.md"
+    "analysis/rtl2_0g_r4_result_stub_provider_contract.md",
+    "analysis/rtl2_0_completion_review.md",
+    "analysis/rtl2_scoreboard_event_schema.json"
   ],
   "top_rule": {
     "top_module": "route_a_kv_subsystem_top",
@@ -26,7 +32,7 @@
   },
   "scoreboard_schema": {
     "path": "analysis/rtl2_scoreboard_event_schema.json",
-    "state": "required_before_first_behavioral_activation",
+    "state": "declared_pre_behavior_schema_validated",
     "adapter": "testbench_route_a_scoreboard_event_adapter_v2",
     "forbidden": [
       "infer architectural event from arbitrary internal state",
@@ -82,10 +88,19 @@
     {"id":"source_service_packet_adapter","kind":"hierarchy","owner":"route_a_source_service_packet_adapter","purpose":"Packetize owner-provided hot/direct/S2 source facts in frozen canonical order and carry SourceInstance sideband to R4; owns no source residency, release, or numeric result.","closure_status":"source_service_packet_interface_owner_closed_behavior_pending","closure_artifact":"analysis/rtl2_0f_source_service_packet_adapter_contract.md","forbidden":["source-plan synthesis at top","source reorder equivalence claim","numeric merge","physical source mux selection"]},
     {"id":"r4_result_stub_provider","kind":"testbench_boundary","owner":"testbench_route_a_r4_result_stub_provider","purpose":"Provide identity-matching deterministic success/fault facts through the frozen R4 boundary during RTL2.5 verification only.","closure_status":"r4_result_stub_interface_owner_closed_testbench_behavior_pending","closure_artifact":"analysis/rtl2_0g_r4_result_stub_provider_contract.md","forbidden":["numeric implementation claim","outward terminal bypass","cycle/latency claim"]}
   ],
+  "completion_review": {
+    "artifact": "analysis/rtl2_0_completion_review.md",
+    "manifest": "analysis/rtl2_0_completion_review_manifest.json",
+    "all_seven_amendments_closed": true,
+    "top_composition_only": true,
+    "behavioral_activation_started": false,
+    "next_authorized_phase": "rtl2_1a_only"
+  },
   "review_disposition": {
-    "rtl2_0_pass": false,
-    "reason":"Six hierarchy/interface amendments and one testbench-boundary amendment are required before production behavior can be activated. RTL2.0a through RTL2.0g have closed bounded interface/owner contracts, but a separate completion review must still verify their cross-owner consistency and create the versioned RTL2 scoreboard schema before any behavioral activation; top-level temporary producers remain prohibited.",
-    "next_action":"Run the RTL2.0 completion review, require all seven closure artifacts and composition-only top rule, then create and validate the versioned RTL2 scoreboard event schema before RTL2.1a."
+    "rtl2_0_pass": true,
+    "reason":"RTL2.0a through RTL2.0g close the exact seven bounded interface/owner amendments. The completion review validates their cross-owner inventory, confirms the composition-only top still prohibits temporary producers, and binds the versioned RTL2 scoreboard schema before any behavioral activation.",
+    "next_action":"Begin only RTL2.1a immutable retained-group/admission behavior with owner-emitted events bound to the validated RTL2 scoreboard schema.",
+    "pass_scope":"RTL2.0 PASS authorizes RTL2.1a only; no payload-write, publication, read-delivery, source-service, R4, physical-realization, timing, throughput, PPA, numeric, model/GPU, or new A4 DSE claim is authorized."
   },
   "evidence_labels": [
     "pure-software machine-readable activation contract",

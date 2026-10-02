@@ -1,6 +1,6 @@
 # RTL2 — Production Transaction/Dataflow Integration
 
-**Status:** `rtl2_plan_frozen; implementation_not_started`.
+**Status:** `rtl2_0_pre_behavior_completion_passed; rtl2_1a_behavioral_entry_authorized`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -17,15 +17,16 @@ metadata-publication boundary.
 
 ## RTL2.0 progress
 
-**Status:** `inventory_complete; behavior_not_started;
-hierarchy_interface_amendment_review_required`.
+**Status:** `rtl2_0a_to_0g_closed; completion_review_passed;
+behavior_not_started; rtl2_1a_only_authorized`.
 
 [`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and its
 machine-readable manifest complete the fail-closed owner/event inventory.  It
 finds seven explicit hierarchy/interface/testbench-boundary amendments needed
 to activate production carriers without making the top a producer or a second
-authority owner.  This does not pass RTL2.0: the amendments require separate
-review before any top-inert production wire or payload behavior is changed.
+authority owner. The separate completion review has now checked the seven
+closures and created the required versioned scoreboard schema, but no
+top-inert carrier has been behaviorally enabled.
 
 **RTL2.0a payload interface/owner closure: complete; behavior pending.**
 [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md)
@@ -71,6 +72,13 @@ consumer ordering, or numeric implementation.
 freezes one explicit testbench success-or-fault scenario per accepted nonempty
 R6 merge request. It remains outside synthesizable numeric RTL and cannot
 bypass R4-to-R6 terminal ownership.
+
+**RTL2.0 completion review: passed pre-behavior.**
+[`rtl2_0_completion_review.md`](rtl2_0_completion_review.md) confirms all
+seven amendments, the top's continued composition-only scope, and the
+pre-behavior [`rtl2_scoreboard_event_schema.json`](rtl2_scoreboard_event_schema.json).
+Its narrow PASS authorizes only RTL2.1a; it does not claim that any carrier,
+payload path, or numeric path is behaviorally active.
 
 ## Entry conditions and common rules
 
