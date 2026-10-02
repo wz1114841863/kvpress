@@ -49,6 +49,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2.0d typed read-fragment / write-terminal router endpoints | [`rtl2_0d_typed_delivery_router_contract.md`](rtl2_0d_typed_delivery_router_contract.md) and [`rtl2_0d_typed_delivery_router_manifest.json`](rtl2_0d_typed_delivery_router_manifest.json) |
 | RTL2.0e R3/R5 descriptor-durability prerequisite | [`rtl2_0e_r3_r5_durability_prerequisite_contract.md`](rtl2_0e_r3_r5_durability_prerequisite_contract.md) and [`rtl2_0e_r3_r5_durability_prerequisite_manifest.json`](rtl2_0e_r3_r5_durability_prerequisite_manifest.json) |
 | RTL2.0f source-service packet adapter | [`rtl2_0f_source_service_packet_adapter_contract.md`](rtl2_0f_source_service_packet_adapter_contract.md) and [`rtl2_0f_source_service_packet_adapter_manifest.json`](rtl2_0f_source_service_packet_adapter_manifest.json) |
+| RTL2.0g R4 verification-only result-stub provider | [`rtl2_0g_r4_result_stub_provider_contract.md`](rtl2_0g_r4_result_stub_provider_contract.md) and [`rtl2_0g_r4_result_stub_provider_manifest.json`](rtl2_0g_r4_result_stub_provider_manifest.json) |
 | RTL1-I3 source/R4/R6 control composition | [`rtl1_i3_delivery_source_contract.md`](rtl1_i3_delivery_source_contract.md) and [`rtl1_i3_interface_manifest.json`](rtl1_i3_interface_manifest.json) |
 | RTL1-I4 reclaim transport contract | [`rtl1_i4_reclaim_contract.md`](rtl1_i4_reclaim_contract.md) and [`rtl1_i4_interface_manifest.json`](rtl1_i4_interface_manifest.json) |
 

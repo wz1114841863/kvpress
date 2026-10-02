@@ -1,6 +1,6 @@
 # RTL2.0 — Producer/consumer activation inventory
 
-**Status:** `inventory_complete; rtl2_0a_to_0f_interface_owner_closed; behavior_not_started; hierarchy_interface_amendment_review_required`.
+**Status:** `inventory_complete; rtl2_0a_to_0g_interface_owner_closed; behavior_not_started; completion_review_required`.
 
 This is the first executable planning slice of RTL2.  It creates a
 machine-readable activation inventory and validates it with no-model Python
@@ -46,14 +46,15 @@ before their associated carrier is activated:
 | `typed_delivery_router` | **Exact endpoint descriptors are closed by [`rtl2_0d_typed_delivery_router_contract.md`](rtl2_0d_typed_delivery_router_contract.md).** A separate registry resolves the opaque ref; the router may only preserve the typed read fragment or final write terminal to that one endpoint. Router behavior remains deferred. | Generic response reinterpretation, data loss, authority transfer, S2 READY creation, or a second memory port. |
 | `r3_r5_durability_prerequisite_interface` | **Exact aggregate durability prerequisite is closed by [`rtl2_0e_r3_r5_durability_prerequisite_contract.md`](rtl2_0e_r3_r5_durability_prerequisite_contract.md).** Only R5 aggregates `new_page` and conditional `tail_link`; R3 treats accepted success as necessary but insufficient for the existing nested commit. Behavior remains deferred. | Visibility outside `metadata_publish_commit`, R3 durability reconstruction, authority transfer, duplicate commit, or page free. |
 | `source_service_packet_adapter` | **Exact plan-copy, source-owner ingress, R4 header/sideband, and fragment boundary is closed by [`rtl2_0f_source_service_packet_adapter_contract.md`](rtl2_0f_source_service_packet_adapter_contract.md).** It transports only matching planned source facts in `hot -> pending -> packed` order; commit/release remain with source owners and R6. Behavior remains deferred. | Top-generated source plan, absent-packet synthesis, numeric merge, source release, or source-reorder claim. |
-| `r4_result_stub_provider` | RTL2.5 needs a verification-only matching result/fault source. | An FP/exp/online-merge or latency claim. |
+| `r4_result_stub_provider` | **Verification-only exact success/fault provider is closed by [`rtl2_0g_r4_result_stub_provider_contract.md`](rtl2_0g_r4_result_stub_provider_contract.md).** It binds one explicit testbench scenario after a nonempty R6 merge request and still leaves R4→R6 as the only terminal chain. | An FP/exp/online-merge, terminal bypass, or latency claim. |
 
 Accordingly, RTL2.0 is deliberately **not PASS**.  This is the intended
 fail-closed result of the RTL2 phase contract: a new producer, hierarchy child,
 or interface endpoint cannot be quietly introduced as an implementation
-convenience. RTL2.0a through RTL2.0f resolve only bounded interface/owner
-boundaries; no behavior should begin until the remaining R4-stub amendment has
-been reviewed and accepted as a bounded hierarchy/interface closure.
+convenience. RTL2.0a through RTL2.0g resolve all seven bounded interface/owner
+amendments. No behavior begins until a separate completion review confirms
+their cross-owner consistency, retains the composition-only top, and creates
+the required versioned RTL2 scoreboard event schema.
 
 ## Validation
 

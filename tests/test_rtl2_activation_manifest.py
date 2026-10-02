@@ -75,6 +75,14 @@ def test_source_packet_adapter_must_bind_exact_rtl2_0f_source_owner_ingress():
         validate_manifest(manifest)
 
 
+def test_r4_stub_provider_must_bind_exact_rtl2_0g_testbench_boundary():
+    manifest = copy.deepcopy(load_manifest(MANIFEST))
+    stub = next(record for record in manifest["required_amendments"] if record["id"] == "r4_result_stub_provider")
+    stub["closure_artifact"] = "analysis/rtl1_6_r4_packet_boundary_contract.md"
+    with pytest.raises(RTL2ActivationManifestError, match="RTL2.0g closure"):
+        validate_manifest(manifest)
+
+
 def test_validator_cli_supports_help_and_default_manifest():
     help_result = subprocess.run([sys.executable, str(VALIDATOR), "--help"], cwd=ROOT, text=True, capture_output=True, check=True)
     assert "--manifest" in help_result.stdout

@@ -1,0 +1,111 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-0g-r4-result-stub-provider-1.0",
+  "status": "rtl2_0g_r4_result_stub_interface_owner_closed_testbench_behavior_pending",
+  "scope": "Verification-only R4 result/fault stub-provider contract. No Chisel provider behavior, numeric datapath, source packet processing, source release, terminal bypass, controller behavior, timing, throughput, PPA, model/GPU, RTL correctness, or new A4 DSE claim.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/architecture_gate_a_r4_numeric_merge_contract.md",
+    "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md",
+    "analysis/rtl1_6_r4_packet_boundary_contract.md",
+    "analysis/rtl1_i3_delivery_source_contract.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_0_activation_contract.md"
+  ],
+  "provider": {
+    "name": "testbench_route_a_r4_result_stub_provider",
+    "classification": "testbench_only_verification_endpoint",
+    "observes": ["R6 merge_req after accepted nonempty source completion plan"],
+    "consumes": ["R4StubScenario supplied explicitly by the testbench"],
+    "produces": ["R4ResultStub", "R4NumericFault"],
+    "owns": [
+      "one live testbench scenario association per accepted merge identity",
+      "mutually exclusive success or numeric-fault offer",
+      "hold selected offer stable until R4 acceptance"
+    ],
+    "does_not_own": [
+      "R6 merge request production",
+      "source packet or ConsumerPartialCommit processing",
+      "source release",
+      "R4 numeric arithmetic or binary32 validation",
+      "R6 outward terminal consumption",
+      "authority transition metadata publication page operation or retirement"
+    ],
+    "forbidden": [
+      "outcome inference from packet data or internal R4 state",
+      "offer before accepted merge_req",
+      "empty-source merge acceptance",
+      "simultaneous success and numeric_fault",
+      "duplicate outcome for one merge identity",
+      "outward terminal bypass",
+      "retry or Full-KV fallback",
+      "numeric implementation claim"
+    ]
+  },
+  "scenario": {
+    "name": "R4StubScenario",
+    "fields": ["transaction_identity", "disposition", "normalized_value_4096b_when_success"],
+    "dispositions": ["success", "numeric_fault"],
+    "selection_rule": "scenario is explicit testbench input, not inferred; it remains stable while held and binds only one matching live merge identity",
+    "success_rule": "emit R4ResultStub with exact transaction_identity and opaque normalized_value_4096b",
+    "fault_rule": "emit R4NumericFault with exact transaction_identity and no normalized result"
+  },
+  "merge_binding": {
+    "producer": "route_a_lifecycle_adapter",
+    "consumer": "route_a_merge_boundary",
+    "fields": ["transaction_identity", "source_presence"],
+    "acceptance_rule": "provider may bind only after R4 accepts the exact nonempty merge_req; it emits no merge_req and never accepts an empty source set",
+    "terminal_chain": "R4 accepts exactly one matching provider carrier, emits existing merge_rsp_or_numeric_fault, and R6 alone consumes the outward attention terminal"
+  },
+  "mutual_exclusion_and_lifetime": [
+    "for one accepted merge identity exactly one scenario disposition is selected",
+    "success and numeric_fault valid signals are never asserted together",
+    "provider holds its selected carrier unchanged until R4 accepts it",
+    "after R4 acceptance the provider retires that identity and rejects duplicate or stale scenarios",
+    "destructive reset invalidates every live scenario; old identity cannot match a later merge"
+  ],
+  "environment_assumptions": [
+    "the testbench supplies at most one matching scenario for each accepted merge request",
+    "for bounded progress tests, the testbench eventually offers the selected scenario after a legal finite ready-low interval",
+    "while valid is asserted and ready is low, every testbench scenario and provider output field remains stable"
+  ],
+  "dut_guarantees_to_observe": [
+    "RouteAMergeBoundary accepts only one matching success or fault after a nonempty merge_req",
+    "R4 maps a fault to the existing R6-facing numeric-fault status with no normalized result",
+    "R6 produces exactly one outward terminal and cannot accept a second terminal for the same identity"
+  ],
+  "rejection_and_stall": {
+    "reject_without_mutation": [
+      "scenario before merge_req acceptance",
+      "empty-source merge identity",
+      "unknown stale or reset identity",
+      "scenario identity mismatch",
+      "duplicate scenario or outcome",
+      "simultaneous success and numeric_fault",
+      "success carrying no normalized value",
+      "fault carrying a normalized value"
+    ],
+    "ready_low_rule": "while R4 result/fault ready is low, every held identity, disposition, and normalized value field remains unchanged and no source, authority, lifecycle, or terminal state is created"
+  },
+  "excluded_paths": [
+    "source packet or consumer commit processing",
+    "SourceRelease or merge_req production",
+    "R4 numeric arithmetic binary32 validation or normalized-value calculation",
+    "R6 outward terminal production",
+    "retry Full-KV fallback or admission/mask change",
+    "metadata publication authority transfer or page operation",
+    "physical numeric storage pipeline or timing realization"
+  ],
+  "required_follow_on": {
+    "behavioral_phase": "rtl2_5_verification_only",
+    "requires": "Instantiate only in testbench/harness scope, drive explicit matching success/fault scenarios, and observe the existing R4-to-R6 terminal chain under stale, simultaneous, reset, and ready-low cases.",
+    "not_authorized": "No synthesizable numeric provider, source packet behavior, R4 arithmetic implementation, controller behavior, timing, throughput, PPA, or performance result."
+  },
+  "evidence_labels": [
+    "pure-software machine-readable testbench-interface contract",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}

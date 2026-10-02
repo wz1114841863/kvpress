@@ -116,6 +116,12 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         or source_adapter_amendment.get("closure_artifact") != "analysis/rtl2_0f_source_service_packet_adapter_contract.md"
     ):
         raise RTL2ActivationManifestError("source-service packet adapter must bind the RTL2.0f closure")
+    r4_stub_amendment = next(record for record in amendments if record["id"] == "r4_result_stub_provider")
+    if (
+        r4_stub_amendment.get("closure_status") != "r4_result_stub_interface_owner_closed_testbench_behavior_pending"
+        or r4_stub_amendment.get("closure_artifact") != "analysis/rtl2_0g_r4_result_stub_provider_contract.md"
+    ):
+        raise RTL2ActivationManifestError("R4 result-stub provider must bind the RTL2.0g closure")
 
     carriers = _records(manifest, "carrier_records")
     if _unique_ids(carriers, "carrier") != REQUIRED_CARRIERS:
@@ -147,6 +153,9 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         or source_carrier.get("current_state") != "interface_owner_closed_behavior_pending"
     ):
         raise RTL2ActivationManifestError("source-service carrier must retain the RTL2.0f source-owner ingress")
+    r4_terminal = carrier_by_id["r4_to_r6_terminal"]
+    if r4_terminal.get("current_state") != "testbench_boundary_closed_behavior_pending":
+        raise RTL2ActivationManifestError("R4-to-R6 terminal must retain the RTL2.0g testbench boundary")
 
     events = _records(manifest, "event_records")
     if _unique_ids(events, "event") != REQUIRED_EVENTS:

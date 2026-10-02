@@ -10,7 +10,8 @@
     "analysis/rtl1_i4_reclaim_contract.md",
     "analysis/rtl1_v_verification_completion_contract.md",
     "analysis/rtl2_0e_r3_r5_durability_prerequisite_contract.md",
-    "analysis/rtl2_0f_source_service_packet_adapter_contract.md"
+    "analysis/rtl2_0f_source_service_packet_adapter_contract.md",
+    "analysis/rtl2_0g_r4_result_stub_provider_contract.md"
   ],
   "top_rule": {
     "top_module": "route_a_kv_subsystem_top",
@@ -67,7 +68,7 @@
     {"id":"r4_to_matching_source_commit","producer":"route_a_merge_boundary","consumer":"matching_source_owner","current_state":"wired_demux_control_only","activation_phase":"rtl2_4","semantic_event":"consumer_partial_commit","identity_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation","consumer_id"],"amendment_id":"source_service_packet_adapter"},
     {"id":"source_owner_release_to_r6","producer":"matching_source_owner","consumer":"route_a_lifecycle_adapter","current_state":"wired_control_only","activation_phase":"rtl2_4","semantic_event":"source_release","identity_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation"],"amendment_id":"source_service_packet_adapter"},
     {"id":"r6_to_r4_merge_request","producer":"route_a_lifecycle_adapter","consumer":"route_a_merge_boundary","current_state":"wired_control_only","activation_phase":"rtl2_5","semantic_event":"merge_request","identity_fields":["request_id","incarnation","source_presence"],"amendment_id":null},
-    {"id":"r4_to_r6_terminal","producer":"route_a_merge_boundary","consumer":"route_a_lifecycle_adapter","current_state":"wired_control_only","activation_phase":"rtl2_5","semantic_event":"attention_terminal","identity_fields":["request_id","incarnation","terminal_status"],"amendment_id":"r4_result_stub_provider"},
+    {"id":"r4_to_r6_terminal","producer":"route_a_merge_boundary","consumer":"route_a_lifecycle_adapter","current_state":"testbench_boundary_closed_behavior_pending","activation_phase":"rtl2_5","semantic_event":"attention_terminal","identity_fields":["request_id","incarnation","terminal_status"],"amendment_id":"r4_result_stub_provider"},
     {"id":"r5_to_r2_descriptor_reclaim_candidate","producer":"route_a_page_manager","consumer":"route_a_core_side_arbiter","current_state":"wired_reclaim_only","activation_phase":"rtl2_6","semantic_event":"descriptor_invalidate","identity_fields":["page_ref","generation","delivery_context_ref"],"amendment_id":null},
     {"id":"r5_allocator_release","producer":"route_a_page_manager","consumer":"route_a_page_manager","current_state":"owner_local_behavior_complete","activation_phase":"rtl2_6","semantic_event":"page_free","identity_fields":["page_ref","generation"],"amendment_id":null},
     {"id":"r6_to_runtime_retire_ack","producer":"route_a_lifecycle_adapter","consumer":"runtime_session_manager","current_state":"wired_control_only","activation_phase":"rtl2_6","semantic_event":"retire_ack","identity_fields":["session_id","request_id","incarnation"],"amendment_id":null}
@@ -79,12 +80,12 @@
     {"id":"typed_delivery_router","kind":"hierarchy","owner":"route_a_typed_delivery_router","purpose":"Route an R2-preserved delivery context to exactly one named read-fragment or write-terminal endpoint through the separately owned delivery-context registry; owns no request identity, authority, or terminal creation.","closure_status":"endpoint_descriptor_contract_closed_router_behavior_pending","closure_artifact":"analysis/rtl2_0d_typed_delivery_router_contract.md","forbidden":["response reinterpretation","source scheduling","second memory port","authority transfer"]},
     {"id":"r3_r5_durability_prerequisite_interface","kind":"interface","owner":"route_a_page_manager","purpose":"Report the exact aggregate descriptor-durability prerequisite to R3 before the existing nested publication commit.","closure_status":"descriptor_durability_interface_owner_closed_behavior_pending","closure_artifact":"analysis/rtl2_0e_r3_r5_durability_prerequisite_contract.md","forbidden":["descriptor visibility outside metadata_publish_commit","duplicate commit","page free"]},
     {"id":"source_service_packet_adapter","kind":"hierarchy","owner":"route_a_source_service_packet_adapter","purpose":"Packetize owner-provided hot/direct/S2 source facts in frozen canonical order and carry SourceInstance sideband to R4; owns no source residency, release, or numeric result.","closure_status":"source_service_packet_interface_owner_closed_behavior_pending","closure_artifact":"analysis/rtl2_0f_source_service_packet_adapter_contract.md","forbidden":["source-plan synthesis at top","source reorder equivalence claim","numeric merge","physical source mux selection"]},
-    {"id":"r4_result_stub_provider","kind":"testbench_boundary","owner":"testbench_route_a_r4_result_stub_provider","purpose":"Provide identity-matching deterministic success/fault facts through the frozen R4 boundary during RTL2.5 verification only.","forbidden":["numeric implementation claim","outward terminal bypass","cycle/latency claim"]}
+    {"id":"r4_result_stub_provider","kind":"testbench_boundary","owner":"testbench_route_a_r4_result_stub_provider","purpose":"Provide identity-matching deterministic success/fault facts through the frozen R4 boundary during RTL2.5 verification only.","closure_status":"r4_result_stub_interface_owner_closed_testbench_behavior_pending","closure_artifact":"analysis/rtl2_0g_r4_result_stub_provider_contract.md","forbidden":["numeric implementation claim","outward terminal bypass","cycle/latency claim"]}
   ],
   "review_disposition": {
     "rtl2_0_pass": false,
-    "reason":"Six hierarchy/interface amendments and one testbench-boundary amendment are required before production behavior can be activated. RTL2.0a through RTL2.0f have closed only bounded interface/owner contracts; the manifest deliberately records the remaining R4-stub amendment instead of permitting top-level temporary producers.",
-    "next_action":"Review and explicitly authorize or revise the remaining R4-stub amendment; only then create the versioned RTL2 scoreboard schema and the first behaviorally active RTL2.1a slice."
+    "reason":"Six hierarchy/interface amendments and one testbench-boundary amendment are required before production behavior can be activated. RTL2.0a through RTL2.0g have closed bounded interface/owner contracts, but a separate completion review must still verify their cross-owner consistency and create the versioned RTL2 scoreboard schema before any behavioral activation; top-level temporary producers remain prohibited.",
+    "next_action":"Run the RTL2.0 completion review, require all seven closure artifacts and composition-only top rule, then create and validate the versioned RTL2 scoreboard event schema before RTL2.1a."
   },
   "evidence_labels": [
     "pure-software machine-readable activation contract",

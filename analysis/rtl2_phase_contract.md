@@ -66,6 +66,12 @@ the atomic R4 header/sideband plus fragment egress. It preserves canonical
 `hot -> pending -> packed` source order without choosing source computation,
 consumer ordering, or numeric implementation.
 
+**RTL2.0g R4 result-stub provider closure: complete; testbench behavior pending.**
+[`rtl2_0g_r4_result_stub_provider_contract.md`](rtl2_0g_r4_result_stub_provider_contract.md)
+freezes one explicit testbench success-or-fault scenario per accepted nonempty
+R6 merge request. It remains outside synthesizable numeric RTL and cannot
+bypass R4-to-R6 terminal ownership.
+
 ## Entry conditions and common rules
 
 RTL2 begins from the RTL1-V completion state.  Every activated carrier must
