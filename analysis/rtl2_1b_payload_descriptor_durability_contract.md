@@ -1,6 +1,7 @@
 # RTL2.1b — payload durability and descriptor prerequisite
 
-**Status:** implementation in progress; structural/top elaboration passed.
+**Status:** implementation and no-tail directed closure complete; the required
+visible-tail integration is closed by RTL2.1c.
 
 RTL2.1b activates the minimum functional path that RTL2.1a deliberately left
 inert:
@@ -75,10 +76,11 @@ descriptor request/data/terminal, and exact R3 prerequisite acceptance. It
 also checks that the P3 stage remains `DURABLE`: neither publication nor an
 authority handoff occurs in this slice.
 
-A real tail-link append is deliberately not marked RTL2.1b-complete: it needs
-a previously **visible** tail, and making the first page visible is the unique
-RTL2.1c `metadata_publish_commit` event. Injecting a visible tail into this
-harness would bypass the frozen linearization boundary. R1 stale/malformed
-response and fault behavior remain covered by its established directed suite;
-the actual tail-link transaction is an RTL2.1c integration requirement.
+A real tail-link append deliberately remained outside this no-tail harness: it
+needs a previously **visible** tail, and making the first page visible is the
+unique RTL2.1c `metadata_publish_commit` event. RTL2.1c now covers that
+two-page transaction through the actual new-page then tail-link maintenance
+path, without injecting a visible-tail fact. R1 stale/malformed response and
+fault behavior remain covered by its established directed suite, with the
+integrated stale/mismatch/fault checks recorded by RTL2.1c.
 This document makes no timing, throughput, PPA, or performance claim.

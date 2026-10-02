@@ -717,6 +717,60 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
   io.component_status_out.bits.asserted := true.B
 }
 
+/**
+  * Functional reference endpoint for R3's private M2 protocol carriers.
+  *
+  * It reflects only identities that R3 has already issued and returns an OK
+  * member completion.  It is deliberately replaceable: this is neither an M2
+  * macro, a port count, a service-rate model, nor a physical timing contract.
+  */
+final class RouteAM2ReferenceProtocolProvider(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_m2_reference_protocol_provider"
+
+  val io = IO(new Bundle {
+    val member_request_in = Flipped(RouteAChannels.m2_group_member_req(p))
+    val member_response_out = RouteAChannels.m2_group_member_rsp(p)
+    val publication_candidate_in = Flipped(RouteAChannels.metadata_publish_req(p))
+    val publication_request_out = RouteAChannels.metadata_publish_req(p)
+  })
+
+  val memberPending = RegInit(false.B)
+  val memberRequest = Reg(new M2GroupMemberRequest(p))
+  io.member_request_in.ready := !memberPending
+  when(io.member_request_in.fire) {
+    memberPending := true.B
+    memberRequest := io.member_request_in.bits
+  }
+  io.member_response_out.valid := memberPending
+  io.member_response_out.bits.layer := memberRequest.layer
+  io.member_response_out.bits.stage_generation := memberRequest.stage_generation
+  io.member_response_out.bits.transaction_group_tag := memberRequest.transaction_group_tag
+  io.member_response_out.bits.member := memberRequest.member
+  io.member_response_out.bits.status := p.coreMemoryOkStatusCode.U
+  when(io.member_response_out.fire) { memberPending := false.B }
+
+  val publicationPending = RegInit(false.B)
+  val publicationCandidate = Reg(new MetadataPublishRequest(p))
+  io.publication_candidate_in.ready := !publicationPending
+  when(io.publication_candidate_in.fire) {
+    publicationPending := true.B
+    publicationCandidate := io.publication_candidate_in.bits
+  }
+  io.publication_request_out.valid := publicationPending
+  io.publication_request_out.bits := publicationCandidate
+  when(io.publication_request_out.fire) { publicationPending := false.B }
+
+  when(io.member_response_out.valid && !io.member_response_out.ready) {
+    assert(io.member_response_out.bits.layer === memberRequest.layer)
+    assert(io.member_response_out.bits.stage_generation === memberRequest.stage_generation)
+    assert(io.member_response_out.bits.transaction_group_tag === memberRequest.transaction_group_tag)
+    assert(io.member_response_out.bits.member === memberRequest.member)
+  }
+  when(io.publication_request_out.valid && !io.publication_request_out.ready) {
+    assert(io.publication_request_out.bits.asUInt === publicationCandidate.asUInt)
+  }
+}
+
 /** RTL1.3 R3 control state: no P3 payload macro, M2 macro, or HBM controller. */
 final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_m2_p3_wrapper"
@@ -741,10 +795,12 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     val p3_packed_write_delivery_in = Flipped(RouteAChannels.source_delivery(p))
     val p3_payload_durable_out = RouteAChannels.p3_payload_durable(p)
     val descriptor_durability_prerequisite_in = Flipped(RouteAChannels.descriptor_durability_prerequisite(p))
+    val m2_group_member_req_out = RouteAChannels.m2_group_member_req(p)
     val m2_group_member_rsp_in = Flipped(RouteAChannels.m2_group_member_rsp(p))
     val p3_observe_layer = Input(UInt(RouteAAnchorWidths.LayerWidth.W))
     val p3_observe_state = Output(UInt(RouteAAnchorWidths.P3StateWidth.W))
     val p3_observe_generation = Output(UInt(p.p3StageGenerationWidth.W))
+    val m2_publish_candidate_out = RouteAChannels.metadata_publish_req(p)
     val m2_publish_req_in = Flipped(RouteAChannels.metadata_publish_req(p))
     val metadata_publish_visibility_apply = RouteAChannels.metadata_publish_visibility(p)
     val metadata_publish_visibility_ack_in = Flipped(RouteAChannels.metadata_publish_visibility_ack)
@@ -1047,10 +1103,43 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
       .otherwise { stageDescriptorPrerequisite(descriptorPrerequisiteLayer) := true.B }
   }
 
+  // R3 is the sole M2 group-member initiator.  A member response is accepted
+  // only for the one exact request still outstanding; stale and mismatched
+  // completions are therefore inert at this boundary.
+  val m2MemberRequestOutstanding = RegInit(false.B)
+  val m2MemberRequestLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
+  val m2MemberRequestGeneration = Reg(UInt(p.p3StageGenerationWidth.W))
+  val m2MemberRequestTag = Reg(UInt(p.transactionGroupTagWidth.W))
+  val m2MemberRequestMember = Reg(UInt(1.W))
+  val m2MemberEligible = VecInit((0 until stages).map { layer =>
+    stageState(layer) === StateDurable && stageDescriptorPrerequisite(layer) &&
+      stageM2Members(layer) =/= 3.U
+  })
+  val m2MemberEligibleAny = m2MemberEligible.asUInt.orR
+  val m2MemberIssueLayer = PriorityEncoder(m2MemberEligible)
+  io.m2_group_member_req_out.valid := initialized && !m2MemberRequestOutstanding && m2MemberEligibleAny
+  io.m2_group_member_req_out.bits.layer := m2MemberIssueLayer
+  io.m2_group_member_req_out.bits.stage_generation := stageGeneration(m2MemberIssueLayer)
+  io.m2_group_member_req_out.bits.transaction_group_tag := stageTag(m2MemberIssueLayer)
+  io.m2_group_member_req_out.bits.member := Mux(stageM2Members(m2MemberIssueLayer)(0),
+    RouteAM2GroupMember.SpanOwnerRmw.U, RouteAM2GroupMember.HeadControlRmw.U)
+  when(io.m2_group_member_req_out.fire) {
+    m2MemberRequestOutstanding := true.B
+    m2MemberRequestLayer := m2MemberIssueLayer
+    m2MemberRequestGeneration := stageGeneration(m2MemberIssueLayer)
+    m2MemberRequestTag := stageTag(m2MemberIssueLayer)
+    m2MemberRequestMember := io.m2_group_member_req_out.bits.member
+  }
+
   val m2Member = io.m2_group_member_rsp_in.bits
   val memberLayer = m2Member.layer
   val memberBit = (1.U(2.W) << m2Member.member)(1, 0)
-  val memberMatches = initialized && stageState(memberLayer) === StateDurable &&
+  val memberMatches = initialized && m2MemberRequestOutstanding &&
+    memberLayer === m2MemberRequestLayer &&
+    m2Member.stage_generation === m2MemberRequestGeneration &&
+    m2Member.transaction_group_tag === m2MemberRequestTag &&
+    m2Member.member === m2MemberRequestMember &&
+    stageState(memberLayer) === StateDurable &&
     stageGeneration(memberLayer) === m2Member.stage_generation &&
     stageTag(memberLayer) === m2Member.transaction_group_tag &&
     m2Member.member <= RouteAM2GroupMember.SpanOwnerRmw.U &&
@@ -1059,6 +1148,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val memberFault = m2Member.status === p.coreMemoryFaultStatusCode.U
   io.m2_group_member_rsp_in.ready := memberMatches && (memberOk || memberFault)
   when(io.m2_group_member_rsp_in.fire) {
+    m2MemberRequestOutstanding := false.B
     when(memberFault) { stageState(memberLayer) := StateFaulted }
       .otherwise { stageM2Members(memberLayer) := stageM2Members(memberLayer) | memberBit }
   }
@@ -1068,14 +1158,45 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val publicationLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
   val publicationTag = Reg(UInt(p.transactionGroupTagWidth.W))
   val publicationPageRef = Reg(new PageRef)
+  // Issuing a publication candidate is separate from accepting the returned
+  // M2 publication request.  The round trip makes the protocol attribution
+  // explicit while retaining R3 as the only issuer of immutable coordinates.
+  val publicationRequestOutstanding = RegInit(false.B)
+  val publicationRequestLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
+  val publicationRequestGeneration = Reg(UInt(p.p3StageGenerationWidth.W))
+  val publicationRequestTag = Reg(UInt(p.transactionGroupTagWidth.W))
+  val publicationEligible = VecInit((0 until stages).map { layer =>
+    stageState(layer) === StateDurable && stageM2Members(layer) === 3.U &&
+      stageDescriptorPrerequisite(layer) &&
+      PopCount(membershipPresent(layer)) === stageValidRecords(layer)
+  })
+  val publicationEligibleAny = publicationEligible.asUInt.orR
+  val publicationEligibleLayer = PriorityEncoder(publicationEligible)
+  io.m2_publish_candidate_out.valid := initialized && !publicationActive &&
+    !publicationRequestOutstanding && publicationEligibleAny
+  io.m2_publish_candidate_out.bits.transaction_group_tag := stageTag(publicationEligibleLayer)
+  io.m2_publish_candidate_out.bits.p3_layer := publicationEligibleLayer
+  io.m2_publish_candidate_out.bits.p3_stage_generation := stageGeneration(publicationEligibleLayer)
+  when(io.m2_publish_candidate_out.fire) {
+    publicationRequestOutstanding := true.B
+    publicationRequestLayer := publicationEligibleLayer
+    publicationRequestGeneration := stageGeneration(publicationEligibleLayer)
+    publicationRequestTag := stageTag(publicationEligibleLayer)
+  }
+
   val publish = io.m2_publish_req_in.bits
   val membershipComplete = PopCount(membershipPresent(publish.p3_layer)) === stageValidRecords(publish.p3_layer)
-  val publishPrerequisites = initialized && stageState(publish.p3_layer) === StateDurable &&
+  val publishPrerequisites = initialized && publicationRequestOutstanding &&
+    publish.p3_layer === publicationRequestLayer &&
+    publish.p3_stage_generation === publicationRequestGeneration &&
+    publish.transaction_group_tag === publicationRequestTag &&
+    stageState(publish.p3_layer) === StateDurable &&
     stageGeneration(publish.p3_layer) === publish.p3_stage_generation &&
     stageTag(publish.p3_layer) === publish.transaction_group_tag &&
     stageM2Members(publish.p3_layer) === 3.U && membershipComplete && stageDescriptorPrerequisite(publish.p3_layer)
   io.m2_publish_req_in.ready := !publicationActive && publishPrerequisites
   when(io.m2_publish_req_in.fire) {
+    publicationRequestOutstanding := false.B
     publicationActive := true.B
     publicationAwaitingVisibilityAck := false.B
     publicationLayer := publish.p3_layer

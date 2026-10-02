@@ -86,7 +86,18 @@ gate record.
 creates the one-active, 64-record immutable association child and connects only
 R6 retained pairs, R5 allocation, R3 claim/ack, and R3 pair relay. It preserves
 pending authority and leaves R1, descriptors, publication, payload, and numeric
-paths inactive. RTL2.1b remains a separate next gate.
+paths inactive.
+
+**RTL2.1b payload/descriptor prerequisite: implemented and directed tested.**
+[`rtl2_1b_payload_descriptor_durability_contract.md`](rtl2_1b_payload_descriptor_durability_contract.md)
+records the actual no-tail R3 -> R2 -> R1 -> R5 write path and its private
+durability prerequisite. Its tail-link dependency is closed by RTL2.1c below.
+
+**RTL2.1c atomic publication: implemented and directed tested.**
+[`rtl2_1c_atomic_publication_contract.md`](rtl2_1c_atomic_publication_contract.md)
+binds R3's exact M2 request/response and publication-candidate identities to
+the nested R5 visibility acknowledgement and the one `pending -> packed`
+handoff. It is functional protocol closure only; no M2 realization is chosen.
 
 ## Entry conditions and common rules
 
@@ -157,8 +168,8 @@ existing `metadata_publish_commit`.
 | Sub-slice | Required functional closure | Must remain impossible |
 |---|---|---|
 | RTL2.1a | Form and preserve an immutable retained group from the frozen admission decision; claim exactly its non-contiguous member records. | Payload release, packed authority, or publication visibility merely from admission/group formation. |
-| RTL2.1b | Drive the unique R2-to-R1 payload-write transaction and the R5 descriptor-maintenance prerequisite; emit identity-bearing `write_commit` and `descriptor_durable` only from their owners. **Implementation in progress:** the minimum replaceable P3 functional backing/hot egress is explicitly front-loaded; verification completion remains open. | Treating a write commit as metadata visibility or authority transfer. |
-| RTL2.1c | After every required payload and descriptor prerequisite is durable, perform the sole nested `metadata_publish_commit`, emit the exact `pending -> packed` authority transition, and make the page readable. | Partial-group visibility, duplicate commit, or a pending/packed authority overlap. |
+| RTL2.1b | Drive the unique R2-to-R1 payload-write transaction and the R5 descriptor-maintenance prerequisite; emit identity-bearing `write_commit` and `descriptor_durable` only from their owners. **Implemented and directed tested;** its no-tail write path is complete and its visible-tail dependency is exercised by RTL2.1c. | Treating a write commit as metadata visibility or authority transfer. |
+| RTL2.1c | After every required payload and descriptor prerequisite is durable, perform the sole nested `metadata_publish_commit`, emit the exact `pending -> packed` authority transition, and make the page readable. **Implemented and directed tested** with stale/mismatch and fault fail-closed cases. | Partial-group visibility, duplicate commit, or a pending/packed authority overlap. |
 
 This slice retains the exact existing admission result; it neither changes
 pruning nor invents a new policy.  Fault and stall tests must demonstrate that

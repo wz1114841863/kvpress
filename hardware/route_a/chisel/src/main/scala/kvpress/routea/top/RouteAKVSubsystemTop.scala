@@ -41,6 +41,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val arbiter = Module(new RouteACoreSideArbiter(p))
     val core_memory = Module(new RouteACoreMemIfV1(p))
     val m2_p3 = Module(new RouteAM2P3Wrapper(p))
+    val m2_reference_protocol = Module(new RouteAM2ReferenceProtocolProvider(p))
     val page_manager = Module(new RouteAPageManager(p))
     val admission_group_builder = Module(new RouteAAdmissionPublicationIngressAdapter(p))
     val r2_write_ingress = Module(new RouteAR2WriteIngressMerge(p))
@@ -170,14 +171,18 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val p3_sidecar = hot_position_sidecar_in
     val p3_write_issue = Wire(RouteAChannels.p3_packed_write_issue(p)); StructuralTieOff.source(p3_write_issue)
     val p3_write_terminal = Wire(RouteAChannels.p3_packed_write_terminal(p)); StructuralTieOff.source(p3_write_terminal)
-    val m2_group_member_rsp = Wire(RouteAChannels.m2_group_member_rsp(p)); StructuralTieOff.source(m2_group_member_rsp)
     m2_p3.io.p3_pending_fragment_in <> p3_fragment
     m2_p3.io.p3_sidecar_bind_in <> p3_sidecar
     m2_p3.io.p3_packed_write_issue_in <> p3_write_issue
     m2_p3.io.p3_packed_write_terminal_in <> p3_write_terminal
-    m2_p3.io.m2_group_member_rsp_in <> m2_group_member_rsp
+    m2_reference_protocol.io.member_request_in <> m2_p3.io.m2_group_member_req_out
+    m2_p3.io.m2_group_member_rsp_in <> m2_reference_protocol.io.member_response_out
     m2_p3.io.p3_observe_layer := 0.U
-    m2_p3.io.m2_publish_req_in <> lifecycle.io.metadata_publish_req
+    m2_reference_protocol.io.publication_candidate_in <> m2_p3.io.m2_publish_candidate_out
+    m2_p3.io.m2_publish_req_in <> m2_reference_protocol.io.publication_request_out
+    // R6 observes the completed R3/R5 commit acknowledgement; it is not a
+    // second publication initiator.  R3 owns the issued candidate above.
+    StructuralTieOff.sink(lifecycle.io.metadata_publish_req)
     lifecycle.io.authority_transition_in <> m2_p3.io.authority_transition_out
     // These are non-authoritative monitor attachment points.  I2's directed
     // harness attaches to them; the inert production top has no group source.

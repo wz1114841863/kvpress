@@ -63,8 +63,10 @@ private final class RouteAAdmissionPublicationHarness(p: RouteASkeletonParameter
   StructuralTieOff.source(r3.io.p3_packed_write_delivery_in)
   StructuralTieOff.sink(r3.io.p3_payload_durable_out)
   r3.io.descriptor_durability_prerequisite_in <> io.descriptor_prerequisite
+  StructuralTieOff.sink(r3.io.m2_group_member_req_out)
   r3.io.m2_group_member_rsp_in <> io.m2_member
   r3.io.p3_observe_layer := 0.U
+  StructuralTieOff.sink(r3.io.m2_publish_candidate_out)
   r3.io.m2_publish_req_in <> io.m2_publish
   r3.io.metadata_publish_visibility_apply.ready := io.visibility_apply_ready
   r3.io.metadata_publish_visibility_ack_in <> io.visibility_ack

@@ -620,6 +620,13 @@ clock with M2 nor demonstrates a physical SRAM port implementation.
    The pending-to-packed authoritative handoff occurs only at the associated
    atomic metadata publication/linearization boundary; pending remains the
    authoritative source during the intervening interval.
+8. The RTL2.1c functional binding makes R3 the sole issuer of the two fixed
+   semantic M2 member coordinates and the publication candidate. A
+   replaceable reference protocol endpoint may reflect only an R3-issued
+   identity; it is not a selected M2 macro, port count, coherence protocol,
+   controller, latency, or PPA implementation. A stale/mismatched completion
+   is fail-closed and cannot create visibility or authority. See
+   `analysis/rtl2_1c_atomic_publication_contract.md`.
 
 The HA8-wide model has `commit_slots = 0`: groups with completed frozen members
 and predecessors may publish in one declared service coordinate.  This is not

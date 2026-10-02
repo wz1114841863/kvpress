@@ -500,6 +500,14 @@ final class P3PayloadDurable(p: RouteASkeletonParameters) extends Bundle {
 }
 
 /** A private result for one of the two fixed semantic M2 RMW members. */
+final class M2GroupMemberRequest(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val member = UInt(1.W)
+}
+
+/** A private result for one of the two fixed semantic M2 RMW members. */
 final class M2GroupMemberResponse(p: RouteASkeletonParameters) extends Bundle {
   val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
   val stage_generation = UInt(p.p3StageGenerationWidth.W)
@@ -596,6 +604,7 @@ object RouteAChannels {
   def p3_packed_write_terminal(p: RouteASkeletonParameters) = Decoupled(new P3PackedWriteTerminal(p))
   def p3_packed_write_issue(p: RouteASkeletonParameters) = Decoupled(new P3PackedWriteIssue(p))
   def p3_payload_durable(p: RouteASkeletonParameters) = Decoupled(new P3PayloadDurable(p))
+  def m2_group_member_req(p: RouteASkeletonParameters) = Decoupled(new M2GroupMemberRequest(p))
   def m2_group_member_rsp(p: RouteASkeletonParameters) = Decoupled(new M2GroupMemberResponse(p))
   def page_allocation_req(p: RouteASkeletonParameters) = Decoupled(new PageAllocationRequest(p))
   def page_allocation_rsp(p: RouteASkeletonParameters) = Decoupled(new PageAllocationResponse(p))

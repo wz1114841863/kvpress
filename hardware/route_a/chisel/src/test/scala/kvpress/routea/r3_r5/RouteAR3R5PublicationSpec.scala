@@ -37,7 +37,9 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.io.p3_packed_write_issue_in.valid.poke(false.B); dut.io.p3_packed_write_terminal_in.valid.poke(false.B)
     dut.io.p3_packed_write_candidate_out.ready.poke(true.B); dut.io.p3_packed_write_delivery_in.valid.poke(false.B)
     dut.io.p3_payload_durable_out.ready.poke(true.B); dut.io.descriptor_durability_prerequisite_in.valid.poke(false.B)
+    dut.io.m2_group_member_req_out.ready.poke(false.B)
     dut.io.m2_group_member_rsp_in.valid.poke(false.B); dut.io.m2_publish_req_in.valid.poke(false.B)
+    dut.io.m2_publish_candidate_out.ready.poke(false.B)
     dut.io.metadata_publish_visibility_apply.ready.poke(true.B)
     dut.io.metadata_publish_visibility_ack_in.valid.poke(false.B); dut.io.m2_publish_ack.ready.poke(true.B)
     dut.io.mem_init_done.poke(true.B); dut.clock.step()
@@ -82,11 +84,22 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.io.p3_packed_write_terminal_in.valid.poke(true.B); dut.io.p3_packed_write_terminal_in.ready.expect(true.B); dut.clock.step(); dut.io.p3_packed_write_terminal_in.valid.poke(false.B)
     offerDescriptorPrerequisite(dut)
     for (member <- Seq(RouteAM2GroupMember.HeadControlRmw, RouteAM2GroupMember.SpanOwnerRmw)) {
+      dut.io.m2_group_member_req_out.valid.expect(true.B)
+      dut.io.m2_group_member_req_out.bits.member.expect(member.U)
+      dut.io.m2_group_member_req_out.ready.poke(true.B); dut.clock.step(); dut.io.m2_group_member_req_out.ready.poke(false.B)
       val response = dut.io.m2_group_member_rsp_in.bits
       response.layer.poke(0.U); response.stage_generation.poke(1.U); response.transaction_group_tag.poke(1.U)
       response.member.poke(member.U); response.status.poke(p.coreMemoryOkStatusCode.U)
       dut.io.m2_group_member_rsp_in.valid.poke(true.B); dut.io.m2_group_member_rsp_in.ready.expect(true.B); dut.clock.step(); dut.io.m2_group_member_rsp_in.valid.poke(false.B)
     }
+  }
+
+  private def acceptPublicationCandidate(dut: RouteAM2P3Wrapper): Unit = {
+    dut.io.m2_publish_candidate_out.valid.expect(true.B)
+    dut.io.m2_publish_candidate_out.bits.transaction_group_tag.expect(1.U)
+    dut.io.m2_publish_candidate_out.bits.p3_layer.expect(0.U)
+    dut.io.m2_publish_candidate_out.bits.p3_stage_generation.expect(1.U)
+    dut.io.m2_publish_candidate_out.ready.poke(true.B); dut.clock.step(); dut.io.m2_publish_candidate_out.ready.poke(false.B)
   }
 
   private def offerDescriptorPrerequisite(dut: RouteAM2P3Wrapper): Unit = {
@@ -141,6 +154,9 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.io.p3_packed_write_terminal_in.ready.expect(true.B); dut.clock.step(); dut.io.p3_packed_write_terminal_in.valid.poke(false.B)
     offerDescriptorPrerequisite(dut)
     for (member <- Seq(RouteAM2GroupMember.HeadControlRmw, RouteAM2GroupMember.SpanOwnerRmw)) {
+      dut.io.m2_group_member_req_out.valid.expect(true.B)
+      dut.io.m2_group_member_req_out.bits.member.expect(member.U)
+      dut.io.m2_group_member_req_out.ready.poke(true.B); dut.clock.step(); dut.io.m2_group_member_req_out.ready.poke(false.B)
       val response = dut.io.m2_group_member_rsp_in.bits
       response.layer.poke(0.U); response.stage_generation.poke(1.U); response.transaction_group_tag.poke(1.U)
       response.member.poke(member.U); response.status.poke(p.coreMemoryOkStatusCode.U)
@@ -155,6 +171,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
       publish.transaction_group_tag.poke(1.U); publish.p3_layer.poke(0.U); publish.p3_stage_generation.poke(1.U)
       dut.io.m2_publish_req_in.valid.poke(true.B); dut.io.m2_publish_req_in.ready.expect(false.B); dut.io.m2_publish_req_in.valid.poke(false.B)
       finishP3AndM2(dut)
+      acceptPublicationCandidate(dut)
       dut.io.m2_publish_req_in.valid.poke(true.B); dut.io.m2_publish_req_in.ready.expect(true.B); dut.clock.step(); dut.io.m2_publish_req_in.valid.poke(false.B)
       dut.io.metadata_publish_visibility_apply.ready.poke(false.B)
       dut.io.metadata_publish_visibility_apply.valid.expect(true.B)
@@ -197,6 +214,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
       dut.io.admission_context_in.valid.poke(true.B); dut.io.admission_authority_in.valid.poke(true.B); dut.io.admission_context_in.ready.expect(false.B); dut.io.admission_authority_in.ready.expect(false.B)
       dut.io.admission_context_in.valid.poke(false.B); dut.io.admission_authority_in.valid.poke(false.B)
       finishGroupP3AndM2(dut, 3)
+      acceptPublicationCandidate(dut)
       val publish = dut.io.m2_publish_req_in.bits
       publish.transaction_group_tag.poke(1.U); publish.p3_layer.poke(0.U); publish.p3_stage_generation.poke(1.U)
       dut.io.m2_publish_req_in.valid.poke(true.B); dut.io.m2_publish_req_in.ready.expect(true.B); dut.clock.step(); dut.io.m2_publish_req_in.valid.poke(false.B)

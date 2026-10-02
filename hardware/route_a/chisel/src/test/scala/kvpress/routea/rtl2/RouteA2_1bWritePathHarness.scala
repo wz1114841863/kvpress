@@ -45,7 +45,9 @@ final class RouteA2_1bWritePathHarness(p: RouteASkeletonParameters) extends Modu
   r3.io.p3_sidecar_bind_in <> io.hot_sidecar
   StructuralTieOff.source(r3.io.p3_packed_write_issue_in)
   StructuralTieOff.source(r3.io.p3_packed_write_terminal_in)
+  StructuralTieOff.sink(r3.io.m2_group_member_req_out)
   StructuralTieOff.source(r3.io.m2_group_member_rsp_in)
+  StructuralTieOff.sink(r3.io.m2_publish_candidate_out)
   StructuralTieOff.source(r3.io.m2_publish_req_in)
   StructuralTieOff.sink(r3.io.metadata_publish_visibility_apply)
   StructuralTieOff.source(r3.io.metadata_publish_visibility_ack_in)
