@@ -1,7 +1,7 @@
 package kvpress.routea.incremental
 
 import chisel3._
-import chisel3.util.{Cat, MuxCase, PopCount, PriorityEncoder, RegEnable, log2Ceil}
+import chisel3.util.{Cat, Enum, MuxCase, PopCount, PriorityEncoder, RegEnable, log2Ceil}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteADescriptorOperationKind, RouteAM2GroupMember, RouteAPublicationStatus, RouteASkeletonParameters}
 
@@ -446,6 +446,170 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   // R6 observes this as a completed R3/R5 publication fact only.  It does not
   // issue a second commit or retain publication membership.
   io.metadata_publish_ack_in.ready := state === StateActive || state === StateRetiring
+}
+
+/**
+  * RTL2.1a's sole retained-group protocol owner.  This is a one-packer,
+  * one-active-group control association: it stores immutable R6 RETAIN facts,
+  * obtains the pre-existing R5 allocation and R3 P3 reservation, then relays
+  * every original context/authority pair to the existing R3 join.  It never
+  * moves payload, creates R1 work, changes authority, publishes metadata, or
+  * chooses a queue/macro implementation.
+  */
+final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_admission_publication_ingress_adapter"
+
+  val io = IO(new Bundle {
+    val r6_admission_context_in = Flipped(RouteAChannels.admission_context(p))
+    val r6_authority_in = Flipped(RouteAChannels.r6_authority_transition(p))
+    val r5_allocation_req = RouteAChannels.page_allocation_req(p)
+    val r5_allocation_rsp_in = Flipped(RouteAChannels.page_allocation_rsp(p))
+    val r3_p3_claim = RouteAChannels.p3_claim(p)
+    val r3_p3_claim_ack_in = Flipped(RouteAChannels.p3_claim_ack(p))
+    val r3_admission_context_out = RouteAChannels.admission_context(p)
+    val r3_admission_authority_out = RouteAChannels.r6_authority_transition(p)
+  })
+
+  private val states = Enum(7)
+  private val StateCollect = states(0)
+  private val StateAllocate = states(1)
+  private val StateAwaitAllocation = states(2)
+  private val StateClaim = states(3)
+  private val StateAwaitClaimAck = states(4)
+  private val StateRelay = states(5)
+  private val StateDone = states(6)
+  private val MemberCount = 64
+  private val ordinalWidth = RouteAAnchorWidths.P3ValidRecordsWidth
+
+  val state = RegInit(StateCollect)
+  val present = RegInit(0.U(MemberCount.W))
+  val groupLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
+  val groupHead = Reg(UInt(RouteAAnchorWidths.KvHeadWidth.W))
+  val groupTag = Reg(UInt(p.transactionGroupTagWidth.W))
+  val groupValidRecords = Reg(UInt(ordinalWidth.W))
+  val members = Reg(Vec(MemberCount, new AdmissionContext(p)))
+  val authorities = Reg(Vec(MemberCount, new R6AuthorityTransition(p)))
+  val allocatedPageRef = Reg(new PageRef)
+  val relayOrdinal = RegInit(0.U(ordinalWidth.W))
+
+  val context = io.r6_admission_context_in.bits
+  val authority = io.r6_authority_in.bits
+  val contextCoordinate = context.logical_position * 288.U + context.layer * 8.U + context.kv_head
+  val ordinalInRange = context.group_member_ordinal < context.group_valid_records &&
+    context.group_valid_records =/= 0.U && context.group_valid_records <= MemberCount.U
+  val ordinalMask = (1.U(MemberCount.W) << context.group_member_ordinal(5, 0))(MemberCount - 1, 0)
+  val firstMember = !present.orR
+  val groupMatches = groupLayer === context.layer && groupHead === context.kv_head &&
+    groupTag === context.transaction_group_tag && groupValidRecords === context.group_valid_records
+  val authorityMatches = authority.entry_id === context.entry_id &&
+    authority.from_authority === RouteAAuthorityStateCode.Hot.U &&
+    authority.to_authority === RouteAAuthorityStateCode.Pending.U &&
+    authority.transaction_group_tag === context.transaction_group_tag
+  val acceptedMember = state === StateCollect && ordinalInRange && authorityMatches &&
+    context.entry_id === contextCoordinate && (firstMember || groupMatches) && (present & ordinalMask) === 0.U
+
+  // R6 emits these as two independent decoupled channels, but the frozen
+  // retained admission contract permits only an atomic pair at this ingress.
+  io.r6_admission_context_in.ready := acceptedMember && io.r6_authority_in.valid
+  io.r6_authority_in.ready := acceptedMember && io.r6_admission_context_in.valid
+  when(io.r6_admission_context_in.fire) {
+    assert(io.r6_authority_in.fire)
+    when(firstMember) {
+      groupLayer := context.layer
+      groupHead := context.kv_head
+      groupTag := context.transaction_group_tag
+      groupValidRecords := context.group_valid_records
+    }
+    val nextPresent = present | ordinalMask
+    present := nextPresent
+    members(context.group_member_ordinal(5, 0)) := context
+    authorities(context.group_member_ordinal(5, 0)) := authority
+    when(PopCount(nextPresent) === context.group_valid_records) {
+      state := StateAllocate
+    }
+  }
+  when(io.r6_authority_in.fire) { assert(io.r6_admission_context_in.fire) }
+
+  io.r5_allocation_req.valid := state === StateAllocate
+  io.r5_allocation_req.bits.layer := groupLayer
+  io.r5_allocation_req.bits.kv_head := groupHead
+  io.r5_allocation_req.bits.valid_records := groupValidRecords
+  io.r5_allocation_req.bits.transaction_group_tag := groupTag
+  when(io.r5_allocation_req.fire) { state := StateAwaitAllocation }
+
+  val allocation = io.r5_allocation_rsp_in.bits
+  val allocationMatches = state === StateAwaitAllocation && allocation.layer === groupLayer &&
+    allocation.kv_head === groupHead && allocation.transaction_group_tag === groupTag
+  io.r5_allocation_rsp_in.ready := allocationMatches
+  when(io.r5_allocation_rsp_in.fire) {
+    allocatedPageRef := allocation.page_ref
+    state := StateClaim
+  }
+
+  io.r3_p3_claim.valid := state === StateClaim
+  io.r3_p3_claim.bits.layer := groupLayer
+  io.r3_p3_claim.bits.kv_head := groupHead
+  io.r3_p3_claim.bits.owner := 0.U
+  io.r3_p3_claim.bits.page_ref := allocatedPageRef
+  io.r3_p3_claim.bits.valid_records := groupValidRecords
+  io.r3_p3_claim.bits.transaction_group_tag := groupTag
+  when(io.r3_p3_claim.fire) { state := StateAwaitClaimAck }
+
+  // P3ClaimAck deliberately contains only layer and stage generation.  The
+  // one-active-group anchor makes layer equality sufficient to associate this
+  // acknowledgement locally; the adapter never reconstructs a group tag.
+  val claimAck = io.r3_p3_claim_ack_in.bits
+  val claimAckMatches = state === StateAwaitClaimAck && claimAck.layer === groupLayer
+  io.r3_p3_claim_ack_in.ready := claimAckMatches
+  when(io.r3_p3_claim_ack_in.fire) {
+    relayOrdinal := 0.U
+    state := StateRelay
+  }
+
+  val relayMember = members(relayOrdinal(5, 0))
+  val relayAuthority = authorities(relayOrdinal(5, 0))
+  val relayActive = state === StateRelay && relayOrdinal < groupValidRecords
+  io.r3_admission_context_out.valid := relayActive
+  io.r3_admission_context_out.bits := relayMember
+  io.r3_admission_authority_out.valid := relayActive
+  io.r3_admission_authority_out.bits := relayAuthority
+  when(io.r3_admission_context_out.fire || io.r3_admission_authority_out.fire) {
+    // The frozen R3 join makes the two fires simultaneous.  This assertion
+    // prevents a future alternate consumer from silently accepting one half.
+    assert(io.r3_admission_context_out.fire && io.r3_admission_authority_out.fire)
+    when(relayOrdinal + 1.U === groupValidRecords) {
+      state := StateDone
+    }.otherwise {
+      relayOrdinal := relayOrdinal + 1.U
+    }
+  }
+
+  when(io.r3_p3_claim.valid) {
+    assert(io.r3_p3_claim.bits.owner === 0.U)
+    assert(io.r3_p3_claim.bits.valid_records =/= 0.U && io.r3_p3_claim.bits.valid_records <= MemberCount.U)
+  }
+  when(io.r3_admission_context_out.valid) {
+    assert(io.r3_admission_authority_out.valid)
+    assert(relayMember.group_member_ordinal === relayOrdinal)
+    assert(relayMember.transaction_group_tag === groupTag)
+    assert(relayAuthority.entry_id === relayMember.entry_id)
+    assert(relayAuthority.from_authority === RouteAAuthorityStateCode.Hot.U)
+    assert(relayAuthority.to_authority === RouteAAuthorityStateCode.Pending.U)
+  }
+
+  val heldAllocation = RegEnable(io.r5_allocation_req.bits, io.r5_allocation_req.valid && !io.r5_allocation_req.ready)
+  when(RegNext(io.r5_allocation_req.valid && !io.r5_allocation_req.ready, false.B)) {
+    assert(io.r5_allocation_req.bits.asUInt === heldAllocation.asUInt)
+  }
+  val heldClaim = RegEnable(io.r3_p3_claim.bits, io.r3_p3_claim.valid && !io.r3_p3_claim.ready)
+  when(RegNext(io.r3_p3_claim.valid && !io.r3_p3_claim.ready, false.B)) {
+    assert(io.r3_p3_claim.bits.asUInt === heldClaim.asUInt)
+  }
+  val heldRelayContext = RegEnable(io.r3_admission_context_out.bits,
+    io.r3_admission_context_out.valid && !io.r3_admission_context_out.ready)
+  when(RegNext(io.r3_admission_context_out.valid && !io.r3_admission_context_out.ready, false.B)) {
+    assert(io.r3_admission_context_out.bits.asUInt === heldRelayContext.asUInt)
+  }
 }
 
 /** RTL1.4 direct-pending control only; no pending page/buffer or K/V storage. */

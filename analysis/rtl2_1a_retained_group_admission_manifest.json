@@ -1,0 +1,59 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-1a-retained-group-admission-1.0",
+  "status": "rtl2_1a_control_association_implemented_directed_tested",
+  "scope": "One-active-group immutable RETAIN association, R5 allocation prerequisite, R3 P3 claim prerequisite, and exact R3 context/authority relay only. No payload, R1, descriptor terminal/durability, metadata publication, packed authority, numeric, timing, throughput, PPA, model/GPU, or new A4 DSE claim.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_0b_admission_group_builder_contract.md",
+    "analysis/rtl2_0_activation_manifest.json",
+    "analysis/rtl2_scoreboard_event_schema.json"
+  ],
+  "implementation": {
+    "child": "route_a_admission_publication_ingress_adapter",
+    "parent": "route_a_kv_subsystem_top",
+    "source": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+    "top_source": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",
+    "test": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAdmissionPublicationIngressAdapterSpec.scala"
+  },
+  "anchor": {
+    "max_active_groups": 1,
+    "max_group_members": 64,
+    "p3_reservation_owner_value": 0,
+    "p3_ack_match": "single-active-group plus exact layer; stage_generation remains R3 state and no missing tag field is synthesized"
+  },
+  "input_rule": {
+    "context_and_authority_atomic": true,
+    "only_authority_edge": "hot_to_pending",
+    "preserved_fields": ["entry_id", "layer", "kv_head", "logical_position", "payload_ref", "transaction_group_tag", "group_member_ordinal", "group_valid_records"],
+    "forbidden": ["admission_redecision", "contiguous_span_reconstruction", "authority_copy_or_new_transition"]
+  },
+  "ordered_prerequisites": [
+    "all_unique_ordinals_0_to_valid_records_minus_1_present",
+    "r5_allocation_request_and_matching_response",
+    "r3_p3_claim_and_matching_layer_acknowledgement",
+    "one_exact_R3_context_authority_pair_relay_per_ordinal"
+  ],
+  "authority": {
+    "before_and_after_rtl2_1a": "pending_only_for_retained_live_token",
+    "adapter_authority_owner": false,
+    "forbidden_until_later_phase": ["pending_to_packed", "metadata_publish_commit", "packed_readable"]
+  },
+  "inactive_or_deferred": [
+    "hot_payload_materialization_or_egress",
+    "p3_fragment_or_sidecar",
+    "r2_or_r1_traffic",
+    "descriptor_terminal_or_durability",
+    "metadata_publish_commit",
+    "packed_authority_or_read",
+    "s2_direct_or_r4_service"
+  ],
+  "evidence_labels": [
+    "synthesizable control association directed-test evidence",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no payload or numeric correctness claim",
+    "no new A4 DSE"
+  ]
+}

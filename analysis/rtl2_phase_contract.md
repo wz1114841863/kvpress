@@ -1,6 +1,6 @@
 # RTL2 — Production Transaction/Dataflow Integration
 
-**Status:** `rtl2_0_pre_behavior_completion_passed; rtl2_1a_behavioral_entry_authorized`.
+**Status:** `rtl2_1a_control_association_implemented_directed_tested; rtl2_1b_not_started`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -17,16 +17,16 @@ metadata-publication boundary.
 
 ## RTL2.0 progress
 
-**Status:** `rtl2_0a_to_0g_closed; completion_review_passed;
-behavior_not_started; rtl2_1a_only_authorized`.
+**Status:** `rtl2_0a_to_0g_closed; historical_completion_review_passed;
+rtl2_1a_implemented_separately`.
 
 [`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and its
 machine-readable manifest complete the fail-closed owner/event inventory.  It
 finds seven explicit hierarchy/interface/testbench-boundary amendments needed
 to activate production carriers without making the top a producer or a second
-authority owner. The separate completion review has now checked the seven
-closures and created the required versioned scoreboard schema, but no
-top-inert carrier has been behaviorally enabled.
+authority owner. The separate completion review checked the seven closures and
+created the required versioned scoreboard schema before the first behavioral
+activation.
 
 **RTL2.0a payload interface/owner closure: complete; behavior pending.**
 [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md)
@@ -77,8 +77,16 @@ bypass R4-to-R6 terminal ownership.
 [`rtl2_0_completion_review.md`](rtl2_0_completion_review.md) confirms all
 seven amendments, the top's continued composition-only scope, and the
 pre-behavior [`rtl2_scoreboard_event_schema.json`](rtl2_scoreboard_event_schema.json).
-Its narrow PASS authorizes only RTL2.1a; it does not claim that any carrier,
-payload path, or numeric path is behaviorally active.
+Its narrow PASS authorized only RTL2.1a. The resulting implementation is now
+recorded separately below; the review itself remains a historical pre-behavior
+gate record.
+
+**RTL2.1a retained-group/admission activation: implemented and directed tested.**
+[`rtl2_1a_retained_group_admission_contract.md`](rtl2_1a_retained_group_admission_contract.md)
+creates the one-active, 64-record immutable association child and connects only
+R6 retained pairs, R5 allocation, R3 claim/ack, and R3 pair relay. It preserves
+pending authority and leaves R1, descriptors, publication, payload, and numeric
+paths inactive. RTL2.1b remains a separate next gate.
 
 ## Entry conditions and common rules
 

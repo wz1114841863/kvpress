@@ -13,7 +13,7 @@ from typing import Any
 
 
 MANIFEST_SCHEMA = "kvzap-route-a-rtl2-0-activation-manifest-1.0"
-MANIFEST_STATUS = "rtl2_0_all_amendments_closed_pre_behavior_pass"
+MANIFEST_STATUS = "rtl2_0_activation_inventory_historical_pre_behavior"
 REQUIRED_EVENTS = frozenset(
     {
         "request_accept", "fragment_deliver", "write_commit", "descriptor_durable",
@@ -140,8 +140,6 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
             raise RTL2ActivationManifestError(f"carrier names unknown amendment: {carrier['id']}")
         if carrier["current_state"] in {"top_inert", "absent_from_frozen_interface", "absent_from_frozen_hierarchy"} and amendment_id is None:
             raise RTL2ActivationManifestError(f"inactive carrier lacks an explicit amendment: {carrier['id']}")
-        if carrier["current_state"] == "behavior_active":
-            raise RTL2ActivationManifestError("RTL2.0 review must complete before any behavior_active carrier")
     durability_carrier = carrier_by_id["r5_descriptor_durable_to_r3"]
     if (
         durability_carrier.get("current_state") != "interface_owner_closed_behavior_pending"
@@ -186,8 +184,8 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
     _required_strings(completion, "artifact", "manifest", "next_authorized_phase")
     if completion.get("all_seven_amendments_closed") is not True or completion.get("top_composition_only") is not True:
         raise RTL2ActivationManifestError("completion review must close all seven amendments and retain top composition-only scope")
-    if completion.get("behavioral_activation_started") is not False:
-        raise RTL2ActivationManifestError("completion review must precede behavioral activation")
+    if completion.get("behavioral_activation_started_at_review") is not False:
+        raise RTL2ActivationManifestError("completion review must record its pre-behavior state")
     if completion.get("next_authorized_phase") != "rtl2_1a_only":
         raise RTL2ActivationManifestError("completion review may authorize only RTL2.1a")
     for key in ("artifact", "manifest"):
@@ -199,7 +197,7 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         raise RTL2ActivationManifestError("RTL2.0 completion review must pass only after all amendments close")
     _required_strings(review, "reason", "next_action", "pass_scope")
     if "composition-only top" not in review["reason"]:
-        raise RTL2ActivationManifestError("review disposition must preserve the composition-only top boundary")
+        raise RTL2ActivationManifestError("review disposition must preserve the historical composition-only top boundary")
     if "RTL2.1a only" not in review["pass_scope"]:
         raise RTL2ActivationManifestError("review PASS must remain limited to RTL2.1a")
 

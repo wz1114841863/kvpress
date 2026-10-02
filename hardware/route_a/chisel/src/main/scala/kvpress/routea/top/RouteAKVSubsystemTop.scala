@@ -37,6 +37,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val core_memory = Module(new RouteACoreMemIfV1(p))
     val m2_p3 = Module(new RouteAM2P3Wrapper(p))
     val page_manager = Module(new RouteAPageManager(p))
+    val admission_group_builder = Module(new RouteAAdmissionPublicationIngressAdapter(p))
     val merge = Module(new RouteAMergeBoundary(p))
     val status_collector = Module(new RouteAComponentStatusCollector(p))
 
@@ -141,23 +142,26 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
 
     m2_p3.io.mem_init_done := core_memory.io.r1_init_complete
     m2_p3.io.drain_collection_enable := lifecycle.io.drain_collection_enable
-    // Only a retained hot->pending event joins its immutable post-decision
-    // context at R3.  Arrival/drop transitions remain local hot control facts.
+    // RTL2.1a: only the admitted hot->pending pair enters the dedicated
+    // one-group protocol owner. Arrival/drop edges remain local hot control
+    // facts; the top creates neither admission context nor authority state.
     val r6ToPending = lifecycle.io.authority_transition_out.bits.from_authority === RouteAAuthorityStateCode.Hot.U &&
       lifecycle.io.authority_transition_out.bits.to_authority === RouteAAuthorityStateCode.Pending.U
-    m2_p3.io.admission_authority_in.valid := lifecycle.io.authority_transition_out.valid && r6ToPending
-    m2_p3.io.admission_authority_in.bits := lifecycle.io.authority_transition_out.bits
-    lifecycle.io.authority_transition_out.ready := Mux(r6ToPending, m2_p3.io.admission_authority_in.ready, true.B)
-    m2_p3.io.admission_context_in <> lifecycle.io.admission_context_out
-    val p3_claim = Wire(RouteAChannels.p3_claim(p)); StructuralTieOff.source(p3_claim)
-    val p3_claim_ack = Wire(RouteAChannels.p3_claim_ack(p)); StructuralTieOff.sink(p3_claim_ack)
+    admission_group_builder.io.r6_admission_context_in <> lifecycle.io.admission_context_out
+    admission_group_builder.io.r6_authority_in.valid := lifecycle.io.authority_transition_out.valid && r6ToPending
+    admission_group_builder.io.r6_authority_in.bits := lifecycle.io.authority_transition_out.bits
+    lifecycle.io.authority_transition_out.ready := Mux(r6ToPending, admission_group_builder.io.r6_authority_in.ready, true.B)
+    admission_group_builder.io.r5_allocation_req <> page_manager.io.page_allocation_req_in
+    admission_group_builder.io.r5_allocation_rsp_in <> page_manager.io.page_allocation_rsp
+    admission_group_builder.io.r3_p3_claim <> m2_p3.io.p3_claim_in
+    admission_group_builder.io.r3_p3_claim_ack_in <> m2_p3.io.p3_claim_ack
+    admission_group_builder.io.r3_admission_context_out <> m2_p3.io.admission_context_in
+    admission_group_builder.io.r3_admission_authority_out <> m2_p3.io.admission_authority_in
     val p3_fragment = Wire(RouteAChannels.p3_pending_fragment(p)); StructuralTieOff.source(p3_fragment)
     val p3_sidecar = Wire(RouteAChannels.p3_sidecar_bind(p)); StructuralTieOff.source(p3_sidecar)
     val p3_write_issue = Wire(RouteAChannels.p3_packed_write_issue(p)); StructuralTieOff.source(p3_write_issue)
     val p3_write_terminal = Wire(RouteAChannels.p3_packed_write_terminal(p)); StructuralTieOff.source(p3_write_terminal)
     val m2_group_member_rsp = Wire(RouteAChannels.m2_group_member_rsp(p)); StructuralTieOff.source(m2_group_member_rsp)
-    m2_p3.io.p3_claim_in <> p3_claim
-    p3_claim_ack <> m2_p3.io.p3_claim_ack
     m2_p3.io.p3_pending_fragment_in <> p3_fragment
     m2_p3.io.p3_sidecar_bind_in <> p3_sidecar
     m2_p3.io.p3_packed_write_issue_in <> p3_write_issue
@@ -174,11 +178,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     page_manager.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     page_manager.io.reclaim_permit_in <> lifecycle.io.reclaim_permit_out
     lifecycle.io.r5_reclaim_complete_in := page_manager.io.reclaim_complete
-    val page_allocation_req = Wire(RouteAChannels.page_allocation_req(p)); StructuralTieOff.source(page_allocation_req)
-    val page_allocation_rsp = Wire(RouteAChannels.page_allocation_rsp(p)); StructuralTieOff.sink(page_allocation_rsp)
     val descriptor_maintenance_terminal = Wire(RouteAChannels.descriptor_maintenance_terminal(p)); StructuralTieOff.source(descriptor_maintenance_terminal)
-    page_manager.io.page_allocation_req_in <> page_allocation_req
-    page_allocation_rsp <> page_manager.io.page_allocation_rsp
     page_manager.io.descriptor_maintenance_terminal_in <> descriptor_maintenance_terminal
     page_manager.io.metadata_publish_visibility_in <> m2_p3.io.metadata_publish_visibility_apply
     m2_p3.io.metadata_publish_visibility_ack_in <> page_manager.io.metadata_publish_visibility_ack

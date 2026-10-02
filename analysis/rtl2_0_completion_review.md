@@ -1,6 +1,6 @@
 # RTL2.0 completion / cross-owner integration review
 
-**Status:** `PASS_FOR_RTL2_1A_BEHAVIORAL_ENTRY; behavior_not_started`.
+**Status:** `historical_PASS_FOR_RTL2_1A_BEHAVIORAL_ENTRY at de57987`.
 
 This review closes the RTL2.0 producer/consumer activation gate after the
 seven bounded amendments, while preserving the pre-behavior boundary. Its
@@ -27,15 +27,17 @@ substitute for a missing interface:
 | source-service packet adapter | Owner-provided hot/direct/S2 facts retain frozen `hot -> pending -> packed` order; no release or numeric result is created there. |
 | R4 result-stub provider | Testbench-only, identity-matching one-of success/fault fact; R4-to-R6 remains the only terminal chain. |
 
-## Composition-only top confirmation
+## Composition-only top confirmation at review
 
-The review confirms the live top remains
+At commit `de57987`, the review confirmed the top remained
 `route_a_kv_subsystem_top` and retains the manifest's composition-only rule.
-The currently unactivated production carriers are explicit structural ties or
-owner-local/control-only bindings. The top therefore does not generate a
+The then-unactivated production carriers were explicit structural ties or
+owner-local/control-only bindings. The top therefore did not generate a
 source plan, reconstruct a delivery context, manufacture a terminal, own
 authority, or create an adapter authority transition. This is a source-level
-scope confirmation; it does not claim an RTL behavior proof.
+scope confirmation; it does not claim an RTL behavior proof. RTL2.1a later
+activates only its separately contracted retained-group child; it does not
+rewrite this pre-behavior gate record.
 
 ## Versioned scoreboard vocabulary
 

@@ -1,7 +1,8 @@
 {
   "schema_version": "kvzap-route-a-rtl2-0-activation-manifest-1.0",
-  "status": "rtl2_0_all_amendments_closed_pre_behavior_pass",
-  "scope": "Machine-readable RTL2.0 producer/consumer and event-schema activation inventory. No payload behavior, storage realization, numeric RTL, controller, timing, throughput, PPA, model/GPU, or new A4 DSE claim.",
+  "status": "rtl2_0_activation_inventory_historical_pre_behavior",
+  "scope": "Historical machine-readable RTL2.0 producer/consumer and event-schema activation inventory at the pre-behavior completion gate. No payload behavior was active at that gate. RTL2.1a changes are recorded separately and do not rewrite this inventory. This record makes no storage realization, numeric RTL, controller, timing, throughput, PPA, model/GPU, or new A4 DSE claim.",
+  "reviewed_commit": "de57987",
   "contract_references": [
     "analysis/architecture_spec.md",
     "analysis/rtl2_phase_contract.md",
@@ -93,14 +94,14 @@
     "manifest": "analysis/rtl2_0_completion_review_manifest.json",
     "all_seven_amendments_closed": true,
     "top_composition_only": true,
-    "behavioral_activation_started": false,
+    "behavioral_activation_started_at_review": false,
     "next_authorized_phase": "rtl2_1a_only"
   },
   "review_disposition": {
     "rtl2_0_pass": true,
-    "reason":"RTL2.0a through RTL2.0g close the exact seven bounded interface/owner amendments. The completion review validates their cross-owner inventory, confirms the composition-only top still prohibits temporary producers, and binds the versioned RTL2 scoreboard schema before any behavioral activation.",
-    "next_action":"Begin only RTL2.1a immutable retained-group/admission behavior with owner-emitted events bound to the validated RTL2 scoreboard schema.",
-    "pass_scope":"RTL2.0 PASS authorizes RTL2.1a only; no payload-write, publication, read-delivery, source-service, R4, physical-realization, timing, throughput, PPA, numeric, model/GPU, or new A4 DSE claim is authorized."
+    "reason":"At the RTL2.0 pre-behavior gate, RTL2.0a through RTL2.0g closed the exact seven bounded interface/owner amendments. The completion review validated their cross-owner inventory, confirmed the composition-only top prohibited temporary producers, and bound the versioned RTL2 scoreboard schema before behavioral activation.",
+    "next_action":"Historical PASS authorized RTL2.1a only. See analysis/rtl2_1a_retained_group_admission_contract.md for the separately recorded current implementation scope.",
+    "pass_scope":"Historical RTL2.0 PASS authorized RTL2.1a only; it did not authorize payload-write, publication, read-delivery, source-service, R4, physical-realization, timing, throughput, PPA, numeric, model/GPU, or new A4 DSE claims."
   },
   "evidence_labels": [
     "pure-software machine-readable activation contract",

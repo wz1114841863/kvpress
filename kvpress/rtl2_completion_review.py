@@ -11,7 +11,7 @@ from kvpress.rtl2_scoreboard_event_schema import load_schema, validate_schema
 
 
 REVIEW_VERSION = "kvzap-route-a-rtl2-0-completion-review-1.0"
-REVIEW_STATUS = "rtl2_0_completion_review_pass_pre_behavior"
+REVIEW_STATUS = "rtl2_0_completion_review_pass_historical_pre_behavior"
 REQUIRED_LABELS = frozenset({"no model/GPU", "no PPA claim", "no RTL correctness claim", "no new A4 DSE"})
 
 
@@ -55,13 +55,15 @@ def validate_review(review: dict[str, Any], activation: dict[str, Any], schema: 
         raise RTL2CompletionReviewError("activation manifest no longer describes a composition-only top")
     if set(_string_list(checks, "top_forbidden_owners")) != set(_string_list(top_rule, "forbidden")):
         raise RTL2CompletionReviewError("review top exclusions differ from the activation manifest")
+    if not isinstance(review.get("reviewed_commit"), str) or not review["reviewed_commit"]:
+        raise RTL2CompletionReviewError("historical completion review must identify its reviewed commit")
     top_source = review.get("top_source")
     if not isinstance(top_source, str) or not top_source:
-        raise RTL2CompletionReviewError("review must name the inspected top source")
-    source_text = (root_path / top_source).read_text(encoding="utf-8")
-    for tie_off in _string_list(review, "required_pre_behavior_tie_offs"):
-        if tie_off not in source_text:
-            raise RTL2CompletionReviewError(f"required pre-behavior top tie-off is absent: {tie_off}")
+        raise RTL2CompletionReviewError("review must name the historically inspected top source")
+    # This review is deliberately a pre-behavior snapshot.  Do not compare its
+    # former tie-offs to a later live top: later phase contracts own such
+    # changes.  Keep the recorded list so the review remains auditable.
+    _string_list(review, "required_pre_behavior_tie_offs")
 
     closures = _records(review, "amendment_closures")
     closure_by_id = _unique_by_id(closures)

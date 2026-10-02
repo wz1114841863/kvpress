@@ -282,3 +282,15 @@ positive durable/publication order and negative P3/descriptor gates.
 
 R4 remains a replaceable numeric boundary. Do not select a controller or infer
 timing/PPA from the completed owner-local control bindings.
+
+## RTL2.1a retained-group admission activation
+
+RTL2.1a adds `route_a_admission_publication_ingress_adapter`, the sole
+one-active-group protocol owner between R6's retained `hot -> pending` pair,
+R5 allocation, and R3 P3 claim/member join. It stores at most 64 immutable
+control associations, preserves non-contiguous entry IDs and the original
+authority edge, and adds no payload transfer, R1 work, descriptor terminal,
+metadata publication, packed authority, physical storage choice, numeric path,
+or PPA claim. Its directed ChiselSim evidence is
+`RouteAAdmissionPublicationIngressAdapterSpec`; see
+`analysis/rtl2_1a_retained_group_admission_contract.md`.

@@ -23,11 +23,12 @@ source-instance/R6 completion, and R5 reclaim through the unique R2/R1 path;
 RTL1-V subsequently closed the remaining bounded verification/scoreboard
 bindings. RTL2.0 has now closed its seven pre-behavior producer/interface
 amendments, passed cross-owner completion review, and frozen a versioned
-scoreboard-event schema. Only RTL2.1a immutable retained-group/admission
-behavior is authorized next; payload/descriptor/publication/dataflow behavior
-is not active. Remaining work is production ingress binding and end-to-end
-transaction/dataflow verification—not PPA, controller, native-HBM, numeric
-realization, or performance work.
+scoreboard-event schema. RTL2.1a now implements and directed-tests the sole
+immutable retained-group/admission association through R5 allocation and R3
+claim/relay, while preserving pending authority. Payload/descriptor/publication
+dataflow behavior remains inactive; RTL2.1b is next. Remaining work is
+production ingress binding and end-to-end transaction/dataflow verification—not
+PPA, controller, native-HBM, numeric realization, or performance work.
 
 ## Current architecture and verification records
 
@@ -54,6 +55,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2.0f source-service packet adapter | [`rtl2_0f_source_service_packet_adapter_contract.md`](rtl2_0f_source_service_packet_adapter_contract.md) and [`rtl2_0f_source_service_packet_adapter_manifest.json`](rtl2_0f_source_service_packet_adapter_manifest.json) |
 | RTL2.0g R4 verification-only result-stub provider | [`rtl2_0g_r4_result_stub_provider_contract.md`](rtl2_0g_r4_result_stub_provider_contract.md) and [`rtl2_0g_r4_result_stub_provider_manifest.json`](rtl2_0g_r4_result_stub_provider_manifest.json) |
 | RTL2.0 completion review and versioned pre-behavior scoreboard schema | [`rtl2_0_completion_review.md`](rtl2_0_completion_review.md), [`rtl2_0_completion_review_manifest.json`](rtl2_0_completion_review_manifest.json), and [`rtl2_scoreboard_event_schema.json`](rtl2_scoreboard_event_schema.json) |
+| RTL2.1a immutable retained-group/admission activation | [`rtl2_1a_retained_group_admission_contract.md`](rtl2_1a_retained_group_admission_contract.md) and [`rtl2_1a_retained_group_admission_manifest.json`](rtl2_1a_retained_group_admission_manifest.json) |
 | RTL1-I3 source/R4/R6 control composition | [`rtl1_i3_delivery_source_contract.md`](rtl1_i3_delivery_source_contract.md) and [`rtl1_i3_interface_manifest.json`](rtl1_i3_interface_manifest.json) |
 | RTL1-I4 reclaim transport contract | [`rtl1_i4_reclaim_contract.md`](rtl1_i4_reclaim_contract.md) and [`rtl1_i4_interface_manifest.json`](rtl1_i4_interface_manifest.json) |
 

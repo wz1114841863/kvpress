@@ -22,7 +22,7 @@ def test_rtl2_0_inventory_names_all_required_events_and_passes_only_pre_behavior
     assert len(manifest["carrier_records"]) == 20
     assert manifest["review_disposition"]["rtl2_0_pass"] is True
     assert manifest["scoreboard_schema"]["state"] == "declared_pre_behavior_schema_validated"
-    assert manifest["completion_review"]["behavioral_activation_started"] is False
+    assert manifest["completion_review"]["behavioral_activation_started_at_review"] is False
 
 
 def test_write_terminal_and_metadata_commit_cannot_be_collapsed_into_one_untyped_path():
@@ -39,7 +39,7 @@ def test_write_terminal_and_metadata_commit_cannot_be_collapsed_into_one_untyped
         validate_manifest(manifest)
 
 
-def test_inert_carrier_without_amendment_and_behavior_before_review_are_rejected():
+def test_inert_carrier_without_amendment_and_missing_historical_review_anchor_are_rejected():
     manifest = copy.deepcopy(load_manifest(MANIFEST))
     carrier = next(record for record in manifest["carrier_records"] if record["id"] == "admission_to_r3_p3_claim")
     carrier["amendment_id"] = None
@@ -47,9 +47,8 @@ def test_inert_carrier_without_amendment_and_behavior_before_review_are_rejected
         validate_manifest(manifest)
 
     manifest = copy.deepcopy(load_manifest(MANIFEST))
-    carrier = next(record for record in manifest["carrier_records"] if record["id"] == "admission_to_r3_p3_claim")
-    carrier["current_state"] = "behavior_active"
-    with pytest.raises(RTL2ActivationManifestError, match="before any behavior_active carrier"):
+    manifest["completion_review"]["behavioral_activation_started_at_review"] = True
+    with pytest.raises(RTL2ActivationManifestError, match="pre-behavior state"):
         validate_manifest(manifest)
 
 

@@ -1,7 +1,8 @@
 {
   "schema_version": "kvzap-route-a-rtl2-0-completion-review-1.0",
-  "status": "rtl2_0_completion_review_pass_pre_behavior",
-  "scope": "Machine-readable cross-owner completion review for RTL2.0. It verifies bounded closure artifacts and top composition-only scope before the first named behavioral phase; it does not activate dataflow or establish RTL functional, timing, throughput, PPA, numeric, model/GPU, or A4-DSE evidence.",
+  "status": "rtl2_0_completion_review_pass_historical_pre_behavior",
+  "scope": "Machine-readable historical cross-owner completion review for RTL2.0 at commit de57987, before the first named behavioral phase. It records bounded closure artifacts and top composition-only scope at that gate; later RTL2 phase changes must be verified by their own contracts and do not rewrite this review.",
+  "reviewed_commit": "de57987",
   "activation_manifest": "analysis/rtl2_0_activation_manifest.json",
   "scoreboard_schema": "analysis/rtl2_scoreboard_event_schema.json",
   "top_source": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",

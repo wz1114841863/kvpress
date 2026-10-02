@@ -27,15 +27,15 @@ def test_completion_review_passes_all_seven_closed_amendments_before_behavior():
     assert review["review_checks"]["behavioral_activation_started"] is False
 
 
-def test_completion_review_rejects_missing_closure_or_missing_pre_behavior_tieoff():
+def test_completion_review_rejects_missing_closure_or_missing_historical_review_anchor():
     review = copy.deepcopy(load_review(REVIEW))
     review["amendment_closures"] = review["amendment_closures"][:-1]
     with pytest.raises(RTL2CompletionReviewError, match="exact seven"):
         validate_review(review, load_manifest(MANIFEST), load_schema(SCHEMA), ROOT)
 
     review = copy.deepcopy(load_review(REVIEW))
-    review["required_pre_behavior_tie_offs"] = ["StructuralTieOff.source(not_a_real_channel)"]
-    with pytest.raises(RTL2CompletionReviewError, match="tie-off is absent"):
+    review["reviewed_commit"] = ""
+    with pytest.raises(RTL2CompletionReviewError, match="reviewed commit"):
         validate_review(review, load_manifest(MANIFEST), load_schema(SCHEMA), ROOT)
 
 
