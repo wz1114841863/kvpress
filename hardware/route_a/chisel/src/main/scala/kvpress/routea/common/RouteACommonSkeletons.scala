@@ -6,6 +6,91 @@ import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
 
 /**
+  * RTL2.2.1 functional delivery-context association owner.
+  *
+  * This child is intentionally top-inert: R3/R5 still use the reviewed
+  * RTL2.1b write-only compatibility keys until RTL2.2.2 replaces that router
+  * with typed registry resolution.  It owns only finite logical association
+  * allocation/release and makes no FIFO depth, endpoint, clock, controller,
+  * throughput, or PPA claim.  R1 remains responsible for adapter-epoch stale
+  * response suppression; reset here destructively clears associations and
+  * allocation is held until R1 has signalled `mem_init_done`.
+  */
+final class RouteADeliveryContextRegistry(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_delivery_context_registry"
+
+  val io = IO(new Bundle {
+    val mem_init_done = Input(Bool())
+    val allocation_in = Flipped(RouteAChannels.delivery_context_allocate(p))
+    val allocation_ack_out = RouteAChannels.delivery_context_allocation_ack(p)
+    val release_in = Flipped(RouteAChannels.delivery_context_release(p))
+  })
+
+  private val contextSlots = 1 << p.sourceDeliveryOpaqueWidth
+  private def targetKindMatchesClass(allocation: DeliveryContextAllocation): Bool = MuxCase(
+    false.B,
+    Seq(
+      (allocation.candidate_class === p.r2PackReadClassCode.U) ->
+        (allocation.target_kind === RouteADeliveryTargetKind.P3PendingRead.U),
+      (allocation.candidate_class === p.r2S2FullClassCode.U) ->
+        (allocation.target_kind === RouteADeliveryTargetKind.S2FullFill.U),
+      (allocation.candidate_class === p.r2S2PackedClassCode.U) ->
+        (allocation.target_kind === RouteADeliveryTargetKind.S2PackedFill.U),
+      (allocation.candidate_class === p.r2DirectPendingClassCode.U) ->
+        (allocation.target_kind === RouteADeliveryTargetKind.DirectPendingRead.U),
+      (allocation.candidate_class === p.r2PackWriteClassCode.U) ->
+        (allocation.target_kind === RouteADeliveryTargetKind.PackedWriteTerminal.U),
+      (allocation.candidate_class === p.r2DescriptorMaintenanceClassCode.U) ->
+        (allocation.target_kind === RouteADeliveryTargetKind.DescriptorMaintenanceTerminal.U),
+    ),
+  )
+
+  val initialized = RegInit(false.B)
+  when(io.mem_init_done) { initialized := true.B }
+
+  val valid = RegInit(VecInit(Seq.fill(contextSlots)(false.B)))
+  val associations = Reg(Vec(contextSlots, new DeliveryContextAllocation(p)))
+  val ackValid = RegInit(false.B)
+  val ack = Reg(new DeliveryContextAllocationAck(p))
+
+  val allocation = io.allocation_in.bits
+  val duplicate = VecInit((0 until contextSlots).map { index =>
+    valid(index) && associations(index).candidate_class === allocation.candidate_class &&
+      associations(index).transaction_identity.asUInt === allocation.transaction_identity.asUInt
+  }).asUInt.orR
+  val anyFree = !valid.reduce(_ && _)
+  val freeIndex = PriorityEncoder(VecInit(valid.map(! _)))
+  io.allocation_in.ready := initialized && !ackValid && targetKindMatchesClass(allocation) && !duplicate && anyFree
+  io.allocation_ack_out.valid := ackValid
+  io.allocation_ack_out.bits := ack
+
+  val release = io.release_in.bits
+  val releaseRef = release.delivery_context_ref
+  val releaseMatches = initialized && valid(releaseRef) &&
+    associations(releaseRef).asUInt === release.allocation.asUInt
+  io.release_in.ready := releaseMatches
+
+  when(io.allocation_ack_out.fire) { ackValid := false.B }
+  when(io.allocation_in.fire) {
+    valid(freeIndex) := true.B
+    associations(freeIndex) := allocation
+    ackValid := true.B
+    ack.delivery_context_ref := freeIndex
+    ack.allocation := allocation
+  }
+  when(io.release_in.fire) { valid(releaseRef) := false.B }
+
+  // A held allocation response is immutable.  This is a ready/valid safety
+  // condition only, not an allocation-service latency promise.
+  val heldAck = RegEnable(io.allocation_ack_out.bits,
+    io.allocation_ack_out.valid && !io.allocation_ack_out.ready)
+  when(RegNext(io.allocation_ack_out.valid && !io.allocation_ack_out.ready, false.B)) {
+    assert(io.allocation_ack_out.bits.asUInt === heldAck.asUInt)
+  }
+  when(io.release_in.fire) { assert(releaseMatches) }
+}
+
+/**
   * The hot-residency data path remains unimplemented.  RTL1-I2 permits this
   * owner-local control acknowledgement so the already-decided lifecycle event
   * can reach R3; accepting it neither stores a token nor services a request.

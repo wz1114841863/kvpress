@@ -41,6 +41,21 @@ object RouteARTL2WriteDeliveryContext {
   final val R3PackedWrite = 2
 }
 
+/**
+  * Semantic target classes held by the RTL2.2 delivery-context registry.
+  * These names freeze routing meaning only; they select no endpoint layout,
+  * physical port, storage implementation, or service rate.
+  */
+object RouteADeliveryTargetKind {
+  final val Width = 3
+  final val P3PendingRead = 0
+  final val S2FullFill = 1
+  final val S2PackedFill = 2
+  final val DirectPendingRead = 3
+  final val PackedWriteTerminal = 4
+  final val DescriptorMaintenanceTerminal = 5
+}
+
 final class TransactionIdentity extends Bundle {
   val request_id = UInt(RouteAAnchorWidths.RequestIdWidth.W)
   val incarnation = UInt(RouteAAnchorWidths.IncarnationWidth.W)
@@ -401,6 +416,35 @@ final class SourceDelivery(p: RouteASkeletonParameters) extends Bundle {
   val r1_response = new CoreMemoryResponse(p)
 }
 
+/**
+  * RTL2.2.1 common association allocated before a future candidate is
+  * presented to R2.  It deliberately carries only the common lookup key, not
+  * an endpoint-specific payload/page/slot descriptor.  RTL2.2.2 owns that
+  * typed resolution refinement.
+  */
+final class DeliveryContextAllocation(p: RouteASkeletonParameters) extends Bundle {
+  val candidate_class = UInt(p.candidateClassWidth.W)
+  val transaction_identity = new TransactionIdentity
+  val target_kind = UInt(RouteADeliveryTargetKind.Width.W)
+  val target_identity_generation = UInt(p.sourceGenerationWidth.W)
+}
+
+/** Exact immutable echo returned by the registry when association allocation succeeds. */
+final class DeliveryContextAllocationAck(p: RouteASkeletonParameters) extends Bundle {
+  val delivery_context_ref = UInt(p.sourceDeliveryOpaqueWidth.W)
+  val allocation = new DeliveryContextAllocation(p)
+}
+
+/**
+  * Target completion asks the registry to release an association only after
+  * the future typed endpoint has accepted the terminal/last fragment.  A
+  * mismatched or stale release is fail-closed and cannot free a live ref.
+  */
+final class DeliveryContextRelease(p: RouteASkeletonParameters) extends Bundle {
+  val delivery_context_ref = UInt(p.sourceDeliveryOpaqueWidth.W)
+  val allocation = new DeliveryContextAllocation(p)
+}
+
 final class MetadataPublishRequest(p: RouteASkeletonParameters) extends Bundle {
   val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
   val p3_layer = UInt(RouteAAnchorWidths.LayerWidth.W)
@@ -593,6 +637,9 @@ object RouteAChannels {
   def core_mem_req(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryRequest(p))
   def core_mem_rsp(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryResponse(p))
   def source_delivery(p: RouteASkeletonParameters) = Decoupled(new SourceDelivery(p))
+  def delivery_context_allocate(p: RouteASkeletonParameters) = Decoupled(new DeliveryContextAllocation(p))
+  def delivery_context_allocation_ack(p: RouteASkeletonParameters) = Decoupled(new DeliveryContextAllocationAck(p))
+  def delivery_context_release(p: RouteASkeletonParameters) = Decoupled(new DeliveryContextRelease(p))
   def metadata_publish_req(p: RouteASkeletonParameters) = Decoupled(new MetadataPublishRequest(p))
   def metadata_publish_visibility(p: RouteASkeletonParameters) = Decoupled(new MetadataPublishVisibility(p))
   def metadata_publish_visibility_ack = Decoupled(new MetadataPublishVisibilityAck)
