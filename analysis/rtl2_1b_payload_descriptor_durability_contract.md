@@ -68,7 +68,17 @@ HBM controller, timing, throughput, energy, or PPA behavior is introduced.
 ## Verification state
 
 `RouteAKVSubsystemTopSpec` elaborates the new ownership/composition graph.
-The legacy R3/R5 simulation suite is being updated for the new required
-descriptor prerequisite; it is not recorded as passing until that update and
-the new actual R2/R1 end-to-end directed harness complete. This document makes
-no RTL-correctness or performance claim from structural elaboration alone.
+`RouteA2_1bWritePathHarnessSpec` executes one actual no-tail append in one
+simulation instance: eight payload fragments and one sidecar, stalled R1
+request acceptance, payload write request/data/terminal, R5 new-page
+descriptor request/data/terminal, and exact R3 prerequisite acceptance. It
+also checks that the P3 stage remains `DURABLE`: neither publication nor an
+authority handoff occurs in this slice.
+
+A real tail-link append is deliberately not marked RTL2.1b-complete: it needs
+a previously **visible** tail, and making the first page visible is the unique
+RTL2.1c `metadata_publish_commit` event. Injecting a visible tail into this
+harness would bypass the frozen linearization boundary. R1 stale/malformed
+response and fault behavior remain covered by its established directed suite;
+the actual tail-link transaction is an RTL2.1c integration requirement.
+This document makes no timing, throughput, PPA, or performance claim.

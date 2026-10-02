@@ -11,7 +11,7 @@ import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
   * lifecycle/R6, M2 member production/publication, read delivery, source
   * service, and R4.  This harness has no architecture state of its own.
   */
-private final class RouteA2_1bWritePathHarness(p: RouteASkeletonParameters) extends Module {
+final class RouteA2_1bWritePathHarness(p: RouteASkeletonParameters) extends Module {
   val io = IO(new Bundle {
     val mem_init_done = Input(Bool())
     val r5_allocate = Flipped(RouteAChannels.page_allocation_req(p))
@@ -60,11 +60,13 @@ private final class RouteA2_1bWritePathHarness(p: RouteASkeletonParameters) exte
   io.r5_allocation_rsp <> r5.io.page_allocation_rsp
   StructuralTieOff.source(r5.io.reclaim_permit_in)
   StructuralTieOff.source(r5.io.reclaim_delivery_in)
+  StructuralTieOff.sink(r5.io.reclaim_candidate_out)
   StructuralTieOff.source(r5.io.descriptor_maintenance_terminal_in)
   StructuralTieOff.source(r5.io.metadata_publish_visibility_in)
   StructuralTieOff.sink(r5.io.metadata_publish_visibility_ack)
   StructuralTieOff.sink(r5.io.component_status_out)
   r5.io.append_delivery_in <> router.io.r5_append_out
+  StructuralTieOff.sink(router.io.r5_reclaim_out)
   r5.io.p3_payload_durable_in <> r3.io.p3_payload_durable_out
   r3.io.descriptor_durability_prerequisite_in <> r5.io.descriptor_durability_prerequisite_out
 
