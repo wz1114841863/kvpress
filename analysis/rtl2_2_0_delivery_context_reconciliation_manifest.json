@@ -1,0 +1,81 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-2-0-delivery-context-reconciliation-1.0",
+  "status": "rtl2_2_0_provenance_interface_reconciliation_complete",
+  "scope": "Versioned no-behavior reconciliation for the pre-existing RTL2.0c opaque delivery-context and RTL2.0d typed endpoint contracts. It corrects one historical future-phase annotation without rewriting a historical artifact. It does not activate Chisel behavior, payload movement, endpoint storage, R2 scheduling, controller behavior, timing, throughput, PPA, model/GPU work, or a new A4 DSE.",
+  "input_artifacts": [
+    {
+      "path": "analysis/rtl2_0c_r2_ingress_delivery_context_manifest.json",
+      "sha256": "a56110500bfb0c62364bdb5c4f3058b7e90de3d699d894f284cdbf3df9d2e559",
+      "role": "historical R2 ingress/context owner record"
+    },
+    {
+      "path": "analysis/rtl2_0d_typed_delivery_router_manifest.json",
+      "sha256": "1e0f473f6f73feeca9d966452b851c68ba055baeb60f6feeea60eb8a0b3de52a",
+      "role": "frozen typed endpoint descriptor record"
+    },
+    {
+      "path": "analysis/rtl2_scoreboard_event_schema.json",
+      "sha256": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
+      "role": "versioned architectural-event vocabulary"
+    }
+  ],
+  "historical_annotation_correction": {
+    "historical_artifact": "analysis/rtl2_0c_r2_ingress_delivery_context_manifest.json",
+    "logical_class": "pack_read",
+    "historical_activation": "future_rtl2_1b",
+    "reconciled_activation": "rtl2_2",
+    "reason": "RTL2.1 activated only pack_write and descriptor-maintenance durability/publication behavior; read-fragment delivery remains the explicit RTL2.2 scope.",
+    "historical_artifact_mutation": false
+  },
+  "owner_freeze": {
+    "r2_owner": "route_a_core_side_arbiter",
+    "registry_owner": "route_a_delivery_context_registry",
+    "router_owner": "route_a_typed_delivery_router",
+    "top_rule": "route_a_kv_subsystem_top composes owner-produced carriers and must not allocate contexts, decode opaque refs, construct target descriptors, select an ingress, or manufacture a terminal."
+  },
+  "typed_read_fragment": {
+    "identity_fields": [
+      "delivery_context_ref",
+      "transaction_identity",
+      "reset_epoch",
+      "candidate_class",
+      "target_kind",
+      "target_identity_generation"
+    ],
+    "fragment_fields": ["fragment_index", "last", "status", "data_512b"],
+    "required_target_kinds": ["p3_pending_read", "s2_full_fill", "s2_packed_fill", "direct_pending_read"],
+    "rule": "Registry validation precedes endpoint observation; unknown, stale, duplicate, wrong-class, or wrong-generation delivery has no endpoint mutation."
+  },
+  "typed_write_terminal": {
+    "required_target_kinds": ["packed_write_terminal", "descriptor_maintenance_terminal"],
+    "rule": "Write terminals are distinct from read fragments and retain the RTL2.1 exact-owner completion rules."
+  },
+  "producer_activation_boundary": [
+    {"logical_class": "pack_read", "producer_owner": "route_a_m2_p3_wrapper", "activation": "rtl2_2_transport_only"},
+    {"logical_class": "s2_packed", "producer_owner": "route_a_packed_source_service_owner", "activation": "deferred_rtl2_3_functional_storage_endpoint"},
+    {"logical_class": "direct_pending", "producer_owner": "route_a_direct_pending_endpoint_v1", "activation": "deferred_rtl2_3_functional_storage_endpoint"},
+    {"logical_class": "s2_full", "producer_owner": "full_kv_baseline_source_adapter", "activation": "not_route_a_production_activated"}
+  ],
+  "scoreboard_binding": {
+    "event": "fragment_deliver",
+    "schema": "analysis/rtl2_scoreboard_event_schema.json",
+    "activation_phase": "rtl2_2",
+    "current_state": "schema_declared_adapter_behavior_deferred",
+    "rule": "A later adapter may emit only an R2-delivered, registry-validated architectural event; it may not infer delivery from arbitrary internal state."
+  },
+  "must_remain_deferred": [
+    "P3/S2/direct functional payload storage or transport deposit",
+    "S2 READY and direct_pending_source_deliverable",
+    "four-consumer GQA completion and source release",
+    "R4 numeric or result behavior",
+    "physical SRAM macro, port count, controller, clock, timing, throughput, energy, area, or PPA interpretation"
+  ],
+  "evidence_labels": [
+    "pure-software machine-readable provenance and interface contract",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}

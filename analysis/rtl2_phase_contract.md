@@ -178,6 +178,12 @@ authoritative residency.
 
 ## RTL2.2 — Read-fragment delivery versus write-terminal delivery
 
+**RTL2.2.0 provenance/interface reconciliation: complete.**
+[`rtl2_2_0_delivery_context_reconciliation_contract.md`](rtl2_2_0_delivery_context_reconciliation_contract.md)
+preserves the historical RTL2.0c record and records that `pack_read` belongs
+to RTL2.2, not the already-completed write-only RTL2.1 behavior. It freezes
+the typed read/write fields and keeps S2/direct functional endpoints deferred.
+
 RTL2.2 has two intentionally separate transaction classes.  They must not be
 implemented as a generic response demultiplexer.
 
