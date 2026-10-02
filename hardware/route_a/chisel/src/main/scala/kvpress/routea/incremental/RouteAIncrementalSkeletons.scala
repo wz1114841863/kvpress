@@ -1024,7 +1024,22 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   io.p3_packed_write_candidate_out.bits.arrival_ordinal := packedWriteSequence
   io.p3_packed_write_candidate_out.bits.candidate_id := packedWriteSequence
   io.p3_packed_write_candidate_out.bits.eligibility_snapshot := packedWriteEligibility
+  // The bridge copies this immutable producer descriptor into the sole
+  // delivery-context registry before R2 sees the candidate. R2 never decodes
+  // it; later typed terminal routing uses only the registry-held copy.
+  // Legacy direct RTL2.1b harnesses still consume this compatibility seed;
+  // RTL2.2.2 production bridge replaces it with a registry-issued opaque ref
+  // before the candidate is presented to R2.
   io.p3_packed_write_candidate_out.bits.delivery_context_ref := RouteARTL2WriteDeliveryContext.R3PackedWrite.U
+  io.p3_packed_write_candidate_out.bits.delivery_target_descriptor :=
+    0.U.asTypeOf(new DeliveryTargetDescriptor(p))
+  io.p3_packed_write_candidate_out.bits.delivery_target_descriptor.write_endpoint :=
+    RouteAWriteDeliveryEndpoint.P3PackedWrite.U
+  io.p3_packed_write_candidate_out.bits.delivery_target_descriptor.p3_layer := packedWriteLayer
+  io.p3_packed_write_candidate_out.bits.delivery_target_descriptor.p3_stage_generation :=
+    stageGeneration(packedWriteLayer)
+  io.p3_packed_write_candidate_out.bits.delivery_target_descriptor.transaction_group_tag :=
+    stageTag(packedWriteLayer)
   io.p3_packed_write_candidate_out.bits.r1_request.transaction_identity := packedWriteIdentity
   io.p3_packed_write_candidate_out.bits.r1_request.request_kind := Mux(
     packedWriteState === WriteRequest, p.coreMemoryWriteRequestCode.U, p.coreMemoryWriteDataCode.U,
@@ -1452,7 +1467,17 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   io.reclaim_candidate_out.bits.arrival_ordinal := reclaimSequence
   io.reclaim_candidate_out.bits.candidate_id := reclaimSequence
   io.reclaim_candidate_out.bits.eligibility_snapshot := reclaimEligibility
-  io.reclaim_candidate_out.bits.delivery_context_ref := 0.U
+  io.reclaim_candidate_out.bits.delivery_context_ref := RouteARTL2WriteDeliveryContext.R5Reclaim.U
+  io.reclaim_candidate_out.bits.delivery_target_descriptor :=
+    0.U.asTypeOf(new DeliveryTargetDescriptor(p))
+  io.reclaim_candidate_out.bits.delivery_target_descriptor.write_endpoint :=
+    RouteAWriteDeliveryEndpoint.R5Reclaim.U
+  io.reclaim_candidate_out.bits.delivery_target_descriptor.descriptor_kind :=
+    RouteADescriptorOperationKind.Invalidate.U
+  // Reclaim invalidates the one 64-B descriptor line, potentially covering
+  // four pages; descriptor_line is therefore authoritative here rather than
+  // pretending this operation has one page-ref target.
+  io.reclaim_candidate_out.bits.delivery_target_descriptor.descriptor_line := reclaimLine
   io.reclaim_candidate_out.bits.r1_request.transaction_identity := reclaimIdentity
   io.reclaim_candidate_out.bits.r1_request.request_kind := Mux(
     reclaimState === ReclaimRequest,
@@ -1620,6 +1645,15 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   io.append_candidate_out.bits.candidate_id := appendSequence
   io.append_candidate_out.bits.eligibility_snapshot := appendEligibility
   io.append_candidate_out.bits.delivery_context_ref := RouteARTL2WriteDeliveryContext.R5Append.U
+  io.append_candidate_out.bits.delivery_target_descriptor :=
+    0.U.asTypeOf(new DeliveryTargetDescriptor(p))
+  io.append_candidate_out.bits.delivery_target_descriptor.write_endpoint :=
+    RouteAWriteDeliveryEndpoint.R5Append.U
+  io.append_candidate_out.bits.delivery_target_descriptor.descriptor_kind := appendKind
+  io.append_candidate_out.bits.delivery_target_descriptor.descriptor_page_ref.page_id := appendSubjectPage
+  io.append_candidate_out.bits.delivery_target_descriptor.descriptor_page_ref.generation := appendSubjectGeneration
+  io.append_candidate_out.bits.delivery_target_descriptor.descriptor_line := appendLine
+  io.append_candidate_out.bits.delivery_target_descriptor.transaction_group_tag := buildTag(appendSlot)
   io.append_candidate_out.bits.r1_request.transaction_identity := appendIdentity
   io.append_candidate_out.bits.r1_request.request_kind := Mux(
     appendState === AppendRequest, p.coreMemoryWriteRequestCode.U, p.coreMemoryWriteDataCode.U,

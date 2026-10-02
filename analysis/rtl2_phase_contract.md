@@ -1,7 +1,8 @@
 # RTL2 — Production Transaction/Dataflow Integration
 
 **Status:** `rtl2_1a_to_1c_atomic_publication_implemented_directed_tested;
-rtl2_2_0_provenance_reconciled; rtl2_2_1_registry_association_implemented_directed_tested`.
+rtl2_2_0_provenance_reconciled; rtl2_2_1_registry_association_implemented_directed_tested;
+rtl2_2_2_typed_write_delivery_implemented_directed_tested`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -187,12 +188,22 @@ the typed read/write fields and keeps S2/direct functional endpoints deferred.
 
 **RTL2.2.1 registry allocation/reuse: implemented and directed tested.**
 [`rtl2_2_1_delivery_context_registry_contract.md`](rtl2_2_1_delivery_context_registry_contract.md)
-implements the registry as an independent, top-inert association child. It
+initially implemented the registry as an independent association child. It
 enforces class/target compatibility, identity-exclusive live allocation,
 ready-low acknowledgement stability, exact release, and stale-incarnation
-fail-closed reuse. It deliberately adds no core-side reset-epoch wire and
-does not yet migrate R3/R5 or replace the RTL2.1b write-only router; those
-remain the distinct RTL2.2.2 typed-resolution closure.
+fail-closed reuse. It deliberately adds no core-side reset-epoch wire. Its
+production R3/R5 integration is now completed by the distinct RTL2.2.2
+typed-resolution closure below.
+
+**RTL2.2.2 registry-resolved typed write terminals: implemented and directed
+tested.**
+[`rtl2_2_2_typed_delivery_router_contract.md`](rtl2_2_2_typed_delivery_router_contract.md)
+connects R3 packed-write, R5 append, and R5 reclaim candidates through a
+producer-neutral pre-R2 allocation bridge, the sole registry, and a typed
+router. The bridge preserves the existing R2 ordinal/id merge rule; the router
+uses only the registry-held descriptor and releases a ref only after exact
+final endpoint acceptance. Its typed read-fragment output remains top-inert:
+S2/direct/P3-read deposition and source service are still later work.
 
 RTL2.2 has two intentionally separate transaction classes.  They must not be
 implemented as a generic response demultiplexer.

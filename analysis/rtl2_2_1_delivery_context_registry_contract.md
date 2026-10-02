@@ -1,7 +1,7 @@
 # RTL2.2.1 — delivery-context registry allocation and reuse contract
 
-**Status:** implemented and directed tested as an independent, top-inert
-functional association child.
+**Status:** allocation/reuse closure complete; superseded in the production
+write path by the registry-resolved RTL2.2.2 integration below.
 
 RTL2.2.1 realizes only the allocation/reuse half of the frozen RTL2.0c
 delivery-context registry. Its synthesizable child is
@@ -65,12 +65,13 @@ SRAM/register realization, port count, service rate, or performance claim.
 
 ## Deliberate non-activation
 
-R3/R5 still emit the reviewed fixed RTL2.1b write-context compatibility keys,
-and `RouteAR2WriteDeliveryRouter` still consumes them. RTL2.2.1 does not
-rewire top-level production behavior, change R2 eligibility/FIFO/credit/read
-rotation, modify R1 identity handling, or alter write-terminal ownership.
-That compatibility remains only until the later registry-resolved typed-router
-closure; it is not reinterpreted as a final deployed encoding.
+At RTL2.2.1 completion, R3/R5 still emitted the reviewed fixed RTL2.1b
+write-context compatibility keys. RTL2.2.2 has since replaced that production
+top-level route with the registry-resolved typed router; the legacy router is
+retained only by the isolated RTL2.1b direct harness. This document remains
+the allocation/reuse provenance record; its later integration and descriptor
+extension are frozen by
+[`rtl2_2_2_typed_delivery_router_contract.md`](rtl2_2_2_typed_delivery_router_contract.md).
 
 No pruning, admission, page size, M2 organization, queue/scheduler behavior,
 P3 mapping, S2 count, GQA rule, atomic-publication rule, HBM/controller,

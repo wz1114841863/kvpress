@@ -3,7 +3,7 @@ package kvpress.routea.r2
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
 import kvpress.routea.common.RouteADeliveryContextRegistry
-import kvpress.routea.interfaces.RouteADeliveryTargetKind
+import kvpress.routea.interfaces.{DeliveryTargetDescriptor, RouteADeliveryTargetKind}
 import kvpress.routea.params.{RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
 
@@ -29,6 +29,14 @@ final class RouteADeliveryContextRegistrySpec extends AnyFunSpec with ChiselSim 
     r6 = RouteAR6Encoding.testOnlyAnchor,
   )
 
+  private def clearDescriptor(bits: DeliveryTargetDescriptor): Unit = {
+    bits.write_endpoint.poke(0.U); bits.p3_layer.poke(0.U); bits.p3_stage_generation.poke(0.U)
+    bits.transaction_group_tag.poke(0.U); bits.descriptor_kind.poke(0.U)
+    bits.descriptor_page_ref.page_id.poke(0.U); bits.descriptor_page_ref.generation.poke(0.U)
+    bits.descriptor_line.poke(0.U); bits.s2_slot.poke(0.U); bits.source_generation.poke(0.U)
+    bits.requires_sidecar.poke(false.B); bits.pending_ordinal.poke(0.U); bits.pending_explicit_empty.poke(false.B)
+  }
+
   private def driveAllocation(
     dut: RouteADeliveryContextRegistry,
     candidateClass: Int,
@@ -43,6 +51,7 @@ final class RouteADeliveryContextRegistrySpec extends AnyFunSpec with ChiselSim 
     bits.transaction_identity.incarnation.poke(incarnation.U)
     bits.target_kind.poke(targetKind.U)
     bits.target_identity_generation.poke(generation.U)
+    clearDescriptor(bits.target_descriptor)
   }
 
   private def driveRelease(
@@ -61,6 +70,7 @@ final class RouteADeliveryContextRegistrySpec extends AnyFunSpec with ChiselSim 
     bits.allocation.transaction_identity.incarnation.poke(incarnation.U)
     bits.allocation.target_kind.poke(targetKind.U)
     bits.allocation.target_identity_generation.poke(generation.U)
+    clearDescriptor(bits.allocation.target_descriptor)
   }
 
   private def initialize(dut: RouteADeliveryContextRegistry): Unit = {

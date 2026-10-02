@@ -1,6 +1,8 @@
 # RTL2.0d — typed delivery-router endpoint descriptors
 
-**Status:** endpoint_descriptor_contract_closed; router_behavior_pending.
+**Status:** endpoint_descriptor contract closed; RTL2.2.2 write-terminal
+registry/router behavior implemented and directed tested. Read endpoint
+payload deposition remains deferred to RTL2.3.
 
 This closure makes the deferred RTL2.2 split exact: an R2-preserved SourceDelivery
 resolves through the separately owned delivery-context registry to one, and only
@@ -107,3 +109,13 @@ Validation:
 This is a pure-software executable interface contract: no model/GPU,
 cycle/timing/throughput, PPA, RTL-correctness, numeric-datapath, or new A4 DSE
 claim is made.
+
+## RTL2.2.2 implementation disposition
+
+[`rtl2_2_2_typed_delivery_router_contract.md`](rtl2_2_2_typed_delivery_router_contract.md)
+implements the registry-resolved production **write-terminal** path. It adds
+producer-supplied immutable descriptors, pre-R2 reference allocation, exact
+live-ref resolution, and final-accept release for R3 packed write, R5 append,
+and R5 reclaim terminals. The four typed read targets are exposed only as a
+router interface and remain inactive at the top until their functional storage
+or transport owners are activated in later RTL2 slices.

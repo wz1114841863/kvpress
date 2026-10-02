@@ -45,7 +45,9 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val page_manager = Module(new RouteAPageManager(p))
     val admission_group_builder = Module(new RouteAAdmissionPublicationIngressAdapter(p))
     val r2_write_ingress = Module(new RouteAR2WriteIngressMerge(p))
-    val r2_write_delivery = Module(new RouteAR2WriteDeliveryRouter(p))
+    val delivery_context_registry = Module(new RouteADeliveryContextRegistry(p))
+    val delivery_context_bridge = Module(new RouteADeliveryContextAllocationBridge(p))
+    val typed_delivery_router = Module(new RouteATypedDeliveryRouter(p))
     val merge = Module(new RouteAMergeBoundary(p))
     val status_collector = Module(new RouteAComponentStatusCollector(p))
 
@@ -145,10 +147,18 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     // interpreted as init acknowledgements.
     s2.io.mem_init_done := core_memory.io.r1_init_complete
     direct_pending.io.mem_init_done := core_memory.io.r1_init_complete
+    delivery_context_registry.io.mem_init_done := core_memory.io.r1_init_complete
 
-    r2_write_delivery.io.source_delivery_in <> arbiter.io.source_delivery_out
-    page_manager.io.reclaim_delivery_in <> r2_write_delivery.io.r5_reclaim_out
-    page_manager.io.append_delivery_in <> r2_write_delivery.io.r5_append_out
+    delivery_context_registry.io.resolve_in <> arbiter.io.source_delivery_out
+    typed_delivery_router.io.resolved_in <> delivery_context_registry.io.resolved_out
+    delivery_context_registry.io.release_in <> typed_delivery_router.io.release_out
+    delivery_context_bridge.io.release_event_in := typed_delivery_router.io.release_event_out
+    page_manager.io.reclaim_delivery_in <> typed_delivery_router.io.r5_reclaim_out
+    page_manager.io.append_delivery_in <> typed_delivery_router.io.r5_append_out
+    // Read fragments have no active top-level producer/functional endpoint in
+    // RTL2.2.2. Keeping the typed output sink inactive prevents accidental
+    // source delivery or payload deposition before RTL2.3.
+    StructuralTieOff.sink(typed_delivery_router.io.read_fragment_out)
 
     m2_p3.io.mem_init_done := core_memory.io.r1_init_complete
     m2_p3.io.drain_collection_enable := lifecycle.io.drain_collection_enable
@@ -194,10 +204,15 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     lifecycle.io.r5_reclaim_complete_in := page_manager.io.reclaim_complete
     val descriptor_maintenance_terminal = Wire(RouteAChannels.descriptor_maintenance_terminal(p)); StructuralTieOff.source(descriptor_maintenance_terminal)
     page_manager.io.descriptor_maintenance_terminal_in <> descriptor_maintenance_terminal
-    r2_write_ingress.io.r3_packed_write_in <> m2_p3.io.p3_packed_write_candidate_out
-    r2_write_ingress.io.r5_append_in <> page_manager.io.append_candidate_out
-    r2_write_ingress.io.r5_reclaim_in <> page_manager.io.reclaim_candidate_out
-    m2_p3.io.p3_packed_write_delivery_in <> r2_write_delivery.io.r3_packed_write_out
+    delivery_context_bridge.io.r3_in <> m2_p3.io.p3_packed_write_candidate_out
+    delivery_context_bridge.io.r5_append_in <> page_manager.io.append_candidate_out
+    delivery_context_bridge.io.r5_reclaim_in <> page_manager.io.reclaim_candidate_out
+    r2_write_ingress.io.r3_packed_write_in <> delivery_context_bridge.io.r3_out
+    r2_write_ingress.io.r5_append_in <> delivery_context_bridge.io.r5_append_out
+    r2_write_ingress.io.r5_reclaim_in <> delivery_context_bridge.io.r5_reclaim_out
+    delivery_context_registry.io.allocation_in <> delivery_context_bridge.io.registry_allocate_out
+    delivery_context_bridge.io.registry_allocation_ack_in <> delivery_context_registry.io.allocation_ack_out
+    m2_p3.io.p3_packed_write_delivery_in <> typed_delivery_router.io.r3_packed_write_out
     page_manager.io.p3_payload_durable_in <> m2_p3.io.p3_payload_durable_out
     m2_p3.io.descriptor_durability_prerequisite_in <> page_manager.io.descriptor_durability_prerequisite_out
     page_manager.io.metadata_publish_visibility_in <> m2_p3.io.metadata_publish_visibility_apply

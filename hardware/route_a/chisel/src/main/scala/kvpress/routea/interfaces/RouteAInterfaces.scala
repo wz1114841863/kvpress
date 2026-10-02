@@ -31,9 +31,9 @@ object RouteAR2PredicateBits {
 }
 
 /**
-  * RTL2.1b reference-registry keys for write-terminal endpoint resolution.
-  * They are not a deployed wire encoding: an integration may replace the
-  * registry implementation while preserving the producer/consumer ownership.
+  * Legacy RTL2.1b write-router keys retained only by direct historical
+  * harnesses. The production top uses the RTL2.2.2 registry-resolved typed
+  * router and must not treat these values as a deployed encoding.
   */
 object RouteARTL2WriteDeliveryContext {
   final val R5Reclaim = 0
@@ -56,9 +56,40 @@ object RouteADeliveryTargetKind {
   final val DescriptorMaintenanceTerminal = 5
 }
 
+/** Registry-selected write endpoint; it is not a physical crossbar encoding. */
+object RouteAWriteDeliveryEndpoint {
+  final val Width = 2
+  final val P3PackedWrite = 0
+  final val R5Append = 1
+  final val R5Reclaim = 2
+}
+
 final class TransactionIdentity extends Bundle {
   val request_id = UInt(RouteAAnchorWidths.RequestIdWidth.W)
   val incarnation = UInt(RouteAAnchorWidths.IncarnationWidth.W)
+}
+
+/**
+  * Immutable typed routing descriptor supplied by the named producer before
+  * R2 sees a candidate. R2 transports but never decodes it; the registry
+  * retains the authoritative copy and the later router consumes only that
+  * copy. Read-owner fields are present for the frozen interface but remain
+  * unconnected to functional S2/direct/P3-read endpoints until later RTL2
+  * slices.
+  */
+final class DeliveryTargetDescriptor(p: RouteASkeletonParameters) extends Bundle {
+  val write_endpoint = UInt(RouteAWriteDeliveryEndpoint.Width.W)
+  val p3_layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val p3_stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val descriptor_kind = UInt(2.W)
+  val descriptor_page_ref = new PageRef
+  val descriptor_line = UInt(p.coreMemoryAddressRefWidth.W)
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val requires_sidecar = Bool()
+  val pending_ordinal = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
+  val pending_explicit_empty = Bool()
 }
 
 final class PageRef extends Bundle {
@@ -360,6 +391,9 @@ final class SourceCandidate(p: RouteASkeletonParameters) extends Bundle {
   val eligibility_snapshot = UInt(p.candidatePredicateWidth.W)
   // Opaque producer-owned context. R2 transports it but never resolves it.
   val delivery_context_ref = UInt(p.sourceDeliveryOpaqueWidth.W)
+  // Producer-owned immutable descriptor copied into the registry before this
+  // candidate can reach R2. R2 must not decode or reconstruct it.
+  val delivery_target_descriptor = new DeliveryTargetDescriptor(p)
   val r1_request = new CoreMemoryRequest(p)
 }
 
@@ -416,6 +450,12 @@ final class SourceDelivery(p: RouteASkeletonParameters) extends Bundle {
   val r1_response = new CoreMemoryResponse(p)
 }
 
+/** Registry-validated response plus its immutable stored target association. */
+final class ResolvedDelivery(p: RouteASkeletonParameters) extends Bundle {
+  val source_delivery = new SourceDelivery(p)
+  val allocation = new DeliveryContextAllocation(p)
+}
+
 /**
   * RTL2.2.1 common association allocated before a future candidate is
   * presented to R2.  It deliberately carries only the common lookup key, not
@@ -427,6 +467,7 @@ final class DeliveryContextAllocation(p: RouteASkeletonParameters) extends Bundl
   val transaction_identity = new TransactionIdentity
   val target_kind = UInt(RouteADeliveryTargetKind.Width.W)
   val target_identity_generation = UInt(p.sourceGenerationWidth.W)
+  val target_descriptor = new DeliveryTargetDescriptor(p)
 }
 
 /** Exact immutable echo returned by the registry when association allocation succeeds. */
@@ -637,6 +678,7 @@ object RouteAChannels {
   def core_mem_req(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryRequest(p))
   def core_mem_rsp(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryResponse(p))
   def source_delivery(p: RouteASkeletonParameters) = Decoupled(new SourceDelivery(p))
+  def resolved_delivery(p: RouteASkeletonParameters) = Decoupled(new ResolvedDelivery(p))
   def delivery_context_allocate(p: RouteASkeletonParameters) = Decoupled(new DeliveryContextAllocation(p))
   def delivery_context_allocation_ack(p: RouteASkeletonParameters) = Decoupled(new DeliveryContextAllocationAck(p))
   def delivery_context_release(p: RouteASkeletonParameters) = Decoupled(new DeliveryContextRelease(p))

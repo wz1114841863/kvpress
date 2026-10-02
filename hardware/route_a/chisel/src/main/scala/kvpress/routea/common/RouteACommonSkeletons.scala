@@ -1,16 +1,15 @@
 package kvpress.routea.common
 
 import chisel3._
-import chisel3.util.{MuxCase, PopCount, PriorityEncoder, RegEnable, UIntToOH, log2Ceil}
+import chisel3.util.{MuxCase, PopCount, PriorityEncoder, RegEnable, UIntToOH, Valid, log2Ceil}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
 
 /**
   * RTL2.2.1 functional delivery-context association owner.
   *
-  * This child is intentionally top-inert: R3/R5 still use the reviewed
-  * RTL2.1b write-only compatibility keys until RTL2.2.2 replaces that router
-  * with typed registry resolution.  It owns only finite logical association
+  * RTL2.2.2 connects this child to the production write-terminal path through
+  * the allocation bridge and typed router. It owns only finite logical association
   * allocation/release and makes no FIFO depth, endpoint, clock, controller,
   * throughput, or PPA claim.  R1 remains responsible for adapter-epoch stale
   * response suppression; reset here destructively clears associations and
@@ -23,6 +22,8 @@ final class RouteADeliveryContextRegistry(p: RouteASkeletonParameters) extends M
     val mem_init_done = Input(Bool())
     val allocation_in = Flipped(RouteAChannels.delivery_context_allocate(p))
     val allocation_ack_out = RouteAChannels.delivery_context_allocation_ack(p)
+    val resolve_in = Flipped(RouteAChannels.source_delivery(p))
+    val resolved_out = RouteAChannels.resolved_delivery(p)
     val release_in = Flipped(RouteAChannels.delivery_context_release(p))
   })
 
@@ -52,6 +53,8 @@ final class RouteADeliveryContextRegistry(p: RouteASkeletonParameters) extends M
   val associations = Reg(Vec(contextSlots, new DeliveryContextAllocation(p)))
   val ackValid = RegInit(false.B)
   val ack = Reg(new DeliveryContextAllocationAck(p))
+  val resolvedValid = RegInit(false.B)
+  val resolved = Reg(new ResolvedDelivery(p))
 
   val allocation = io.allocation_in.bits
   val duplicate = VecInit((0 until contextSlots).map { index =>
@@ -64,6 +67,15 @@ final class RouteADeliveryContextRegistry(p: RouteASkeletonParameters) extends M
   io.allocation_ack_out.valid := ackValid
   io.allocation_ack_out.bits := ack
 
+  val delivery = io.resolve_in.bits
+  val deliveryRef = delivery.delivery_context_ref
+  val resolveMatches = initialized && valid(deliveryRef) &&
+    associations(deliveryRef).candidate_class === delivery.candidate_class &&
+    associations(deliveryRef).transaction_identity.asUInt === delivery.r1_response.transaction_identity.asUInt
+  io.resolve_in.ready := resolveMatches && !resolvedValid
+  io.resolved_out.valid := resolvedValid
+  io.resolved_out.bits := resolved
+
   val release = io.release_in.bits
   val releaseRef = release.delivery_context_ref
   val releaseMatches = initialized && valid(releaseRef) &&
@@ -71,12 +83,18 @@ final class RouteADeliveryContextRegistry(p: RouteASkeletonParameters) extends M
   io.release_in.ready := releaseMatches
 
   when(io.allocation_ack_out.fire) { ackValid := false.B }
+  when(io.resolved_out.fire) { resolvedValid := false.B }
   when(io.allocation_in.fire) {
     valid(freeIndex) := true.B
     associations(freeIndex) := allocation
     ackValid := true.B
     ack.delivery_context_ref := freeIndex
     ack.allocation := allocation
+  }
+  when(io.resolve_in.fire) {
+    resolvedValid := true.B
+    resolved.source_delivery := delivery
+    resolved.allocation := associations(deliveryRef)
   }
   when(io.release_in.fire) { valid(releaseRef) := false.B }
 
@@ -88,6 +106,7 @@ final class RouteADeliveryContextRegistry(p: RouteASkeletonParameters) extends M
     assert(io.allocation_ack_out.bits.asUInt === heldAck.asUInt)
   }
   when(io.release_in.fire) { assert(releaseMatches) }
+  when(io.resolve_in.fire) { assert(resolveMatches) }
 }
 
 /**
@@ -568,9 +587,183 @@ final class RouteAR2WriteIngressMerge(p: RouteASkeletonParameters) extends Modul
 }
 
 /**
-  * RTL2.1b write-terminal-only registry resolution.  Read response routing
-  * remains a later RTL2.2 concern.  The three keys name endpoint ownership;
-  * they do not encode a physical crossbar or HBM response protocol.
+  * Sole pre-R2 allocation bridge for the three already-existing write
+  * producers. It owns no association or R2 ordering decision: the registry
+  * owns refs, and the existing write-ingress merge still applies the frozen
+  * `(arrival_ordinal, candidate_id)` rule after the opaque ref is bound.
+  */
+final class RouteADeliveryContextAllocationBridge(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_delivery_context_allocation_bridge"
+
+  val io = IO(new Bundle {
+    val r3_in = Flipped(RouteAChannels.source_candidate(p))
+    val r5_append_in = Flipped(RouteAChannels.source_candidate(p))
+    val r5_reclaim_in = Flipped(RouteAChannels.source_candidate(p))
+    val r3_out = RouteAChannels.source_candidate(p)
+    val r5_append_out = RouteAChannels.source_candidate(p)
+    val r5_reclaim_out = RouteAChannels.source_candidate(p)
+    val registry_allocate_out = RouteAChannels.delivery_context_allocate(p)
+    val registry_allocation_ack_in = Flipped(RouteAChannels.delivery_context_allocation_ack(p))
+    val release_event_in = Input(Valid(new DeliveryContextRelease(p)))
+  })
+
+  private val producerCount = 3
+  val inputs = Seq(io.r3_in, io.r5_append_in, io.r5_reclaim_in)
+  val outputs = Seq(io.r3_out, io.r5_append_out, io.r5_reclaim_out)
+  val bound = RegInit(VecInit(Seq.fill(producerCount)(false.B)))
+  val awaitingRelease = RegInit(VecInit(Seq.fill(producerCount)(false.B)))
+  val captured = Reg(Vec(producerCount, new SourceCandidate(p)))
+  val refs = Reg(Vec(producerCount, UInt(p.sourceDeliveryOpaqueWidth.W)))
+  val allocationActive = RegInit(false.B)
+  val allocationProducer = Reg(UInt(2.W))
+
+  private def earlier(left: SourceCandidate, right: SourceCandidate): Bool =
+    left.arrival_ordinal < right.arrival_ordinal ||
+      (left.arrival_ordinal === right.arrival_ordinal && left.candidate_id < right.candidate_id)
+  private def targetKind(candidate: SourceCandidate): UInt = MuxCase(0.U(RouteADeliveryTargetKind.Width.W), Seq(
+    (candidate.candidate_class === p.r2PackReadClassCode.U) -> RouteADeliveryTargetKind.P3PendingRead.U,
+    (candidate.candidate_class === p.r2S2FullClassCode.U) -> RouteADeliveryTargetKind.S2FullFill.U,
+    (candidate.candidate_class === p.r2S2PackedClassCode.U) -> RouteADeliveryTargetKind.S2PackedFill.U,
+    (candidate.candidate_class === p.r2DirectPendingClassCode.U) -> RouteADeliveryTargetKind.DirectPendingRead.U,
+    (candidate.candidate_class === p.r2PackWriteClassCode.U) -> RouteADeliveryTargetKind.PackedWriteTerminal.U,
+    (candidate.candidate_class === p.r2DescriptorMaintenanceClassCode.U) -> RouteADeliveryTargetKind.DescriptorMaintenanceTerminal.U,
+  ))
+
+  var found: Bool = false.B
+  var selected = 0.U(2.W)
+  var best = 0.U.asTypeOf(new SourceCandidate(p))
+  for (index <- 0 until producerCount) {
+    val eligible = inputs(index).valid && !bound(index) && !awaitingRelease(index)
+    val take = eligible && (!found || earlier(inputs(index).bits, best))
+    selected = Mux(take, index.U, selected)
+    best = Mux(take, inputs(index).bits, best)
+    found = found || eligible
+  }
+
+  io.registry_allocate_out.valid := !allocationActive && found
+  io.registry_allocate_out.bits.candidate_class := best.candidate_class
+  io.registry_allocate_out.bits.transaction_identity := best.r1_request.transaction_identity
+  io.registry_allocate_out.bits.target_kind := targetKind(best)
+  io.registry_allocate_out.bits.target_identity_generation := best.delivery_target_descriptor.source_generation
+  io.registry_allocate_out.bits.target_descriptor := best.delivery_target_descriptor
+  io.registry_allocation_ack_in.ready := allocationActive
+
+  when(io.registry_allocate_out.fire) {
+    captured(selected) := best
+    allocationProducer := selected
+    allocationActive := true.B
+  }
+  when(io.registry_allocation_ack_in.fire) {
+    val pending = allocationProducer
+    assert(io.registry_allocation_ack_in.bits.allocation.candidate_class === captured(pending).candidate_class)
+    assert(io.registry_allocation_ack_in.bits.allocation.transaction_identity.asUInt ===
+      captured(pending).r1_request.transaction_identity.asUInt)
+    assert(io.registry_allocation_ack_in.bits.allocation.target_descriptor.asUInt ===
+      captured(pending).delivery_target_descriptor.asUInt)
+    refs(pending) := io.registry_allocation_ack_in.bits.delivery_context_ref
+    bound(pending) := true.B
+    allocationActive := false.B
+  }
+
+  for (index <- 0 until producerCount) {
+    outputs(index).valid := bound(index) && !awaitingRelease(index)
+    outputs(index).bits := captured(index)
+    outputs(index).bits.delivery_context_ref := refs(index)
+    inputs(index).ready := outputs(index).fire
+    when(outputs(index).fire) {
+      bound(index) := false.B
+      awaitingRelease(index) := true.B
+    }
+    when(io.release_event_in.valid && awaitingRelease(index) &&
+      io.release_event_in.bits.delivery_context_ref === refs(index)) {
+      assert(io.release_event_in.bits.allocation.candidate_class === captured(index).candidate_class)
+      assert(io.release_event_in.bits.allocation.transaction_identity.asUInt ===
+        captured(index).r1_request.transaction_identity.asUInt)
+      awaitingRelease(index) := false.B
+    }
+  }
+}
+
+/**
+  * Registry-resolved typed delivery router. It cannot reconstruct an endpoint
+  * from R1 response fields: every legal route is selected from the registry's
+  * stored target kind and descriptor. Read endpoints are exposed as typed
+  * handoffs only; their functional storage/transport activation remains later
+  * RTL2 work.
+  */
+final class RouteATypedDeliveryRouter(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_typed_delivery_router"
+
+  val io = IO(new Bundle {
+    val resolved_in = Flipped(RouteAChannels.resolved_delivery(p))
+    val r3_packed_write_out = RouteAChannels.source_delivery(p)
+    val r5_append_out = RouteAChannels.source_delivery(p)
+    val r5_reclaim_out = RouteAChannels.source_delivery(p)
+    val read_fragment_out = RouteAChannels.resolved_delivery(p)
+    val release_out = RouteAChannels.delivery_context_release(p)
+    val release_event_out = Output(Valid(new DeliveryContextRelease(p)))
+  })
+
+  val resolved = io.resolved_in.bits
+  val source = resolved.source_delivery
+  val allocation = resolved.allocation
+  val descriptor = allocation.target_descriptor
+  val isR3 = source.candidate_class === p.r2PackWriteClassCode.U &&
+    allocation.target_kind === RouteADeliveryTargetKind.PackedWriteTerminal.U &&
+    descriptor.write_endpoint === RouteAWriteDeliveryEndpoint.P3PackedWrite.U && source.r1_response.last
+  val isAppend = source.candidate_class === p.r2DescriptorMaintenanceClassCode.U &&
+    allocation.target_kind === RouteADeliveryTargetKind.DescriptorMaintenanceTerminal.U &&
+    descriptor.write_endpoint === RouteAWriteDeliveryEndpoint.R5Append.U && source.r1_response.last
+  val isReclaim = source.candidate_class === p.r2DescriptorMaintenanceClassCode.U &&
+    allocation.target_kind === RouteADeliveryTargetKind.DescriptorMaintenanceTerminal.U &&
+    descriptor.write_endpoint === RouteAWriteDeliveryEndpoint.R5Reclaim.U && source.r1_response.last
+  val isRead = (source.candidate_class === p.r2PackReadClassCode.U &&
+      allocation.target_kind === RouteADeliveryTargetKind.P3PendingRead.U) ||
+    (source.candidate_class === p.r2S2FullClassCode.U &&
+      allocation.target_kind === RouteADeliveryTargetKind.S2FullFill.U) ||
+    (source.candidate_class === p.r2S2PackedClassCode.U &&
+      allocation.target_kind === RouteADeliveryTargetKind.S2PackedFill.U) ||
+    (source.candidate_class === p.r2DirectPendingClassCode.U &&
+      allocation.target_kind === RouteADeliveryTargetKind.DirectPendingRead.U)
+
+  io.r3_packed_write_out.valid := io.resolved_in.valid && isR3
+  io.r3_packed_write_out.bits := source
+  io.r5_append_out.valid := io.resolved_in.valid && isAppend
+  io.r5_append_out.bits := source
+  io.r5_reclaim_out.valid := io.resolved_in.valid && isReclaim
+  io.r5_reclaim_out.bits := source
+  io.read_fragment_out.valid := io.resolved_in.valid && isRead
+  io.read_fragment_out.bits := resolved
+
+  val releasePending = RegInit(false.B)
+  val release = Reg(new DeliveryContextRelease(p))
+  val routeReady = Mux(isR3, io.r3_packed_write_out.ready,
+    Mux(isAppend, io.r5_append_out.ready,
+      Mux(isReclaim, io.r5_reclaim_out.ready,
+        Mux(isRead, io.read_fragment_out.ready, false.B))))
+  io.resolved_in.ready := !releasePending && routeReady
+  when(io.resolved_in.fire && source.r1_response.last) {
+    releasePending := true.B
+    release.delivery_context_ref := source.delivery_context_ref
+    release.allocation := allocation
+  }
+  io.release_out.valid := releasePending
+  io.release_out.bits := release
+  io.release_event_out.valid := io.release_out.fire
+  io.release_event_out.bits := release
+  when(io.release_out.fire) { releasePending := false.B }
+
+  val heldRelease = RegEnable(io.release_out.bits, io.release_out.valid && !io.release_out.ready)
+  when(RegNext(io.release_out.valid && !io.release_out.ready, false.B)) {
+    assert(io.release_out.bits.asUInt === heldRelease.asUInt)
+  }
+}
+
+/**
+  * Historical RTL2.1b write-terminal-only router, retained by its isolated
+  * direct harness. Production top-level wiring uses RouteATypedDeliveryRouter
+  * since RTL2.2.2. The three keys do not encode a physical crossbar or HBM
+  * response protocol.
   */
 final class RouteAR2WriteDeliveryRouter(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_r2_write_delivery_router"
