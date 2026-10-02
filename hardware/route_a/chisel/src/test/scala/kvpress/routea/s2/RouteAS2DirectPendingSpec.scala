@@ -7,7 +7,7 @@ import kvpress.routea.incremental.RouteADirectPendingEndpointV1
 import kvpress.routea.params.{RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
 
-/** RTL1.4 directed source-control checks; no payload SRAM, controller, or merge model. */
+/** RTL2.3 functional-storage and existing source-control checks; no macro, controller, or merge model. */
 final class RouteAS2DirectPendingSpec extends AnyFunSpec with ChiselSim {
   private val p = RouteASkeletonParameters(
     frontendEventKindWidth = 3, componentStatusNameWidth = 4, hotControlKindWidth = 2,
@@ -29,7 +29,10 @@ final class RouteAS2DirectPendingSpec extends AnyFunSpec with ChiselSim {
     dut.io.mem_init_done.poke(false.B); dut.io.s2_observe_slot.poke(0.U)
     dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
     dut.io.service_req_in.valid.poke(false.B); dut.io.s2_fill_open_in.valid.poke(false.B)
+    dut.io.s2_payload_fragment_in.valid.poke(false.B); dut.io.s2_sidecar_fragment_in.valid.poke(false.B)
     dut.io.s2_fill_terminal_in.valid.poke(false.B); dut.io.s2_sidecar_complete_in.valid.poke(false.B)
+    dut.io.s2_payload_read_req_in.valid.poke(false.B); dut.io.s2_payload_read_rsp_out.ready.poke(false.B)
+    dut.io.s2_sidecar_read_req_in.valid.poke(false.B); dut.io.s2_sidecar_read_rsp_out.ready.poke(false.B)
     dut.io.gqa_consumer_commit_in.valid.poke(false.B); dut.io.s2_release_out.ready.poke(true.B)
     dut.io.mem_init_done.poke(true.B); dut.clock.step()
   }
@@ -45,19 +48,51 @@ final class RouteAS2DirectPendingSpec extends AnyFunSpec with ChiselSim {
     val open = dut.io.s2_fill_open_in.bits
     open.transaction_identity.request_id.poke(rid.U); open.transaction_identity.incarnation.poke(0.U)
     open.page_ref.page_id.poke(page.U); open.page_ref.generation.poke(0.U); open.s2_slot.poke(0.U)
-    open.source_generation.poke(generation.U); open.expected_fragment_count.poke(1.U); open.requires_sidecar.poke(true.B)
+    open.source_generation.poke(generation.U); open.expected_fragment_count.poke(1.U)
+    open.expected_sidecar_records.poke(1.U); open.requires_sidecar.poke(true.B)
     dut.io.s2_fill_open_in.valid.poke(true.B); dut.io.s2_fill_open_in.ready.expect(true.B); dut.clock.step(); dut.io.s2_fill_open_in.valid.poke(false.B)
     val terminal = dut.io.s2_fill_terminal_in.bits
     terminal.transaction_identity.request_id.poke(rid.U); terminal.transaction_identity.incarnation.poke(0.U)
     terminal.s2_slot.poke(0.U); terminal.source_generation.poke(generation.U); terminal.fragment_index.poke(0.U)
     terminal.last.poke(true.B); terminal.status.poke(p.coreMemoryOkStatusCode.U)
+    // A matching terminal cannot make a slot READY before its payload has
+    // actually arrived and been stored.
+    dut.io.s2_fill_terminal_in.valid.poke(true.B); dut.io.s2_fill_terminal_in.ready.expect(false.B)
+    dut.io.s2_fill_terminal_in.valid.poke(false.B)
+    val payload = dut.io.s2_payload_fragment_in.bits
+    payload.transaction_identity.request_id.poke(rid.U); payload.transaction_identity.incarnation.poke(0.U)
+    payload.s2_slot.poke(0.U); payload.source_generation.poke(generation.U); payload.fragment_index.poke(0.U)
+    payload.last.poke(true.B); payload.data.poke(0x5a.U)
+    dut.io.s2_payload_fragment_in.valid.poke(true.B); dut.io.s2_payload_fragment_in.ready.expect(true.B); dut.clock.step(); dut.io.s2_payload_fragment_in.valid.poke(false.B)
     dut.io.s2_fill_terminal_in.valid.poke(true.B); dut.io.s2_fill_terminal_in.ready.expect(true.B); dut.clock.step(); dut.io.s2_fill_terminal_in.valid.poke(false.B)
     dut.io.s2_observe_state.expect(1.U)
+    val sidecarFragment = dut.io.s2_sidecar_fragment_in.bits
+    sidecarFragment.transaction_identity.request_id.poke(rid.U); sidecarFragment.transaction_identity.incarnation.poke(0.U)
+    sidecarFragment.s2_slot.poke(0.U); sidecarFragment.source_generation.poke(generation.U)
+    sidecarFragment.record_ordinal.poke(0.U); sidecarFragment.data.poke(0x1234.U)
+    dut.io.s2_sidecar_fragment_in.valid.poke(true.B); dut.io.s2_sidecar_fragment_in.ready.expect(true.B); dut.clock.step(); dut.io.s2_sidecar_fragment_in.valid.poke(false.B)
     val sidecar = dut.io.s2_sidecar_complete_in.bits
     sidecar.transaction_identity.request_id.poke(rid.U); sidecar.transaction_identity.incarnation.poke(0.U)
     sidecar.s2_slot.poke(0.U); sidecar.source_generation.poke(generation.U)
     dut.io.s2_sidecar_complete_in.valid.poke(true.B); dut.io.s2_sidecar_complete_in.ready.expect(true.B); dut.clock.step(); dut.io.s2_sidecar_complete_in.valid.poke(false.B)
     dut.io.s2_observe_state.expect(2.U)
+  }
+
+  private def expectS2Storage(dut: RouteAS2GqaSourceWrapper, rid: Int, generation: Int): Unit = {
+    val payloadRead = dut.io.s2_payload_read_req_in.bits
+    payloadRead.transaction_identity.request_id.poke(rid.U); payloadRead.transaction_identity.incarnation.poke(0.U)
+    payloadRead.s2_slot.poke(0.U); payloadRead.source_generation.poke(generation.U); payloadRead.fragment_index.poke(0.U)
+    dut.io.s2_payload_read_req_in.valid.poke(true.B); dut.io.s2_payload_read_req_in.ready.expect(true.B); dut.clock.step(); dut.io.s2_payload_read_req_in.valid.poke(false.B)
+    dut.io.s2_payload_read_rsp_out.valid.expect(true.B); dut.io.s2_payload_read_rsp_out.bits.data.expect(0x5a.U)
+    dut.io.s2_payload_read_rsp_out.ready.poke(false.B); dut.clock.step(); dut.io.s2_payload_read_rsp_out.bits.data.expect(0x5a.U)
+    dut.io.s2_payload_read_rsp_out.ready.poke(true.B); dut.clock.step(); dut.io.s2_payload_read_rsp_out.ready.poke(false.B)
+    val sidecarRead = dut.io.s2_sidecar_read_req_in.bits
+    sidecarRead.transaction_identity.request_id.poke(rid.U); sidecarRead.transaction_identity.incarnation.poke(0.U)
+    sidecarRead.s2_slot.poke(0.U); sidecarRead.source_generation.poke(generation.U); sidecarRead.record_ordinal.poke(0.U)
+    dut.io.s2_sidecar_read_req_in.valid.poke(true.B); dut.io.s2_sidecar_read_req_in.ready.expect(true.B); dut.clock.step(); dut.io.s2_sidecar_read_req_in.valid.poke(false.B)
+    dut.io.s2_sidecar_read_rsp_out.valid.expect(true.B); dut.io.s2_sidecar_read_rsp_out.bits.data.expect(0x1234.U)
+    dut.io.s2_sidecar_read_rsp_out.ready.poke(false.B); dut.clock.step(); dut.io.s2_sidecar_read_rsp_out.bits.data.expect(0x1234.U)
+    dut.io.s2_sidecar_read_rsp_out.ready.poke(true.B); dut.clock.step(); dut.io.s2_sidecar_read_rsp_out.ready.poke(false.B)
   }
 
   private def commitS2(dut: RouteAS2GqaSourceWrapper, rid: Int, generation: Int, consumer: Int): Unit = {
@@ -72,6 +107,7 @@ final class RouteAS2DirectPendingSpec extends AnyFunSpec with ChiselSim {
     simulate(new RouteAS2GqaSourceWrapper(p)) { dut =>
       initS2(dut); serviceSlot(dut, 1, 3); dut.io.s2_observe_generation.expect(1.U)
       fillOnePacked(dut, 1, 3, 1)
+      expectS2Storage(dut, 1, 1)
       (0 until 3).foreach(commitS2(dut, 1, 1, _)); dut.io.s2_release_out.valid.expect(false.B)
       commitS2(dut, 1, 1, 3); dut.io.s2_release_out.valid.expect(true.B)
       dut.io.s2_release_out.ready.poke(false.B); dut.clock.step(); dut.io.s2_release_out.valid.expect(true.B)
@@ -81,6 +117,13 @@ final class RouteAS2DirectPendingSpec extends AnyFunSpec with ChiselSim {
       stale.transaction_identity.request_id.poke(1.U); stale.transaction_identity.incarnation.poke(0.U)
       stale.s2_slot.poke(0.U); stale.source_generation.poke(1.U); stale.fragment_index.poke(0.U); stale.last.poke(true.B); stale.status.poke(p.coreMemoryOkStatusCode.U)
       dut.io.s2_fill_terminal_in.valid.poke(true.B); dut.io.s2_fill_terminal_in.ready.expect(false.B); dut.io.s2_observe_state.expect(1.U)
+      dut.io.s2_fill_terminal_in.valid.poke(false.B)
+      val stalePayload = dut.io.s2_payload_fragment_in.bits
+      stalePayload.transaction_identity.request_id.poke(1.U); stalePayload.transaction_identity.incarnation.poke(0.U)
+      stalePayload.s2_slot.poke(0.U); stalePayload.source_generation.poke(1.U); stalePayload.fragment_index.poke(0.U)
+      stalePayload.last.poke(true.B); stalePayload.data.poke(0xff.U)
+      dut.io.s2_payload_fragment_in.valid.poke(true.B); dut.io.s2_payload_fragment_in.ready.expect(false.B)
+      dut.io.s2_observe_state.expect(1.U)
     }
   }
 

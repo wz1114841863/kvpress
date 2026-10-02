@@ -257,6 +257,9 @@ final class S2FillOpen(p: RouteASkeletonParameters) extends Bundle {
   val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
   val source_generation = UInt(p.sourceGenerationWidth.W)
   val expected_fragment_count = UInt(10.W)
+  // Logical 8-B position-sidecar records. This is an endpoint contract, not
+  // a physical S2 macro geometry or port selection.
+  val expected_sidecar_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
   val requires_sidecar = Bool()
 }
 
@@ -274,6 +277,51 @@ final class S2SidecarComplete(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
   val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
   val source_generation = UInt(p.sourceGenerationWidth.W)
+}
+
+/** One 64-B functional S2 payload-store write, distinct from terminal control. */
+final class S2PayloadFragment(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val fragment_index = UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W)
+  val last = Bool()
+  val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
+}
+
+/** One padded 8-B logical position-sidecar write into a functional S2 slot. */
+final class S2SidecarFragment(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val record_ordinal = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val data = UInt(64.W)
+}
+
+/** Owner-only functional payload read; source service is a later RTL2.4 client. */
+final class S2PayloadReadRequest(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val fragment_index = UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W)
+}
+
+final class S2PayloadReadResponse(p: RouteASkeletonParameters) extends Bundle {
+  val request = new S2PayloadReadRequest(p)
+  val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
+}
+
+/** Owner-only functional sidecar read; no physical layout claim. */
+final class S2SidecarReadRequest(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val record_ordinal = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+}
+
+final class S2SidecarReadResponse(p: RouteASkeletonParameters) extends Bundle {
+  val request = new S2SidecarReadRequest(p)
+  val data = UInt(64.W)
 }
 
 /** Local direct-pending deliverability/close observation; K/V is not stored here. */
@@ -662,6 +710,12 @@ object RouteAChannels {
   def s2_fill_open(p: RouteASkeletonParameters) = Decoupled(new S2FillOpen(p))
   def s2_fill_terminal(p: RouteASkeletonParameters) = Decoupled(new S2FillTerminal(p))
   def s2_sidecar_complete(p: RouteASkeletonParameters) = Decoupled(new S2SidecarComplete(p))
+  def s2_payload_fragment(p: RouteASkeletonParameters) = Decoupled(new S2PayloadFragment(p))
+  def s2_sidecar_fragment(p: RouteASkeletonParameters) = Decoupled(new S2SidecarFragment(p))
+  def s2_payload_read_req(p: RouteASkeletonParameters) = Decoupled(new S2PayloadReadRequest(p))
+  def s2_payload_read_rsp(p: RouteASkeletonParameters) = Decoupled(new S2PayloadReadResponse(p))
+  def s2_sidecar_read_req(p: RouteASkeletonParameters) = Decoupled(new S2SidecarReadRequest(p))
+  def s2_sidecar_read_rsp(p: RouteASkeletonParameters) = Decoupled(new S2SidecarReadResponse(p))
   def direct_pending_record_terminal(p: RouteASkeletonParameters) = Decoupled(new DirectPendingRecordTerminal(p))
   def gqa_consumer_commit(p: RouteASkeletonParameters) = Decoupled(new GqaConsumerCommit(p))
   def source_release(p: RouteASkeletonParameters) = Decoupled(new SourceRelease(p))

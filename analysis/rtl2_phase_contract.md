@@ -2,7 +2,8 @@
 
 **Status:** `rtl2_1a_to_1c_atomic_publication_implemented_directed_tested;
 rtl2_2_0_provenance_reconciled; rtl2_2_1_registry_association_implemented_directed_tested;
-rtl2_2_2_typed_write_delivery_implemented_directed_tested`.
+rtl2_2_2_typed_write_delivery_implemented_directed_tested;
+rtl2_3_functional_storage_implemented_directed_tested`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -240,6 +241,15 @@ rotation and does not imply a second memory port.  Its terminal facts feed
 RTL2.1b/RTL2.1c prerequisites rather than S2/direct read delivery.
 
 ## RTL2.3 — Replaceable functional P3/S2 storage boundary
+
+**Status:** implemented and directed tested.
+[`rtl2_3_functional_storage_contract.md`](rtl2_3_functional_storage_contract.md)
+records the existing sole R3 P3 reference backing and the new owner-local S2
+payload/sidecar reference backing.  A packed S2 slot reaches `READY` only after
+matching payload, sidecar, and existing control completion facts.  The top
+continues to keep its new S2 ingress/read carriers inactive: no R2 read
+producer, typed read deposition, source service, GQA packet, or R4 work is
+implicitly activated.
 
 P3 and S2 payload handling is introduced only behind a replaceable functional
 storage interface:

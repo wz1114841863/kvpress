@@ -71,12 +71,22 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     s2.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     s2.io.service_req_in <> lifecycle.io.s2_service_req
     val s2_fill_open = Wire(RouteAChannels.s2_fill_open(p)); StructuralTieOff.source(s2_fill_open)
+    val s2_payload_fragment = Wire(RouteAChannels.s2_payload_fragment(p)); StructuralTieOff.source(s2_payload_fragment)
+    val s2_sidecar_fragment = Wire(RouteAChannels.s2_sidecar_fragment(p)); StructuralTieOff.source(s2_sidecar_fragment)
     val s2_fill_terminal = Wire(RouteAChannels.s2_fill_terminal(p)); StructuralTieOff.source(s2_fill_terminal)
     val s2_sidecar_complete = Wire(RouteAChannels.s2_sidecar_complete(p)); StructuralTieOff.source(s2_sidecar_complete)
+    val s2_payload_read_req = Wire(RouteAChannels.s2_payload_read_req(p)); StructuralTieOff.source(s2_payload_read_req)
+    val s2_sidecar_read_req = Wire(RouteAChannels.s2_sidecar_read_req(p)); StructuralTieOff.source(s2_sidecar_read_req)
     val s2_release = Wire(RouteAChannels.source_release(p))
     s2.io.s2_fill_open_in <> s2_fill_open
+    s2.io.s2_payload_fragment_in <> s2_payload_fragment
+    s2.io.s2_sidecar_fragment_in <> s2_sidecar_fragment
     s2.io.s2_fill_terminal_in <> s2_fill_terminal
     s2.io.s2_sidecar_complete_in <> s2_sidecar_complete
+    s2.io.s2_payload_read_req_in <> s2_payload_read_req
+    s2.io.s2_sidecar_read_req_in <> s2_sidecar_read_req
+    StructuralTieOff.sink(s2.io.s2_payload_read_rsp_out)
+    StructuralTieOff.sink(s2.io.s2_sidecar_read_rsp_out)
     s2_release <> s2.io.s2_release_out
     lifecycle.io.packed_source_release_in <> s2_release
     s2.io.s2_observe_slot := 0.U

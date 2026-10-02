@@ -156,7 +156,12 @@ final class RouteAHotSourcePath(p: RouteASkeletonParameters) extends Module {
   }
 }
 
-/** RTL1.4 S2 control only; payload/sidecar macros and source mux remain unimplemented. */
+/**
+  * RTL2.3 logical S2 functional storage boundary. The two 32-KiB payload and
+  * 512-B sidecar capacities are modeled only as replaceable reference backing;
+  * this does not select a macro, port count, latency, controller, or PPA.
+  * Source service/GQA packetization remains a later owner-local RTL2.4 step.
+  */
 final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_s2_gqa_source_wrapper"
 
@@ -165,8 +170,14 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     val drain_collection_enable = Input(Bool())
     val service_req_in = Flipped(RouteAChannels.s2_service_req)
     val s2_fill_open_in = Flipped(RouteAChannels.s2_fill_open(p))
+    val s2_payload_fragment_in = Flipped(RouteAChannels.s2_payload_fragment(p))
+    val s2_sidecar_fragment_in = Flipped(RouteAChannels.s2_sidecar_fragment(p))
     val s2_fill_terminal_in = Flipped(RouteAChannels.s2_fill_terminal(p))
     val s2_sidecar_complete_in = Flipped(RouteAChannels.s2_sidecar_complete(p))
+    val s2_payload_read_req_in = Flipped(RouteAChannels.s2_payload_read_req(p))
+    val s2_payload_read_rsp_out = RouteAChannels.s2_payload_read_rsp(p)
+    val s2_sidecar_read_req_in = Flipped(RouteAChannels.s2_sidecar_read_req(p))
+    val s2_sidecar_read_rsp_out = RouteAChannels.s2_sidecar_read_rsp(p)
     val gqa_consumer_commit_in = Flipped(RouteAChannels.gqa_consumer_commit(p))
     val s2_release_out = RouteAChannels.source_release(p)
     val s2_observe_slot = Input(UInt(RouteAAnchorWidths.S2SlotWidth.W))
@@ -190,9 +201,23 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   val fillOpened = RegInit(VecInit(Seq.fill(slots)(false.B)))
   val expectedFragments = Reg(Vec(slots, UInt(10.W)))
   val nextFragment = RegInit(VecInit(Seq.fill(slots)(0.U(10.W))))
+  val payloadNext = RegInit(VecInit(Seq.fill(slots)(0.U(10.W))))
+  val expectedSidecars = Reg(Vec(slots, UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)))
+  val sidecarNext = RegInit(VecInit(Seq.fill(slots)(0.U(RouteAAnchorWidths.P3ValidRecordsWidth.W))))
   val requiresSidecar = RegInit(VecInit(Seq.fill(slots)(false.B)))
   val sidecarComplete = RegInit(VecInit(Seq.fill(slots)(false.B)))
   val consumerMask = RegInit(VecInit(Seq.fill(slots)(0.U(4.W))))
+  // Reference-only, flat logical storage: 2 x 512 payload fragments and
+  // 2 x 64 padded sidecar records. It remains replaceable by later SRAM
+  // realization and cannot be interpreted as a macro/port choice.
+  val payloadStore = Mem(slots * 512, UInt(RouteAAnchorWidths.CoreDataWidth.W))
+  val sidecarStore = Mem(slots * 64, UInt(64.W))
+  private def payloadIndex(slot: UInt, fragment: UInt): UInt = slot * 512.U + fragment
+  private def sidecarIndex(slot: UInt, ordinal: UInt): UInt = slot * 64.U + ordinal
+  val payloadReadRspValid = RegInit(false.B)
+  val payloadReadRsp = Reg(new S2PayloadReadResponse(p))
+  val sidecarReadRspValid = RegInit(false.B)
+  val sidecarReadRsp = Reg(new S2SidecarReadResponse(p))
 
   val service = io.service_req_in.bits
   val serviceSlot = service.s2_slot
@@ -204,6 +229,8 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     slotPageRef(serviceSlot) := service.page_ref
     fillOpened(serviceSlot) := false.B
     nextFragment(serviceSlot) := 0.U
+    payloadNext(serviceSlot) := 0.U
+    sidecarNext(serviceSlot) := 0.U
     requiresSidecar(serviceSlot) := false.B
     sidecarComplete(serviceSlot) := false.B
     consumerMask(serviceSlot) := 0.U
@@ -211,18 +238,53 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
 
   val fillOpen = io.s2_fill_open_in.bits
   val fillSlot = fillOpen.s2_slot
+  val sidecarCountLegal = Mux(fillOpen.requires_sidecar,
+    fillOpen.expected_sidecar_records =/= 0.U && fillOpen.expected_sidecar_records <= 64.U,
+    fillOpen.expected_sidecar_records === 0.U)
   val fillOpenMatches = initialized && slotState(fillSlot) === StateFilling && !fillOpened(fillSlot) &&
     slotGeneration(fillSlot) === fillOpen.source_generation &&
     slotIdentity(fillSlot).asUInt === fillOpen.transaction_identity.asUInt &&
     slotPageRef(fillSlot).asUInt === fillOpen.page_ref.asUInt &&
-    fillOpen.expected_fragment_count =/= 0.U && fillOpen.expected_fragment_count <= 512.U
+    fillOpen.expected_fragment_count =/= 0.U && fillOpen.expected_fragment_count <= 512.U && sidecarCountLegal
   io.s2_fill_open_in.ready := fillOpenMatches
   when(io.s2_fill_open_in.fire) {
     fillOpened(fillSlot) := true.B
     expectedFragments(fillSlot) := fillOpen.expected_fragment_count
     nextFragment(fillSlot) := 0.U
+    payloadNext(fillSlot) := 0.U
+    expectedSidecars(fillSlot) := fillOpen.expected_sidecar_records
+    sidecarNext(fillSlot) := 0.U
     requiresSidecar(fillSlot) := fillOpen.requires_sidecar
     sidecarComplete(fillSlot) := false.B
+  }
+
+  val payloadFragment = io.s2_payload_fragment_in.bits
+  val payloadSlot = payloadFragment.s2_slot
+  val payloadLastExpected = payloadNext(payloadSlot) + 1.U === expectedFragments(payloadSlot)
+  val payloadMatches = initialized && slotState(payloadSlot) === StateFilling && fillOpened(payloadSlot) &&
+    slotGeneration(payloadSlot) === payloadFragment.source_generation &&
+    slotIdentity(payloadSlot).asUInt === payloadFragment.transaction_identity.asUInt &&
+    payloadNext(payloadSlot) < expectedFragments(payloadSlot) &&
+    payloadFragment.fragment_index === payloadNext(payloadSlot)(8, 0) &&
+    payloadFragment.last === payloadLastExpected
+  io.s2_payload_fragment_in.ready := payloadMatches
+  when(io.s2_payload_fragment_in.fire) {
+    payloadStore.write(payloadIndex(payloadSlot, payloadFragment.fragment_index), payloadFragment.data)
+    payloadNext(payloadSlot) := payloadNext(payloadSlot) + 1.U
+  }
+
+  val sidecarFragment = io.s2_sidecar_fragment_in.bits
+  val sidecarFragmentSlot = sidecarFragment.s2_slot
+  val sidecarFragmentMatches = initialized && slotState(sidecarFragmentSlot) === StateFilling &&
+    fillOpened(sidecarFragmentSlot) && requiresSidecar(sidecarFragmentSlot) &&
+    slotGeneration(sidecarFragmentSlot) === sidecarFragment.source_generation &&
+    slotIdentity(sidecarFragmentSlot).asUInt === sidecarFragment.transaction_identity.asUInt &&
+    sidecarNext(sidecarFragmentSlot) < expectedSidecars(sidecarFragmentSlot) &&
+    sidecarFragment.record_ordinal === sidecarNext(sidecarFragmentSlot)
+  io.s2_sidecar_fragment_in.ready := sidecarFragmentMatches
+  when(io.s2_sidecar_fragment_in.fire) {
+    sidecarStore.write(sidecarIndex(sidecarFragmentSlot, sidecarFragment.record_ordinal), sidecarFragment.data)
+    sidecarNext(sidecarFragmentSlot) := sidecarNext(sidecarFragmentSlot) + 1.U
   }
 
   val fillTerminal = io.s2_fill_terminal_in.bits
@@ -233,7 +295,8 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   val terminalOk = fillTerminal.status === p.coreMemoryOkStatusCode.U
   val terminalFault = fillTerminal.status === p.coreMemoryFaultStatusCode.U
   val terminalOrdinalOk = nextFragment(terminalSlot) < expectedFragments(terminalSlot) &&
-    fillTerminal.fragment_index === nextFragment(terminalSlot)(8, 0)
+    fillTerminal.fragment_index === nextFragment(terminalSlot)(8, 0) &&
+    payloadNext(terminalSlot) === nextFragment(terminalSlot) + 1.U
   val terminalLastExpected = nextFragment(terminalSlot) + 1.U === expectedFragments(terminalSlot)
   io.s2_fill_terminal_in.ready := terminalMatches &&
     ((terminalOk && terminalOrdinalOk && fillTerminal.last === terminalLastExpected) || terminalFault)
@@ -254,7 +317,8 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   val sidecarSlot = sidecar.s2_slot
   val sidecarMatches = initialized && slotState(sidecarSlot) === StateFilling && fillOpened(sidecarSlot) &&
     requiresSidecar(sidecarSlot) && slotGeneration(sidecarSlot) === sidecar.source_generation &&
-    slotIdentity(sidecarSlot).asUInt === sidecar.transaction_identity.asUInt
+    slotIdentity(sidecarSlot).asUInt === sidecar.transaction_identity.asUInt &&
+    sidecarNext(sidecarSlot) === expectedSidecars(sidecarSlot)
   io.s2_sidecar_complete_in.ready := sidecarMatches
   when(io.s2_sidecar_complete_in.fire) {
     sidecarComplete(sidecarSlot) := true.B
@@ -262,6 +326,51 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
       slotState(sidecarSlot) := StateReady
       consumerMask(sidecarSlot) := "b1111".U
     }
+  }
+
+  val payloadRead = io.s2_payload_read_req_in.bits
+  val payloadReadSlot = payloadRead.s2_slot
+  val payloadReadMatches = initialized && !payloadReadRspValid && slotState(payloadReadSlot) === StateReady &&
+    slotGeneration(payloadReadSlot) === payloadRead.source_generation &&
+    slotIdentity(payloadReadSlot).asUInt === payloadRead.transaction_identity.asUInt &&
+    payloadRead.fragment_index < expectedFragments(payloadReadSlot)
+  io.s2_payload_read_req_in.ready := payloadReadMatches
+  io.s2_payload_read_rsp_out.valid := payloadReadRspValid
+  io.s2_payload_read_rsp_out.bits := payloadReadRsp
+  when(io.s2_payload_read_rsp_out.fire) { payloadReadRspValid := false.B }
+  when(io.s2_payload_read_req_in.fire) {
+    payloadReadRspValid := true.B
+    payloadReadRsp.request := payloadRead
+    payloadReadRsp.data := payloadStore.read(payloadIndex(payloadReadSlot, payloadRead.fragment_index))
+  }
+
+  val sidecarRead = io.s2_sidecar_read_req_in.bits
+  val sidecarReadSlot = sidecarRead.s2_slot
+  val sidecarReadMatches = initialized && !sidecarReadRspValid && slotState(sidecarReadSlot) === StateReady &&
+    requiresSidecar(sidecarReadSlot) && slotGeneration(sidecarReadSlot) === sidecarRead.source_generation &&
+    slotIdentity(sidecarReadSlot).asUInt === sidecarRead.transaction_identity.asUInt &&
+    sidecarRead.record_ordinal < expectedSidecars(sidecarReadSlot)
+  io.s2_sidecar_read_req_in.ready := sidecarReadMatches
+  io.s2_sidecar_read_rsp_out.valid := sidecarReadRspValid
+  io.s2_sidecar_read_rsp_out.bits := sidecarReadRsp
+  when(io.s2_sidecar_read_rsp_out.fire) { sidecarReadRspValid := false.B }
+  when(io.s2_sidecar_read_req_in.fire) {
+    sidecarReadRspValid := true.B
+    sidecarReadRsp.request := sidecarRead
+    sidecarReadRsp.data := sidecarStore.read(sidecarIndex(sidecarReadSlot, sidecarRead.record_ordinal))
+  }
+
+  // a_ready_low_nonmutation applies to the new owner-local functional-store
+  // responses as well: a consumer stall cannot alter an offered fragment.
+  val payloadReadRspStalled = io.s2_payload_read_rsp_out.valid && !io.s2_payload_read_rsp_out.ready
+  val heldPayloadReadRsp = RegEnable(io.s2_payload_read_rsp_out.bits, payloadReadRspStalled)
+  when(RegNext(payloadReadRspStalled, false.B)) {
+    assert(io.s2_payload_read_rsp_out.bits.asUInt === heldPayloadReadRsp.asUInt)
+  }
+  val sidecarReadRspStalled = io.s2_sidecar_read_rsp_out.valid && !io.s2_sidecar_read_rsp_out.ready
+  val heldSidecarReadRsp = RegEnable(io.s2_sidecar_read_rsp_out.bits, sidecarReadRspStalled)
+  when(RegNext(sidecarReadRspStalled, false.B)) {
+    assert(io.s2_sidecar_read_rsp_out.bits.asUInt === heldSidecarReadRsp.asUInt)
   }
 
   val consumerCommit = io.gqa_consumer_commit_in.bits
