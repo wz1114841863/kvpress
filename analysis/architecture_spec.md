@@ -265,6 +265,12 @@ per-stream list/tail updates, append page creation, and release; allocator
 timing, descriptor-maintenance service, physical HBM address mapping, and
 macro organization remain unestimated.
 
+RTL2.1b may use a replaceable functional/reference backing with exactly this
+logical indexing to bind hot-owner payload egress to the R3 packed-write
+contract. Such backing is not a chosen P3 SRAM realization, port count,
+physical placement, or performance evidence; its replacement remains a later
+realization decision.
+
 ### Gate-A R3 P3 logical-stage wrapper
 
 R3 binds the per-layer P3 stage to a finite event-level wrapper: exactly 36

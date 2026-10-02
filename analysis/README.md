@@ -25,8 +25,10 @@ bindings. RTL2.0 has now closed its seven pre-behavior producer/interface
 amendments, passed cross-owner completion review, and frozen a versioned
 scoreboard-event schema. RTL2.1a now implements and directed-tests the sole
 immutable retained-group/admission association through R5 allocation and R3
-claim/relay, while preserving pending authority. Payload/descriptor/publication
-dataflow behavior remains inactive; RTL2.1b is next. Remaining work is
+claim/relay, while preserving pending authority. RTL2.1b is now in progress:
+it front-loads replaceable P3 functional backing/hot payload egress and the
+unique payload-write/descriptor-durability owner path, without publication or
+authority activation. Remaining work is
 production ingress binding and end-to-end transaction/dataflow verification—not
 PPA, controller, native-HBM, numeric realization, or performance work.
 

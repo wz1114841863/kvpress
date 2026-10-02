@@ -1,7 +1,7 @@
 package kvpress.routea.incremental
 
 import chisel3._
-import chisel3.util.{Cat, Enum, MuxCase, PopCount, PriorityEncoder, RegEnable, log2Ceil}
+import chisel3.util.{Cat, Enum, Fill, MuxCase, PopCount, PriorityEncoder, RegEnable, log2Ceil}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteADescriptorOperationKind, RouteAM2GroupMember, RouteAPublicationStatus, RouteASkeletonParameters}
 
@@ -490,6 +490,7 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
   val members = Reg(Vec(MemberCount, new AdmissionContext(p)))
   val authorities = Reg(Vec(MemberCount, new R6AuthorityTransition(p)))
   val allocatedPageRef = Reg(new PageRef)
+  val allocatedRequiresTailLink = RegInit(false.B)
   val relayOrdinal = RegInit(0.U(ordinalWidth.W))
 
   val context = io.r6_admission_context_in.bits
@@ -543,6 +544,7 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
   io.r5_allocation_rsp_in.ready := allocationMatches
   when(io.r5_allocation_rsp_in.fire) {
     allocatedPageRef := allocation.page_ref
+    allocatedRequiresTailLink := allocation.requires_tail_link
     state := StateClaim
   }
 
@@ -552,6 +554,7 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
   io.r3_p3_claim.bits.owner := 0.U
   io.r3_p3_claim.bits.page_ref := allocatedPageRef
   io.r3_p3_claim.bits.valid_records := groupValidRecords
+  io.r3_p3_claim.bits.requires_tail_link := allocatedRequiresTailLink
   io.r3_p3_claim.bits.transaction_group_tag := groupTag
   when(io.r3_p3_claim.fire) { state := StateAwaitClaimAck }
 
@@ -732,6 +735,12 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     val p3_sidecar_bind_in = Flipped(RouteAChannels.p3_sidecar_bind(p))
     val p3_packed_write_issue_in = Flipped(RouteAChannels.p3_packed_write_issue(p))
     val p3_packed_write_terminal_in = Flipped(RouteAChannels.p3_packed_write_terminal(p))
+    // RTL2.1b: the R3-owned functional P3 backing is the sole producer of
+    // its packed-write candidate. R2/R1 remain the unique transport path.
+    val p3_packed_write_candidate_out = RouteAChannels.source_candidate(p)
+    val p3_packed_write_delivery_in = Flipped(RouteAChannels.source_delivery(p))
+    val p3_payload_durable_out = RouteAChannels.p3_payload_durable(p)
+    val descriptor_durability_prerequisite_in = Flipped(RouteAChannels.descriptor_durability_prerequisite(p))
     val m2_group_member_rsp_in = Flipped(RouteAChannels.m2_group_member_rsp(p))
     val p3_observe_layer = Input(UInt(RouteAAnchorWidths.LayerWidth.W))
     val p3_observe_state = Output(UInt(RouteAAnchorWidths.P3StateWidth.W))
@@ -764,6 +773,18 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val stageHead = Reg(Vec(stages, UInt(RouteAAnchorWidths.KvHeadWidth.W)))
   val stageTag = Reg(Vec(stages, UInt(p.transactionGroupTagWidth.W)))
   val stageM2Members = RegInit(VecInit(Seq.fill(stages)(0.U(2.W))))
+  val stageDescriptorRequiredMask = Reg(Vec(stages, UInt(2.W)))
+  // Replaceable functional/reference backing for the fixed logical P3
+  // envelope: 64 records x 8 ordered 64-B fragments per layer, plus the
+  // 8-B logical-position sidecar. This does not choose an SRAM macro, port
+  // count, clock schedule, or physical HBM representation.
+  // Flat indexing retains the exact 36 x 512 and 36 x 64 logical capacities
+  // while deliberately leaving the future macro/port organization replaceable.
+  val stagePayload = Mem(stages * 512, UInt(RouteAAnchorWidths.CoreDataWidth.W))
+  val stageSidecar = Mem(stages * 64, UInt(64.W))
+  private def payloadStoreIndex(layer: UInt, fragment: UInt): UInt = layer * 512.U + fragment
+  private def sidecarStoreIndex(layer: UInt, ordinal: UInt): UInt = layer * 64.U + ordinal
+  val stageDescriptorPrerequisite = RegInit(VecInit(Seq.fill(stages)(false.B)))
   // The following is a logical, per-record association ledger.  It contains
   // sidecar/payload references only, never K/V data or authoritative residency.
   val membershipPresent = RegInit(VecInit(Seq.fill(stages)(0.U(64.W))))
@@ -773,6 +794,17 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val observationMemberOrdinal = RegInit(VecInit(Seq.fill(stages)(0.U(RouteAAnchorWidths.P3ValidRecordsWidth.W))))
   val observationMemberSent = RegInit(VecInit(Seq.fill(stages)(false.B)))
   val observationAuthoritySent = RegInit(VecInit(Seq.fill(stages)(false.B)))
+
+  private val WriteIdle = 0.U(2.W)
+  private val WriteRequest = 1.U(2.W)
+  private val WriteData = 2.U(2.W)
+  private val WriteAwaitTerminal = 3.U(2.W)
+  val packedWriteState = RegInit(WriteIdle)
+  val packedWriteLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
+  val packedWriteFragment = RegInit(0.U(RouteAAnchorWidths.P3FragmentIndexWidth.W))
+  val packedWriteIdentity = Reg(new TransactionIdentity)
+  val packedWriteSequence = RegInit(0.U((RouteAAnchorWidths.RequestIdWidth + RouteAAnchorWidths.IncarnationWidth).W))
+  val payloadDurablePending = RegInit(VecInit(Seq.fill(stages)(false.B)))
 
   val claimAckValid = RegInit(false.B)
   val claimAckLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
@@ -798,6 +830,9 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     stageHead(claimLayer) := claim.kv_head
     stageTag(claimLayer) := claim.transaction_group_tag
     stageM2Members(claimLayer) := 0.U
+    stageDescriptorRequiredMask(claimLayer) := Mux(claim.requires_tail_link, 3.U, 1.U)
+    stageDescriptorPrerequisite(claimLayer) := false.B
+    payloadDurablePending(claimLayer) := false.B
     membershipPresent(claimLayer) := 0.U
     claimAckValid := true.B
     claimAckLayer := claimLayer
@@ -839,9 +874,13 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   def expectedFragments(layer: UInt): UInt = Cat(stageValidRecords(layer), 0.U(3.W))
   val fragment = io.p3_pending_fragment_in.bits
   val fragmentLayer = fragment.layer
+  val membershipCompleteForFragment = PopCount(membershipPresent(fragmentLayer)) === stageValidRecords(fragmentLayer)
+  val fragmentRecordOrdinal = fragment.fragment_index(8, 3)
+  val fragmentPayloadMatches = membershipCompleteForFragment &&
+    membershipEntries(fragmentLayer)(fragmentRecordOrdinal).payload_ref === fragment.payload_ref
   val fragmentMatches = initialized &&
     (stageState(fragmentLayer) === StateReserved || stageState(fragmentLayer) === StateFilling) &&
-    stageGeneration(fragmentLayer) === fragment.stage_generation
+    stageGeneration(fragmentLayer) === fragment.stage_generation && fragmentPayloadMatches
   val fragmentExpected = expectedFragments(fragmentLayer)
   val fragmentOrdinalOk = stageFragmentNext(fragmentLayer) < fragmentExpected &&
     fragment.fragment_index === stageFragmentNext(fragmentLayer)(8, 0)
@@ -855,6 +894,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
       stageState(fragmentLayer) := StateFaulted
     }.otherwise {
       val nextFragment = stageFragmentNext(fragmentLayer) + 1.U
+      stagePayload.write(payloadStoreIndex(fragmentLayer, fragment.fragment_index), fragment.data)
       stageFragmentNext(fragmentLayer) := nextFragment
       when(stageState(fragmentLayer) === StateReserved) { stageState(fragmentLayer) := StateFilling }
       when(fragment.last && stageSidecarNext(fragmentLayer) === stageValidRecords(fragmentLayer)) {
@@ -865,14 +905,19 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
 
   val sidecar = io.p3_sidecar_bind_in.bits
   val sidecarLayer = sidecar.layer
+  val sidecarOrdinal = sidecar.record_ordinal(5, 0)
+  val sidecarPayloadMatches = membershipPresent(sidecarLayer)(sidecarOrdinal) &&
+    membershipEntries(sidecarLayer)(sidecarOrdinal).payload_ref === sidecar.payload_ref &&
+    membershipEntries(sidecarLayer)(sidecarOrdinal).logical_position === sidecar.logical_position
   val sidecarMatches = initialized &&
     (stageState(sidecarLayer) === StateReserved || stageState(sidecarLayer) === StateFilling) &&
     stageGeneration(sidecarLayer) === sidecar.stage_generation &&
     stageSidecarNext(sidecarLayer) < stageValidRecords(sidecarLayer) &&
-    sidecar.record_ordinal === stageSidecarNext(sidecarLayer)
+    sidecar.record_ordinal === stageSidecarNext(sidecarLayer) && sidecarPayloadMatches
   io.p3_sidecar_bind_in.ready := sidecarMatches
   when(io.p3_sidecar_bind_in.fire) {
     val nextSidecar = stageSidecarNext(sidecarLayer) + 1.U
+    stageSidecar.write(sidecarStoreIndex(sidecarLayer, sidecarOrdinal), sidecar.logical_position)
     stageSidecarNext(sidecarLayer) := nextSidecar
     when(stageFragmentNext(sidecarLayer) === expectedFragments(sidecarLayer) && nextSidecar === stageValidRecords(sidecarLayer)) {
       stageState(sidecarLayer) := StateComplete
@@ -896,6 +941,110 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   io.p3_packed_write_terminal_in.ready := writeMatches && (writeOk || writeFault)
   when(io.p3_packed_write_terminal_in.fire) {
     stageState(writeLayer) := Mux(writeFault, StateFaulted, StateDurable)
+    when(!writeFault) { payloadDurablePending(writeLayer) := true.B }
+  }
+
+  // One R3-local functional write flow serializes the pre-existing one-packer
+  // anchor. It is not a new global scheduler or a memory service-rate claim.
+  val packedWriteWidthSupported = (p.coreMemoryFragmentCountWidth >= 10 && p.coreMemoryFragmentIndexWidth >= 9).B
+  val completeStages = VecInit((0 until stages).map(layer => stageState(layer) === StateComplete))
+  when(packedWriteState === WriteIdle && packedWriteWidthSupported && completeStages.asUInt.orR) {
+    packedWriteLayer := PriorityEncoder(completeStages)
+    packedWriteFragment := 0.U
+    packedWriteIdentity.request_id := packedWriteSequence(RouteAAnchorWidths.RequestIdWidth - 1, 0)
+    packedWriteIdentity.incarnation := packedWriteSequence(RouteAAnchorWidths.RequestIdWidth + RouteAAnchorWidths.IncarnationWidth - 1, RouteAAnchorWidths.RequestIdWidth)
+    packedWriteState := WriteRequest
+  }
+  val packedWriteExpected = expectedFragments(packedWriteLayer)
+  val packedWriteEligibility = (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.FifoPredecessor) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.Ownership) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.SourceCredit) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.PageAllocated) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.P3StageComplete) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.P3StageOwned)
+  io.p3_packed_write_candidate_out.valid := packedWriteWidthSupported &&
+    (packedWriteState === WriteRequest || packedWriteState === WriteData)
+  io.p3_packed_write_candidate_out.bits.candidate_class := p.r2PackWriteClassCode.U
+  io.p3_packed_write_candidate_out.bits.arrival_ordinal := packedWriteSequence
+  io.p3_packed_write_candidate_out.bits.candidate_id := packedWriteSequence
+  io.p3_packed_write_candidate_out.bits.eligibility_snapshot := packedWriteEligibility
+  io.p3_packed_write_candidate_out.bits.delivery_context_ref := RouteARTL2WriteDeliveryContext.R3PackedWrite.U
+  io.p3_packed_write_candidate_out.bits.r1_request.transaction_identity := packedWriteIdentity
+  io.p3_packed_write_candidate_out.bits.r1_request.request_kind := Mux(
+    packedWriteState === WriteRequest, p.coreMemoryWriteRequestCode.U, p.coreMemoryWriteDataCode.U,
+  )
+  io.p3_packed_write_candidate_out.bits.r1_request.destination := 0.U
+  // This is the R5-selected logical page payload offset handle (page_id *
+  // 33,280 B), truncated only by the still-parameterized opaque R1 handle.
+  io.p3_packed_write_candidate_out.bits.r1_request.address_ref := stagePageRef(packedWriteLayer).page_id * 33280.U
+  io.p3_packed_write_candidate_out.bits.r1_request.expected_fragment_count := packedWriteExpected
+  io.p3_packed_write_candidate_out.bits.r1_request.fragment_index := packedWriteFragment
+  io.p3_packed_write_candidate_out.bits.r1_request.last := packedWriteFragment + 1.U === packedWriteExpected
+  io.p3_packed_write_candidate_out.bits.r1_request.data := Mux(
+    packedWriteState === WriteData, stagePayload.read(payloadStoreIndex(packedWriteLayer, packedWriteFragment)), 0.U,
+  )
+  when(io.p3_packed_write_candidate_out.fire) {
+    when(packedWriteState === WriteRequest) {
+      stageState(packedWriteLayer) := StateWriteIssued
+      packedWriteState := WriteData
+    }.otherwise {
+      when(packedWriteFragment + 1.U === packedWriteExpected) {
+        packedWriteState := WriteAwaitTerminal
+      }.otherwise {
+        packedWriteFragment := packedWriteFragment + 1.U
+      }
+    }
+  }
+
+  val packedWriteDelivery = io.p3_packed_write_delivery_in.bits
+  val packedWriteDeliveryMatches = packedWriteState === WriteAwaitTerminal &&
+    packedWriteDelivery.candidate_class === p.r2PackWriteClassCode.U &&
+    packedWriteDelivery.candidate_id === packedWriteSequence &&
+    packedWriteDelivery.r1_response.transaction_identity.asUInt === packedWriteIdentity.asUInt &&
+    packedWriteDelivery.r1_response.last
+  val packedWriteDeliveryOk = packedWriteDelivery.r1_response.status === p.coreMemoryOkStatusCode.U
+  val packedWriteDeliveryFault = packedWriteDelivery.r1_response.status === p.coreMemoryFaultStatusCode.U
+  io.p3_packed_write_delivery_in.ready := packedWriteDeliveryMatches && (packedWriteDeliveryOk || packedWriteDeliveryFault)
+  when(io.p3_packed_write_delivery_in.fire) {
+    stageState(packedWriteLayer) := Mux(packedWriteDeliveryFault, StateFaulted, StateDurable)
+    when(!packedWriteDeliveryFault) { payloadDurablePending(packedWriteLayer) := true.B }
+    packedWriteState := WriteIdle
+    packedWriteSequence := packedWriteSequence + 1.U
+  }
+  // A direct control-only test ingress cannot race the actual R2/R1 flow.
+  when(io.p3_packed_write_issue_in.fire || io.p3_packed_write_terminal_in.fire) {
+    assert(packedWriteState === WriteIdle)
+  }
+
+  val anyPayloadDurable = payloadDurablePending.asUInt.orR
+  val payloadDurableLayer = PriorityEncoder(payloadDurablePending)
+  io.p3_payload_durable_out.valid := anyPayloadDurable
+  io.p3_payload_durable_out.bits.layer := payloadDurableLayer
+  io.p3_payload_durable_out.bits.kv_head := stageHead(payloadDurableLayer)
+  io.p3_payload_durable_out.bits.page_ref := stagePageRef(payloadDurableLayer)
+  io.p3_payload_durable_out.bits.stage_generation := stageGeneration(payloadDurableLayer)
+  io.p3_payload_durable_out.bits.transaction_group_tag := stageTag(payloadDurableLayer)
+  io.p3_payload_durable_out.bits.status := p.coreMemoryOkStatusCode.U
+  when(io.p3_payload_durable_out.fire) { payloadDurablePending(payloadDurableLayer) := false.B }
+
+  val descriptorPrerequisite = io.descriptor_durability_prerequisite_in.bits
+  val descriptorPrerequisiteLayer = descriptorPrerequisite.layer
+  val descriptorMaskExact = descriptorPrerequisite.required_descriptor_operation_mask ===
+    stageDescriptorRequiredMask(descriptorPrerequisiteLayer)
+  val descriptorPrerequisiteMatches = initialized && stageState(descriptorPrerequisiteLayer) === StateDurable &&
+    stageHead(descriptorPrerequisiteLayer) === descriptorPrerequisite.kv_head &&
+    stagePageRef(descriptorPrerequisiteLayer).asUInt === descriptorPrerequisite.page_ref.asUInt &&
+    stageTag(descriptorPrerequisiteLayer) === descriptorPrerequisite.transaction_group_tag &&
+    !stageDescriptorPrerequisite(descriptorPrerequisiteLayer)
+  val descriptorPrerequisiteOk = descriptorPrerequisite.status === p.coreMemoryOkStatusCode.U &&
+    descriptorPrerequisite.descriptor_prepared && descriptorMaskExact &&
+    descriptorPrerequisite.durable_descriptor_operation_mask === descriptorPrerequisite.required_descriptor_operation_mask
+  val descriptorPrerequisiteFault = descriptorPrerequisite.status === p.coreMemoryFaultStatusCode.U
+  io.descriptor_durability_prerequisite_in.ready := descriptorPrerequisiteMatches &&
+    (descriptorPrerequisiteOk || descriptorPrerequisiteFault)
+  when(io.descriptor_durability_prerequisite_in.fire) {
+    when(descriptorPrerequisiteFault) { stageState(descriptorPrerequisiteLayer) := StateFaulted }
+      .otherwise { stageDescriptorPrerequisite(descriptorPrerequisiteLayer) := true.B }
   }
 
   val m2Member = io.m2_group_member_rsp_in.bits
@@ -924,7 +1073,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val publishPrerequisites = initialized && stageState(publish.p3_layer) === StateDurable &&
     stageGeneration(publish.p3_layer) === publish.p3_stage_generation &&
     stageTag(publish.p3_layer) === publish.transaction_group_tag &&
-    stageM2Members(publish.p3_layer) === 3.U && membershipComplete
+    stageM2Members(publish.p3_layer) === 3.U && membershipComplete && stageDescriptorPrerequisite(publish.p3_layer)
   io.m2_publish_req_in.ready := !publicationActive && publishPrerequisites
   when(io.m2_publish_req_in.fire) {
     publicationActive := true.B
@@ -973,6 +1122,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   when(io.metadata_publish_visibility_apply.valid) {
     assert(stageState(publicationLayer) === StateDurable)
     assert(stageM2Members(publicationLayer) === 3.U)
+    assert(stageDescriptorPrerequisite(publicationLayer))
     assert(PopCount(membershipPresent(publicationLayer)) === stageValidRecords(publicationLayer))
   }
   when(io.m2_publish_ack.valid && io.m2_publish_ack.bits.status === RouteAPublicationStatus.Published.U) {
@@ -1064,6 +1214,12 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     val reclaim_complete = Output(Bool())
     val page_allocation_req_in = Flipped(RouteAChannels.page_allocation_req(p))
     val page_allocation_rsp = RouteAChannels.page_allocation_rsp(p)
+    // RTL2.1b append-maintenance producer/terminal path. It remains distinct
+    // from the existing retirement invalidation carrier.
+    val append_candidate_out = RouteAChannels.source_candidate(p)
+    val append_delivery_in = Flipped(RouteAChannels.source_delivery(p))
+    val p3_payload_durable_in = Flipped(RouteAChannels.p3_payload_durable(p))
+    val descriptor_durability_prerequisite_out = RouteAChannels.descriptor_durability_prerequisite(p)
     val descriptor_maintenance_terminal_in = Flipped(RouteAChannels.descriptor_maintenance_terminal(p))
     val metadata_publish_visibility_in = Flipped(RouteAChannels.metadata_publish_visibility(p))
     val metadata_publish_visibility_ack = RouteAChannels.metadata_publish_visibility_ack
@@ -1076,6 +1232,7 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     "R5 descriptor reclaim requires four 128-bit lanes per logical 64-B descriptor line")
   private val descriptorLines = p.r5AllocatorEntries / 4
   private val descriptorLineWidth = math.max(1, log2Ceil(descriptorLines))
+  private val allocatorIndexWidth = math.max(1, log2Ceil(p.r5AllocatorEntries))
   private val ReclaimIdle = 0.U(2.W)
   private val ReclaimRequest = 1.U(2.W)
   private val ReclaimData = 2.U(2.W)
@@ -1093,6 +1250,11 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val durableInvalidation = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))
   val buildActive = RegInit(VecInit(Seq.fill(streamSlots)(false.B)))
   val buildFault = RegInit(VecInit(Seq.fill(streamSlots)(false.B)))
+  val buildPayloadDurable = RegInit(VecInit(Seq.fill(streamSlots)(false.B)))
+  val buildPrerequisiteReported = RegInit(VecInit(Seq.fill(streamSlots)(false.B)))
+  val buildLayer = Reg(Vec(streamSlots, UInt(RouteAAnchorWidths.LayerWidth.W)))
+  val buildHead = Reg(Vec(streamSlots, UInt(RouteAAnchorWidths.KvHeadWidth.W)))
+  val buildValidRecords = Reg(Vec(streamSlots, UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)))
   val buildPageId = Reg(Vec(streamSlots, UInt(RouteAAnchorWidths.PageIdWidth.W)))
   val buildGeneration = Reg(Vec(streamSlots, UInt(RouteAAnchorWidths.PageGenerationWidth.W)))
   val buildTag = Reg(Vec(streamSlots, UInt(p.transactionGroupTagWidth.W)))
@@ -1112,6 +1274,20 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val reclaimLine = Reg(UInt(descriptorLineWidth.W))
   val reclaimSequence = RegInit(0.U(5.W))
   val reclaimFaulted = RegInit(false.B)
+  // Functional/reference descriptor-entry backing. This preserves all four
+  // 128-bit lanes when producing the frozen 64-B maintenance line; it is not
+  // an HBM macro/cache/controller implementation or a PPA claim.
+  val descriptorEntryImage = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(0.U(128.W))))
+  private def allocatorIndex(pageId: UInt): UInt = pageId(allocatorIndexWidth - 1, 0)
+  private val AppendIdle = 0.U(2.W)
+  private val AppendRequest = 1.U(2.W)
+  private val AppendData = 2.U(2.W)
+  private val AppendAwaitTerminal = 3.U(2.W)
+  val appendState = RegInit(AppendIdle)
+  val appendSlot = Reg(UInt(streamIndexWidth.W))
+  val appendKind = Reg(UInt(2.W))
+  val appendIdentity = Reg(new TransactionIdentity)
+  val appendSequence = RegInit(0.U((RouteAAnchorWidths.RequestIdWidth + RouteAAnchorWidths.IncarnationWidth).W))
 
   val lineAllocated = VecInit((0 until descriptorLines).map { line =>
     (0 until 4).map(lane => allocated(line * 4 + lane)).reduce(_ || _)
@@ -1238,12 +1414,23 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     durableInvalidation(freeIndex) := false.B
     buildActive(allocStream) := true.B
     buildFault(allocStream) := false.B
+    buildPayloadDurable(allocStream) := false.B
+    buildPrerequisiteReported(allocStream) := false.B
+    buildLayer(allocStream) := alloc.layer
+    buildHead(allocStream) := alloc.kv_head
+    buildValidRecords(allocStream) := alloc.valid_records
     buildPageId(allocStream) := freeIndex
     buildGeneration(allocStream) := generations(freeIndex)
     buildTag(allocStream) := alloc.transaction_group_tag
     buildNewDurable(allocStream) := false.B
     buildTailDurable(allocStream) := false.B
     buildNeedsTail(allocStream) := visibleTailPresent(allocStream)
+    // ALLOCATED_UNPUBLISHED, with no successor, as the private functional
+    // descriptor image. Visibility remains separately guarded by R3 commit.
+    descriptorEntryImage(freeIndex) := Cat(
+      0.U(76.W), generations(freeIndex), 0.U(8.W), Fill(18, 1.U(1.W)),
+      alloc.valid_records, alloc.kv_head, alloc.layer, 1.U(2.W),
+    )
     allocationRspValid := true.B
     allocationRsp.layer := alloc.layer
     allocationRsp.kv_head := alloc.kv_head
@@ -1251,6 +1438,126 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     allocationRsp.page_ref.generation := generations(freeIndex)
     allocationRsp.requires_tail_link := visibleTailPresent(allocStream)
     allocationRsp.transaction_group_tag := alloc.transaction_group_tag
+  }
+
+  val payloadDurable = io.p3_payload_durable_in.bits
+  val payloadDurableMatches = VecInit((0 until streamSlots).map { slot =>
+    buildActive(slot) && !buildPayloadDurable(slot) && !buildFault(slot) &&
+      buildLayer(slot) === payloadDurable.layer && buildHead(slot) === payloadDurable.kv_head &&
+      buildPageId(slot) === payloadDurable.page_ref.page_id &&
+      buildGeneration(slot) === payloadDurable.page_ref.generation &&
+      buildTag(slot) === payloadDurable.transaction_group_tag
+  })
+  val payloadDurableAnyMatch = payloadDurableMatches.asUInt.orR
+  val payloadDurableSlot = PriorityEncoder(payloadDurableMatches)
+  val payloadDurableOk = payloadDurable.status === p.coreMemoryOkStatusCode.U
+  val payloadDurableFault = payloadDurable.status === p.coreMemoryFaultStatusCode.U
+  io.p3_payload_durable_in.ready := initialized && payloadDurableAnyMatch && (payloadDurableOk || payloadDurableFault)
+  when(io.p3_payload_durable_in.fire) {
+    when(payloadDurableFault) { buildFault(payloadDurableSlot) := true.B }
+      .otherwise { buildPayloadDurable(payloadDurableSlot) := true.B }
+  }
+
+  // R5 performs only its own private descriptor-operation sequencing. The
+  // global R2 FIFO/arbitration still receives a single normal candidate.
+  val appendEligible = VecInit((0 until streamSlots).map { slot =>
+    buildActive(slot) && buildPayloadDurable(slot) && !buildFault(slot) &&
+      (!buildNewDurable(slot) || (buildNeedsTail(slot) && !buildTailDurable(slot)))
+  })
+  when(appendState === AppendIdle && appendEligible.asUInt.orR) {
+    appendSlot := PriorityEncoder(appendEligible)
+    appendKind := Mux(!buildNewDurable(PriorityEncoder(appendEligible)),
+      RouteADescriptorOperationKind.NewPage.U, RouteADescriptorOperationKind.TailLink.U)
+    appendIdentity.request_id := appendSequence(RouteAAnchorWidths.RequestIdWidth - 1, 0)
+    appendIdentity.incarnation := appendSequence(RouteAAnchorWidths.RequestIdWidth + RouteAAnchorWidths.IncarnationWidth - 1, RouteAAnchorWidths.RequestIdWidth)
+    appendState := AppendRequest
+  }
+  val appendSubjectPage = Mux(appendKind === RouteADescriptorOperationKind.NewPage.U,
+    buildPageId(appendSlot), visibleTailId(appendSlot))
+  val appendSubjectGeneration = Mux(appendKind === RouteADescriptorOperationKind.NewPage.U,
+    buildGeneration(appendSlot), visibleTailGeneration(appendSlot))
+  val appendDescriptorImage = Mux(
+    appendKind === RouteADescriptorOperationKind.NewPage.U,
+    descriptorEntryImage(allocatorIndex(buildPageId(appendSlot))),
+    Cat(
+      descriptorEntryImage(allocatorIndex(visibleTailId(appendSlot)))(127, 44), buildGeneration(appendSlot),
+      buildPageId(appendSlot), descriptorEntryImage(allocatorIndex(visibleTailId(appendSlot)))(17, 0),
+    ),
+  )
+  val appendLine = appendSubjectPage(RouteAAnchorWidths.PageIdWidth - 1, 2)
+  def appendLineLaneImage(lane: Int): UInt = {
+    val lanePage = Cat(appendLine, lane.U(2.W))
+    Mux(lanePage === appendSubjectPage, appendDescriptorImage, descriptorEntryImage(allocatorIndex(lanePage)))
+  }
+  val appendLineData = Cat(appendLineLaneImage(3), appendLineLaneImage(2), appendLineLaneImage(1), appendLineLaneImage(0))
+  val appendEligibility = (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.FifoPredecessor) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.Ownership) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.SourceCredit)
+  io.append_candidate_out.valid := appendState === AppendRequest || appendState === AppendData
+  io.append_candidate_out.bits.candidate_class := p.r2DescriptorMaintenanceClassCode.U
+  io.append_candidate_out.bits.arrival_ordinal := appendSequence
+  io.append_candidate_out.bits.candidate_id := appendSequence
+  io.append_candidate_out.bits.eligibility_snapshot := appendEligibility
+  io.append_candidate_out.bits.delivery_context_ref := RouteARTL2WriteDeliveryContext.R5Append.U
+  io.append_candidate_out.bits.r1_request.transaction_identity := appendIdentity
+  io.append_candidate_out.bits.r1_request.request_kind := Mux(
+    appendState === AppendRequest, p.coreMemoryWriteRequestCode.U, p.coreMemoryWriteDataCode.U,
+  )
+  io.append_candidate_out.bits.r1_request.destination := 0.U
+  io.append_candidate_out.bits.r1_request.address_ref := appendLine
+  io.append_candidate_out.bits.r1_request.expected_fragment_count := 1.U
+  io.append_candidate_out.bits.r1_request.fragment_index := 0.U
+  io.append_candidate_out.bits.r1_request.last := true.B
+  io.append_candidate_out.bits.r1_request.data := Mux(appendState === AppendData, appendLineData, 0.U)
+  when(io.append_candidate_out.fire) {
+    when(appendState === AppendRequest) { appendState := AppendData }
+      .otherwise { appendState := AppendAwaitTerminal }
+  }
+  val appendDelivery = io.append_delivery_in.bits
+  val appendDeliveryMatches = appendState === AppendAwaitTerminal &&
+    appendDelivery.candidate_class === p.r2DescriptorMaintenanceClassCode.U &&
+    appendDelivery.candidate_id === appendSequence &&
+    appendDelivery.r1_response.transaction_identity.asUInt === appendIdentity.asUInt &&
+    appendDelivery.r1_response.last
+  val appendDeliveryOk = appendDelivery.r1_response.status === p.coreMemoryOkStatusCode.U
+  val appendDeliveryFault = appendDelivery.r1_response.status === p.coreMemoryFaultStatusCode.U
+  io.append_delivery_in.ready := appendDeliveryMatches && (appendDeliveryOk || appendDeliveryFault)
+  when(io.append_delivery_in.fire) {
+    when(appendDeliveryFault) {
+      buildFault(appendSlot) := true.B
+    }.elsewhen(appendKind === RouteADescriptorOperationKind.NewPage.U) {
+      buildNewDurable(appendSlot) := true.B
+      descriptorEntryImage(allocatorIndex(appendSubjectPage)) := appendDescriptorImage
+    }.otherwise {
+      buildTailDurable(appendSlot) := true.B
+      descriptorEntryImage(allocatorIndex(appendSubjectPage)) := appendDescriptorImage
+    }
+    appendState := AppendIdle
+    appendSequence := appendSequence + 1.U
+  }
+
+  val descriptorPrerequisiteEligible = VecInit((0 until streamSlots).map { slot =>
+    buildActive(slot) && !buildPrerequisiteReported(slot) &&
+      (buildFault(slot) || (buildPayloadDurable(slot) && buildNewDurable(slot) &&
+        (!buildNeedsTail(slot) || buildTailDurable(slot))))
+  })
+  val descriptorPrerequisiteAny = descriptorPrerequisiteEligible.asUInt.orR
+  val descriptorPrerequisiteSlot = PriorityEncoder(descriptorPrerequisiteEligible)
+  val descriptorRequiredMask = Mux(buildNeedsTail(descriptorPrerequisiteSlot), 3.U, 1.U)
+  val descriptorDurableMask = Cat(buildTailDurable(descriptorPrerequisiteSlot), buildNewDurable(descriptorPrerequisiteSlot))
+  io.descriptor_durability_prerequisite_out.valid := descriptorPrerequisiteAny
+  io.descriptor_durability_prerequisite_out.bits.layer := buildLayer(descriptorPrerequisiteSlot)
+  io.descriptor_durability_prerequisite_out.bits.kv_head := buildHead(descriptorPrerequisiteSlot)
+  io.descriptor_durability_prerequisite_out.bits.page_ref.page_id := buildPageId(descriptorPrerequisiteSlot)
+  io.descriptor_durability_prerequisite_out.bits.page_ref.generation := buildGeneration(descriptorPrerequisiteSlot)
+  io.descriptor_durability_prerequisite_out.bits.transaction_group_tag := buildTag(descriptorPrerequisiteSlot)
+  io.descriptor_durability_prerequisite_out.bits.required_descriptor_operation_mask := descriptorRequiredMask
+  io.descriptor_durability_prerequisite_out.bits.durable_descriptor_operation_mask := descriptorDurableMask
+  io.descriptor_durability_prerequisite_out.bits.descriptor_prepared := !buildFault(descriptorPrerequisiteSlot)
+  io.descriptor_durability_prerequisite_out.bits.status := Mux(buildFault(descriptorPrerequisiteSlot),
+    p.coreMemoryFaultStatusCode.U, p.coreMemoryOkStatusCode.U)
+  when(io.descriptor_durability_prerequisite_out.fire) {
+    buildPrerequisiteReported(descriptorPrerequisiteSlot) := true.B
   }
 
   val descriptorTerminal = io.descriptor_maintenance_terminal_in.bits

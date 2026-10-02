@@ -157,7 +157,7 @@ existing `metadata_publish_commit`.
 | Sub-slice | Required functional closure | Must remain impossible |
 |---|---|---|
 | RTL2.1a | Form and preserve an immutable retained group from the frozen admission decision; claim exactly its non-contiguous member records. | Payload release, packed authority, or publication visibility merely from admission/group formation. |
-| RTL2.1b | Drive the unique R2-to-R1 payload-write transaction and the R5 descriptor-maintenance prerequisite; emit identity-bearing `write_commit` and `descriptor_durable` only from their owners. | Treating a write commit as metadata visibility or authority transfer. |
+| RTL2.1b | Drive the unique R2-to-R1 payload-write transaction and the R5 descriptor-maintenance prerequisite; emit identity-bearing `write_commit` and `descriptor_durable` only from their owners. **Implementation in progress:** the minimum replaceable P3 functional backing/hot egress is explicitly front-loaded; verification completion remains open. | Treating a write commit as metadata visibility or authority transfer. |
 | RTL2.1c | After every required payload and descriptor prerequisite is durable, perform the sole nested `metadata_publish_commit`, emit the exact `pending -> packed` authority transition, and make the page readable. | Partial-group visibility, duplicate commit, or a pending/packed authority overlap. |
 
 This slice retains the exact existing admission result; it neither changes

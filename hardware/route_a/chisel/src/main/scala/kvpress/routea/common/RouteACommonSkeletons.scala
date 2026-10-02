@@ -441,6 +441,80 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
 }
 
 /**
+  * RTL2.1b logical multi-producer ingress for the sole R2 FIFO owner.  It is
+  * a lossless ready/valid merge, not a second FIFO, scheduler, or controller.
+  * Among simultaneously offered candidates it selects the frozen ordinal/id
+  * order; candidates not selected remain held by their unique producer.
+  */
+final class RouteAR2WriteIngressMerge(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_r2_write_ingress_merge"
+
+  val io = IO(new Bundle {
+    val r3_packed_write_in = Flipped(RouteAChannels.source_candidate(p))
+    val r5_append_in = Flipped(RouteAChannels.source_candidate(p))
+    val r5_reclaim_in = Flipped(RouteAChannels.source_candidate(p))
+    val candidate_out = RouteAChannels.source_candidate(p)
+  })
+
+  private def earlier(left: SourceCandidate, right: SourceCandidate): Bool =
+    left.arrival_ordinal < right.arrival_ordinal ||
+      (left.arrival_ordinal === right.arrival_ordinal && left.candidate_id < right.candidate_id)
+
+  val inputs = Seq(io.r3_packed_write_in, io.r5_append_in, io.r5_reclaim_in)
+  val validVec = VecInit(inputs.map(_.valid))
+  val first = Wire(new SourceCandidate(p)); first := io.r3_packed_write_in.bits
+  val chooseR3 = io.r3_packed_write_in.valid &&
+    (!io.r5_append_in.valid || earlier(io.r3_packed_write_in.bits, io.r5_append_in.bits)) &&
+    (!io.r5_reclaim_in.valid || earlier(io.r3_packed_write_in.bits, io.r5_reclaim_in.bits))
+  val chooseAppend = !chooseR3 && io.r5_append_in.valid &&
+    (!io.r5_reclaim_in.valid || earlier(io.r5_append_in.bits, io.r5_reclaim_in.bits))
+  val chooseReclaim = !chooseR3 && !chooseAppend && io.r5_reclaim_in.valid
+  io.candidate_out.valid := validVec.asUInt.orR
+  io.candidate_out.bits := Mux(chooseR3, io.r3_packed_write_in.bits,
+    Mux(chooseAppend, io.r5_append_in.bits, io.r5_reclaim_in.bits))
+  io.r3_packed_write_in.ready := io.candidate_out.ready && chooseR3
+  io.r5_append_in.ready := io.candidate_out.ready && chooseAppend
+  io.r5_reclaim_in.ready := io.candidate_out.ready && chooseReclaim
+
+  val held = RegEnable(io.candidate_out.bits, io.candidate_out.valid && !io.candidate_out.ready)
+  when(RegNext(io.candidate_out.valid && !io.candidate_out.ready, false.B)) {
+    assert(io.candidate_out.bits.asUInt === held.asUInt)
+  }
+}
+
+/**
+  * RTL2.1b write-terminal-only registry resolution.  Read response routing
+  * remains a later RTL2.2 concern.  The three keys name endpoint ownership;
+  * they do not encode a physical crossbar or HBM response protocol.
+  */
+final class RouteAR2WriteDeliveryRouter(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_r2_write_delivery_router"
+
+  val io = IO(new Bundle {
+    val source_delivery_in = Flipped(RouteAChannels.source_delivery(p))
+    val r3_packed_write_out = RouteAChannels.source_delivery(p)
+    val r5_append_out = RouteAChannels.source_delivery(p)
+    val r5_reclaim_out = RouteAChannels.source_delivery(p)
+  })
+
+  val delivery = io.source_delivery_in.bits
+  val isR3 = delivery.candidate_class === p.r2PackWriteClassCode.U &&
+    delivery.delivery_context_ref === RouteARTL2WriteDeliveryContext.R3PackedWrite.U
+  val isAppend = delivery.candidate_class === p.r2DescriptorMaintenanceClassCode.U &&
+    delivery.delivery_context_ref === RouteARTL2WriteDeliveryContext.R5Append.U
+  val isReclaim = delivery.candidate_class === p.r2DescriptorMaintenanceClassCode.U &&
+    delivery.delivery_context_ref === RouteARTL2WriteDeliveryContext.R5Reclaim.U
+  io.r3_packed_write_out.valid := io.source_delivery_in.valid && isR3
+  io.r3_packed_write_out.bits := delivery
+  io.r5_append_out.valid := io.source_delivery_in.valid && isAppend
+  io.r5_append_out.bits := delivery
+  io.r5_reclaim_out.valid := io.source_delivery_in.valid && isReclaim
+  io.r5_reclaim_out.bits := delivery
+  io.source_delivery_in.ready := Mux(isR3, io.r3_packed_write_out.ready,
+    Mux(isAppend, io.r5_append_out.ready, Mux(isReclaim, io.r5_reclaim_out.ready, false.B)))
+}
+
+/**
   * RTL1.1 R1 core-memory transaction wrapper.
   *
   * This is deliberately a core-clock ready/valid wrapper, not an HBM command,

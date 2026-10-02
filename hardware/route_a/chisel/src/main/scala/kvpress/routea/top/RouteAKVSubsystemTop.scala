@@ -26,6 +26,11 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
   val runtime_retire_req = IO(Flipped(RouteAChannels.runtime_retire_req))
   val attention_terminal_rsp = IO(RouteAChannels.attention_terminal_rsp)
   val session_retire_ack = IO(RouteAChannels.session_retire_ack)
+  // Hot-owner egress into R3's replaceable functional P3 backing. These are
+  // environment-owned payload/sidecar inputs; the composition top creates no
+  // data, address, admission, authority, or delivery-context fact.
+  val hot_payload_fragment_in = IO(Flipped(RouteAChannels.p3_pending_fragment(p)))
+  val hot_position_sidecar_in = IO(Flipped(RouteAChannels.p3_sidecar_bind(p)))
   val external_core_mem_if_v1 = IO(new CoreMemoryExternalPort(p))
 
   withClockAndReset(core_clk, destructive_reset) {
@@ -38,6 +43,8 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val m2_p3 = Module(new RouteAM2P3Wrapper(p))
     val page_manager = Module(new RouteAPageManager(p))
     val admission_group_builder = Module(new RouteAAdmissionPublicationIngressAdapter(p))
+    val r2_write_ingress = Module(new RouteAR2WriteIngressMerge(p))
+    val r2_write_delivery = Module(new RouteAR2WriteDeliveryRouter(p))
     val merge = Module(new RouteAMergeBoundary(p))
     val status_collector = Module(new RouteAComponentStatusCollector(p))
 
@@ -123,7 +130,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
 
     // RTL1-I4: R5 is the only active source during retirement, and only after
     // R6's permit.  R2 remains the unique core-side issuer for this carrier.
-    arbiter.io.candidate_in <> page_manager.io.reclaim_candidate_out
+    arbiter.io.candidate_in <> r2_write_ingress.io.candidate_out
 
     core_memory.io.core_mem_req_in <> arbiter.io.core_mem_req
     arbiter.io.core_mem_rsp_in <> core_memory.io.core_mem_rsp
@@ -138,7 +145,9 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     s2.io.mem_init_done := core_memory.io.r1_init_complete
     direct_pending.io.mem_init_done := core_memory.io.r1_init_complete
 
-    page_manager.io.reclaim_delivery_in <> arbiter.io.source_delivery_out
+    r2_write_delivery.io.source_delivery_in <> arbiter.io.source_delivery_out
+    page_manager.io.reclaim_delivery_in <> r2_write_delivery.io.r5_reclaim_out
+    page_manager.io.append_delivery_in <> r2_write_delivery.io.r5_append_out
 
     m2_p3.io.mem_init_done := core_memory.io.r1_init_complete
     m2_p3.io.drain_collection_enable := lifecycle.io.drain_collection_enable
@@ -157,8 +166,8 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     admission_group_builder.io.r3_p3_claim_ack_in <> m2_p3.io.p3_claim_ack
     admission_group_builder.io.r3_admission_context_out <> m2_p3.io.admission_context_in
     admission_group_builder.io.r3_admission_authority_out <> m2_p3.io.admission_authority_in
-    val p3_fragment = Wire(RouteAChannels.p3_pending_fragment(p)); StructuralTieOff.source(p3_fragment)
-    val p3_sidecar = Wire(RouteAChannels.p3_sidecar_bind(p)); StructuralTieOff.source(p3_sidecar)
+    val p3_fragment = hot_payload_fragment_in
+    val p3_sidecar = hot_position_sidecar_in
     val p3_write_issue = Wire(RouteAChannels.p3_packed_write_issue(p)); StructuralTieOff.source(p3_write_issue)
     val p3_write_terminal = Wire(RouteAChannels.p3_packed_write_terminal(p)); StructuralTieOff.source(p3_write_terminal)
     val m2_group_member_rsp = Wire(RouteAChannels.m2_group_member_rsp(p)); StructuralTieOff.source(m2_group_member_rsp)
@@ -180,6 +189,12 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     lifecycle.io.r5_reclaim_complete_in := page_manager.io.reclaim_complete
     val descriptor_maintenance_terminal = Wire(RouteAChannels.descriptor_maintenance_terminal(p)); StructuralTieOff.source(descriptor_maintenance_terminal)
     page_manager.io.descriptor_maintenance_terminal_in <> descriptor_maintenance_terminal
+    r2_write_ingress.io.r3_packed_write_in <> m2_p3.io.p3_packed_write_candidate_out
+    r2_write_ingress.io.r5_append_in <> page_manager.io.append_candidate_out
+    r2_write_ingress.io.r5_reclaim_in <> page_manager.io.reclaim_candidate_out
+    m2_p3.io.p3_packed_write_delivery_in <> r2_write_delivery.io.r3_packed_write_out
+    page_manager.io.p3_payload_durable_in <> m2_p3.io.p3_payload_durable_out
+    m2_p3.io.descriptor_durability_prerequisite_in <> page_manager.io.descriptor_durability_prerequisite_out
     page_manager.io.metadata_publish_visibility_in <> m2_p3.io.metadata_publish_visibility_apply
     m2_p3.io.metadata_publish_visibility_ack_in <> page_manager.io.metadata_publish_visibility_ack
     lifecycle.io.metadata_publish_ack_in <> m2_p3.io.m2_publish_ack

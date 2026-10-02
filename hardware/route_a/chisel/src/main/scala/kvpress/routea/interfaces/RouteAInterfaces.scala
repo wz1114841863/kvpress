@@ -30,6 +30,17 @@ object RouteAR2PredicateBits {
   final val P3StageOwned = 9
 }
 
+/**
+  * RTL2.1b reference-registry keys for write-terminal endpoint resolution.
+  * They are not a deployed wire encoding: an integration may replace the
+  * registry implementation while preserving the producer/consumer ownership.
+  */
+object RouteARTL2WriteDeliveryContext {
+  final val R5Reclaim = 0
+  final val R5Append = 1
+  final val R3PackedWrite = 2
+}
+
 final class TransactionIdentity extends Bundle {
   val request_id = UInt(RouteAAnchorWidths.RequestIdWidth.W)
   val incarnation = UInt(RouteAAnchorWidths.IncarnationWidth.W)
@@ -418,6 +429,9 @@ final class P3Claim(p: RouteASkeletonParameters) extends Bundle {
   val owner = UInt(RouteAAnchorWidths.RequestIdWidth.W)
   val page_ref = new PageRef
   val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  // R5 allocation fact; it freezes the two-bit descriptor prerequisite for
+  // this append without letting R3 infer stream-tail state.
+  val requires_tail_link = Bool()
   val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
 }
 
@@ -426,20 +440,34 @@ final class P3ClaimAck(p: RouteASkeletonParameters) extends Bundle {
   val stage_generation = UInt(p.p3StageGenerationWidth.W)
 }
 
-/** Control-only observation of a delivered 64-B pending fragment. */
+/**
+  * One 64-B fragment egressed by the hot/pending payload owner into R3's
+  * replaceable functional P3 backing.  `payload_ref` is checked against the
+  * immutable admitted member association; it is not an HBM address.  The
+  * 512-bit `data` is functional/reference storage content only and does not
+  * select a P3 macro, port count, or physical transport.
+  */
 final class P3PendingFragment(p: RouteASkeletonParameters) extends Bundle {
   val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
   val stage_generation = UInt(p.p3StageGenerationWidth.W)
   val fragment_index = UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W)
   val last = Bool()
   val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
+  val payload_ref = UInt(RouteAAnchorWidths.PayloadRefWidth.W)
+  val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
 }
 
-/** Position-sidecar completion carrier; position payload storage remains unselected. */
+/**
+  * One logical position-sidecar binding from the hot/pending owner into R3's
+  * functional P3 backing.  The selected 8-B sidecar representation is the
+  * zero-extended logical position; it is not an HBM sidecar address/layout.
+  */
 final class P3SidecarBind(p: RouteASkeletonParameters) extends Bundle {
   val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
   val stage_generation = UInt(p.p3StageGenerationWidth.W)
   val record_ordinal = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val payload_ref = UInt(RouteAAnchorWidths.PayloadRefWidth.W)
+  val logical_position = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
 }
 
 /** Associates an R1 packed-write terminal with a P3 stage/group, control only. */
@@ -456,6 +484,19 @@ final class P3PackedWriteIssue(p: RouteASkeletonParameters) extends Bundle {
   val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
   val stage_generation = UInt(p.p3StageGenerationWidth.W)
   val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+}
+
+/**
+  * R3-only observation that one complete staged payload page is durable at
+  * the unique R1 write boundary.  It carries no publication/authority effect.
+  */
+final class P3PayloadDurable(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val page_ref = new PageRef
+  val stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
 }
 
 /** A private result for one of the two fixed semantic M2 RMW members. */
@@ -490,6 +531,22 @@ final class DescriptorMaintenanceTerminal(p: RouteASkeletonParameters) extends B
   val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
   val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
   val r1_descriptor_durable = Bool()
+}
+
+/**
+  * The sole R5-to-R3 aggregate append prerequisite.  The masks use the frozen
+  * semantic bits (new_page, optional tail_link), never a descriptor layout or
+  * physical maintenance-port encoding.
+  */
+final class DescriptorDurabilityPrerequisite(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val page_ref = new PageRef
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val required_descriptor_operation_mask = UInt(2.W)
+  val durable_descriptor_operation_mask = UInt(2.W)
+  val descriptor_prepared = Bool()
+  val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
 }
 
 object RouteAChannels {
@@ -538,8 +595,10 @@ object RouteAChannels {
   def p3_sidecar_bind(p: RouteASkeletonParameters) = Decoupled(new P3SidecarBind(p))
   def p3_packed_write_terminal(p: RouteASkeletonParameters) = Decoupled(new P3PackedWriteTerminal(p))
   def p3_packed_write_issue(p: RouteASkeletonParameters) = Decoupled(new P3PackedWriteIssue(p))
+  def p3_payload_durable(p: RouteASkeletonParameters) = Decoupled(new P3PayloadDurable(p))
   def m2_group_member_rsp(p: RouteASkeletonParameters) = Decoupled(new M2GroupMemberResponse(p))
   def page_allocation_req(p: RouteASkeletonParameters) = Decoupled(new PageAllocationRequest(p))
   def page_allocation_rsp(p: RouteASkeletonParameters) = Decoupled(new PageAllocationResponse(p))
   def descriptor_maintenance_terminal(p: RouteASkeletonParameters) = Decoupled(new DescriptorMaintenanceTerminal(p))
+  def descriptor_durability_prerequisite(p: RouteASkeletonParameters) = Decoupled(new DescriptorDurabilityPrerequisite(p))
 }
