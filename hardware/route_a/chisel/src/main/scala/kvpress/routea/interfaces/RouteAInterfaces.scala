@@ -515,6 +515,10 @@ final class DeliveryContextAllocation(p: RouteASkeletonParameters) extends Bundl
   val transaction_identity = new TransactionIdentity
   val target_kind = UInt(RouteADeliveryTargetKind.Width.W)
   val target_identity_generation = UInt(p.sourceGenerationWidth.W)
+  // Immutable copy of the existing R1 request fact. A later read endpoint
+  // requires it to validate ordinal/last coverage; this selects no port,
+  // FIFO, endpoint implementation, or service-rate behavior.
+  val expected_fragment_count = UInt(p.coreMemoryFragmentCountWidth.W)
   val target_descriptor = new DeliveryTargetDescriptor(p)
 }
 

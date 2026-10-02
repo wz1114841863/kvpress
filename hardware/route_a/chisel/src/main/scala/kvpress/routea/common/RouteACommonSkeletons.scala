@@ -754,6 +754,7 @@ final class RouteADeliveryContextAllocationBridge(p: RouteASkeletonParameters) e
   io.registry_allocate_out.bits.transaction_identity := best.r1_request.transaction_identity
   io.registry_allocate_out.bits.target_kind := targetKind(best)
   io.registry_allocate_out.bits.target_identity_generation := best.delivery_target_descriptor.source_generation
+  io.registry_allocate_out.bits.expected_fragment_count := best.r1_request.expected_fragment_count
   io.registry_allocate_out.bits.target_descriptor := best.delivery_target_descriptor
   io.registry_allocation_ack_in.ready := allocationActive
 
@@ -767,6 +768,8 @@ final class RouteADeliveryContextAllocationBridge(p: RouteASkeletonParameters) e
     assert(io.registry_allocation_ack_in.bits.allocation.candidate_class === captured(pending).candidate_class)
     assert(io.registry_allocation_ack_in.bits.allocation.transaction_identity.asUInt ===
       captured(pending).r1_request.transaction_identity.asUInt)
+    assert(io.registry_allocation_ack_in.bits.allocation.expected_fragment_count ===
+      captured(pending).r1_request.expected_fragment_count)
     assert(io.registry_allocation_ack_in.bits.allocation.target_descriptor.asUInt ===
       captured(pending).delivery_target_descriptor.asUInt)
     refs(pending) := io.registry_allocation_ack_in.bits.delivery_context_ref

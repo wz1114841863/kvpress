@@ -17,6 +17,7 @@ final class RouteATypedDeliveryHarness(p: RouteASkeletonParameters) extends Modu
     val r3_delivery = RouteAChannels.source_delivery(p)
     val append_delivery = RouteAChannels.source_delivery(p)
     val reclaim_delivery = RouteAChannels.source_delivery(p)
+    val read_delivery = RouteAChannels.resolved_delivery(p)
   })
   val registry = Module(new RouteADeliveryContextRegistry(p))
   val router = Module(new RouteATypedDeliveryRouter(p))
@@ -29,7 +30,7 @@ final class RouteATypedDeliveryHarness(p: RouteASkeletonParameters) extends Modu
   io.r3_delivery <> router.io.r3_packed_write_out
   io.append_delivery <> router.io.r5_append_out
   io.reclaim_delivery <> router.io.r5_reclaim_out
-  StructuralTieOff.sink(router.io.read_fragment_out)
+  io.read_delivery <> router.io.read_fragment_out
 }
 
 final class RouteATypedDeliveryRouterSpec extends AnyFunSpec with ChiselSim {
@@ -56,10 +57,11 @@ final class RouteATypedDeliveryRouterSpec extends AnyFunSpec with ChiselSim {
     d.descriptor_line.poke(0.U); d.s2_slot.poke(0.U); d.source_generation.poke(0.U)
     d.requires_sidecar.poke(false.B); d.pending_ordinal.poke(0.U); d.pending_explicit_empty.poke(false.B)
   }
-  private def driveAllocation(dut: RouteATypedDeliveryHarness, cls: Int, rid: Int, inc: Int, kind: Int, endpoint: Int): Unit = {
+  private def driveAllocation(dut: RouteATypedDeliveryHarness, cls: Int, rid: Int, inc: Int, kind: Int, endpoint: Int, expectedFragments: Int = 1): Unit = {
     val a = dut.io.allocate.bits
     a.candidate_class.poke(cls.U); a.transaction_identity.request_id.poke(rid.U); a.transaction_identity.incarnation.poke(inc.U)
-    a.target_kind.poke(kind.U); a.target_identity_generation.poke(0.U); driveDescriptor(a.target_descriptor, endpoint, 1)
+    a.target_kind.poke(kind.U); a.target_identity_generation.poke(0.U); a.expected_fragment_count.poke(expectedFragments.U)
+    driveDescriptor(a.target_descriptor, endpoint, 1)
   }
   private def driveDelivery(dut: RouteATypedDeliveryHarness, ref: Int, cls: Int, id: Int, rid: Int, inc: Int, last: Boolean = true): Unit = {
     val d = dut.io.delivery.bits
@@ -69,12 +71,12 @@ final class RouteATypedDeliveryRouterSpec extends AnyFunSpec with ChiselSim {
   }
   private def init(dut: RouteATypedDeliveryHarness): Unit = {
     dut.io.mem_init_done.poke(false.B); dut.io.allocate.valid.poke(false.B); dut.io.allocation_ack.ready.poke(false.B)
-    dut.io.delivery.valid.poke(false.B); dut.io.r3_delivery.ready.poke(false.B); dut.io.append_delivery.ready.poke(false.B); dut.io.reclaim_delivery.ready.poke(false.B)
+    dut.io.delivery.valid.poke(false.B); dut.io.r3_delivery.ready.poke(false.B); dut.io.append_delivery.ready.poke(false.B); dut.io.reclaim_delivery.ready.poke(false.B); dut.io.read_delivery.ready.poke(false.B)
     driveAllocation(dut, p.r2PackWriteClassCode, 0, 0, RouteADeliveryTargetKind.PackedWriteTerminal, RouteAWriteDeliveryEndpoint.P3PackedWrite)
     driveDelivery(dut, 0, p.r2PackWriteClassCode, 0, 0, 0)
   }
-  private def allocate(dut: RouteATypedDeliveryHarness, cls: Int, rid: Int, inc: Int, kind: Int, endpoint: Int): Int = {
-    driveAllocation(dut, cls, rid, inc, kind, endpoint); dut.io.allocate.valid.poke(true.B); dut.io.allocate.ready.expect(true.B); dut.clock.step()
+  private def allocate(dut: RouteATypedDeliveryHarness, cls: Int, rid: Int, inc: Int, kind: Int, endpoint: Int, expectedFragments: Int = 1): Int = {
+    driveAllocation(dut, cls, rid, inc, kind, endpoint, expectedFragments); dut.io.allocate.valid.poke(true.B); dut.io.allocate.ready.expect(true.B); dut.clock.step()
     dut.io.allocate.valid.poke(false.B); dut.io.allocation_ack.valid.expect(true.B)
     val ref = dut.io.allocation_ack.bits.delivery_context_ref.peek().litValue.toInt
     dut.io.allocation_ack.ready.poke(true.B); dut.clock.step(); dut.io.allocation_ack.ready.poke(false.B); ref
@@ -109,6 +111,24 @@ final class RouteATypedDeliveryRouterSpec extends AnyFunSpec with ChiselSim {
         RouteADeliveryTargetKind.DescriptorMaintenanceTerminal, RouteAWriteDeliveryEndpoint.R5Reclaim)
       driveDelivery(dut, reclaimRef, p.r2DescriptorMaintenanceClassCode, 3, 3, 0); dut.io.delivery.valid.poke(true.B); dut.io.delivery.ready.expect(true.B); dut.clock.step()
       dut.io.delivery.valid.poke(false.B); dut.io.reclaim_delivery.valid.expect(true.B); dut.io.append_delivery.valid.expect(false.B)
+    }
+  }
+
+  it("preserves the producer-owned expected fragment count on a held typed read handoff") {
+    simulate(new RouteATypedDeliveryHarness(p)) { dut =>
+      init(dut); dut.io.mem_init_done.poke(true.B); dut.clock.step()
+      val ref = allocate(dut, p.r2PackReadClassCode, 6, 0,
+        RouteADeliveryTargetKind.P3PendingRead, RouteAWriteDeliveryEndpoint.P3PackedWrite,
+        expectedFragments = 3)
+      driveDelivery(dut, ref, p.r2PackReadClassCode, 6, 6, 0, last = false)
+      dut.io.delivery.valid.poke(true.B); dut.io.delivery.ready.expect(true.B); dut.clock.step()
+      dut.io.delivery.valid.poke(false.B)
+      dut.io.read_delivery.valid.expect(true.B)
+      dut.io.read_delivery.bits.allocation.expected_fragment_count.expect(3.U)
+      dut.io.read_delivery.ready.poke(false.B); dut.clock.step()
+      dut.io.read_delivery.valid.expect(true.B)
+      dut.io.read_delivery.bits.allocation.expected_fragment_count.expect(3.U)
+      dut.io.read_delivery.ready.poke(true.B); dut.clock.step(); dut.io.read_delivery.ready.poke(false.B)
     }
   }
 }

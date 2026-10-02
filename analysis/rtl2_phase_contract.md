@@ -4,7 +4,7 @@
 rtl2_2_0_provenance_reconciled; rtl2_2_1_registry_association_implemented_directed_tested;
 rtl2_2_2_typed_write_delivery_implemented_directed_tested;
 rtl2_2_3_functional_storage_implemented_directed_tested;
-rtl2_2_4_read_delivery_context_in_progress`.
+rtl2_2_4_read_delivery_context_implemented_directed_tested`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -217,7 +217,7 @@ continues to keep its new S2 ingress/read carriers inactive: no R2 read
 producer, typed read deposition, source service, GQA packet, or R4 work is
 implicitly activated.
 
-**RTL2.2.4 read-delivery context completion: implementation in progress.**
+**RTL2.2.4 read-delivery context completion: implemented and directed tested.**
 [`rtl2_2_4_read_delivery_context_contract.md`](rtl2_2_4_read_delivery_context_contract.md)
 and its machine-readable manifest preserve the producer-originated
 `expected_fragment_count` in the immutable registry allocation.  This closes

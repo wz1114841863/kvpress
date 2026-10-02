@@ -72,6 +72,7 @@ final class RouteADeliveryContextAllocationBridgeSpec extends AnyFunSpec with Ch
     a.candidate_class.poke(p.r2DescriptorMaintenanceClassCode.U)
     a.transaction_identity.request_id.poke(2.U); a.transaction_identity.incarnation.poke(0.U)
     a.target_kind.poke(RouteADeliveryTargetKind.DescriptorMaintenanceTerminal.U); a.target_identity_generation.poke(0.U)
+    a.expected_fragment_count.poke(1.U)
     a.target_descriptor.write_endpoint.poke(RouteAWriteDeliveryEndpoint.R5Append.U)
     a.target_descriptor.p3_layer.poke(0.U); a.target_descriptor.p3_stage_generation.poke(0.U)
     a.target_descriptor.transaction_group_tag.poke(0.U); a.target_descriptor.descriptor_kind.poke(0.U)

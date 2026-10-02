@@ -1,7 +1,6 @@
 # RTL2.2.4 — read-delivery context completion
 
-**Status:** contract closed; implementation and directed-test closure in
-progress.  This closure completes an
+**Status:** implemented and directed tested.  This closure completes an
 immutable context prerequisite for later read-fragment endpoint activation; it
 does **not** activate a Route-A read candidate, payload deposit, S2 `READY`,
 direct-pending deliverability, source service, GQA, R4, or a physical-memory
@@ -88,3 +87,7 @@ immutable acknowledgement/release association and bridge echo checking; the
 top test guards composition after the bundle extension.  Passing evidence is
 synthesizable protocol/context evidence only—no complete read dataflow, RTL
 numeric correctness, deadlock freedom, or PPA claim.
+
+Recorded result for this closure: JSON manifest validation and `Test / compile`
+passed; the targeted suite passed 3/3 registry tests, 1/1 allocation-bridge
+test, 3/3 typed-router tests, and 3/3 structural-top tests (10/10 total).

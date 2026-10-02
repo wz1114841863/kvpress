@@ -51,6 +51,7 @@ final class RouteADeliveryContextRegistrySpec extends AnyFunSpec with ChiselSim 
     bits.transaction_identity.incarnation.poke(incarnation.U)
     bits.target_kind.poke(targetKind.U)
     bits.target_identity_generation.poke(generation.U)
+    bits.expected_fragment_count.poke(3.U)
     clearDescriptor(bits.target_descriptor)
   }
 
@@ -70,6 +71,7 @@ final class RouteADeliveryContextRegistrySpec extends AnyFunSpec with ChiselSim 
     bits.allocation.transaction_identity.incarnation.poke(incarnation.U)
     bits.allocation.target_kind.poke(targetKind.U)
     bits.allocation.target_identity_generation.poke(generation.U)
+    bits.allocation.expected_fragment_count.poke(3.U)
     clearDescriptor(bits.allocation.target_descriptor)
   }
 
@@ -107,6 +109,7 @@ final class RouteADeliveryContextRegistrySpec extends AnyFunSpec with ChiselSim 
     dut.io.allocation_ack_out.bits.allocation.transaction_identity.incarnation.expect(incarnation.U)
     dut.io.allocation_ack_out.bits.allocation.target_kind.expect(targetKind.U)
     dut.io.allocation_ack_out.bits.allocation.target_identity_generation.expect(generation.U)
+    dut.io.allocation_ack_out.bits.allocation.expected_fragment_count.expect(3.U)
     dut.io.allocation_ack_out.ready.poke(true.B)
     dut.clock.step()
     dut.io.allocation_ack_out.ready.poke(false.B)
@@ -126,10 +129,12 @@ final class RouteADeliveryContextRegistrySpec extends AnyFunSpec with ChiselSim 
       dut.io.allocation_ack_out.valid.expect(true.B)
       dut.io.allocation_ack_out.bits.delivery_context_ref.expect(0.U)
       dut.io.allocation_ack_out.bits.allocation.transaction_identity.request_id.expect(1.U)
+      dut.io.allocation_ack_out.bits.allocation.expected_fragment_count.expect(3.U)
       dut.io.allocation_ack_out.ready.poke(false.B); dut.clock.step()
       dut.io.allocation_ack_out.valid.expect(true.B)
       dut.io.allocation_ack_out.bits.delivery_context_ref.expect(0.U)
       dut.io.allocation_ack_out.bits.allocation.target_identity_generation.expect(2.U)
+      dut.io.allocation_ack_out.bits.allocation.expected_fragment_count.expect(3.U)
       dut.io.allocation_ack_out.ready.poke(true.B); dut.clock.step()
     }
   }
