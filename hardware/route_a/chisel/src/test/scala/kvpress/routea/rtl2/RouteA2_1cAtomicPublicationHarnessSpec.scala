@@ -61,7 +61,15 @@ final class RouteA2_1cAtomicPublicationHarnessSpec extends AnyFunSpec with Chise
     val f=d.io.hot_payload.bits; f.layer.poke(0.U); f.stage_generation.poke((pageId + 1).U); f.status.poke(0.U); f.payload_ref.poke(payloadRef.U)
     (0 until 8).foreach { i => f.fragment_index.poke(i.U); f.last.poke((i==7).B); f.data.poke((0x100 + pageId * 16 + i).U); d.io.hot_payload.valid.poke(true.B); d.io.hot_payload.ready.expect(true.B); d.clock.step() }; d.io.hot_payload.valid.poke(false.B)
     val s=d.io.hot_sidecar.bits; s.layer.poke(0.U); s.stage_generation.poke((pageId + 1).U); s.record_ordinal.poke(0.U); s.payload_ref.poke(payloadRef.U); s.logical_position.poke(position.U); d.io.hot_sidecar.valid.poke(true.B); d.io.hot_sidecar.ready.expect(true.B); d.clock.step(); d.io.hot_sidecar.valid.poke(false.B)
-    d.clock.step(); acceptReq(d,p.coreMemoryWriteRequestCode,0); (0 until 8).foreach(i=>acceptReq(d,p.coreMemoryWriteDataCode,i)); terminal(d, requestId=pageId)
+    d.clock.step(); acceptReq(d,p.coreMemoryWriteRequestCode,0); (0 until 8).foreach(i=>acceptReq(d,p.coreMemoryWriteDataCode,i))
+    // R1 consumes an unmatched external terminal at its boundary, but it must
+    // not emit it into the core path or mutate the R3 write association.
+    d.io.external.response.bits.transaction_identity.request_id.poke(pageId.U)
+    d.io.external.response.bits.transaction_identity.incarnation.poke(1.U)
+    d.io.external.response.bits.status.poke(0.U); d.io.external.response.valid.poke(true.B)
+    d.io.external.response.ready.expect(true.B); d.clock.step(); d.io.external.response.valid.poke(false.B)
+    d.io.p3_state.expect(4.U) // WRITE_ISSUED: stale response did not complete it.
+    terminal(d, requestId=pageId)
   }
 
   private def finishDescriptorWrites(d: RouteA2_1cAtomicPublicationHarness, firstRequestId: Int, tail: Boolean, fault: Boolean = false): Unit = {

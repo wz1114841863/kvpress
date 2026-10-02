@@ -40,7 +40,9 @@ the matching nested visibility acknowledgement.
 ## Fail-closed rules
 
 - A response without the exact outstanding member identity is `ready=0` and
-  cannot change M2-member state, P3 state, visibility, or authority.
+  cannot change M2-member state, P3 state, visibility, or authority. An
+  unmatched R1 external response is instead consumed at R1's stale-response
+  boundary, but cannot become a core response or mutate the write association.
 - A publication request is `ready=0` until R3's exact candidate has been
   accepted; stale/mismatched layer, generation, or tag is `ready=0`.
 - A matching member fault, descriptor terminal fault, or rejected nested
@@ -62,8 +64,10 @@ carriers for deterministic negative injection.
    sidecar each. The first page publishes through two exact member completions
    and R5 nested acknowledgement; the second page then executes both new-page
    and tail-link descriptor writes.
-2. A stale old-member response and a generation-mismatched publication request
-   are held fail-closed before the matching carrier is accepted.
+2. A stale R1 response incarnation is consumed without changing the
+   `WRITE_ISSUED` association; stale old-member and generation-mismatched
+   publication carriers are held fail-closed before a matching carrier is
+   accepted.
 3. An R1 descriptor terminal fault and an exact outstanding M2 member fault
    each leave the stage `FAULTED`, with no M2 publication candidate or
    authority handoff.
