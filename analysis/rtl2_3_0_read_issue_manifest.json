@@ -1,0 +1,56 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-3-0-read-issue-1.0",
+  "status": "implemented_directed_tested_interface_only",
+  "scope": "Producer-originated logical read-issue descriptor and channel factory. No live candidate, R2 arbitration, R1 request, payload response deposit, source service, GQA, R4, scoreboard event emission, physical-memory, timing, throughput, PPA, model/GPU, numeric RTL, or new A4 DSE behavior.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_0c_r2_ingress_delivery_context_contract.md",
+    "analysis/rtl2_0d_typed_delivery_router_contract.md",
+    "analysis/rtl2_2_4_read_delivery_context_contract.md"
+  ],
+  "descriptor": {
+    "name": "ReadIssueDescriptor",
+    "channel": "RouteAChannels.read_issue_descriptor",
+    "fields": [
+      {"name":"delivery_context_ref","source":"existing immutable R2 context association","rule":"never response-derived"},
+      {"name":"candidate_class","source":"existing named R2 producer class","rule":"R2 retains arbitration and rotation ownership"},
+      {"name":"transaction_identity","source":"producer-owned live identity","rule":"never allocated or reconstructed by endpoint"},
+      {"name":"source_kind","source":"RouteASourceKind canonical vocabulary","rule":"hot is illegal for a core-memory read"},
+      {"name":"payload_handle_or_address","source":"owner-owned opaque core-side reference","rule":"not an HBM/controller address format"},
+      {"name":"valid_count","source":"frozen 64-token page/pending semantic fact","rule":"range 0..64; never endpoint-defaulted or response-derived"},
+      {"name":"expected_generation_or_validity","source":"owner-owned generation/validity association","rule":"must match immutable target association"},
+      {"name":"destination_endpoint","source":"existing core-side destination field","rule":"must agree with immutable target descriptor"},
+      {"name":"expected_fragment_count","source":"producer request fact captured by RTL2.2.4","rule":"never reconstructed from last/response"},
+      {"name":"target_descriptor","source":"existing immutable endpoint descriptor","rule":"retains PageRef and requires_sidecar without choosing sidecar mapping"}
+    ]
+  },
+  "future_owner_table": [
+    {"candidate_class":"pack_read","fact_owner":"route_a_m2_p3_wrapper","endpoint_owner":"route_a_m2_p3_wrapper.functional_p3_payload_endpoint","source_kind":"pending"},
+    {"candidate_class":"direct_pending","fact_owner":"route_a_m2_p3_wrapper","endpoint_owner":"route_a_direct_pending_endpoint_v1.functional_pending_transport_endpoint","source_kind":"pending"},
+    {"candidate_class":"s2_packed","fact_owner":"route_a_page_manager","endpoint_owner":"route_a_s2_gqa_source_wrapper.functional_s2_payload_endpoint","source_kind":"packed"},
+    {"candidate_class":"s2_full","fact_owner":"existing common Full-KV source owner","endpoint_owner":"route_a_s2_gqa_source_wrapper.functional_s2_payload_endpoint","source_kind":"outside_route_a_incremental_payload_path"}
+  ],
+  "scoreboard": {
+    "new_architectural_event_emitted": false,
+    "existing_events_not_reinterpreted": ["request_accept", "fragment_deliver"],
+    "rule": "A planning-only read_issue observation cannot substitute for R1 acceptance or typed fragment delivery."
+  },
+  "required_invariants": [
+    "The top does not construct a read-issue descriptor.",
+    "Only named source fact owners provide handle, valid_count, identity, and generation facts.",
+    "R2 remains sole owner of arbitration, credits, FIFO order, rotation, and grant-on-R1-accept.",
+    "Endpoints never reconstruct a descriptor field from an R1 response.",
+    "requires_sidecar plus PageRef preserve obligation without selecting a sidecar address mapping or transport sequence.",
+    "No source deliverability or authority transition follows from descriptor presence."
+  ],
+  "tests": ["RouteAReadIssueDescriptorSpec", "Test / compile"],
+  "evidence_labels": [
+    "synthesizable interface/elaboration evidence",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL numeric-correctness claim",
+    "no new A4 DSE"
+  ]
+}

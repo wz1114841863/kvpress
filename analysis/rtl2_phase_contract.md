@@ -4,7 +4,8 @@
 rtl2_2_0_provenance_reconciled; rtl2_2_1_registry_association_implemented_directed_tested;
 rtl2_2_2_typed_write_delivery_implemented_directed_tested;
 rtl2_2_3_functional_storage_implemented_directed_tested;
-rtl2_2_4_read_delivery_context_implemented_directed_tested`.
+rtl2_2_4_read_delivery_context_implemented_directed_tested;
+rtl2_3_0_read_issue_contract_implemented_directed_tested`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -264,6 +265,16 @@ The complete canonical numbering map, including historical manifest labels, is
 [`rtl2_phase_numbering_reconciliation.md`](rtl2_phase_numbering_reconciliation.md).
 
 ## RTL2.3 — Source service and multi-source composition
+
+**RTL2.3.0 read-issue descriptor contract: implemented and directed tested.**
+[`rtl2_3_0_read_issue_contract.md`](rtl2_3_0_read_issue_contract.md) and its
+machine-readable manifest bind the pre-R1 read facts—opaque payload handle,
+`valid_count`, source generation/validity, destination, expected fragment
+count, and immutable endpoint descriptor—to one producer-originated logical
+record.  It names R3 as the pending/pack-read fact owner and R5 as the packed
+page-handle fact owner, while preserving S2/direct as endpoint owners.  It is
+not a live candidate, R1 request, R2 arbitration, response deposit, source
+deliverability, or scoreboard-event activation.
 
 Connect owner-produced hot, direct-pending, and packed/S2 source facts to the
 frozen source-instance and four-consumer protocol.  A source becomes

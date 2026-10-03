@@ -462,6 +462,34 @@ final class CoreMemoryRequest(p: RouteASkeletonParameters) extends Bundle {
   val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
 }
 
+/**
+  * Immutable, producer-originated logical description of one future R1 read
+  * issue.  This is deliberately not an R1 command, an HBM address format, or
+  * a scheduler decision: a later named source owner materializes the existing
+  * CoreMemoryRequest only after the R2-owned arbitration path accepts its
+  * candidate.  `target_descriptor.requires_sidecar` plus the frozen PageRef
+  * retain the sidecar obligation without selecting an address mapping or a
+  * sidecar transport sequence.
+  */
+final class ReadIssueDescriptor(p: RouteASkeletonParameters) extends Bundle {
+  // Existing R2 ownership key; it is not reconstructed from a response.
+  val delivery_context_ref = UInt(p.sourceDeliveryOpaqueWidth.W)
+  val candidate_class = UInt(p.candidateClassWidth.W)
+  val transaction_identity = new TransactionIdentity
+  // Canonical Route-A source vocabulary (hot, pending, packed).  A future
+  // core-read producer must reject hot because hot is not a core-memory read.
+  val source_kind = UInt(RouteAAnchorWidths.SourceKindWidth.W)
+  // Opaque core-side reference only, never an HBM/controller address claim.
+  val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+  // Frozen 0..64 page/pending semantic count; no endpoint-local default.
+  val valid_count = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val expected_generation_or_validity = UInt(p.sourceGenerationWidth.W)
+  val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
+  val expected_fragment_count = UInt(p.coreMemoryFragmentCountWidth.W)
+  // Retains P3/S2/direct endpoint-specific association and sidecar need.
+  val target_descriptor = new DeliveryTargetDescriptor(p)
+}
+
 final class CoreMemoryResponse(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
   val fragment_index = UInt(p.coreMemoryFragmentIndexWidth.W)
@@ -733,6 +761,7 @@ object RouteAChannels {
   def r4_result_stub = Decoupled(new R4ResultStub)
   def r4_numeric_fault = Decoupled(new R4NumericFault)
   def source_candidate(p: RouteASkeletonParameters) = Decoupled(new SourceCandidate(p))
+  def read_issue_descriptor(p: RouteASkeletonParameters) = Decoupled(new ReadIssueDescriptor(p))
   def core_mem_req(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryRequest(p))
   def core_mem_rsp(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryResponse(p))
   def source_delivery(p: RouteASkeletonParameters) = Decoupled(new SourceDelivery(p))
