@@ -285,6 +285,13 @@ without selecting an R2 winner.  It is not instantiated in the production top:
 read allocation, multi-producer ingress, R2/R1 acceptance, and every response
 or source-service effect remain later work.
 
+**RTL2.3.2 incremental read allocation/ingress: implemented and directed
+tested in isolation.** [`rtl2_3_2_read_ingress_contract.md`](rtl2_3_2_read_ingress_contract.md)
+connects the three Route-A incremental read lanes to the existing
+delivery-context registry and a lossless ordinal/id pre-R2 merge.  The new
+bridge/merge have no production-top instance: R2, R1, typed read delivery and
+all data/source behavior remain inactive.
+
 Connect owner-produced hot, direct-pending, and packed/S2 source facts to the
 frozen source-instance and four-consumer protocol.  A source becomes
 deliverable only after its own validity prerequisites; all four distinct GQA

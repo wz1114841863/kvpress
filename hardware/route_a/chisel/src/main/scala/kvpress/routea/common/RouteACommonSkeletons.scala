@@ -747,7 +747,49 @@ final class RouteAR2WriteIngressMerge(p: RouteASkeletonParameters) extends Modul
 }
 
 /**
-  * Sole pre-R2 allocation bridge for the three already-existing write
+  * RTL2.3.2 lossless pre-R2 merge for the Route-A incremental read lanes.
+  * It applies only the frozen producer-supplied ordinal/id comparison in order
+  * to present one carrier to the existing R2 FIFO owner; it has no storage,
+  * credit, cursor, request, or response state and does not replace R2's read
+  * rotation/arbitration.
+  */
+final class RouteAR2ReadIngressMerge(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_r2_read_ingress_merge"
+
+  val io = IO(new Bundle {
+    val r3_pack_read_in = Flipped(RouteAChannels.source_candidate(p))
+    val r3_direct_pending_in = Flipped(RouteAChannels.source_candidate(p))
+    val r5_s2_packed_in = Flipped(RouteAChannels.source_candidate(p))
+    val candidate_out = RouteAChannels.source_candidate(p)
+  })
+
+  private def earlier(left: SourceCandidate, right: SourceCandidate): Bool =
+    left.arrival_ordinal < right.arrival_ordinal ||
+      (left.arrival_ordinal === right.arrival_ordinal && left.candidate_id < right.candidate_id)
+
+  val inputs = Seq(io.r3_pack_read_in, io.r3_direct_pending_in, io.r5_s2_packed_in)
+  val validVec = VecInit(inputs.map(_.valid))
+  val choosePack = io.r3_pack_read_in.valid &&
+    (!io.r3_direct_pending_in.valid || earlier(io.r3_pack_read_in.bits, io.r3_direct_pending_in.bits)) &&
+    (!io.r5_s2_packed_in.valid || earlier(io.r3_pack_read_in.bits, io.r5_s2_packed_in.bits))
+  val chooseDirect = !choosePack && io.r3_direct_pending_in.valid &&
+    (!io.r5_s2_packed_in.valid || earlier(io.r3_direct_pending_in.bits, io.r5_s2_packed_in.bits))
+  val choosePacked = !choosePack && !chooseDirect && io.r5_s2_packed_in.valid
+  io.candidate_out.valid := validVec.asUInt.orR
+  io.candidate_out.bits := Mux(choosePack, io.r3_pack_read_in.bits,
+    Mux(chooseDirect, io.r3_direct_pending_in.bits, io.r5_s2_packed_in.bits))
+  io.r3_pack_read_in.ready := io.candidate_out.ready && choosePack
+  io.r3_direct_pending_in.ready := io.candidate_out.ready && chooseDirect
+  io.r5_s2_packed_in.ready := io.candidate_out.ready && choosePacked
+
+  val held = RegEnable(io.candidate_out.bits, io.candidate_out.valid && !io.candidate_out.ready)
+  when(RegNext(io.candidate_out.valid && !io.candidate_out.ready, false.B)) {
+    assert(io.candidate_out.bits.asUInt === held.asUInt)
+  }
+}
+
+/**
+ * Sole pre-R2 allocation bridge for the three already-existing write
   * producers. It owns no association or R2 ordering decision: the registry
   * owns refs, and the existing write-ingress merge still applies the frozen
   * `(arrival_ordinal, candidate_id)` rule after the opaque ref is bound.
@@ -794,6 +836,111 @@ final class RouteADeliveryContextAllocationBridge(p: RouteASkeletonParameters) e
   var best = 0.U.asTypeOf(new SourceCandidate(p))
   for (index <- 0 until producerCount) {
     val eligible = inputs(index).valid && !bound(index) && !awaitingRelease(index)
+    val take = eligible && (!found || earlier(inputs(index).bits, best))
+    selected = Mux(take, index.U, selected)
+    best = Mux(take, inputs(index).bits, best)
+    found = found || eligible
+  }
+
+  io.registry_allocate_out.valid := !allocationActive && found
+  io.registry_allocate_out.bits.candidate_class := best.candidate_class
+  io.registry_allocate_out.bits.transaction_identity := best.r1_request.transaction_identity
+  io.registry_allocate_out.bits.target_kind := targetKind(best)
+  io.registry_allocate_out.bits.target_identity_generation := best.delivery_target_descriptor.source_generation
+  io.registry_allocate_out.bits.expected_fragment_count := best.r1_request.expected_fragment_count
+  io.registry_allocate_out.bits.target_descriptor := best.delivery_target_descriptor
+  io.registry_allocation_ack_in.ready := allocationActive
+
+  when(io.registry_allocate_out.fire) {
+    captured(selected) := best
+    allocationProducer := selected
+    allocationActive := true.B
+  }
+  when(io.registry_allocation_ack_in.fire) {
+    val pending = allocationProducer
+    assert(io.registry_allocation_ack_in.bits.allocation.candidate_class === captured(pending).candidate_class)
+    assert(io.registry_allocation_ack_in.bits.allocation.transaction_identity.asUInt ===
+      captured(pending).r1_request.transaction_identity.asUInt)
+    assert(io.registry_allocation_ack_in.bits.allocation.expected_fragment_count ===
+      captured(pending).r1_request.expected_fragment_count)
+    assert(io.registry_allocation_ack_in.bits.allocation.target_descriptor.asUInt ===
+      captured(pending).delivery_target_descriptor.asUInt)
+    refs(pending) := io.registry_allocation_ack_in.bits.delivery_context_ref
+    bound(pending) := true.B
+    allocationActive := false.B
+  }
+
+  for (index <- 0 until producerCount) {
+    outputs(index).valid := bound(index) && !awaitingRelease(index)
+    outputs(index).bits := captured(index)
+    outputs(index).bits.delivery_context_ref := refs(index)
+    inputs(index).ready := outputs(index).fire
+    when(outputs(index).fire) {
+      bound(index) := false.B
+      awaitingRelease(index) := true.B
+    }
+    when(io.release_event_in.valid && awaitingRelease(index) &&
+      io.release_event_in.bits.delivery_context_ref === refs(index)) {
+      assert(io.release_event_in.bits.allocation.candidate_class === captured(index).candidate_class)
+      assert(io.release_event_in.bits.allocation.transaction_identity.asUInt ===
+        captured(index).r1_request.transaction_identity.asUInt)
+      awaitingRelease(index) := false.B
+    }
+  }
+}
+
+/**
+  * RTL2.3.2 read-lane counterpart to the write allocation bridge.  It only
+  * serializes registry allocation for R3 pack-read/direct-pending and R5
+  * packed-S2 producers.  It neither owns the opaque associations, selects an
+  * R2 grant, launches R1, nor accepts/delivers a response.
+  */
+final class RouteAReadDeliveryContextAllocationBridge(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_read_delivery_context_allocation_bridge"
+
+  val io = IO(new Bundle {
+    val r3_pack_read_in = Flipped(RouteAChannels.source_candidate(p))
+    val r3_direct_pending_in = Flipped(RouteAChannels.source_candidate(p))
+    val r5_s2_packed_in = Flipped(RouteAChannels.source_candidate(p))
+    val r3_pack_read_out = RouteAChannels.source_candidate(p)
+    val r3_direct_pending_out = RouteAChannels.source_candidate(p)
+    val r5_s2_packed_out = RouteAChannels.source_candidate(p)
+    val registry_allocate_out = RouteAChannels.delivery_context_allocate(p)
+    val registry_allocation_ack_in = Flipped(RouteAChannels.delivery_context_allocation_ack(p))
+    val release_event_in = Input(Valid(new DeliveryContextRelease(p)))
+  })
+
+  private val producerCount = 3
+  val inputs = Seq(io.r3_pack_read_in, io.r3_direct_pending_in, io.r5_s2_packed_in)
+  val outputs = Seq(io.r3_pack_read_out, io.r3_direct_pending_out, io.r5_s2_packed_out)
+  val bound = RegInit(VecInit(Seq.fill(producerCount)(false.B)))
+  val awaitingRelease = RegInit(VecInit(Seq.fill(producerCount)(false.B)))
+  val captured = Reg(Vec(producerCount, new SourceCandidate(p)))
+  val refs = Reg(Vec(producerCount, UInt(p.sourceDeliveryOpaqueWidth.W)))
+  val allocationActive = RegInit(false.B)
+  val allocationProducer = Reg(UInt(2.W))
+
+  private def earlier(left: SourceCandidate, right: SourceCandidate): Bool =
+    left.arrival_ordinal < right.arrival_ordinal ||
+      (left.arrival_ordinal === right.arrival_ordinal && left.candidate_id < right.candidate_id)
+  private def targetKind(candidate: SourceCandidate): UInt = MuxCase(0.U(RouteADeliveryTargetKind.Width.W), Seq(
+    (candidate.candidate_class === p.r2PackReadClassCode.U) -> RouteADeliveryTargetKind.P3PendingRead.U,
+    (candidate.candidate_class === p.r2DirectPendingClassCode.U) -> RouteADeliveryTargetKind.DirectPendingRead.U,
+    (candidate.candidate_class === p.r2S2PackedClassCode.U) -> RouteADeliveryTargetKind.S2PackedFill.U,
+  ))
+  private def legalReadCandidate(candidate: SourceCandidate): Bool = {
+    val readClass = candidate.candidate_class === p.r2PackReadClassCode.U ||
+      candidate.candidate_class === p.r2DirectPendingClassCode.U ||
+      candidate.candidate_class === p.r2S2PackedClassCode.U
+    readClass && candidate.r1_request.request_kind === p.coreMemoryReadRequestCode.U &&
+      candidate.r1_request.expected_fragment_count =/= 0.U
+  }
+
+  var found: Bool = false.B
+  var selected = 0.U(2.W)
+  var best = 0.U.asTypeOf(new SourceCandidate(p))
+  for (index <- 0 until producerCount) {
+    val eligible = inputs(index).valid && legalReadCandidate(inputs(index).bits) && !bound(index) && !awaitingRelease(index)
     val take = eligible && (!found || earlier(inputs(index).bits, best))
     selected = Mux(take, index.U, selected)
     best = Mux(take, inputs(index).bits, best)

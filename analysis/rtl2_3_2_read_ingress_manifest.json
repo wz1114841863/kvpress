@@ -1,0 +1,40 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-3-2-read-ingress-1.0",
+  "status": "implemented_directed_tested_isolated_not_top_activated",
+  "scope": "Three Route-A incremental read-lane registry-allocation and lossless pre-R2 merge. No production-top instance, R2/core-arbiter connection, R1 launch, response deposit, source delivery, scoreboard event, physical-memory, timing, throughput, PPA, numeric RTL, model/GPU, or new A4 DSE behavior.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_3_0_read_issue_contract.md",
+    "analysis/rtl2_3_1_read_candidate_adapter_contract.md",
+    "analysis/rtl2_2_1_delivery_context_registry_contract.md",
+    "analysis/rtl2_2_2_typed_delivery_router_contract.md"
+  ],
+  "lanes": [
+    {"name":"r3_pack_read","fact_owner":"route_a_m2_p3_wrapper","candidate_class":"pack_read","target_kind":"p3_pending_read","endpoint_owner":"route_a_m2_p3_wrapper.functional_p3_payload_endpoint"},
+    {"name":"r3_direct_pending","fact_owner":"route_a_m2_p3_wrapper","candidate_class":"direct_pending","target_kind":"direct_pending_read","endpoint_owner":"route_a_direct_pending_endpoint_v1.functional_pending_transport_endpoint"},
+    {"name":"r5_s2_packed","fact_owner":"route_a_page_manager","candidate_class":"s2_packed","target_kind":"s2_packed_fill","endpoint_owner":"route_a_s2_gqa_source_wrapper.functional_s2_payload_endpoint"}
+  ],
+  "excluded_common_lane": {"name":"s2_full","reason":"existing common Full-KV source infrastructure is outside Route-A incremental activation"},
+  "modules": [
+    {"name":"route_a_read_delivery_context_allocation_bridge","owner":"registry-allocation serialization only","state":"per-lane captured candidate/ref/release wait; no association ownership or R2 scheduling"},
+    {"name":"route_a_r2_read_ingress_merge","owner":"lossless pre-R2 composition only","state":"none; no FIFO/credit/cursor/R1/response state"}
+  ],
+  "required_invariants": [
+    "Only pack_read, direct_pending, and s2_packed read-class carriers with a read request kind and nonzero expected fragment count can allocate through the bridge.",
+    "Registry acknowledgement must exactly echo class, identity, expected fragment count, and target descriptor before a lane exposes its bound ref.",
+    "The merge compares only existing producer ordinal/id fields and preserves its output under ready-low.",
+    "A lane remains unavailable until the exact router release is applied to both bridge and registry.",
+    "Production top does not instantiate either module in this closure."
+  ],
+  "scoreboard": {"new_architectural_event_emitted": false, "existing_events_not_emitted":["request_accept","fragment_deliver"]},
+  "tests": ["RouteAReadIngressSpec", "RouteAReadIssueDescriptorSpec", "Test / compile"],
+  "evidence_labels": [
+    "synthesizable functional-control/association evidence",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL numeric-correctness claim",
+    "no new A4 DSE"
+  ]
+}
