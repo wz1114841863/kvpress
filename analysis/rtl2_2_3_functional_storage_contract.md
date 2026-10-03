@@ -29,7 +29,7 @@ and retains the already-active, flat reference backing from RTL2.1b:
 That backing already checks immutable admission membership, payload reference,
 logical position, fragment order, and sidecar completion before the existing
 R3 pack-write path may proceed.  It remains transient: pending or packed
-state, not P3, is authoritative.  RTL2.3 reconfirms it through the RTL2.1b
+state, not P3, is authoritative.  RTL2.2.3 reconfirms it through the RTL2.1b
 write-path regression rather than introducing a second writer or an
 unconnected copy.
 
@@ -85,7 +85,7 @@ The following remain outside this closure:
 - R2 read-candidate production and typed read-router endpoint deposition;
 - P3 pending-read service and actual packed-page read request construction;
 - S2/direct-pending source service, source-packet formation, GQA consumer
-  partial updates, source release integration, and R4 composition (RTL2.4+);
+  partial updates, source release integration, and R4 composition (RTL2.3+);
 - physical memory realization, HBM controller/CDC, port/bank selection,
   service schedule, clock/frequency, timing, bandwidth, energy, and PPA; and
 - any pruning, admission, page-size, M2, scheduler, atomic-publication, or
