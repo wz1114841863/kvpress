@@ -475,6 +475,11 @@ final class ReadIssueDescriptor(p: RouteASkeletonParameters) extends Bundle {
   // Existing R2 ownership key; it is not reconstructed from a response.
   val delivery_context_ref = UInt(p.sourceDeliveryOpaqueWidth.W)
   val candidate_class = UInt(p.candidateClassWidth.W)
+  // Existing producer-owned R2 ordering/predicate facts.  The adapter below
+  // copies them verbatim; it never selects a winner or derives eligibility.
+  val arrival_ordinal = UInt(p.candidateOrdinalWidth.W)
+  val candidate_id = UInt(p.candidateIdWidth.W)
+  val eligibility_snapshot = UInt(p.candidatePredicateWidth.W)
   val transaction_identity = new TransactionIdentity
   // Canonical Route-A source vocabulary (hot, pending, packed).  A future
   // core-read producer must reject hot because hot is not a core-memory read.

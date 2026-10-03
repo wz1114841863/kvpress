@@ -654,6 +654,57 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
 }
 
 /**
+  * RTL2.3.1 producer-local read issue refinement.  It translates only a
+  * named owner's immutable ReadIssueDescriptor into the pre-existing R2
+  * SourceCandidate carrier.  It contains no queue, arbitration, identity
+  * allocation, response handling, endpoint deposition, or authority state.
+  * The production top deliberately does not instantiate it until a later
+  * read-ingress closure names and connects all producer lanes.
+  */
+final class RouteAReadIssueCandidateAdapter(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_read_issue_candidate_adapter"
+
+  val io = IO(new Bundle {
+    val read_issue_in = Flipped(RouteAChannels.read_issue_descriptor(p))
+    val candidate_out = RouteAChannels.source_candidate(p)
+  })
+
+  val issue = io.read_issue_in.bits
+  val isReadClass = issue.candidate_class === p.r2S2FullClassCode.U ||
+    issue.candidate_class === p.r2S2PackedClassCode.U ||
+    issue.candidate_class === p.r2DirectPendingClassCode.U ||
+    issue.candidate_class === p.r2PackReadClassCode.U
+  val isCoreReadSource = issue.source_kind =/= RouteASourceKind.Hot.U
+  val validCountLegal = issue.valid_count =/= 0.U && issue.valid_count <= 64.U
+  val fragmentsLegal = issue.expected_fragment_count =/= 0.U
+  val notExplicitEmpty = !issue.target_descriptor.pending_explicit_empty
+  val issueLegal = isReadClass && isCoreReadSource && validCountLegal && fragmentsLegal && notExplicitEmpty
+
+  io.candidate_out.valid := io.read_issue_in.valid && issueLegal
+  io.candidate_out.bits := 0.U.asTypeOf(new SourceCandidate(p))
+  io.candidate_out.bits.candidate_class := issue.candidate_class
+  io.candidate_out.bits.arrival_ordinal := issue.arrival_ordinal
+  io.candidate_out.bits.candidate_id := issue.candidate_id
+  io.candidate_out.bits.eligibility_snapshot := issue.eligibility_snapshot
+  io.candidate_out.bits.delivery_context_ref := issue.delivery_context_ref
+  io.candidate_out.bits.delivery_target_descriptor := issue.target_descriptor
+  io.candidate_out.bits.r1_request.transaction_identity := issue.transaction_identity
+  io.candidate_out.bits.r1_request.request_kind := p.coreMemoryReadRequestCode.U
+  io.candidate_out.bits.r1_request.destination := issue.destination_endpoint
+  io.candidate_out.bits.r1_request.address_ref := issue.payload_handle_or_address
+  io.candidate_out.bits.r1_request.expected_fragment_count := issue.expected_fragment_count
+  io.candidate_out.bits.r1_request.fragment_index := 0.U
+  io.candidate_out.bits.r1_request.last := false.B
+  io.candidate_out.bits.r1_request.data := 0.U
+  io.read_issue_in.ready := io.candidate_out.ready && issueLegal
+
+  val held = RegEnable(io.candidate_out.bits, io.candidate_out.valid && !io.candidate_out.ready)
+  when(RegNext(io.candidate_out.valid && !io.candidate_out.ready, false.B)) {
+    assert(io.candidate_out.bits.asUInt === held.asUInt)
+  }
+}
+
+/**
   * RTL2.1b logical multi-producer ingress for the sole R2 FIFO owner.  It is
   * a lossless ready/valid merge, not a second FIFO, scheduler, or controller.
   * Among simultaneously offered candidates it selects the frozen ordinal/id

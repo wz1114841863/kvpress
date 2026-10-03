@@ -1,0 +1,64 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-3-1-read-candidate-adapter-1.0",
+  "status": "implemented_directed_tested_isolated_not_top_activated",
+  "scope": "State-free producer-local ReadIssueDescriptor to SourceCandidate refinement. It is not instantiated in the production top and does not allocate context, enter R2, launch R1, process a response, mutate payload, make a source deliverable, emit a scoreboard event, or make physical/timing/PPA/numeric/model claims.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_3_0_read_issue_contract.md",
+    "analysis/rtl2_0c_r2_ingress_delivery_context_contract.md",
+    "analysis/rtl2_2_4_read_delivery_context_contract.md"
+  ],
+  "module": {
+    "name": "route_a_read_issue_candidate_adapter",
+    "input_owner": "future named R3 or R5 source fact owner",
+    "output_owner": "future named producer lane; R2 remains sole arbiter",
+    "state": "none",
+    "top_instantiated": false
+  },
+  "exact_copy_fields": [
+    "delivery_context_ref",
+    "candidate_class",
+    "arrival_ordinal",
+    "candidate_id",
+    "eligibility_snapshot",
+    "transaction_identity",
+    "target_descriptor"
+  ],
+  "r1_read_materialization": {
+    "request_kind": "coreMemoryReadRequestCode",
+    "destination": "destination_endpoint",
+    "address_ref": "payload_handle_or_address",
+    "expected_fragment_count": "expected_fragment_count",
+    "fragment_index": 0,
+    "last": false,
+    "data": 0
+  },
+  "fail_closed_conditions": [
+    "candidate_class is not a frozen read class",
+    "source_kind is hot",
+    "valid_count is zero or exceeds 64",
+    "expected_fragment_count is zero",
+    "target_descriptor.pending_explicit_empty is true"
+  ],
+  "invariants": [
+    "The adapter never selects between producers or changes arrival_ordinal/candidate_id/eligibility_snapshot.",
+    "The adapter never allocates, binds, releases, or reconstructs a delivery context reference.",
+    "A legal candidate remains stable while valid and ready is low.",
+    "No R2 rotation, credit, FIFO, or R1 acceptance is caused by isolated adapter operation.",
+    "No source deliverability or authority transition follows from candidate construction."
+  ],
+  "scoreboard": {
+    "new_architectural_event_emitted": false,
+    "existing_events_not_emitted": ["request_accept", "fragment_deliver"]
+  },
+  "tests": ["RouteAReadIssueDescriptorSpec", "Test / compile"],
+  "evidence_labels": [
+    "synthesizable interface/functional-control evidence",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL numeric-correctness claim",
+    "no new A4 DSE"
+  ]
+}

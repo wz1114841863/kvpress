@@ -276,6 +276,15 @@ page-handle fact owner, while preserving S2/direct as endpoint owners.  It is
 not a live candidate, R1 request, R2 arbitration, response deposit, source
 deliverability, or scoreboard-event activation.
 
+**RTL2.3.1 producer-local candidate refinement: implemented and directed
+tested.** [`rtl2_3_1_read_candidate_adapter_contract.md`](rtl2_3_1_read_candidate_adapter_contract.md)
+adds the state-free `ReadIssueDescriptor -> SourceCandidate` translation used
+by a future named R3/R5 source producer.  It rejects malformed or non-read
+issues before candidate creation and copies producer ordering/predicate facts
+without selecting an R2 winner.  It is not instantiated in the production top:
+read allocation, multi-producer ingress, R2/R1 acceptance, and every response
+or source-service effect remain later work.
+
 Connect owner-produced hot, direct-pending, and packed/S2 source facts to the
 frozen source-instance and four-consumer protocol.  A source becomes
 deliverable only after its own validity prerequisites; all four distinct GQA
