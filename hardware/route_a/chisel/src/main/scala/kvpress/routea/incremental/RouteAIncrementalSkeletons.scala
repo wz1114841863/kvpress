@@ -626,6 +626,9 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
     val direct_pending_record_terminal_in = Flipped(RouteAChannels.direct_pending_record_terminal(p))
     val gqa_consumer_commit_in = Flipped(RouteAChannels.gqa_consumer_commit(p))
     val direct_release_out = RouteAChannels.source_release(p)
+    // Read-only local observation for the exact C3 typed endpoint match. It
+    // grants no source data, scheduling, ownership, or generation choice.
+    val direct_observe_identity = Output(new TransactionIdentity)
     val direct_observe_generation = Output(UInt(p.sourceGenerationWidth.W))
     val direct_observe_active = Output(Bool())
     val component_status_out = RouteAChannels.component_status(p)
@@ -710,6 +713,7 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
     assert(io.direct_release_out.bits.asUInt === heldRelease.asUInt)
   }
 
+  io.direct_observe_identity := identity
   io.direct_observe_generation := endpointGeneration
   io.direct_observe_active := active
   io.component_status_out.valid := initialized && io.drain_collection_enable && !active

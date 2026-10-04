@@ -321,6 +321,17 @@ single-outstanding schedule.  The production top keeps the work/issue boundary
 inactive because hot-versus-pack P3 ingress composition and a live work producer
 remain separately scoped; no top source-service claim is made.
 
+**RTL2.3-C3 direct-pending record endpoint: implemented and directed tested in
+an integration harness.** C3 keeps Gate-A1 `direct_pending_endpoint_v1` as a
+direct transient transport: one pending 512-B record maps to one eight-fragment
+R1 read, and a typed endpoint forwards each exact fragment before issuing the
+existing control-only direct terminal. It binds the direct endpoint's active
+identity and generated endpoint generation before any payload handoff; stale
+identity, generation mismatch, terminal fault, and malformed matching response
+cannot hand off payload or make a source deliverable. C3 creates no S2 slot,
+pending buffer, source packet, R4 input, numeric operation, top-level work
+producer, or scheduler.
+
 Connect owner-produced hot, direct-pending, and packed/S2 source facts to the
 frozen source-instance and four-consumer protocol.  A source becomes
 deliverable only after its own validity prerequisites; all four distinct GQA

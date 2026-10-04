@@ -1,0 +1,46 @@
+{
+  "schema": "kvpress-route-a-rtl2-3-c3-provenance-v1",
+  "status": "closed_functional_harness",
+  "evidence_label": [
+    "synthesizable functional control/dataflow RTL",
+    "directed Chisel simulation",
+    "no model or GPU",
+    "no timing throughput or PPA claim",
+    "no new A4 DSE"
+  ],
+  "scope": {
+    "record_bytes": 512,
+    "r1_fragment_bytes": 64,
+    "expected_fragments_per_record": 8,
+    "endpoint": "direct_pending_endpoint_v1",
+    "top_behavioral_activation": false
+  },
+  "source_sha256": {
+    "analysis/architecture_spec.md": "b7ab7f29fe01c5f28f6d270e16250fff2bbb28043d61727c5462f99a3c9e47b3",
+    "analysis/rtl2_phase_contract.md": "394ef9171e4aa0e4122eac08d829f7f80461c1eceff416236d5424e7ebc601c3",
+    "analysis/rtl2_3_completion_review.md": "704f300cae0cad35e91ababf9ecee0ddc463175a94a0bed39f0075fc78a5132b",
+    "analysis/rtl2_3_c3_direct_pending_contract.md": "ae70c8ecc6a57ffcbc31e2d608e4730a40d9dd9f94e51df8629f40df92d1bd82",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "d442fb36ad9352c4b23e975652a21fd152e5214571bff9d3f152ca231622d8fb",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "c7d9eec2c45ebf28e1bb63598a63182f519de40780fa684b43fce901d27ec46e",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "07694481d9a9edadf8c2f032d189318042f39b4e00a1d12b95438793bfc21db5",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteADirectPendingReadPathSpec.scala": "fe646f43acdd11acd2e0d19d0d2eabefea0583b7fb27ddf5f3fc30eabb9271a3"
+  },
+  "verification": [
+    {
+      "command": "env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'Test / compile'",
+      "result": "pass"
+    },
+    {
+      "command": "env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteADirectPendingReadPathSpec'",
+      "result": "pass"
+    },
+    {
+      "command": "env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.s2.RouteAS2DirectPendingSpec'",
+      "result": "pass"
+    },
+    {
+      "command": "env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec -- -z \\\"elaborate every frozen hierarchy module\\\"'",
+      "result": "pass"
+    }
+  ]
+}

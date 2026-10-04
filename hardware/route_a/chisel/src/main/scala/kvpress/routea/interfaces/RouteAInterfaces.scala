@@ -94,6 +94,9 @@ final class DeliveryTargetDescriptor(p: RouteASkeletonParameters) extends Bundle
   // core-side address/handle: the latter is transport-facing while this field
   // is the exact association P3 checks before functional deposition.
   val p3_member_payload_ref = UInt(RouteAAnchorWidths.PayloadRefWidth.W)
+  // Direct-pending source completion is distinct from the last fragment of a
+  // 512-B record. This immutable flag reaches the typed endpoint unchanged.
+  val direct_source_last = Bool()
   val pending_explicit_empty = Bool()
 }
 
@@ -339,6 +342,21 @@ final class DirectPendingRecordTerminal(p: RouteASkeletonParameters) extends Bun
   val explicit_empty = Bool()
 }
 
+/**
+  * One transient 64-B direct-pending fragment after exact typed endpoint
+  * validation. It is not a pending payload buffer, source packet, R4 value
+  * fragment, or physical transport claim.
+  */
+final class DirectPendingPayloadFragment(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val endpoint_generation = UInt(p.sourceGenerationWidth.W)
+  val ordinal = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
+  val fragment_index = UInt(p.coreMemoryFragmentIndexWidth.W)
+  val record_last_fragment = Bool()
+  val source_last = Bool()
+  val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
+}
+
 /** Control-only activation for the hot owner; it carries no hot K/V payload. */
 final class HotSourceOpen(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
@@ -522,6 +540,20 @@ final class P3PackReadWork(p: RouteASkeletonParameters) extends Bundle {
   val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
   val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
   val source_generation = UInt(p.sourceGenerationWidth.W)
+}
+
+/** One R3-owned direct-pending 512-B record read, i.e. eight 64-B fragments. */
+final class DirectPendingReadWork(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val arrival_ordinal = UInt(p.candidateOrdinalWidth.W)
+  val candidate_id = UInt(p.candidateIdWidth.W)
+  val eligibility_snapshot = UInt(p.candidatePredicateWidth.W)
+  val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+  val valid_count = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
+  val endpoint_generation = UInt(p.sourceGenerationWidth.W)
+  val pending_ordinal = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
+  val source_last = Bool()
 }
 
 final class CoreMemoryResponse(p: RouteASkeletonParameters) extends Bundle {
@@ -797,6 +829,8 @@ object RouteAChannels {
   def source_candidate(p: RouteASkeletonParameters) = Decoupled(new SourceCandidate(p))
   def read_issue_descriptor(p: RouteASkeletonParameters) = Decoupled(new ReadIssueDescriptor(p))
   def p3_pack_read_work(p: RouteASkeletonParameters) = Decoupled(new P3PackReadWork(p))
+  def direct_pending_read_work(p: RouteASkeletonParameters) = Decoupled(new DirectPendingReadWork(p))
+  def direct_pending_payload_fragment(p: RouteASkeletonParameters) = Decoupled(new DirectPendingPayloadFragment(p))
   def core_mem_req(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryRequest(p))
   def core_mem_rsp(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryResponse(p))
   def source_delivery(p: RouteASkeletonParameters) = Decoupled(new SourceDelivery(p))

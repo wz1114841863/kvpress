@@ -497,6 +497,17 @@ fields; their concrete controller mapping is not an HBM implementation claim.
 fallback policy are not selected here and may not change the mask or admission
 semantics.
 
+For the direct-pending record path, one 512-B pending record is carried as
+exactly eight logical 64-B R1 fragments. The endpoint may hand off each exact
+validated fragment only as transient direct transport; it may emit its existing
+control-only `pending_record_rsp` terminal only after the eighth fragment is
+accepted. `source_last` is a distinct immutable descriptor fact, not the
+record's eighth-fragment `last` bit. The terminal can make the existing direct
+endpoint locally deliverable, but is not itself a source packet, R4 value
+fragment, numeric result, S2 fill, new pending residency, or authority transfer.
+Identity/generation mismatches and fault or malformed R1 responses cannot make
+a direct source deliverable or transfer payload data.
+
 ### Request lifetime and stale-response contract
 
 An accepted `(request_id, incarnation)` becomes live and remains live until

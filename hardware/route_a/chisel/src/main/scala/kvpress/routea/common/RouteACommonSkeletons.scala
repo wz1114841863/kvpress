@@ -728,6 +728,55 @@ final class RouteAReadIssueCandidateAdapter(p: RouteASkeletonParameters) extends
 }
 
 /**
+  * RTL2.3-C3 stateless R3 producer for one direct-pending record read. It
+  * fixes immutable transaction association but owns neither direct-source
+  * opening, R2 selection, R1 lifecycle, endpoint generation allocation, nor
+  * source completion. The 512-B record always uses eight logical 64-B R1
+  * fragments; this is not a physical HBM transfer claim.
+  */
+final class RouteAR3DirectPendingReadProducer(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_r3_direct_pending_read_producer"
+
+  val io = IO(new Bundle {
+    val work_in = Flipped(RouteAChannels.direct_pending_read_work(p))
+    val read_issue_out = RouteAChannels.read_issue_descriptor(p)
+  })
+
+  val work = io.work_in.bits
+  val validCountLegal = work.valid_count =/= 0.U && work.valid_count <= 64.U
+  val workLegal = validCountLegal
+  io.read_issue_out.valid := io.work_in.valid && workLegal
+  io.read_issue_out.bits := 0.U.asTypeOf(new ReadIssueDescriptor(p))
+  io.read_issue_out.bits.delivery_context_ref := 0.U
+  io.read_issue_out.bits.candidate_class := p.r2DirectPendingClassCode.U
+  io.read_issue_out.bits.arrival_ordinal := work.arrival_ordinal
+  io.read_issue_out.bits.candidate_id := work.candidate_id
+  io.read_issue_out.bits.eligibility_snapshot := work.eligibility_snapshot
+  io.read_issue_out.bits.transaction_identity := work.transaction_identity
+  io.read_issue_out.bits.source_kind := RouteASourceKind.Pending.U
+  io.read_issue_out.bits.payload_handle_or_address := work.payload_handle_or_address
+  io.read_issue_out.bits.valid_count := work.valid_count
+  io.read_issue_out.bits.expected_generation_or_validity := work.endpoint_generation
+  io.read_issue_out.bits.destination_endpoint := work.destination_endpoint
+  io.read_issue_out.bits.expected_fragment_count := 8.U
+  io.read_issue_out.bits.target_descriptor.write_endpoint := 0.U
+  io.read_issue_out.bits.target_descriptor.p3_layer := 0.U
+  io.read_issue_out.bits.target_descriptor.p3_stage_generation := 0.U
+  io.read_issue_out.bits.target_descriptor.transaction_group_tag := 0.U
+  io.read_issue_out.bits.target_descriptor.descriptor_kind := 0.U
+  io.read_issue_out.bits.target_descriptor.descriptor_page_ref := 0.U.asTypeOf(new PageRef)
+  io.read_issue_out.bits.target_descriptor.descriptor_line := 0.U
+  io.read_issue_out.bits.target_descriptor.s2_slot := 0.U
+  io.read_issue_out.bits.target_descriptor.source_generation := work.endpoint_generation
+  io.read_issue_out.bits.target_descriptor.requires_sidecar := false.B
+  io.read_issue_out.bits.target_descriptor.pending_ordinal := work.pending_ordinal
+  io.read_issue_out.bits.target_descriptor.p3_member_payload_ref := 0.U
+  io.read_issue_out.bits.target_descriptor.direct_source_last := work.source_last
+  io.read_issue_out.bits.target_descriptor.pending_explicit_empty := false.B
+  io.work_in.ready := workLegal && io.read_issue_out.ready
+}
+
+/**
   * RTL2.1b logical multi-producer ingress for the sole R2 FIFO owner.  It is
   * a lossless ready/valid merge, not a second FIFO, scheduler, or controller.
   * Among simultaneously offered candidates it selects the frozen ordinal/id
@@ -1272,6 +1321,86 @@ final class RouteAR3PackReadEndpoint(p: RouteASkeletonParameters) extends Module
     io.p3_pending_fragment_out.valid && !io.p3_pending_fragment_out.ready)
   when(RegNext(io.p3_pending_fragment_out.valid && !io.p3_pending_fragment_out.ready, false.B)) {
     assert(io.p3_pending_fragment_out.bits.asUInt === held.asUInt)
+  }
+}
+
+/**
+  * RTL2.3-C3 registry-resolved endpoint for one direct-pending 512-B record.
+  * It forwards eight exact 64-B fragments only to a transient direct transport
+  * handoff, then emits the existing control-only terminal. It contains no
+  * payload storage, source packet, GQA, R4, or numeric behavior.
+  */
+final class RouteADirectPendingReadEndpoint(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_direct_pending_read_endpoint"
+
+  val io = IO(new Bundle {
+    val resolved_fragment_in = Flipped(RouteAChannels.resolved_delivery(p))
+    val endpoint_active_in = Input(Bool())
+    val endpoint_identity_in = Input(new TransactionIdentity)
+    val endpoint_generation_in = Input(UInt(p.sourceGenerationWidth.W))
+    val payload_fragment_out = RouteAChannels.direct_pending_payload_fragment(p)
+    val record_terminal_out = RouteAChannels.direct_pending_record_terminal(p)
+  })
+
+  val resolved = io.resolved_fragment_in.bits
+  val source = resolved.source_delivery
+  val allocation = resolved.allocation
+  val descriptor = allocation.target_descriptor
+  val response = source.r1_response
+  val responseOk = response.status === p.coreMemoryOkStatusCode.U
+  val responseFault = response.status === p.coreMemoryFaultStatusCode.U
+  val endpointMatches = io.endpoint_active_in &&
+    io.endpoint_identity_in.asUInt === allocation.transaction_identity.asUInt &&
+    io.endpoint_generation_in === descriptor.source_generation &&
+    source.candidate_class === p.r2DirectPendingClassCode.U &&
+    allocation.candidate_class === p.r2DirectPendingClassCode.U &&
+    allocation.target_kind === RouteADeliveryTargetKind.DirectPendingRead.U &&
+    allocation.target_identity_generation === descriptor.source_generation &&
+    allocation.transaction_identity.asUInt === response.transaction_identity.asUInt &&
+    allocation.expected_fragment_count === 8.U &&
+    descriptor.pending_ordinal < 64.U
+  val okFragmentLegal = response.fragment_index < 8.U &&
+    response.last === (response.fragment_index === 7.U)
+  val faultLegal = response.last
+  val inputLegal = endpointMatches &&
+    ((responseOk && okFragmentLegal) || (responseFault && faultLegal))
+
+  val terminalPending = RegInit(false.B)
+  val terminal = Reg(new DirectPendingRecordTerminal(p))
+  io.record_terminal_out.valid := terminalPending
+  io.record_terminal_out.bits := terminal
+  when(io.record_terminal_out.fire) { terminalPending := false.B }
+
+  io.payload_fragment_out.valid := io.resolved_fragment_in.valid && inputLegal && responseOk
+  io.payload_fragment_out.bits.transaction_identity := allocation.transaction_identity
+  io.payload_fragment_out.bits.endpoint_generation := descriptor.source_generation
+  io.payload_fragment_out.bits.ordinal := descriptor.pending_ordinal
+  io.payload_fragment_out.bits.fragment_index := response.fragment_index
+  io.payload_fragment_out.bits.record_last_fragment := response.last
+  io.payload_fragment_out.bits.source_last := descriptor.direct_source_last
+  io.payload_fragment_out.bits.data := response.data
+
+  val payloadAccepted = !responseOk || io.payload_fragment_out.ready
+  io.resolved_fragment_in.ready := inputLegal && !terminalPending && payloadAccepted
+  when(io.resolved_fragment_in.fire && (responseFault || response.last)) {
+    terminal.transaction_identity := allocation.transaction_identity
+    terminal.endpoint_generation := descriptor.source_generation
+    terminal.ordinal := descriptor.pending_ordinal
+    terminal.last := Mux(responseFault, true.B, descriptor.direct_source_last)
+    terminal.status := response.status
+    terminal.explicit_empty := descriptor.pending_explicit_empty
+    terminalPending := true.B
+  }
+
+  val heldPayload = RegEnable(io.payload_fragment_out.bits,
+    io.payload_fragment_out.valid && !io.payload_fragment_out.ready)
+  when(RegNext(io.payload_fragment_out.valid && !io.payload_fragment_out.ready, false.B)) {
+    assert(io.payload_fragment_out.bits.asUInt === heldPayload.asUInt)
+  }
+  val heldTerminal = RegEnable(io.record_terminal_out.bits,
+    io.record_terminal_out.valid && !io.record_terminal_out.ready)
+  when(RegNext(io.record_terminal_out.valid && !io.record_terminal_out.ready, false.B)) {
+    assert(io.record_terminal_out.bits.asUInt === heldTerminal.asUInt)
   }
 }
 
