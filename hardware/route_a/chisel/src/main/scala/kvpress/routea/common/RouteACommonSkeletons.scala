@@ -424,7 +424,11 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_core_side_arbiter"
 
   val io = IO(new Bundle {
+    // Existing ingress retains its compatibility name.  A second logical
+    // ingress lets R2 itself, rather than the top, arbitrate a later
+    // read-path offer against the active write/maintenance path.
     val candidate_in = Flipped(RouteAChannels.source_candidate(p))
+    val read_candidate_in = Flipped(RouteAChannels.source_candidate(p))
     val core_mem_req = RouteAChannels.core_mem_req(p)
     val core_mem_rsp_in = Flipped(RouteAChannels.core_mem_rsp(p))
     val source_delivery_out = RouteAChannels.source_delivery(p)
@@ -564,20 +568,34 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   io.core_mem_req.bits := finalCandidate.r1_request
 
   val selectedRequestStalled = io.core_mem_req.valid && !io.core_mem_req.ready
-  val inputClassCount = PopCount((0 until totalSlots).map { slot =>
-    slotValid(slot) && slots(slot).candidate_class === io.candidate_in.bits.candidate_class
-  })
-  val inputEligible = candidateEligible(io.candidate_in.bits)
   val anyFreeSlot = !slotValid.reduce(_ && _)
-  val reclaimDescriptorCandidate = io.candidate_in.bits.candidate_class === p.r2DescriptorMaintenanceClassCode.U
-  val candidateIngressAllowed = !io.drain_collection_enable ||
-    (io.reclaim_maintenance_enable && reclaimDescriptorCandidate)
-  io.candidate_in.ready := candidateIngressAllowed && !selectedRequestStalled && inputEligible && anyFreeSlot && inputClassCount < p.r2CandidateSlotsPerClass.U
+  private def ingressReady(candidate: SourceCandidate): Bool = {
+    val classCount = PopCount((0 until totalSlots).map { slot =>
+      slotValid(slot) && slots(slot).candidate_class === candidate.candidate_class
+    })
+    val reclaimDescriptorCandidate = candidate.candidate_class === p.r2DescriptorMaintenanceClassCode.U
+    val ingressAllowed = !io.drain_collection_enable ||
+      (io.reclaim_maintenance_enable && reclaimDescriptorCandidate)
+    ingressAllowed && !selectedRequestStalled && candidateEligible(candidate) && anyFreeSlot &&
+      classCount < p.r2CandidateSlotsPerClass.U
+  }
 
-  when(io.candidate_in.fire) {
+  val legacyAcceptable = io.candidate_in.valid && ingressReady(io.candidate_in.bits)
+  val readAcceptable = io.read_candidate_in.valid && ingressReady(io.read_candidate_in.bits)
+  // This is candidate acceptance inside R2, not a top-level mux or a second
+  // scheduler.  It preserves the already-frozen ordinal/id rule whenever both
+  // logical ingress carriers are simultaneously acceptable.
+  val readIngressWins = readAcceptable &&
+    (!legacyAcceptable || earlier(io.read_candidate_in.bits, io.candidate_in.bits))
+  io.candidate_in.ready := legacyAcceptable && !readIngressWins
+  io.read_candidate_in.ready := readAcceptable && readIngressWins
+  val acceptedIncoming = Mux(readIngressWins, io.read_candidate_in.bits, io.candidate_in.bits)
+  val incomingFire = io.read_candidate_in.fire || io.candidate_in.fire
+
+  when(incomingFire) {
     val freeIndex = PriorityEncoder(VecInit(slotValid.map(! _)))
     slotValid(freeIndex) := true.B
-    slots(freeIndex) := io.candidate_in.bits
+    slots(freeIndex) := acceptedIncoming
   }
 
   when(io.core_mem_req.fire) {
@@ -650,6 +668,11 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   }
   when(io.source_delivery_out.fire && response.last) {
     assert(matchingResponse)
+  }
+  val readIngressStalled = io.read_candidate_in.valid && !io.read_candidate_in.ready
+  val heldReadIngress = RegEnable(io.read_candidate_in.bits, readIngressStalled)
+  when(RegNext(readIngressStalled, false.B)) {
+    assert(io.read_candidate_in.bits.asUInt === heldReadIngress.asUInt)
   }
 }
 

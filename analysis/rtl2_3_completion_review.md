@@ -1,0 +1,55 @@
+# RTL2.3 completion / cross-owner integration review
+
+**Review status:** `partial_pass_for_r2_ingress_preparation_only`.
+
+This review checks the completed RTL2.3.0--RTL2.3.3 slices against the phase
+contract, rather than treating individually passing isolated tests as a full
+source-service completion.  It uses architecture and Chisel source inspection
+plus the recorded no-model directed tests.  It makes no performance, numeric,
+physical-memory, controller, timing, PPA, or end-to-end RTL correctness claim.
+
+## Closed preparation scope
+
+| Required preparation boundary | Evidence | Review disposition |
+|---|---|---|
+| Immutable pre-R1 read facts cannot be response-derived. | RTL2.3.0 descriptor carries handle, valid count, generation, endpoint, fragment count and descriptor. | closed |
+| A named producer can form only a legal read `SourceCandidate`. | RTL2.3.1 state-free adapter copies ordinal/ID/predicate and fails closed on malformed input. | closed in isolation |
+| Route-A incremental R3/R5 lanes can obtain immutable registry associations before pre-R2 composition. | RTL2.3.2 isolated bridge + registry + merge handles pack-read, direct-pending, packed-S2. | closed in isolation |
+| Top does not become a read/write arbiter. | RTL2.3.3 places dual-ingress choice in R2 and ties the top read carrier inactive. | closed |
+| Existing R2 rotation/issue ownership is retained. | No R2 selection logic was moved; focused test shows R2-only input acceptance and ready-low hold. | closed at ingress boundary |
+
+## Unclosed phase requirements
+
+The RTL2.3 phase heading requires a **functional source packet/fragment path**
+and source completion association.  That outcome is not yet present.  The
+following are real blockers, not harmless documentation gaps:
+
+| Missing closure | Why it blocks RTL2.3 completion |
+|---|---|
+| One shared registry-allocation composition owner for active read and existing write producers. | The sole registry has one allocation input; both allocation bridges cannot be connected to it without a named owner and ordering contract. |
+| Live R3/R5 read-issue producer attachment. | The adapter and read ingress are not instantiated in the production top, so no descriptor can enter R2. |
+| Exact R1 read response to P3/S2/direct endpoint adapters. | The typed router read output is still tied inactive; no payload/sidecar deposit or fault/no-deposit behavior exists in the production graph. |
+| P3 pack-read source completion and sidecar association. | P3 has functional backing, but no registry-resolved read response reaches its owner. |
+| S2 packed-fill open/payload/sidecar/terminal sequence. | S2 storage exists, but it has no production read-delivery producer and cannot become READY from R1 activity. |
+| Direct-pending terminal sequence. | The direct endpoint has completion state but receives no typed read terminal. |
+| Source packet emission to R4 and four-consumer completion/release wiring. | Existing S2/direct/hot local state is not connected to an active source packet/partial path; no actual all-four commit witness exists. |
+
+## Review disposition and next safe order
+
+RTL2.3 is **not complete**.  The code is ready for the next narrow closure,
+but it must not be represented as a production source-service dataflow.
+
+1. Close a shared allocation-composition owner that preserves producer
+   ordinal/ID facts and feeds the sole registry without a top mux.
+2. Attach one smallest live source first: R3 `pack_read` through R2/R1 and a
+   P3 endpoint, including stale/mismatch/fault no-deposit checks.
+3. Attach direct-pending and packed-S2 endpoint paths separately, including
+   sidecar requirements for packed S2.
+4. Only then activate source packet egress, canonical
+   `hot -> pending -> packed` sequencing, and the existing four-consumer
+   completion/release protocol to R4/R6.
+
+The review permits this next control/dataflow closure only.  It does not
+authorize changing pruning, admission, page size, M2/P3 organization, S2
+count, GQA legality, scheduler, atomic publication, numeric merge, physical
+HBM/SRAM/controller, profiling, timing, or PPA work.

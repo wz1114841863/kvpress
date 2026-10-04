@@ -61,6 +61,7 @@ private final class RouteAFairReclaimHarness(p: RouteASkeletonParameters) extend
   r5.io.component_status_out.ready := true.B
 
   r2.io.candidate_in <> r5.io.reclaim_candidate_out
+  StructuralTieOff.source(r2.io.read_candidate_in)
   r2.io.reclaim_maintenance_enable := r6.io.reclaim_maintenance_enable
   r2.io.drain_collection_enable := r6.io.drain_collection_enable
   StructuralTieOff.sink(r2.io.payload_drain_status_out)

@@ -76,6 +76,7 @@ final class RouteA2_1bWritePathHarness(p: RouteASkeletonParameters) extends Modu
   ingress.io.r5_append_in <> r5.io.append_candidate_out
   StructuralTieOff.source(ingress.io.r5_reclaim_in)
   r2.io.candidate_in <> ingress.io.candidate_out
+  StructuralTieOff.source(r2.io.read_candidate_in)
   r1.io.core_mem_req_in <> r2.io.core_mem_req
   r2.io.core_mem_rsp_in <> r1.io.core_mem_rsp
   router.io.source_delivery_in <> r2.io.source_delivery_out

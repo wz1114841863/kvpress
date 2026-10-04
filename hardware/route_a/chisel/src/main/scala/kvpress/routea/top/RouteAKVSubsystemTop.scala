@@ -144,6 +144,12 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     // RTL1-I4: R5 is the only active source during retirement, and only after
     // R6's permit.  R2 remains the unique core-side issuer for this carrier.
     arbiter.io.candidate_in <> r2_write_ingress.io.candidate_out
+    // RTL2.3.3 exposes the second logical ingress at its sole R2 owner.  It
+    // remains tied inactive until a later closure attaches named R3/R5 read
+    // producers through the shared registry-allocation boundary; the top does
+    // not construct a candidate or choose between read/write offers.
+    val r2_read_candidate_in = Wire(RouteAChannels.source_candidate(p)); StructuralTieOff.source(r2_read_candidate_in)
+    arbiter.io.read_candidate_in <> r2_read_candidate_in
 
     core_memory.io.core_mem_req_in <> arbiter.io.core_mem_req
     arbiter.io.core_mem_rsp_in <> core_memory.io.core_mem_rsp

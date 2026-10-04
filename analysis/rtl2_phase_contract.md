@@ -292,6 +292,14 @@ delivery-context registry and a lossless ordinal/id pre-R2 merge.  The new
 bridge/merge have no production-top instance: R2, R1, typed read delivery and
 all data/source behavior remain inactive.
 
+**RTL2.3.3 R2-owned dual logical ingress: implemented and directed tested.**
+[`rtl2_3_3_r2_dual_ingress_contract.md`](rtl2_3_3_r2_dual_ingress_contract.md)
+moves the one-step choice between the existing ingress and a future read
+ingress inside `route_a_core_side_arbiter`; the top exposes the latter only as
+an explicit inactive carrier.  This prevents a top mux from becoming an
+arbiter, but does not itself attach the isolated RTL2.3.1/2 producers to the
+production graph.
+
 Connect owner-produced hot, direct-pending, and packed/S2 source facts to the
 frozen source-instance and four-consumer protocol.  A source becomes
 deliverable only after its own validity prerequisites; all four distinct GQA

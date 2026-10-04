@@ -41,7 +41,7 @@ final class RouteACoreSideArbiterSpec extends AnyFunSpec with ChiselSim {
     bits.r1_request.fragment_index.poke(0.U); bits.r1_request.last.poke(false.B); bits.r1_request.data.poke(0.U)
   }
   private def init(dut: RouteACoreSideArbiter): Unit = {
-    dut.io.candidate_in.valid.poke(false.B); dut.io.core_mem_req.ready.poke(false.B)
+    dut.io.candidate_in.valid.poke(false.B); dut.io.read_candidate_in.valid.poke(false.B); dut.io.core_mem_req.ready.poke(false.B)
     dut.io.core_mem_rsp_in.valid.poke(false.B); dut.io.source_delivery_out.ready.poke(true.B)
     dut.io.drain_collection_enable.poke(false.B)
     dut.io.reclaim_maintenance_enable.poke(false.B)
@@ -137,6 +137,30 @@ final class RouteACoreSideArbiterSpec extends AnyFunSpec with ChiselSim {
       dut.io.candidate_in.ready.expect(false.B)
       dut.io.reclaim_maintenance_enable.poke(true.B)
       dut.io.candidate_in.ready.expect(true.B)
+    }
+  }
+
+  it("accepts simultaneous logical read ingress only inside R2 by the existing ordinal/id rule") {
+    simulate(new RouteACoreSideArbiter(p)) { dut =>
+      init(dut)
+      driveCandidate(dut, p.r2S2FullClassCode, 7, 6, 7, commonRead)
+      dut.io.candidate_in.valid.poke(true.B)
+      val read = dut.io.read_candidate_in.bits
+      read.candidate_class.poke(p.r2PackReadClassCode.U); read.candidate_id.poke(1.U); read.arrival_ordinal.poke(1.U)
+      read.eligibility_snapshot.poke((commonRead | (1 << RouteAR2PredicateBits.PendingAuthoritative) |
+        (1 << RouteAR2PredicateBits.P3StageReadyOwned)).U)
+      read.delivery_context_ref.poke(1.U)
+      read.delivery_target_descriptor.poke(0.U.asTypeOf(read.delivery_target_descriptor))
+      read.r1_request.transaction_identity.request_id.poke(1.U); read.r1_request.transaction_identity.incarnation.poke(0.U)
+      read.r1_request.request_kind.poke(p.coreMemoryReadRequestCode.U); read.r1_request.destination.poke(1.U)
+      read.r1_request.address_ref.poke(0x44.U); read.r1_request.expected_fragment_count.poke(1.U)
+      read.r1_request.fragment_index.poke(0.U); read.r1_request.last.poke(false.B); read.r1_request.data.poke(0.U)
+      dut.io.read_candidate_in.valid.poke(true.B)
+      dut.io.read_candidate_in.ready.expect(true.B); dut.io.candidate_in.ready.expect(false.B)
+      dut.clock.step(); dut.io.read_candidate_in.valid.poke(false.B); dut.io.candidate_in.valid.poke(false.B)
+      dut.io.core_mem_req.valid.expect(true.B); dut.io.core_mem_req.bits.transaction_identity.request_id.expect(1.U)
+      dut.io.core_mem_req.ready.poke(false.B); dut.clock.step()
+      dut.io.core_mem_req.bits.transaction_identity.request_id.expect(1.U)
     }
   }
 }

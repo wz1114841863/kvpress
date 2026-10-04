@@ -1,0 +1,46 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-3-3-r2-dual-ingress-1.0",
+  "status": "implemented_directed_tested_production_port_inactive",
+  "scope": "R2-owned acceptance between its existing candidate ingress and an explicit future read ingress. The production top keeps read_candidate_in inactive; no read producer, registry allocation, R1 read launch, response deposition, source delivery, scoreboard event, physical-memory, timing, throughput, PPA, numeric RTL, model/GPU, or new A4 DSE behavior is activated.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_3_1_read_candidate_adapter_contract.md",
+    "analysis/rtl2_3_2_read_ingress_contract.md",
+    "analysis/rtl2_2_2_typed_delivery_router_contract.md"
+  ],
+  "module": {
+    "name": "route_a_core_side_arbiter",
+    "new_port": "read_candidate_in",
+    "owner": "R2 only",
+    "top_binding": "named inactive source carrier",
+    "rule": "Both acceptable ingresses are compared only by their existing arrival_ordinal then candidate_id; one exact record is stored in existing R2 candidate state."
+  },
+  "required_invariants": [
+    "Top cannot choose between existing and read logical ingress offers.",
+    "No new FIFO, credit, cursor, request-ID, or response state is created.",
+    "R2 read rotation remains unchanged and advances only on core-memory request acceptance.",
+    "A stalled read ingress record remains stable.",
+    "Production top keeps read_candidate_in inactive until a shared registry-allocation composition owner is closed."
+  ],
+  "explicitly_not_activated": [
+    "RTL2.3.1 adapter or RTL2.3.2 bridge/merge top instance",
+    "read context allocation competing with existing write allocation",
+    "R1 read request launch",
+    "typed response delivery and P3/S2/direct payload or sidecar deposit",
+    "source deliverability, GQA commit/release, R4, lifecycle, authority, scoreboard events"
+  ],
+  "tests": [
+    "RouteACoreSideArbiterSpec focused dual-ingress case",
+    "RouteAKVSubsystemTopSpec focused elaboration case",
+    "Test / compile"
+  ],
+  "evidence_labels": [
+    "synthesizable functional-control/ownership evidence",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL numeric-correctness claim",
+    "no new A4 DSE"
+  ]
+}
