@@ -1,7 +1,7 @@
 package kvpress.routea.common
 
 import chisel3._
-import chisel3.util.{MuxCase, PopCount, PriorityEncoder, RegEnable, UIntToOH, Valid, log2Ceil}
+import chisel3.util.{Cat, MuxCase, PopCount, PriorityEncoder, RegEnable, UIntToOH, Valid, log2Ceil}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
 
@@ -1217,6 +1217,61 @@ final class RouteATypedDeliveryRouter(p: RouteASkeletonParameters) extends Modul
   val heldRelease = RegEnable(io.release_out.bits, io.release_out.valid && !io.release_out.ready)
   when(RegNext(io.release_out.valid && !io.release_out.ready, false.B)) {
     assert(io.release_out.bits.asUInt === heldRelease.asUInt)
+  }
+}
+
+/**
+  * RTL2.3-C2 endpoint for a registry-resolved R3 pending-member pack read.
+  * It translates only an exact typed response into P3's existing logical
+  * fragment carrier.  It owns no association, source scheduling, P3 state,
+  * sidecar, authority, retry, fallback, or data transformation.  A malformed,
+  * stale, mismatched, or non-terminal fault response remains backpressured and
+  * cannot deposit functional P3 payload data.
+  */
+final class RouteAR3PackReadEndpoint(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_r3_pack_read_endpoint"
+
+  val io = IO(new Bundle {
+    val resolved_fragment_in = Flipped(RouteAChannels.resolved_delivery(p))
+    val p3_pending_fragment_out = RouteAChannels.p3_pending_fragment(p)
+  })
+
+  val resolved = io.resolved_fragment_in.bits
+  val source = resolved.source_delivery
+  val allocation = resolved.allocation
+  val descriptor = allocation.target_descriptor
+  val response = source.r1_response
+  val expectedEightFragments = allocation.expected_fragment_count === 8.U
+  val endpointKindMatches = source.candidate_class === p.r2PackReadClassCode.U &&
+    allocation.candidate_class === p.r2PackReadClassCode.U &&
+    allocation.target_kind === RouteADeliveryTargetKind.P3PendingRead.U
+  val identityMatches = allocation.transaction_identity.asUInt === response.transaction_identity.asUInt
+  val generationMatches = allocation.target_identity_generation === descriptor.source_generation
+  val ordinalLegal = descriptor.pending_ordinal < 64.U
+  val responseIndexLegal = response.fragment_index < 8.U
+  val responseOk = response.status === p.coreMemoryOkStatusCode.U
+  val responseFault = response.status === p.coreMemoryFaultStatusCode.U
+  val lastLegal = Mux(responseOk,
+    response.last === (response.fragment_index === 7.U),
+    response.last)
+  val statusLegal = responseOk || responseFault
+  val endpointLegal = endpointKindMatches && identityMatches && generationMatches &&
+    expectedEightFragments && ordinalLegal && responseIndexLegal && statusLegal && lastLegal
+
+  io.p3_pending_fragment_out.valid := io.resolved_fragment_in.valid && endpointLegal
+  io.p3_pending_fragment_out.bits.layer := descriptor.p3_layer
+  io.p3_pending_fragment_out.bits.stage_generation := descriptor.p3_stage_generation
+  io.p3_pending_fragment_out.bits.fragment_index := Cat(descriptor.pending_ordinal(5, 0), response.fragment_index(2, 0))
+  io.p3_pending_fragment_out.bits.last := response.last
+  io.p3_pending_fragment_out.bits.status := response.status
+  io.p3_pending_fragment_out.bits.payload_ref := descriptor.p3_member_payload_ref
+  io.p3_pending_fragment_out.bits.data := response.data
+  io.resolved_fragment_in.ready := endpointLegal && io.p3_pending_fragment_out.ready
+
+  val held = RegEnable(io.p3_pending_fragment_out.bits,
+    io.p3_pending_fragment_out.valid && !io.p3_pending_fragment_out.ready)
+  when(RegNext(io.p3_pending_fragment_out.valid && !io.p3_pending_fragment_out.ready, false.B)) {
+    assert(io.p3_pending_fragment_out.bits.asUInt === held.asUInt)
   }
 }
 

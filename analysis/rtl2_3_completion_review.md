@@ -27,9 +27,9 @@ following are real blockers, not harmless documentation gaps:
 
 | Missing closure | Why it blocks RTL2.3 completion |
 |---|---|
-| Live R3/R5 read-issue producer attachment. | The adapter and read ingress are not instantiated in the production top, so no descriptor can enter R2. |
-| Exact R1 read response to P3/S2/direct endpoint adapters. | The typed router read output is still tied inactive; no payload/sidecar deposit or fault/no-deposit behavior exists in the production graph. |
-| P3 pack-read source completion and sidecar association. | P3 has functional backing, but no registry-resolved read response reaches its owner. |
+| Live R3/R5 read-issue producer attachment. | C2 attaches explicit R3 work through the actual C1/R2/R1 chain in an integration harness, but the production top still has no authorized live work producer. R5 remains unconnected. |
+| Exact R1 read response to P3/S2/direct endpoint adapters. | C2 closes the P3 endpoint in an integration harness, including stale/mismatch/fault no-deposit. The production typed read carrier remains inactive; S2/direct remain unclosed. |
+| P3 pack-read source completion and sidecar association. | C2 proves one eight-fragment retained-member transaction reaches P3 `COMPLETE` only with existing sidecar binding, but does not activate top source service or source completion. |
 | S2 packed-fill open/payload/sidecar/terminal sequence. | S2 storage exists, but it has no production read-delivery producer and cannot become READY from R1 activity. |
 | Direct-pending terminal sequence. | The direct endpoint has completion state but receives no typed read terminal. |
 | Source packet emission to R4 and four-consumer completion/release wiring. | Existing S2/direct/hot local state is not connected to an active source packet/partial path; no actual all-four commit witness exists. |
@@ -39,8 +39,8 @@ following are real blockers, not harmless documentation gaps:
 RTL2.3 is **not complete**.  The code is ready for the next narrow closure,
 but it must not be represented as a production source-service dataflow.
 
-1. Attach one smallest live source first: R3 `pack_read` through R2/R1 and a
-   P3 endpoint, including stale/mismatch/fault no-deposit checks.
+1. C2 has closed the smallest R3 `pack_read` integration witness; do not expand
+   it into a permanent serial scheduler or top ingress selector.
 2. Attach direct-pending and packed-S2 endpoint paths separately, including
    sidecar requirements for packed S2.
 3. Only then activate source packet egress, canonical

@@ -308,6 +308,19 @@ context, then forwards ref-bound records to the existing read/write pre-R2
 merges.  Read producers remain inactive; this does not yet create a read
 transaction or endpoint mutation.
 
+**RTL2.3-C2 R3 pending-member pack-read endpoint: implemented and directed
+tested in an integration harness.**
+[`rtl2_3_c2_r3_pack_read_contract.md`](rtl2_3_c2_r3_pack_read_contract.md)
+freezes one retained member to one eight-fragment `pack_read`, with immutable
+`payload_ref` association and `member_ordinal * 8 + fragment_index` P3 mapping.
+The harness passes that work through the existing C1 registry/R2/R1 route and
+the typed router into the R3 endpoint, while stale/mismatched work/identity and
+fault/malformed response cases fail closed without payload deposit.  Its one
+explicit work carrier is a conservative functional baseline, not a permanent
+single-outstanding schedule.  The production top keeps the work/issue boundary
+inactive because hot-versus-pack P3 ingress composition and a live work producer
+remain separately scoped; no top source-service claim is made.
+
 Connect owner-produced hot, direct-pending, and packed/S2 source facts to the
 frozen source-instance and four-consumer protocol.  A source becomes
 deliverable only after its own validity prerequisites; all four distinct GQA

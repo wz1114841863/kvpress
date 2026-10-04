@@ -289,6 +289,20 @@ all ordered payload fragments and sidecar bindings and grants the existing R2
 `p3_stage_complete/owned` predicate for a pack write.  P3 is transient in all
 states and is never an authoritative residency.
 
+For a retained member supplied through the pending-HBM pack-read path, the
+transaction granularity is frozen: one immutable admitted member ordinal maps
+to exactly one `pack_read` with `expected_fragment_count = 8`; successful
+fragment `i` maps to `p3_index = member_ordinal * 8 + i`.  The endpoint carries
+the exact immutable member `payload_ref` independently of the parameterized
+opaque payload handle/address and verifies it against R3's admitted-member
+ledger before a functional P3 deposit.  An identity, generation, member, or
+fragment mismatch cannot deposit; an accepted terminal fault carries no
+payload and leaves the member/group incomplete, so it cannot enable a pack
+write or publication.  This fixes member transaction granularity and
+association only.  It does **not** freeze a one-member-at-a-time issue policy,
+maximum pack-read concurrency, or response-reorder scheme; a future
+multi-outstanding realization needs explicit association/reorder closure.
+
 After a successful R1 write commit, P3 becomes `DURABLE` only with the R1
 payload-durable indication.  It remains non-authoritative until the one M2
 atomic publication.  Publication then makes metadata visible, invokes the

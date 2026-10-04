@@ -89,6 +89,11 @@ final class DeliveryTargetDescriptor(p: RouteASkeletonParameters) extends Bundle
   val source_generation = UInt(p.sourceGenerationWidth.W)
   val requires_sidecar = Bool()
   val pending_ordinal = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
+  // The immutable retained-member payload identity for a P3 pending-read
+  // endpoint.  It is deliberately distinct from the parameterized opaque
+  // core-side address/handle: the latter is transport-facing while this field
+  // is the exact association P3 checks before functional deposition.
+  val p3_member_payload_ref = UInt(RouteAAnchorWidths.PayloadRefWidth.W)
   val pending_explicit_empty = Bool()
 }
 
@@ -495,6 +500,30 @@ final class ReadIssueDescriptor(p: RouteASkeletonParameters) extends Bundle {
   val target_descriptor = new DeliveryTargetDescriptor(p)
 }
 
+/**
+  * One explicit R3-owned request to load the eight 64-B fragments of one
+  * admitted pending member into its claimed P3 stage.  It fixes transaction
+  * granularity and member association only.  It does not select how many
+  * member reads may be outstanding, a physical address encoding, a memory
+  * schedule, or a P3 storage realization.
+  */
+final class P3PackReadWork(p: RouteASkeletonParameters) extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val member_ordinal = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  // This must match the immutable R3 admission-member ledger.  It is carried
+  // separately from the opaque handle so response data can never establish
+  // or reconstruct a P3 member association.
+  val payload_ref = UInt(RouteAAnchorWidths.PayloadRefWidth.W)
+  val transaction_identity = new TransactionIdentity
+  val arrival_ordinal = UInt(p.candidateOrdinalWidth.W)
+  val candidate_id = UInt(p.candidateIdWidth.W)
+  val eligibility_snapshot = UInt(p.candidatePredicateWidth.W)
+  val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+  val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+}
+
 final class CoreMemoryResponse(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
   val fragment_index = UInt(p.coreMemoryFragmentIndexWidth.W)
@@ -767,6 +796,7 @@ object RouteAChannels {
   def r4_numeric_fault = Decoupled(new R4NumericFault)
   def source_candidate(p: RouteASkeletonParameters) = Decoupled(new SourceCandidate(p))
   def read_issue_descriptor(p: RouteASkeletonParameters) = Decoupled(new ReadIssueDescriptor(p))
+  def p3_pack_read_work(p: RouteASkeletonParameters) = Decoupled(new P3PackReadWork(p))
   def core_mem_req(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryRequest(p))
   def core_mem_rsp(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryResponse(p))
   def source_delivery(p: RouteASkeletonParameters) = Decoupled(new SourceDelivery(p))

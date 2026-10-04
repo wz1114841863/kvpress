@@ -1,0 +1,61 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-3-c2-r3-pack-read-1.0",
+  "status": "implemented_directed_tested_integration_harness_top_inactive",
+  "scope": "One explicit R3 pending-member work item through the sole registry allocation, R2/R1 read path, typed router, and R3 P3 endpoint. It fixes per-member transaction association and fail-closed P3 deposition only.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_3_completion_review.md",
+    "analysis/rtl2_3_c1_shared_allocation_contract.md",
+    "analysis/rtl2_3_c2_r3_pack_read_contract.md"
+  ],
+  "transaction": {
+    "retained_member_to_pack_read": "exactly_one",
+    "expected_fragment_count": 8,
+    "fragment_bytes": 64,
+    "p3_index": "member_ordinal * 8 + fragment_index",
+    "member_identity": "immutable target_descriptor.p3_member_payload_ref",
+    "transport_handle": "parameterized opaque payload_handle_or_address",
+    "sidecar": "separate existing P3 sidecar binding required for COMPLETE",
+    "issue_schedule": "not_selected; C2 single-work harness is not a permanent serial policy"
+  },
+  "owners": {
+    "work_validation_and_descriptor": "route_a_m2_p3_wrapper",
+    "candidate_formation": "route_a_read_issue_candidate_adapter",
+    "sole_association_allocation": "route_a_unified_delivery_context_allocation_bridge plus route_a_delivery_context_registry",
+    "r2_issue_and_r1_transport": "route_a_core_side_arbiter plus route_a_core_mem_if_v1",
+    "resolved_response_routing": "route_a_typed_delivery_router",
+    "p3_endpoint_validation": "route_a_r3_pack_read_endpoint",
+    "p3_state_and_storage": "route_a_m2_p3_wrapper"
+  },
+  "fail_closed": [
+    "work member/stage mismatch: no request and no P3 deposit",
+    "stale identity: R1 stale suppression, no P3 mutation",
+    "typed endpoint mismatch: no P3 deposit",
+    "terminal fault: P3 FAULTED without payload deposit",
+    "malformed matching fragment: R1 terminal fault, no P3 COMPLETE"
+  ],
+  "tests": [
+    "RouteAR3PackReadPathSpec maps one immutable",
+    "RouteAR3PackReadPathSpec without P3 deposit",
+    "RouteAR3PackReadPathSpec fault control",
+    "RouteAR3PackReadPathSpec malformed fragment",
+    "Test / compile"
+  ],
+  "evidence_labels": [
+    "synthesizable functional-control/dataflow integration evidence",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL numeric-correctness claim",
+    "no new A4 DSE"
+  ],
+  "source_sha256": {
+    "analysis/architecture_spec.md": "b7b7857700a32038a24bcf4d7665162b62742246e785f3248ab4bf0d9a7feb04",
+    "analysis/rtl2_3_c2_r3_pack_read_contract.md": "35a11bba4055919406c24ea524de2af4fbb2cbf67cbf481020b0e7757be92e55",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "9011dd029c7b6e389d43499e2d653a719923393a6e33b57a784c9ae2ae9575df",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "0caa2ff15a64c1095a7fed5b1775e91feeb0a14e5faf6d71884ee9ecaa222dd7",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "f1e11ffb12661ecd1f7e3e277babab37d34f0a6232906c674bc0bc158aadb27c",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR3PackReadPathSpec.scala": "9eeec3646f431f3f2f1df92a347b40f5457c601ed5afcf416da24d3173c6ac42"
+  }
+}

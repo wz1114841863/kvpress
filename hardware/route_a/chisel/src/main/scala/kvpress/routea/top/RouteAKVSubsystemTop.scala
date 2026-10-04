@@ -191,10 +191,18 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     admission_group_builder.io.r3_admission_authority_out <> m2_p3.io.admission_authority_in
     val p3_fragment = hot_payload_fragment_in
     val p3_sidecar = hot_position_sidecar_in
+    // RTL2.3-C2 supplies the R3-owned work/issue boundary but leaves its
+    // producer inactive in the composition top.  Activating a member issue
+    // schedule or merging hot and pack-read payload ingress is later work;
+    // the top must not synthesize either behavior.
+    val p3_pack_read_work = Wire(RouteAChannels.p3_pack_read_work(p)); StructuralTieOff.source(p3_pack_read_work)
+    val p3_pack_read_issue = Wire(RouteAChannels.read_issue_descriptor(p)); StructuralTieOff.sink(p3_pack_read_issue)
     val p3_write_issue = Wire(RouteAChannels.p3_packed_write_issue(p)); StructuralTieOff.source(p3_write_issue)
     val p3_write_terminal = Wire(RouteAChannels.p3_packed_write_terminal(p)); StructuralTieOff.source(p3_write_terminal)
     m2_p3.io.p3_pending_fragment_in <> p3_fragment
     m2_p3.io.p3_sidecar_bind_in <> p3_sidecar
+    m2_p3.io.p3_pack_read_work_in <> p3_pack_read_work
+    p3_pack_read_issue <> m2_p3.io.p3_pack_read_issue_out
     m2_p3.io.p3_packed_write_issue_in <> p3_write_issue
     m2_p3.io.p3_packed_write_terminal_in <> p3_write_terminal
     m2_reference_protocol.io.member_request_in <> m2_p3.io.m2_group_member_req_out

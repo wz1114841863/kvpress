@@ -785,6 +785,12 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     val authority_transition_out = RouteAChannels.r6_authority_transition(p)
     val publication_commit_observation = RouteAChannels.publication_commit_observation(p)
     val publication_member_observation = RouteAChannels.publication_member_observation(p)
+    // An explicit member work item is the R3-owned entry to the minimal
+    // pending -> P3 pack-read path.  R3 validates it against the immutable
+    // admitted-member ledger before emitting a pre-R2 descriptor; this port
+    // does not embody a member issue schedule.
+    val p3_pack_read_work_in = Flipped(RouteAChannels.p3_pack_read_work(p))
+    val p3_pack_read_issue_out = RouteAChannels.read_issue_descriptor(p)
     val p3_pending_fragment_in = Flipped(RouteAChannels.p3_pending_fragment(p))
     val p3_sidecar_bind_in = Flipped(RouteAChannels.p3_sidecar_bind(p))
     val p3_packed_write_issue_in = Flipped(RouteAChannels.p3_packed_write_issue(p))
@@ -926,6 +932,55 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     membershipPresent(admissionLayer) := membershipPresent(admissionLayer) | admissionOrdinalMask
     membershipEntries(admissionLayer)(admission.group_member_ordinal(5, 0)) := admission
   }
+
+  // RTL2.3-C2: a retained P3 member has exactly one logical pack-read work
+  // item, with eight 64-B fragments.  The work carrier supplies only
+  // transaction/eligibility and opaque transport facts.  Layer, generation,
+  // ordinal, payload association, valid-count, and group tag are checked or
+  // sourced from R3's immutable local state, never from an R1 response.
+  // This deliberately has no outstanding-count or issue-order state: any
+  // later multi-member scheduling/reorder policy needs a separate closure.
+  val packReadWork = io.p3_pack_read_work_in.bits
+  val packReadLayer = packReadWork.layer
+  val packReadOrdinal = packReadWork.member_ordinal(5, 0)
+  val packReadOrdinalMask = 1.U(64.W) << packReadOrdinal
+  val packReadMemberPresent = membershipPresent(packReadLayer) & packReadOrdinalMask
+  val packReadMember = membershipEntries(packReadLayer)(packReadOrdinal)
+  val packReadStageLive = initialized &&
+    (stageState(packReadLayer) === StateReserved || stageState(packReadLayer) === StateFilling) &&
+    stageGeneration(packReadLayer) === packReadWork.stage_generation
+  val packReadLegal = packReadStageLive && packReadMemberPresent =/= 0.U &&
+    packReadWork.member_ordinal < stageValidRecords(packReadLayer) &&
+    packReadWork.payload_ref === packReadMember.payload_ref
+
+  io.p3_pack_read_issue_out.valid := io.p3_pack_read_work_in.valid && packReadLegal
+  io.p3_pack_read_issue_out.bits := 0.U.asTypeOf(new ReadIssueDescriptor(p))
+  io.p3_pack_read_issue_out.bits.delivery_context_ref := 0.U
+  io.p3_pack_read_issue_out.bits.candidate_class := p.r2PackReadClassCode.U
+  io.p3_pack_read_issue_out.bits.arrival_ordinal := packReadWork.arrival_ordinal
+  io.p3_pack_read_issue_out.bits.candidate_id := packReadWork.candidate_id
+  io.p3_pack_read_issue_out.bits.eligibility_snapshot := packReadWork.eligibility_snapshot
+  io.p3_pack_read_issue_out.bits.transaction_identity := packReadWork.transaction_identity
+  io.p3_pack_read_issue_out.bits.source_kind := RouteASourceKind.Pending.U
+  io.p3_pack_read_issue_out.bits.payload_handle_or_address := packReadWork.payload_handle_or_address
+  io.p3_pack_read_issue_out.bits.valid_count := stageValidRecords(packReadLayer)
+  io.p3_pack_read_issue_out.bits.expected_generation_or_validity := packReadWork.source_generation
+  io.p3_pack_read_issue_out.bits.destination_endpoint := packReadWork.destination_endpoint
+  io.p3_pack_read_issue_out.bits.expected_fragment_count := 8.U
+  io.p3_pack_read_issue_out.bits.target_descriptor.write_endpoint := 0.U
+  io.p3_pack_read_issue_out.bits.target_descriptor.p3_layer := packReadLayer
+  io.p3_pack_read_issue_out.bits.target_descriptor.p3_stage_generation := stageGeneration(packReadLayer)
+  io.p3_pack_read_issue_out.bits.target_descriptor.transaction_group_tag := stageTag(packReadLayer)
+  io.p3_pack_read_issue_out.bits.target_descriptor.descriptor_kind := 0.U
+  io.p3_pack_read_issue_out.bits.target_descriptor.descriptor_page_ref := 0.U.asTypeOf(new PageRef)
+  io.p3_pack_read_issue_out.bits.target_descriptor.descriptor_line := 0.U
+  io.p3_pack_read_issue_out.bits.target_descriptor.s2_slot := 0.U
+  io.p3_pack_read_issue_out.bits.target_descriptor.source_generation := packReadWork.source_generation
+  io.p3_pack_read_issue_out.bits.target_descriptor.requires_sidecar := false.B
+  io.p3_pack_read_issue_out.bits.target_descriptor.pending_ordinal := packReadWork.member_ordinal
+  io.p3_pack_read_issue_out.bits.target_descriptor.p3_member_payload_ref := packReadMember.payload_ref
+  io.p3_pack_read_issue_out.bits.target_descriptor.pending_explicit_empty := false.B
+  io.p3_pack_read_work_in.ready := packReadLegal && io.p3_pack_read_issue_out.ready
 
   def expectedFragments(layer: UInt): UInt = Cat(stageValidRecords(layer), 0.U(3.W))
   val fragment = io.p3_pending_fragment_in.bits

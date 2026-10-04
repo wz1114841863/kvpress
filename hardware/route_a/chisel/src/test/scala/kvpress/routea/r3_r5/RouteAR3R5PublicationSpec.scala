@@ -34,6 +34,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.io.authority_transition_out.ready.poke(true.B)
     dut.io.publication_commit_observation.ready.poke(true.B); dut.io.publication_member_observation.ready.poke(true.B)
     dut.io.p3_pending_fragment_in.valid.poke(false.B); dut.io.p3_sidecar_bind_in.valid.poke(false.B)
+    dut.io.p3_pack_read_work_in.valid.poke(false.B); dut.io.p3_pack_read_issue_out.ready.poke(true.B)
     dut.io.p3_packed_write_issue_in.valid.poke(false.B); dut.io.p3_packed_write_terminal_in.valid.poke(false.B)
     dut.io.p3_packed_write_candidate_out.ready.poke(true.B); dut.io.p3_packed_write_delivery_in.valid.poke(false.B)
     dut.io.p3_payload_durable_out.ready.poke(true.B); dut.io.descriptor_durability_prerequisite_in.valid.poke(false.B)

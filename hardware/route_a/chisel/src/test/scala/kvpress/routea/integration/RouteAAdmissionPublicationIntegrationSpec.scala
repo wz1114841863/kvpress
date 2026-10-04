@@ -57,6 +57,8 @@ private final class RouteAAdmissionPublicationHarness(p: RouteASkeletonParameter
   StructuralTieOff.sink(r3.io.p3_claim_ack)
   r3.io.p3_pending_fragment_in <> io.p3_fragment
   r3.io.p3_sidecar_bind_in <> io.p3_sidecar
+  StructuralTieOff.source(r3.io.p3_pack_read_work_in)
+  StructuralTieOff.sink(r3.io.p3_pack_read_issue_out)
   r3.io.p3_packed_write_issue_in <> io.p3_write_issue
   r3.io.p3_packed_write_terminal_in <> io.p3_write_terminal
   StructuralTieOff.sink(r3.io.p3_packed_write_candidate_out)
