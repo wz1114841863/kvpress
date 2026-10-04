@@ -45,8 +45,9 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val page_manager = Module(new RouteAPageManager(p))
     val admission_group_builder = Module(new RouteAAdmissionPublicationIngressAdapter(p))
     val r2_write_ingress = Module(new RouteAR2WriteIngressMerge(p))
+    val r2_read_ingress = Module(new RouteAR2ReadIngressMerge(p))
     val delivery_context_registry = Module(new RouteADeliveryContextRegistry(p))
-    val delivery_context_bridge = Module(new RouteADeliveryContextAllocationBridge(p))
+    val delivery_context_composition = Module(new RouteAUnifiedDeliveryContextAllocationBridge(p))
     val typed_delivery_router = Module(new RouteATypedDeliveryRouter(p))
     val merge = Module(new RouteAMergeBoundary(p))
     val status_collector = Module(new RouteAComponentStatusCollector(p))
@@ -141,15 +142,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     merge.io.merge_req_in <> lifecycle.io.merge_req
     lifecycle.io.merge_terminal_in <> merge.io.merge_rsp_or_numeric_fault
 
-    // RTL1-I4: R5 is the only active source during retirement, and only after
-    // R6's permit.  R2 remains the unique core-side issuer for this carrier.
+    // R2 alone accepts its two logical ingress carriers. The producer-local
+    // merges merely present ref-bound records; this top does not select one.
     arbiter.io.candidate_in <> r2_write_ingress.io.candidate_out
-    // RTL2.3.3 exposes the second logical ingress at its sole R2 owner.  It
-    // remains tied inactive until a later closure attaches named R3/R5 read
-    // producers through the shared registry-allocation boundary; the top does
-    // not construct a candidate or choose between read/write offers.
-    val r2_read_candidate_in = Wire(RouteAChannels.source_candidate(p)); StructuralTieOff.source(r2_read_candidate_in)
-    arbiter.io.read_candidate_in <> r2_read_candidate_in
+    arbiter.io.read_candidate_in <> r2_read_ingress.io.candidate_out
 
     core_memory.io.core_mem_req_in <> arbiter.io.core_mem_req
     arbiter.io.core_mem_rsp_in <> core_memory.io.core_mem_rsp
@@ -168,7 +164,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     delivery_context_registry.io.resolve_in <> arbiter.io.source_delivery_out
     typed_delivery_router.io.resolved_in <> delivery_context_registry.io.resolved_out
     delivery_context_registry.io.release_in <> typed_delivery_router.io.release_out
-    delivery_context_bridge.io.release_event_in := typed_delivery_router.io.release_event_out
+    delivery_context_composition.io.release_event_in := typed_delivery_router.io.release_event_out
     page_manager.io.reclaim_delivery_in <> typed_delivery_router.io.r5_reclaim_out
     page_manager.io.append_delivery_in <> typed_delivery_router.io.r5_append_out
     // Read fragments have no active top-level producer/functional endpoint in
@@ -220,14 +216,23 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     lifecycle.io.r5_reclaim_complete_in := page_manager.io.reclaim_complete
     val descriptor_maintenance_terminal = Wire(RouteAChannels.descriptor_maintenance_terminal(p)); StructuralTieOff.source(descriptor_maintenance_terminal)
     page_manager.io.descriptor_maintenance_terminal_in <> descriptor_maintenance_terminal
-    delivery_context_bridge.io.r3_in <> m2_p3.io.p3_packed_write_candidate_out
-    delivery_context_bridge.io.r5_append_in <> page_manager.io.append_candidate_out
-    delivery_context_bridge.io.r5_reclaim_in <> page_manager.io.reclaim_candidate_out
-    r2_write_ingress.io.r3_packed_write_in <> delivery_context_bridge.io.r3_out
-    r2_write_ingress.io.r5_append_in <> delivery_context_bridge.io.r5_append_out
-    r2_write_ingress.io.r5_reclaim_in <> delivery_context_bridge.io.r5_reclaim_out
-    delivery_context_registry.io.allocation_in <> delivery_context_bridge.io.registry_allocate_out
-    delivery_context_bridge.io.registry_allocation_ack_in <> delivery_context_registry.io.allocation_ack_out
+    // The three named incremental read owners do not yet emit live candidate
+    // facts.  Their lanes are present at the sole shared allocation point and
+    // fail closed here; the top creates neither descriptor nor candidate.
+    StructuralTieOff.source(delivery_context_composition.io.r3_pack_read_in)
+    StructuralTieOff.source(delivery_context_composition.io.r3_direct_pending_in)
+    StructuralTieOff.source(delivery_context_composition.io.r5_s2_packed_in)
+    delivery_context_composition.io.r3_packed_write_in <> m2_p3.io.p3_packed_write_candidate_out
+    delivery_context_composition.io.r5_append_in <> page_manager.io.append_candidate_out
+    delivery_context_composition.io.r5_reclaim_in <> page_manager.io.reclaim_candidate_out
+    r2_read_ingress.io.r3_pack_read_in <> delivery_context_composition.io.r3_pack_read_out
+    r2_read_ingress.io.r3_direct_pending_in <> delivery_context_composition.io.r3_direct_pending_out
+    r2_read_ingress.io.r5_s2_packed_in <> delivery_context_composition.io.r5_s2_packed_out
+    r2_write_ingress.io.r3_packed_write_in <> delivery_context_composition.io.r3_packed_write_out
+    r2_write_ingress.io.r5_append_in <> delivery_context_composition.io.r5_append_out
+    r2_write_ingress.io.r5_reclaim_in <> delivery_context_composition.io.r5_reclaim_out
+    delivery_context_registry.io.allocation_in <> delivery_context_composition.io.registry_allocate_out
+    delivery_context_composition.io.registry_allocation_ack_in <> delivery_context_registry.io.allocation_ack_out
     m2_p3.io.p3_packed_write_delivery_in <> typed_delivery_router.io.r3_packed_write_out
     page_manager.io.p3_payload_durable_in <> m2_p3.io.p3_payload_durable_out
     m2_p3.io.descriptor_durability_prerequisite_in <> page_manager.io.descriptor_durability_prerequisite_out

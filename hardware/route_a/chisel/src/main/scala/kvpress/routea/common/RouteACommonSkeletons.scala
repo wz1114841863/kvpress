@@ -1018,6 +1018,134 @@ final class RouteAReadDeliveryContextAllocationBridge(p: RouteASkeletonParameter
 }
 
 /**
+  * RTL2.3-C1 sole production composition point before the already-sole
+  * delivery-context registry.  It receives all six frozen producer lanes,
+  * serializes only immutable association allocation by existing ordinal/id,
+  * and returns each bound candidate to its class-specific pre-R2 ingress.
+  * It owns neither the association table (registry), R2 grant/rotation/FIFO,
+  * R1 request lifecycle, payload, endpoint, authority, nor source service.
+  */
+final class RouteAUnifiedDeliveryContextAllocationBridge(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_unified_delivery_context_allocation_bridge"
+
+  val io = IO(new Bundle {
+    val r3_pack_read_in = Flipped(RouteAChannels.source_candidate(p))
+    val r3_direct_pending_in = Flipped(RouteAChannels.source_candidate(p))
+    val r5_s2_packed_in = Flipped(RouteAChannels.source_candidate(p))
+    val r3_packed_write_in = Flipped(RouteAChannels.source_candidate(p))
+    val r5_append_in = Flipped(RouteAChannels.source_candidate(p))
+    val r5_reclaim_in = Flipped(RouteAChannels.source_candidate(p))
+    val r3_pack_read_out = RouteAChannels.source_candidate(p)
+    val r3_direct_pending_out = RouteAChannels.source_candidate(p)
+    val r5_s2_packed_out = RouteAChannels.source_candidate(p)
+    val r3_packed_write_out = RouteAChannels.source_candidate(p)
+    val r5_append_out = RouteAChannels.source_candidate(p)
+    val r5_reclaim_out = RouteAChannels.source_candidate(p)
+    val registry_allocate_out = RouteAChannels.delivery_context_allocate(p)
+    val registry_allocation_ack_in = Flipped(RouteAChannels.delivery_context_allocation_ack(p))
+    val release_event_in = Input(Valid(new DeliveryContextRelease(p)))
+  })
+
+  private val producerCount = 6
+  private val producerIndexWidth = log2Ceil(producerCount)
+  val inputs = Seq(
+    io.r3_pack_read_in, io.r3_direct_pending_in, io.r5_s2_packed_in,
+    io.r3_packed_write_in, io.r5_append_in, io.r5_reclaim_in,
+  )
+  val outputs = Seq(
+    io.r3_pack_read_out, io.r3_direct_pending_out, io.r5_s2_packed_out,
+    io.r3_packed_write_out, io.r5_append_out, io.r5_reclaim_out,
+  )
+  val bound = RegInit(VecInit(Seq.fill(producerCount)(false.B)))
+  val awaitingRelease = RegInit(VecInit(Seq.fill(producerCount)(false.B)))
+  val captured = Reg(Vec(producerCount, new SourceCandidate(p)))
+  val refs = Reg(Vec(producerCount, UInt(p.sourceDeliveryOpaqueWidth.W)))
+  val allocationActive = RegInit(false.B)
+  val allocationProducer = Reg(UInt(producerIndexWidth.W))
+
+  private def earlier(left: SourceCandidate, right: SourceCandidate): Bool =
+    left.arrival_ordinal < right.arrival_ordinal ||
+      (left.arrival_ordinal === right.arrival_ordinal && left.candidate_id < right.candidate_id)
+  private def targetKind(candidate: SourceCandidate): UInt = MuxCase(0.U(RouteADeliveryTargetKind.Width.W), Seq(
+    (candidate.candidate_class === p.r2PackReadClassCode.U) -> RouteADeliveryTargetKind.P3PendingRead.U,
+    (candidate.candidate_class === p.r2S2FullClassCode.U) -> RouteADeliveryTargetKind.S2FullFill.U,
+    (candidate.candidate_class === p.r2S2PackedClassCode.U) -> RouteADeliveryTargetKind.S2PackedFill.U,
+    (candidate.candidate_class === p.r2DirectPendingClassCode.U) -> RouteADeliveryTargetKind.DirectPendingRead.U,
+    (candidate.candidate_class === p.r2PackWriteClassCode.U) -> RouteADeliveryTargetKind.PackedWriteTerminal.U,
+    (candidate.candidate_class === p.r2DescriptorMaintenanceClassCode.U) -> RouteADeliveryTargetKind.DescriptorMaintenanceTerminal.U,
+  ))
+  private val expectedLaneClasses = Seq(
+    p.r2PackReadClassCode,
+    p.r2DirectPendingClassCode,
+    p.r2S2PackedClassCode,
+    p.r2PackWriteClassCode,
+    p.r2DescriptorMaintenanceClassCode,
+    p.r2DescriptorMaintenanceClassCode,
+  )
+
+  var found: Bool = false.B
+  var selected = 0.U(producerIndexWidth.W)
+  var best = 0.U.asTypeOf(new SourceCandidate(p))
+  for (index <- 0 until producerCount) {
+    // A class may be legal at R2 yet illegal on this named owner lane.  This
+    // closes the route-a producer ownership boundary before the shared bridge
+    // can allocate an association for a misdirected carrier.
+    val laneClassMatches = inputs(index).bits.candidate_class === expectedLaneClasses(index).U
+    val eligible = inputs(index).valid && laneClassMatches && !bound(index) && !awaitingRelease(index)
+    val take = eligible && (!found || earlier(inputs(index).bits, best))
+    selected = Mux(take, index.U(producerIndexWidth.W), selected)
+    best = Mux(take, inputs(index).bits, best)
+    found = found || eligible
+  }
+
+  io.registry_allocate_out.valid := !allocationActive && found
+  io.registry_allocate_out.bits.candidate_class := best.candidate_class
+  io.registry_allocate_out.bits.transaction_identity := best.r1_request.transaction_identity
+  io.registry_allocate_out.bits.target_kind := targetKind(best)
+  io.registry_allocate_out.bits.target_identity_generation := best.delivery_target_descriptor.source_generation
+  io.registry_allocate_out.bits.expected_fragment_count := best.r1_request.expected_fragment_count
+  io.registry_allocate_out.bits.target_descriptor := best.delivery_target_descriptor
+  io.registry_allocation_ack_in.ready := allocationActive
+
+  when(io.registry_allocate_out.fire) {
+    captured(selected) := best
+    allocationProducer := selected
+    allocationActive := true.B
+  }
+  when(io.registry_allocation_ack_in.fire) {
+    val pending = allocationProducer
+    assert(io.registry_allocation_ack_in.bits.allocation.candidate_class === captured(pending).candidate_class)
+    assert(io.registry_allocation_ack_in.bits.allocation.transaction_identity.asUInt ===
+      captured(pending).r1_request.transaction_identity.asUInt)
+    assert(io.registry_allocation_ack_in.bits.allocation.expected_fragment_count ===
+      captured(pending).r1_request.expected_fragment_count)
+    assert(io.registry_allocation_ack_in.bits.allocation.target_descriptor.asUInt ===
+      captured(pending).delivery_target_descriptor.asUInt)
+    refs(pending) := io.registry_allocation_ack_in.bits.delivery_context_ref
+    bound(pending) := true.B
+    allocationActive := false.B
+  }
+
+  for (index <- 0 until producerCount) {
+    outputs(index).valid := bound(index) && !awaitingRelease(index)
+    outputs(index).bits := captured(index)
+    outputs(index).bits.delivery_context_ref := refs(index)
+    inputs(index).ready := outputs(index).fire
+    when(outputs(index).fire) {
+      bound(index) := false.B
+      awaitingRelease(index) := true.B
+    }
+    when(io.release_event_in.valid && awaitingRelease(index) &&
+      io.release_event_in.bits.delivery_context_ref === refs(index)) {
+      assert(io.release_event_in.bits.allocation.candidate_class === captured(index).candidate_class)
+      assert(io.release_event_in.bits.allocation.transaction_identity.asUInt ===
+        captured(index).r1_request.transaction_identity.asUInt)
+      awaitingRelease(index) := false.B
+    }
+  }
+}
+
+/**
   * Registry-resolved typed delivery router. It cannot reconstruct an endpoint
   * from R1 response fields: every legal route is selected from the registry's
   * stored target kind and descriptor. Read endpoints are exposed as typed

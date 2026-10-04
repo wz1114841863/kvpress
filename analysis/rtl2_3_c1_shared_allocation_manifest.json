@@ -1,0 +1,47 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-3-c1-shared-allocation-1.0",
+  "status": "implemented_directed_tested_read_producers_inactive",
+  "scope": "One six-lane production composition owner before the sole delivery-context registry. It performs immutable association-allocation serialization only; no live read producer, R1 read launch, payload/sidecar deposit, source service, scoreboard event, physical-memory, timing, throughput, PPA, numeric RTL, model/GPU, or new A4 DSE behavior is activated.",
+  "contract_references": [
+    "analysis/architecture_spec.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_3_completion_review.md",
+    "analysis/rtl2_3_2_read_ingress_contract.md",
+    "analysis/rtl2_3_3_r2_dual_ingress_contract.md"
+  ],
+  "module": {
+    "name": "route_a_unified_delivery_context_allocation_bridge",
+    "sole_registry_allocation_producer": true,
+    "selection_rule": "existing arrival_ordinal then candidate_id for association serialization only",
+    "not_owner_of": ["association table", "R2 FIFO/credit/rotation/grant", "R1 lifecycle", "payload", "authority", "source service"]
+  },
+  "lanes": [
+    {"lane":"r3_pack_read","candidate_class":"pack_read"},
+    {"lane":"r3_direct_pending","candidate_class":"direct_pending"},
+    {"lane":"r5_s2_packed","candidate_class":"s2_packed"},
+    {"lane":"r3_packed_write","candidate_class":"pack_write"},
+    {"lane":"r5_append","candidate_class":"descriptor_maintenance"},
+    {"lane":"r5_reclaim","candidate_class":"descriptor_maintenance"}
+  ],
+  "invariants": [
+    "A candidate class must match its named lane before allocation.",
+    "Registry acknowledgement must echo class, identity, expected fragment count, and target descriptor before ref-bound output.",
+    "A bound lane cannot be reused until exact router release.",
+    "Top provides inactive read producer inputs and cannot synthesize a candidate."
+  ],
+  "tests": [
+    "RouteAReadIngressSpec focused read allocation/backpressure",
+    "RouteAReadIngressSpec focused lane/class fail-closed",
+    "RouteAReadIngressSpec focused shared read/write ordering",
+    "RouteAKVSubsystemTopSpec focused elaboration",
+    "Test / compile"
+  ],
+  "evidence_labels": [
+    "synthesizable functional-control/association evidence",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL numeric-correctness claim",
+    "no new A4 DSE"
+  ]
+}

@@ -300,6 +300,14 @@ an explicit inactive carrier.  This prevents a top mux from becoming an
 arbiter, but does not itself attach the isolated RTL2.3.1/2 producers to the
 production graph.
 
+**RTL2.3-C1 shared registry-allocation composition: implemented and directed
+tested.** [`rtl2_3_c1_shared_allocation_contract.md`](rtl2_3_c1_shared_allocation_contract.md)
+replaces the production write-only bridge with one six-lane composition owner.
+It enforces each named lane's unique class before the sole registry allocates a
+context, then forwards ref-bound records to the existing read/write pre-R2
+merges.  Read producers remain inactive; this does not yet create a read
+transaction or endpoint mutation.
+
 Connect owner-produced hot, direct-pending, and packed/S2 source facts to the
 frozen source-instance and four-consumer protocol.  A source becomes
 deliverable only after its own validity prerequisites; all four distinct GQA

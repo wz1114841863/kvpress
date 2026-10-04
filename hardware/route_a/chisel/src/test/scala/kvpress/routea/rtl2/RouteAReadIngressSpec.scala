@@ -3,7 +3,7 @@ package kvpress.routea.rtl2
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
 import chisel3.util.Valid
-import kvpress.routea.common.{RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAReadDeliveryContextAllocationBridge, RouteAR2ReadIngressMerge}
+import kvpress.routea.common.{RouteADeliveryContextRegistry, RouteAR2ReadIngressMerge, RouteAUnifiedDeliveryContextAllocationBridge}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
@@ -15,19 +15,27 @@ final class RouteAReadIngressHarness(p: RouteASkeletonParameters) extends Module
     val r3_pack = Flipped(RouteAChannels.source_candidate(p))
     val r3_direct = Flipped(RouteAChannels.source_candidate(p))
     val r5_packed = Flipped(RouteAChannels.source_candidate(p))
+    val r3_write = Flipped(RouteAChannels.source_candidate(p))
     val candidate = RouteAChannels.source_candidate(p)
+    val write_candidate = RouteAChannels.source_candidate(p)
     val release_event = Input(Valid(new DeliveryContextRelease(p)))
   })
-  val bridge = Module(new RouteAReadDeliveryContextAllocationBridge(p))
+  val bridge = Module(new RouteAUnifiedDeliveryContextAllocationBridge(p))
   val registry = Module(new RouteADeliveryContextRegistry(p))
   val merge = Module(new RouteAR2ReadIngressMerge(p))
   bridge.io.r3_pack_read_in <> io.r3_pack
   bridge.io.r3_direct_pending_in <> io.r3_direct
   bridge.io.r5_s2_packed_in <> io.r5_packed
+  bridge.io.r3_packed_write_in <> io.r3_write
+  StructuralTieOff.source(bridge.io.r5_append_in)
+  StructuralTieOff.source(bridge.io.r5_reclaim_in)
   merge.io.r3_pack_read_in <> bridge.io.r3_pack_read_out
   merge.io.r3_direct_pending_in <> bridge.io.r3_direct_pending_out
   merge.io.r5_s2_packed_in <> bridge.io.r5_s2_packed_out
   io.candidate <> merge.io.candidate_out
+  io.write_candidate <> bridge.io.r3_packed_write_out
+  StructuralTieOff.sink(bridge.io.r5_append_out)
+  StructuralTieOff.sink(bridge.io.r5_reclaim_out)
   registry.io.mem_init_done := io.mem_init_done
   registry.io.allocation_in <> bridge.io.registry_allocate_out
   bridge.io.registry_allocation_ack_in <> registry.io.allocation_ack_out
@@ -90,11 +98,13 @@ final class RouteAReadIngressSpec extends AnyFunSpec with ChiselSim {
   }
 
   private def init(d: RouteAReadIngressHarness): Unit = {
-    d.io.mem_init_done.poke(false.B); d.io.r3_pack.valid.poke(false.B); d.io.r3_direct.valid.poke(false.B); d.io.r5_packed.valid.poke(false.B)
-    d.io.candidate.ready.poke(false.B); d.io.release_event.valid.poke(false.B)
+    d.io.mem_init_done.poke(false.B); d.io.r3_pack.valid.poke(false.B); d.io.r3_direct.valid.poke(false.B); d.io.r5_packed.valid.poke(false.B); d.io.r3_write.valid.poke(false.B)
+    d.io.candidate.ready.poke(false.B); d.io.write_candidate.ready.poke(false.B); d.io.release_event.valid.poke(false.B)
     driveCandidate(d.io.r3_pack.bits, p.r2PackReadClassCode, 2, 2, 1)
     driveCandidate(d.io.r3_direct.bits, p.r2DirectPendingClassCode, 0, 0, 2)
     driveCandidate(d.io.r5_packed.bits, p.r2S2PackedClassCode, 1, 1, 3)
+    driveCandidate(d.io.r3_write.bits, p.r2PackWriteClassCode, 4, 4, 4)
+    d.io.r3_write.bits.r1_request.request_kind.poke(p.coreMemoryWriteRequestCode.U)
     driveRelease(d.io.release_event.bits, 0, p.r2DirectPendingClassCode, 2)
   }
 
@@ -125,6 +135,20 @@ final class RouteAReadIngressSpec extends AnyFunSpec with ChiselSim {
       driveCandidate(dut.io.r3_pack.bits, p.r2PackWriteClassCode, 0, 0, 1)
       dut.io.r3_pack.valid.poke(true.B); dut.clock.step(2)
       dut.io.candidate.valid.expect(false.B); dut.io.r3_pack.ready.expect(false.B)
+    }
+  }
+
+  it("serializes a lower-ordinal write and read offer through one shared registry-allocation owner") {
+    simulate(new RouteAReadIngressHarness(p)) { dut =>
+      init(dut); dut.io.mem_init_done.poke(true.B); dut.clock.step()
+      driveCandidate(dut.io.r3_direct.bits, p.r2DirectPendingClassCode, 3, 3, 2)
+      driveCandidate(dut.io.r3_write.bits, p.r2PackWriteClassCode, 0, 0, 4)
+      dut.io.r3_direct.valid.poke(true.B); dut.io.r3_write.valid.poke(true.B)
+      dut.clock.step(3)
+      dut.io.write_candidate.valid.expect(true.B)
+      dut.io.write_candidate.bits.candidate_class.expect(p.r2PackWriteClassCode.U)
+      dut.io.write_candidate.bits.candidate_id.expect(0.U)
+      dut.io.candidate.valid.expect(false.B)
     }
   }
 }

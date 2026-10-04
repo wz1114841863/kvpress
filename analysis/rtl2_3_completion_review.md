@@ -1,6 +1,6 @@
 # RTL2.3 completion / cross-owner integration review
 
-**Review status:** `partial_pass_for_r2_ingress_preparation_only`.
+**Review status:** `partial_pass_for_ingress_and_shared_allocation_only`.
 
 This review checks the completed RTL2.3.0--RTL2.3.3 slices against the phase
 contract, rather than treating individually passing isolated tests as a full
@@ -17,6 +17,7 @@ physical-memory, controller, timing, PPA, or end-to-end RTL correctness claim.
 | Route-A incremental R3/R5 lanes can obtain immutable registry associations before pre-R2 composition. | RTL2.3.2 isolated bridge + registry + merge handles pack-read, direct-pending, packed-S2. | closed in isolation |
 | Top does not become a read/write arbiter. | RTL2.3.3 places dual-ingress choice in R2 and ties the top read carrier inactive. | closed |
 | Existing R2 rotation/issue ownership is retained. | No R2 selection logic was moved; focused test shows R2-only input acceptance and ready-low hold. | closed at ingress boundary |
+| Read/write producers share exactly one registry allocation owner. | RTL2.3-C1 six-lane bridge replaces the production write-only bridge and rejects lane/class mismatch. | closed |
 
 ## Unclosed phase requirements
 
@@ -26,7 +27,6 @@ following are real blockers, not harmless documentation gaps:
 
 | Missing closure | Why it blocks RTL2.3 completion |
 |---|---|
-| One shared registry-allocation composition owner for active read and existing write producers. | The sole registry has one allocation input; both allocation bridges cannot be connected to it without a named owner and ordering contract. |
 | Live R3/R5 read-issue producer attachment. | The adapter and read ingress are not instantiated in the production top, so no descriptor can enter R2. |
 | Exact R1 read response to P3/S2/direct endpoint adapters. | The typed router read output is still tied inactive; no payload/sidecar deposit or fault/no-deposit behavior exists in the production graph. |
 | P3 pack-read source completion and sidecar association. | P3 has functional backing, but no registry-resolved read response reaches its owner. |
@@ -39,13 +39,11 @@ following are real blockers, not harmless documentation gaps:
 RTL2.3 is **not complete**.  The code is ready for the next narrow closure,
 but it must not be represented as a production source-service dataflow.
 
-1. Close a shared allocation-composition owner that preserves producer
-   ordinal/ID facts and feeds the sole registry without a top mux.
-2. Attach one smallest live source first: R3 `pack_read` through R2/R1 and a
+1. Attach one smallest live source first: R3 `pack_read` through R2/R1 and a
    P3 endpoint, including stale/mismatch/fault no-deposit checks.
-3. Attach direct-pending and packed-S2 endpoint paths separately, including
+2. Attach direct-pending and packed-S2 endpoint paths separately, including
    sidecar requirements for packed S2.
-4. Only then activate source packet egress, canonical
+3. Only then activate source packet egress, canonical
    `hot -> pending -> packed` sequencing, and the existing four-consumer
    completion/release protocol to R4/R6.
 
