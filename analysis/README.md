@@ -23,14 +23,14 @@ source-instance/R6 completion, and R5 reclaim through the unique R2/R1 path;
 RTL1-V subsequently closed the remaining bounded verification/scoreboard
 bindings. RTL2.0 has now closed its seven pre-behavior producer/interface
 amendments, passed cross-owner completion review, and frozen a versioned
-scoreboard-event schema. RTL2.1a now implements and directed-tests the sole
-immutable retained-group/admission association through R5 allocation and R3
-claim/relay, while preserving pending authority. RTL2.1b is now in progress:
-it front-loads replaceable P3 functional backing/hot payload egress and the
-unique payload-write/descriptor-durability owner path, without publication or
-authority activation. Remaining work is
-production ingress binding and end-to-end transaction/dataflow verification—not
-PPA, controller, native-HBM, numeric realization, or performance work.
+scoreboard-event schema. RTL2.1a--RTL2.1c atomic-publication behavior and
+RTL2.2 read/write delivery prerequisites are implemented and directed tested.
+RTL2.3.0--.3 plus C1--C5 close read-endpoint preparation and structural R4
+packet ingress, but RTL2.3 is still partial: C6--C9 must bind a non-top
+source-plan producer, source-owner packet service, four-consumer release, and
+one top-composed endpoint path. RTL2.3-R records the active event-phase map;
+the next work remains functional control/dataflow closure—not PPA, controller,
+native-HBM, numeric realization, or performance work.
 
 ## Current architecture and verification records
 
@@ -48,6 +48,7 @@ Read these only when the corresponding level of detail is required:
 | Gate-RTL0 assertion/scoreboard/coverage plan | [`rtl_entry_assertion_verification_contract.md`](rtl_entry_assertion_verification_contract.md) and [`rtl_entry_assertion_matrix.json`](rtl_entry_assertion_matrix.json) |
 | RTL1-V executable verification closure | [`rtl1_v_verification_completion_contract.md`](rtl1_v_verification_completion_contract.md), [`rtl1_v_scoreboard_event_schema.json`](rtl1_v_scoreboard_event_schema.json), and [`rtl1_v_provenance_freeze.md`](rtl1_v_provenance_freeze.md) |
 | RTL2 production transaction/dataflow activation plan | [`rtl2_phase_contract.md`](rtl2_phase_contract.md) |
+| RTL2.3 active phase/event reconciliation | [`rtl2_3_reconciliation_01.md`](rtl2_3_reconciliation_01.md) and [`rtl2_scoreboard_event_phase_reconciliation_01.json`](rtl2_scoreboard_event_phase_reconciliation_01.json) |
 | RTL2.0 producer/event activation inventory | [`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and [`rtl2_0_activation_manifest.json`](rtl2_0_activation_manifest.json) |
 | RTL2.0a logical payload materialization / hot maturity egress | [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md) and [`rtl2_0a_payload_materialization_manifest.json`](rtl2_0a_payload_materialization_manifest.json) |
 | RTL2.0b retained admission-group builder | [`rtl2_0b_admission_group_builder_contract.md`](rtl2_0b_admission_group_builder_contract.md) and [`rtl2_0b_admission_group_builder_manifest.json`](rtl2_0b_admission_group_builder_manifest.json) |

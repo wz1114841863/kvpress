@@ -2,6 +2,10 @@
 
 **Review status:** `partial_pass_for_ingress_endpoints_and_structural_r4_packet_ingress_only`.
 
+**Active navigation:** [`RTL2.3-R`](rtl2_3_reconciliation_01.md) reconciles
+future phase/event labels without changing this partial disposition or
+activating an event.
+
 This review checks the completed RTL2.3.0--RTL2.3.3 slices against the phase
 contract, rather than treating individually passing isolated tests as a full
 source-service completion.  It uses architecture and Chisel source inspection
@@ -34,20 +38,19 @@ following are real blockers, not harmless documentation gaps:
 | Direct-pending terminal sequence. | C3 passes eight transient record fragments through the typed endpoint and emits the existing terminal only after the eighth accepted fragment. It is not yet a top-level source packet path. |
 | Source packet emission to R4 and four-consumer completion/release wiring. | **Partially closed by C5:** an R6 accepted plan copy and owner-provided structural packets reach the existing R4 parser for every present-source/four-consumer combination. Still unclosed: real hot/direct/S2 partial producers, owner-side commit consumption/release, R6 merge request, and terminal association. |
 
-## Review disposition and next safe order
+## Review disposition and remaining closure order
 
 RTL2.3 is **not complete**.  The code is ready for the next narrow closure,
 but it must not be represented as a production source-service dataflow.
 
-1. C2 has closed the smallest R3 `pack_read` integration witness; do not expand
-   it into a permanent serial scheduler or top ingress selector.
-2. C3 and C4 have closed direct-pending and packed-S2 endpoint witnesses;
-   neither creates a pending buffer, top producer, or source packet.
-3. C5 now closes structural source packet egress and canonical
-   `hot -> pending -> packed` sequencing into R4. The next separately scoped
-   work must attach real owner-side partial production and then the existing
-   four-consumer completion/release protocol to R4/R6; it must not treat C5's
+1. **C6** names the non-top source-plan binder; C5 cannot synthesize that plan.
+2. **C7** instantiates the existing adapter in the composition-only top and
+   binds the accepted-plan copy plus exact owner availability observations.
+3. **C8** proves all seven masks through four commits, one exact owner release
+   per present source, and the R6 merge request; it must not treat C5's
    verification offers as source arithmetic.
+4. **C9** replaces the isolated C2/C3/C4 endpoint witnesses with one authorized
+   top composition path before an RTL2.3 completion review.
 
 The review permits this next control/dataflow closure only.  It does not
 authorize changing pruning, admission, page size, M2/P3 organization, S2

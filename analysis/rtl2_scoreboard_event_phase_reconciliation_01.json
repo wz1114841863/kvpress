@@ -1,0 +1,42 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-scoreboard-event-phase-reconciliation-1.1",
+  "status": "active_navigation_phase_map_no_events_emittable",
+  "scope": "Active RTL2 phase-label overlay only. It does not alter the historical v1.0 scoreboard schema, RTL2.0 activation manifest, owner/carrier fields, event required fields, RTL behavior, numeric datapath, model/GPU, timing, throughput, PPA, or new A4 DSE.",
+  "base_schema": {
+    "path": "analysis/rtl2_scoreboard_event_schema.json",
+    "schema_version": "kvzap-route-a-rtl2-scoreboard-event-1.0",
+    "rule": "Historical v1.0 remains immutable and valid for its pre-behavior RTL2.0 review. This overlay supplies only active future-phase labels."
+  },
+  "active_phase_contract": "analysis/rtl2_phase_contract.md",
+  "reconciliation_record": "analysis/rtl2_3_reconciliation_01.md",
+  "overrides": [
+    {"event": "source_deliverable", "historical_activation_phase": "rtl2_4", "active_activation_phase": "rtl2_3_c7", "emission_state": "not_emittable_until_named_behavioral_phase"},
+    {"event": "consumer_partial_commit", "historical_activation_phase": "rtl2_4", "active_activation_phase": "rtl2_3_c8", "emission_state": "not_emittable_until_named_behavioral_phase"},
+    {"event": "source_release", "historical_activation_phase": "rtl2_4", "active_activation_phase": "rtl2_3_c8", "emission_state": "not_emittable_until_named_behavioral_phase"},
+    {"event": "merge_request", "historical_activation_phase": "rtl2_5", "active_activation_phase": "rtl2_3_c8", "emission_state": "not_emittable_until_named_behavioral_phase"},
+    {"event": "attention_terminal", "historical_activation_phase": "rtl2_5", "active_activation_phase": "rtl2_4", "emission_state": "not_emittable_until_named_behavioral_phase"},
+    {"event": "descriptor_invalidate", "historical_activation_phase": "rtl2_6", "active_activation_phase": "rtl2_5", "emission_state": "not_emittable_until_named_behavioral_phase"},
+    {"event": "page_free", "historical_activation_phase": "rtl2_6", "active_activation_phase": "rtl2_5", "emission_state": "not_emittable_until_named_behavioral_phase"},
+    {"event": "retire_ack", "historical_activation_phase": "rtl2_6", "active_activation_phase": "rtl2_5", "emission_state": "not_emittable_until_named_behavioral_phase"}
+  ],
+  "unmodified_inheritance": "All event names, owners, carrier IDs, required fields, forbidden rules, and evidence labels are inherited exactly from v1.0.",
+  "forbidden": [
+    "modify historical rtl2_scoreboard_event_schema.json",
+    "modify historical rtl2_0_activation_manifest.json",
+    "event emission before its active named behavioral phase",
+    "infer architectural event from arbitrary internal state",
+    "top-generated source plan",
+    "numeric merge or source-partial computation claim",
+    "raw HBM byte observation",
+    "cycle or latency annotation",
+    "PPA claim"
+  ],
+  "evidence_labels": [
+    "documentation-only active navigation",
+    "no model/GPU",
+    "no RTL behavior claim",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no new A4 DSE"
+  ]
+}

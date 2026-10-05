@@ -6,7 +6,8 @@ rtl2_2_2_typed_write_delivery_implemented_directed_tested;
 rtl2_2_3_functional_storage_implemented_directed_tested;
 rtl2_2_4_read_delivery_context_implemented_directed_tested;
 rtl2_3_0_read_issue_contract_implemented_directed_tested;
-rtl2_3_c5_source_packet_r4_implemented_directed_tested_limited_protocol_closure`.
+rtl2_3_c5_source_packet_r4_implemented_directed_tested_limited_protocol_closure;
+rtl2_3_r_active_phase_reconciled_no_behavioral_activation`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -267,6 +268,13 @@ The complete canonical numbering map, including historical manifest labels, is
 
 ## RTL2.3 — Source service and multi-source composition
 
+**RTL2.3-R active phase reconciliation: complete; no behavior activated.**
+[`rtl2_3_reconciliation_01.md`](rtl2_3_reconciliation_01.md) preserves the
+historical RTL2.0 schema and manifest while supplying the active phase labels
+for the remaining RTL2.3--RTL2.6 work. Its JSON overlay is a navigation map,
+not an event emitter or a replacement schema. In particular, C1--C5 remain
+preparation/structural closures; the parent RTL2.3 phase remains incomplete.
+
 **RTL2.3.0 read-issue descriptor contract: implemented and directed tested.**
 [`rtl2_3_0_read_issue_contract.md`](rtl2_3_0_read_issue_contract.md) and its
 machine-readable manifest bind the pre-R1 read facts—opaque payload handle,
@@ -366,12 +374,34 @@ consumer commits are required before its exact generation-bearing release.
 The source mask and canonical order remain frozen as `hot -> pending -> packed`;
 the RTL must not claim that arbitrary source reordering is bitwise equivalent.
 
-The result is a functional source packet/fragment path, not a source scheduler,
-HBM bandwidth model, or numeric merge implementation.
+The RTL2.3 result **after the remaining closure sequence below** is a
+functional source packet/fragment path, not a source scheduler, HBM bandwidth
+model, or numeric merge implementation.
+
+### Remaining RTL2.3 closure order
+
+The preceding sentence is a parent-phase requirement, not a claim that C5's
+testbench-provided structural packets already satisfy it. The only authorized
+remaining sequence is:
+
+1. **C6:** source-plan binder with a named non-top producer of R6's immutable
+   nonempty source declaration;
+2. **C7:** composition-only top binding of the accepted plan copy, source-owner
+   availability, and existing packet adapter;
+3. **C8:** all-mask four-consumer commit/release association through R6
+   `merge_req`; and
+4. **C9:** one authorized top composition path replacing the isolated C2/C3/C4
+   endpoint witnesses, without representing opaque verification fragments as
+   numeric source partials.
+
+Only C6--C9 permit an RTL2.3 `control_protocol_complete` review disposition.
+They do not authorize a source scheduler, numeric attention computation,
+physical memory/controller selection, timing, throughput, or PPA claim.
 
 ## RTL2.4 — R4 boundary activation with replaceable result stub
 
-Activate the existing R4 packet/result/fault boundary using a deterministic
+After RTL2.3 has produced and held a legal R6 `merge_req`, activate the
+existing R4 packet/result/fault boundary using a deterministic
 verification result stub.  The stub may issue an identity-matching success or
 one numeric fault after a valid source-completion association, so that R6 has
 one outward terminal route.  It may not be represented as an exp, floating
