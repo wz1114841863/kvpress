@@ -1,0 +1,56 @@
+{
+  "schema_version": "rtl2.3-c9-top-endpoint-composition-manifest-1.0",
+  "status": "passed_no_model_directed_and_structural_verification",
+  "scope": "pure Chisel control/dataflow composition; no model or GPU",
+  "implementation": {
+    "shared_read_endpoint_demultiplexer": "route_a_read_endpoint_demultiplexer",
+    "p3_ingress_rule": "explicit mutually-exclusive hot versus pack-read ingress; simultaneous offer fails closed",
+    "top_verification_ingress": "C2/C3/C4 environment-only carriers; not a production source-plan, scheduler, numeric, or physical-memory interface",
+    "opaque_packet_boundary": "C5/C7 structural offers/fragments remain non-numeric and inactive as numeric partials"
+  },
+  "tests": [
+    {
+      "command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteAR3PackReadPathSpec'",
+      "result": "passed",
+      "tests": 4,
+      "coverage": "C2 path through the shared descriptor-only demultiplexer and C9 exclusive P3 ingress, including existing stale/mismatch/fault fail-closed cases"
+    },
+    {
+      "command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteADirectPendingReadPathSpec kvpress.routea.rtl2.RouteAPackedS2ReadPathSpec'",
+      "result": "passed",
+      "tests": 11,
+      "coverage": "C3/C4 positive paths plus existing stale, identity/generation mismatch, malformed fragment, and terminal fault fail-closed cases through the shared descriptor-only demultiplexer"
+    },
+    {
+      "command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec'",
+      "result": "passed",
+      "tests": 3,
+      "coverage": "top elaboration including C9 children and named verification ingress ports"
+    },
+    {
+      "command": "python3 -m json.tool analysis/rtl2_scoreboard_event_phase_reconciliation_01.json >/dev/null && git diff --check",
+      "result": "passed",
+      "coverage": "navigation JSON syntax and whitespace preflight"
+    }
+  ],
+  "source_sha256": {
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "3957891e86353a4a39c3457b5fb6dfe5cc21524a72b7455d0b2c91afbcc23dbe",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "e2c83d544942b64df62250239fa3f1274ddbceaa7fb8a8c9f63293c2fb691167",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR3PackReadPathSpec.scala": "c25b17aae887445ddb389e5349e540bac44e2ac08104360dd2140bda9de2fb1d",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteADirectPendingReadPathSpec.scala": "a0baa31bef226402e6d75211f1758e2e756c1d58cbe6a64456ee04c4e067a3f4",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAPackedS2ReadPathSpec.scala": "12eac197a51d76fadaa489c8e24fceec98437121ce70008b42d5d0868b41b66a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala": "9dc4864155bbf7c8d2011f788669ef6fbbf9f5094dadba2c36af8dfb7f34ae66",
+    "analysis/rtl2_3_c9_top_endpoint_composition_contract.md": "5f53015053b814d40d19848f8707358f0d6f9d0027657128d2c57d714e759fe8",
+    "analysis/rtl2_phase_contract.md": "51c123afc1e685b0f1b0e854d91acee2298c4795efa63278f7d70c02f25700de",
+    "analysis/rtl2_3_reconciliation_01.md": "7f3a53c220fbf77d4f5d039464878ef3ddcaa1f6c9f3f407f388e317d1f7e287",
+    "analysis/rtl2_3_completion_review.md": "cdc0e01ab30f5fc965f22550a59acf80ef7ac2911d804a719e466588d0b815d8",
+    "analysis/README.md": "6a0acf26a0cf617fd6294a253aeb099e72fc17063a3e9c6d6a30e62a95cec025"
+  },
+  "evidence_boundary": [
+    "pure-software Chisel executable contract",
+    "no model or GPU",
+    "no cycle, timing, throughput, area, energy, PPA, or RTL correctness claim",
+    "no new A4 DSE",
+    "not production numeric attention or end-to-end Route-A dataflow"
+  ]
+}

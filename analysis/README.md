@@ -29,11 +29,13 @@ RTL2.3.0--.3 plus C1--C5 close read-endpoint preparation and structural R4
 packet ingress. RTL2.3-C6 binds the non-top source-plan producer and RTL2.3-C7
 connects its R6 plan copy plus exact source-owner observations to the packet
 adapter. RTL2.3-C8 closes four-consumer release and R6 merge-request
-association in a verification-packet integration harness, but the phase is
-still partial: C9 must bind one top-composed endpoint path. RTL2.3-R records
-the active event-phase map;
-the next work remains functional control/dataflow closure—not PPA, controller,
-native-HBM, numeric realization, or performance work.
+association in a verification-packet integration harness. RTL2.3-C9 now binds
+the C2/C3/C4 endpoints through one descriptor-selected top composition path
+with explicitly non-production verification ingress. RTL2.3 is therefore
+ready for its separate completion review; it remains neither numeric attention
+nor production end-to-end dataflow. RTL2.3-R records the active event-phase
+map; the next work is review—not PPA, controller, native-HBM, numeric
+realization, or performance work.
 
 ## Current architecture and verification records
 
@@ -55,6 +57,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2.3-C6 R6 source-plan producer | [`rtl2_3_c6_source_plan_binder_contract.md`](rtl2_3_c6_source_plan_binder_contract.md) and [`rtl2_3_c6_source_plan_binder_manifest.json`](rtl2_3_c6_source_plan_binder_manifest.json) |
 | RTL2.3-C7 source-service top integration | [`rtl2_3_c7_source_service_top_integration_contract.md`](rtl2_3_c7_source_service_top_integration_contract.md) and [`rtl2_3_c7_source_service_top_integration_manifest.json`](rtl2_3_c7_source_service_top_integration_manifest.json) |
 | RTL2.3-C8 four-consumer completion / R6 merge request | [`rtl2_3_c8_four_consumer_completion_contract.md`](rtl2_3_c8_four_consumer_completion_contract.md) and [`rtl2_3_c8_four_consumer_completion_manifest.json`](rtl2_3_c8_four_consumer_completion_manifest.json) |
+| RTL2.3-C9 authorized top endpoint composition | [`rtl2_3_c9_top_endpoint_composition_contract.md`](rtl2_3_c9_top_endpoint_composition_contract.md) and [`rtl2_3_c9_top_endpoint_composition_manifest.json`](rtl2_3_c9_top_endpoint_composition_manifest.json) |
 | RTL2.0 producer/event activation inventory | [`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and [`rtl2_0_activation_manifest.json`](rtl2_0_activation_manifest.json) |
 | RTL2.0a logical payload materialization / hot maturity egress | [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md) and [`rtl2_0a_payload_materialization_manifest.json`](rtl2_0a_payload_materialization_manifest.json) |
 | RTL2.0b retained admission-group builder | [`rtl2_0b_admission_group_builder_contract.md`](rtl2_0b_admission_group_builder_contract.md) and [`rtl2_0b_admission_group_builder_manifest.json`](rtl2_0b_admission_group_builder_manifest.json) |

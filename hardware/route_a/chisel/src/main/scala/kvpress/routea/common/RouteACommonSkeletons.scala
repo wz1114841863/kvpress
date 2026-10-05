@@ -1382,6 +1382,71 @@ final class RouteATypedDeliveryRouter(p: RouteASkeletonParameters) extends Modul
 }
 
 /**
+  * RTL2.3-C9's sole top-level read-endpoint composition point.  R2/R1 may
+  * reach an endpoint only through the registry-resolved descriptor carried
+  * here; this block neither reconstructs an endpoint from a response nor
+  * chooses a source-service schedule.  Unknown or cross-class descriptors
+  * are deliberately backpressured.
+  */
+final class RouteAReadEndpointDemultiplexer(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_read_endpoint_demultiplexer"
+
+  val io = IO(new Bundle {
+    val resolved_in = Flipped(RouteAChannels.resolved_delivery(p))
+    val p3_pack_read_out = RouteAChannels.resolved_delivery(p)
+    val direct_pending_out = RouteAChannels.resolved_delivery(p)
+    val packed_s2_out = RouteAChannels.resolved_delivery(p)
+  })
+
+  val resolved = io.resolved_in.bits
+  val source = resolved.source_delivery
+  val allocation = resolved.allocation
+  val isP3PackRead = source.candidate_class === p.r2PackReadClassCode.U &&
+    allocation.candidate_class === p.r2PackReadClassCode.U &&
+    allocation.target_kind === RouteADeliveryTargetKind.P3PendingRead.U
+  val isDirectPending = source.candidate_class === p.r2DirectPendingClassCode.U &&
+    allocation.candidate_class === p.r2DirectPendingClassCode.U &&
+    allocation.target_kind === RouteADeliveryTargetKind.DirectPendingRead.U
+  val isPackedS2 = source.candidate_class === p.r2S2PackedClassCode.U &&
+    allocation.candidate_class === p.r2S2PackedClassCode.U &&
+    allocation.target_kind === RouteADeliveryTargetKind.S2PackedFill.U
+
+  io.p3_pack_read_out.valid := io.resolved_in.valid && isP3PackRead
+  io.p3_pack_read_out.bits := resolved
+  io.direct_pending_out.valid := io.resolved_in.valid && isDirectPending
+  io.direct_pending_out.bits := resolved
+  io.packed_s2_out.valid := io.resolved_in.valid && isPackedS2
+  io.packed_s2_out.bits := resolved
+  io.resolved_in.ready := Mux(isP3PackRead, io.p3_pack_read_out.ready,
+    Mux(isDirectPending, io.direct_pending_out.ready,
+      Mux(isPackedS2, io.packed_s2_out.ready, false.B)))
+}
+
+/**
+  * The pre-existing hot ingress and C2 pack-read endpoint share the one P3
+  * functional backing only under an explicit environment exclusion.  C9
+  * intentionally fails closed on a simultaneous offer: resolving that case
+  * with a priority policy would silently create a new P3 service schedule.
+  */
+final class RouteAExclusiveP3PendingIngress(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_exclusive_p3_pending_ingress"
+
+  val io = IO(new Bundle {
+    val hot_in = Flipped(RouteAChannels.p3_pending_fragment(p))
+    val pack_read_in = Flipped(RouteAChannels.p3_pending_fragment(p))
+    val out = RouteAChannels.p3_pending_fragment(p)
+  })
+
+  val simultaneous = io.hot_in.valid && io.pack_read_in.valid
+  io.out.valid := (io.hot_in.valid || io.pack_read_in.valid) && !simultaneous
+  io.out.bits := Mux(io.hot_in.valid, io.hot_in.bits, io.pack_read_in.bits)
+  io.hot_in.ready := !io.pack_read_in.valid && io.out.ready
+  io.pack_read_in.ready := !io.hot_in.valid && io.out.ready
+  assert(!simultaneous,
+    "C9 P3 ingress requires environment exclusion; no hidden priority/schedule is authorized")
+}
+
+/**
   * RTL2.3-C2 endpoint for a registry-resolved R3 pending-member pack read.
   * It translates only an exact typed response into P3's existing logical
   * fragment carrier.  It owns no association, source scheduling, P3 state,

@@ -2,7 +2,7 @@ package kvpress.routea.rtl2
 
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
-import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAR2ReadIngressMerge, RouteAR3PackReadEndpoint, RouteAReadIssueCandidateAdapter, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
+import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAExclusiveP3PendingIngress, RouteAReadEndpointDemultiplexer, RouteAR2ReadIngressMerge, RouteAR3PackReadEndpoint, RouteAReadIssueCandidateAdapter, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
 import kvpress.routea.incremental.RouteAM2P3Wrapper
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteAR6Encoding, RouteASkeletonParameters}
@@ -34,7 +34,9 @@ final class RouteAR3PackReadPathHarness(p: RouteASkeletonParameters) extends Mod
   val r1 = Module(new RouteACoreMemIfV1(p))
   val registry = Module(new RouteADeliveryContextRegistry(p))
   val router = Module(new RouteATypedDeliveryRouter(p))
+  val endpointDemux = Module(new RouteAReadEndpointDemultiplexer(p))
   val endpoint = Module(new RouteAR3PackReadEndpoint(p))
+  val p3Ingress = Module(new RouteAExclusiveP3PendingIngress(p))
 
   r3.io.mem_init_done := io.p3_mem_init_done
   r3.io.drain_collection_enable := false.B
@@ -77,12 +79,17 @@ final class RouteAR3PackReadPathHarness(p: RouteASkeletonParameters) extends Mod
   router.io.resolved_in <> registry.io.resolved_out
   registry.io.release_in <> router.io.release_out
   bridge.io.release_event_in := router.io.release_event_out
-  router.io.read_fragment_out <> endpoint.io.resolved_fragment_in
+  endpointDemux.io.resolved_in <> router.io.read_fragment_out
+  endpoint.io.resolved_fragment_in <> endpointDemux.io.p3_pack_read_out
+  StructuralTieOff.sink(endpointDemux.io.direct_pending_out)
+  StructuralTieOff.sink(endpointDemux.io.packed_s2_out)
   StructuralTieOff.sink(router.io.r3_packed_write_out)
   StructuralTieOff.sink(router.io.r5_append_out)
   StructuralTieOff.sink(router.io.r5_reclaim_out)
 
-  r3.io.p3_pending_fragment_in <> endpoint.io.p3_pending_fragment_out
+  StructuralTieOff.source(p3Ingress.io.hot_in)
+  p3Ingress.io.pack_read_in <> endpoint.io.p3_pending_fragment_out
+  r3.io.p3_pending_fragment_in <> p3Ingress.io.out
   r3.io.p3_sidecar_bind_in <> io.p3_sidecar
   StructuralTieOff.source(r3.io.p3_packed_write_issue_in)
   StructuralTieOff.source(r3.io.p3_packed_write_terminal_in)

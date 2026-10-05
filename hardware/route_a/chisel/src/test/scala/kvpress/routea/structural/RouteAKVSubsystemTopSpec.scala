@@ -32,8 +32,10 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     coreMemoryRequestKindWidth = 3,
     coreMemoryDestinationWidth = 2,
     coreMemoryAddressRefWidth = 1,
-    coreMemoryFragmentCountWidth = 1,
-    coreMemoryFragmentIndexWidth = 1,
+    // C9 instantiates the frozen packed-S2 functional endpoint, whose
+    // logical 0..512 fragment carrier requires these elaboration widths.
+    coreMemoryFragmentCountWidth = 10,
+    coreMemoryFragmentIndexWidth = 9,
     coreMemoryReadRequestCode = 0,
     coreMemoryWriteRequestCode = 1,
     coreMemoryWriteDataCode = 2,
@@ -68,6 +70,11 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
       "route_a_source_plan_binder",
       "route_a_source_service_packet_adapter",
       "route_a_source_commit_demultiplexer",
+      "route_a_read_endpoint_demultiplexer",
+      "route_a_exclusive_p3_pending_ingress",
+      "route_a_r3_pack_read_endpoint",
+      "route_a_direct_pending_read_endpoint",
+      "route_a_packed_s2_read_endpoint",
       "route_a_merge_boundary",
       "route_a_component_status_collector",
     ).foreach { moduleName =>
@@ -112,6 +119,9 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     systemVerilog should include("external_core_mem_if_v1_request_valid")
     systemVerilog should include("source_packet_adapter")
     chirrtl should include("packed_observe_slot_out")
+    chirrtl should include("verification_p3_pack_read_work_in")
+    chirrtl should include("verification_direct_pending_read_work_in")
+    chirrtl should include("verification_packed_s2_read_work_in")
   }
 
   it should "preserve the selected, non-opaque Route-A anchor widths" in {

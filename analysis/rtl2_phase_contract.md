@@ -420,11 +420,15 @@ remaining sequence is:
    source-owner availability, and existing packet adapter;
 3. **C8: complete.** All-mask four-consumer commit/release association through
    R6 `merge_req` is directed-tested; and
-4. **C9:** one authorized top composition path replacing the isolated C2/C3/C4
-   endpoint witnesses, without representing opaque verification fragments as
-   numeric source partials.
+4. **C9: complete.** One descriptor-selected top composition path now
+   replaces the isolated C2/C3/C4 endpoint router attachments. Its explicit
+   verification ingress is mutually exclusive with lifecycle-owned ingress;
+   it does not represent opaque verification fragments as numeric source
+   partials or choose a source schedule.
 
-Only C6--C9 permit an RTL2.3 `control_protocol_complete` review disposition.
+With C6--C9 closed, RTL2.3 is ready for its separate
+`control_protocol_complete` review disposition. That review is not implicit
+in a passing C9 test run.
 They do not authorize a source scheduler, numeric attention computation,
 physical memory/controller selection, timing, throughput, or PPA claim.
 

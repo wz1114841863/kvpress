@@ -2,7 +2,7 @@ package kvpress.routea.rtl2
 
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
-import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAR2ReadIngressMerge, RouteADirectPendingReadEndpoint, RouteAReadIssueCandidateAdapter, RouteAR3DirectPendingReadProducer, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
+import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAReadEndpointDemultiplexer, RouteAR2ReadIngressMerge, RouteADirectPendingReadEndpoint, RouteAReadIssueCandidateAdapter, RouteAR3DirectPendingReadProducer, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
 import kvpress.routea.incremental.RouteADirectPendingEndpointV1
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteAR6Encoding, RouteASkeletonParameters}
@@ -29,6 +29,7 @@ final class RouteADirectPendingReadPathHarness(p: RouteASkeletonParameters) exte
   val r1 = Module(new RouteACoreMemIfV1(p))
   val registry = Module(new RouteADeliveryContextRegistry(p))
   val router = Module(new RouteATypedDeliveryRouter(p))
+  val endpointDemux = Module(new RouteAReadEndpointDemultiplexer(p))
   val endpoint = Module(new RouteADirectPendingReadEndpoint(p))
   val direct = Module(new RouteADirectPendingEndpointV1(p))
 
@@ -67,7 +68,10 @@ final class RouteADirectPendingReadPathHarness(p: RouteASkeletonParameters) exte
   router.io.resolved_in <> registry.io.resolved_out
   registry.io.release_in <> router.io.release_out
   bridge.io.release_event_in := router.io.release_event_out
-  router.io.read_fragment_out <> endpoint.io.resolved_fragment_in
+  endpointDemux.io.resolved_in <> router.io.read_fragment_out
+  endpoint.io.resolved_fragment_in <> endpointDemux.io.direct_pending_out
+  StructuralTieOff.sink(endpointDemux.io.p3_pack_read_out)
+  StructuralTieOff.sink(endpointDemux.io.packed_s2_out)
   StructuralTieOff.sink(router.io.r3_packed_write_out)
   StructuralTieOff.sink(router.io.r5_append_out)
   StructuralTieOff.sink(router.io.r5_reclaim_out)

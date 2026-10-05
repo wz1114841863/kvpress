@@ -1,6 +1,6 @@
 # RTL2.3 completion / cross-owner integration review
 
-**Review status:** `partial_pass_for_ingress_endpoints_and_structural_r4_packet_ingress_only`.
+**Review status:** `ready_for_control_protocol_complete_re_review`.
 
 **Active navigation:** [`RTL2.3-R`](rtl2_3_reconciliation_01.md) reconciles
 future phase/event labels without changing this partial disposition or
@@ -24,18 +24,21 @@ physical-memory, controller, timing, PPA, or end-to-end RTL correctness claim.
 | Read/write producers share exactly one registry allocation owner. | RTL2.3-C1 six-lane bridge replaces the production write-only bridge and rejects lane/class mismatch. | closed |
 | Non-top R6 source-plan producer is explicit. | C6 `route_a_source_plan_binder` validates and holds an upstream declared nonempty canonical plan before R6 intake. | closed; no source service activated |
 | R6 accepted-plan copy and exact owner availability reach the packet adapter. | C7 adds `route_a_source_service_packet_adapter` to the composition top and uses owner-local hot/direct/S2 observations. | closed; source packet ingress remains fail-closed |
-| Four R4 commits produce one exact owner release and then one R6 merge request. | C8 names the R4-to-owner commit router and directed integration exercises all seven nonempty source masks. | closed in verification-packet harness; C9 still owns live top endpoint composition |
+| Four R4 commits produce one exact owner release and then one R6 merge request. | C8 names the R4-to-owner commit router and directed integration exercises all seven nonempty source masks. | closed in verification-packet harness; opaque packets remain non-numeric |
+| C2/C3/C4 endpoint routing is uniquely composed at top. | C9 adds `route_a_read_endpoint_demultiplexer`, binds all three existing endpoint modules, and uses explicit mutually-exclusive verification ingress. | closed; separate parent re-review required |
 
-## Unclosed phase requirements
+## Remaining parent-review requirements
 
-The RTL2.3 phase heading requires a **functional source packet/fragment path**
-and source completion association.  That outcome is not yet present.  The
-following are real blockers, not harmless documentation gaps:
+The C2/C3/C4 endpoint attachment blocker is closed. RTL2.3 still requires a
+cross-owner completion review to confirm that the C6--C9 composed facts may
+be summarized as `control_protocol_complete`; it must not infer numeric or
+production dataflow behavior from structural packets. The following remain
+review boundaries rather than new implementation work:
 
 | Missing closure | Why it blocks RTL2.3 completion |
 |---|---|
-| Live R3/R5 read-issue producer attachment. | C2/C3 attach explicit R3 pack/direct work and C4 attaches explicit packed-S2 work through actual C1/R2/R1 chains in integration harnesses, but the production top still has no authorized live work producer. |
-| Exact R1 read response to P3/S2/direct endpoint adapters. | C2 closes P3, C3 closes direct-pending, and C4 closes packed-S2 in integration harnesses, including stale/mismatch/fault fail-closed handling. The production typed read carrier remains inactive. |
+| Verification ingress replacement. | C9 intentionally keeps named verification-environment work/open ingress until a separately authorized production producer realization; it is not an implicit scheduler or source-plan owner. |
+| Exact R1 read response to P3/S2/direct endpoint adapters. | C9 binds the existing C2/C3/C4 endpoint modules behind the top's descriptor-only demux. The re-review must inspect preservation of stale/mismatch/fault fail-closed behavior. |
 | P3 pack-read source completion and sidecar association. | C2 proves one eight-fragment retained-member transaction reaches P3 `COMPLETE` only with existing sidecar binding, but does not activate top source service or source completion. |
 | S2 packed-fill open/payload/sidecar/terminal sequence. | C4 proves the exact sequence in an integration harness, including a full 64-record/512-fragment page and sidecar gate; it does not attach an authorized live top producer or source-service egress. |
 | Direct-pending terminal sequence. | C3 passes eight transient record fragments through the typed endpoint and emits the existing terminal only after the eighth accepted fragment. It is not yet a top-level source packet path. |
@@ -43,8 +46,8 @@ following are real blockers, not harmless documentation gaps:
 
 ## Review disposition and remaining closure order
 
-RTL2.3 is **not complete**.  The code is ready for the next narrow closure,
-but it must not be represented as a production source-service dataflow.
+RTL2.3 is ready for completion review; it must not be represented as a
+production source-service dataflow.
 
 1. **C6 is complete:** the non-top source-plan binder now supplies the only
    R6 plan producer; C5 still cannot synthesize a plan.
@@ -53,8 +56,9 @@ but it must not be represented as a production source-service dataflow.
 3. **C8 is complete:** all seven masks now traverse four commits, one exact
    owner release per present source, and the R6 merge request without treating
    C5 verification offers as source arithmetic.
-4. **C9** replaces the isolated C2/C3/C4 endpoint witnesses with one authorized
-   top composition path before an RTL2.3 completion review.
+4. **C9 is complete:** the isolated C2/C3/C4 endpoint witnesses now share the
+   authorized descriptor-selected top composition path. The next action is an
+   RTL2.3 completion review, not a new data-path activation.
 
 The review permits this next control/dataflow closure only.  It does not
 authorize changing pruning, admission, page size, M2/P3 organization, S2

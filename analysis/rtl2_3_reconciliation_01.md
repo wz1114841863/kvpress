@@ -53,15 +53,17 @@ The remaining active sequence is deliberately finite:
    exercises all seven nonempty masks through R4 commit demultiplexing, one
    generation-bearing owner release per present source, and the consequent R6
    `merge_request`; verification packets remain explicitly non-numeric.
-4. **RTL2.3-C9 — live endpoint composition.** Replace isolated C2/C3/C4
-   endpoint witnesses with one authorized top composition path. Opaque
-   verification packet fragments remain explicitly non-numeric until a later
-   numerical realization gate.
+4. **RTL2.3-C9 — live endpoint composition: complete.**
+   [`rtl2_3_c9_top_endpoint_composition_contract.md`](rtl2_3_c9_top_endpoint_composition_contract.md)
+   makes the descriptor-selected C2/C3/C4 endpoint path explicit in the top
+   and retains mutually-exclusive verification ingress. Opaque verification
+   packet fragments remain explicitly non-numeric until a later numerical
+   realization gate.
 
-RTL2.3 may pass only as `control_protocol_complete` after C6--C9. It must not
-be called production attention, numeric correctness, or end-to-end Route-A
-dataflow correctness. RTL2.4 begins only after that point and closes the
-replaceable R4 result/fault-stub terminal path.
+RTL2.3 is now eligible for a separate `control_protocol_complete` review. It
+must not be called production attention, numeric correctness, or end-to-end
+Route-A dataflow correctness. RTL2.4 begins only after a passing review and
+closes the replaceable R4 result/fault-stub terminal path.
 
 ## Validation and evidence boundary
 

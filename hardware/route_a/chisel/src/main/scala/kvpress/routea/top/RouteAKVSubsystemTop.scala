@@ -34,6 +34,20 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
   // data, address, admission, authority, or delivery-context fact.
   val hot_payload_fragment_in = IO(Flipped(RouteAChannels.p3_pending_fragment(p)))
   val hot_position_sidecar_in = IO(Flipped(RouteAChannels.p3_sidecar_bind(p)))
+  // RTL2.3-C9 verification-environment ingress.  These carriers make the
+  // already specified C2/C3/C4 endpoint paths observable from the composed
+  // top while assigning no source-plan, admission, ownership, scheduling, or
+  // numeric responsibility to this top.  Production realization replaces
+  // these explicit harness ingress points with their separately-authorized
+  // owners; opaque source-service packets remain inactive below.
+  val verification_p3_pack_read_work_in = IO(Flipped(RouteAChannels.p3_pack_read_work(p)))
+  val verification_direct_pending_open_in = IO(Flipped(RouteAChannels.direct_pending_open(p)))
+  val verification_direct_pending_read_work_in = IO(Flipped(RouteAChannels.direct_pending_read_work(p)))
+  val verification_s2_service_req_in = IO(Flipped(RouteAChannels.s2_service_req))
+  val verification_packed_s2_read_work_in = IO(Flipped(RouteAChannels.packed_s2_read_work(p)))
+  val verification_s2_sidecar_fragment_in = IO(Flipped(RouteAChannels.s2_sidecar_fragment(p)))
+  val verification_s2_sidecar_complete_in = IO(Flipped(RouteAChannels.s2_sidecar_complete(p)))
+  val verification_direct_pending_payload_fragment_out = IO(RouteAChannels.direct_pending_payload_fragment(p))
   val external_core_mem_if_v1 = IO(new CoreMemoryExternalPort(p))
 
   withClockAndReset(core_clk, destructive_reset) {
@@ -52,6 +66,16 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val delivery_context_registry = Module(new RouteADeliveryContextRegistry(p))
     val delivery_context_composition = Module(new RouteAUnifiedDeliveryContextAllocationBridge(p))
     val typed_delivery_router = Module(new RouteATypedDeliveryRouter(p))
+    val read_endpoint_demultiplexer = Module(new RouteAReadEndpointDemultiplexer(p))
+    val p3_pending_ingress = Module(new RouteAExclusiveP3PendingIngress(p))
+    val p3_pack_read_issue_adapter = Module(new RouteAReadIssueCandidateAdapter(p))
+    val direct_pending_read_producer = Module(new RouteAR3DirectPendingReadProducer(p))
+    val direct_pending_read_issue_adapter = Module(new RouteAReadIssueCandidateAdapter(p))
+    val packed_s2_read_producer = Module(new RouteAPackedS2ReadProducer(p))
+    val packed_s2_read_issue_adapter = Module(new RouteAReadIssueCandidateAdapter(p))
+    val p3_pack_read_endpoint = Module(new RouteAR3PackReadEndpoint(p))
+    val direct_pending_read_endpoint = Module(new RouteADirectPendingReadEndpoint(p))
+    val packed_s2_read_endpoint = Module(new RouteAPackedS2ReadEndpoint(p))
     val source_plan_binder = Module(new RouteASourcePlanBinder(p))
     val source_packet_adapter = Module(new RouteASourceServicePacketAdapter(p))
     val source_commit_demultiplexer = Module(new RouteASourceCommitDemultiplexer(p))
@@ -79,12 +103,20 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     source_packet_adapter.io.accepted_plan_in <> lifecycle.io.source_completion_plan_copy_out
     lifecycle.io.hot_source_release_in <> hot_release
     s2.io.drain_collection_enable := lifecycle.io.drain_collection_enable
-    s2.io.service_req_in <> lifecycle.io.s2_service_req
-    val s2_fill_open = Wire(RouteAChannels.s2_fill_open(p)); StructuralTieOff.source(s2_fill_open)
-    val s2_payload_fragment = Wire(RouteAChannels.s2_payload_fragment(p)); StructuralTieOff.source(s2_payload_fragment)
-    val s2_sidecar_fragment = Wire(RouteAChannels.s2_sidecar_fragment(p)); StructuralTieOff.source(s2_sidecar_fragment)
-    val s2_fill_terminal = Wire(RouteAChannels.s2_fill_terminal(p)); StructuralTieOff.source(s2_fill_terminal)
-    val s2_sidecar_complete = Wire(RouteAChannels.s2_sidecar_complete(p)); StructuralTieOff.source(s2_sidecar_complete)
+    val s2ServiceIngress = Wire(RouteAChannels.s2_service_req)
+    val simultaneousS2Service = lifecycle.io.s2_service_req.valid && verification_s2_service_req_in.valid
+    s2ServiceIngress.valid := (lifecycle.io.s2_service_req.valid || verification_s2_service_req_in.valid) && !simultaneousS2Service
+    s2ServiceIngress.bits := Mux(lifecycle.io.s2_service_req.valid,
+      lifecycle.io.s2_service_req.bits, verification_s2_service_req_in.bits)
+    lifecycle.io.s2_service_req.ready := !verification_s2_service_req_in.valid && s2ServiceIngress.ready
+    verification_s2_service_req_in.ready := !lifecycle.io.s2_service_req.valid && s2ServiceIngress.ready
+    assert(!simultaneousS2Service, "C9 S2 service ingress requires one declared producer")
+    s2.io.service_req_in <> s2ServiceIngress
+    val s2_fill_open = packed_s2_read_producer.io.s2_fill_open_out
+    val s2_payload_fragment = packed_s2_read_endpoint.io.s2_payload_fragment_out
+    val s2_sidecar_fragment = verification_s2_sidecar_fragment_in
+    val s2_fill_terminal = packed_s2_read_endpoint.io.s2_fill_terminal_out
+    val s2_sidecar_complete = verification_s2_sidecar_complete_in
     val s2_payload_read_req = Wire(RouteAChannels.s2_payload_read_req(p)); StructuralTieOff.source(s2_payload_read_req)
     val s2_sidecar_read_req = Wire(RouteAChannels.s2_sidecar_read_req(p)); StructuralTieOff.source(s2_sidecar_read_req)
     val s2_release = Wire(RouteAChannels.source_release(p))
@@ -104,10 +136,19 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     // adapter, and an out-of-range coordinate fails closed there.
     s2.io.s2_observe_slot := source_packet_adapter.io.packed_observe_slot_out
     direct_pending.io.drain_collection_enable := lifecycle.io.drain_collection_enable
-    direct_pending.io.pending_source_open_in <> lifecycle.io.direct_pending_open
-    val direct_record_terminal = Wire(RouteAChannels.direct_pending_record_terminal(p)); StructuralTieOff.source(direct_record_terminal)
+    val directOpenIngress = Wire(RouteAChannels.direct_pending_open(p))
+    val simultaneousDirectOpen = lifecycle.io.direct_pending_open.valid && verification_direct_pending_open_in.valid
+    directOpenIngress.valid := (lifecycle.io.direct_pending_open.valid || verification_direct_pending_open_in.valid) && !simultaneousDirectOpen
+    directOpenIngress.bits := Mux(lifecycle.io.direct_pending_open.valid,
+      lifecycle.io.direct_pending_open.bits, verification_direct_pending_open_in.bits)
+    lifecycle.io.direct_pending_open.ready := !verification_direct_pending_open_in.valid && directOpenIngress.ready
+    verification_direct_pending_open_in.ready := !lifecycle.io.direct_pending_open.valid && directOpenIngress.ready
+    assert(!simultaneousDirectOpen, "C9 direct-pending open requires one declared producer")
+    direct_pending.io.pending_source_open_in <> directOpenIngress
+    val direct_record_terminal = direct_pending_read_endpoint.io.record_terminal_out
     val direct_release = Wire(RouteAChannels.source_release(p))
     direct_pending.io.direct_pending_record_terminal_in <> direct_record_terminal
+    verification_direct_pending_payload_fragment_out <> direct_pending_read_endpoint.io.payload_fragment_out
     direct_release <> direct_pending.io.direct_release_out
     lifecycle.io.pending_source_release_in <> direct_release
 
@@ -179,10 +220,13 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     delivery_context_composition.io.release_event_in := typed_delivery_router.io.release_event_out
     page_manager.io.reclaim_delivery_in <> typed_delivery_router.io.r5_reclaim_out
     page_manager.io.append_delivery_in <> typed_delivery_router.io.r5_append_out
-    // Read fragments have no active top-level producer/functional endpoint in
-    // RTL2.2.2. Keeping the typed output sink inactive prevents accidental
-    // source delivery or payload deposition before RTL2.3.
-    StructuralTieOff.sink(typed_delivery_router.io.read_fragment_out)
+    // C9: one descriptor-selected, fail-closed top composition point replaces
+    // the isolated C2/C3/C4 endpoint harness routers.  It has no response
+    // field inference and no scheduler/producer policy.
+    read_endpoint_demultiplexer.io.resolved_in <> typed_delivery_router.io.read_fragment_out
+    p3_pack_read_endpoint.io.resolved_fragment_in <> read_endpoint_demultiplexer.io.p3_pack_read_out
+    direct_pending_read_endpoint.io.resolved_fragment_in <> read_endpoint_demultiplexer.io.direct_pending_out
+    packed_s2_read_endpoint.io.resolved_fragment_in <> read_endpoint_demultiplexer.io.packed_s2_out
 
     m2_p3.io.mem_init_done := core_memory.io.r1_init_complete
     m2_p3.io.drain_collection_enable := lifecycle.io.drain_collection_enable
@@ -201,20 +245,22 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     admission_group_builder.io.r3_p3_claim_ack_in <> m2_p3.io.p3_claim_ack
     admission_group_builder.io.r3_admission_context_out <> m2_p3.io.admission_context_in
     admission_group_builder.io.r3_admission_authority_out <> m2_p3.io.admission_authority_in
-    val p3_fragment = hot_payload_fragment_in
+    p3_pending_ingress.io.hot_in <> hot_payload_fragment_in
+    p3_pending_ingress.io.pack_read_in <> p3_pack_read_endpoint.io.p3_pending_fragment_out
+    val p3_fragment = p3_pending_ingress.io.out
     val p3_sidecar = hot_position_sidecar_in
-    // RTL2.3-C2 supplies the R3-owned work/issue boundary but leaves its
-    // producer inactive in the composition top.  Activating a member issue
-    // schedule or merging hot and pack-read payload ingress is later work;
-    // the top must not synthesize either behavior.
-    val p3_pack_read_work = Wire(RouteAChannels.p3_pack_read_work(p)); StructuralTieOff.source(p3_pack_read_work)
-    val p3_pack_read_issue = Wire(RouteAChannels.read_issue_descriptor(p)); StructuralTieOff.sink(p3_pack_read_issue)
+    // C9 activates the already-frozen C2 work/issue carrier only through an
+    // explicit verification environment ingress.  R3 validates the immutable
+    // member association before the sole bridge allocates a delivery context.
+    val p3_pack_read_work = verification_p3_pack_read_work_in
+    val p3_pack_read_issue = p3_pack_read_issue_adapter.io.read_issue_in
     val p3_write_issue = Wire(RouteAChannels.p3_packed_write_issue(p)); StructuralTieOff.source(p3_write_issue)
     val p3_write_terminal = Wire(RouteAChannels.p3_packed_write_terminal(p)); StructuralTieOff.source(p3_write_terminal)
     m2_p3.io.p3_pending_fragment_in <> p3_fragment
     m2_p3.io.p3_sidecar_bind_in <> p3_sidecar
     m2_p3.io.p3_pack_read_work_in <> p3_pack_read_work
     p3_pack_read_issue <> m2_p3.io.p3_pack_read_issue_out
+    p3_pack_read_issue_adapter.io.candidate_out <> delivery_context_composition.io.r3_pack_read_in
     m2_p3.io.p3_packed_write_issue_in <> p3_write_issue
     m2_p3.io.p3_packed_write_terminal_in <> p3_write_terminal
     m2_reference_protocol.io.member_request_in <> m2_p3.io.m2_group_member_req_out
@@ -236,12 +282,15 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     lifecycle.io.r5_reclaim_complete_in := page_manager.io.reclaim_complete
     val descriptor_maintenance_terminal = Wire(RouteAChannels.descriptor_maintenance_terminal(p)); StructuralTieOff.source(descriptor_maintenance_terminal)
     page_manager.io.descriptor_maintenance_terminal_in <> descriptor_maintenance_terminal
-    // The three named incremental read owners do not yet emit live candidate
-    // facts.  Their lanes are present at the sole shared allocation point and
-    // fail closed here; the top creates neither descriptor nor candidate.
-    StructuralTieOff.source(delivery_context_composition.io.r3_pack_read_in)
-    StructuralTieOff.source(delivery_context_composition.io.r3_direct_pending_in)
-    StructuralTieOff.source(delivery_context_composition.io.r5_s2_packed_in)
+    // C9 leaves allocation to the pre-existing sole bridge.  The C3/C4
+    // stateless producers only bind their immutable environment work to its
+    // respective lane; neither producer selects a source-service schedule.
+    direct_pending_read_producer.io.work_in <> verification_direct_pending_read_work_in
+    direct_pending_read_issue_adapter.io.read_issue_in <> direct_pending_read_producer.io.read_issue_out
+    delivery_context_composition.io.r3_direct_pending_in <> direct_pending_read_issue_adapter.io.candidate_out
+    packed_s2_read_producer.io.work_in <> verification_packed_s2_read_work_in
+    packed_s2_read_issue_adapter.io.read_issue_in <> packed_s2_read_producer.io.read_issue_out
+    delivery_context_composition.io.r5_s2_packed_in <> packed_s2_read_issue_adapter.io.candidate_out
     delivery_context_composition.io.r3_packed_write_in <> m2_p3.io.p3_packed_write_candidate_out
     delivery_context_composition.io.r5_append_in <> page_manager.io.append_candidate_out
     delivery_context_composition.io.r5_reclaim_in <> page_manager.io.reclaim_candidate_out
@@ -254,6 +303,17 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     delivery_context_registry.io.allocation_in <> delivery_context_composition.io.registry_allocate_out
     delivery_context_composition.io.registry_allocation_ack_in <> delivery_context_registry.io.allocation_ack_out
     m2_p3.io.p3_packed_write_delivery_in <> typed_delivery_router.io.r3_packed_write_out
+    direct_pending_read_endpoint.io.endpoint_active_in := direct_pending.io.direct_observe_active
+    direct_pending_read_endpoint.io.endpoint_identity_in := direct_pending.io.direct_observe_identity
+    direct_pending_read_endpoint.io.endpoint_generation_in := direct_pending.io.direct_observe_generation
+    packed_s2_read_endpoint.io.endpoint_filling_in := s2.io.s2_observe_filling
+    packed_s2_read_endpoint.io.endpoint_fill_open_in := s2.io.s2_observe_fill_open
+    // The producer's immutable work item owns the slot association; C9 uses
+    // the same slot only as an owner-local observation coordinate.
+    packed_s2_read_endpoint.io.endpoint_slot_in := packed_s2_read_producer.io.s2_fill_open_out.bits.s2_slot
+    packed_s2_read_endpoint.io.endpoint_identity_in := s2.io.s2_observe_identity
+    packed_s2_read_endpoint.io.endpoint_page_ref_in := s2.io.s2_observe_page_ref
+    packed_s2_read_endpoint.io.endpoint_generation_in := s2.io.s2_observe_generation
     page_manager.io.p3_payload_durable_in <> m2_p3.io.p3_payload_durable_out
     m2_p3.io.descriptor_durability_prerequisite_in <> page_manager.io.descriptor_durability_prerequisite_out
     page_manager.io.metadata_publish_visibility_in <> m2_p3.io.metadata_publish_visibility_apply
