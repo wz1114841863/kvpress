@@ -556,6 +556,25 @@ final class DirectPendingReadWork(p: RouteASkeletonParameters) extends Bundle {
   val source_last = Bool()
 }
 
+/**
+  * One packed-authoritative page read into an already-open logical S2 slot.
+  * `valid_records` preserves a tail-page count; the semantic payload transfer
+  * is exactly `valid_records * 8` 64-B fragments. It is neither a physical
+  * HBM command nor an S2 macro/port selection.
+  */
+final class PackedS2ReadWork(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val page_ref = new PageRef
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val arrival_ordinal = UInt(p.candidateOrdinalWidth.W)
+  val candidate_id = UInt(p.candidateIdWidth.W)
+  val eligibility_snapshot = UInt(p.candidatePredicateWidth.W)
+  val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+  val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
+}
+
 final class CoreMemoryResponse(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
   val fragment_index = UInt(p.coreMemoryFragmentIndexWidth.W)
@@ -830,6 +849,7 @@ object RouteAChannels {
   def read_issue_descriptor(p: RouteASkeletonParameters) = Decoupled(new ReadIssueDescriptor(p))
   def p3_pack_read_work(p: RouteASkeletonParameters) = Decoupled(new P3PackReadWork(p))
   def direct_pending_read_work(p: RouteASkeletonParameters) = Decoupled(new DirectPendingReadWork(p))
+  def packed_s2_read_work(p: RouteASkeletonParameters) = Decoupled(new PackedS2ReadWork(p))
   def direct_pending_payload_fragment(p: RouteASkeletonParameters) = Decoupled(new DirectPendingPayloadFragment(p))
   def core_mem_req(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryRequest(p))
   def core_mem_rsp(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryResponse(p))

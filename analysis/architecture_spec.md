@@ -508,6 +508,21 @@ fragment, numeric result, S2 fill, new pending residency, or authority transfer.
 Identity/generation mismatches and fault or malformed R1 responses cannot make
 a direct source deliverable or transfer payload data.
 
+For a packed-S2 page delivery, the immutable page descriptor fixes the page
+reference, S2 slot, slot generation, `valid_records`, and sidecar requirement
+before R2/R1 issue. Its exact payload response count is
+`valid_records * 8` logical 64-B fragments: a full 64-token page therefore
+uses 512 fragments, while a tail page retains its smaller valid-record count.
+The typed packed endpoint may write an S2 payload fragment only while the
+matching slot is `FILLING` and has accepted that exact fill-open association;
+each payload fragment is followed by its matching terminal control observation.
+S2 becomes `READY` only after all such payload/terminal observations and the
+separate immutable position-sidecar stream have completed. The endpoint does
+not create sidecar contents, source packets, R4 fragments, an authority
+transition, or a physical HBM/S2 realization. A stale identity, page/slot or
+generation mismatch, R1 fault, or malformed response cannot deposit payload or
+make the slot `READY`.
+
 ### Request lifetime and stale-response contract
 
 An accepted `(request_id, incarnation)` becomes live and remains live until

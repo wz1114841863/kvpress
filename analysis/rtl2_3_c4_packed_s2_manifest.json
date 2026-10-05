@@ -1,0 +1,38 @@
+{
+  "schema": "kvpress-route-a-rtl2-3-c4-provenance-v1",
+  "status": "closed_functional_harness",
+  "evidence_label": [
+    "synthesizable functional control/dataflow RTL",
+    "directed Chisel simulation",
+    "no model or GPU",
+    "no timing throughput physical-memory controller numeric or PPA claim",
+    "no new A4 DSE"
+  ],
+  "scope": {
+    "payload_fragment_bytes": 64,
+    "records_per_full_page": 64,
+    "fragments_per_record": 8,
+    "fragments_per_full_page": 512,
+    "sidecar_bytes_per_record": 8,
+    "top_behavioral_activation": false
+  },
+  "source_sha256": {
+    "analysis/architecture_spec.md": "3177b293068767e10da0d49cc75cbc1267669a22b9764849cfec48506c391e4a",
+    "analysis/rtl2_phase_contract.md": "1d225522c6f4cef165f138c4f921f38550e50559460c2361dd88f1d46620e2fd",
+    "analysis/rtl2_3_completion_review.md": "ce71d4ff95cdff4424e7ec58f15421c1f50941f1bc4d3b8c34a7a1a1cf0014d8",
+    "analysis/rtl2_3_c4_packed_s2_contract.md": "b0b5b802417c25bd2e38a85124272781ac41aec2ab1689fd1707c8cf7d516202",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "a4d7ed0eca865ec6015d111f5469656233df976cb663508548ee3f3c393fee79",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "08c210d3579f5289a58014f1cf16423214f1e1efa238e8ed89042ac0ae63b77e",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAPackedS2ReadPathSpec.scala": "52da48eb3844ec10aa288d393fc5f7dad1c12fb8e21e514d933664dcc2a42f6f"
+  },
+  "verification": [
+    {
+      "command": "env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'Test / compile'",
+      "result": "pass"
+    },
+    {
+      "command": "env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteAPackedS2ReadPathSpec'",
+      "result": "pass"
+    }
+  ]
+}

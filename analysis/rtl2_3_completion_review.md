@@ -27,10 +27,10 @@ following are real blockers, not harmless documentation gaps:
 
 | Missing closure | Why it blocks RTL2.3 completion |
 |---|---|
-| Live R3/R5 read-issue producer attachment. | C2/C3 attach explicit R3 pack/direct work through actual C1/R2/R1 chains in integration harnesses, but the production top still has no authorized live work producer. R5 remains unconnected. |
-| Exact R1 read response to P3/S2/direct endpoint adapters. | C2 closes P3 and C3 closes direct-pending in integration harnesses, including stale/mismatch/fault fail-closed handling. The production typed read carrier remains inactive; S2 remains unclosed. |
+| Live R3/R5 read-issue producer attachment. | C2/C3 attach explicit R3 pack/direct work and C4 attaches explicit packed-S2 work through actual C1/R2/R1 chains in integration harnesses, but the production top still has no authorized live work producer. |
+| Exact R1 read response to P3/S2/direct endpoint adapters. | C2 closes P3, C3 closes direct-pending, and C4 closes packed-S2 in integration harnesses, including stale/mismatch/fault fail-closed handling. The production typed read carrier remains inactive. |
 | P3 pack-read source completion and sidecar association. | C2 proves one eight-fragment retained-member transaction reaches P3 `COMPLETE` only with existing sidecar binding, but does not activate top source service or source completion. |
-| S2 packed-fill open/payload/sidecar/terminal sequence. | S2 storage exists, but it has no production read-delivery producer and cannot become READY from R1 activity. |
+| S2 packed-fill open/payload/sidecar/terminal sequence. | C4 proves the exact sequence in an integration harness, including a full 64-record/512-fragment page and sidecar gate; it does not attach an authorized live top producer or source-service egress. |
 | Direct-pending terminal sequence. | C3 passes eight transient record fragments through the typed endpoint and emits the existing terminal only after the eighth accepted fragment. It is not yet a top-level source packet path. |
 | Source packet emission to R4 and four-consumer completion/release wiring. | Existing S2/direct/hot local state is not connected to an active source packet/partial path; no actual all-four commit witness exists. |
 
@@ -41,9 +41,9 @@ but it must not be represented as a production source-service dataflow.
 
 1. C2 has closed the smallest R3 `pack_read` integration witness; do not expand
    it into a permanent serial scheduler or top ingress selector.
-2. C3 has closed the direct-pending endpoint witness without a pending buffer
-   or source packet. Attach packed-S2 separately, including sidecar requirements.
-3. Only then activate source packet egress, canonical
+2. C3 and C4 have closed direct-pending and packed-S2 endpoint witnesses;
+   neither creates a pending buffer, top producer, or source packet.
+3. Only then consider source packet egress, canonical
    `hot -> pending -> packed` sequencing, and the existing four-consumer
    completion/release protocol to R4/R6.
 

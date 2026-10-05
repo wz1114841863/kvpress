@@ -182,7 +182,13 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     val s2_release_out = RouteAChannels.source_release(p)
     val s2_observe_slot = Input(UInt(RouteAAnchorWidths.S2SlotWidth.W))
     val s2_observe_state = Output(UInt(3.W))
+    val s2_observe_filling = Output(Bool())
     val s2_observe_generation = Output(UInt(p.sourceGenerationWidth.W))
+    // Read-only association observations for the typed packed-fill endpoint.
+    // They do not expose payload storage or select an S2 implementation.
+    val s2_observe_identity = Output(new TransactionIdentity)
+    val s2_observe_page_ref = Output(new PageRef)
+    val s2_observe_fill_open = Output(Bool())
     val component_status_out = RouteAChannels.component_status(p)
   })
 
@@ -412,7 +418,11 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   }
 
   io.s2_observe_state := slotState(io.s2_observe_slot)
+  io.s2_observe_filling := slotState(io.s2_observe_slot) === StateFilling
   io.s2_observe_generation := slotGeneration(io.s2_observe_slot)
+  io.s2_observe_identity := slotIdentity(io.s2_observe_slot)
+  io.s2_observe_page_ref := slotPageRef(io.s2_observe_slot)
+  io.s2_observe_fill_open := fillOpened(io.s2_observe_slot)
   val locallyDrained = VecInit((0 until slots).map(slot => slotState(slot) === StateEmpty)).asUInt.andR
   io.component_status_out.valid := initialized && io.drain_collection_enable && locallyDrained
   io.component_status_out.bits.acknowledgement_name := p.r6.s2GqaDrainedStatusCode.U
@@ -777,7 +787,97 @@ final class RouteAR3DirectPendingReadProducer(p: RouteASkeletonParameters) exten
 }
 
 /**
-  * RTL2.1b logical multi-producer ingress for the sole R2 FIFO owner.  It is
+  * RTL2.3-C4 packed-page read producer. It binds one immutable packed-page
+  * work item to the pre-existing S2 fill-open and R2/R1 read carriers. The
+  * page manager remains the owner of page validity/publication facts, while
+  * S2 remains the owner of slot state and payload/sidecar backing. This
+  * producer selects no top-level source schedule or physical memory request.
+  */
+final class RouteAPackedS2ReadProducer(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_packed_s2_read_producer"
+
+  require(p.coreMemoryFragmentCountWidth >= 10,
+    "packed S2 functional endpoint needs a parameterized 0..512 fragment-count carrier")
+  require(p.coreMemoryFragmentIndexWidth >= 9,
+    "packed S2 functional endpoint needs a parameterized 0..511 fragment-index carrier")
+
+  val io = IO(new Bundle {
+    val work_in = Flipped(RouteAChannels.packed_s2_read_work(p))
+    val s2_fill_open_out = RouteAChannels.s2_fill_open(p)
+    val read_issue_out = RouteAChannels.read_issue_descriptor(p)
+  })
+
+  private val StateIdle = 0.U(2.W)
+  private val StateOpen = 1.U(2.W)
+  private val StateIssue = 2.U(2.W)
+  val state = RegInit(StateIdle)
+  val work = Reg(new PackedS2ReadWork(p))
+  val input = io.work_in.bits
+  val validRecordsLegal = input.valid_records =/= 0.U && input.valid_records <= 64.U
+  val payloadFragments = (input.valid_records << 3).asUInt
+  val workLegal = validRecordsLegal && payloadFragments =/= 0.U && payloadFragments <= 512.U
+
+  io.work_in.ready := state === StateIdle && workLegal
+  when(io.work_in.fire) {
+    work := input
+    state := StateOpen
+  }
+
+  val capturedPayloadFragments = (work.valid_records << 3).asUInt
+  io.s2_fill_open_out.valid := state === StateOpen
+  io.s2_fill_open_out.bits.transaction_identity := work.transaction_identity
+  io.s2_fill_open_out.bits.page_ref := work.page_ref
+  io.s2_fill_open_out.bits.s2_slot := work.s2_slot
+  io.s2_fill_open_out.bits.source_generation := work.source_generation
+  io.s2_fill_open_out.bits.expected_fragment_count := capturedPayloadFragments
+  io.s2_fill_open_out.bits.expected_sidecar_records := work.valid_records
+  io.s2_fill_open_out.bits.requires_sidecar := true.B
+  when(io.s2_fill_open_out.fire) { state := StateIssue }
+
+  io.read_issue_out.valid := state === StateIssue
+  io.read_issue_out.bits := 0.U.asTypeOf(new ReadIssueDescriptor(p))
+  io.read_issue_out.bits.delivery_context_ref := 0.U
+  io.read_issue_out.bits.candidate_class := p.r2S2PackedClassCode.U
+  io.read_issue_out.bits.arrival_ordinal := work.arrival_ordinal
+  io.read_issue_out.bits.candidate_id := work.candidate_id
+  io.read_issue_out.bits.eligibility_snapshot := work.eligibility_snapshot
+  io.read_issue_out.bits.transaction_identity := work.transaction_identity
+  io.read_issue_out.bits.source_kind := RouteASourceKind.Packed.U
+  io.read_issue_out.bits.payload_handle_or_address := work.payload_handle_or_address
+  io.read_issue_out.bits.valid_count := work.valid_records
+  io.read_issue_out.bits.expected_generation_or_validity := work.source_generation
+  io.read_issue_out.bits.destination_endpoint := work.destination_endpoint
+  io.read_issue_out.bits.expected_fragment_count := capturedPayloadFragments
+  io.read_issue_out.bits.target_descriptor.write_endpoint := 0.U
+  io.read_issue_out.bits.target_descriptor.p3_layer := 0.U
+  io.read_issue_out.bits.target_descriptor.p3_stage_generation := 0.U
+  io.read_issue_out.bits.target_descriptor.transaction_group_tag := 0.U
+  io.read_issue_out.bits.target_descriptor.descriptor_kind := 0.U
+  io.read_issue_out.bits.target_descriptor.descriptor_page_ref := work.page_ref
+  io.read_issue_out.bits.target_descriptor.descriptor_line := 0.U
+  io.read_issue_out.bits.target_descriptor.s2_slot := work.s2_slot
+  io.read_issue_out.bits.target_descriptor.source_generation := work.source_generation
+  io.read_issue_out.bits.target_descriptor.requires_sidecar := true.B
+  io.read_issue_out.bits.target_descriptor.pending_ordinal := 0.U
+  io.read_issue_out.bits.target_descriptor.p3_member_payload_ref := 0.U
+  io.read_issue_out.bits.target_descriptor.direct_source_last := false.B
+  io.read_issue_out.bits.target_descriptor.pending_explicit_empty := false.B
+  when(io.read_issue_out.fire) { state := StateIdle }
+
+  val heldOpen = RegEnable(io.s2_fill_open_out.bits,
+    io.s2_fill_open_out.valid && !io.s2_fill_open_out.ready)
+  when(RegNext(io.s2_fill_open_out.valid && !io.s2_fill_open_out.ready, false.B)) {
+    assert(io.s2_fill_open_out.bits.asUInt === heldOpen.asUInt)
+  }
+  val heldIssue = RegEnable(io.read_issue_out.bits,
+    io.read_issue_out.valid && !io.read_issue_out.ready)
+  when(RegNext(io.read_issue_out.valid && !io.read_issue_out.ready, false.B)) {
+    assert(io.read_issue_out.bits.asUInt === heldIssue.asUInt)
+  }
+}
+
+/**
+ * RTL2.1b logical multi-producer ingress for the sole R2 FIFO owner.  It is
   * a lossless ready/valid merge, not a second FIFO, scheduler, or controller.
   * Among simultaneously offered candidates it selects the frozen ordinal/id
   * order; candidates not selected remain held by their unique producer.
@@ -1405,7 +1505,112 @@ final class RouteADirectPendingReadEndpoint(p: RouteASkeletonParameters) extends
 }
 
 /**
-  * Historical RTL2.1b write-terminal-only router, retained by its isolated
+  * RTL2.3-C4 registry-resolved packed-page endpoint. It admits only an exact
+  * typed R1 response into the already-open S2 slot named by the immutable
+  * descriptor. Payload and terminal are deliberately serialized because the
+  * existing S2 owner checks its payload-before-terminal state per fragment.
+  * Position sidecar transport remains the separate S2 sidecar interface; this
+  * endpoint never invents, transforms, or makes sidecar data authoritative.
+  */
+final class RouteAPackedS2ReadEndpoint(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_packed_s2_read_endpoint"
+
+  require(p.coreMemoryFragmentCountWidth >= 10,
+    "packed S2 functional endpoint needs a parameterized 0..512 fragment-count carrier")
+  require(p.coreMemoryFragmentIndexWidth >= 9,
+    "packed S2 functional endpoint needs a parameterized 0..511 fragment-index carrier")
+
+  val io = IO(new Bundle {
+    val resolved_fragment_in = Flipped(RouteAChannels.resolved_delivery(p))
+    val endpoint_filling_in = Input(Bool())
+    val endpoint_fill_open_in = Input(Bool())
+    val endpoint_slot_in = Input(UInt(RouteAAnchorWidths.S2SlotWidth.W))
+    val endpoint_identity_in = Input(new TransactionIdentity)
+    val endpoint_page_ref_in = Input(new PageRef)
+    val endpoint_generation_in = Input(UInt(p.sourceGenerationWidth.W))
+    val s2_payload_fragment_out = RouteAChannels.s2_payload_fragment(p)
+    val s2_fill_terminal_out = RouteAChannels.s2_fill_terminal(p)
+  })
+
+  private val StateIdle = 0.U(2.W)
+  private val StatePayload = 1.U(2.W)
+  private val StateTerminal = 2.U(2.W)
+  val state = RegInit(StateIdle)
+  val payload = Reg(new S2PayloadFragment(p))
+  val terminal = Reg(new S2FillTerminal(p))
+
+  val resolved = io.resolved_fragment_in.bits
+  val source = resolved.source_delivery
+  val allocation = resolved.allocation
+  val descriptor = allocation.target_descriptor
+  val response = source.r1_response
+  val responseOk = response.status === p.coreMemoryOkStatusCode.U
+  val responseFault = response.status === p.coreMemoryFaultStatusCode.U
+  val expectedFragments = allocation.expected_fragment_count
+  val endpointMatches = io.endpoint_filling_in && io.endpoint_fill_open_in &&
+    source.candidate_class === p.r2S2PackedClassCode.U &&
+    allocation.candidate_class === p.r2S2PackedClassCode.U &&
+    allocation.target_kind === RouteADeliveryTargetKind.S2PackedFill.U &&
+    allocation.transaction_identity.asUInt === response.transaction_identity.asUInt &&
+    allocation.target_identity_generation === descriptor.source_generation &&
+    descriptor.requires_sidecar &&
+    descriptor.s2_slot === io.endpoint_slot_in &&
+    io.endpoint_identity_in.asUInt === allocation.transaction_identity.asUInt &&
+    io.endpoint_page_ref_in.asUInt === descriptor.descriptor_page_ref.asUInt &&
+    io.endpoint_generation_in === descriptor.source_generation &&
+    expectedFragments =/= 0.U && expectedFragments <= 512.U
+  // `fragment_index` is nine bits for 0..511 while a full page needs the
+  // representable one-past value 512. Widen before adding so the final beat
+  // cannot wrap to zero and be rejected by the fail-closed endpoint.
+  val onePastFragment = Cat(0.U(1.W), response.fragment_index) + 1.U
+  val okFragmentLegal = response.fragment_index < expectedFragments &&
+    response.last === (onePastFragment === expectedFragments)
+  val faultLegal = response.last
+  val inputLegal = endpointMatches &&
+    ((responseOk && okFragmentLegal) || (responseFault && faultLegal))
+
+  io.s2_payload_fragment_out.valid := state === StatePayload
+  io.s2_payload_fragment_out.bits := payload
+  io.s2_fill_terminal_out.valid := state === StateTerminal
+  io.s2_fill_terminal_out.bits := terminal
+  io.resolved_fragment_in.ready := state === StateIdle && inputLegal
+
+  when(io.resolved_fragment_in.fire) {
+    terminal.transaction_identity := allocation.transaction_identity
+    terminal.s2_slot := descriptor.s2_slot
+    terminal.source_generation := descriptor.source_generation
+    terminal.fragment_index := response.fragment_index
+    terminal.last := response.last
+    terminal.status := response.status
+    when(responseOk) {
+      payload.transaction_identity := allocation.transaction_identity
+      payload.s2_slot := descriptor.s2_slot
+      payload.source_generation := descriptor.source_generation
+      payload.fragment_index := response.fragment_index
+      payload.last := response.last
+      payload.data := response.data
+      state := StatePayload
+    }.otherwise {
+      state := StateTerminal
+    }
+  }
+  when(io.s2_payload_fragment_out.fire) { state := StateTerminal }
+  when(io.s2_fill_terminal_out.fire) { state := StateIdle }
+
+  val heldPayload = RegEnable(io.s2_payload_fragment_out.bits,
+    io.s2_payload_fragment_out.valid && !io.s2_payload_fragment_out.ready)
+  when(RegNext(io.s2_payload_fragment_out.valid && !io.s2_payload_fragment_out.ready, false.B)) {
+    assert(io.s2_payload_fragment_out.bits.asUInt === heldPayload.asUInt)
+  }
+  val heldTerminal = RegEnable(io.s2_fill_terminal_out.bits,
+    io.s2_fill_terminal_out.valid && !io.s2_fill_terminal_out.ready)
+  when(RegNext(io.s2_fill_terminal_out.valid && !io.s2_fill_terminal_out.ready, false.B)) {
+    assert(io.s2_fill_terminal_out.bits.asUInt === heldTerminal.asUInt)
+  }
+}
+
+/**
+ * Historical RTL2.1b write-terminal-only router, retained by its isolated
   * direct harness. Production top-level wiring uses RouteATypedDeliveryRouter
   * since RTL2.2.2. The three keys do not encode a physical crossbar or HBM
   * response protocol.

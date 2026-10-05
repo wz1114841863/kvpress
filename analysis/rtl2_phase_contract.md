@@ -332,6 +332,19 @@ cannot hand off payload or make a source deliverable. C3 creates no S2 slot,
 pending buffer, source packet, R4 input, numeric operation, top-level work
 producer, or scheduler.
 
+**RTL2.3-C4 packed-S2 page endpoint: implemented and directed tested in an
+integration harness.** [`rtl2_3_c4_packed_s2_contract.md`](rtl2_3_c4_packed_s2_contract.md)
+binds immutable packed-page work to an S2 fill-open association before it can
+enter the existing C1/R2/R1/registry/router path. It preserves tail-page
+`valid_records`: payload count is exactly `valid_records * 8` logical 64-B
+fragments, so a full 64-record page is 512 fragments. Each accepted response
+is serialized into the owner-local S2 payload then terminal handoff; the
+separate position-sidecar stream must also complete before S2 `READY`. Stale
+identity, page/slot or generation mismatch, terminal fault, and malformed
+matching response fail closed without payload deposit or READY. C4 does not
+activate a top producer, generate sidecar data, emit source packets, invoke
+R4, select an S2 macro/controller, or change scheduling.
+
 Connect owner-produced hot, direct-pending, and packed/S2 source facts to the
 frozen source-instance and four-consumer protocol.  A source becomes
 deliverable only after its own validity prerequisites; all four distinct GQA
