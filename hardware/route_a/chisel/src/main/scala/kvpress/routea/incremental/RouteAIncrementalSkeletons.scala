@@ -33,6 +33,9 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     val authority_transition_in = Flipped(RouteAChannels.r6_authority_transition(p))
     val merge_ready_in = Flipped(RouteAChannels.r6_merge_ready)
     val source_completion_plan_in = Flipped(RouteAChannels.source_completion_plan(p))
+    // Exact copy of an R6-accepted plan for the later protocol-only packet
+    // adapter. R6 remains the sole plan owner and source-set authority.
+    val source_completion_plan_copy_out = RouteAChannels.source_completion_plan(p)
     val hot_source_release_in = Flipped(RouteAChannels.source_release(p))
     val pending_source_release_in = Flipped(RouteAChannels.source_release(p))
     val packed_source_release_in = Flipped(RouteAChannels.source_release(p))
@@ -97,6 +100,8 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val sourcePlanHot = Reg(Vec(trackerEntries, new SourceInstance(p)))
   val sourcePlanPending = Reg(Vec(trackerEntries, new SourceInstance(p)))
   val sourcePlanPacked = Reg(Vec(trackerEntries, new SourceInstance(p)))
+  val sourcePlanCopyPending = RegInit(false.B)
+  val sourcePlanCopy = Reg(new SourceCompletionPlan(p))
   val mergePending = RegInit(false.B)
   val mergeIdentity = Reg(new TransactionIdentity)
   val mergePresence = Reg(UInt(RouteAAnchorWidths.SourcePresenceWidth.W))
@@ -275,7 +280,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     sourcePlan.pending_instance.source_kind === RouteASourceKind.Pending.U &&
     sourcePlan.packed_instance.source_kind === RouteASourceKind.Packed.U
   io.source_completion_plan_in.ready := (state === StateActive || state === StateRetiring) &&
-    sourcePlanKindsLegal && sourcePlanMatches.asUInt.orR
+    !sourcePlanCopyPending && sourcePlanKindsLegal && sourcePlanMatches.asUInt.orR
   when(io.source_completion_plan_in.fire) {
     sourcePlanValid(sourcePlanSlot) := true.B
     sourcePlanPresence(sourcePlanSlot) := sourcePlan.source_presence
@@ -283,7 +288,12 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     sourcePlanHot(sourcePlanSlot) := sourcePlan.hot_instance
     sourcePlanPending(sourcePlanSlot) := sourcePlan.pending_instance
     sourcePlanPacked(sourcePlanSlot) := sourcePlan.packed_instance
+    sourcePlanCopy := sourcePlan
+    sourcePlanCopyPending := true.B
   }
+  io.source_completion_plan_copy_out.valid := sourcePlanCopyPending
+  io.source_completion_plan_copy_out.bits := sourcePlanCopy
+  when(io.source_completion_plan_copy_out.fire) { sourcePlanCopyPending := false.B }
 
   private def releaseMatches(release: SourceRelease, expectedKind: Int, expected: Int => SourceInstance) =
     VecInit((0 until trackerEntries).map(slot =>
@@ -631,6 +641,8 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
     val direct_observe_identity = Output(new TransactionIdentity)
     val direct_observe_generation = Output(UInt(p.sourceGenerationWidth.W))
     val direct_observe_active = Output(Bool())
+    val direct_observe_deliverable = Output(Bool())
+    val direct_observe_instance = Output(new SourceInstance(p))
     val component_status_out = RouteAChannels.component_status(p)
   })
 
@@ -716,6 +728,10 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
   io.direct_observe_identity := identity
   io.direct_observe_generation := endpointGeneration
   io.direct_observe_active := active
+  io.direct_observe_deliverable := active && deliverable && !faulted
+  io.direct_observe_instance.source_kind := RouteASourceKind.Pending.U
+  io.direct_observe_instance.instance_coordinate := 0.U
+  io.direct_observe_instance.generation := endpointGeneration
   io.component_status_out.valid := initialized && io.drain_collection_enable && !active
   io.component_status_out.bits.acknowledgement_name := p.r6.directPendingDrainedStatusCode.U
   io.component_status_out.bits.asserted := true.B

@@ -1,7 +1,7 @@
 {
   "schema_version": "kvzap-route-a-rtl2-0f-source-service-packet-adapter-1.0",
-  "status": "rtl2_0f_source_service_packet_interface_owner_closed_behavior_pending",
-  "scope": "Logical source-service packet and SourceInstance association contract only. No Chisel packet behavior, source payload storage, attention arithmetic, R4 numeric merge, physical source mux, controller behavior, timing, throughput, PPA, model/GPU, RTL correctness, or new A4 DSE claim.",
+  "status": "rtl2_0f_source_service_packet_interface_owner_closed_behavioral_packetization_implemented_in_rtl2_3_c5",
+  "scope": "Logical source-service packet and SourceInstance association contract. RTL2.3-C5 implements only structural Chisel packet forwarding to the existing R4 parser; it does not implement source payload storage, attention arithmetic, R4 numeric merge, physical source mux, controller behavior, timing, throughput, PPA, model/GPU, end-to-end RTL correctness, or new A4 DSE.",
   "contract_references": [
     "analysis/architecture_spec.md",
     "analysis/architecture_gate_a1_pending_delivery_realization_closure.md",
@@ -123,8 +123,8 @@
     "physical source mux or service schedule"
   ],
   "required_follow_on": {
-    "behavioral_phase": "rtl2_4",
-    "requires": "Add the protocol-only adapter, an R6 accepted-plan copy, source-owner packet ingress, and R4 header/sideband/fragment bindings; test all seven nonempty source masks plus stale, malformed, fault, and legal-stall cases.",
+    "behavioral_phase": "rtl2_3_c5",
+    "requires": "Implemented by RTL2.3-C5: protocol-only adapter, R6 accepted-plan copy, owner-provided packet ingress, and R4 header/sideband/fragment bindings. Directed coverage exercises all seven nonempty masks and stale/malformed/duplicate fail-closed cases; source arithmetic fault and source-service backpressure randomized coverage remain separate work.",
     "not_authorized": "No payload backing, source attention arithmetic, R4 numeric implementation, source scheduler, physical mux, controller behavior, timing, throughput, PPA, or performance result."
   },
   "evidence_labels": [

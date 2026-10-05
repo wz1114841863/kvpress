@@ -1,17 +1,20 @@
 # RTL2.0f — source-service packet-adapter closure
 
-**Status:** source_service_packet_interface_owner_closed; behavioral_packetization_pending.
+**Status:** `source_service_packet_interface_owner_closed;
+behavioral_packetization_implemented_in_rtl2_3_c5`.
 
 This closure resolves the production source-to-R4 boundary without granting a
 source owner, scheduler, numeric unit, or top-level mux to the adapter. It
 defines how the independently owned hot, direct-pending, and S2 sources expose
 already-serviceable partial packets to the frozen R4 packet boundary. It does
-not activate Chisel packet behavior, source payload storage, attention
+not activate source payload storage, attention
 arithmetic, R4 numeric merge, controller behavior, timing, throughput, PPA, or
 new A4 DSE.
 
-The machine-readable record is
+The interface record is
 [rtl2_0f_source_service_packet_adapter_manifest.json](rtl2_0f_source_service_packet_adapter_manifest.json).
+The behavioral implementation and directed evidence are recorded separately by
+[RTL2.3-C5](rtl2_3_c5_source_packet_r4_contract.md).
 
 ## Owners and immutable plan association
 
@@ -109,9 +112,11 @@ absent packet is authorized here.
 
 ## Validation
 
-    .venv/bin/python tools/validate_rtl2_source_service_packet_adapter_manifest.py --help
-    .venv/bin/python -m pytest tests/test_rtl2_source_service_packet_adapter_manifest.py -q
+    cd hardware/route_a/chisel
+    env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 \
+      sbt -batch 'testOnly kvpress.routea.rtl2.RouteASourceServicePacketAdapterSpec'
 
-This is a pure-software executable interface contract: no model/GPU,
-cycle/timing/throughput, PPA, RTL-correctness, numeric-datapath, or new A4 DSE
-claim is made.
+The interface record plus C5 provide synthesizable functional protocol evidence
+and directed ChiselSim coverage only: no model/GPU, cycle/timing/throughput,
+PPA, numeric-datapath, end-to-end RTL-correctness, or new A4 DSE claim is
+made.

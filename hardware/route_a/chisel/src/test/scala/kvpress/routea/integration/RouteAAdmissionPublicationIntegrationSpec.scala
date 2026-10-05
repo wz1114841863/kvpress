@@ -42,6 +42,7 @@ private final class RouteAAdmissionPublicationHarness(p: RouteASkeletonParameter
   lifecycle.io.hot_control_out.ready := true.B
   StructuralTieOff.source(lifecycle.io.merge_ready_in)
   StructuralTieOff.source(lifecycle.io.source_completion_plan_in)
+  lifecycle.io.source_completion_plan_copy_out.ready := true.B
   StructuralTieOff.source(lifecycle.io.hot_source_release_in)
   StructuralTieOff.source(lifecycle.io.pending_source_release_in)
   StructuralTieOff.source(lifecycle.io.packed_source_release_in)

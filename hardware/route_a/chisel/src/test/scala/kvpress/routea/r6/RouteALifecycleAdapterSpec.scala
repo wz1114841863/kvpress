@@ -51,6 +51,7 @@ final class RouteALifecycleAdapterSpec extends AnyFunSpec with ChiselSim {
     dut.io.component_status_in.valid.poke(false.B); dut.io.authority_transition_in.valid.poke(false.B)
     dut.io.merge_ready_in.valid.poke(false.B); dut.io.merge_terminal_in.valid.poke(false.B)
     dut.io.source_completion_plan_in.valid.poke(false.B)
+    dut.io.source_completion_plan_copy_out.ready.poke(true.B)
     dut.io.hot_source_release_in.valid.poke(false.B); dut.io.pending_source_release_in.valid.poke(false.B); dut.io.packed_source_release_in.valid.poke(false.B)
     dut.io.hot_control_out.ready.poke(true.B); dut.io.authority_transition_out.ready.poke(true.B)
     dut.io.admission_context_out.ready.poke(true.B)

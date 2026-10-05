@@ -5,7 +5,8 @@ rtl2_2_0_provenance_reconciled; rtl2_2_1_registry_association_implemented_direct
 rtl2_2_2_typed_write_delivery_implemented_directed_tested;
 rtl2_2_3_functional_storage_implemented_directed_tested;
 rtl2_2_4_read_delivery_context_implemented_directed_tested;
-rtl2_3_0_read_issue_contract_implemented_directed_tested`.
+rtl2_3_0_read_issue_contract_implemented_directed_tested;
+rtl2_3_c5_source_packet_r4_implemented_directed_tested_limited_protocol_closure`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -344,6 +345,19 @@ identity, page/slot or generation mismatch, terminal fault, and malformed
 matching response fail closed without payload deposit or READY. C4 does not
 activate a top producer, generate sidecar data, emit source packets, invoke
 R4, select an S2 macro/controller, or change scheduling.
+
+**RTL2.3-C5 source packet to R4 boundary: implemented and directed tested.**
+[`rtl2_3_c5_source_packet_r4_contract.md`](rtl2_3_c5_source_packet_r4_contract.md)
+turns the earlier RTL2.0f interface-only contract into a narrow behavioral
+adapter: R6's accepted immutable plan copy plus owner-provided structural
+offers/fragments are accepted only in present-subset canonical
+`hot -> pending -> packed` order and forwarded to the existing R4 packet
+parser. All seven nonempty source masks and four consumer associations per
+present source are exercised; stale availability, malformed headers, and
+duplicate consumers fail closed. C5 neither derives source partials from
+hot/direct/S2 payload state nor consumes commits/creates releases, and it
+leaves the composition-only top packet ingress inactive. It is not R4 numeric
+merge, source service, a live top producer, or an end-to-end transaction.
 
 Connect owner-produced hot, direct-pending, and packed/S2 source facts to the
 frozen source-instance and four-consumer protocol.  A source becomes

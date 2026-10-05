@@ -68,6 +68,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val source_completion_plan = Wire(RouteAChannels.source_completion_plan(p)); StructuralTieOff.source(source_completion_plan)
     lifecycle.io.merge_ready_in <> r6_merge_ready
     lifecycle.io.source_completion_plan_in <> source_completion_plan
+    StructuralTieOff.sink(lifecycle.io.source_completion_plan_copy_out)
     lifecycle.io.hot_source_release_in <> hot_release
     s2.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     s2.io.service_req_in <> lifecycle.io.s2_service_req

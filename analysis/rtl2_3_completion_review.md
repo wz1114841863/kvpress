@@ -1,6 +1,6 @@
 # RTL2.3 completion / cross-owner integration review
 
-**Review status:** `partial_pass_for_ingress_and_shared_allocation_only`.
+**Review status:** `partial_pass_for_ingress_endpoints_and_structural_r4_packet_ingress_only`.
 
 This review checks the completed RTL2.3.0--RTL2.3.3 slices against the phase
 contract, rather than treating individually passing isolated tests as a full
@@ -32,7 +32,7 @@ following are real blockers, not harmless documentation gaps:
 | P3 pack-read source completion and sidecar association. | C2 proves one eight-fragment retained-member transaction reaches P3 `COMPLETE` only with existing sidecar binding, but does not activate top source service or source completion. |
 | S2 packed-fill open/payload/sidecar/terminal sequence. | C4 proves the exact sequence in an integration harness, including a full 64-record/512-fragment page and sidecar gate; it does not attach an authorized live top producer or source-service egress. |
 | Direct-pending terminal sequence. | C3 passes eight transient record fragments through the typed endpoint and emits the existing terminal only after the eighth accepted fragment. It is not yet a top-level source packet path. |
-| Source packet emission to R4 and four-consumer completion/release wiring. | Existing S2/direct/hot local state is not connected to an active source packet/partial path; no actual all-four commit witness exists. |
+| Source packet emission to R4 and four-consumer completion/release wiring. | **Partially closed by C5:** an R6 accepted plan copy and owner-provided structural packets reach the existing R4 parser for every present-source/four-consumer combination. Still unclosed: real hot/direct/S2 partial producers, owner-side commit consumption/release, R6 merge request, and terminal association. |
 
 ## Review disposition and next safe order
 
@@ -43,9 +43,11 @@ but it must not be represented as a production source-service dataflow.
    it into a permanent serial scheduler or top ingress selector.
 2. C3 and C4 have closed direct-pending and packed-S2 endpoint witnesses;
    neither creates a pending buffer, top producer, or source packet.
-3. Only then consider source packet egress, canonical
-   `hot -> pending -> packed` sequencing, and the existing four-consumer
-   completion/release protocol to R4/R6.
+3. C5 now closes structural source packet egress and canonical
+   `hot -> pending -> packed` sequencing into R4. The next separately scoped
+   work must attach real owner-side partial production and then the existing
+   four-consumer completion/release protocol to R4/R6; it must not treat C5's
+   verification offers as source arithmetic.
 
 The review permits this next control/dataflow closure only.  It does not
 authorize changing pruning, admission, page size, M2/P3 organization, S2

@@ -382,6 +382,36 @@ final class SourcePartial extends Bundle {
   val merge_value_fragment = UInt(RouteAAnchorWidths.MergeValueFragmentWidth.W)
 }
 
+/** Read-only owner fact used by the protocol-only source packet adapter. */
+final class SourceServiceAvailability(p: RouteASkeletonParameters) extends Bundle {
+  val valid = Bool()
+  val transaction_identity = new TransactionIdentity
+  val source_instance = new SourceInstance(p)
+}
+
+/**
+  * Owner-provided structural R4 partial offer. Header/data semantics remain
+  * outside this adapter; it only validates identity, source association, and
+  * frozen packet structure.
+  */
+final class SourceServicePartialOffer(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val source_instance = new SourceInstance(p)
+  val consumer_id = UInt(RouteAAnchorWidths.ConsumerIdWidth.W)
+  val r4_header = UInt(RouteAAnchorWidths.MergePartialHeaderWidth.W)
+  val partial_present = Bool()
+}
+
+/** One owner-provided fragment of an already-computed present source partial. */
+final class SourceServiceValueFragment(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val source_instance = new SourceInstance(p)
+  val consumer_id = UInt(RouteAAnchorWidths.ConsumerIdWidth.W)
+  val fragment_index = UInt(3.W)
+  val last = Bool()
+  val data = UInt(RouteAAnchorWidths.MergeValueFragmentWidth.W)
+}
+
 /** Fixed semantic Route-A source codes; never a physical mux encoding. */
 object RouteASourceKind {
   final val Hot = 0
@@ -837,6 +867,8 @@ object RouteAChannels {
   def gqa_consumer_commit(p: RouteASkeletonParameters) = Decoupled(new GqaConsumerCommit(p))
   def source_release(p: RouteASkeletonParameters) = Decoupled(new SourceRelease(p))
   def source_partial = Decoupled(new SourcePartial)
+  def source_service_partial_offer(p: RouteASkeletonParameters) = Decoupled(new SourceServicePartialOffer(p))
+  def source_service_value_fragment(p: RouteASkeletonParameters) = Decoupled(new SourceServiceValueFragment(p))
   def consumer_partial_commit(p: RouteASkeletonParameters) = Decoupled(new ConsumerPartialCommit(p))
   def r4_source_instance_sideband(p: RouteASkeletonParameters) = Decoupled(new R4SourceInstanceSideband(p))
   def merge_req = Decoupled(new MergeRequest)

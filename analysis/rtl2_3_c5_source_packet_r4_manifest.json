@@ -1,0 +1,61 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-3-c5-source-packet-r4-1.0",
+  "status": "implemented_directed_tested_limited_protocol_closure",
+  "scope": "R6 accepted-plan copy to structural source packet adapter to existing R4 packet parser. No source partial arithmetic, numeric merge, result/fault terminal, top producer, physical memory/controller, timing, throughput, PPA, model/GPU, or new A4 DSE.",
+  "source_contract": "analysis/rtl2_0f_source_service_packet_adapter_contract.md",
+  "implementation": {
+    "plan_owner": "route_a_lifecycle_adapter",
+    "adapter": "route_a_source_service_packet_adapter",
+    "r4_consumer": "route_a_merge_boundary",
+    "top_status": "new packet carriers deliberately tied inactive; top remains composition-only"
+  },
+  "canonical_order": {
+    "source_kinds": ["hot", "pending", "packed"],
+    "consumer_requirement": "four distinct consumer_id values for each present source before adapter advances",
+    "not_a_claim": ["scheduler policy", "arbitrary reorder equivalence", "numeric merge order"]
+  },
+  "legal_packet": {
+    "requires": [
+      "nonempty R6-accepted SourceCompletionPlan copy",
+      "matching owner availability identity and SourceInstance",
+      "matching offer identity, SourceInstance, consumer ID and present bit",
+      "header source and consumer match with merge-instance zero, reserved zero and count eight",
+      "exact fragments zero through seven with last only at seven"
+    ],
+    "rejects_without_r4_commit": [
+      "stale or unavailable identity",
+      "source instance/generation mismatch",
+      "absent source",
+      "malformed header",
+      "duplicate consumer",
+      "malformed fragment ordering"
+    ]
+  },
+  "directed_test": {
+    "suite": "kvpress.routea.rtl2.RouteASourceServicePacketAdapterSpec",
+    "cases": [
+      "all seven nonempty source masks with four packets per present source",
+      "stale availability, malformed header and duplicate consumer fail closed",
+      "R4 consumer-commit backpressure holds the next coupled packet before fragment acceptance"
+    ],
+    "command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteASourceServicePacketAdapterSpec'"
+  },
+  "provenance_sha256": {
+    "analysis/rtl2_0f_source_service_packet_adapter_contract.md": "b5713ec70870d935359c20578f7f59e8b60e786f8bea9fb7bcb1c1cd2712a5a5",
+    "analysis/rtl2_3_c5_source_packet_r4_contract.md": "bf95b9368771324d35f46e290a7c28e6a6b0cbcf04e7a33900261dc3fe4fa161",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "9b97e623124c21213c2341a8237570b1a0007db3e377af1a62a05e837ec7080a",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "f52d140dfe984a77958679f4af27dfcf2322f4206f1ea73705c18433546c9920",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "c61cb01aeee76a0209f1ec4e7b234f97d73dc442cce3800afeae55ae7d99b27f",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteASourceServicePacketAdapterSpec.scala": "253454d39bf30b6501225e1d10a87d5d5fe4e3de051349168035c2f06cd7ff0b"
+  },
+  "evidence_labels": [
+    "synthesizable functional protocol evidence",
+    "directed ChiselSim",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no numeric-datapath correctness claim",
+    "no end-to-end RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}

@@ -39,6 +39,7 @@ private final class RouteAFairReclaimHarness(p: RouteASkeletonParameters) extend
   StructuralTieOff.source(r6.io.authority_transition_in)
   StructuralTieOff.source(r6.io.merge_ready_in)
   StructuralTieOff.source(r6.io.source_completion_plan_in)
+  r6.io.source_completion_plan_copy_out.ready := true.B
   StructuralTieOff.source(r6.io.hot_source_release_in)
   StructuralTieOff.source(r6.io.pending_source_release_in)
   StructuralTieOff.source(r6.io.packed_source_release_in)

@@ -39,6 +39,7 @@ private final class RouteAHotR4R6Harness(p: RouteASkeletonParameters) extends Mo
   hot.io.lifecycle_control_in <> lifecycle.io.hot_control_out
   hot.io.hot_source_open_in <> io.hot_open
   lifecycle.io.source_completion_plan_in <> io.source_plan
+  lifecycle.io.source_completion_plan_copy_out.ready := true.B
   lifecycle.io.hot_source_release_in <> hot.io.hot_release_out
   StructuralTieOff.source(lifecycle.io.pending_source_release_in)
   StructuralTieOff.source(lifecycle.io.packed_source_release_in)
@@ -89,6 +90,7 @@ final class RouteASourceCompletionPlanSpec extends AnyFunSpec with ChiselSim {
     dut.io.component_status_in.valid.poke(false.B); dut.io.authority_transition_in.valid.poke(false.B)
     dut.io.merge_ready_in.valid.poke(false.B); dut.io.merge_terminal_in.valid.poke(false.B)
     dut.io.source_completion_plan_in.valid.poke(false.B); dut.io.hot_source_release_in.valid.poke(false.B)
+    dut.io.source_completion_plan_copy_out.ready.poke(true.B)
     dut.io.pending_source_release_in.valid.poke(false.B); dut.io.packed_source_release_in.valid.poke(false.B)
     dut.io.hot_control_out.ready.poke(true.B); dut.io.authority_transition_out.ready.poke(true.B); dut.io.admission_context_out.ready.poke(true.B)
     dut.io.merge_req.ready.poke(true.B); dut.io.attention_terminal_rsp.ready.poke(true.B); dut.io.session_retire_ack.ready.poke(true.B)

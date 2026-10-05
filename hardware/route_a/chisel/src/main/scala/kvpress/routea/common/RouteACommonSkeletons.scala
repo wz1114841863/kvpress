@@ -122,6 +122,9 @@ final class RouteAHotSourcePath(p: RouteASkeletonParameters) extends Module {
     val hot_source_open_in = Flipped(RouteAChannels.hot_source_open(p))
     val gqa_consumer_commit_in = Flipped(RouteAChannels.gqa_consumer_commit(p))
     val hot_release_out = RouteAChannels.source_release(p)
+    val hot_observe_active = Output(Bool())
+    val hot_observe_identity = Output(new TransactionIdentity)
+    val hot_observe_instance = Output(new SourceInstance(p))
   })
 
   io.lifecycle_control_in.ready := true.B
@@ -154,6 +157,9 @@ final class RouteAHotSourcePath(p: RouteASkeletonParameters) extends Module {
   when(RegNext(io.hot_release_out.valid && !io.hot_release_out.ready, false.B)) {
     assert(io.hot_release_out.bits.asUInt === heldRelease.asUInt)
   }
+  io.hot_observe_active := active
+  io.hot_observe_identity := identity
+  io.hot_observe_instance := instance
 }
 
 /**
@@ -189,6 +195,8 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     val s2_observe_identity = Output(new TransactionIdentity)
     val s2_observe_page_ref = Output(new PageRef)
     val s2_observe_fill_open = Output(Bool())
+    val s2_observe_available = Output(Bool())
+    val s2_observe_instance = Output(new SourceInstance(p))
     val component_status_out = RouteAChannels.component_status(p)
   })
 
@@ -423,6 +431,10 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   io.s2_observe_identity := slotIdentity(io.s2_observe_slot)
   io.s2_observe_page_ref := slotPageRef(io.s2_observe_slot)
   io.s2_observe_fill_open := fillOpened(io.s2_observe_slot)
+  io.s2_observe_available := slotState(io.s2_observe_slot) === StateReady
+  io.s2_observe_instance.source_kind := RouteASourceKind.Packed.U
+  io.s2_observe_instance.instance_coordinate := io.s2_observe_slot
+  io.s2_observe_instance.generation := slotGeneration(io.s2_observe_slot)
   val locallyDrained = VecInit((0 until slots).map(slot => slotState(slot) === StateEmpty)).asUInt.andR
   io.component_status_out.valid := initialized && io.drain_collection_enable && locallyDrained
   io.component_status_out.bits.acknowledgement_name := p.r6.s2GqaDrainedStatusCode.U
@@ -1606,6 +1618,186 @@ final class RouteAPackedS2ReadEndpoint(p: RouteASkeletonParameters) extends Modu
     io.s2_fill_terminal_out.valid && !io.s2_fill_terminal_out.ready)
   when(RegNext(io.s2_fill_terminal_out.valid && !io.s2_fill_terminal_out.ready, false.B)) {
     assert(io.s2_fill_terminal_out.bits.asUInt === heldTerminal.asUInt)
+  }
+}
+
+/**
+  * RTL2.3-C5 protocol-only source-service packet adapter. It copies no
+  * payload from a source owner and performs no attention arithmetic: owners
+  * provide already-computed structural partial packets. The adapter verifies
+  * only the R6-accepted source plan, current owner availability, canonical
+  * hot -> pending -> packed order, and frozen R4 packet structure.
+  */
+final class RouteASourceServicePacketAdapter(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_source_service_packet_adapter"
+
+  val io = IO(new Bundle {
+    val accepted_plan_in = Flipped(RouteAChannels.source_completion_plan(p))
+    val hot_available_in = Input(new SourceServiceAvailability(p))
+    val pending_available_in = Input(new SourceServiceAvailability(p))
+    val packed_available_in = Input(new SourceServiceAvailability(p))
+    val hot_offer_in = Flipped(RouteAChannels.source_service_partial_offer(p))
+    val pending_offer_in = Flipped(RouteAChannels.source_service_partial_offer(p))
+    val packed_offer_in = Flipped(RouteAChannels.source_service_partial_offer(p))
+    val hot_fragment_in = Flipped(RouteAChannels.source_service_value_fragment(p))
+    val pending_fragment_in = Flipped(RouteAChannels.source_service_value_fragment(p))
+    val packed_fragment_in = Flipped(RouteAChannels.source_service_value_fragment(p))
+    val r4_partial_header_out = RouteAChannels.r4_partial_header
+    val r4_source_instance_out = RouteAChannels.r4_source_instance_sideband(p)
+    val r4_value_fragment_out = RouteAChannels.r4_value_fragment
+  })
+
+  private val StateIdle = 0.U(2.W)
+  private val StateOffer = 1.U(2.W)
+  private val StateHeader = 2.U(2.W)
+  private val StateFragments = 3.U(2.W)
+  val state = RegInit(StateIdle)
+  val plan = Reg(new SourceCompletionPlan(p))
+  val planActive = RegInit(false.B)
+  val currentKind = Reg(UInt(RouteAAnchorWidths.SourceKindWidth.W))
+  val currentConsumerMask = RegInit(0.U(4.W))
+  val packet = Reg(new SourceServicePartialOffer(p))
+  val nextFragment = RegInit(0.U(3.W))
+
+  private def planInstance(kind: UInt): SourceInstance = {
+    val result = Wire(new SourceInstance(p))
+    result := plan.hot_instance
+    when(kind === RouteASourceKind.Pending.U) { result := plan.pending_instance }
+    when(kind === RouteASourceKind.Packed.U) { result := plan.packed_instance }
+    result
+  }
+  private def availability(kind: UInt): SourceServiceAvailability = {
+    val result = Wire(new SourceServiceAvailability(p))
+    result := io.hot_available_in
+    when(kind === RouteASourceKind.Pending.U) { result := io.pending_available_in }
+    when(kind === RouteASourceKind.Packed.U) { result := io.packed_available_in }
+    result
+  }
+  private def nextPresentAfter(kind: UInt): UInt = Mux(
+    kind === RouteASourceKind.Hot.U && plan.source_presence(RouteASourceKind.Pending),
+    RouteASourceKind.Pending.U,
+    Mux(kind =/= RouteASourceKind.Packed.U && plan.source_presence(RouteASourceKind.Packed),
+      RouteASourceKind.Packed.U, 3.U),
+  )
+  private def isPresent(kind: UInt): Bool = kind <= RouteASourceKind.Packed.U && plan.source_presence(kind)
+
+  val firstKind = Mux(io.accepted_plan_in.bits.source_presence(RouteASourceKind.Hot), RouteASourceKind.Hot.U,
+    Mux(io.accepted_plan_in.bits.source_presence(RouteASourceKind.Pending), RouteASourceKind.Pending.U,
+      RouteASourceKind.Packed.U))
+  val planKindsLegal = io.accepted_plan_in.bits.source_presence.orR &&
+    io.accepted_plan_in.bits.hot_instance.source_kind === RouteASourceKind.Hot.U &&
+    io.accepted_plan_in.bits.pending_instance.source_kind === RouteASourceKind.Pending.U &&
+    io.accepted_plan_in.bits.packed_instance.source_kind === RouteASourceKind.Packed.U
+  io.accepted_plan_in.ready := state === StateIdle && !planActive && planKindsLegal
+  when(io.accepted_plan_in.fire) {
+    plan := io.accepted_plan_in.bits
+    planActive := true.B
+    currentKind := firstKind
+    currentConsumerMask := 0.U
+    state := StateOffer
+  }
+
+  val selectedOffer = Wire(new SourceServicePartialOffer(p))
+  selectedOffer := io.hot_offer_in.bits
+  when(currentKind === RouteASourceKind.Pending.U) { selectedOffer := io.pending_offer_in.bits }
+  when(currentKind === RouteASourceKind.Packed.U) { selectedOffer := io.packed_offer_in.bits }
+  val selectedOfferValid = Mux(currentKind === RouteASourceKind.Hot.U, io.hot_offer_in.valid,
+    Mux(currentKind === RouteASourceKind.Pending.U, io.pending_offer_in.valid, io.packed_offer_in.valid))
+  val selectedAvailability = availability(currentKind)
+  val expectedInstance = planInstance(currentKind)
+  val header = selectedOffer.r4_header
+  val headerSource = header(65, 64)
+  val headerConsumer = header(67, 66)
+  val headerPresent = header(69)
+  val headerCount = header(73, 70)
+  val headerReserved = header(127, 74)
+  val offerMatches = planActive && isPresent(currentKind) && selectedAvailability.valid &&
+    selectedAvailability.transaction_identity.asUInt === plan.transaction_identity.asUInt &&
+    selectedAvailability.source_instance.asUInt === expectedInstance.asUInt &&
+    selectedOffer.transaction_identity.asUInt === plan.transaction_identity.asUInt &&
+    selectedOffer.source_instance.asUInt === expectedInstance.asUInt &&
+    selectedOffer.source_instance.source_kind === currentKind && selectedOffer.consumer_id < 4.U &&
+    !currentConsumerMask(selectedOffer.consumer_id) && selectedOffer.partial_present &&
+    headerSource === currentKind && headerConsumer === selectedOffer.consumer_id && !header(68) &&
+    headerPresent && headerCount === 8.U && headerReserved === 0.U
+  val offerReady = state === StateOffer && offerMatches
+  io.hot_offer_in.ready := offerReady && currentKind === RouteASourceKind.Hot.U
+  io.pending_offer_in.ready := offerReady && currentKind === RouteASourceKind.Pending.U
+  io.packed_offer_in.ready := offerReady && currentKind === RouteASourceKind.Packed.U
+  when(selectedOfferValid && offerReady) {
+    packet := selectedOffer
+    nextFragment := 0.U
+    state := StateHeader
+  }
+
+  io.r4_partial_header_out.valid := state === StateHeader
+  io.r4_partial_header_out.bits.transaction_identity := packet.transaction_identity
+  io.r4_partial_header_out.bits.header := packet.r4_header
+  io.r4_source_instance_out.valid := state === StateHeader
+  io.r4_source_instance_out.bits.transaction_identity := packet.transaction_identity
+  io.r4_source_instance_out.bits.source_instance := packet.source_instance
+  io.r4_source_instance_out.bits.consumer_id := packet.consumer_id
+  when(io.r4_partial_header_out.fire || io.r4_source_instance_out.fire) {
+    assert(io.r4_partial_header_out.fire && io.r4_source_instance_out.fire)
+  }
+  when(io.r4_partial_header_out.fire && io.r4_source_instance_out.fire) { state := StateFragments }
+
+  val selectedFragment = Wire(new SourceServiceValueFragment(p))
+  selectedFragment := io.hot_fragment_in.bits
+  when(currentKind === RouteASourceKind.Pending.U) { selectedFragment := io.pending_fragment_in.bits }
+  when(currentKind === RouteASourceKind.Packed.U) { selectedFragment := io.packed_fragment_in.bits }
+  val selectedFragmentValid = Mux(currentKind === RouteASourceKind.Hot.U, io.hot_fragment_in.valid,
+    Mux(currentKind === RouteASourceKind.Pending.U, io.pending_fragment_in.valid, io.packed_fragment_in.valid))
+  val finalFragment = nextFragment === 7.U
+  val fragmentMatches = state === StateFragments && selectedFragment.transaction_identity.asUInt === packet.transaction_identity.asUInt &&
+    selectedFragment.source_instance.asUInt === packet.source_instance.asUInt &&
+    selectedFragment.consumer_id === packet.consumer_id && selectedFragment.fragment_index === nextFragment &&
+    selectedFragment.last === finalFragment
+  io.r4_value_fragment_out.valid := selectedFragmentValid && fragmentMatches
+  io.r4_value_fragment_out.bits.transaction_identity := selectedFragment.transaction_identity
+  io.r4_value_fragment_out.bits.fragment_index := selectedFragment.fragment_index
+  io.r4_value_fragment_out.bits.last := selectedFragment.last
+  io.r4_value_fragment_out.bits.data := selectedFragment.data
+  val fragmentReady = io.r4_value_fragment_out.ready && fragmentMatches
+  io.hot_fragment_in.ready := fragmentReady && currentKind === RouteASourceKind.Hot.U
+  io.pending_fragment_in.ready := fragmentReady && currentKind === RouteASourceKind.Pending.U
+  io.packed_fragment_in.ready := fragmentReady && currentKind === RouteASourceKind.Packed.U
+  when(io.r4_value_fragment_out.fire) {
+    when(finalFragment) {
+      val committedConsumers = currentConsumerMask | (1.U(4.W) << packet.consumer_id)(3, 0)
+      currentConsumerMask := committedConsumers
+      when(committedConsumers === "b1111".U) {
+        val nextKind = nextPresentAfter(currentKind)
+        when(nextKind <= RouteASourceKind.Packed.U) {
+          currentKind := nextKind
+          currentConsumerMask := 0.U
+          state := StateOffer
+        }.otherwise {
+          planActive := false.B
+          state := StateIdle
+        }
+      }.otherwise {
+        state := StateOffer
+      }
+    }.otherwise {
+      nextFragment := nextFragment + 1.U
+    }
+  }
+
+  val heldHeader = RegEnable(io.r4_partial_header_out.bits,
+    io.r4_partial_header_out.valid && !io.r4_partial_header_out.ready)
+  val heldSideband = RegEnable(io.r4_source_instance_out.bits,
+    io.r4_source_instance_out.valid && !io.r4_source_instance_out.ready)
+  when(RegNext(io.r4_partial_header_out.valid && !io.r4_partial_header_out.ready, false.B)) {
+    assert(io.r4_partial_header_out.bits.asUInt === heldHeader.asUInt)
+  }
+  when(RegNext(io.r4_source_instance_out.valid && !io.r4_source_instance_out.ready, false.B)) {
+    assert(io.r4_source_instance_out.bits.asUInt === heldSideband.asUInt)
+  }
+  val heldFragment = RegEnable(io.r4_value_fragment_out.bits,
+    io.r4_value_fragment_out.valid && !io.r4_value_fragment_out.ready)
+  when(RegNext(io.r4_value_fragment_out.valid && !io.r4_value_fragment_out.ready, false.B)) {
+    assert(io.r4_value_fragment_out.bits.asUInt === heldFragment.asUInt)
   }
 }
 
