@@ -48,9 +48,11 @@ The remaining active sequence is deliberately finite:
    instantiates and wires the existing packet adapter from the accepted plan
    copy and exact source-owner availability observations. The top remains
    composition-only and packet ingress remains fail-closed.
-3. **RTL2.3-C8 — four-consumer completion.** Exercise all seven nonempty masks
-   through R4 commit demultiplexing, one generation-bearing owner release per
-   present source, and the consequent R6 `merge_request`.
+3. **RTL2.3-C8 — four-consumer completion: complete.**
+   [`rtl2_3_c8_four_consumer_completion_contract.md`](rtl2_3_c8_four_consumer_completion_contract.md)
+   exercises all seven nonempty masks through R4 commit demultiplexing, one
+   generation-bearing owner release per present source, and the consequent R6
+   `merge_request`; verification packets remain explicitly non-numeric.
 4. **RTL2.3-C9 — live endpoint composition.** Replace isolated C2/C3/C4
    endpoint witnesses with one authorized top composition path. Opaque
    verification packet fragments remain explicitly non-numeric until a later

@@ -67,6 +67,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
       "route_a_admission_publication_ingress_adapter",
       "route_a_source_plan_binder",
       "route_a_source_service_packet_adapter",
+      "route_a_source_commit_demultiplexer",
       "route_a_merge_boundary",
       "route_a_component_status_collector",
     ).foreach { moduleName =>

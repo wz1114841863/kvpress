@@ -24,6 +24,7 @@ physical-memory, controller, timing, PPA, or end-to-end RTL correctness claim.
 | Read/write producers share exactly one registry allocation owner. | RTL2.3-C1 six-lane bridge replaces the production write-only bridge and rejects lane/class mismatch. | closed |
 | Non-top R6 source-plan producer is explicit. | C6 `route_a_source_plan_binder` validates and holds an upstream declared nonempty canonical plan before R6 intake. | closed; no source service activated |
 | R6 accepted-plan copy and exact owner availability reach the packet adapter. | C7 adds `route_a_source_service_packet_adapter` to the composition top and uses owner-local hot/direct/S2 observations. | closed; source packet ingress remains fail-closed |
+| Four R4 commits produce one exact owner release and then one R6 merge request. | C8 names the R4-to-owner commit router and directed integration exercises all seven nonempty source masks. | closed in verification-packet harness; C9 still owns live top endpoint composition |
 
 ## Unclosed phase requirements
 
@@ -49,9 +50,9 @@ but it must not be represented as a production source-service dataflow.
    R6 plan producer; C5 still cannot synthesize a plan.
 2. **C7 is complete:** the existing adapter now receives the accepted plan copy
    plus exact owner availability observations in the composition-only top.
-3. **C8** proves all seven masks through four commits, one exact owner release
-   per present source, and the R6 merge request; it must not treat C5's
-   verification offers as source arithmetic.
+3. **C8 is complete:** all seven masks now traverse four commits, one exact
+   owner release per present source, and the R6 merge request without treating
+   C5 verification offers as source arithmetic.
 4. **C9** replaces the isolated C2/C3/C4 endpoint witnesses with one authorized
    top composition path before an RTL2.3 completion review.
 

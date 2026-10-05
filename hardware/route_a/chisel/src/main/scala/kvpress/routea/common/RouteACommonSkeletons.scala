@@ -1,7 +1,7 @@
 package kvpress.routea.common
 
 import chisel3._
-import chisel3.util.{Cat, MuxCase, PopCount, PriorityEncoder, RegEnable, UIntToOH, Valid, log2Ceil}
+import chisel3.util.{Cat, DecoupledIO, MuxCase, PopCount, PriorityEncoder, RegEnable, UIntToOH, Valid, log2Ceil}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
 
@@ -1813,6 +1813,46 @@ final class RouteASourceServicePacketAdapter(p: RouteASkeletonParameters) extend
   when(RegNext(io.r4_value_fragment_out.valid && !io.r4_value_fragment_out.ready, false.B)) {
     assert(io.r4_value_fragment_out.bits.asUInt === heldFragment.asUInt)
   }
+}
+
+/**
+  * C8 exact R4-commit router. It has no source state: it accepts a commit only
+  * when both frozen source-kind fields agree, then forwards the exact identity,
+  * SourceInstance, and consumer ID to that one owner. Owner-local four-bit
+  * tracking and release remain outside this composition child.
+  */
+final class RouteASourceCommitDemultiplexer(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_source_commit_demultiplexer"
+
+  val io = IO(new Bundle {
+    val commit_in = Flipped(RouteAChannels.consumer_partial_commit(p))
+    val hot_commit_out = RouteAChannels.gqa_consumer_commit(p)
+    val pending_commit_out = RouteAChannels.gqa_consumer_commit(p)
+    val packed_commit_out = RouteAChannels.gqa_consumer_commit(p)
+  })
+
+  private def assignCommit(out: DecoupledIO[GqaConsumerCommit]): Unit = {
+    out.bits.transaction_identity := io.commit_in.bits.transaction_identity
+    out.bits.source_instance := io.commit_in.bits.source_instance
+    out.bits.consumer_id := io.commit_in.bits.consumer_id
+  }
+  assignCommit(io.hot_commit_out)
+  assignCommit(io.pending_commit_out)
+  assignCommit(io.packed_commit_out)
+
+  val kindMatchesInstance = io.commit_in.bits.source_kind === io.commit_in.bits.source_instance.source_kind
+  val hotSelected = kindMatchesInstance && io.commit_in.bits.source_kind === RouteASourceKind.Hot.U
+  val pendingSelected = kindMatchesInstance && io.commit_in.bits.source_kind === RouteASourceKind.Pending.U
+  val packedSelected = kindMatchesInstance && io.commit_in.bits.source_kind === RouteASourceKind.Packed.U
+  io.hot_commit_out.valid := io.commit_in.valid && hotSelected
+  io.pending_commit_out.valid := io.commit_in.valid && pendingSelected
+  io.packed_commit_out.valid := io.commit_in.valid && packedSelected
+  io.commit_in.ready := Mux(
+    hotSelected,
+    io.hot_commit_out.ready,
+    Mux(pendingSelected, io.pending_commit_out.ready, Mux(packedSelected, io.packed_commit_out.ready, false.B)),
+  )
+  when(io.commit_in.fire) { assert(kindMatchesInstance) }
 }
 
 /**

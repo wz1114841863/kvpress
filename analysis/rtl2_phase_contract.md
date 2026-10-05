@@ -9,7 +9,8 @@ rtl2_3_0_read_issue_contract_implemented_directed_tested;
 rtl2_3_c5_source_packet_r4_implemented_directed_tested_limited_protocol_closure;
 rtl2_3_r_active_phase_reconciled_no_behavioral_activation;
 rtl2_3_c6_source_plan_binder_implemented_directed_tested;
-rtl2_3_c7_source_service_top_integration_implemented_directed_tested`.
+rtl2_3_c7_source_service_top_integration_implemented_directed_tested;
+rtl2_3_c8_four_consumer_completion_implemented_directed_tested`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -295,6 +296,15 @@ partial.  C7 is therefore a fail-closed observation/association closure, not
 a source packet, consumer-completion, source-release, merge-request, or
 scoreboard-emission claim.
 
+**RTL2.3-C8 four-consumer completion: implemented and directed tested.**
+[`rtl2_3_c8_four_consumer_completion_contract.md`](rtl2_3_c8_four_consumer_completion_contract.md)
+names the fail-closed R4 commit demultiplexer and exercises the existing
+owner-local release trackers with all seven nonempty source masks.  R6 holds
+one merge request only after all planned generation-bearing releases.  The
+integration harness uses structural verification packets and does not make a
+numeric partial, source arithmetic, host-side scoreboard adapter, live top
+endpoint, R4 terminal, or end-to-end claim.
+
 **RTL2.3.0 read-issue descriptor contract: implemented and directed tested.**
 [`rtl2_3_0_read_issue_contract.md`](rtl2_3_0_read_issue_contract.md) and its
 machine-readable manifest bind the pre-R1 read facts—opaque payload handle,
@@ -408,8 +418,8 @@ remaining sequence is:
    of R6's immutable nonempty source declaration;
 2. **C7: complete.** The composition-only top binds the accepted plan copy,
    source-owner availability, and existing packet adapter;
-3. **C8:** all-mask four-consumer commit/release association through R6
-   `merge_req`; and
+3. **C8: complete.** All-mask four-consumer commit/release association through
+   R6 `merge_req` is directed-tested; and
 4. **C9:** one authorized top composition path replacing the isolated C2/C3/C4
    endpoint witnesses, without representing opaque verification fragments as
    numeric source partials.

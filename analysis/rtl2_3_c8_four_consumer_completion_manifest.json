@@ -1,0 +1,70 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-3-c8-four-consumer-completion-1.0",
+  "status": "implemented_directed_tested_verification_packet_integration_only",
+  "scope": "R4 consumer-commit demultiplexing, existing owner-local four-consumer release, and R6 merge-request association. No source plan selection, source partial arithmetic, live top endpoint producer, R4 result/fault producer, terminal, retirement, physical memory/controller, timing, throughput, PPA, model/GPU, or new A4 DSE behavior.",
+  "references": [
+    "analysis/architecture_spec.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_3_reconciliation_01.md",
+    "analysis/rtl2_0f_source_service_packet_adapter_contract.md",
+    "analysis/rtl2_3_c5_source_packet_r4_contract.md",
+    "analysis/rtl2_3_c7_source_service_top_integration_contract.md"
+  ],
+  "implementation": {
+    "commit_router": "route_a_source_commit_demultiplexer",
+    "router_acceptance": "source_kind equals source_instance.source_kind and is hot/pending/packed",
+    "owner_release_rule": "existing owner-local four distinct matching consumer commits before exactly one SourceRelease",
+    "r6_rule": "all and only present immutable-plan releases are required before one merge_req"
+  },
+  "directed_harness": {
+    "name": "RouteAFourConsumerCompletionHarness",
+    "uses_real_modules": [
+      "route_a_lifecycle_adapter",
+      "route_a_hot_source_path",
+      "route_a_direct_pending_endpoint_v1",
+      "route_a_s2_gqa_source_wrapper",
+      "route_a_source_service_packet_adapter",
+      "route_a_source_commit_demultiplexer",
+      "route_a_merge_boundary"
+    ],
+    "test_environment_only_inputs": [
+      "owner activation/fill controls",
+      "structural SourceServicePartialOffer packets",
+      "structural SourceServiceValueFragment packets"
+    ]
+  },
+  "tests": {
+    "command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'Test / compile' 'testOnly kvpress.routea.rtl2.RouteAFourConsumerCompletionSpec' 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec'",
+    "result": "6 passed (3 C8 directed integration/router cases and 3 top structural cases; compile passed)",
+    "coverage": [
+      "three commits do not release or issue merge request",
+      "all seven nonempty masks",
+      "four exact commits per present source",
+      "one R6 merge request after final planned release",
+      "header kind and SourceInstance kind disagreement fails closed",
+      "top elaborates named commit router"
+    ]
+  },
+  "event_boundary": {
+    "consumer_partial_commit": "protocol carrier implemented and directed exercised; no host-side scoreboard adapter",
+    "source_release": "existing owner-local carrier exercised and validated by R6; no host-side scoreboard adapter",
+    "merge_request": "R6 carrier exercised after all planned releases; no R4 terminal/result behavior"
+  },
+  "provenance_sha256": {
+    "analysis/rtl2_3_c8_four_consumer_completion_contract.md": "2828e12b26ed098748fbe8670db67afedf5f77cd68031ad1cdf6cc6010a88b96",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "e5cf46b07fa3b50743e0ff56335c572b11ee4eafb0fb82783406f05be9ae2e32",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "d85027d02406a6e5ee351d3fbc915b764dd7d01e637392f6b91b88312390d567",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAFourConsumerCompletionSpec.scala": "ad28389d9977596b7cc77fa70e8a94e5d62096c21ccbb665df822f991793b160",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala": "e2ad91d2ae52c3153cf7b4ae58a7579715945b3d17c63f37283de5ce9586dc7d"
+  },
+  "evidence_labels": [
+    "synthesizable control-protocol closure",
+    "directed ChiselSim and elaboration evidence",
+    "verification packet environment only",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no numeric datapath or end-to-end RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}

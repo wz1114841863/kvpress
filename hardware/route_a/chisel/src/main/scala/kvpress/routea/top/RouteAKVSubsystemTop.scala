@@ -54,6 +54,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val typed_delivery_router = Module(new RouteATypedDeliveryRouter(p))
     val source_plan_binder = Module(new RouteASourcePlanBinder(p))
     val source_packet_adapter = Module(new RouteASourceServicePacketAdapter(p))
+    val source_commit_demultiplexer = Module(new RouteASourceCommitDemultiplexer(p))
     val merge = Module(new RouteAMergeBoundary(p))
     val status_collector = Module(new RouteAComponentStatusCollector(p))
 
@@ -142,30 +143,13 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     merge.io.r4_result_stub_in <> r4_result_stub
     merge.io.r4_numeric_fault_in <> r4_numeric_fault
 
-    val merge_source_commit = Wire(RouteAChannels.consumer_partial_commit(p))
-    merge_source_commit <> merge.io.consumer_partial_commit
-    hot.io.gqa_consumer_commit_in.valid := merge_source_commit.valid &&
-      merge_source_commit.bits.source_instance.source_kind === RouteASourceKind.Hot.U
-    hot.io.gqa_consumer_commit_in.bits := merge_source_commit.bits
-    direct_pending.io.gqa_consumer_commit_in.valid := merge_source_commit.valid &&
-      merge_source_commit.bits.source_instance.source_kind === RouteASourceKind.Pending.U
-    direct_pending.io.gqa_consumer_commit_in.bits := merge_source_commit.bits
-    s2.io.gqa_consumer_commit_in.valid := merge_source_commit.valid &&
-      merge_source_commit.bits.source_instance.source_kind === RouteASourceKind.Packed.U
-    s2.io.gqa_consumer_commit_in.bits := merge_source_commit.bits
-    merge_source_commit.ready := Mux(
-      merge_source_commit.bits.source_instance.source_kind === RouteASourceKind.Hot.U,
-      hot.io.gqa_consumer_commit_in.ready,
-      Mux(
-        merge_source_commit.bits.source_instance.source_kind === RouteASourceKind.Pending.U,
-        direct_pending.io.gqa_consumer_commit_in.ready,
-        Mux(
-          merge_source_commit.bits.source_instance.source_kind === RouteASourceKind.Packed.U,
-          s2.io.gqa_consumer_commit_in.ready,
-          false.B,
-        ),
-      ),
-    )
+    // C8 keeps the top composition-only: the named child rejects a mismatch
+    // between R4's header source ordinal and sideband SourceInstance, then
+    // forwards the exact commit to one owner-local four-consumer tracker.
+    source_commit_demultiplexer.io.commit_in <> merge.io.consumer_partial_commit
+    hot.io.gqa_consumer_commit_in <> source_commit_demultiplexer.io.hot_commit_out
+    direct_pending.io.gqa_consumer_commit_in <> source_commit_demultiplexer.io.pending_commit_out
+    s2.io.gqa_consumer_commit_in <> source_commit_demultiplexer.io.packed_commit_out
 
     merge.io.merge_req_in <> lifecycle.io.merge_req
     lifecycle.io.merge_terminal_in <> merge.io.merge_rsp_or_numeric_fault
