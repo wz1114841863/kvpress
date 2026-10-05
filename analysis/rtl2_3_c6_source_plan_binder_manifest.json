@@ -1,0 +1,74 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-3-c6-source-plan-binder-1.0",
+  "status": "implemented_directed_tested_source_declaration_to_r6_plan_only",
+  "scope": "Finite structural binding from an upstream immutable source declaration to R6's SourceCompletionPlan. No source-set selection, scheduler, source residency, payload, packet, R4, numeric, controller, timing, throughput, PPA, model/GPU, or new A4 DSE behavior.",
+  "references": [
+    "analysis/rtl2_3_reconciliation_01.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl1_i3_delivery_source_contract.md",
+    "analysis/rtl2_0f_source_service_packet_adapter_contract.md"
+  ],
+  "binding": {
+    "upstream_declaration_owner": "environment-owned already-selected source declaration",
+    "rtl_plan_producer": "route_a_source_plan_binder",
+    "r6_plan_consumer": "route_a_lifecycle_adapter",
+    "top_role": "composition-only declaration ingress and binder wiring",
+    "not_owned_by_binder": [
+      "source presence selection",
+      "source scheduler",
+      "attention tracker allocation",
+      "source availability or residency",
+      "source packet/partial generation",
+      "R4 merge or terminal"
+    ]
+  },
+  "acceptance": {
+    "requires": [
+      "nonempty source_presence",
+      "hot/pending/packed canonical kind tuple 0/1/2",
+      "single binder holding slot empty"
+    ],
+    "exactly_copied_fields": [
+      "transaction_identity",
+      "source_presence",
+      "hot_instance",
+      "pending_instance",
+      "packed_instance"
+    ],
+    "fail_closed": [
+      "empty source_presence",
+      "noncanonical source-kind tuple",
+      "second declaration while held output awaits R6"
+    ],
+    "ready_low_rule": "all held completion-plan fields remain unchanged while R6 ready is low"
+  },
+  "directed_tests": {
+    "suite": "kvpress.routea.rtl2.RouteASourcePlanBinderSpec",
+    "coverage": [
+      "all seven nonempty source masks",
+      "empty and noncanonical declarations rejected",
+      "exact plan hold under R6 backpressure"
+    ],
+    "regressions": [
+      "kvpress.routea.structural.RouteAKVSubsystemTopSpec",
+      "kvpress.routea.integration.RouteAInitDrainIntegrationSpec"
+    ]
+  },
+  "provenance_sha256": {
+    "analysis/rtl2_3_c6_source_plan_binder_contract.md": "b2164084c80a2b88e3741d79d620887eea28bdabcd8db72d3657bd9d526f6508",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "cc01043afbaafd09f21d23c6c36eb775646aba911d0d2d719c16958ba6ec1e9c",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "38f1abe46009df42edceeebba7ff2d47d2dd6bd8be76b0ee9b78a6be90a54a2f",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "841603de82492b75ac52d065c2f0f94be6936aee21b62ecf5ba4510df9bc981c",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteASourcePlanBinderSpec.scala": "efe4de3223897839e3e21544577cb575134243c8f9afe5eeca104663f40a6c48"
+  },
+  "evidence_labels": [
+    "synthesizable functional-control evidence",
+    "directed ChiselSim",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL numeric-correctness claim",
+    "no end-to-end Route-A RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}

@@ -26,6 +26,9 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
   val runtime_retire_req = IO(Flipped(RouteAChannels.runtime_retire_req))
   val attention_terminal_rsp = IO(RouteAChannels.attention_terminal_rsp)
   val session_retire_ack = IO(RouteAChannels.session_retire_ack)
+  // C6 consumes an immutable, already-selected source declaration through a
+  // named binder. The top only composes this boundary and never creates a plan.
+  val source_plan_declaration_in = IO(Flipped(RouteAChannels.source_plan_declaration(p)))
   // Hot-owner egress into R3's replaceable functional P3 backing. These are
   // environment-owned payload/sidecar inputs; the composition top creates no
   // data, address, admission, authority, or delivery-context fact.
@@ -49,6 +52,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val delivery_context_registry = Module(new RouteADeliveryContextRegistry(p))
     val delivery_context_composition = Module(new RouteAUnifiedDeliveryContextAllocationBridge(p))
     val typed_delivery_router = Module(new RouteATypedDeliveryRouter(p))
+    val source_plan_binder = Module(new RouteASourcePlanBinder(p))
     val merge = Module(new RouteAMergeBoundary(p))
     val status_collector = Module(new RouteAComponentStatusCollector(p))
 
@@ -65,9 +69,9 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     hot.io.hot_source_open_in <> hot_source_open
     hot_release <> hot.io.hot_release_out
     val r6_merge_ready = Wire(RouteAChannels.r6_merge_ready); StructuralTieOff.source(r6_merge_ready)
-    val source_completion_plan = Wire(RouteAChannels.source_completion_plan(p)); StructuralTieOff.source(source_completion_plan)
     lifecycle.io.merge_ready_in <> r6_merge_ready
-    lifecycle.io.source_completion_plan_in <> source_completion_plan
+    source_plan_binder.io.declaration_in <> source_plan_declaration_in
+    lifecycle.io.source_completion_plan_in <> source_plan_binder.io.completion_plan_out
     StructuralTieOff.sink(lifecycle.io.source_completion_plan_copy_out)
     lifecycle.io.hot_source_release_in <> hot_release
     s2.io.drain_collection_enable := lifecycle.io.drain_collection_enable

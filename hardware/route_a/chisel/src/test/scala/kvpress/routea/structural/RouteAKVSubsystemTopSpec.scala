@@ -65,6 +65,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
       "route_a_m2_p3_wrapper",
       "route_a_page_manager",
       "route_a_admission_publication_ingress_adapter",
+      "route_a_source_plan_binder",
       "route_a_merge_boundary",
       "route_a_component_status_collector",
     ).foreach { moduleName =>
@@ -74,6 +75,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     Seq(
       "frontend_lifecycle_req",
       "runtime_retire_req",
+      "source_plan_declaration_in",
       "attention_terminal_rsp",
       "session_retire_ack",
       "component_status_in",

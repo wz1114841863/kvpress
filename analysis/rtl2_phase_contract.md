@@ -7,7 +7,8 @@ rtl2_2_3_functional_storage_implemented_directed_tested;
 rtl2_2_4_read_delivery_context_implemented_directed_tested;
 rtl2_3_0_read_issue_contract_implemented_directed_tested;
 rtl2_3_c5_source_packet_r4_implemented_directed_tested_limited_protocol_closure;
-rtl2_3_r_active_phase_reconciled_no_behavioral_activation`.
+rtl2_3_r_active_phase_reconciled_no_behavioral_activation;
+rtl2_3_c6_source_plan_binder_implemented_directed_tested`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -275,6 +276,14 @@ for the remaining RTL2.3--RTL2.6 work. Its JSON overlay is a navigation map,
 not an event emitter or a replacement schema. In particular, C1--C5 remain
 preparation/structural closures; the parent RTL2.3 phase remains incomplete.
 
+**RTL2.3-C6 source-plan binder: implemented and directed tested.**
+[`rtl2_3_c6_source_plan_binder_contract.md`](rtl2_3_c6_source_plan_binder_contract.md)
+names `route_a_source_plan_binder` as the finite non-top producer of R6's
+completion plan. It accepts only an upstream already-selected, nonempty,
+canonical declaration; it holds exact fields under R6 backpressure and makes
+no source-selection, residency, packet, or numeric claim. C6 creates no
+scoreboard event and does not complete RTL2.3.
+
 **RTL2.3.0 read-issue descriptor contract: implemented and directed tested.**
 [`rtl2_3_0_read_issue_contract.md`](rtl2_3_0_read_issue_contract.md) and its
 machine-readable manifest bind the pre-R1 read facts—opaque payload handle,
@@ -384,8 +393,8 @@ The preceding sentence is a parent-phase requirement, not a claim that C5's
 testbench-provided structural packets already satisfy it. The only authorized
 remaining sequence is:
 
-1. **C6:** source-plan binder with a named non-top producer of R6's immutable
-   nonempty source declaration;
+1. **C6: complete.** `route_a_source_plan_binder` is the named non-top producer
+   of R6's immutable nonempty source declaration;
 2. **C7:** composition-only top binding of the accepted plan copy, source-owner
    availability, and existing packet adapter;
 3. **C8:** all-mask four-consumer commit/release association through R6

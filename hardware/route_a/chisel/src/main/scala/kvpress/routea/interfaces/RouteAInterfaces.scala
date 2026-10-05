@@ -244,6 +244,19 @@ final class SourceCompletionPlan(p: RouteASkeletonParameters) extends Bundle {
   val packed_instance = new SourceInstance(p)
 }
 
+/**
+  * Immutable upstream declaration consumed by the C6 source-plan binder.
+  * It declares an already-selected source set; it is neither a scheduler
+  * command nor permission for the composition top to construct a plan.
+  */
+final class SourcePlanDeclaration(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val source_presence = UInt(RouteAAnchorWidths.SourcePresenceWidth.W)
+  val hot_instance = new SourceInstance(p)
+  val pending_instance = new SourceInstance(p)
+  val packed_instance = new SourceInstance(p)
+}
+
 final class S2ServiceRequest extends Bundle {
   val transaction_identity = new TransactionIdentity
   val page_ref = new PageRef
@@ -851,6 +864,7 @@ object RouteAChannels {
   def publication_commit_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationCommitObservation(p))
   def publication_member_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationMemberObservation(p))
   def r6_merge_ready = Decoupled(new R6MergeReady)
+  def source_plan_declaration(p: RouteASkeletonParameters) = Decoupled(new SourcePlanDeclaration(p))
   def source_completion_plan(p: RouteASkeletonParameters) = Decoupled(new SourceCompletionPlan(p))
   def s2_service_req = Decoupled(new S2ServiceRequest)
   def direct_pending_open(p: RouteASkeletonParameters) = Decoupled(new DirectPendingOpen(p))

@@ -6,6 +6,49 @@ import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteADescriptorOperationKind, RouteAM2GroupMember, RouteAPublicationStatus, RouteASkeletonParameters}
 
 /**
+  * RTL2.3-C6 finite binder from an upstream immutable source declaration to
+  * R6's exact completion plan. It validates structure and holds a single
+  * accepted declaration; it does not choose sources, inspect payloads, or
+  * create attention state.
+  */
+final class RouteASourcePlanBinder(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_source_plan_binder"
+
+  val io = IO(new Bundle {
+    val declaration_in = Flipped(RouteAChannels.source_plan_declaration(p))
+    val completion_plan_out = RouteAChannels.source_completion_plan(p)
+  })
+
+  val full = RegInit(false.B)
+  val held = Reg(new SourceCompletionPlan(p))
+  val declaration = io.declaration_in.bits
+  val declarationLegal = declaration.source_presence.orR &&
+    declaration.hot_instance.source_kind === RouteASourceKind.Hot.U &&
+    declaration.pending_instance.source_kind === RouteASourceKind.Pending.U &&
+    declaration.packed_instance.source_kind === RouteASourceKind.Packed.U
+
+  io.declaration_in.ready := !full && declarationLegal
+  when(io.declaration_in.fire) {
+    held.transaction_identity := declaration.transaction_identity
+    held.source_presence := declaration.source_presence
+    held.hot_instance := declaration.hot_instance
+    held.pending_instance := declaration.pending_instance
+    held.packed_instance := declaration.packed_instance
+    full := true.B
+  }
+
+  io.completion_plan_out.valid := full
+  io.completion_plan_out.bits := held
+  when(io.completion_plan_out.fire) { full := false.B }
+
+  val heldPlanWhileStalled = RegEnable(io.completion_plan_out.bits,
+    io.completion_plan_out.valid && !io.completion_plan_out.ready)
+  when(RegNext(io.completion_plan_out.valid && !io.completion_plan_out.ready, false.B)) {
+    assert(io.completion_plan_out.bits.asUInt === heldPlanWhileStalled.asUInt)
+  }
+}
+
+/**
   * RTL1.5 R6 lifecycle control. It owns only session/attention/terminal/drain
   * associations; long-lived hot/pending/packed state remains at its frozen
   * owners and crosses this wrapper as event-level authority transitions.

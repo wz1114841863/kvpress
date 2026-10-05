@@ -38,10 +38,11 @@ packet ingress only. They do not satisfy the parent phase by themselves.
 
 The remaining active sequence is deliberately finite:
 
-1. **RTL2.3-C6 — source-plan binder closure.** Name the non-top producer of
-   the immutable source declaration accepted by R6. It validates and binds a
-   declared nonempty source set; it does not choose a scheduler, substitute a
-   source, or manufacture a plan at the top.
+1. **RTL2.3-C6 — source-plan binder closure: complete.**
+   [`rtl2_3_c6_source_plan_binder_contract.md`](rtl2_3_c6_source_plan_binder_contract.md)
+   names the non-top producer of the immutable source declaration accepted by
+   R6. It validates and binds a declared nonempty source set; it does not
+   choose a scheduler, substitute a source, or manufacture a plan at the top.
 2. **RTL2.3-C7 — source-service top integration.** Instantiate and wire the
    existing packet adapter from the accepted plan copy and exact source-owner
    availability observations. The top remains composition-only.

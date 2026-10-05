@@ -22,6 +22,7 @@ physical-memory, controller, timing, PPA, or end-to-end RTL correctness claim.
 | Top does not become a read/write arbiter. | RTL2.3.3 places dual-ingress choice in R2 and ties the top read carrier inactive. | closed |
 | Existing R2 rotation/issue ownership is retained. | No R2 selection logic was moved; focused test shows R2-only input acceptance and ready-low hold. | closed at ingress boundary |
 | Read/write producers share exactly one registry allocation owner. | RTL2.3-C1 six-lane bridge replaces the production write-only bridge and rejects lane/class mismatch. | closed |
+| Non-top R6 source-plan producer is explicit. | C6 `route_a_source_plan_binder` validates and holds an upstream declared nonempty canonical plan before R6 intake. | closed; no source service activated |
 
 ## Unclosed phase requirements
 
@@ -43,7 +44,8 @@ following are real blockers, not harmless documentation gaps:
 RTL2.3 is **not complete**.  The code is ready for the next narrow closure,
 but it must not be represented as a production source-service dataflow.
 
-1. **C6** names the non-top source-plan binder; C5 cannot synthesize that plan.
+1. **C6 is complete:** the non-top source-plan binder now supplies the only
+   R6 plan producer; C5 still cannot synthesize a plan.
 2. **C7** instantiates the existing adapter in the composition-only top and
    binds the accepted-plan copy plus exact owner availability observations.
 3. **C8** proves all seven masks through four commits, one exact owner release

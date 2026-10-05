@@ -26,6 +26,9 @@ final class RouteAInitDrainHarness(p: RouteASkeletonParameters) extends Module {
   subsystem.destructive_reset := reset.asBool
   subsystem.frontend_lifecycle_req <> io.frontend_lifecycle_req
   subsystem.runtime_retire_req <> io.runtime_retire_req
+  StructuralTieOff.source(subsystem.source_plan_declaration_in)
+  StructuralTieOff.source(subsystem.hot_payload_fragment_in)
+  StructuralTieOff.source(subsystem.hot_position_sidecar_in)
   io.attention_terminal_rsp <> subsystem.attention_terminal_rsp
   io.session_retire_ack <> subsystem.session_retire_ack
   io.external_core_mem_if_v1 <> subsystem.external_core_mem_if_v1
