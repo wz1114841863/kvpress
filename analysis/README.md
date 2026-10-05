@@ -26,9 +26,10 @@ amendments, passed cross-owner completion review, and frozen a versioned
 scoreboard-event schema. RTL2.1a--RTL2.1c atomic-publication behavior and
 RTL2.2 read/write delivery prerequisites are implemented and directed tested.
 RTL2.3.0--.3 plus C1--C5 close read-endpoint preparation and structural R4
-packet ingress. RTL2.3-C6 now binds the non-top source-plan producer, but the
-phase is still partial: C7--C9 must bind source-owner packet service,
-four-consumer release, and one top-composed endpoint path. RTL2.3-R records
+packet ingress. RTL2.3-C6 binds the non-top source-plan producer and RTL2.3-C7
+connects its R6 plan copy plus exact source-owner observations to the packet
+adapter, but the phase is still partial: C8--C9 must bind four-consumer
+release and one top-composed endpoint path. RTL2.3-R records
 the active event-phase map;
 the next work remains functional control/dataflow closure—not PPA, controller,
 native-HBM, numeric realization, or performance work.
@@ -51,6 +52,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2 production transaction/dataflow activation plan | [`rtl2_phase_contract.md`](rtl2_phase_contract.md) |
 | RTL2.3 active phase/event reconciliation | [`rtl2_3_reconciliation_01.md`](rtl2_3_reconciliation_01.md) and [`rtl2_scoreboard_event_phase_reconciliation_01.json`](rtl2_scoreboard_event_phase_reconciliation_01.json) |
 | RTL2.3-C6 R6 source-plan producer | [`rtl2_3_c6_source_plan_binder_contract.md`](rtl2_3_c6_source_plan_binder_contract.md) and [`rtl2_3_c6_source_plan_binder_manifest.json`](rtl2_3_c6_source_plan_binder_manifest.json) |
+| RTL2.3-C7 source-service top integration | [`rtl2_3_c7_source_service_top_integration_contract.md`](rtl2_3_c7_source_service_top_integration_contract.md) and [`rtl2_3_c7_source_service_top_integration_manifest.json`](rtl2_3_c7_source_service_top_integration_manifest.json) |
 | RTL2.0 producer/event activation inventory | [`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and [`rtl2_0_activation_manifest.json`](rtl2_0_activation_manifest.json) |
 | RTL2.0a logical payload materialization / hot maturity egress | [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md) and [`rtl2_0a_payload_materialization_manifest.json`](rtl2_0a_payload_materialization_manifest.json) |
 | RTL2.0b retained admission-group builder | [`rtl2_0b_admission_group_builder_contract.md`](rtl2_0b_admission_group_builder_contract.md) and [`rtl2_0b_admission_group_builder_manifest.json`](rtl2_0b_admission_group_builder_manifest.json) |

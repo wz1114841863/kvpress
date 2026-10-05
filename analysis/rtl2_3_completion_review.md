@@ -23,6 +23,7 @@ physical-memory, controller, timing, PPA, or end-to-end RTL correctness claim.
 | Existing R2 rotation/issue ownership is retained. | No R2 selection logic was moved; focused test shows R2-only input acceptance and ready-low hold. | closed at ingress boundary |
 | Read/write producers share exactly one registry allocation owner. | RTL2.3-C1 six-lane bridge replaces the production write-only bridge and rejects lane/class mismatch. | closed |
 | Non-top R6 source-plan producer is explicit. | C6 `route_a_source_plan_binder` validates and holds an upstream declared nonempty canonical plan before R6 intake. | closed; no source service activated |
+| R6 accepted-plan copy and exact owner availability reach the packet adapter. | C7 adds `route_a_source_service_packet_adapter` to the composition top and uses owner-local hot/direct/S2 observations. | closed; source packet ingress remains fail-closed |
 
 ## Unclosed phase requirements
 
@@ -46,8 +47,8 @@ but it must not be represented as a production source-service dataflow.
 
 1. **C6 is complete:** the non-top source-plan binder now supplies the only
    R6 plan producer; C5 still cannot synthesize a plan.
-2. **C7** instantiates the existing adapter in the composition-only top and
-   binds the accepted-plan copy plus exact owner availability observations.
+2. **C7 is complete:** the existing adapter now receives the accepted plan copy
+   plus exact owner availability observations in the composition-only top.
 3. **C8** proves all seven masks through four commits, one exact owner release
    per present source, and the R6 merge request; it must not treat C5's
    verification offers as source arithmetic.

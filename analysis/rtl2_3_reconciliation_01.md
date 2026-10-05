@@ -21,7 +21,7 @@ active map is therefore:
 
 | Event group | v1.0 future label | Active behavioral entry | Reason |
 |---|---|---|---|
-| `source_deliverable` | RTL2.4 | RTL2.3-C7 | A source owner may announce only through the top-integrated packet path. |
+| `source_deliverable` | RTL2.4 | RTL2.3-C7 | A source owner may be observed only through the top-integrated adapter path; C7 emits no host-side packet record. |
 | `consumer_partial_commit`, `source_release` | RTL2.4 | RTL2.3-C8 | Four matching R4 commits precede an owner release. |
 | `merge_request` | RTL2.5 | RTL2.3-C8 | R6 emits it after exactly the planned releases; R4 result acceptance remains later. |
 | `attention_terminal` | RTL2.5 | RTL2.4 | The verification-only R4 result/fault stub is the sole terminal producer. |
@@ -43,9 +43,11 @@ The remaining active sequence is deliberately finite:
    names the non-top producer of the immutable source declaration accepted by
    R6. It validates and binds a declared nonempty source set; it does not
    choose a scheduler, substitute a source, or manufacture a plan at the top.
-2. **RTL2.3-C7 — source-service top integration.** Instantiate and wire the
-   existing packet adapter from the accepted plan copy and exact source-owner
-   availability observations. The top remains composition-only.
+2. **RTL2.3-C7 — source-service top integration: complete.**
+   [`rtl2_3_c7_source_service_top_integration_contract.md`](rtl2_3_c7_source_service_top_integration_contract.md)
+   instantiates and wires the existing packet adapter from the accepted plan
+   copy and exact source-owner availability observations. The top remains
+   composition-only and packet ingress remains fail-closed.
 3. **RTL2.3-C8 — four-consumer completion.** Exercise all seven nonempty masks
    through R4 commit demultiplexing, one generation-bearing owner release per
    present source, and the consequent R6 `merge_request`.

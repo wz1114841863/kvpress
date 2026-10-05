@@ -1642,6 +1642,10 @@ final class RouteASourceServicePacketAdapter(p: RouteASkeletonParameters) extend
     val hot_fragment_in = Flipped(RouteAChannels.source_service_value_fragment(p))
     val pending_fragment_in = Flipped(RouteAChannels.source_service_value_fragment(p))
     val packed_fragment_in = Flipped(RouteAChannels.source_service_value_fragment(p))
+    // C7 exposes only the selected logical S2 slot for a read-only owner
+    // observation.  The adapter owns the accepted-plan copy, so the
+    // composition top cannot reselect a slot from an unrelated plan copy.
+    val packed_observe_slot_out = Output(UInt(RouteAAnchorWidths.S2SlotWidth.W))
     val r4_partial_header_out = RouteAChannels.r4_partial_header
     val r4_source_instance_out = RouteAChannels.r4_source_instance_sideband(p)
     val r4_value_fragment_out = RouteAChannels.r4_value_fragment
@@ -1658,6 +1662,16 @@ final class RouteASourceServicePacketAdapter(p: RouteASkeletonParameters) extend
   val currentConsumerMask = RegInit(0.U(4.W))
   val packet = Reg(new SourceServicePartialOffer(p))
   val nextFragment = RegInit(0.U(3.W))
+
+  // A packed coordinate that does not fit this logical two-slot S2 wrapper
+  // cannot match the exact SourceInstance returned by the owner and therefore
+  // fails closed.  This selector never grants service or rewrites the plan.
+  val packedObservationCoordinate = Mux(
+    planActive,
+    plan.packed_instance.instance_coordinate,
+    io.accepted_plan_in.bits.packed_instance.instance_coordinate,
+  )
+  io.packed_observe_slot_out := packedObservationCoordinate(RouteAAnchorWidths.S2SlotWidth - 1, 0)
 
   private def planInstance(kind: UInt): SourceInstance = {
     val result = Wire(new SourceInstance(p))

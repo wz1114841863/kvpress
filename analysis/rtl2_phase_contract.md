@@ -8,7 +8,8 @@ rtl2_2_4_read_delivery_context_implemented_directed_tested;
 rtl2_3_0_read_issue_contract_implemented_directed_tested;
 rtl2_3_c5_source_packet_r4_implemented_directed_tested_limited_protocol_closure;
 rtl2_3_r_active_phase_reconciled_no_behavioral_activation;
-rtl2_3_c6_source_plan_binder_implemented_directed_tested`.
+rtl2_3_c6_source_plan_binder_implemented_directed_tested;
+rtl2_3_c7_source_service_top_integration_implemented_directed_tested`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -284,6 +285,16 @@ canonical declaration; it holds exact fields under R6 backpressure and makes
 no source-selection, residency, packet, or numeric claim. C6 creates no
 scoreboard event and does not complete RTL2.3.
 
+**RTL2.3-C7 source-service top integration: implemented and directed tested.**
+[`rtl2_3_c7_source_service_top_integration_contract.md`](rtl2_3_c7_source_service_top_integration_contract.md)
+places the existing packet adapter at the sole composition-top packet boundary.
+It receives only R6's accepted plan copy and exact hot/direct/S2 owner-local
+availability observations.  All offer/fragment ingress remains explicitly
+inactive because no source owner has yet been authorized to produce a numeric
+partial.  C7 is therefore a fail-closed observation/association closure, not
+a source packet, consumer-completion, source-release, merge-request, or
+scoreboard-emission claim.
+
 **RTL2.3.0 read-issue descriptor contract: implemented and directed tested.**
 [`rtl2_3_0_read_issue_contract.md`](rtl2_3_0_read_issue_contract.md) and its
 machine-readable manifest bind the pre-R1 read facts—opaque payload handle,
@@ -395,8 +406,8 @@ remaining sequence is:
 
 1. **C6: complete.** `route_a_source_plan_binder` is the named non-top producer
    of R6's immutable nonempty source declaration;
-2. **C7:** composition-only top binding of the accepted plan copy, source-owner
-   availability, and existing packet adapter;
+2. **C7: complete.** The composition-only top binds the accepted plan copy,
+   source-owner availability, and existing packet adapter;
 3. **C8:** all-mask four-consumer commit/release association through R6
    `merge_req`; and
 4. **C9:** one authorized top composition path replacing the isolated C2/C3/C4

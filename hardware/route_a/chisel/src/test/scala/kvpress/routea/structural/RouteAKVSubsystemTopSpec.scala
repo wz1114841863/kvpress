@@ -66,6 +66,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
       "route_a_page_manager",
       "route_a_admission_publication_ingress_adapter",
       "route_a_source_plan_binder",
+      "route_a_source_service_packet_adapter",
       "route_a_merge_boundary",
       "route_a_component_status_collector",
     ).foreach { moduleName =>
@@ -108,6 +109,8 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     systemVerilog should include("session_retire_ack_valid")
     systemVerilog should include("external_core_mem_if_v1_init_ack_ready")
     systemVerilog should include("external_core_mem_if_v1_request_valid")
+    systemVerilog should include("source_packet_adapter")
+    chirrtl should include("packed_observe_slot_out")
   }
 
   it should "preserve the selected, non-opaque Route-A anchor widths" in {

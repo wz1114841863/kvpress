@@ -53,6 +53,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val delivery_context_composition = Module(new RouteAUnifiedDeliveryContextAllocationBridge(p))
     val typed_delivery_router = Module(new RouteATypedDeliveryRouter(p))
     val source_plan_binder = Module(new RouteASourcePlanBinder(p))
+    val source_packet_adapter = Module(new RouteASourceServicePacketAdapter(p))
     val merge = Module(new RouteAMergeBoundary(p))
     val status_collector = Module(new RouteAComponentStatusCollector(p))
 
@@ -72,7 +73,9 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     lifecycle.io.merge_ready_in <> r6_merge_ready
     source_plan_binder.io.declaration_in <> source_plan_declaration_in
     lifecycle.io.source_completion_plan_in <> source_plan_binder.io.completion_plan_out
-    StructuralTieOff.sink(lifecycle.io.source_completion_plan_copy_out)
+    // C7: R6 retains plan ownership.  Its exact accepted copy feeds the
+    // packet adapter; the top does not inspect, construct, or choose a plan.
+    source_packet_adapter.io.accepted_plan_in <> lifecycle.io.source_completion_plan_copy_out
     lifecycle.io.hot_source_release_in <> hot_release
     s2.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     s2.io.service_req_in <> lifecycle.io.s2_service_req
@@ -95,7 +98,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     StructuralTieOff.sink(s2.io.s2_sidecar_read_rsp_out)
     s2_release <> s2.io.s2_release_out
     lifecycle.io.packed_source_release_in <> s2_release
-    s2.io.s2_observe_slot := 0.U
+    // The adapter's active accepted plan selects only which S2 owner-local
+    // state is observed.  Exact identity/instance matching remains in the
+    // adapter, and an out-of-range coordinate fails closed there.
+    s2.io.s2_observe_slot := source_packet_adapter.io.packed_observe_slot_out
     direct_pending.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     direct_pending.io.pending_source_open_in <> lifecycle.io.direct_pending_open
     val direct_record_terminal = Wire(RouteAChannels.direct_pending_record_terminal(p)); StructuralTieOff.source(direct_record_terminal)
@@ -108,14 +114,31 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     StructuralTieOff.source(source_partial_to_merge)
     merge.io.source_partial_in <> source_partial_to_merge
 
-    val r4_partial_header = Wire(RouteAChannels.r4_partial_header); StructuralTieOff.source(r4_partial_header)
-    val r4_source_instance = Wire(RouteAChannels.r4_source_instance_sideband(p)); StructuralTieOff.source(r4_source_instance)
-    val r4_value_fragment = Wire(RouteAChannels.r4_value_fragment); StructuralTieOff.source(r4_value_fragment)
+    // C7 connects the already accepted plan and exact owner observations into
+    // the C5 packet adapter.  Current owners still have no numeric partial
+    // producer, so their packet ingress remains explicitly inactive until the
+    // later source-service closure; this top manufactures no packet.
+    source_packet_adapter.io.hot_available_in.valid := hot.io.hot_observe_active
+    source_packet_adapter.io.hot_available_in.transaction_identity := hot.io.hot_observe_identity
+    source_packet_adapter.io.hot_available_in.source_instance := hot.io.hot_observe_instance
+    source_packet_adapter.io.pending_available_in.valid := direct_pending.io.direct_observe_deliverable
+    source_packet_adapter.io.pending_available_in.transaction_identity := direct_pending.io.direct_observe_identity
+    source_packet_adapter.io.pending_available_in.source_instance := direct_pending.io.direct_observe_instance
+    source_packet_adapter.io.packed_available_in.valid := s2.io.s2_observe_available
+    source_packet_adapter.io.packed_available_in.transaction_identity := s2.io.s2_observe_identity
+    source_packet_adapter.io.packed_available_in.source_instance := s2.io.s2_observe_instance
+    StructuralTieOff.source(source_packet_adapter.io.hot_offer_in)
+    StructuralTieOff.source(source_packet_adapter.io.pending_offer_in)
+    StructuralTieOff.source(source_packet_adapter.io.packed_offer_in)
+    StructuralTieOff.source(source_packet_adapter.io.hot_fragment_in)
+    StructuralTieOff.source(source_packet_adapter.io.pending_fragment_in)
+    StructuralTieOff.source(source_packet_adapter.io.packed_fragment_in)
+
     val r4_result_stub = Wire(RouteAChannels.r4_result_stub); StructuralTieOff.source(r4_result_stub)
     val r4_numeric_fault = Wire(RouteAChannels.r4_numeric_fault); StructuralTieOff.source(r4_numeric_fault)
-    merge.io.r4_partial_header_in <> r4_partial_header
-    merge.io.r4_source_instance_in <> r4_source_instance
-    merge.io.r4_value_fragment_in <> r4_value_fragment
+    merge.io.r4_partial_header_in <> source_packet_adapter.io.r4_partial_header_out
+    merge.io.r4_source_instance_in <> source_packet_adapter.io.r4_source_instance_out
+    merge.io.r4_value_fragment_in <> source_packet_adapter.io.r4_value_fragment_out
     merge.io.r4_result_stub_in <> r4_result_stub
     merge.io.r4_numeric_fault_in <> r4_numeric_fault
 

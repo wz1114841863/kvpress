@@ -1,0 +1,64 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-3-c7-source-service-top-integration-1.0",
+  "status": "implemented_directed_tested_plan_copy_and_owner_observation_only",
+  "scope": "Composition-only top integration of the R6-accepted source-plan copy, exact owner-local availability observations, and the existing source packet adapter. No source selection, partial arithmetic, packet offer/fragment producer, consumer completion, source release, merge request, terminal, authority, controller, timing, throughput, PPA, model/GPU, or new A4 DSE behavior.",
+  "references": [
+    "analysis/architecture_spec.md",
+    "analysis/rtl2_phase_contract.md",
+    "analysis/rtl2_3_reconciliation_01.md",
+    "analysis/rtl2_0f_source_service_packet_adapter_contract.md",
+    "analysis/rtl2_3_c5_source_packet_r4_contract.md",
+    "analysis/rtl2_3_c6_source_plan_binder_contract.md"
+  ],
+  "composition": {
+    "plan_owner": "route_a_lifecycle_adapter",
+    "plan_copy_consumer": "route_a_source_service_packet_adapter",
+    "top_role": "named composition only; no plan inspection, source selection, identity reconstruction, or packet construction",
+    "owner_observations": [
+      {"source_kind": "hot", "owner": "route_a_hot_source_path", "valid": "hot_observe_active", "identity": "hot_observe_identity", "instance": "hot_observe_instance"},
+      {"source_kind": "pending", "owner": "route_a_direct_pending_endpoint_v1", "valid": "direct_observe_deliverable", "identity": "direct_observe_identity", "instance": "direct_observe_instance"},
+      {"source_kind": "packed", "owner": "route_a_s2_gqa_source_wrapper", "valid": "s2_observe_available", "identity": "s2_observe_identity", "instance": "s2_observe_instance"}
+    ],
+    "packed_slot_selection": "adapter-owned accepted-plan coordinate selects an S2 read-only observation; full SourceInstance equality remains required, so an invalid coordinate fails closed"
+  },
+  "inactive_carriers": [
+    "hot_offer_in",
+    "pending_offer_in",
+    "packed_offer_in",
+    "hot_fragment_in",
+    "pending_fragment_in",
+    "packed_fragment_in"
+  ],
+  "event_boundary": {
+    "source_deliverable": "owner-observation prerequisite carrier connected; no accepted packet and no host-side scoreboard record emitted by C7",
+    "consumer_partial_commit": "not activated; reserved for C8",
+    "source_release": "not activated; reserved for C8",
+    "merge_request": "not activated; reserved for C8"
+  },
+  "tests": {
+    "command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'Test / compile' 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec' 'testOnly kvpress.routea.rtl2.RouteASourceServicePacketAdapterSpec' 'testOnly kvpress.routea.integration.RouteAInitDrainIntegrationSpec'",
+    "result": "8 passed (3 structural, 3 packet adapter, 2 init/drain; compile passed; structural elaboration emits CHIRRTL/SystemVerilog)",
+    "coverage": [
+      "adapter is present in composition-only top",
+      "R6 plan copy is consumed by adapter rather than tied off",
+      "adapter-owned packed observation selector elaborates",
+      "existing all-seven-mask packet and fail-closed tests remain passing",
+      "top reset/init and empty-session retirement remain passing"
+    ]
+  },
+  "provenance_sha256": {
+    "analysis/rtl2_3_c7_source_service_top_integration_contract.md": "898c7e2f1634fad2272b891bfb6512d8edabf3565ee74202479172a177c57907",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "27a7953170cfff6651b9b20d739ee023805e38978f7bea5a9d18fb852e212707",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "9e8d17bbbada10b18364df5b13e1436cb896fdb4ff5e3dfcba5118afa18ea00b",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala": "6f056d979a6d45b7d75906b272461eb92ce4454d31efcd5b3c4536355edeb3e8"
+  },
+  "evidence_labels": [
+    "synthesizable structural/protocol closure",
+    "directed ChiselSim and elaboration evidence",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no numeric datapath or end-to-end RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}
