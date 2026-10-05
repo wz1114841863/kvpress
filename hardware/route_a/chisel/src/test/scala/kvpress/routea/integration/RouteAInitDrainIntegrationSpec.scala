@@ -29,6 +29,17 @@ final class RouteAInitDrainHarness(p: RouteASkeletonParameters) extends Module {
   StructuralTieOff.source(subsystem.source_plan_declaration_in)
   StructuralTieOff.source(subsystem.hot_payload_fragment_in)
   StructuralTieOff.source(subsystem.hot_position_sidecar_in)
+  // C9 adds named verification-environment ingress for the composed C2/C3/C4
+  // endpoint path.  Init/drain deliberately exercises none of those paths;
+  // make that inert boundary explicit rather than leaving inputs implicit.
+  StructuralTieOff.source(subsystem.verification_p3_pack_read_work_in)
+  StructuralTieOff.source(subsystem.verification_direct_pending_open_in)
+  StructuralTieOff.source(subsystem.verification_direct_pending_read_work_in)
+  StructuralTieOff.source(subsystem.verification_s2_service_req_in)
+  StructuralTieOff.source(subsystem.verification_packed_s2_read_work_in)
+  StructuralTieOff.source(subsystem.verification_s2_sidecar_fragment_in)
+  StructuralTieOff.source(subsystem.verification_s2_sidecar_complete_in)
+  StructuralTieOff.sink(subsystem.verification_direct_pending_payload_fragment_out)
   io.attention_terminal_rsp <> subsystem.attention_terminal_rsp
   io.session_retire_ack <> subsystem.session_retire_ack
   io.external_core_mem_if_v1 <> subsystem.external_core_mem_if_v1
@@ -43,7 +54,10 @@ final class RouteAInitDrainIntegrationSpec extends AnyFunSpec with ChiselSim {
     r2PackReadClassCode = 3, r2PackWriteClassCode = 4, r2DescriptorMaintenanceClassCode = 5,
     r2CandidateSlotsPerClass = 2,
     coreMemoryRequestKindWidth = 3, coreMemoryDestinationWidth = 2, coreMemoryAddressRefWidth = 8,
-    coreMemoryFragmentCountWidth = 3, coreMemoryFragmentIndexWidth = 3,
+    // The composed top includes C4's fixed 64-record packed-page endpoint:
+    // count must represent 512 and index must represent 0..511.  These are
+    // logical carrier widths, not a physical port or controller selection.
+    coreMemoryFragmentCountWidth = 10, coreMemoryFragmentIndexWidth = 9,
     coreMemoryReadRequestCode = 0, coreMemoryWriteRequestCode = 1, coreMemoryWriteDataCode = 2,
     coreMemoryOkStatusCode = 0, coreMemoryFaultStatusCode = 1,
     sourceDeliveryOpaqueWidth = 1, transactionGroupTagWidth = 2, p3StageGenerationWidth = 2,

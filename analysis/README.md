@@ -32,10 +32,10 @@ adapter. RTL2.3-C8 closes four-consumer release and R6 merge-request
 association in a verification-packet integration harness. RTL2.3-C9 now binds
 the C2/C3/C4 endpoints through one descriptor-selected top composition path
 with explicitly non-production verification ingress. RTL2.3 is therefore
-ready for its separate completion review; it remains neither numeric attention
+passed for `control_protocol_complete`; it remains neither numeric attention
 nor production end-to-end dataflow. RTL2.3-R records the active event-phase
-map; the next work is review—not PPA, controller, native-HBM, numeric
-realization, or performance work.
+map; the next work is RTL2.4's replaceable result/fault-stub closure—not PPA,
+controller, native-HBM, numeric realization, or performance work.
 
 ## Current architecture and verification records
 

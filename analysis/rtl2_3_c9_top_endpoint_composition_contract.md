@@ -51,6 +51,19 @@ transport output.  It is not source storage, a numeric partial, or an R4
 input.  S2 sidecar ingress remains a distinct existing interface and is not
 constructed or transformed by C9.
 
+## Top-level logical carrier bound
+
+Because the composed top now contains C4's fixed 64-record packed-page
+endpoint, `coreMemoryFragmentCountWidth` must represent the one-past full-page
+count `512` (minimum 10 bits) and `coreMemoryFragmentIndexWidth` must represent
+`0..511` (minimum 9 bits). This is a logical interface/elaboration bound from
+the frozen 64-token page contract. It is not an SRAM port count, HBM command
+format, controller width, timing choice, or physical realization claim.
+
+Any test-only top harness must either use these bounds or intentionally avoid
+instantiating the composed C4 path; it must explicitly tie the named C9
+verification ingress inactive when testing unrelated control behavior.
+
 ## Non-goals and retained boundaries
 
 This closes only control/dataflow attachment.  C9 does **not** activate:

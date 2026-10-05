@@ -31,6 +31,12 @@
       "command": "python3 -m json.tool analysis/rtl2_scoreboard_event_phase_reconciliation_01.json >/dev/null && git diff --check",
       "result": "passed",
       "coverage": "navigation JSON syntax and whitespace preflight"
+    },
+    {
+      "command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteASourcePlanBinderSpec kvpress.routea.rtl2.RouteASourceServicePacketAdapterSpec kvpress.routea.rtl2.RouteAFourConsumerCompletionSpec kvpress.routea.rtl2.RouteAR3PackReadPathSpec kvpress.routea.rtl2.RouteADirectPendingReadPathSpec kvpress.routea.rtl2.RouteAPackedS2ReadPathSpec kvpress.routea.structural.RouteAKVSubsystemTopSpec kvpress.routea.integration.RouteAInitDrainIntegrationSpec'",
+      "result": "passed",
+      "tests": 29,
+      "coverage": "RTL2.3 control-protocol completion review regression, including C6-C9, structural top elaboration, and inert C9 verification ingress during init/drain"
     }
   ],
   "source_sha256": {
@@ -40,11 +46,12 @@
     "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteADirectPendingReadPathSpec.scala": "a0baa31bef226402e6d75211f1758e2e756c1d58cbe6a64456ee04c4e067a3f4",
     "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAPackedS2ReadPathSpec.scala": "12eac197a51d76fadaa489c8e24fceec98437121ce70008b42d5d0868b41b66a",
     "hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala": "9dc4864155bbf7c8d2011f788669ef6fbbf9f5094dadba2c36af8dfb7f34ae66",
-    "analysis/rtl2_3_c9_top_endpoint_composition_contract.md": "5f53015053b814d40d19848f8707358f0d6f9d0027657128d2c57d714e759fe8",
-    "analysis/rtl2_phase_contract.md": "51c123afc1e685b0f1b0e854d91acee2298c4795efa63278f7d70c02f25700de",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAInitDrainIntegrationSpec.scala": "6e11625d1f4d351cfe8039f7ed0d7fa5838227ce7e65faa8f5d86a8b6bcd3f91",
+    "analysis/rtl2_3_c9_top_endpoint_composition_contract.md": "3b6cc352f2619e64966c1e98e053e1cdc6d6891b4e8e57e9aef793f35a3c8ac6",
+    "analysis/rtl2_phase_contract.md": "296d00f593950c7a66eb311847940fbd8c3186f362954d7a39b0f2ba806174df",
     "analysis/rtl2_3_reconciliation_01.md": "7f3a53c220fbf77d4f5d039464878ef3ddcaa1f6c9f3f407f388e317d1f7e287",
-    "analysis/rtl2_3_completion_review.md": "cdc0e01ab30f5fc965f22550a59acf80ef7ac2911d804a719e466588d0b815d8",
-    "analysis/README.md": "6a0acf26a0cf617fd6294a253aeb099e72fc17063a3e9c6d6a30e62a95cec025"
+    "analysis/rtl2_3_completion_review.md": "1414fe23b99648965815b685a931c72739323c486279a913f2b6400ea3195630",
+    "analysis/README.md": "7bd6698f905d6f0b9739e38f9b3e81cbd8e65ff42be871f0fcf3089ce7e927a3"
   },
   "evidence_boundary": [
     "pure-software Chisel executable contract",

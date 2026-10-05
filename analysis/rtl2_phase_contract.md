@@ -424,7 +424,10 @@ remaining sequence is:
    replaces the isolated C2/C3/C4 endpoint router attachments. Its explicit
    verification ingress is mutually exclusive with lifecycle-owned ingress;
    it does not represent opaque verification fragments as numeric source
-   partials or choose a source schedule.
+   partials or choose a source schedule. Because it instantiates C4 in the
+   top, the logical fragment count/index carriers must be at least 10/9 bits
+   to represent the frozen full-page 512 count and 0..511 indices; this is not
+   a physical memory/controller selection.
 
 With C6--C9 closed, RTL2.3 is ready for its separate
 `control_protocol_complete` review disposition. That review is not implicit
