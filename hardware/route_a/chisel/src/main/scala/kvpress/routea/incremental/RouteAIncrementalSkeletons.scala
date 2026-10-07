@@ -1,7 +1,7 @@
 package kvpress.routea.incremental
 
 import chisel3._
-import chisel3.util.{Cat, Enum, Fill, MuxCase, PopCount, PriorityEncoder, RegEnable, log2Ceil}
+import chisel3.util.{Cat, Enum, Fill, MuxCase, PopCount, PriorityEncoder, RegEnable, Valid, log2Ceil}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteADescriptorOperationKind, RouteAM2GroupMember, RouteAPublicationStatus, RouteASkeletonParameters}
 
@@ -1917,6 +1917,9 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
     val r4_value_fragment_in = Flipped(RouteAChannels.r4_value_fragment)
     val r4_result_stub_in = Flipped(RouteAChannels.r4_result_stub)
     val r4_numeric_fault_in = Flipped(RouteAChannels.r4_numeric_fault)
+    // RTL2.4.1 verification-only observation: this does not create a second
+    // merge consumer or provide backpressure into the accepted R6 request.
+    val r4_active_merge_observation = Output(Valid(new MergeRequest))
     val merge_rsp_or_numeric_fault = RouteAChannels.merge_terminal_rsp
     val component_status_out = RouteAChannels.component_status(p)
   })
@@ -1935,6 +1938,7 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
 
   val mergeActive = RegInit(false.B)
   val mergeIdentity = Reg(new TransactionIdentity)
+  val mergeSourcePresence = Reg(UInt(RouteAAnchorWidths.SourcePresenceWidth.W))
   val terminalPending = RegInit(false.B)
   val terminalIdentity = Reg(new TransactionIdentity)
   val terminalStatus = Reg(UInt(RouteAAnchorWidths.TerminalStatusWidth.W))
@@ -2010,6 +2014,14 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   when(io.merge_req_in.fire) {
     mergeActive := true.B
     mergeIdentity := io.merge_req_in.bits.transaction_identity
+    mergeSourcePresence := io.merge_req_in.bits.source_presence
+  }
+
+  io.r4_active_merge_observation.valid := mergeActive
+  io.r4_active_merge_observation.bits.transaction_identity := mergeIdentity
+  io.r4_active_merge_observation.bits.source_presence := mergeSourcePresence
+  when(io.r4_active_merge_observation.valid) {
+    assert(io.r4_active_merge_observation.bits.source_presence.orR)
   }
 
   val resultMatches = mergeActive && !terminalPending &&

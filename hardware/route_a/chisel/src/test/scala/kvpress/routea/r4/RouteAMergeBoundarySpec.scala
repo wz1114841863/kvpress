@@ -115,6 +115,33 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
     }
   }
 
+  it("exposes only the accepted nonempty merge as a read-only active observation") {
+    simulate(new RouteAMergeBoundary(p)) { dut =>
+      init(dut)
+      dut.io.r4_active_merge_observation.valid.expect(false.B)
+      dut.io.merge_req_in.bits.source_presence.poke(0.U); dut.io.merge_req_in.valid.poke(true.B)
+      dut.io.merge_req_in.ready.expect(false.B); dut.clock.step(); dut.io.merge_req_in.valid.poke(false.B)
+      dut.io.r4_active_merge_observation.valid.expect(false.B)
+
+      sendMergeRequest(dut, 3, 1, presence = 5)
+      dut.io.r4_active_merge_observation.valid.expect(true.B)
+      dut.io.r4_active_merge_observation.bits.transaction_identity.request_id.expect(3.U)
+      dut.io.r4_active_merge_observation.bits.transaction_identity.incarnation.expect(1.U)
+      dut.io.r4_active_merge_observation.bits.source_presence.expect(5.U)
+
+      dut.io.r4_result_stub_in.bits.transaction_identity.request_id.poke(3.U)
+      dut.io.r4_result_stub_in.bits.transaction_identity.incarnation.poke(1.U)
+      dut.io.r4_result_stub_in.bits.normalized_value.poke("h55".U)
+      dut.io.r4_result_stub_in.valid.poke(true.B); dut.io.r4_result_stub_in.ready.expect(true.B)
+      dut.clock.step(); dut.io.r4_result_stub_in.valid.poke(false.B)
+      // The observation remains valid while R4 holds the unconsumed terminal.
+      dut.io.r4_active_merge_observation.valid.expect(true.B)
+      dut.io.merge_rsp_or_numeric_fault.valid.expect(true.B)
+      dut.clock.step()
+      dut.io.r4_active_merge_observation.valid.expect(false.B)
+    }
+  }
+
   it("maps matching replaceable success or explicit numeric fault to one terminal and rejects duplicates") {
     simulate(new RouteAMergeBoundary(p)) { dut =>
       init(dut)

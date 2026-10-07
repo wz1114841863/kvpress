@@ -455,6 +455,15 @@ success-XOR-fault association, R6-only terminal rule, and fairness boundary.
 It creates no provider, top-level port, terminal behavior, numeric datapath,
 scoreboard event, or performance claim.
 
+**RTL2.4.1 verification-stub provider: complete in isolated test scope.**
+[`rtl2_4_1_r4_stub_provider_contract.md`](rtl2_4_1_r4_stub_provider_contract.md)
+implements the test-scope provider and R4's read-only active-merge observation.
+It holds one explicit, identity-matching success XOR numeric-fault offer across
+ready-low, rejects empty/stale/mismatched/malformed/duplicate inputs, and
+clears on reset. It is not instantiated by the top and does not bind real R6
+or create an `attention_terminal` scoreboard event; those remain RTL2.4.2 and
+RTL2.4.3 respectively.
+
 ## RTL2.5 — Active-state reset, fault, retirement, and reclaim
 
 Exercise active retained/publication/source transactions through destructive

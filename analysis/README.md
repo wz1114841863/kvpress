@@ -35,8 +35,9 @@ with explicitly non-production verification ingress. RTL2.3 therefore passes
 `control_protocol_complete`; it remains neither numeric attention
 nor production end-to-end dataflow. RTL2.3-R records the active event-phase
 map. RTL2.4.0 has frozen the verification-only result/fault-stub terminal
-contract; the next work is its behavioral provider closure—not PPA,
-controller, native-HBM, numeric realization, or performance work.
+contract, and RTL2.4.1 has closed its isolated test-scope provider behavior.
+The next work is R4/R6 cross-owner binding—not PPA, controller, native-HBM,
+numeric realization, or performance work.
 
 ## Current architecture and verification records
 
@@ -60,6 +61,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2.3-C8 four-consumer completion / R6 merge request | [`rtl2_3_c8_four_consumer_completion_contract.md`](rtl2_3_c8_four_consumer_completion_contract.md) and [`rtl2_3_c8_four_consumer_completion_manifest.json`](rtl2_3_c8_four_consumer_completion_manifest.json) |
 | RTL2.3-C9 authorized top endpoint composition | [`rtl2_3_c9_top_endpoint_composition_contract.md`](rtl2_3_c9_top_endpoint_composition_contract.md) and [`rtl2_3_c9_top_endpoint_composition_manifest.json`](rtl2_3_c9_top_endpoint_composition_manifest.json) |
 | RTL2.4.0 R4 verification-stub terminal contract | [`rtl2_4_0_r4_stub_terminal_contract.md`](rtl2_4_0_r4_stub_terminal_contract.md) and [`rtl2_4_0_r4_stub_terminal_manifest.json`](rtl2_4_0_r4_stub_terminal_manifest.json) |
+| RTL2.4.1 isolated R4 verification-stub provider | [`rtl2_4_1_r4_stub_provider_contract.md`](rtl2_4_1_r4_stub_provider_contract.md) and [`rtl2_4_1_r4_stub_provider_manifest.json`](rtl2_4_1_r4_stub_provider_manifest.json) |
 | RTL2.0 producer/event activation inventory | [`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and [`rtl2_0_activation_manifest.json`](rtl2_0_activation_manifest.json) |
 | RTL2.0a logical payload materialization / hot maturity egress | [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md) and [`rtl2_0a_payload_materialization_manifest.json`](rtl2_0a_payload_materialization_manifest.json) |
 | RTL2.0b retained admission-group builder | [`rtl2_0b_admission_group_builder_contract.md`](rtl2_0b_admission_group_builder_contract.md) and [`rtl2_0b_admission_group_builder_manifest.json`](rtl2_0b_admission_group_builder_manifest.json) |

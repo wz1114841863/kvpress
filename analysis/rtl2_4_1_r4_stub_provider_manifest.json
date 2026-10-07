@@ -1,0 +1,62 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-4-1-r4-stub-provider-1.0",
+  "status": "passed_isolated_test_scope_r4_r6_integration_pending",
+  "scope": "Test-scope verification-only R4 result/fault provider plus R4 read-only active-merge observation. No numeric datapath, production top instantiation, R6 integration, scoreboard binding, model, GPU, timing, throughput, PPA, or new A4 DSE.",
+  "implementation": {
+    "r4_boundary_observation": "RouteAMergeBoundary exposes Valid[MergeRequest] from the accepted active merge identity and source_presence; it has no ready/backpressure path.",
+    "provider_location": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4ResultStubProviderSpec.scala",
+    "provider_name": "testbench_route_a_r4_result_stub_provider",
+    "instantiation_scope": "test only; RouteAKVSubsystemTop does not instantiate this provider",
+    "scenario_encoding": {
+      "success": 0,
+      "numeric_fault": 1,
+      "malformed": [2, 3],
+      "fault_normalized_value": "must be zero"
+    }
+  },
+  "guarantees": [
+    "An accepted scenario exactly matches a valid nonempty active merge identity.",
+    "Provider output is exactly success XOR numeric_fault and is held stable until R4 acceptance.",
+    "A completed identity cannot accept a duplicate while R4 still observes that exact active incarnation.",
+    "Stale, mismatch, empty, malformed, duplicate, reset-era, and nonzero-fault-value scenarios fail closed.",
+    "Reset clears held and completed provider state; request-ID reuse is discriminated by incarnation."
+  ],
+  "environment_assumptions": [
+    "The testbench keeps a scenario stable while it remains valid and ready-low.",
+    "For bounded progress only, an active merge is eventually supplied exactly one legal matching scenario and R4 eventually accepts the selected terminal."
+  ],
+  "deferred": [
+    "real RouteAMergeBoundary plus R6 lifecycle cross-owner integration",
+    "attention_terminal scoreboard event binding",
+    "R4 numeric/exp/precision/online-merge implementation",
+    "source scheduling, source release, authority/publication/page behavior",
+    "controller, memory macro, timing, throughput, area, energy, and PPA"
+  ],
+  "tests": [
+    {
+      "command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteAR4ResultStubProviderSpec kvpress.routea.r4.RouteAMergeBoundarySpec'",
+      "result": "passed",
+      "tests": 8,
+      "coverage": "provider success/fault/stall/fail-closed/reset-reuse plus R4 active-observation lifetime"
+    }
+  ],
+  "source_sha256": {
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "618c43b69ff06b9fb92dc67f33ffbb117458dfd91903c6d3890e2098e02e068a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/r4/RouteAMergeBoundarySpec.scala": "f63ca32e699880ad6198f408dc3600057ca2c74f93bb36442db33717c5c9c3e5",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4ResultStubProviderSpec.scala": "d54e761964729fa1bb4446462540a86d917c3a260c7b300a9f7c55342502d4a9",
+    "analysis/rtl2_4_0_r4_stub_terminal_contract.md": "4824d42afdca541fc28b3035bcfdd791853403b029b4a72b0e97f245ff637b9d",
+    "analysis/rtl2_4_1_r4_stub_provider_contract.md": "028aa74dc6e1e28ef1eebe2c32eaaec24978e4e85a08895e7fd441ecfc3a02a0",
+    "analysis/rtl2_phase_contract.md": "9d318330e82ffe696c8a0049b1acacf866ed8f7dbf98e560ab9592575150162f",
+    "analysis/README.md": "1cb54429d14ab1c356cd4fbf4d8d7e885502ec5c8f7b5db0f6f86bc9b01a07b3"
+  },
+  "preflight": {
+    "command": "python3 -m json.tool analysis/rtl2_4_1_r4_stub_provider_manifest.json >/dev/null && git diff --check",
+    "result": "passed"
+  },
+  "evidence_boundary": [
+    "pure-software Chisel executable control contract",
+    "no model or GPU",
+    "no cycle, timing, throughput, area, energy, PPA, numeric correctness, or RTL system correctness claim",
+    "no new A4 DSE"
+  ]
+}
