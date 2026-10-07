@@ -20,16 +20,20 @@ final class RouteAR4R6StubTerminalHarness(p: RouteASkeletonParameters) extends M
     val merge_ready = Flipped(RouteAChannels.r6_merge_ready)
     val scenario = Flipped(Decoupled(new R4StubScenario))
     val attention_terminal = RouteAChannels.attention_terminal_rsp
+    val attention_terminal_scoreboard_event = Decoupled(new AttentionTerminalScoreboardEvent)
   })
 
   val lifecycle = Module(new RouteALifecycleAdapter(p))
   val merge = Module(new RouteAMergeBoundary(p))
   val provider = Module(new RouteAR4ResultStubProvider)
+  val terminalScoreboard = Module(new RouteAAttentionTerminalScoreboardAdapter)
 
   lifecycle.io.frontend_lifecycle_req <> io.frontend
   lifecycle.io.component_status_in <> io.status
   lifecycle.io.merge_ready_in <> io.merge_ready
-  io.attention_terminal <> lifecycle.io.attention_terminal_rsp
+  terminalScoreboard.io.attention_terminal_in <> lifecycle.io.attention_terminal_rsp
+  io.attention_terminal <> terminalScoreboard.io.attention_terminal_out
+  io.attention_terminal_scoreboard_event <> terminalScoreboard.io.scoreboard_event_out
   StructuralTieOff.source(lifecycle.io.runtime_retire_req)
   StructuralTieOff.sink(lifecycle.io.session_retire_ack)
   StructuralTieOff.sink(lifecycle.io.reclaim_permit_out)
@@ -85,6 +89,7 @@ final class RouteAR4R6StubTerminalIntegrationSpec extends AnyFunSpec with Chisel
     dut.io.frontend.valid.poke(false.B); dut.io.status.valid.poke(false.B)
     dut.io.merge_ready.valid.poke(false.B); dut.io.scenario.valid.poke(false.B)
     dut.io.attention_terminal.ready.poke(false.B)
+    dut.io.attention_terminal_scoreboard_event.ready.poke(true.B)
     dut.io.status.bits.asserted.poke(false.B)
     identity(dut.io.merge_ready.bits.transaction_identity, 0, 0); dut.io.merge_ready.bits.source_presence.poke(0.U)
     identity(dut.io.scenario.bits.transaction_identity, 0, 0)
@@ -132,7 +137,7 @@ final class RouteAR4R6StubTerminalIntegrationSpec extends AnyFunSpec with Chisel
     dut.clock.step(2)
   }
 
-  it("routes one matching success through R4 and R6, holding only the R6 terminal under backpressure") {
+  it("routes one matching success through R4 and R6, withholding the event until the atomic terminal handoff") {
     simulate(new RouteAR4R6StubTerminalHarness(p)) { dut =>
       init(dut); startSession(dut); issueMerge(dut, rid = 1, incarnation = 1, presence = 3)
       offerScenario(dut, rid = 1, incarnation = 1, RouteAR4StubScenarioDisposition.Success, BigInt("1234", 16))
@@ -140,9 +145,15 @@ final class RouteAR4R6StubTerminalIntegrationSpec extends AnyFunSpec with Chisel
       dut.io.attention_terminal.bits.transaction_identity.request_id.expect(1.U)
       dut.io.attention_terminal.bits.transaction_identity.incarnation.expect(1.U)
       dut.io.attention_terminal.bits.terminal_status.expect(p.coreMemoryOkStatusCode.U)
+      dut.io.attention_terminal_scoreboard_event.valid.expect(false.B)
       dut.clock.step()
       dut.io.attention_terminal.valid.expect(true.B)
-      dut.io.attention_terminal.ready.poke(true.B); dut.clock.step(); dut.io.attention_terminal.ready.poke(false.B)
+      dut.io.attention_terminal.ready.poke(true.B)
+      dut.io.attention_terminal_scoreboard_event.valid.expect(true.B)
+      dut.io.attention_terminal_scoreboard_event.bits.transaction_identity.request_id.expect(1.U)
+      dut.io.attention_terminal_scoreboard_event.bits.transaction_identity.incarnation.expect(1.U)
+      dut.io.attention_terminal_scoreboard_event.bits.terminal_status.expect(p.coreMemoryOkStatusCode.U)
+      dut.clock.step(); dut.io.attention_terminal.ready.poke(false.B)
       dut.io.attention_terminal.valid.expect(false.B)
     }
   }
@@ -159,7 +170,12 @@ final class RouteAR4R6StubTerminalIntegrationSpec extends AnyFunSpec with Chisel
       dut.io.attention_terminal.valid.expect(true.B)
       dut.io.attention_terminal.bits.transaction_identity.request_id.expect(2.U)
       dut.io.attention_terminal.bits.terminal_status.expect(p.coreMemoryFaultStatusCode.U)
-      dut.io.attention_terminal.ready.poke(true.B); dut.clock.step(); dut.io.attention_terminal.ready.poke(false.B)
+      dut.io.attention_terminal_scoreboard_event.valid.expect(false.B)
+      dut.io.attention_terminal.ready.poke(true.B)
+      dut.io.attention_terminal_scoreboard_event.valid.expect(true.B)
+      dut.io.attention_terminal_scoreboard_event.bits.transaction_identity.request_id.expect(2.U)
+      dut.io.attention_terminal_scoreboard_event.bits.terminal_status.expect(p.coreMemoryFaultStatusCode.U)
+      dut.clock.step(); dut.io.attention_terminal.ready.poke(false.B)
     }
   }
 

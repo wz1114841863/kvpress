@@ -1,7 +1,7 @@
 {
   "schema_version": "kvzap-route-a-rtl2-scoreboard-event-phase-reconciliation-1.1",
-  "status": "active_navigation_phase_map_no_events_emittable",
-  "scope": "Active RTL2 phase-label overlay only. It does not alter the historical v1.0 scoreboard schema, RTL2.0 activation manifest, owner/carrier fields, event required fields, RTL behavior, numeric datapath, model/GPU, timing, throughput, PPA, or new A4 DSE.",
+  "status": "active_navigation_with_rtl2_4_3_attention_terminal_binding",
+  "scope": "Active RTL2 phase-label overlay. It does not alter the historical v1.0 scoreboard schema, RTL2.0 activation manifest, owner/carrier fields, event required fields, numeric datapath, model/GPU, timing, throughput, PPA, or new A4 DSE. RTL2.4.3 additionally binds only the named attention_terminal event in a test-only harness.",
   "base_schema": {
     "path": "analysis/rtl2_scoreboard_event_schema.json",
     "schema_version": "kvzap-route-a-rtl2-scoreboard-event-1.0",
@@ -14,7 +14,7 @@
     {"event": "consumer_partial_commit", "historical_activation_phase": "rtl2_4", "active_activation_phase": "rtl2_3_c8", "emission_state": "not_emittable_until_named_behavioral_phase"},
     {"event": "source_release", "historical_activation_phase": "rtl2_4", "active_activation_phase": "rtl2_3_c8", "emission_state": "not_emittable_until_named_behavioral_phase"},
     {"event": "merge_request", "historical_activation_phase": "rtl2_5", "active_activation_phase": "rtl2_3_c8", "emission_state": "not_emittable_until_named_behavioral_phase"},
-    {"event": "attention_terminal", "historical_activation_phase": "rtl2_5", "active_activation_phase": "rtl2_4", "emission_state": "not_emittable_until_named_behavioral_phase"},
+    {"event": "attention_terminal", "historical_activation_phase": "rtl2_5", "active_activation_phase": "rtl2_4", "emission_state": "bound_and_emittable_in_rtl2_4_3_test_harness", "binding": "analysis/rtl2_4_3_attention_terminal_scoreboard_binding.json"},
     {"event": "descriptor_invalidate", "historical_activation_phase": "rtl2_6", "active_activation_phase": "rtl2_5", "emission_state": "not_emittable_until_named_behavioral_phase"},
     {"event": "page_free", "historical_activation_phase": "rtl2_6", "active_activation_phase": "rtl2_5", "emission_state": "not_emittable_until_named_behavioral_phase"},
     {"event": "retire_ack", "historical_activation_phase": "rtl2_6", "active_activation_phase": "rtl2_5", "emission_state": "not_emittable_until_named_behavioral_phase"}

@@ -1,6 +1,6 @@
 # RTL2.3-R — active phase and scoreboard-event reconciliation
 
-**Status:** `active_navigation_reconciled; no_behavioral_activation`.
+**Status:** `active_navigation_reconciled; attention_terminal_bound_in_rtl2_4_3`.
 
 This is a living navigation correction after the RTL2.3 completion audit. It
 does not modify the historical RTL2.0 activation manifest, the v1.0
@@ -27,8 +27,11 @@ active map is therefore:
 | `attention_terminal` | RTL2.5 | RTL2.4 | The verification-only R4 result/fault stub is the sole terminal producer. |
 | `descriptor_invalidate`, `page_free`, `retire_ack` | RTL2.6 | RTL2.5 | They belong to active-state reset/fault/retirement/reclaim, before the RTL2.6 review. |
 
-All records remain `not_emittable_until_named_behavioral_phase`. This is a
-schedule correction, not permission to emit a new scoreboard event today.
+All records other than `attention_terminal` remain
+`not_emittable_until_named_behavioral_phase`. RTL2.4.3 binds that one event
+only after the real R4--R6 test harness produces the named outward terminal;
+it does not alter any other event, the historical base schema, or production
+top behavior.
 
 ## RTL2.3 completion sequence
 

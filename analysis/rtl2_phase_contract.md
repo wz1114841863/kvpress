@@ -475,6 +475,16 @@ uses an explicit already-completed `merge_ready` stimulus; it is neither a
 source scheduler nor a production-top integration. `attention_terminal`
 scoreboard binding remains RTL2.4.3.
 
+**RTL2.4.3 attention-terminal scoreboard/oracle binding: complete in a
+test-only harness.**
+[`rtl2_4_3_attention_terminal_scoreboard_contract.md`](rtl2_4_3_attention_terminal_scoreboard_contract.md)
+binds the named R6 outward terminal observation to the frozen R4-origin
+`attention_terminal` vocabulary, a same-handshake Chisel event adapter, and
+the existing R6 Python lifecycle reference. Success/fault, event ready-low,
+duplicate/stale/reset rejection, and exact field/owner validation are tested.
+It does not bind numeric values, infer events from internal state, or modify
+the production top. RTL2.4 completion review remains separate.
+
 ## RTL2.5 — Active-state reset, fault, retirement, and reclaim
 
 Exercise active retained/publication/source transactions through destructive

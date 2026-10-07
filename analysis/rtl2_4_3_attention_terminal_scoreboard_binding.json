@@ -1,0 +1,66 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-4-3-attention-terminal-binding-1.0",
+  "status": "active_testbench_attention_terminal_bound",
+  "scope": "One testbench-only binding of the named R4-origin attention_terminal event to a same-handshake R6-outward observation and the existing Python R6 lifecycle reference. No production-top integration, numeric datapath, source scheduling, model, GPU, cycle, timing, throughput, PPA, or new A4 DSE.",
+  "base_schema": "analysis/rtl2_scoreboard_event_schema.json",
+  "phase_overlay": "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json",
+  "event": {
+    "name": "attention_terminal",
+    "origin_owner": "route_a_merge_boundary",
+    "origin_carrier": "r4_to_r6_terminal",
+    "observation_owner": "route_a_lifecycle_adapter",
+    "observation_carrier": "r6_outward_attention_terminal_rsp",
+    "required_fields": ["request_id", "incarnation", "terminal_status"],
+    "terminal_status_encoding": {"success": 0, "numeric_fault": 1}
+  },
+  "chisel_adapter": {
+    "module": "testbench_route_a_attention_terminal_scoreboard_adapter",
+    "source": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAttentionTerminalScoreboardAdapterSpec.scala",
+    "rule": "For one legal accepted R6 outward terminal, emit exactly one event with identical identity/status in the same handshake; event ready-low may delay both facts but cannot create a second terminal or event."
+  },
+  "python_adapter": {
+    "path": "kvpress/rtl2_attention_terminal_scoreboard_binding.py",
+    "class": "RouteARTL2AttentionTerminalScoreboardAdapter",
+    "oracle": "kvpress/route_a_lifecycle_adapter_reference.py",
+    "entry_points": ["attention_service_request", "mark_gqa_updates_committed", "terminal_attention", "merge_numeric_fault", "destructive_reset"],
+    "setup_rule": "Accepted session/attention/GQA facts are explicit testbench mirror setup; no event is inferred from RTL internal state.",
+    "fault_rule": "terminal_status=numeric_fault dispatches only merge_numeric_fault; no retry or Full-KV fallback is available."
+  },
+  "forbidden": [
+    "rewrite historical rtl2_scoreboard_event_schema.json",
+    "rewrite historical rtl1_v_scoreboard_event_schema.json",
+    "infer event from arbitrary internal state",
+    "production-top scoreboard adapter instantiation",
+    "numeric value comparison or R4 arithmetic claim",
+    "source schedule or packet claim",
+    "raw HBM byte observation",
+    "cycle or latency annotation",
+    "Full-KV fallback event"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "e21224ed539813584669cb49b9f6e2d3a00cb1958dc90b0c645dc034421c7c60",
+    "analysis/rtl2_3_reconciliation_01.md": "e753d4774c2b65e664b66bdc55d595010cde4aacf899172e97abd64dddc4c707",
+    "analysis/rtl2_4_3_attention_terminal_scoreboard_contract.md": "f8d5de938141db7141926d051848c6c025dda213475577b40c4180ae2548ef9e",
+    "analysis/rtl2_phase_contract.md": "fa5bb36593a560bbdd1fe1ca763710ecc65e5facd246ddb3dfcd00e7fc7f1c56",
+    "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json": "98c0ed14b10d5d5c66b4e5652c4c46291a5566cfeeec2effb2e521b9d8054b72",
+    "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "618c43b69ff06b9fb92dc67f33ffbb117458dfd91903c6d3890e2098e02e068a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAttentionTerminalScoreboardAdapterSpec.scala": "a4bd500e1331b094b02ba25ef9c8cd763a65988e7f2d6464af4248213c7aa8cc",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4R6StubTerminalIntegrationSpec.scala": "f2bb1318a001656117c2cd6b2123500508e33ca73e07314f6b5cc5c459f46e17",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4ResultStubProviderSpec.scala": "163a5cfd98215e2480f4605e912777ee66047de98c097257202cf7474246faf0",
+    "kvpress/route_a_lifecycle_adapter_reference.py": "46855f9106354edcabe495acd5deb986c850f3768f2c904766b3f0af2c06bf9f",
+    "kvpress/rtl2_attention_terminal_scoreboard_binding.py": "2cb12da287a7ce00fd6ed9478fcad35d6614c5c878fca599a39b56110ca568a2",
+    "tests/test_rtl2_4_3_attention_terminal_scoreboard_binding.py": "e3fa3aa0d6e93b20a629561f4e5a7e366396c2f41c6e210b8d109b1cc5765782",
+    "tools/validate_rtl2_4_3_attention_terminal_scoreboard_binding.py": "4baa1a3a9b9421b43716eb915ed41d75e2df4b3b9a37c23bd5c34dbdbc59b06d"
+  },
+  "preflight": {
+    "command": ".venv/bin/python tools/validate_rtl2_4_3_attention_terminal_scoreboard_binding.py && git diff --check",
+    "result": "passed"
+  },
+  "evidence_boundary": [
+    "pure-software Chisel/Python testbench event binding",
+    "no model or GPU",
+    "no numeric correctness, cycle, timing, throughput, deadlock-freedom, area, energy, PPA, or RTL system correctness claim",
+    "no new A4 DSE"
+  ]
+}
