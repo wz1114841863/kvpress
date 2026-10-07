@@ -1,0 +1,62 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-4-2-r4-r6-terminal-integration-1.0",
+  "status": "passed_test_only_cross_owner_integration_scoreboard_pending",
+  "scope": "Real RouteALifecycleAdapter plus RouteAMergeBoundary plus the test-scope RTL2.4.1 provider. No production-top provider, numeric datapath, source scheduling/packets, model, GPU, timing, throughput, PPA, or new A4 DSE.",
+  "terminal_chain": [
+    "verification R6MergeReady",
+    "RouteALifecycleAdapter.merge_req",
+    "RouteAMergeBoundary.r4_active_merge_observation",
+    "testbench_route_a_r4_result_stub_provider",
+    "RouteAMergeBoundary.merge_rsp_or_numeric_fault",
+    "RouteALifecycleAdapter.merge_terminal_in",
+    "RouteALifecycleAdapter.attention_terminal_rsp"
+  ],
+  "ownership": {
+    "merge_request": "RouteALifecycleAdapter produces; RouteAMergeBoundary solely consumes",
+    "active_observation": "RouteAMergeBoundary solely owns; provider reads without ready/backpressure",
+    "result_fault_offer": "testbench-only provider owns exactly one success XOR fault offer",
+    "r4_terminal_mapping": "RouteAMergeBoundary solely owns",
+    "outward_terminal": "RouteALifecycleAdapter solely owns"
+  },
+  "harness_stimulus_boundary": "merge_ready is an explicit already-completed canonical source-set test event. It is not a source plan, source packet, source release, scheduler, endpoint, or production ingress.",
+  "directed_coverage": [
+    "matching success reaches one R6 outward terminal and is stable while attention_terminal ready is low",
+    "stale scenario is rejected without an outward terminal; matching numeric fault reaches one R6 fault terminal",
+    "destructive reset after provider acceptance prevents an outward terminal"
+  ],
+  "deferred": [
+    "attention_terminal scoreboard-event and Python-oracle binding",
+    "R4 numeric datapath, exp, precision, partial softmax, online merge, and numeric correctness",
+    "production top integration or provider instantiation",
+    "source packet production, scheduling, release, authority/publication/page behavior",
+    "physical controller/macro, cycle, timing, throughput, deadlock, area, energy, and PPA"
+  ],
+  "tests": [
+    {
+      "command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteAR4ResultStubProviderSpec kvpress.routea.r4.RouteAMergeBoundarySpec kvpress.routea.rtl2.RouteAR4R6StubTerminalIntegrationSpec kvpress.routea.structural.RouteAKVSubsystemTopSpec'",
+      "result": "passed",
+      "tests": 14,
+      "coverage": "isolated provider, R4 observation/boundary, R4-R6 terminal chain, and production-top structural regression"
+    }
+  ],
+  "source_sha256": {
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "618c43b69ff06b9fb92dc67f33ffbb117458dfd91903c6d3890e2098e02e068a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4ResultStubProviderSpec.scala": "163a5cfd98215e2480f4605e912777ee66047de98c097257202cf7474246faf0",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4R6StubTerminalIntegrationSpec.scala": "657df38484264badc6d66e276095ea8db3ba20b7bef9a423c05013f028833e9a",
+    "analysis/rtl2_4_0_r4_stub_terminal_contract.md": "4824d42afdca541fc28b3035bcfdd791853403b029b4a72b0e97f245ff637b9d",
+    "analysis/rtl2_4_1_r4_stub_provider_contract.md": "028aa74dc6e1e28ef1eebe2c32eaaec24978e4e85a08895e7fd441ecfc3a02a0",
+    "analysis/rtl2_4_2_r4_r6_terminal_integration_contract.md": "d69394095ca8069f2e5bf65c75150cb844a5ff9b09c37b861f570e832bd73524",
+    "analysis/rtl2_phase_contract.md": "6065582b4a89c6dba384cb1c98376c7eb820a552eddc16cf00e391606c0db1f1",
+    "analysis/README.md": "80dd88f39e0a0d2938931abde844e641fb688124d80a9400522f4c019c651d9b"
+  },
+  "preflight": {
+    "command": "python3 -m json.tool analysis/rtl2_4_2_r4_r6_terminal_integration_manifest.json >/dev/null && git diff --check",
+    "result": "passed"
+  },
+  "evidence_boundary": [
+    "pure-software Chisel executable control integration",
+    "no model or GPU",
+    "no numeric correctness, cycle, timing, throughput, deadlock-freedom, area, energy, PPA, or RTL system correctness claim",
+    "no new A4 DSE"
+  ]
+}

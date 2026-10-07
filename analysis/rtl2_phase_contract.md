@@ -464,6 +464,17 @@ clears on reset. It is not instantiated by the top and does not bind real R6
 or create an `attention_terminal` scoreboard event; those remain RTL2.4.2 and
 RTL2.4.3 respectively.
 
+**RTL2.4.2 R4--R6 terminal-chain integration: complete in a test-only
+harness.**
+[`rtl2_4_2_r4_r6_terminal_integration_contract.md`](rtl2_4_2_r4_r6_terminal_integration_contract.md)
+binds the existing R6 `merge_ready -> merge_req` event, the real R4 boundary,
+the RTL2.4.1 provider, R4's sole `merge_rsp_or_numeric_fault`, and R6's sole
+outward `attention_terminal_rsp`. Matching success/fault, stale rejection, R6
+terminal backpressure, and destructive reset are directed-tested. The harness
+uses an explicit already-completed `merge_ready` stimulus; it is neither a
+source scheduler nor a production-top integration. `attention_terminal`
+scoreboard binding remains RTL2.4.3.
+
 ## RTL2.5 — Active-state reset, fault, retirement, and reclaim
 
 Exercise active retained/publication/source transactions through destructive

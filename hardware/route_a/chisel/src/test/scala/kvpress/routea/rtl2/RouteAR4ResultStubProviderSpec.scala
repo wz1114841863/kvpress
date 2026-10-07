@@ -8,7 +8,7 @@ import kvpress.routea.params.RouteAAnchorWidths
 import org.scalatest.funspec.AnyFunSpec
 
 /** Testbench-only encodings for RTL2.4.1's explicit R4 terminal scenario. */
-private object RouteAR4StubScenarioDisposition {
+object RouteAR4StubScenarioDisposition {
   final val Width = 2
   final val Success = 0
   final val NumericFault = 1
@@ -18,7 +18,7 @@ private object RouteAR4StubScenarioDisposition {
   * Explicit verification input only: its 4096-bit value is opaque and has no
   * numeric, packet, source-order, or latency meaning.
   */
-private final class R4StubScenario extends Bundle {
+final class R4StubScenario extends Bundle {
   val transaction_identity = new TransactionIdentity
   val disposition = UInt(RouteAR4StubScenarioDisposition.Width.W)
   val normalized_value = UInt(RouteAAnchorWidths.NormalizedValueWidth.W)
@@ -30,7 +30,7 @@ private final class R4StubScenario extends Bundle {
   * success XOR fault carrier. This module is deliberately compiled only in
   * test scope and is never instantiated by the production composition top.
   */
-private final class RouteAR4ResultStubProvider extends Module {
+final class RouteAR4ResultStubProvider extends Module {
   override def desiredName: String = "testbench_route_a_r4_result_stub_provider"
 
   val io = IO(new Bundle {
