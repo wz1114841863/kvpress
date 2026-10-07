@@ -1,0 +1,79 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-4-0-r4-stub-terminal-1.0",
+  "status": "contract_frozen_behavior_pending",
+  "scope": "Verification-only R4 terminal scenario association. No provider behavior, synthesizable RTL change, model, GPU, numeric datapath, timing, throughput, PPA, or new A4 DSE.",
+  "precondition": "RTL2.3 control_protocol_complete review passed before this contract is entered.",
+  "planned_interfaces": {
+    "r4_active_merge_observation": {
+      "owner": "route_a_merge_boundary",
+      "type": "Valid[MergeRequest]",
+      "consumer": "testbench_route_a_r4_result_stub_provider",
+      "semantics": "Read-only observation of exactly one accepted nonempty active merge; it cannot backpressure, create, reorder, or retire a merge."
+    },
+    "r4_stub_scenario": {
+      "owner": "verification_environment",
+      "consumer": "testbench_route_a_r4_result_stub_provider",
+      "classification": "testbench-only harness bundle; not a production top-level port",
+      "fields": [
+        "transaction_identity: RID + incarnation",
+        "disposition: success | numeric_fault",
+        "normalized_value: opaque 4096-bit value meaningful only for success"
+      ]
+    },
+    "terminal_offers": {
+      "producer": "testbench_route_a_r4_result_stub_provider",
+      "consumer": "route_a_merge_boundary",
+      "carriers": ["R4ResultStub", "R4NumericFault"],
+      "downstream": "existing merge_rsp_or_numeric_fault to R6 lifecycle adapter"
+    }
+  },
+  "association_rules": [
+    "A scenario is accepted only for a valid active observation with nonempty source_presence and exact transaction_identity match.",
+    "Exactly one success XOR numeric_fault disposition may be selected for an accepted merge identity.",
+    "Success copies its opaque 4096-bit value exactly; numeric_fault requires and produces a zero value at the R4 terminal boundary.",
+    "A selected terminal offer remains stable until RouteAMergeBoundary accepts it.",
+    "R6 remains the only outward attention-terminal consumer; the provider cannot bypass R4 or R6."
+  ],
+  "fail_closed_cases": [
+    "empty source_presence",
+    "scenario before an accepted merge",
+    "stale, reset-era, unknown, or mismatched identity",
+    "duplicate scenario or already-held terminal fact",
+    "malformed disposition or fault carrying nonzero opaque value",
+    "simultaneous success and numeric_fault offer"
+  ],
+  "reset_and_progress": {
+    "reset": "Destructive reset clears active observation and every held scenario; a later old scenario cannot mutate a later merge.",
+    "environment_fairness": "For bounded progress only, the environment eventually offers exactly one matching scenario for an active merge and R6 eventually accepts the R4 terminal.",
+    "not_a_claim": "The fairness condition is not a latency, throughput, timing, deadlock-freedom, or numeric-correctness claim."
+  },
+  "follow_on_evidence": [
+    "RTL2.4.1: isolated provider success/fault/stall/stale/reset tests",
+    "RTL2.4.2: cross-owner R4-to-R6 binding with real active merge state",
+    "RTL2.4.3: attention_terminal scoreboard binding and separate completion review"
+  ],
+  "implementation_status": "No Scala source, testbench provider, top-level port, scoreboard event, or terminal behavior is created by RTL2.4.0.",
+  "input_sha256": {
+    "analysis/architecture_spec.md": "3177b293068767e10da0d49cc75cbc1267669a22b9764849cfec48506c391e4a",
+    "analysis/rtl1_6_r4_packet_boundary_contract.md": "b725d1eacf82c5aee3081b5516d103b88706fe45098e9cc1c36a54e7d5d4fd36",
+    "analysis/rtl2_0g_r4_result_stub_provider_contract.md": "d300a7aa2a103afce9fffd5e5706024472d36da1396190b8d46a2eecac12033c",
+    "analysis/rtl2_3_completion_review.md": "1414fe23b99648965815b685a931c72739323c486279a913f2b6400ea3195630",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "38f1abe46009df42edceeebba7ff2d47d2dd6bd8be76b0ee9b78a6be90a54a2f"
+  },
+  "output_sha256": {
+    "analysis/rtl2_4_0_r4_stub_terminal_contract.md": "4824d42afdca541fc28b3035bcfdd791853403b029b4a72b0e97f245ff637b9d",
+    "analysis/rtl2_phase_contract.md": "60157f68e896f7750f3ed52b6b66fa78ec981ee3e39f56eede2b32d868ee961b",
+    "analysis/README.md": "1552fe112219a95435e65d67ca76e816399301651a0e2d7093eade4da93fefce"
+  },
+  "preflight": {
+    "command": "python3 -m json.tool analysis/rtl2_4_0_r4_stub_terminal_manifest.json >/dev/null && git diff --check",
+    "result": "passed"
+  },
+  "evidence_boundary": [
+    "pure-software documentation and machine-readable architecture contract",
+    "no model or GPU",
+    "no cycle, timing, throughput, area, energy, PPA, or RTL correctness claim",
+    "no numeric datapath or numerical correctness claim",
+    "no new A4 DSE"
+  ]
+}

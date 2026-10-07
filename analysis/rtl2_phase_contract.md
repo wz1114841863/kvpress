@@ -429,10 +429,9 @@ remaining sequence is:
    to represent the frozen full-page 512 count and 0..511 indices; this is not
    a physical memory/controller selection.
 
-With C6--C9 closed, RTL2.3 is ready for its separate
-`control_protocol_complete` review disposition. That review is not implicit
-in a passing C9 test run.
-They do not authorize a source scheduler, numeric attention computation,
+RTL2.3 has passed its separate `control_protocol_complete` review disposition;
+C6--C9 passing tests remain distinct from that review evidence. This does not
+authorize a source scheduler, numeric attention computation,
 physical memory/controller selection, timing, throughput, or PPA claim.
 
 ## RTL2.4 — R4 boundary activation with replaceable result stub
@@ -448,6 +447,13 @@ implementation.
 The frozen R4 boundary remains the replaceable contract for
 `merge_req`, partial header/value fragments, `merge_rsp`, and `numeric_fault`.
 The actual numerical implementation is a later realization sub-gate.
+
+**RTL2.4.0 verification-stub terminal contract: complete; behavior pending.**
+[`rtl2_4_0_r4_stub_terminal_contract.md`](rtl2_4_0_r4_stub_terminal_contract.md)
+freezes the test-only `R4StubScenario`, R4-boundary active-merge observation,
+success-XOR-fault association, R6-only terminal rule, and fairness boundary.
+It creates no provider, top-level port, terminal behavior, numeric datapath,
+scoreboard event, or performance claim.
 
 ## RTL2.5 — Active-state reset, fault, retirement, and reclaim
 
