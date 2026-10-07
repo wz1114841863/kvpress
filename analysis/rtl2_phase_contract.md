@@ -483,9 +483,18 @@ binds the named R6 outward terminal observation to the frozen R4-origin
 the existing R6 Python lifecycle reference. Success/fault, event ready-low,
 duplicate/stale/reset rejection, and exact field/owner validation are tested.
 It does not bind numeric values, infer events from internal state, or modify
-the production top. RTL2.4 completion review remains separate.
+the production top. The separate RTL2.4 completion review has passed; its
+pass does not broaden the RTL2.5.0 behavioral boundary.
 
 ## RTL2.5 — Active-state reset, fault, retirement, and reclaim
+
+**RTL2.5.0 lifecycle/reclaim contract: complete; behavior pending.**
+[`rtl2_5_0_lifecycle_reclaim_contract.md`](rtl2_5_0_lifecycle_reclaim_contract.md)
+freezes the existing R1/R2/R3/R4/R5/R6 ownership, reset stale-state exclusion,
+global-drain membership, descriptor-invalidation-before-free ordering, and the
+three deferred event targets.  It does not activate their emission, modify the
+historical schema/overlay, or create a new top ingress.  RTL2.5.1 is the first
+permitted destructive-reset behavioral closure.
 
 Exercise active retained/publication/source transactions through destructive
 reset, terminal fault, retirement drain, descriptor invalidation, and page

@@ -1,0 +1,74 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-5-0-lifecycle-reclaim-1.0",
+  "status": "contract_frozen_behavior_pending",
+  "scope": "RTL2.5.0 owner/event/order/reset/progress closure only. No synthesizable behavior, production-top integration, event emission, numeric datapath, model, GPU, cycle, timing, throughput, PPA, or new A4 DSE.",
+  "base_schema": "analysis/rtl2_scoreboard_event_schema.json",
+  "active_phase_overlay": "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json",
+  "event_targets": [
+    {
+      "event": "descriptor_invalidate",
+      "owner": "route_a_page_manager",
+      "carrier": "r5_to_r2_descriptor_reclaim_candidate",
+      "required_fields": ["page_ref", "generation", "descriptor_operation", "delivery_context_ref"],
+      "emission_state": "not_emittable_until_named_behavioral_substep"
+    },
+    {
+      "event": "page_free",
+      "owner": "route_a_page_manager",
+      "carrier": "r5_allocator_release",
+      "required_fields": ["page_ref", "generation"],
+      "emission_state": "not_emittable_until_named_behavioral_substep"
+    },
+    {
+      "event": "retire_ack",
+      "owner": "route_a_lifecycle_adapter",
+      "carrier": "r6_to_runtime_retire_ack",
+      "required_fields": ["session_id", "request_id", "incarnation"],
+      "emission_state": "not_emittable_until_named_behavioral_substep"
+    }
+  ],
+  "global_drain_membership": [
+    "r1_live_transactions",
+    "r2_payload_arbiter_and_descriptor_maintenance_grants",
+    "r3_m2_p3_groups_and_stages",
+    "r5_page_and_descriptor_operations",
+    "s2_gqa_ownership",
+    "direct_pending_ownership",
+    "r4_merge_state"
+  ],
+  "reclaim_order": [
+    "runtime_retire_request",
+    "stop_new_work",
+    "global_drain",
+    "r5_per_page_quiescence",
+    "durable_descriptor_invalidation",
+    "generation_advance_and_allocator_free",
+    "matching_retire_ack"
+  ],
+  "reset_rule": "Destructive reset invalidates local reachability only. R1 suppresses pre-reset responses and mem_init_done precedes renewed R5 initialization acknowledgement; raw HBM bytes, authority, and generation rules remain unchanged.",
+  "progress_assumption": "Accepted external work and willing consumers eventually complete; bounded tests may report only no observed deadlock under covered fairness-constrained interleavings.",
+  "forbidden": [
+    "event emission in rtl2_5_0",
+    "rewrite historical scoreboard schemas",
+    "top-level event production or inferred event emission",
+    "retry or Full-KV fallback after numeric fault",
+    "descriptor free before durable invalidation",
+    "allocator reuse before generation advance and complete quiescence",
+    "new scheduler or mask/admission/atomic-publication semantics",
+    "numeric, timing, throughput, PPA, model/GPU, or A4 DSE claim"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "1281b80c2dafd368561ece4b091dd8628e6f5a5323c9a0eff4744cd2141fbb58",
+    "analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md": "964eb391d205bc4fba1962c4465df61ad29c3a3a7de9cc442e44860ba27f3849",
+    "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md": "445b00f6410da976421eb7a3a9fd1da1d1610a9b341ad2bf44f1de17ecc2b684",
+    "analysis/architecture_spec.md": "3177b293068767e10da0d49cc75cbc1267669a22b9764849cfec48506c391e4a",
+    "analysis/rtl2_5_0_lifecycle_reclaim_contract.md": "de3d3be2fecbc7c4fa56f92a4d32a5865c891dcaf93125060e4a010b6faa5614",
+    "analysis/rtl2_phase_contract.md": "b361e2088cd518b87c08f88905813b9acbbaea07c3825452cbcbaf65153fd0e3",
+    "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json": "98c0ed14b10d5d5c66b4e5652c4c46291a5566cfeeec2effb2e521b9d8054b72",
+    "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53"
+  },
+  "preflight": {
+    "command": "python3 -m json.tool analysis/rtl2_5_0_lifecycle_reclaim_manifest.json >/dev/null && git diff --check",
+    "result": "passed"
+  }
+}

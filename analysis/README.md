@@ -38,9 +38,10 @@ map. RTL2.4.0 has frozen the verification-only result/fault-stub terminal
 contract, and RTL2.4.1 has closed its isolated test-scope provider behavior.
 RTL2.4.2 has now bound it through the real R4/R6 terminal chain in a test-only
 harness, and RTL2.4.3 binds its named terminal event to the testbench adapter
-and Python lifecycle reference. The next work is the separate RTL2.4
-completion review—not PPA, controller, native-HBM, numeric realization, or
-performance work.
+and Python lifecycle reference. The RTL2.4 completion review has passed
+without reopening numeric realization, controller, native-HBM, or performance
+scope. RTL2.5.0 now freezes the reset/fault/retirement/reclaim owner and event
+contract; RTL2.5.1 behavior remains pending.
 
 ## Current architecture and verification records
 
@@ -67,6 +68,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2.4.1 isolated R4 verification-stub provider | [`rtl2_4_1_r4_stub_provider_contract.md`](rtl2_4_1_r4_stub_provider_contract.md) and [`rtl2_4_1_r4_stub_provider_manifest.json`](rtl2_4_1_r4_stub_provider_manifest.json) |
 | RTL2.4.2 R4--R6 verification terminal chain | [`rtl2_4_2_r4_r6_terminal_integration_contract.md`](rtl2_4_2_r4_r6_terminal_integration_contract.md) and [`rtl2_4_2_r4_r6_terminal_integration_manifest.json`](rtl2_4_2_r4_r6_terminal_integration_manifest.json) |
 | RTL2.4.3 attention-terminal scoreboard/oracle binding | [`rtl2_4_3_attention_terminal_scoreboard_contract.md`](rtl2_4_3_attention_terminal_scoreboard_contract.md) and [`rtl2_4_3_attention_terminal_scoreboard_binding.json`](rtl2_4_3_attention_terminal_scoreboard_binding.json) |
+| RTL2.5.0 lifecycle/reset/reclaim closure contract | [`rtl2_5_0_lifecycle_reclaim_contract.md`](rtl2_5_0_lifecycle_reclaim_contract.md) and [`rtl2_5_0_lifecycle_reclaim_manifest.json`](rtl2_5_0_lifecycle_reclaim_manifest.json) |
 | RTL2.0 producer/event activation inventory | [`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and [`rtl2_0_activation_manifest.json`](rtl2_0_activation_manifest.json) |
 | RTL2.0a logical payload materialization / hot maturity egress | [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md) and [`rtl2_0a_payload_materialization_manifest.json`](rtl2_0a_payload_materialization_manifest.json) |
 | RTL2.0b retained admission-group builder | [`rtl2_0b_admission_group_builder_contract.md`](rtl2_0b_admission_group_builder_contract.md) and [`rtl2_0b_admission_group_builder_manifest.json`](rtl2_0b_admission_group_builder_manifest.json) |
