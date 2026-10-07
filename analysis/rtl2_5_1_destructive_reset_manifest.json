@@ -1,0 +1,52 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-5-1-destructive-reset-1.0",
+  "status": "passed_directed_reset_epoch_evidence",
+  "scope": "Directed no-model Chisel reset-epoch closure for existing R1, R5, S2/direct, and composed top init state. No new production behavior, event emission, numeric datapath, controller, model, GPU, cycle, timing, throughput, PPA, or A4 DSE.",
+  "contract": "analysis/rtl2_5_1_destructive_reset_contract.md",
+  "covered_local_states": [
+    "r1_live_read_identity",
+    "r5_allocated_published_page",
+    "s2_fill_association",
+    "direct_pending_association",
+    "composed_r1_r3_r5_r6_initialization"
+  ],
+  "required_observations": [
+    "pre_reset_r1_response_is_consumed_without_core_response",
+    "r1_init_ack_gates_new_request_after_reset",
+    "r5_old_descriptor_facts_are_ready_low_before_reinit",
+    "s2_old_identity_generation_cannot_deposit_or_reopen",
+    "direct_old_terminal_cannot_deliver_or_release",
+    "top_session_start_requires_fresh_init_after_reset"
+  ],
+  "preserved_deferred_events": [
+    "descriptor_invalidate",
+    "page_free",
+    "retire_ack"
+  ],
+  "forbidden": [
+    "rewrite historical scoreboard schema or phase overlay",
+    "infer event from reset-local state",
+    "retry or Full-KV fallback",
+    "authority or publication mutation from stale fact",
+    "descriptor free before durable invalidation",
+    "retirement or reclaim completion claim",
+    "formal deadlock-free, latency, throughput, numeric, PPA, model/GPU, or A4 DSE claim"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "d708aa1c79de6b8f740b0049d4cc99371eb0a67a384d88f356fe5fc9f8a92d01",
+    "analysis/rtl2_5_0_lifecycle_reclaim_contract.md": "de3d3be2fecbc7c4fa56f92a4d32a5865c891dcaf93125060e4a010b6faa5614",
+    "analysis/rtl2_5_1_destructive_reset_contract.md": "77fa81da0c34a8732e5ea8b5cb1d47f6f9505370915028808a654746c2bee21e",
+    "analysis/rtl2_phase_contract.md": "5de382c3c2ac7e30cd5d9a9c3e5f3afbec8b94a986ce8cc4d9f21510684797a0",
+    "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json": "98c0ed14b10d5d5c66b4e5652c4c46291a5566cfeeec2effb2e521b9d8054b72",
+    "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "3957891e86353a4a39c3457b5fb6dfe5cc21524a72b7455d0b2c91afbcc23dbe",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "618c43b69ff06b9fb92dc67f33ffbb117458dfd91903c6d3890e2098e02e068a",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "e2c83d544942b64df62250239fa3f1274ddbceaa7fb8a8c9f63293c2fb691167",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAInitDrainIntegrationSpec.scala": "6e11625d1f4d351cfe8039f7ed0d7fa5838227ce7e65faa8f5d86a8b6bcd3f91",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAResetEpochIntegrationSpec.scala": "48e6ed2fe07780d3ca536cb97a23260a950332624035b679000065f14dd674c4"
+  },
+  "preflight": {
+    "command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.integration.RouteAResetEpochIntegrationSpec'",
+    "result": "passed"
+  }
+}

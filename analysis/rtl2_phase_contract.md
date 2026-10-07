@@ -496,6 +496,13 @@ three deferred event targets.  It does not activate their emission, modify the
 historical schema/overlay, or create a new top ingress.  RTL2.5.1 is the first
 permitted destructive-reset behavioral closure.
 
+**RTL2.5.1 destructive-reset closure: complete for directed reset epochs.**
+[`rtl2_5_1_destructive_reset_contract.md`](rtl2_5_1_destructive_reset_contract.md)
+injects reset into active R1, R5, S2/direct, and composed top initialization
+state, then verifies old facts fail closed until the existing R1 init boundary
+is re-established. It neither emits the deferred reclaim events nor closes
+fault, retirement, or reclaim behavior.
+
 Exercise active retained/publication/source transactions through destructive
 reset, terminal fault, retirement drain, descriptor invalidation, and page
 free.  The existing R6/R5/R2/R1 ownership and quiescence requirements remain
