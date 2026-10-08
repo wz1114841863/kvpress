@@ -570,6 +570,19 @@ owned, justified realization deferrals rather than unowned production
 carriers.  RTL2.6.1 must bind the remaining events and replay one real-owner
 composed retained transaction before this gate can pass.
 
+**RTL2.6.1 event field-provenance binding: complete; Chisel carrier capture
+remains deliberately pending.**
+[`rtl2_6_1_event_binding_contract.md`](rtl2_6_1_event_binding_contract.md)
+and [`rtl2_6_1_event_binding_manifest.json`](rtl2_6_1_event_binding_manifest.json)
+close the no-default field source for the ten formerly schema-only records.
+In particular, `request_accept` and `write_commit` retain their preceding
+accepted R2/R1 association rather than pretending the bare R1 bundle carries
+candidate class, delivery context, or write operation. The manifest is an
+executable provenance contract only: it does not mark the records emittable
+or change the RTL2.6.0 incomplete disposition. RTL2.6.2 must attach these
+associations to real owner-carrier handshakes in one composed testbench
+harness.
+
 RTL2.0--RTL2.5 passing individually does not by itself complete production
 dataflow integration.  A separate completion review must consume the explicit
 scoreboard events and demonstrate at least one complete retained transaction:

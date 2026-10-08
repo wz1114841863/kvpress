@@ -54,6 +54,9 @@ RTL2.6.0 has completed the machine-readable entry audit: only four of the
 fourteen declared events are testbench-bound, so its disposition remains
 explicitly incomplete pending a single real-owner retained-transaction witness
 and the remaining ten event bindings.
+RTL2.6.1 now freezes exact no-default field provenance for those ten records;
+it intentionally does not yet claim that a composed Chisel harness captures
+or emits them.
 
 ## Current architecture and verification records
 
@@ -87,6 +90,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2.5.4 R5 durable invalidation-before-free closure | [`rtl2_5_4_r5_durable_invalidation_contract.md`](rtl2_5_4_r5_durable_invalidation_contract.md) and [`rtl2_5_4_r5_durable_invalidation_manifest.json`](rtl2_5_4_r5_durable_invalidation_manifest.json) |
 | RTL2.5.5 R5/R6 active-state scoreboard/oracle binding | [`rtl2_5_5_active_state_scoreboard_contract.md`](rtl2_5_5_active_state_scoreboard_contract.md), [`rtl2_5_5_active_state_scoreboard_binding.json`](rtl2_5_5_active_state_scoreboard_binding.json), and [`rtl2_5_5_active_state_scoreboard_manifest.json`](rtl2_5_5_active_state_scoreboard_manifest.json) |
 | RTL2.6 completion-review entry audit (incomplete; no PASS) | [`rtl2_6_completion_review.md`](rtl2_6_completion_review.md) and [`rtl2_6_completion_review_manifest.json`](rtl2_6_completion_review_manifest.json) |
+| RTL2.6.1 event field-provenance binding | [`rtl2_6_1_event_binding_contract.md`](rtl2_6_1_event_binding_contract.md) and [`rtl2_6_1_event_binding_manifest.json`](rtl2_6_1_event_binding_manifest.json) |
 | RTL2.0 producer/event activation inventory | [`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and [`rtl2_0_activation_manifest.json`](rtl2_0_activation_manifest.json) |
 | RTL2.0a logical payload materialization / hot maturity egress | [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md) and [`rtl2_0a_payload_materialization_manifest.json`](rtl2_0a_payload_materialization_manifest.json) |
 | RTL2.0b retained admission-group builder | [`rtl2_0b_admission_group_builder_contract.md`](rtl2_0b_admission_group_builder_contract.md) and [`rtl2_0b_admission_group_builder_manifest.json`](rtl2_0b_admission_group_builder_manifest.json) |

@@ -14,10 +14,17 @@ pack-read, direct-pending, S2 fill/read, and S2 sidecar facts. These are owned
 and justified verification boundaries rather than unowned production carriers;
 they must remain explicit until a separately authorized producer realization.
 
-## Required RTL2.6.1 closure
+## RTL2.6.1 result and required RTL2.6.2 closure
 
-1. Bind the remaining ten events to their existing named owner carriers, with
-   exact identity/generation fields and no internal-state inference.
+RTL2.6.1 has now frozen the exact no-default field provenance for the ten
+schema-only records in
+[`rtl2_6_1_event_binding_contract.md`](rtl2_6_1_event_binding_contract.md).
+It intentionally does not claim Chisel event emission: two records require a
+prior accepted R2/R1 association that is absent from a bare R1 carrier.
+
+1. Attach each declared field association to real owner-carrier handshakes in
+   one test-only observation adapter; no field may be inferred from private
+   owner state or supplied by a default.
 2. Compose one no-model harness using real existing owners for the sequence
    `RETAIN -> pending -> packed -> packed-read/S2 READY -> four commits -> R4
    stub terminal -> retire -> reclaim -> retire_ack`.

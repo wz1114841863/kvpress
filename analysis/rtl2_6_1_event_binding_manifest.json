@@ -1,0 +1,117 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-6-1-event-field-binding-1.0",
+  "status": "field_provenance_contract_closed_chisel_capture_pending",
+  "scope": "Machine-readable, no-model field provenance for the ten RTL2 event records that were schema-only at RTL2.6 entry. A later RTL2.6.2 composed testbench harness must connect these declared observation associations to real owner-carrier handshakes before any record becomes Chisel-emittable.",
+  "base_schema": "analysis/rtl2_scoreboard_event_schema.json",
+  "capture_boundary": "rtl2_6_2_composed_testbench_harness",
+  "event_bindings": [
+    {"event":"request_accept","origin_owners":["route_a_core_mem_if_v1"],"origin_carriers":["r2_to_r1_accepted_request"],"required_fields":["request_id","incarnation","reset_epoch","delivery_context_ref","candidate_class"],"capture_status":"contract_bound_chisel_capture_pending","field_provenance":[
+      {"field":"request_id","kind":"accepted_carrier_field","carrier":"r2_to_r1_accepted_request","expression":"accepted request transaction_identity.request_id"},
+      {"field":"incarnation","kind":"accepted_carrier_field","carrier":"r2_to_r1_accepted_request","expression":"accepted request transaction_identity.incarnation"},
+      {"field":"reset_epoch","kind":"accepted_carrier_field","carrier":"r2_to_r1_accepted_request","expression":"accepted request reset epoch association"},
+      {"field":"delivery_context_ref","kind":"accepted_carrier_field","carrier":"r2_to_r1_accepted_request","expression":"accepted request delivery_context_ref association"},
+      {"field":"candidate_class","kind":"accepted_carrier_field","carrier":"r2_to_r1_accepted_request","expression":"accepted R2 candidate_class association"}
+    ]},
+    {"event":"fragment_deliver","origin_owners":["route_a_core_side_arbiter"],"origin_carriers":["r2_to_typed_delivery_router"],"required_fields":["request_id","incarnation","reset_epoch","delivery_context_ref","fragment_index","last","status"],"capture_status":"contract_bound_chisel_capture_pending","field_provenance":[
+      {"field":"request_id","kind":"accepted_carrier_field","carrier":"r2_to_typed_delivery_router","expression":"accepted source_delivery.r1_response.transaction_identity.request_id"},
+      {"field":"incarnation","kind":"accepted_carrier_field","carrier":"r2_to_typed_delivery_router","expression":"accepted source_delivery.r1_response.transaction_identity.incarnation"},
+      {"field":"reset_epoch","kind":"accepted_carrier_field","carrier":"r2_to_typed_delivery_router","expression":"accepted delivery-context reset epoch association"},
+      {"field":"delivery_context_ref","kind":"accepted_carrier_field","carrier":"r2_to_typed_delivery_router","expression":"accepted source_delivery.delivery_context_ref"},
+      {"field":"fragment_index","kind":"accepted_carrier_field","carrier":"r2_to_typed_delivery_router","expression":"accepted source_delivery.r1_response.fragment_index"},
+      {"field":"last","kind":"accepted_carrier_field","carrier":"r2_to_typed_delivery_router","expression":"accepted source_delivery.r1_response.last"},
+      {"field":"status","kind":"accepted_carrier_field","carrier":"r2_to_typed_delivery_router","expression":"accepted source_delivery.r1_response.status"}
+    ]},
+    {"event":"write_commit","origin_owners":["route_a_core_mem_if_v1"],"origin_carriers":["r1_to_r3_packed_write_terminal","r1_to_r5_descriptor_terminal"],"required_fields":["request_id","incarnation","reset_epoch","delivery_context_ref","operation_kind","status","r1_durable"],"capture_status":"contract_bound_chisel_capture_pending","field_provenance":[
+      {"field":"request_id","kind":"accepted_carrier_field","carrier":"r1_to_r3_packed_write_terminal","expression":"accepted terminal transaction_identity.request_id"},
+      {"field":"incarnation","kind":"accepted_carrier_field","carrier":"r1_to_r3_packed_write_terminal","expression":"accepted terminal transaction_identity.incarnation"},
+      {"field":"reset_epoch","kind":"accepted_carrier_field","carrier":"r1_to_r3_packed_write_terminal","expression":"accepted terminal reset epoch association"},
+      {"field":"delivery_context_ref","kind":"accepted_carrier_field","carrier":"r1_to_r3_packed_write_terminal","expression":"accepted terminal delivery_context_ref association"},
+      {"field":"operation_kind","kind":"accepted_carrier_field","carrier":"r1_to_r5_descriptor_terminal","expression":"accepted R1 write operation kind association"},
+      {"field":"status","kind":"accepted_carrier_field","carrier":"r1_to_r3_packed_write_terminal","expression":"accepted terminal status"},
+      {"field":"r1_durable","kind":"accepted_carrier_predicate","carrier":"r1_to_r3_packed_write_terminal","expression":"accepted terminal is final successful durable write predicate"}
+    ]},
+    {"event":"descriptor_durable","origin_owners":["route_a_page_manager"],"origin_carriers":["r5_descriptor_durable_to_r3"],"required_fields":["page_ref","generation","layer","kv_head","transaction_group_tag","required_mask","durable_mask"],"capture_status":"contract_bound_chisel_capture_pending","field_provenance":[
+      {"field":"page_ref","kind":"accepted_carrier_field","carrier":"r5_descriptor_durable_to_r3","expression":"accepted descriptor prerequisite page_ref.page_id"},
+      {"field":"generation","kind":"accepted_carrier_field","carrier":"r5_descriptor_durable_to_r3","expression":"accepted descriptor prerequisite page_ref.generation"},
+      {"field":"layer","kind":"accepted_carrier_field","carrier":"r5_descriptor_durable_to_r3","expression":"accepted descriptor prerequisite layer"},
+      {"field":"kv_head","kind":"accepted_carrier_field","carrier":"r5_descriptor_durable_to_r3","expression":"accepted descriptor prerequisite kv_head"},
+      {"field":"transaction_group_tag","kind":"accepted_carrier_field","carrier":"r5_descriptor_durable_to_r3","expression":"accepted descriptor prerequisite transaction_group_tag"},
+      {"field":"required_mask","kind":"accepted_carrier_field","carrier":"r5_descriptor_durable_to_r3","expression":"accepted required_descriptor_operation_mask"},
+      {"field":"durable_mask","kind":"accepted_carrier_field","carrier":"r5_descriptor_durable_to_r3","expression":"accepted durable_descriptor_operation_mask"}
+    ]},
+    {"event":"metadata_publish_commit","origin_owners":["route_a_m2_p3_wrapper"],"origin_carriers":["r3_nested_publication_to_r5","r3_publication_ack_to_r6"],"required_fields":["transaction_group_tag","entry_id","record_ordinal","page_ref","generation","publication_status"],"capture_status":"contract_bound_chisel_capture_pending","field_provenance":[
+      {"field":"transaction_group_tag","kind":"accepted_carrier_field","carrier":"r3_nested_publication_to_r5","expression":"accepted post-publication commit observation transaction_group_tag"},
+      {"field":"entry_id","kind":"accepted_carrier_field","carrier":"r3_publication_ack_to_r6","expression":"accepted post-publication member observation entry_id"},
+      {"field":"record_ordinal","kind":"accepted_carrier_field","carrier":"r3_publication_ack_to_r6","expression":"accepted post-publication member observation group_member_ordinal"},
+      {"field":"page_ref","kind":"accepted_carrier_field","carrier":"r3_nested_publication_to_r5","expression":"accepted post-publication commit observation page_ref.page_id"},
+      {"field":"generation","kind":"accepted_carrier_field","carrier":"r3_nested_publication_to_r5","expression":"accepted post-publication commit observation page_ref.generation"},
+      {"field":"publication_status","kind":"accepted_carrier_field","carrier":"r3_publication_ack_to_r6","expression":"accepted M2 publication acknowledgement status association"}
+    ]},
+    {"event":"authority_transition","origin_owners":["route_a_lifecycle_adapter","route_a_m2_p3_wrapper"],"origin_carriers":["r6_to_r3_admission_context","r3_publication_ack_to_r6"],"required_fields":["entry_id","transaction_group_tag","from_authority","to_authority"],"capture_status":"contract_bound_chisel_capture_pending","field_provenance":[
+      {"field":"entry_id","kind":"accepted_carrier_field","carrier":"r6_to_r3_admission_context","expression":"accepted authority transition entry_id"},
+      {"field":"transaction_group_tag","kind":"accepted_carrier_field","carrier":"r6_to_r3_admission_context","expression":"accepted authority transition transaction_group_tag"},
+      {"field":"from_authority","kind":"accepted_carrier_field","carrier":"r3_publication_ack_to_r6","expression":"accepted authority transition from_authority"},
+      {"field":"to_authority","kind":"accepted_carrier_field","carrier":"r3_publication_ack_to_r6","expression":"accepted authority transition to_authority"}
+    ]},
+    {"event":"source_deliverable","origin_owners":["route_a_hot_source_path","route_a_direct_pending_endpoint_v1","route_a_s2_gqa_source_wrapper"],"origin_carriers":["source_owner_to_packet_adapter"],"required_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation","source_valid"],"capture_status":"contract_bound_chisel_capture_pending","field_provenance":[
+      {"field":"request_id","kind":"accepted_carrier_field","carrier":"source_owner_to_packet_adapter","expression":"accepted source partial offer transaction_identity.request_id"},
+      {"field":"incarnation","kind":"accepted_carrier_field","carrier":"source_owner_to_packet_adapter","expression":"accepted source partial offer transaction_identity.incarnation"},
+      {"field":"source_kind","kind":"accepted_carrier_field","carrier":"source_owner_to_packet_adapter","expression":"accepted source partial offer source_instance.source_kind"},
+      {"field":"instance_coordinate","kind":"accepted_carrier_field","carrier":"source_owner_to_packet_adapter","expression":"accepted source partial offer source_instance.instance_coordinate"},
+      {"field":"source_generation","kind":"accepted_carrier_field","carrier":"source_owner_to_packet_adapter","expression":"accepted source partial offer source_instance.generation"},
+      {"field":"source_valid","kind":"accepted_carrier_field","carrier":"source_owner_to_packet_adapter","expression":"accepted source partial offer partial_present"}
+    ]},
+    {"event":"consumer_partial_commit","origin_owners":["route_a_merge_boundary"],"origin_carriers":["r4_to_matching_source_commit"],"required_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation","consumer_id"],"capture_status":"contract_bound_chisel_capture_pending","field_provenance":[
+      {"field":"request_id","kind":"accepted_carrier_field","carrier":"r4_to_matching_source_commit","expression":"accepted consumer commit transaction_identity.request_id"},
+      {"field":"incarnation","kind":"accepted_carrier_field","carrier":"r4_to_matching_source_commit","expression":"accepted consumer commit transaction_identity.incarnation"},
+      {"field":"source_kind","kind":"accepted_carrier_field","carrier":"r4_to_matching_source_commit","expression":"accepted consumer commit source_instance.source_kind"},
+      {"field":"instance_coordinate","kind":"accepted_carrier_field","carrier":"r4_to_matching_source_commit","expression":"accepted consumer commit source_instance.instance_coordinate"},
+      {"field":"source_generation","kind":"accepted_carrier_field","carrier":"r4_to_matching_source_commit","expression":"accepted consumer commit source_instance.generation"},
+      {"field":"consumer_id","kind":"accepted_carrier_field","carrier":"r4_to_matching_source_commit","expression":"accepted consumer commit consumer_id"}
+    ]},
+    {"event":"source_release","origin_owners":["route_a_hot_source_path","route_a_direct_pending_endpoint_v1","route_a_s2_gqa_source_wrapper"],"origin_carriers":["source_owner_release_to_r6"],"required_fields":["request_id","incarnation","source_kind","instance_coordinate","source_generation","all_four_consumers_committed"],"capture_status":"contract_bound_chisel_capture_pending","field_provenance":[
+      {"field":"request_id","kind":"accepted_carrier_field","carrier":"source_owner_release_to_r6","expression":"accepted source release transaction_identity.request_id"},
+      {"field":"incarnation","kind":"accepted_carrier_field","carrier":"source_owner_release_to_r6","expression":"accepted source release transaction_identity.incarnation"},
+      {"field":"source_kind","kind":"accepted_carrier_field","carrier":"source_owner_release_to_r6","expression":"accepted source release source_instance.source_kind"},
+      {"field":"instance_coordinate","kind":"accepted_carrier_field","carrier":"source_owner_release_to_r6","expression":"accepted source release source_instance.instance_coordinate"},
+      {"field":"source_generation","kind":"accepted_carrier_field","carrier":"source_owner_release_to_r6","expression":"accepted source release source_instance.generation"},
+      {"field":"all_four_consumers_committed","kind":"accepted_carrier_predicate","carrier":"source_owner_release_to_r6","expression":"accepted source release is permitted only after all four consumer commits"}
+    ]},
+    {"event":"merge_request","origin_owners":["route_a_lifecycle_adapter"],"origin_carriers":["r6_to_r4_merge_request"],"required_fields":["request_id","incarnation","source_presence"],"capture_status":"contract_bound_chisel_capture_pending","field_provenance":[
+      {"field":"request_id","kind":"accepted_carrier_field","carrier":"r6_to_r4_merge_request","expression":"accepted R6 merge request transaction_identity.request_id"},
+      {"field":"incarnation","kind":"accepted_carrier_field","carrier":"r6_to_r4_merge_request","expression":"accepted R6 merge request transaction_identity.incarnation"},
+      {"field":"source_presence","kind":"accepted_carrier_field","carrier":"r6_to_r4_merge_request","expression":"accepted R6 merge request source_presence"}
+    ]}
+  ],
+  "forbidden": [
+    "infer event from arbitrary internal state",
+    "implicit field default",
+    "production-top scoreboard adapter",
+    "change immutable RTL2 event schema",
+    "numeric datapath claim",
+    "physical HBM or SRAM claim",
+    "cycle timing throughput or PPA claim"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "8fc42bddb2a20d78fa17161d4162b0f7339b07ff71c645117e89fccc4ce46e20",
+    "analysis/rtl2_0_activation_manifest.json": "5d378c50eca221f48756afb93c01b9efb2763abfd3398bf5fd8020af4f6ceb1c",
+    "analysis/rtl2_6_1_event_binding_contract.md": "83c649161d087b654638f01d8d3401648daeaa013c2aab06e79aa262210889b4",
+    "analysis/rtl2_6_completion_review.md": "4ba7fbdc28fa832338a5bac9efac40df22e9eab23d8c6c07a2a4d7e0cfa1ae13",
+    "analysis/rtl2_phase_contract.md": "27e417cb0175434df338fca2b12c063b053c9d4812b6a640ade3b0883cdba382",
+    "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "3957891e86353a4a39c3457b5fb6dfe5cc21524a72b7455d0b2c91afbcc23dbe",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "a20ab4cd6949dae107830569efa2d4d5a22c7150a036efcfa6ba975f7bd8df09",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "ebf0b22ab8b73794aa4e7e5461f28debf691440085ba37ac3ccf8089de1718d8",
+    "kvpress/rtl2_6_1_event_binding.py": "151710a246cd67ff75f4a9dcf7d9678bc7f440c44e91a59cb1c6374028b389ed",
+    "tests/test_rtl2_6_1_event_binding.py": "b17034c089812cbab9d5e876073f5ac9053329738ae3e669f0f95edc3a7080e0",
+    "tools/validate_rtl2_6_1_event_binding.py": "216c58887156736670f124a3630db91528953f6a3586ef4ea1b5cfd9f58af812"
+  },
+  "evidence_labels": [
+    "pure-software executable event field-provenance contract",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL correctness claim",
+    "no new A4 DSE"
+  ]
+}
