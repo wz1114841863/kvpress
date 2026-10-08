@@ -27,6 +27,14 @@ now closes a narrow same-instance S2 `READY` through packed source release,
 R6 merge request, and R4/R6 numeric-fault terminal path.  Its explicit
 verification fill/packet ingress does not constitute a production
 R3/R5-publication-to-S2 bridge; therefore this review remains incomplete.
+
+### RTL2.6.3 progress
+
+[`rtl2_6_3_publication_s2_association_contract.md`](rtl2_6_3_publication_s2_association_contract.md)
+now supplies the explicit test-only association needed to join a real R3
+publication/authority pair to S2 service identity. Its page/tag/record and
+authority checks are fail-closed, but it remains deliberately outside the
+production top until a separately authorized realization is selected.
 It intentionally does not claim Chisel event emission: two records require a
 prior accepted R2/R1 association that is absent from a bare R1 carrier.
 

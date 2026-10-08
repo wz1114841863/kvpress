@@ -590,6 +590,15 @@ or change the RTL2.6.0 incomplete disposition. RTL2.6.2 must attach these
 associations to real owner-carrier handshakes in one composed testbench
 harness.
 
+**RTL2.6.3 publication-to-S2 verification association: complete as a narrow
+test-only adapter.**
+[`rtl2_6_3_publication_s2_association_contract.md`](rtl2_6_3_publication_s2_association_contract.md)
+requires a matching R3 publication observation, R3 `pending -> packed`
+authority transition, and an explicit verification-only identity/slot
+association before producing an existing S2 service request. It fails closed
+on stale authority and page/tag/record mismatch, but is not a production
+R3/R5-to-S2 bridge and does not complete the retained-transaction witness.
+
 RTL2.0--RTL2.5 passing individually does not by itself complete production
 dataflow integration.  A separate completion review must consume the explicit
 scoreboard events and demonstrate at least one complete retained transaction:
