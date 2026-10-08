@@ -533,7 +533,7 @@ line is live.  This does not emit `descriptor_invalidate` or `page_free`;
 their event/oracle binding is exclusively RTL2.5.5.
 
 **RTL2.5.5 active-state scoreboard/oracle binding: complete in test-only
-harnesses.** [`rtl2_5_5_active_state_scoreboard_contract.md`](rtl2_5_5_active_state_scoreboard_contract.md)
+harnesses (RTL2.5.5-I cross-owner witness included).** [`rtl2_5_5_active_state_scoreboard_contract.md`](rtl2_5_5_active_state_scoreboard_contract.md)
 binds the three remaining declared records to named carriers and existing
 Python references. R5 now exposes its old-reference `allocator_release` only
 after the matching durable descriptor terminal; the test-only adapter atomically

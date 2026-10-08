@@ -1,6 +1,6 @@
 # RTL2.5.5 — Active-state scoreboard/oracle binding
 
-**Status:** `implemented_directed_tested_testbench_only`.
+**Status:** `complete_directed_cross_owner_testbench_binding`.
 
 RTL2.5.5 closes the three remaining predeclared event records without changing
 the immutable RTL2 event schema or any R5/R6 authority rule.  It binds only:
@@ -30,3 +30,23 @@ and duplicate/mismatched retirement acknowledgement.  This is no-model,
 no-GPU architecture-event evidence only; it makes no numeric, RTL-equivalence,
 deadlock, physical-memory, cycle, timing, throughput, area, energy, or PPA
 claim.
+
+## RTL2.5.5-I integration completion
+
+`RouteAActiveStateScoreboardIntegrationSpec` closes the carrier-to-adapter
+gap without placing an observer in the production top. It has two real-owner
+test compositions:
+
+1. The real R5 page manager completes a matching reclaim descriptor terminal;
+   its `allocator_release_out` feeds the adapter.  A blocked event pair holds
+   the owner carrier; one accepted handshake produces matching
+   `descriptor_invalidate` and `page_free` records with the old PageRef.
+   Destructive reset then clears an unconsumed observation without an event.
+2. The real R6 lifecycle adapter plus real fixed-membership status collector
+   reaches its outward acknowledgement only after the existing drain/final-pass
+   protocol. That `session_retire_ack` feeds the adapter and yields exactly one
+   matching `retire_ack` record under atomic event/outward acceptance.
+
+The fixed field trace from these two Chisel witnesses is replayed through the
+Python oracle. This adds no cross-language simulator, RTL equivalence claim,
+or new production interface: it verifies only the named carrier/event mapping.

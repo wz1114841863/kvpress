@@ -16,6 +16,14 @@ def test_reclaim_rejects_stale_generation_and_retire_ack_is_exactly_once():
     with pytest.raises(ReclaimScoreboardBindingError): a.dispatch(obs("descriptor_invalidate", page_ref=ref.page_id, generation=ref.generation+1, descriptor_operation=2, delivery_context_ref=0))
     a.arm_retire_ack(TransactionIdentity(3,1)); a.dispatch(obs("retire_ack", session_id=0, request_id=3, incarnation=1))
     with pytest.raises(ReclaimScoreboardBindingError): a.dispatch(obs("retire_ack", session_id=0, request_id=3, incarnation=1))
+def test_fixed_r5_r6_carrier_capture_trace_dispatches_to_the_same_oracles():
+    # The matching Chisel RTL2.5.5-I witness captures these exact fields from
+    # real R5/R6 owner carriers; this remains a pure-software oracle replay.
+    a=RouteARTL2ReclaimScoreboardAdapter(ROOT); ref=a.arm_reclaim()
+    a.dispatch(obs("descriptor_invalidate", page_ref=ref.page_id, generation=ref.generation, descriptor_operation=2, delivery_context_ref=0))
+    a.dispatch(obs("page_free", page_ref=ref.page_id, generation=ref.generation))
+    a.arm_retire_ack(TransactionIdentity(3,1))
+    a.dispatch(obs("retire_ack", session_id=0, request_id=3, incarnation=1))
 def test_binding_rejects_owner_drift_and_cli_validates():
     binding=json.loads(BINDING.read_text()); schema=json.loads(SCHEMA.read_text()); overlay=json.loads(OVERLAY.read_text()); bad=copy.deepcopy(binding); bad["events"][0]["required_fields"].pop()
     with pytest.raises(ReclaimScoreboardBindingError): validate_binding(bad,schema,overlay)

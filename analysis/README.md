@@ -47,9 +47,9 @@ numeric-fault terminal boundary: one stable terminal/event, stale/malformed
 and replay rejection, and no retry or Full-KV-fallback interface. Retirement
 drain now has fixed-membership and bounded-fairness witnesses in RTL2.5.3;
 RTL2.5.4 closes R5's matching durable invalidation-before-generation/free
-boundary. RTL2.5.5 binds the three remaining R5/R6 active-state events through
-named testbench carriers and Python references; it is not a production-top
-scoreboard or a physical-memory claim.
+boundary. RTL2.5.5-I additionally connects real R5/R6 named carriers through
+the testbench adapter before replaying their fixed field trace through Python;
+it is not a production-top scoreboard or a physical-memory claim.
 
 ## Current architecture and verification records
 

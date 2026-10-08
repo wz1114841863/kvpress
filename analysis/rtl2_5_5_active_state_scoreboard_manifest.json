@@ -1,6 +1,6 @@
 {
   "schema_version": "kvzap-route-a-rtl2-5-5-active-state-scoreboard-1.0",
-  "status": "passed_testbench_event_oracle_binding",
+  "status": "passed_directed_cross_owner_testbench_event_oracle_binding",
   "contract": "analysis/rtl2_5_5_active_state_scoreboard_contract.md",
   "binding": "analysis/rtl2_5_5_active_state_scoreboard_binding.json",
   "bound_events": ["descriptor_invalidate", "page_free", "retire_ack"],
@@ -11,9 +11,16 @@
     "testbench adapter atomically observes one R6 outward acknowledgement with retire_ack"
   ],
   "negative_coverage": ["free_before_invalidate", "stale_generation", "wrong_descriptor_operation_or_context", "duplicate_page_free", "mismatched_or_duplicate_retire_ack", "event_ready_low_partial_acceptance"],
+  "rtl2_5_5_i": {
+    "scope": "Real R5/R6 named-carrier to testbench-adapter integration only; production top remains observer-free.",
+    "chisel_test": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAActiveStateScoreboardIntegrationSpec.scala",
+    "observations": ["real_r5_allocator_release_to_atomic_descriptor_invalidate_and_page_free", "blocked_release_observation_cleared_by_destructive_reset", "real_r6_collector_driven_retire_ack_to_atomic_retire_ack_event"]
+  },
   "preflight": {
     "python": ".venv/bin/python tools/validate_rtl2_5_5_active_state_scoreboard_binding.py && .venv/bin/python -m pytest tests/test_rtl2_5_5_active_state_scoreboard_binding.py tests/test_rtl2_4_3_attention_terminal_scoreboard_binding.py tests/test_rtl2_scoreboard_event_schema.py -q",
-    "chisel": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.r5.RouteAReclaimSpec kvpress.routea.rtl2.RouteAReclaimScoreboardAdapterSpec kvpress.routea.integration.RouteAFairReclaimIntegrationSpec kvpress.routea.integration.RouteARetirementDrainClosureSpec kvpress.routea.r6.RouteALifecycleAdapterSpec kvpress.routea.rtl2.RouteA2_1bWritePathHarnessSpec kvpress.routea.rtl2.RouteA2_1cAtomicPublicationHarnessSpec'"
+    "python_result": "passed: 11 tests",
+    "chisel": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteAActiveStateScoreboardIntegrationSpec kvpress.routea.rtl2.RouteAReclaimScoreboardAdapterSpec kvpress.routea.r5.RouteAReclaimSpec'",
+    "chisel_result": "passed: 9 directed tests"
   },
   "evidence_boundary": ["pure-software testbench binding", "no model/GPU", "no numeric, cycle, timing, throughput, area, energy, PPA, RTL-equivalence, or new A4 DSE claim"]
 }
