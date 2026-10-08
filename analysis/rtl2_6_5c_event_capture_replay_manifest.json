@@ -1,0 +1,25 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-6-5c-event-capture-replay-1.0",
+  "status": "testbench_accepted_carrier_capture_and_oracle_replay",
+  "scope": "Versioned RTL2.6.5c testbench-only capture boundary. It admits an architectural event only from an explicitly accepted declared owner/carrier observation and replays the resulting event sequence through existing Python Route-A references. It is not a production-top observer, waveform/cycle trace, numeric datapath, HBM/controller model, performance claim, PPA claim, RTL-equivalence claim, model/GPU execution, or new A4 DSE.",
+  "base_schema": "analysis/rtl2_scoreboard_event_schema.json",
+  "capture_boundary": "rtl2_6_5c_testbench_accepted_carrier_observation",
+  "captured_event_order": ["request_accept", "fragment_deliver", "write_commit", "descriptor_durable", "metadata_publish_commit", "authority_transition", "source_deliverable", "consumer_partial_commit", "source_release", "merge_request", "attention_terminal", "descriptor_invalidate", "page_free", "retire_ack"],
+  "existing_bound_event_reuse": {
+    "attention_terminal": "analysis/rtl2_4_3_attention_terminal_scoreboard_binding.json",
+    "descriptor_invalidate": "analysis/rtl2_5_5_active_state_scoreboard_binding.json",
+    "page_free": "analysis/rtl2_5_5_active_state_scoreboard_binding.json",
+    "retire_ack": "analysis/rtl2_5_5_active_state_scoreboard_binding.json"
+  },
+  "capture_rule": "Every observation names one immutable event, one declared schema owner, one declared schema carrier, exact schema-ordered integer fields, and accepted=true. accepted=false represents ready-low, stale, or otherwise unaccepted traffic and must emit no event.",
+  "replay_cases": ["success_all_fourteen_event_types", "fault_fail_closed", "stale_response_rejected", "bounded_legal_ready_low"],
+  "forbidden": ["production-top scoreboard adapter", "private-state event inference", "implicit field default", "change immutable RTL2 event schema", "cycle or latency annotation", "numeric datapath or PPA claim", "Full-KV fallback"],
+  "source_sha256": {
+    "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
+    "analysis/rtl2_6_5c_event_capture_replay_contract.md": "0f55bf14ded94e93b3a9fbca42f36d02f2a1ae1ec7e4c3dfd0d448e23ea9c4ea",
+    "kvpress/rtl2_6_5c_event_replay.py": "2f96fece8544cd2326fe4b1af19bc5ec2b1afab1c322d07ef35ec6732e832fb8",
+    "tests/test_rtl2_6_5c_event_capture_replay.py": "08e5e4ee41b6cc5fb60ab3124495a2589a0eaeab3af6617812996986e4becd08",
+    "tools/validate_rtl2_6_5c_event_capture_replay.py": "210f24f8c4419ec90ab614d41b9851b6b13f8ae812ad09d95675faa9313f595f"
+  },
+  "evidence_labels": ["testbench accepted-carrier capture and pure-software oracle replay", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL correctness claim", "no new A4 DSE"]
+}

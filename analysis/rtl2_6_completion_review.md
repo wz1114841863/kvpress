@@ -87,10 +87,14 @@ RTL2.6.5 is ordered internally to keep every remaining gap explicit:
    environment retire association, R6 global drain/permit, and the real
    R5->R2->R1 durable invalidation path to `retire_ack`. A mismatched retire
    is rejected and a reclaim terminal fault leaves retirement incomplete.
-3. **RTL2.6.5c — event capture and oracle replay.** Capture all fourteen
-   immutable-schema records solely from declared accepted carriers, then replay
-   the trace through the Python scoreboard/oracles. Add one success, one fault,
-   one stale-response, and one bounded legal ready-low case.
+3. **RTL2.6.5c — event capture and oracle replay:** complete.
+   [`rtl2_6_5c_event_capture_replay_contract.md`](rtl2_6_5c_event_capture_replay_contract.md)
+   captures all fourteen immutable-schema event types only from explicitly
+   accepted declared owner/carrier observations and replays the resulting
+   event-level traces through the Python authority, terminal, and reclaim
+   oracles. It covers one success, fault fail-closed, stale-response, and
+   bounded legal ready-low case. It remains a testbench event contract, not a
+   production waveform/cycle trace.
 4. **RTL2.6.5d — completion review.** Re-run the entry audit only after
    2.6.5a--c pass. This is the sole point at which the review may evaluate a
    `rtl2_production_transaction_dataflow_complete` disposition.

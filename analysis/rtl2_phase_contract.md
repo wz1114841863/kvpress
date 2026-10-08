@@ -626,7 +626,12 @@ binds an accepted R6 attention terminal to an explicit matching environment
 retire request, then uses existing R6 drain/permit and R5/R2/R1 durable
 invalidation owners to reach `retire_ack`. It does not make terminal completion
 an implicit production retirement request or remove deferred R3/direct drain
-facts. RTL2.6.5c--d remain required.
+facts. RTL2.6.5c now closes testbench accepted-carrier event capture and
+pure-software oracle replay for all fourteen immutable-schema event types;
+the separate [`rtl2_6_5c_event_capture_replay_contract.md`](rtl2_6_5c_event_capture_replay_contract.md)
+records its success, fault, stale, and bounded ready-low coverage. It does not
+turn the separate composition slices into a production waveform. RTL2.6.5d
+completion review remains required.
 
 RTL2.0--RTL2.5 passing individually does not by itself complete production
 dataflow integration.  A separate completion review must consume the explicit
