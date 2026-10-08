@@ -522,6 +522,16 @@ fixed-seed finite ready-low stalls before the environment releases them.  This
 is neither a formal liveness claim nor R5's durable invalidation-before-free
 closure; the three deferred reclaim events remain non-emittable.
 
+**RTL2.5.4 R5 durable invalidation-before-free: complete for directed
+descriptor-line witnesses.** [`rtl2_5_4_r5_durable_invalidation_contract.md`](rtl2_5_4_r5_durable_invalidation_contract.md)
+exercises R5's sole matching descriptor terminal boundary.  A durable FREE
+with next-generation line image, durable-invalidation fact, allocator release,
+and generation advance occur together only for the matching terminal; fault,
+stale, malformed, or replayed terminals cannot free the live line.  A
+two-line witness rejects an old operation identity while the next descriptor
+line is live.  This does not emit `descriptor_invalidate` or `page_free`;
+their event/oracle binding is exclusively RTL2.5.5.
+
 Exercise active retained/publication/source transactions through destructive
 reset, terminal fault, retirement drain, descriptor invalidation, and page
 free.  The existing R6/R5/R2/R1 ownership and quiescence requirements remain

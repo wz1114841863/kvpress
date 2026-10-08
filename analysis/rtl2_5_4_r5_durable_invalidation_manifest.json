@@ -1,0 +1,65 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-5-4-r5-durable-invalidation-1.0",
+  "status": "passed_directed_r5_durable_invalidation_evidence",
+  "scope": "Directed no-model ChiselSim closure of R5's existing matching descriptor-terminal free/generation boundary. No new allocator, descriptor format, production-top event emitter, scheduler, HBM controller, model, GPU, cycle, timing, throughput, PPA, or A4 DSE.",
+  "contract": "analysis/rtl2_5_4_r5_durable_invalidation_contract.md",
+  "sole_owner": "route_a_page_manager",
+  "sole_carrier": {
+    "descriptor_maintenance_candidate": "r5_to_r2_descriptor_reclaim_candidate",
+    "accepted_terminal": "r5_reclaim_delivery_in"
+  },
+  "linearization_rule": "Only a matching final R1 descriptor response with status OK may atomically record durable invalidation, clear allocated lanes, and advance their generations. Fault, stale, wrong-identity, incomplete, or replayed responses cannot free the current line.",
+  "directed_observations": [
+    "one_64B_descriptor_line_carries_all_four_allocated_lanes_as_FREE_with_next_generation_before_terminal_acceptance",
+    "reclaim_complete_and_r5_drained_remain_false_until_every_allocated_line_has_a_matching_OK_terminal",
+    "faulted_or_stale_terminal_leaves_the_live_line_allocated_and_blocks_completion",
+    "sequence_0_terminal_is_rejected_while_sequence_1_descriptor_line_is_live",
+    "post_success_terminal_replay_is_rejected"
+  ],
+  "preserved_prerequisites": [
+    "r6_authorized_reclaim_permit",
+    "r6_fixed_global_drain_membership",
+    "a3_complete_generation_wrap_quiescence",
+    "r2_r1_descriptor_transport_and_response_suppression"
+  ],
+  "preserved_deferred_events": [
+    "descriptor_invalidate",
+    "page_free",
+    "retire_ack"
+  ],
+  "forbidden": [
+    "emit_or_infer_descriptor_invalidate_page_free_or_retire_ack_scoreboard_events",
+    "change page_id_generation_descriptor_or_allocator_contract",
+    "free_before_matching_durable_terminal",
+    "reuse_old_terminal_as_a_new_line_terminal",
+    "claim physical_HBM_write_generation_wrap_proof_latency_throughput_PPA_model_GPU_or_A4_DSE_result"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "916f2096b6bbbaef90e9fc4c65860ed10592fb640169489091209b9c8ff32256",
+    "analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md": "964eb391d205bc4fba1962c4465df61ad29c3a3a7de9cc442e44860ba27f3849",
+    "analysis/architecture_spec.md": "3177b293068767e10da0d49cc75cbc1267669a22b9764849cfec48506c391e4a",
+    "analysis/rtl2_4_3_attention_terminal_scoreboard_binding.json": "e30008bca9db2272edee7820bf2d1a5704de1a2936dde62446526915dbe52e64",
+    "analysis/rtl2_5_0_lifecycle_reclaim_contract.md": "de3d3be2fecbc7c4fa56f92a4d32a5865c891dcaf93125060e4a010b6faa5614",
+    "analysis/rtl2_5_3_retirement_drain_contract.md": "4e5b072c7e60f67eb5d81de26f3525672759c1d11f79510867594dfc5de03e67",
+    "analysis/rtl2_5_4_r5_durable_invalidation_contract.md": "50df94fcc00359372439951d6e7b795eb88ca96a6d3f97c2ffa7971cc99fb360",
+    "analysis/rtl2_phase_contract.md": "5c4c9a7c8ad3426d2cd4004f67f35fc8bde7b1128bd320ac3b49e2462092b324",
+    "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json": "98c0ed14b10d5d5c66b4e5652c4c46291a5566cfeeec2effb2e521b9d8054b72",
+    "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "618c43b69ff06b9fb92dc67f33ffbb117458dfd91903c6d3890e2098e02e068a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAFairReclaimIntegrationSpec.scala": "0e31d83c14c973a40ad3ef2df425bf5529256b0a1f6bdfc6576b4a2cdbd94631",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAReclaimSpec.scala": "afb0ff2548dfacc1a5bc47da53538524ae14d98792f9c881d392194cfa138416"
+  },
+  "preflight": {
+    "chisel_command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.r5.RouteAReclaimSpec kvpress.routea.integration.RouteAFairReclaimIntegrationSpec kvpress.routea.integration.RouteARetirementDrainClosureSpec kvpress.routea.r6.RouteALifecycleAdapterSpec'",
+    "chisel_result": "passed: 13 directed tests",
+    "python_command": ".venv/bin/python tools/validate_rtl2_4_3_attention_terminal_scoreboard_binding.py && .venv/bin/python -m pytest tests/test_rtl2_4_3_attention_terminal_scoreboard_binding.py tests/test_rtl2_scoreboard_event_schema.py -q",
+    "python_result": "passed: 7 tests"
+  },
+  "evidence_boundary": [
+    "pure-software executable architecture and testbench contract",
+    "no model or GPU",
+    "no formal generation-wrap, liveness, or RTL equivalence proof",
+    "no physical HBM, cycle, timing, throughput, area, energy, or PPA claim",
+    "no new A4 DSE"
+  ]
+}

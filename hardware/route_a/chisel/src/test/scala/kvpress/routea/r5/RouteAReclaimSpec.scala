@@ -6,7 +6,7 @@ import kvpress.routea.incremental.RouteAPageManager
 import kvpress.routea.params.{RouteADescriptorOperationKind, RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
 
-/** RTL1-I4 directed reclaim control checks; no descriptor memory, HBM, or PPA model. */
+/** RTL1-I4 / RTL2.5.4 directed reclaim control checks; no HBM or PPA model. */
 final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
   private val p = RouteASkeletonParameters(
     frontendEventKindWidth = 3, componentStatusNameWidth = 4, hotControlKindWidth = 2,
@@ -61,11 +61,11 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
     dut.clock.step()
   }
 
-  private def terminalLine(dut: RouteAPageManager, fault: Boolean): Unit = {
+  private def terminalLine(dut: RouteAPageManager, fault: Boolean, sequence: Int = 0): Unit = {
     val rsp = dut.io.reclaim_delivery_in.bits
-    rsp.candidate_id.poke(0.U); rsp.candidate_class.poke(p.r2DescriptorMaintenanceClassCode.U)
+    rsp.candidate_id.poke(sequence.U); rsp.candidate_class.poke(p.r2DescriptorMaintenanceClassCode.U)
     rsp.destination.poke(0.U); rsp.delivery_context_ref.poke(0.U)
-    rsp.r1_response.transaction_identity.request_id.poke(0.U); rsp.r1_response.transaction_identity.incarnation.poke(0.U)
+    rsp.r1_response.transaction_identity.request_id.poke(sequence.U); rsp.r1_response.transaction_identity.incarnation.poke(0.U)
     rsp.r1_response.fragment_index.poke(0.U); rsp.r1_response.last.poke(true.B)
     rsp.r1_response.status.poke((if (fault) p.coreMemoryFaultStatusCode else p.coreMemoryOkStatusCode).U); rsp.r1_response.data.poke(0.U)
     dut.io.reclaim_delivery_in.valid.poke(true.B); dut.io.reclaim_delivery_in.ready.expect(true.B)
@@ -115,6 +115,58 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
       dut.io.reclaim_complete.expect(false.B)
       terminalLine(dut, fault = false)
       dut.io.reclaim_complete.expect(true.B)
+    }
+  }
+
+  it("does not let an old durable terminal free the next descriptor line or report R5 drained early") {
+    simulate(new RouteAPageManager(p)) { dut =>
+      init(dut)
+      // Pages 0..3 share descriptor line 0; page 4 starts descriptor line 1.
+      // Each stream is distinct, so this constructs five independent already-
+      // visible allocations without adding a scheduler or source model.
+      (0 until 5).foreach { page =>
+        publishOne(dut, head = page, tag = page & 1, page = page)
+      }
+      val firstLineImage = Seq(44, 172, 300, 428).map(bit => BigInt(1) << bit).sum
+      issueLine(dut, expectedImage = firstLineImage)
+      dut.io.reclaim_complete.expect(false.B)
+      dut.io.component_status_out.valid.expect(false.B)
+      terminalLine(dut, fault = false, sequence = 0)
+      // Line 1 remains allocated, so no R5 drain fact may yet be reported.
+      dut.io.reclaim_complete.expect(false.B)
+      dut.io.component_status_out.valid.expect(false.B)
+
+      // The next line has a distinct immutable reclaim sequence.  Holding
+      // candidate ready low exposes that identity without issuing a write.
+      dut.io.reclaim_candidate_out.ready.poke(false.B)
+      dut.clock.step()
+      dut.io.reclaim_candidate_out.valid.expect(true.B)
+      dut.io.reclaim_candidate_out.bits.candidate_id.expect(1.U)
+      dut.io.reclaim_candidate_out.bits.r1_request.transaction_identity.request_id.expect(1.U)
+      dut.io.reclaim_candidate_out.bits.r1_request.request_kind.expect(p.coreMemoryWriteRequestCode.U)
+      dut.io.reclaim_candidate_out.ready.poke(true.B); dut.clock.step()
+      dut.io.reclaim_candidate_out.valid.expect(true.B)
+      dut.io.reclaim_candidate_out.bits.r1_request.request_kind.expect(p.coreMemoryWriteDataCode.U)
+      dut.io.reclaim_candidate_out.bits.r1_request.data.expect((BigInt(1) << 44).U)
+      dut.clock.step()
+
+      // A delayed terminal from line 0 cannot match the live line-1
+      // descriptor operation and therefore cannot free or advance it.
+      val stale = dut.io.reclaim_delivery_in.bits
+      stale.candidate_id.poke(0.U); stale.candidate_class.poke(p.r2DescriptorMaintenanceClassCode.U)
+      stale.destination.poke(0.U); stale.delivery_context_ref.poke(0.U)
+      stale.r1_response.transaction_identity.request_id.poke(0.U); stale.r1_response.transaction_identity.incarnation.poke(0.U)
+      stale.r1_response.fragment_index.poke(0.U); stale.r1_response.last.poke(true.B)
+      stale.r1_response.status.poke(p.coreMemoryOkStatusCode.U); stale.r1_response.data.poke(0.U)
+      dut.io.reclaim_delivery_in.valid.poke(true.B); dut.io.reclaim_delivery_in.ready.expect(false.B)
+      dut.io.reclaim_delivery_in.valid.poke(false.B)
+      dut.io.reclaim_complete.expect(false.B)
+
+      terminalLine(dut, fault = false, sequence = 1)
+      dut.io.reclaim_complete.expect(true.B)
+      dut.io.component_status_out.valid.expect(true.B)
+      // Replaying an already-consumed terminal cannot perform a second free.
+      dut.io.reclaim_delivery_in.valid.poke(true.B); dut.io.reclaim_delivery_in.ready.expect(false.B)
     }
   }
 }
