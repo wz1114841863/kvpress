@@ -610,7 +610,10 @@ or the full retained-transaction completion disposition.
 **RTL2.6.5 full retained-transaction and scoreboard witness: active.**
 The authoritative ordered sub-slices and non-goals are recorded in
 [`rtl2_6_completion_review.md`](rtl2_6_completion_review.md).  Its first
-implementation task is RTL2.6.5a read-path composition; no existing
+task, RTL2.6.5a.1, is now complete:
+[`rtl2_6_5a_packed_s2_read_composition_contract.md`](rtl2_6_5a_packed_s2_read_composition_contract.md)
+uses the actual typed packed-S2 R2/R1 path before S2/R4/R6 completion.
+RTL2.6.5a.2 remains the R3 pack-read-to-P3 composition task; no existing
 verification ingress may be relabelled as a real R2/R1 read transaction.
 
 RTL2.0--RTL2.5 passing individually does not by itself complete production

@@ -23,6 +23,12 @@ final class RouteAPackedS2ReadPathHarness(p: RouteASkeletonParameters) extends M
     val external = new CoreMemoryExternalPort(p)
     val s2_state = Output(UInt(3.W))
     val s2_generation = Output(UInt(p.sourceGenerationWidth.W))
+    // Test-only public owner observations for RTL2.6 composition.  These
+    // expose no payload store and do not turn this harness into a source
+    // scheduler or production-top component.
+    val s2_available = Output(Bool())
+    val s2_identity = Output(new TransactionIdentity)
+    val s2_instance = Output(new SourceInstance(p))
   })
 
   val producer = Module(new RouteAPackedS2ReadProducer(p))
@@ -104,6 +110,9 @@ final class RouteAPackedS2ReadPathHarness(p: RouteASkeletonParameters) extends M
   s2.io.component_status_out.ready := true.B
   io.s2_state := s2.io.s2_observe_state
   io.s2_generation := s2.io.s2_observe_generation
+  io.s2_available := s2.io.s2_observe_available
+  io.s2_identity := s2.io.s2_observe_identity
+  io.s2_instance := s2.io.s2_observe_instance
 }
 
 final class RouteAPackedS2ReadPathSpec extends AnyFunSpec with ChiselSim {
