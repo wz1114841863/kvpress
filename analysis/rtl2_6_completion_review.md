@@ -46,6 +46,47 @@ capture/replay, and stale/stall full-composition branches remain open.
 It intentionally does not claim Chisel event emission: two records require a
 prior accepted R2/R1 association that is absent from a bare R1 carrier.
 
+## RTL2.6 work breakdown and completion criterion
+
+The original RTL2.6 plan named two implementation actions after the entry
+audit: RTL2.6.1 field provenance and RTL2.6.2 one composed retained
+transaction.  The latter was necessarily decomposed after implementation
+revealed the publication-to-S2 identity gap:
+
+| Label | Scope | Status | Does not establish |
+|---|---|---|---|
+| RTL2.6.1 | exact no-default field provenance | complete | Chisel event capture |
+| RTL2.6.2a | S2/source/R4/R6 fault-terminal slice | complete | publication or retirement |
+| RTL2.6.3 | publication-to-S2 verification association | complete | production bridge |
+| RTL2.6.4 | publication-to-fault-terminal partial witness | complete | real read path, reclaim, replay |
+| RTL2.6.5 | full retained-transaction and scoreboard witness | active | production-top/PPA/numeric realization |
+
+RTL2.6.2a through RTL2.6.4 are therefore implementation sub-slices of the
+original RTL2.6.2 objective, not additional architecture/DSE gates.
+
+### RTL2.6.5 required closure
+
+RTL2.6.5 is ordered internally to keep every remaining gap explicit:
+
+1. **RTL2.6.5a — read-path composition.** Replace direct P3/S2 fill
+   verification ingress in the witness with the existing typed R3 `pack_read`
+   and packed-S2 read paths through R2/R1. A response must deposit only into
+   its matching owner; stale/mismatched/fault responses must not deposit.
+2. **RTL2.6.5b — terminal-to-reclaim composition.** In the same transaction
+   instance, connect terminal completion to the existing R6 retirement/global
+   drain and R5 durable invalidation-before-free path, ending at `retire_ack`.
+3. **RTL2.6.5c — event capture and oracle replay.** Capture all fourteen
+   immutable-schema records solely from declared accepted carriers, then replay
+   the trace through the Python scoreboard/oracles. Add one success, one fault,
+   one stale-response, and one bounded legal ready-low case.
+4. **RTL2.6.5d — completion review.** Re-run the entry audit only after
+   2.6.5a--c pass. This is the sole point at which the review may evaluate a
+   `rtl2_production_transaction_dataflow_complete` disposition.
+
+None of these sub-slices authorizes a production R3/R5-to-S2 bridge, a
+different scheduler/admission policy, numeric realization, controller/macro
+selection, timing/PPA, model/GPU work, or a new A4 DSE.
+
 1. Attach each declared field association to real owner-carrier handshakes in
    one test-only observation adapter; no field may be inferred from private
    owner state or supplied by a default.

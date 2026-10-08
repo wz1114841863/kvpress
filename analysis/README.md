@@ -62,7 +62,9 @@ remaining R3/R5-to-S2 association and full retained-transaction witness as
 open work. RTL2.6.3 has now frozen that association as an explicit,
 fail-closed verification adapter; it is still not a production bridge.
 RTL2.6.4 uses it in one same-instance publication-to-fault-terminal witness,
-but still leaves full completion/reclaim and scoreboard replay open.
+but still leaves full completion/reclaim and scoreboard replay open. RTL2.6.5
+is now the explicit final full-witness gate; its ordered read, reclaim, event,
+and review sub-slices are recorded in the RTL2.6 completion review.
 
 ## Current architecture and verification records
 

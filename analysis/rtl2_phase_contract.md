@@ -607,6 +607,12 @@ real S2/R4/R6 control to reach a numeric-fault terminal. It retains every
 test-only boundary and does not yet include retirement/reclaim, event replay,
 or the full retained-transaction completion disposition.
 
+**RTL2.6.5 full retained-transaction and scoreboard witness: active.**
+The authoritative ordered sub-slices and non-goals are recorded in
+[`rtl2_6_completion_review.md`](rtl2_6_completion_review.md).  Its first
+implementation task is RTL2.6.5a read-path composition; no existing
+verification ingress may be relabelled as a real R2/R1 read transaction.
+
 RTL2.0--RTL2.5 passing individually does not by itself complete production
 dataflow integration.  A separate completion review must consume the explicit
 scoreboard events and demonstrate at least one complete retained transaction:
