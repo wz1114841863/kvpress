@@ -35,6 +35,14 @@ now supplies the explicit test-only association needed to join a real R3
 publication/authority pair to S2 service identity. Its page/tag/record and
 authority checks are fail-closed, but it remains deliberately outside the
 production top until a separately authorized realization is selected.
+
+### RTL2.6.4 progress
+
+[`rtl2_6_4_publication_to_terminal_composition_contract.md`](rtl2_6_4_publication_to_terminal_composition_contract.md)
+uses that association in one Chisel instance: real publication reaches real S2
+`READY`, four commits, source release, R6 merge, and one R4/R6 fault terminal.
+It is a partial retained witness only: retirement/reclaim, success, event
+capture/replay, and stale/stall full-composition branches remain open.
 It intentionally does not claim Chisel event emission: two records require a
 prior accepted R2/R1 association that is absent from a bare R1 carrier.
 

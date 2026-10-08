@@ -61,6 +61,8 @@ R4/R6 terminal segment in one test-only instance, while preserving the
 remaining R3/R5-to-S2 association and full retained-transaction witness as
 open work. RTL2.6.3 has now frozen that association as an explicit,
 fail-closed verification adapter; it is still not a production bridge.
+RTL2.6.4 uses it in one same-instance publication-to-fault-terminal witness,
+but still leaves full completion/reclaim and scoreboard replay open.
 
 ## Current architecture and verification records
 
@@ -97,6 +99,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2.6.1 event field-provenance binding | [`rtl2_6_1_event_binding_contract.md`](rtl2_6_1_event_binding_contract.md) and [`rtl2_6_1_event_binding_manifest.json`](rtl2_6_1_event_binding_manifest.json) |
 | RTL2.6.2a narrow composed packed-source terminal harness | [`rtl2_6_2_composed_packed_source_harness_contract.md`](rtl2_6_2_composed_packed_source_harness_contract.md) |
 | RTL2.6.3 publication-to-S2 verification association | [`rtl2_6_3_publication_s2_association_contract.md`](rtl2_6_3_publication_s2_association_contract.md) |
+| RTL2.6.4 single-instance publication-to-terminal witness | [`rtl2_6_4_publication_to_terminal_composition_contract.md`](rtl2_6_4_publication_to_terminal_composition_contract.md) |
 | RTL2.0 producer/event activation inventory | [`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and [`rtl2_0_activation_manifest.json`](rtl2_0_activation_manifest.json) |
 | RTL2.0a logical payload materialization / hot maturity egress | [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md) and [`rtl2_0a_payload_materialization_manifest.json`](rtl2_0a_payload_materialization_manifest.json) |
 | RTL2.0b retained admission-group builder | [`rtl2_0b_admission_group_builder_contract.md`](rtl2_0b_admission_group_builder_contract.md) and [`rtl2_0b_admission_group_builder_manifest.json`](rtl2_0b_admission_group_builder_manifest.json) |

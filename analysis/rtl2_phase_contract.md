@@ -599,6 +599,14 @@ association before producing an existing S2 service request. It fails closed
 on stale authority and page/tag/record mismatch, but is not a production
 R3/R5-to-S2 bridge and does not complete the retained-transaction witness.
 
+**RTL2.6.4 publication-to-terminal composition: complete as a narrow
+single-instance witness.**
+[`rtl2_6_4_publication_to_terminal_composition_contract.md`](rtl2_6_4_publication_to_terminal_composition_contract.md)
+uses real R3/R5/R2/R1 publication, the explicit RTL2.6.3 association, and
+real S2/R4/R6 control to reach a numeric-fault terminal. It retains every
+test-only boundary and does not yet include retirement/reclaim, event replay,
+or the full retained-transaction completion disposition.
+
 RTL2.0--RTL2.5 passing individually does not by itself complete production
 dataflow integration.  A separate completion review must consume the explicit
 scoreboard events and demonstrate at least one complete retained transaction:
