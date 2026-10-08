@@ -47,7 +47,9 @@ numeric-fault terminal boundary: one stable terminal/event, stale/malformed
 and replay rejection, and no retry or Full-KV-fallback interface. Retirement
 drain now has fixed-membership and bounded-fairness witnesses in RTL2.5.3;
 RTL2.5.4 closes R5's matching durable invalidation-before-generation/free
-boundary. Reclaim event/oracle binding remains pending.
+boundary. RTL2.5.5 binds the three remaining R5/R6 active-state events through
+named testbench carriers and Python references; it is not a production-top
+scoreboard or a physical-memory claim.
 
 ## Current architecture and verification records
 
@@ -79,6 +81,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2.5.2 fault / terminal cross-owner closure | [`rtl2_5_2_fault_terminal_contract.md`](rtl2_5_2_fault_terminal_contract.md) and [`rtl2_5_2_fault_terminal_manifest.json`](rtl2_5_2_fault_terminal_manifest.json) |
 | RTL2.5.3 R6 retirement / drain fixed-membership closure | [`rtl2_5_3_retirement_drain_contract.md`](rtl2_5_3_retirement_drain_contract.md) and [`rtl2_5_3_retirement_drain_manifest.json`](rtl2_5_3_retirement_drain_manifest.json) |
 | RTL2.5.4 R5 durable invalidation-before-free closure | [`rtl2_5_4_r5_durable_invalidation_contract.md`](rtl2_5_4_r5_durable_invalidation_contract.md) and [`rtl2_5_4_r5_durable_invalidation_manifest.json`](rtl2_5_4_r5_durable_invalidation_manifest.json) |
+| RTL2.5.5 R5/R6 active-state scoreboard/oracle binding | [`rtl2_5_5_active_state_scoreboard_contract.md`](rtl2_5_5_active_state_scoreboard_contract.md), [`rtl2_5_5_active_state_scoreboard_binding.json`](rtl2_5_5_active_state_scoreboard_binding.json), and [`rtl2_5_5_active_state_scoreboard_manifest.json`](rtl2_5_5_active_state_scoreboard_manifest.json) |
 | RTL2.0 producer/event activation inventory | [`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and [`rtl2_0_activation_manifest.json`](rtl2_0_activation_manifest.json) |
 | RTL2.0a logical payload materialization / hot maturity egress | [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md) and [`rtl2_0a_payload_materialization_manifest.json`](rtl2_0a_payload_materialization_manifest.json) |
 | RTL2.0b retained admission-group builder | [`rtl2_0b_admission_group_builder_contract.md`](rtl2_0b_admission_group_builder_contract.md) and [`rtl2_0b_admission_group_builder_manifest.json`](rtl2_0b_admission_group_builder_manifest.json) |

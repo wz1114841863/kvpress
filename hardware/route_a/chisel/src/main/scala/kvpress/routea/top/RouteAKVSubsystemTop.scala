@@ -220,6 +220,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     delivery_context_composition.io.release_event_in := typed_delivery_router.io.release_event_out
     page_manager.io.reclaim_delivery_in <> typed_delivery_router.io.r5_reclaim_out
     page_manager.io.append_delivery_in <> typed_delivery_router.io.r5_append_out
+    // The composed production top does not instantiate a scoreboard.  Consume
+    // R5's post-durable observation locally; the RTL2.5.5 test-only adapter
+    // is the sole event binding and may backpressure this carrier there.
+    page_manager.io.allocator_release_out.ready := true.B
     // C9: one descriptor-selected, fail-closed top composition point replaces
     // the isolated C2/C3/C4 endpoint harness routers.  It has no response
     // field inference and no scheduler/producer policy.

@@ -1,0 +1,33 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-5-5-active-state-scoreboard-binding-1.0",
+  "status": "active_testbench_reclaim_and_retire_events_bound",
+  "scope": "Testbench-only binding of the three predeclared active-state events. It observes only named accepted R5/R6 carriers, with no internal-state inference, production-top scoreboard, numeric, HBM, model/GPU, timing, throughput, PPA, RTL-equivalence, or new A4 DSE claim.",
+  "base_schema": "analysis/rtl2_scoreboard_event_schema.json",
+  "phase_overlay": "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json",
+  "events": [
+    {"name":"descriptor_invalidate","origin_owner":"route_a_page_manager","origin_carrier":"r5_to_r2_descriptor_reclaim_candidate","observation_owner":"route_a_page_manager","observation_carrier":"r5_allocator_release","required_fields":["page_ref","generation","descriptor_operation","delivery_context_ref"],"rule":"The event is observed only with the post-durable old-reference R5 release; its origin remains the pre-existing reclaim candidate, and no one-page target is inferred from the 64-B line."},
+    {"name":"page_free","origin_owner":"route_a_page_manager","origin_carrier":"r5_allocator_release","observation_owner":"route_a_page_manager","observation_carrier":"r5_allocator_release","required_fields":["page_ref","generation"],"rule":"The event copies the exact old PageRef only after the matching durable invalidation terminal; it is not a free command."},
+    {"name":"retire_ack","origin_owner":"route_a_lifecycle_adapter","origin_carrier":"r6_to_runtime_retire_ack","observation_owner":"route_a_lifecycle_adapter","observation_carrier":"r6_to_runtime_retire_ack","required_fields":["session_id","request_id","incarnation"],"rule":"The event is emitted only with the accepted outward R6 acknowledgement after existing global drain membership."}
+  ],
+  "chisel_adapter":{"module":"testbench_route_a_reclaim_scoreboard_adapter","source":"hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReclaimScoreboardAdapterSpec.scala","rule":"Each observed carrier and all of its matching event fanout handshakes atomically; ready-low delays all of them and cannot produce a partial/replay event."},
+  "python_adapter":{"path":"kvpress/rtl2_reclaim_scoreboard_binding.py","class":"RouteARTL2ReclaimScoreboardAdapter","oracles":["kvpress/route_a_page_manager_reference.py","kvpress/route_a_lifecycle_adapter_reference.py"],"setup_rule":"R5 reclaimability and R6 drain completion are explicit testbench mirror setup, never inferred from RTL state."},
+  "forbidden":["rewrite historical rtl2_scoreboard_event_schema.json","infer event from arbitrary internal state","production-top scoreboard adapter instantiation","allocator free command from event","physical HBM or descriptor-macro claim","cycle latency throughput PPA model GPU numeric or A4 DSE claim"],
+  "source_sha256": {
+    "analysis/README.md": "6e240c0887ad4e1eabb07d1722c8c40fa7ec4e6f6525f9e32158ea1056587af9",
+    "analysis/rtl2_5_5_active_state_scoreboard_contract.md": "7e9224dd309f30b7cc0b2fd4d2887be9b46e1979fbfb027ebadec46ef6448241",
+    "analysis/rtl2_phase_contract.md": "cf537c3459568b9b3f55585b6c09243d27e14d8587dbcfab74309c8380c86c25",
+    "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json": "7dcaff1a0f20f63e5255a148f8cd7cddaca76b7fe7e57269ec05e32a993fb042",
+    "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "a20ab4cd6949dae107830569efa2d4d5a22c7150a036efcfa6ba975f7bd8df09",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "ebf0b22ab8b73794aa4e7e5461f28debf691440085ba37ac3ccf8089de1718d8",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "bdc4b137b674b44c95a165d3cf2b891db46806e0cea436bd74a5029e6459af58",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAReclaimSpec.scala": "f916e3fea825e7fa5c33399ffba25ea6fb63fe9b1afc63f37ec4546843186a6a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReclaimScoreboardAdapterSpec.scala": "301e07f3e1db9c7557403e70847e804bf115ba5dfd545bd2854e6f3882003f01",
+    "kvpress/route_a_lifecycle_adapter_reference.py": "46855f9106354edcabe495acd5deb986c850f3768f2c904766b3f0af2c06bf9f",
+    "kvpress/route_a_page_manager_reference.py": "e96a72182e761d6a2e3629e067661991a1ba731cbb5685dd1a7e74d9fbb195f4",
+    "kvpress/rtl2_reclaim_scoreboard_binding.py": "91b81d0e92f78e3364678c42769f6283c97ba5923e45c9e6b88a901d5f17f7f6",
+    "tests/test_rtl2_5_5_active_state_scoreboard_binding.py": "0fc6aadd0bdce0aafa560e61ae226faa5a7454602b8b2bf37f2f30a6fa53bb00",
+    "tools/validate_rtl2_5_5_active_state_scoreboard_binding.py": "b4bbb206bd817cb2809355033c9a9f57eda97b09d06c4418552b665cc6bbe7df"
+  },
+  "evidence_boundary":["pure-software Chisel/Python testbench event binding","no model or GPU","no cycle/timing/throughput or PPA claim","no RTL correctness or new A4 DSE claim"]
+}

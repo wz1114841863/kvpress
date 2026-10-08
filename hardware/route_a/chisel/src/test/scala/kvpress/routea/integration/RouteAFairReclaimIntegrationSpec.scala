@@ -54,6 +54,9 @@ private final class RouteAFairReclaimHarness(p: RouteASkeletonParameters) extend
   r5.io.drain_collection_enable := r6.io.drain_collection_enable
   r5.io.reclaim_permit_in <> r6.io.reclaim_permit_out
   r6.io.r5_reclaim_complete_in := r5.io.reclaim_complete
+  // RTL2.5.5's testbench-only R5 observation is not part of this historical
+  // R1/R2/R5/R6 transport witness; consume it without backpressuring reclaim.
+  r5.io.allocator_release_out.ready := true.B
   r5.io.page_allocation_req_in <> io.allocation
   r5.io.page_allocation_rsp.ready := true.B
   // This RTL1-V reclaim-only harness deliberately does not exercise the

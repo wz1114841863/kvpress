@@ -45,6 +45,7 @@ final class RouteA2_1cAtomicPublicationHarness(p: RouteASkeletonParameters) exte
 
   r3.io.mem_init_done := io.mem_init_done; r3.io.drain_collection_enable := false.B
   r5.io.mem_init_done := io.mem_init_done; r5.io.drain_collection_enable := false.B
+  r5.io.allocator_release_out.ready := true.B
   r2.io.drain_collection_enable := false.B; r2.io.reclaim_maintenance_enable := false.B
   r1.io.r1_drain_permitted := false.B
   r3.io.p3_claim_ack.ready := true.B

@@ -1465,6 +1465,10 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     val reclaim_permit_in = Flipped(RouteAChannels.reclaim_permit)
     val reclaim_candidate_out = RouteAChannels.source_candidate(p)
     val reclaim_delivery_in = Flipped(RouteAChannels.source_delivery(p))
+    // Post-durable event carrier for the scoreboard/testbench boundary.  It
+    // observes a completed R5 invalidation; it is not part of allocator
+    // admission, descriptor arbitration, or the R6 reclaim-complete fact.
+    val allocator_release_out = RouteAChannels.allocator_release
     val reclaim_complete = Output(Bool())
     val page_allocation_req_in = Flipped(RouteAChannels.page_allocation_req(p))
     val page_allocation_rsp = RouteAChannels.page_allocation_rsp(p)
@@ -1528,6 +1532,11 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val reclaimLine = Reg(UInt(descriptorLineWidth.W))
   val reclaimSequence = RegInit(0.U(5.W))
   val reclaimFaulted = RegInit(false.B)
+  // One descriptor line may free four entries.  Preserve every old PageRef
+  // until its named observation carrier is accepted, rather than reconstruct
+  // it after generation advance from internal allocator state.
+  val releasePending = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))
+  val releaseGeneration = Reg(Vec(p.r5AllocatorEntries, UInt(RouteAAnchorWidths.PageGenerationWidth.W)))
   // Functional/reference descriptor-entry backing. This preserves all four
   // 128-bit lanes when producing the frozen 64-B maintenance line; it is not
   // an HBM macro/cache/controller implementation or a PPA claim.
@@ -1567,6 +1576,15 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   )
   val reclaimActive = reclaimState =/= ReclaimIdle
   val reclaimLocalSafe = !buildActive.asUInt.orR && !allocationRspValid && !visibilityAckPending
+
+  val releaseAny = releasePending.asUInt.orR
+  val releaseIndex = PriorityEncoder(releasePending)
+  io.allocator_release_out.valid := releaseAny
+  io.allocator_release_out.bits.page_ref.page_id := releaseIndex
+  io.allocator_release_out.bits.page_ref.generation := releaseGeneration(releaseIndex)
+  when(io.allocator_release_out.fire) {
+    releasePending(releaseIndex) := false.B
+  }
 
   io.reclaim_permit_in.ready := initialized && !reclaimPermitted && reclaimLocalSafe
   when(io.reclaim_permit_in.fire) {
@@ -1630,6 +1648,11 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     }.otherwise {
       for (line <- 0 until descriptorLines; lane <- 0 until 4) {
         when(reclaimLine === line.U && allocated(line * 4 + lane)) {
+          // Capture the live generation before this same terminal advances it.
+          // The resulting carrier is an observation of this accepted durable
+          // transition, never an independent free command.
+          releaseGeneration(line * 4 + lane) := generations(line * 4 + lane)
+          releasePending(line * 4 + lane) := true.B
           durableInvalidation(line * 4 + lane) := true.B
           allocated(line * 4 + lane) := false.B
           generations(line * 4 + lane) := generations(line * 4 + lane) + 1.U

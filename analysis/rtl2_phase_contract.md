@@ -532,6 +532,16 @@ two-line witness rejects an old operation identity while the next descriptor
 line is live.  This does not emit `descriptor_invalidate` or `page_free`;
 their event/oracle binding is exclusively RTL2.5.5.
 
+**RTL2.5.5 active-state scoreboard/oracle binding: complete in test-only
+harnesses.** [`rtl2_5_5_active_state_scoreboard_contract.md`](rtl2_5_5_active_state_scoreboard_contract.md)
+binds the three remaining declared records to named carriers and existing
+Python references. R5 now exposes its old-reference `allocator_release` only
+after the matching durable descriptor terminal; the test-only adapter atomically
+maps it to `descriptor_invalidate` and `page_free`, while the existing outward
+R6 acknowledgement maps to `retire_ack`. The binding does not infer page facts
+from descriptor images/state, instantiate a scoreboard in the production top,
+or alter reclaim/authority/global-drain semantics.
+
 Exercise active retained/publication/source transactions through destructive
 reset, terminal fault, retirement drain, descriptor invalidation, and page
 free.  The existing R6/R5/R2/R1 ownership and quiescence requirements remain

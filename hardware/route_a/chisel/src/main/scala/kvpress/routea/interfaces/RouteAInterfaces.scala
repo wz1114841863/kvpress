@@ -106,6 +106,19 @@ final class PageRef extends Bundle {
 }
 
 /**
+  * R5-owned post-durability observation for one reclaimed allocator entry.
+  *
+  * The page reference is the *old* live generation.  This is not an allocator
+  * request/grant and is never permission to free a page: R5 creates it only
+  * after its matching descriptor-invalidation terminal has been accepted.
+  * It exists so the testbench scoreboard does not infer page-free events from
+  * a descriptor image or arbitrary R5 state.
+  */
+final class PageAllocatorRelease extends Bundle {
+  val page_ref = new PageRef
+}
+
+/**
   * Carrier for the score-free frontend logical tagged union. event_kind is
   * intentionally width-parameterized: RTL1.0 does not select its encoding.
   */
@@ -919,6 +932,7 @@ object RouteAChannels {
   def m2_group_member_rsp(p: RouteASkeletonParameters) = Decoupled(new M2GroupMemberResponse(p))
   def page_allocation_req(p: RouteASkeletonParameters) = Decoupled(new PageAllocationRequest(p))
   def page_allocation_rsp(p: RouteASkeletonParameters) = Decoupled(new PageAllocationResponse(p))
+  def allocator_release = Decoupled(new PageAllocatorRelease)
   def descriptor_maintenance_terminal(p: RouteASkeletonParameters) = Decoupled(new DescriptorMaintenanceTerminal(p))
   def descriptor_durability_prerequisite(p: RouteASkeletonParameters) = Decoupled(new DescriptorDurabilityPrerequisite(p))
 }

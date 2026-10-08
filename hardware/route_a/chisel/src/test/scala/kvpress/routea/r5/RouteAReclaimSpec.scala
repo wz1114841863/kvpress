@@ -29,6 +29,7 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
     dut.io.descriptor_maintenance_terminal_in.valid.poke(false.B); dut.io.metadata_publish_visibility_in.valid.poke(false.B)
     dut.io.metadata_publish_visibility_ack.ready.poke(true.B); dut.io.reclaim_candidate_out.ready.poke(false.B)
     dut.io.reclaim_delivery_in.valid.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
+    dut.io.allocator_release_out.ready.poke(false.B)
     dut.io.mem_init_done.poke(true.B); dut.clock.step(); dut.clock.step()
   }
 
@@ -77,6 +78,13 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
       init(dut); publishOne(dut); issueLine(dut)
       dut.io.reclaim_complete.expect(false.B)
       terminalLine(dut, fault = false)
+      // The named observation carries the old reference only after the
+      // matching durable terminal; it is not a new allocator command.
+      dut.io.allocator_release_out.valid.expect(true.B)
+      dut.io.allocator_release_out.bits.page_ref.page_id.expect(0.U)
+      dut.io.allocator_release_out.bits.page_ref.generation.expect(0.U)
+      dut.io.allocator_release_out.ready.poke(true.B); dut.clock.step()
+      dut.io.allocator_release_out.valid.expect(false.B)
       dut.io.reclaim_complete.expect(true.B)
       dut.io.page_allocation_req_in.ready.expect(false.B)
     }
