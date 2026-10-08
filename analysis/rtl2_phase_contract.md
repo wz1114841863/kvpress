@@ -503,6 +503,16 @@ state, then verifies old facts fail closed until the existing R1 init boundary
 is re-established. It neither emits the deferred reclaim events nor closes
 fault, retirement, or reclaim behavior.
 
+**RTL2.5.2 fault/terminal closure: complete for the directed R4--R6 fault
+boundary.** [`rtl2_5_2_fault_terminal_contract.md`](rtl2_5_2_fault_terminal_contract.md)
+reuses the real R4 terminal boundary, real R6 outward terminal owner, and the
+existing test-only terminal observation adapter.  It demonstrates one stable
+`numeric_fault` terminal/event under legal backpressure, rejects stale,
+mismatched, malformed, and post-terminal replay scenarios, and introduces no
+retry or Full-KV fallback interface.  This is a narrow interface-absence and
+fault-terminal statement only: it does not imply that a fault publishes,
+transfers authority, reclaims storage, or closes retirement/reclaim behavior.
+
 Exercise active retained/publication/source transactions through destructive
 reset, terminal fault, retirement drain, descriptor invalidation, and page
 free.  The existing R6/R5/R2/R1 ownership and quiescence requirements remain

@@ -1,0 +1,69 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-5-2-fault-terminal-1.0",
+  "status": "passed_directed_fault_terminal_evidence",
+  "scope": "Directed no-model ChiselSim closure of the existing test-scope R4 numeric-fault to R6 outward terminal path. No production-top carrier, retry, Full-KV fallback, numeric datapath, controller, model, GPU, cycle, timing, throughput, PPA, or A4 DSE.",
+  "contract": "analysis/rtl2_5_2_fault_terminal_contract.md",
+  "owners_and_carriers": {
+    "fault_origin": {
+      "owner": "route_a_merge_boundary",
+      "carrier": "r4_to_r6_terminal",
+      "status": "numeric_fault=1"
+    },
+    "outward_terminal": {
+      "owner": "route_a_lifecycle_adapter",
+      "carrier": "r6_outward_attention_terminal_rsp"
+    },
+    "testbench_observation": {
+      "owner": "testbench_route_a_attention_terminal_scoreboard_adapter",
+      "carrier": "attention_terminal_scoreboard_event",
+      "rule": "same accepted handshake as the named R6 outward terminal"
+    }
+  },
+  "directed_observations": [
+    "exact_fault_produces_one_status_1_terminal_and_one_same_handshake_event",
+    "terminal_and_event_are_stable_under_ready_low",
+    "post_terminal_same_identity_fault_replay_is_ready_low_and_has_no_second_terminal",
+    "wrong_request_id_wrong_incarnation_and_nonzero_fault_value_fail_closed",
+    "test_scope_interface_has_no_retry_or_full_kv_fallback_carrier"
+  ],
+  "preserved_pending_work": [
+    "r6_retirement_drain_fixed_membership",
+    "r5_durable_descriptor_invalidate_before_generation_advance_and_free",
+    "descriptor_invalidate_page_free_retire_ack_scoreboard_and_python_oracle_binding"
+  ],
+  "forbidden": [
+    "rewrite historical scoreboard schemas or event phase overlay",
+    "add production-top fault ingress or terminal producer",
+    "add retry or Full-KV fallback",
+    "infer publication authority handoff invalidation free or retirement from a fault terminal",
+    "claim R4 numeric correctness RTL equivalence end_to_end correctness formal deadlock freedom latency throughput PPA model_GPU result or A4 DSE"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "cdd1d3d85036f6fcef248e28ad420ea62b034bb7475a8ef22b797c83ace2c995",
+    "analysis/rtl2_4_3_attention_terminal_scoreboard_binding.json": "641f80229fa6aebd3a350d8a4b1ee3cd34c3adc7ff98cf05f17d9bde7b331b4a",
+    "analysis/rtl2_5_0_lifecycle_reclaim_contract.md": "de3d3be2fecbc7c4fa56f92a4d32a5865c891dcaf93125060e4a010b6faa5614",
+    "analysis/rtl2_5_2_fault_terminal_contract.md": "f6be2101f45b913018ae6f65803ca9448fe8b5bb26edfcf33f9e7704c446c0fe",
+    "analysis/rtl2_phase_contract.md": "feea8ab0aa47da145d82def2d9e2a815a4cac17499504c6691a25c799452e172",
+    "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json": "98c0ed14b10d5d5c66b4e5652c4c46291a5566cfeeec2effb2e521b9d8054b72",
+    "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "618c43b69ff06b9fb92dc67f33ffbb117458dfd91903c6d3890e2098e02e068a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAttentionTerminalScoreboardAdapterSpec.scala": "a4bd500e1331b094b02ba25ef9c8cd763a65988e7f2d6464af4248213c7aa8cc",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAFaultTerminalClosureSpec.scala": "7228897b22c399d8cf01b81dc7ba3b80640d39f34f1e36b4a4b69ea3a2ada40b",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4R6StubTerminalIntegrationSpec.scala": "f2bb1318a001656117c2cd6b2123500508e33ca73e07314f6b5cc5c459f46e17",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4ResultStubProviderSpec.scala": "163a5cfd98215e2480f4605e912777ee66047de98c097257202cf7474246faf0",
+    "kvpress/rtl2_attention_terminal_scoreboard_binding.py": "2cb12da287a7ce00fd6ed9478fcad35d6614c5c878fca599a39b56110ca568a2"
+  },
+  "preflight": {
+    "chisel_command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteAFaultTerminalClosureSpec kvpress.routea.rtl2.RouteAR4R6StubTerminalIntegrationSpec kvpress.routea.r4.RouteAMergeBoundarySpec kvpress.routea.r6.RouteALifecycleAdapterSpec kvpress.routea.rtl2.RouteAAttentionTerminalScoreboardAdapterSpec'",
+    "chisel_result": "passed: 17 directed tests",
+    "python_command": ".venv/bin/python tools/validate_rtl2_4_3_attention_terminal_scoreboard_binding.py && .venv/bin/python -m pytest tests/test_rtl2_4_3_attention_terminal_scoreboard_binding.py tests/test_rtl2_scoreboard_event_schema.py -q",
+    "python_result": "passed: 7 tests"
+  },
+  "evidence_boundary": [
+    "pure-software executable architecture and testbench contract",
+    "no model or GPU",
+    "no numeric datapath or RTL system correctness claim",
+    "no cycle timing throughput area energy PPA or formal liveness claim",
+    "no new A4 DSE"
+  ]
+}
