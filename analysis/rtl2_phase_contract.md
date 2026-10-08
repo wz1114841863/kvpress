@@ -557,6 +557,19 @@ liveness statement requires a later formal proof with explicit assumptions.
 
 ## RTL2.6 — completion / integration review
 
+**RTL2.6.0 entry audit: complete, with an explicitly incomplete disposition.**
+[`rtl2_6_completion_review.md`](rtl2_6_completion_review.md) and its
+machine-readable [`rtl2_6_completion_review_manifest.json`](rtl2_6_completion_review_manifest.json)
+freeze the review entry inventory without activating a new carrier.  Four of
+the fourteen declared RTL2 events have existing testbench bindings;
+`attention_terminal`, `descriptor_invalidate`, `page_free`, and `retire_ack`.
+The other ten remain schema-only.  Consequently this audit is **not**
+`rtl2_production_transaction_dataflow_complete`, and it does not claim a
+complete retained-transaction witness.  The named verification ingress remain
+owned, justified realization deferrals rather than unowned production
+carriers.  RTL2.6.1 must bind the remaining events and replay one real-owner
+composed retained transaction before this gate can pass.
+
 RTL2.0--RTL2.5 passing individually does not by itself complete production
 dataflow integration.  A separate completion review must consume the explicit
 scoreboard events and demonstrate at least one complete retained transaction:

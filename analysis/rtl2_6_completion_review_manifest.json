@@ -1,0 +1,28 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-6-entry-audit-1.0",
+  "status": "rtl2_6_entry_audit_incomplete_scoreboard_and_transaction_witness",
+  "scope": "Machine-readable no-model entry audit for the RTL2 completion/integration review. It neither activates a carrier nor claims a complete transaction, numeric merge, HBM implementation, timing, throughput, PPA, or new A4 DSE.",
+  "scoreboard_schema": "analysis/rtl2_scoreboard_event_schema.json",
+  "phase_overlay": "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json",
+  "required_events": ["request_accept", "fragment_deliver", "write_commit", "descriptor_durable", "metadata_publish_commit", "authority_transition", "source_deliverable", "consumer_partial_commit", "source_release", "merge_request", "attention_terminal", "descriptor_invalidate", "page_free", "retire_ack"],
+  "bound_events": ["attention_terminal", "descriptor_invalidate", "page_free", "retire_ack"],
+  "missing_event_bindings": ["request_accept", "fragment_deliver", "write_commit", "descriptor_durable", "metadata_publish_commit", "authority_transition", "source_deliverable", "consumer_partial_commit", "source_release", "merge_request"],
+  "complete_retained_transaction_witness": false,
+  "remaining_verification_ingress": [
+    {"port":"verification_p3_pack_read_work_in","owner":"verification environment / existing R3 pack-read producer","justification":"production packed-read work producer is deliberately not selected by RTL2"},
+    {"port":"verification_direct_pending_open_in and verification_direct_pending_read_work_in","owner":"verification environment / existing direct-pending endpoint","justification":"they avoid inventing a scheduler or source-plan owner"},
+    {"port":"verification_s2_service_req_in and verification_packed_s2_read_work_in","owner":"verification environment / existing S2 packed-read endpoint","justification":"they retain owner-local functional backing without choosing physical service"},
+    {"port":"verification_s2_sidecar_fragment_in and verification_s2_sidecar_complete_in","owner":"verification environment / S2 owner","justification":"sidecar completion remains explicit and cannot be inferred from payload traffic"}
+  ],
+  "source_sha256": {
+    "analysis/README.md": "26d4e768d8f2b5d5a32ceec74e0690aa43d87e7ea393fe08db9985202b7fd50f",
+    "analysis/rtl2_phase_contract.md": "9826ee24f126e9f988e527fcfa18894716d4255c679e5f6ef09dbd8b8b52bc31",
+    "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
+    "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json": "7dcaff1a0f20f63e5255a148f8cd7cddaca76b7fe7e57269ec05e32a993fb042",
+    "kvpress/rtl2_6_completion_review.py": "97ec36b1753c0831cb6e72943de050df57f0ab5e3905fca6f9517c5c3ef604f7",
+    "tests/test_rtl2_6_completion_review.py": "c84811d144fb46e766b715f985d3d570535b5ad3fe113674797351bec7ca7ed0",
+    "tools/validate_rtl2_6_completion_review.py": "351bdd9bb8f23987cc2ba49c27b92b1d84aaa6c72ef0446c0659687705071ac0"
+  },
+  "disposition": {"rtl2_production_transaction_dataflow_complete": false, "next_required_closure":"rtl2_6_1_bind_remaining_ten_scoreboard_events_before_one_real_owner_composed_retained_transaction"},
+  "evidence_labels": ["pure-software machine-readable review audit", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL correctness claim", "no new A4 DSE"]
+}
