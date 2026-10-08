@@ -620,6 +620,14 @@ packed-write, descriptor, and atomic-publication sequence. It does not
 relabel a verification ingress as a producer or select a future member issue
 schedule. RTL2.6.5b--d remain required.
 
+**RTL2.6.5b terminal-to-reclaim composition: complete.**
+[`rtl2_6_5b_terminal_reclaim_composition_contract.md`](rtl2_6_5b_terminal_reclaim_composition_contract.md)
+binds an accepted R6 attention terminal to an explicit matching environment
+retire request, then uses existing R6 drain/permit and R5/R2/R1 durable
+invalidation owners to reach `retire_ack`. It does not make terminal completion
+an implicit production retirement request or remove deferred R3/direct drain
+facts. RTL2.6.5c--d remain required.
+
 RTL2.0--RTL2.5 passing individually does not by itself complete production
 dataflow integration.  A separate completion review must consume the explicit
 scoreboard events and demonstrate at least one complete retained transaction:

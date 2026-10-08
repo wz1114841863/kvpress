@@ -81,9 +81,12 @@ RTL2.6.5 is ordered internally to keep every remaining gap explicit:
      fault responses do not deposit. The bridge preserves a single context
      across a write request and its data carriers; it does not change R2
      arbitration or choose a member issue schedule.
-2. **RTL2.6.5b — terminal-to-reclaim composition.** In the same transaction
-   instance, connect terminal completion to the existing R6 retirement/global
-   drain and R5 durable invalidation-before-free path, ending at `retire_ack`.
+2. **RTL2.6.5b — terminal-to-reclaim composition:** complete.
+   [`rtl2_6_5b_terminal_reclaim_composition_contract.md`](rtl2_6_5b_terminal_reclaim_composition_contract.md)
+   composes an accepted real R6 attention terminal, an explicit matching
+   environment retire association, R6 global drain/permit, and the real
+   R5->R2->R1 durable invalidation path to `retire_ack`. A mismatched retire
+   is rejected and a reclaim terminal fault leaves retirement incomplete.
 3. **RTL2.6.5c — event capture and oracle replay.** Capture all fourteen
    immutable-schema records solely from declared accepted carriers, then replay
    the trace through the Python scoreboard/oracles. Add one success, one fault,
