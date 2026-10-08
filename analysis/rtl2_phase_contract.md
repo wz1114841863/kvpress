@@ -151,6 +151,13 @@ no model/GPU; no cycle, latency, throughput, PPA, or RTL numeric-correctness
 claim.  Commit each completed slice with the contract/review source in its
 message.
 
+**RTL2.6.2a narrow composition is implemented.**
+[`rtl2_6_2_composed_packed_source_harness_contract.md`](rtl2_6_2_composed_packed_source_harness_contract.md)
+connects a real S2 owner through a test-only availability observation seam,
+four R4 commits, source release, R6 merge, and the R4/R6 numeric-fault
+terminal in one simulation instance. It neither adds a production R3/R5-to-S2
+bridge nor claims the full retained transaction witness.
+
 ## RTL2.0 — Producer and event-ownership activation closure
 
 Before behavioral payload wiring, inventory every RTL1 top-inert carrier and

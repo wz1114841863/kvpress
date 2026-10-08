@@ -19,6 +19,14 @@ they must remain explicit until a separately authorized producer realization.
 RTL2.6.1 has now frozen the exact no-default field provenance for the ten
 schema-only records in
 [`rtl2_6_1_event_binding_contract.md`](rtl2_6_1_event_binding_contract.md).
+
+### RTL2.6.2a progress
+
+[`rtl2_6_2_composed_packed_source_harness_contract.md`](rtl2_6_2_composed_packed_source_harness_contract.md)
+now closes a narrow same-instance S2 `READY` through packed source release,
+R6 merge request, and R4/R6 numeric-fault terminal path.  Its explicit
+verification fill/packet ingress does not constitute a production
+R3/R5-publication-to-S2 bridge; therefore this review remains incomplete.
 It intentionally does not claim Chisel event emission: two records require a
 prior accepted R2/R1 association that is absent from a bare R1 carrier.
 

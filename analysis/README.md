@@ -56,7 +56,10 @@ explicitly incomplete pending a single real-owner retained-transaction witness
 and the remaining ten event bindings.
 RTL2.6.1 now freezes exact no-default field provenance for those ten records;
 it intentionally does not yet claim that a composed Chisel harness captures
-or emits them.
+or emits them. RTL2.6.2a now composes the real packed S2 source-release and
+R4/R6 terminal segment in one test-only instance, while preserving the
+remaining R3/R5-to-S2 association and full retained-transaction witness as
+open work.
 
 ## Current architecture and verification records
 
@@ -91,6 +94,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2.5.5 R5/R6 active-state scoreboard/oracle binding | [`rtl2_5_5_active_state_scoreboard_contract.md`](rtl2_5_5_active_state_scoreboard_contract.md), [`rtl2_5_5_active_state_scoreboard_binding.json`](rtl2_5_5_active_state_scoreboard_binding.json), and [`rtl2_5_5_active_state_scoreboard_manifest.json`](rtl2_5_5_active_state_scoreboard_manifest.json) |
 | RTL2.6 completion-review entry audit (incomplete; no PASS) | [`rtl2_6_completion_review.md`](rtl2_6_completion_review.md) and [`rtl2_6_completion_review_manifest.json`](rtl2_6_completion_review_manifest.json) |
 | RTL2.6.1 event field-provenance binding | [`rtl2_6_1_event_binding_contract.md`](rtl2_6_1_event_binding_contract.md) and [`rtl2_6_1_event_binding_manifest.json`](rtl2_6_1_event_binding_manifest.json) |
+| RTL2.6.2a narrow composed packed-source terminal harness | [`rtl2_6_2_composed_packed_source_harness_contract.md`](rtl2_6_2_composed_packed_source_harness_contract.md) |
 | RTL2.0 producer/event activation inventory | [`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and [`rtl2_0_activation_manifest.json`](rtl2_0_activation_manifest.json) |
 | RTL2.0a logical payload materialization / hot maturity egress | [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md) and [`rtl2_0a_payload_materialization_manifest.json`](rtl2_0a_payload_materialization_manifest.json) |
 | RTL2.0b retained admission-group builder | [`rtl2_0b_admission_group_builder_contract.md`](rtl2_0b_admission_group_builder_contract.md) and [`rtl2_0b_admission_group_builder_manifest.json`](rtl2_0b_admission_group_builder_manifest.json) |
