@@ -631,12 +631,15 @@ pure-software oracle replay for all fourteen immutable-schema event types;
 the separate [`rtl2_6_5c_event_capture_replay_contract.md`](rtl2_6_5c_event_capture_replay_contract.md)
 records its success, fault, stale, and bounded ready-low coverage. It does not
 turn the separate composition slices into a production waveform. RTL2.6.5d
-has completed the cross-owner review and correctly retains a no-PASS
-disposition: the current real-owner subpaths are not a single same-instance
-R3 publication -> S2/terminal -> reclaim witness. See
-[`rtl2_6_5d_completion_review.md`](rtl2_6_5d_completion_review.md). The sole
-remaining item is that narrow, testbench-only witness; no production bridge or
-realization choice is authorized.
+completed the cross-owner review with a historical no-PASS disposition because
+the real-owner subpaths were not yet a single same-instance R3 publication ->
+S2/terminal -> reclaim witness. RTL2.6.5e now supplies that narrow witness in
+one Chisel testbench instance; see
+[`rtl2_6_5e_same_instance_witness_contract.md`](rtl2_6_5e_same_instance_witness_contract.md).
+Its re-review records `rtl2_production_transaction_dataflow_complete` only
+under `testbench_only_functional_transaction_dataflow`. No production bridge,
+numeric realization, physical-memory choice, or timing/PPA conclusion is
+authorized.
 
 RTL2.0--RTL2.5 passing individually does not by itself complete production
 dataflow integration.  A separate completion review must consume the explicit

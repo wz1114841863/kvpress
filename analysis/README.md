@@ -71,10 +71,13 @@ existing R3 pack-read through typed R2/R1 delivery, then its existing
 packed-write/descriptor/publication sequence. RTL2.6.5b then composes the
 existing R6 terminal, explicit matching environment retirement, R5 durable
 reclaim, and global `retire_ack`. RTL2.6.5c closes the accepted-carrier
-event-capture/Python-oracle replay boundary; only the final RTL2.6.5d review
-remained. RTL2.6.5d is now complete with a deliberately no-PASS disposition:
-the passing pieces are not yet one same-instance real-owner retained
-transaction, so the exact testbench-only association witness remains open.
+event-capture/Python-oracle replay boundary. RTL2.6.5d then recorded the
+historical no-PASS because the passing pieces were not yet one same-instance
+real-owner retained transaction. RTL2.6.5e now closes that narrow testbench
+witness: it composes R3 publication, real S2 service/terminal, and the same
+R5 durable reclaim to `retire_ack` in one Chisel instance. Its completion is
+strictly testbench-only functional transaction/dataflow evidence, not a
+production top, numeric/memory realization, or performance claim.
 
 ## Current architecture and verification records
 
@@ -117,6 +120,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2.6.5b terminal-to-reclaim composition | [`rtl2_6_5b_terminal_reclaim_composition_contract.md`](rtl2_6_5b_terminal_reclaim_composition_contract.md) |
 | RTL2.6.5c accepted-carrier event capture / oracle replay | [`rtl2_6_5c_event_capture_replay_contract.md`](rtl2_6_5c_event_capture_replay_contract.md) and [`rtl2_6_5c_event_capture_replay_manifest.json`](rtl2_6_5c_event_capture_replay_manifest.json) |
 | RTL2.6.5d cross-owner completion review (no PASS) | [`rtl2_6_5d_completion_review.md`](rtl2_6_5d_completion_review.md) and [`rtl2_6_5d_completion_review.json`](rtl2_6_5d_completion_review.json) |
+| RTL2.6.5e same-instance real-owner witness / constrained re-review | [`rtl2_6_5e_same_instance_witness_contract.md`](rtl2_6_5e_same_instance_witness_contract.md) and [`rtl2_6_5e_same_instance_witness_manifest.json`](rtl2_6_5e_same_instance_witness_manifest.json) |
 | RTL2.0 producer/event activation inventory | [`rtl2_0_activation_contract.md`](rtl2_0_activation_contract.md) and [`rtl2_0_activation_manifest.json`](rtl2_0_activation_manifest.json) |
 | RTL2.0a logical payload materialization / hot maturity egress | [`rtl2_0a_payload_materialization_contract.md`](rtl2_0a_payload_materialization_contract.md) and [`rtl2_0a_payload_materialization_manifest.json`](rtl2_0a_payload_materialization_manifest.json) |
 | RTL2.0b retained admission-group builder | [`rtl2_0b_admission_group_builder_contract.md`](rtl2_0b_admission_group_builder_contract.md) and [`rtl2_0b_admission_group_builder_manifest.json`](rtl2_0b_admission_group_builder_manifest.json) |

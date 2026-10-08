@@ -37,6 +37,19 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
     val publication_member = RouteAChannels.publication_member_observation(p)
     val publication_ack = RouteAChannels.metadata_publish_ack(p)
     val p3_state = Output(UInt(RouteAAnchorWidths.P3StateWidth.W))
+    // RTL2.6.5e test-only outward hooks.  They preserve the existing child
+    // owners and let one outer lifecycle harness reclaim the exact R5 page
+    // published by this R3 instance; they are not top-level production ports.
+    val drain_collection_enable = Input(Bool())
+    val reclaim_maintenance_enable = Input(Bool())
+    val r1_drain_permitted = Input(Bool())
+    val reclaim_permit = Flipped(RouteAChannels.reclaim_permit)
+    val reclaim_complete = Output(Bool())
+    val r1_status = RouteAChannels.component_status(p)
+    val r2_payload_status = RouteAChannels.component_status(p)
+    val r2_descriptor_status = RouteAChannels.component_status(p)
+    val r3_status = RouteAChannels.component_status(p)
+    val r5_status = RouteAChannels.component_status(p)
   })
 
   val r3 = Module(new RouteAM2P3Wrapper(p))
@@ -54,7 +67,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   val p3Ingress = Module(new RouteAExclusiveP3PendingIngress(p))
 
   r3.io.mem_init_done := io.mem_init_done
-  r3.io.drain_collection_enable := false.B
+  r3.io.drain_collection_enable := io.drain_collection_enable
   r3.io.p3_claim_in <> io.p3_claim
   r3.io.p3_claim_ack.ready := true.B
   r3.io.admission_context_in <> io.admission_context
@@ -69,19 +82,21 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   r3.io.p3_packed_write_candidate_out <> bridge.io.r3_packed_write_in
 
   r5.io.mem_init_done := io.mem_init_done
-  r5.io.drain_collection_enable := false.B
+  r5.io.drain_collection_enable := io.drain_collection_enable
   r5.io.allocator_release_out.ready := true.B
   r5.io.page_allocation_req_in <> io.r5_allocate
   io.r5_allocation_rsp <> r5.io.page_allocation_rsp
-  StructuralTieOff.source(r5.io.reclaim_permit_in)
+  r5.io.reclaim_permit_in <> io.reclaim_permit
+  io.reclaim_complete := r5.io.reclaim_complete
   StructuralTieOff.source(r5.io.descriptor_maintenance_terminal_in)
-  r5.io.reclaim_candidate_out <> bridge.io.r5_reclaim_in
   r5.io.append_candidate_out <> bridge.io.r5_append_in
   r5.io.p3_payload_durable_in <> r3.io.p3_payload_durable_out
   r3.io.descriptor_durability_prerequisite_in <> r5.io.descriptor_durability_prerequisite_out
   r5.io.metadata_publish_visibility_in <> r3.io.metadata_publish_visibility_apply
   r3.io.metadata_publish_visibility_ack_in <> r5.io.metadata_publish_visibility_ack
-  StructuralTieOff.sink(r5.io.component_status_out)
+  r5.io.reclaim_candidate_out <> bridge.io.r5_reclaim_in
+  r5.io.reclaim_delivery_in <> router.io.r5_reclaim_out
+  io.r5_status <> r5.io.component_status_out
 
   readIngress.io.r3_pack_read_in <> bridge.io.r3_pack_read_out
   StructuralTieOff.source(readIngress.io.r3_direct_pending_in)
@@ -91,15 +106,15 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   writeIngress.io.r5_append_in <> bridge.io.r5_append_out
   writeIngress.io.r5_reclaim_in <> bridge.io.r5_reclaim_out
   r2.io.candidate_in <> writeIngress.io.candidate_out
-  r2.io.drain_collection_enable := false.B
-  r2.io.reclaim_maintenance_enable := false.B
+  r2.io.drain_collection_enable := io.drain_collection_enable
+  r2.io.reclaim_maintenance_enable := io.reclaim_maintenance_enable
   r1.io.core_mem_req_in <> r2.io.core_mem_req
   r2.io.core_mem_rsp_in <> r1.io.core_mem_rsp
   r1.io.external_core_mem_if_v1 <> io.external
-  r1.io.r1_drain_permitted := false.B
-  StructuralTieOff.sink(r1.io.component_status_out)
-  StructuralTieOff.sink(r2.io.payload_drain_status_out)
-  StructuralTieOff.sink(r2.io.descriptor_drain_status_out)
+  r1.io.r1_drain_permitted := io.r1_drain_permitted
+  io.r1_status <> r1.io.component_status_out
+  io.r2_payload_status <> r2.io.payload_drain_status_out
+  io.r2_descriptor_status <> r2.io.descriptor_drain_status_out
 
   registry.io.mem_init_done := r1.io.r1_init_complete
   registry.io.allocation_in <> bridge.io.registry_allocate_out
@@ -110,7 +125,6 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   bridge.io.release_event_in := router.io.release_event_out
   r3.io.p3_packed_write_delivery_in <> router.io.r3_packed_write_out
   r5.io.append_delivery_in <> router.io.r5_append_out
-  r5.io.reclaim_delivery_in <> router.io.r5_reclaim_out
   endpointDemux.io.resolved_in <> router.io.read_fragment_out
   endpoint.io.resolved_fragment_in <> endpointDemux.io.p3_pack_read_out
   StructuralTieOff.sink(endpointDemux.io.direct_pending_out)
@@ -130,7 +144,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   io.publication_commit <> r3.io.publication_commit_observation
   io.publication_member <> r3.io.publication_member_observation
   io.publication_ack <> r3.io.m2_publish_ack
-  StructuralTieOff.sink(r3.io.component_status_out)
+  io.r3_status <> r3.io.component_status_out
   r3.io.p3_observe_layer := 0.U
   io.p3_state := r3.io.p3_observe_state
 }
@@ -160,6 +174,9 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     d.io.m2_publication_candidate.ready.poke(false.B); d.io.m2_publication_request.valid.poke(false.B)
     d.io.authority_transition.ready.poke(false.B); d.io.publication_commit.ready.poke(false.B); d.io.publication_member.ready.poke(false.B); d.io.publication_ack.ready.poke(false.B)
     d.io.external.init_ack.valid.poke(false.B); d.io.external.request.ready.poke(false.B); d.io.external.response.valid.poke(false.B)
+    d.io.drain_collection_enable.poke(false.B); d.io.reclaim_maintenance_enable.poke(false.B); d.io.r1_drain_permitted.poke(false.B)
+    d.io.reclaim_permit.valid.poke(false.B); d.io.reclaim_permit.bits.transaction_identity.request_id.poke(0.U); d.io.reclaim_permit.bits.transaction_identity.incarnation.poke(0.U)
+    d.io.r1_status.ready.poke(true.B); d.io.r2_payload_status.ready.poke(true.B); d.io.r2_descriptor_status.ready.poke(true.B); d.io.r3_status.ready.poke(true.B); d.io.r5_status.ready.poke(true.B)
     d.io.external.init_ack.bits.adapter_epoch_ready.poke(true.B)
     d.io.external.response.bits.transaction_identity.request_id.poke(0.U); d.io.external.response.bits.transaction_identity.incarnation.poke(0.U)
     d.io.external.response.bits.fragment_index.poke(0.U); d.io.external.response.bits.last.poke(true.B); d.io.external.response.bits.status.poke(p.coreMemoryOkStatusCode.U); d.io.external.response.bits.data.poke(0.U)

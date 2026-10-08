@@ -1,0 +1,31 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-6-5e-same-instance-witness-1.0",
+  "status": "implemented_directed_tested_no_model_functional_completion",
+  "scope": "RTL2.6.5e testbench-only same-instance retained-transaction witness and constrained re-review. It composes existing real owner children plus the previously declared verification association. It is not a production-top bridge, numeric datapath, controller/macro selection, timing/throughput/PPA result, model/GPU execution, or A4 DSE.",
+  "same_instance_witness": {
+    "r3_pack_read_to_publication": true,
+    "publication_to_s2_service": true,
+    "s2_four_consumer_to_r4_terminal": true,
+    "same_r5_durable_reclaim_to_retire_ack": true,
+    "stale_association_fail_closed": true,
+    "bounded_terminal_ready_low_nonmutation": true
+  },
+  "accepted_carrier_replay": "analysis/rtl2_6_5c_event_capture_replay_manifest.json",
+  "prior_no_pass_review": "analysis/rtl2_6_5d_completion_review.json",
+  "disposition": {
+    "rtl2_production_transaction_dataflow_complete": true,
+    "scope": "testbench_only_functional_transaction_dataflow"
+  },
+  "forbidden": ["production-top bridge", "numeric datapath claim", "timing throughput or PPA claim", "new A4 DSE", "scheduler or admission-policy change", "Full-KV fallback"],
+  "source_sha256": {
+    "analysis/rtl2_6_5c_event_capture_replay_manifest.json": "23d0f5621e065f8b4269bdc3b12d1039fa164c465295b51dbcbe65cf94d0bce7",
+    "analysis/rtl2_6_5d_completion_review.json": "b3070a348b0c324f56b5e68f74c96e0a773d615e017c57aedb3d814056c24e7c",
+    "analysis/rtl2_6_5e_same_instance_witness_contract.md": "14c63b1cd23ef1216db2b3c14ec02dfc917e39da9b1665bfb073f75c9afb2df2",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala": "f6e69ab07190464d83745c61b415f7aa903115053c7f6116f7f45f5fce753212",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala": "a75b4169f22aa40fe289365c288ed5541a7dded2cfc99d734248ae153999d965",
+    "kvpress/rtl2_6_5e_same_instance_review.py": "7c59335ddb8bccfd255ddcb9ba3fa2cbb4ae4dae1961ba2d2a8283abb8d05c4b",
+    "tests/test_rtl2_6_5e_same_instance_review.py": "b9da181efd207e04f9e3290f897271ec0371dcb3482e4545cc18b0a8f2e335e4",
+    "tools/validate_rtl2_6_5e_same_instance_review.py": "520aaf2e0d4cc46b5bf2f5b8f78673779706c2473dba21b89d9dffc2ff999123"
+  },
+  "evidence_labels": ["testbench-only Chisel functional-control witness plus pure-software replay review", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no numeric RTL correctness claim", "no new A4 DSE"]
+}

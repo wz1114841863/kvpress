@@ -1,6 +1,10 @@
 # RTL2.6 — completion / integration review
 
-**Entry-audit status:** `incomplete_scoreboard_and_transaction_witness`.
+**Entry-audit status (historical):** `incomplete_scoreboard_and_transaction_witness`.
+
+**Current constrained disposition:**
+`rtl2_production_transaction_dataflow_complete` under
+`testbench_only_functional_transaction_dataflow`.
 
 RTL2.6 is a review gate, not permission to conceal separate unit witnesses as
 one production transaction. The immutable event schema names fourteen events.
@@ -59,12 +63,12 @@ revealed the publication-to-S2 identity gap:
 | RTL2.6.2a | S2/source/R4/R6 fault-terminal slice | complete | publication or retirement |
 | RTL2.6.3 | publication-to-S2 verification association | complete | production bridge |
 | RTL2.6.4 | publication-to-fault-terminal partial witness | complete | real read path, reclaim, replay |
-| RTL2.6.5 | full retained-transaction and scoreboard witness | active | production-top/PPA/numeric realization |
+| RTL2.6.5 | full retained-transaction and scoreboard witness | complete, testbench-only | production-top/PPA/numeric realization |
 
 RTL2.6.2a through RTL2.6.4 are therefore implementation sub-slices of the
 original RTL2.6.2 objective, not additional architecture/DSE gates.
 
-### RTL2.6.5 required closure
+### RTL2.6.5 required closure (historical checklist)
 
 RTL2.6.5 is ordered internally to keep every remaining gap explicit:
 
@@ -102,6 +106,18 @@ RTL2.6.5 is ordered internally to keep every remaining gap explicit:
    one same-instance trace from R3 read/publication through S2/terminal and
    durable reclaim. The exact remaining closure is a testbench-only
    same-instance retained-transaction witness.
+5. **RTL2.6.5e — same-instance real-owner witness and constrained re-review:**
+   complete.
+   [`rtl2_6_5e_same_instance_witness_contract.md`](rtl2_6_5e_same_instance_witness_contract.md)
+   and its machine-readable manifest now compose the actual RTL2.6.5a.2
+   R3/R2/R1/P3/publication child, explicit verification association, real S2
+   four-consumer service, R4 result-stub terminal, R6 retirement, and the
+   *same child R5* durable reclaim to `retire_ack` in one Chisel instance.
+   The witness rejects a stale association and preserves terminal identity
+   across one bounded ready-low cycle. Its explicit S2-fill ingress and R4
+   result stub remain verification endpoints. The resulting disposition is
+   strictly `testbench_only_functional_transaction_dataflow`, not a production
+   bridge or realization claim.
 
 None of these sub-slices authorizes a production R3/R5-to-S2 bridge, a
 different scheduler/admission policy, numeric realization, controller/macro
@@ -115,8 +131,11 @@ selection, timing/PPA, model/GPU work, or a new A4 DSE.
    stub terminal -> retire -> reclaim -> retire_ack`.
 3. Replay that captured event trace through the Python scoreboard/oracle; add
    a representative stale response, fault, and legal ready-low branch.
-4. The completed review rejects the completion disposition until the one
-   same-instance real-owner witness closes that exact association gap.
+4. RTL2.6.5e has now supplied that one same-instance real-owner witness. Its
+   completion disposition remains restricted to testbench-only functional
+   transaction/dataflow evidence and continues to consume the independent
+   RTL2.6.5c accepted-carrier replay contract for the immutable event schema
+   and fault branch.
 
 No numeric merge, physical HBM/SRAM/controller, scheduler change, profiling,
 frequency, timing, area, energy, PPA, model/GPU, or new A4 DSE is authorized

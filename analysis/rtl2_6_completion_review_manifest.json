@@ -15,8 +15,8 @@
     {"port":"verification_s2_sidecar_fragment_in and verification_s2_sidecar_complete_in","owner":"verification environment / S2 owner","justification":"sidecar completion remains explicit and cannot be inferred from payload traffic"}
   ],
   "source_sha256": {
-    "analysis/README.md": "72006d248e28851b23956fde51f4939e7e7a6ee3f8a82d6eabeda17a4bc44769",
-    "analysis/rtl2_phase_contract.md": "2336fd9a7eb7e49df216ea773f666745aaf3694f410ec79c478ac1b363538e70",
+    "analysis/README.md": "a9abf115adee7c54f8405948fa3aca1e318c0c60b4819228ac125b0742122f3e",
+    "analysis/rtl2_phase_contract.md": "7413284c531144b1ccff054d53fe03d3a1c08f17b65f9db8f71a0056a1e1498c",
     "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
     "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json": "7dcaff1a0f20f63e5255a148f8cd7cddaca76b7fe7e57269ec05e32a993fb042",
     "kvpress/rtl2_6_completion_review.py": "97ec36b1753c0831cb6e72943de050df57f0ab5e3905fca6f9517c5c3ef604f7",
