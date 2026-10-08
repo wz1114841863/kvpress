@@ -95,9 +95,13 @@ RTL2.6.5 is ordered internally to keep every remaining gap explicit:
    oracles. It covers one success, fault fail-closed, stale-response, and
    bounded legal ready-low case. It remains a testbench event contract, not a
    production waveform/cycle trace.
-4. **RTL2.6.5d — completion review.** Re-run the entry audit only after
-   2.6.5a--c pass. This is the sole point at which the review may evaluate a
-   `rtl2_production_transaction_dataflow_complete` disposition.
+4. **RTL2.6.5d — completion review:** complete, no-PASS.
+   [`rtl2_6_5d_completion_review.md`](rtl2_6_5d_completion_review.md) and its
+   machine-readable record confirm that all four sub-slice inputs pass, but
+   retain a false completion disposition: their real-owner evidence is not yet
+   one same-instance trace from R3 read/publication through S2/terminal and
+   durable reclaim. The exact remaining closure is a testbench-only
+   same-instance retained-transaction witness.
 
 None of these sub-slices authorizes a production R3/R5-to-S2 bridge, a
 different scheduler/admission policy, numeric realization, controller/macro
@@ -111,8 +115,8 @@ selection, timing/PPA, model/GPU work, or a new A4 DSE.
    stub terminal -> retire -> reclaim -> retire_ack`.
 3. Replay that captured event trace through the Python scoreboard/oracle; add
    a representative stale response, fault, and legal ready-low branch.
-4. Re-run this review. Only then may its disposition become
-   `rtl2_production_transaction_dataflow_complete`.
+4. The completed review rejects the completion disposition until the one
+   same-instance real-owner witness closes that exact association gap.
 
 No numeric merge, physical HBM/SRAM/controller, scheduler change, profiling,
 frequency, timing, area, energy, PPA, model/GPU, or new A4 DSE is authorized

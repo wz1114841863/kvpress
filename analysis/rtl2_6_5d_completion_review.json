@@ -1,0 +1,35 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-6-5d-cross-owner-completion-review-1.0",
+  "status": "review_completed_no_pass_missing_same_instance_real_owner_trace",
+  "scope": "No-model cross-owner RTL2 completion review. It evaluates existing test-only owner composition and accepted-carrier oracle replay without selecting a production bridge, numeric datapath, memory/controller realization, timing, throughput, PPA, model/GPU work, or new A4 DSE.",
+  "base_schema": "analysis/rtl2_scoreboard_event_schema.json",
+  "evidence": [
+    {"id":"rtl2_6_5a2","contract":"analysis/rtl2_6_5a2_r3_pack_read_p3_composition_contract.md","scope":"real_r3_pack_read_to_atomic_publication","passed":true},
+    {"id":"rtl2_6_4","contract":"analysis/rtl2_6_4_publication_to_terminal_composition_contract.md","scope":"real_publication_to_s2_to_fault_terminal","passed":true},
+    {"id":"rtl2_6_5b","contract":"analysis/rtl2_6_5b_terminal_reclaim_composition_contract.md","scope":"real_terminal_to_reclaim_to_retire_ack","passed":true},
+    {"id":"rtl2_6_5c","contract":"analysis/rtl2_6_5c_event_capture_replay_contract.md","scope":"accepted_carrier_event_capture_and_python_replay","passed":true}
+  ],
+  "same_instance_real_owner_trace": {
+    "present": false,
+    "missing_link": "r3_publication_to_s2_service_to_terminal_to_reclaim_same_instance",
+    "reason": "RTL2.6.5a.2, RTL2.6.4, and RTL2.6.5b each prove real owner subpaths, but do not place the retained R3 read/publication, S2 service/terminal, and durable reclaim in one Chisel instance. RTL2.6.5c is an accepted-carrier event/oracle boundary and explicitly is not a production waveform."
+  },
+  "disposition": {
+    "rtl2_production_transaction_dataflow_complete": false,
+    "next_required_closure": "testbench_same_instance_real_owner_retained_transaction_witness"
+  },
+  "forbidden": ["production-top bridge", "numeric datapath claim", "timing throughput or PPA claim", "new A4 DSE", "scheduler or admission-policy change", "Full-KV fallback"],
+  "source_sha256": {
+    "analysis/rtl2_6_4_publication_to_terminal_composition_contract.md": "764d82a06bc4b879de0f3a544f16345313f7dd6ef0e3d15a591bd6993897c2a4",
+    "analysis/rtl2_6_5a2_r3_pack_read_p3_composition_contract.md": "c1b731b87e6d875ad438598aa0e2fb3a5e265adbbc3c21e711d0fe86f9c5a9b8",
+    "analysis/rtl2_6_5b_terminal_reclaim_composition_contract.md": "d559f9ed1675a5ff59f2c4b7659bf1ee0b11fcadf932f7200f2d5fb44d39de87",
+    "analysis/rtl2_6_5c_event_capture_replay_contract.md": "0f55bf14ded94e93b3a9fbca42f36d02f2a1ae1ec7e4c3dfd0d448e23ea9c4ea",
+    "analysis/rtl2_6_5c_event_capture_replay_manifest.json": "23d0f5621e065f8b4269bdc3b12d1039fa164c465295b51dbcbe65cf94d0bce7",
+    "analysis/rtl2_6_5d_completion_review.md": "c36c8f044a03e3de790d937ad1ada89feaddd1ecbc9af7315e1e5f6564f7655c",
+    "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
+    "kvpress/rtl2_6_5d_completion_review.py": "58a95299d607e5383d432fe945c5312a275fb75574e3d55845ffcd51d3400402",
+    "tests/test_rtl2_6_5d_completion_review.py": "92803b4c1e9eb29b520de92f6f9d73ed843ee53b27e9485e73248da0a0880a98",
+    "tools/validate_rtl2_6_5d_completion_review.py": "83d9b5b84e6c8a7104238a7ad12ccbab4344f3c0e0d090284e6c43022a029da4"
+  },
+  "evidence_labels": ["pure-software machine-readable cross-owner review", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL correctness claim", "no new A4 DSE"]
+}
