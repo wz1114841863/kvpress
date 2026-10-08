@@ -513,6 +513,15 @@ retry or Full-KV fallback interface.  This is a narrow interface-absence and
 fault-terminal statement only: it does not imply that a fault publishes,
 transfers authority, reclaims storage, or closes retirement/reclaim behavior.
 
+**RTL2.5.3 R6 retirement/drain closure: complete for fixed membership and
+bounded fairness witnesses.** [`rtl2_5_3_retirement_drain_contract.md`](rtl2_5_3_retirement_drain_contract.md)
+composes real R6 with the real status collector to prove that all eight frozen
+drain facts, R5 reclaim completion, and a final R1/R2-descriptor pass precede
+one matching `retire_ack`.  It also holds the permit and acknowledgement under
+fixed-seed finite ready-low stalls before the environment releases them.  This
+is neither a formal liveness claim nor R5's durable invalidation-before-free
+closure; the three deferred reclaim events remain non-emittable.
+
 Exercise active retained/publication/source transactions through destructive
 reset, terminal fault, retirement drain, descriptor invalidation, and page
 free.  The existing R6/R5/R2/R1 ownership and quiescence requirements remain

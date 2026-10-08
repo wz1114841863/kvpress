@@ -1,0 +1,83 @@
+{
+  "schema_version": "kvzap-route-a-rtl2-5-3-retirement-drain-1.0",
+  "status": "passed_directed_fixed_membership_bounded_fairness_evidence",
+  "scope": "Directed no-model ChiselSim closure of the existing R6 retirement drain collector, R5 reclaim-permit completion gate, and final R1/R2-descriptor pass. No new production-top behavior, event emission, scheduler, controller, model, GPU, cycle, timing, throughput, PPA, or A4 DSE.",
+  "contract": "analysis/rtl2_5_3_retirement_drain_contract.md",
+  "owners": {
+    "global_retire_ack": "route_a_lifecycle_adapter",
+    "status_serialization": "route_a_component_status_collector",
+    "reclaim_completion": "route_a_page_manager"
+  },
+  "fixed_drain_membership": [
+    "r1_memory_drained_pre_reclaim_and_final_pass",
+    "r2_payload_drained_pre_reclaim",
+    "r2_descriptor_drained_pre_reclaim_and_final_pass",
+    "r3_m2_p3_drained_pre_reclaim",
+    "r5_page_manager_drained_final_completion",
+    "s2_gqa_drained_pre_reclaim",
+    "direct_pending_drained_pre_reclaim",
+    "r4_merge_drained_pre_reclaim"
+  ],
+  "ordered_retirement_protocol": [
+    "accepted_runtime_retire_identity",
+    "stop_new_work_and_collect_pre_reclaim_membership",
+    "one_matching_r5_reclaim_permit",
+    "r5_reclaim_complete",
+    "final_r2_descriptor_and_r1_drain_pass",
+    "r5_page_manager_drain_fact",
+    "one_matching_r6_session_retire_ack"
+  ],
+  "directed_observations": [
+    "withheld_r4_merge_drain_blocks_reclaim_permit_and_retire_ack",
+    "permit_identity_is_stable_under_ready_low",
+    "r1_r2_descriptor_final_facts_are_suppressed_before_r5_completion",
+    "withheld_r5_drain_blocks_retire_ack_after_final_r1_r2_descriptor_pass",
+    "retire_ack_identity_is_stable_under_ready_low",
+    "fixed_seed_finite_permit_and_ack_stalls_complete_only_after_eventual_ready"
+  ],
+  "environment_assumptions": [
+    "each named owner eventually asserts its drain fact after its local predicate becomes true",
+    "r5 eventually completes an accepted reclaim permit transaction",
+    "runtime eventually accepts stable reclaim_permit and session_retire_ack carriers"
+  ],
+  "preserved_deferred_events": [
+    "descriptor_invalidate",
+    "page_free",
+    "retire_ack"
+  ],
+  "forbidden": [
+    "change fixed drain membership or R1_after_R2 ordering",
+    "make retire_ack a scoreboard event before rtl2_5_5",
+    "infer drain status from arbitrary local state",
+    "advance generation free page or invalidate descriptor in rtl2_5_3",
+    "retry Full-KV fallback new scheduler numeric controller latency throughput PPA model_GPU or A4 DSE claim"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "4f561cad39971aac424ece40258932bdb608c5132c23e72b491f65ff8b47dac8",
+    "analysis/rtl2_4_3_attention_terminal_scoreboard_binding.json": "26c44ccaf81193d5a31d93c7e48cabdd2378f5d014ff5cc3efe218caa09e6da9",
+    "analysis/rtl2_5_0_lifecycle_reclaim_contract.md": "de3d3be2fecbc7c4fa56f92a4d32a5865c891dcaf93125060e4a010b6faa5614",
+    "analysis/rtl2_5_2_fault_terminal_contract.md": "f6be2101f45b913018ae6f65803ca9448fe8b5bb26edfcf33f9e7704c446c0fe",
+    "analysis/rtl2_5_3_retirement_drain_contract.md": "4e5b072c7e60f67eb5d81de26f3525672759c1d11f79510867594dfc5de03e67",
+    "analysis/rtl2_phase_contract.md": "bed12fd3539005713ab2bd8c0c504130e29a5eb92091b476f6ca18840821c880",
+    "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json": "98c0ed14b10d5d5c66b4e5652c4c46291a5566cfeeec2effb2e521b9d8054b72",
+    "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "618c43b69ff06b9fb92dc67f33ffbb117458dfd91903c6d3890e2098e02e068a",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAComponentStatusCollector.scala": "6b83963f747ad3f32c379df0bed30a84468fe891d9493cd9f0b3aea3f47ee329",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAFairReclaimIntegrationSpec.scala": "0e31d83c14c973a40ad3ef2df425bf5529256b0a1f6bdfc6576b4a2cdbd94631",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteARetirementDrainClosureSpec.scala": "3f217c96e33c78d56418262b884c2a976fc7826aebe2e81f3d8f66fccff188ec",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/RouteALifecycleAdapterSpec.scala": "ca59f2c861508478fab3b08c4ea5021d436f4d026e40879840887aade115b549"
+  },
+  "preflight": {
+    "chisel_command": "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.integration.RouteARetirementDrainClosureSpec kvpress.routea.integration.RouteAFairReclaimIntegrationSpec kvpress.routea.r6.RouteALifecycleAdapterSpec kvpress.routea.integration.RouteAInitDrainIntegrationSpec'",
+    "chisel_result": "passed: 10 directed tests",
+    "python_command": ".venv/bin/python tools/validate_rtl2_4_3_attention_terminal_scoreboard_binding.py && .venv/bin/python -m pytest tests/test_rtl2_4_3_attention_terminal_scoreboard_binding.py tests/test_rtl2_scoreboard_event_schema.py -q",
+    "python_result": "passed: 7 tests"
+  },
+  "evidence_boundary": [
+    "pure-software executable architecture and testbench contract",
+    "no model or GPU",
+    "no formal deadlock-freedom or liveness proof",
+    "no cycle timing throughput area energy PPA or numeric claim",
+    "no new A4 DSE"
+  ]
+}

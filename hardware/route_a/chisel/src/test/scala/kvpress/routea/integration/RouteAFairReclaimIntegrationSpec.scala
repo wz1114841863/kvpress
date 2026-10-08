@@ -56,6 +56,13 @@ private final class RouteAFairReclaimHarness(p: RouteASkeletonParameters) extend
   r6.io.r5_reclaim_complete_in := r5.io.reclaim_complete
   r5.io.page_allocation_req_in <> io.allocation
   r5.io.page_allocation_rsp.ready := true.B
+  // This RTL1-V reclaim-only harness deliberately does not exercise the
+  // later RTL2 append/durability path.  Tie it off explicitly so that the
+  // R1/R2/R5/R6 reclaim witness stays isolated from that independent ingress.
+  StructuralTieOff.sink(r5.io.append_candidate_out)
+  StructuralTieOff.source(r5.io.append_delivery_in)
+  StructuralTieOff.source(r5.io.p3_payload_durable_in)
+  StructuralTieOff.sink(r5.io.descriptor_durability_prerequisite_out)
   r5.io.descriptor_maintenance_terminal_in <> io.descriptor_terminal
   r5.io.metadata_publish_visibility_in <> io.visibility
   r5.io.metadata_publish_visibility_ack.ready := true.B
