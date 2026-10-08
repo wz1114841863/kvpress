@@ -73,10 +73,14 @@ RTL2.6.5 is ordered internally to keep every remaining gap explicit:
      [`rtl2_6_5a_packed_s2_read_composition_contract.md`](rtl2_6_5a_packed_s2_read_composition_contract.md)
      replaces direct S2 payload injection with the existing typed packed-S2
      R2/R1 endpoint path.
-   - **RTL2.6.5a.2 — R3 pack-read to P3:** active. Replace direct P3 payload
-     verification ingress with the existing R3 `pack_read -> R2/R1 -> P3`
-     path in the retained witness. A response must deposit only into its
-     matching owner; stale/mismatched/fault responses must not deposit.
+   - **RTL2.6.5a.2 — R3 pack-read to P3:** complete.
+     [`rtl2_6_5a2_r3_pack_read_p3_composition_contract.md`](rtl2_6_5a2_r3_pack_read_p3_composition_contract.md)
+     composes the existing R3 `pack_read -> R2/R1 -> P3` path with its later
+     packed write, descriptor prerequisite, and publication path in one R3
+     instance. A response deposits only into its matching owner; stale and
+     fault responses do not deposit. The bridge preserves a single context
+     across a write request and its data carriers; it does not change R2
+     arbitration or choose a member issue schedule.
 2. **RTL2.6.5b — terminal-to-reclaim composition.** In the same transaction
    instance, connect terminal completion to the existing R6 retirement/global
    drain and R5 durable invalidation-before-free path, ending at `retire_ack`.

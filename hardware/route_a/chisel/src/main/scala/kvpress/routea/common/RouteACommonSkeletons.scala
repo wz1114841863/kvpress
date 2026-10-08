@@ -1288,11 +1288,28 @@ final class RouteAUnifiedDeliveryContextAllocationBridge(p: RouteASkeletonParame
   }
 
   for (index <- 0 until producerCount) {
-    outputs(index).valid := bound(index) && !awaitingRelease(index)
-    outputs(index).bits := captured(index)
+    // A write is one R1 transaction expressed as a request carrier followed
+    // by write-data carriers.  Association allocation is therefore per
+    // transaction, not per carrier.  After the frozen identity/target has
+    // been bound, matching carriers retain that same opaque ref until the
+    // final write-data carrier issues; a read remains a one-carrier issue.
+    // This preserves association only: it creates no queue, arbitration,
+    // retry, or service schedule.
+    val carrier = inputs(index).bits
+    val matchesBound = carrier.candidate_class === captured(index).candidate_class &&
+      carrier.arrival_ordinal === captured(index).arrival_ordinal &&
+      carrier.candidate_id === captured(index).candidate_id &&
+      carrier.r1_request.transaction_identity.asUInt === captured(index).r1_request.transaction_identity.asUInt &&
+      carrier.delivery_target_descriptor.asUInt === captured(index).delivery_target_descriptor.asUInt
+    val readIssue = carrier.r1_request.request_kind === p.coreMemoryReadRequestCode.U
+    val finalWriteData = carrier.r1_request.request_kind === p.coreMemoryWriteDataCode.U &&
+      carrier.r1_request.last
+    val issueComplete = readIssue || finalWriteData
+    outputs(index).valid := bound(index) && !awaitingRelease(index) && inputs(index).valid && matchesBound
+    outputs(index).bits := carrier
     outputs(index).bits.delivery_context_ref := refs(index)
-    inputs(index).ready := outputs(index).fire
-    when(outputs(index).fire) {
+    inputs(index).ready := bound(index) && !awaitingRelease(index) && matchesBound && outputs(index).ready
+    when(outputs(index).fire && issueComplete) {
       bound(index) := false.B
       awaitingRelease(index) := true.B
     }

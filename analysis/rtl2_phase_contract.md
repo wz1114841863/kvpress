@@ -613,8 +613,12 @@ The authoritative ordered sub-slices and non-goals are recorded in
 task, RTL2.6.5a.1, is now complete:
 [`rtl2_6_5a_packed_s2_read_composition_contract.md`](rtl2_6_5a_packed_s2_read_composition_contract.md)
 uses the actual typed packed-S2 R2/R1 path before S2/R4/R6 completion.
-RTL2.6.5a.2 remains the R3 pack-read-to-P3 composition task; no existing
-verification ingress may be relabelled as a real R2/R1 read transaction.
+RTL2.6.5a.2 is now also complete:
+[`rtl2_6_5a2_r3_pack_read_p3_composition_contract.md`](rtl2_6_5a2_r3_pack_read_p3_composition_contract.md)
+uses the actual R3 `pack_read -> R2/R1 -> P3` path before its existing
+packed-write, descriptor, and atomic-publication sequence. It does not
+relabel a verification ingress as a producer or select a future member issue
+schedule. RTL2.6.5b--d remain required.
 
 RTL2.0--RTL2.5 passing individually does not by itself complete production
 dataflow integration.  A separate completion review must consume the explicit
