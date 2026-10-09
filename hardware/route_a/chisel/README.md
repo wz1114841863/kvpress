@@ -388,6 +388,14 @@ partial-to-R4-to-R6 terminal/reclaim binding exists, and sidecar transport is
 still an explicit testbench ingress. See
 `analysis/rtl3_6_functional_realization_completion_review.md`.
 
+## RTL3.6-A active replay provenance repair
+
+RTL3.6-A refreshes only the two runtime-loaded terminal/reclaim scoreboard
+binding source maps after their existing Chisel suites pass. It restores the
+RTL2.6.5c accepted-carrier replay preflight without altering event semantics or
+claiming the missing live functional provider/R4/R6 composition. See
+`analysis/rtl3_6a_active_replay_provenance_repair_contract.md`.
+
 ## RTL2.1a retained-group admission activation
 
 RTL2.1a adds `route_a_admission_publication_ingress_adapter`, the sole

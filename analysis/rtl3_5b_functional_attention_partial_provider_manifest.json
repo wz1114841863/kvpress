@@ -46,12 +46,12 @@
     "evidence_labels": ["pure-software functional PE/reference model", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL numeric correctness claim", "no new A4 DSE"]
   },
   "source_sha256": {
-    "analysis/README.md": "2de6d5048633c0e1aeb15516f54b9522a8eaebf9d6c27c968d134fc551ee6f12",
+    "analysis/README.md": "d7915141147171081eff5b81e4f9f4ed0644e23a247a09d5fef6eeaec2ceaf7e",
     "analysis/rtl3_5a_attention_partial_producer_boundary_contract.md": "07d684ee7f3dbf4044927a536b105fb5c04c08ceaa2a985ff26ab7af5fcea206",
     "analysis/rtl3_5b_functional_attention_partial_provider_contract.md": "5a12ad017550cb414d20f13196d382a3fc1e90bd11db0d17a989b4f51c374b22",
-    "analysis/architecture_spec.md": "23705151a72962bb943fee5c134c4405884efc29965327bb792f6a3e91c435ee",
-    "analysis/rtl2_phase_contract.md": "a6994c5b4777237569d1cff340bfe966a48aa86fb92d981c7d5c42ed3a4cebd6",
-    "hardware/route_a/chisel/README.md": "b6867d52834face029a3638f0585c138bf83c3958987c5aebef6b60d7052175c",
+    "analysis/architecture_spec.md": "5d7921a3304fd93ce977077d0abf07df92669c5f8737165d1162d8f22a48f268",
+    "analysis/rtl2_phase_contract.md": "9955b62592d8ca395d8113a59deaf2c22aa0a805b7e4c7d5d930afab11fb1266",
+    "hardware/route_a/chisel/README.md": "105d31931fcdcc7eeb20db8d73d12fd66dfb85ad266de677c6478fa965fa41fd",
     "kvpress/route_a_merge_numeric_reference.py": "af6add96618a1bb48169140dabd038c5932251d62a63fe0ac6ea0c65c5ae31f6",
     "kvpress/rtl3_4b_functional_r4_provider.py": "8de527191887731f9b8ccc5c851dad8dbea2f794e22e5a8fa9ea542fcef3aaf0",
     "kvpress/rtl3_5b_functional_attention_partial_provider.py": "b89a4d6a46f0c89d5fcabd74741652e00cbf51cc2e54326be6f92f6712746e24",

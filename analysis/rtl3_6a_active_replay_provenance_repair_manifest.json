@@ -1,0 +1,76 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-6a-active-replay-provenance-repair-1.0",
+  "status": "completed_active_replay_provenance_repair",
+  "scope": "Narrow no-model repair of source-hash provenance for the two runtime-loaded accepted-carrier replay bindings. It changes no event schema, owner, carrier, field, acceptance rule, reference oracle, dataflow, production top, numeric implementation, timing/PPA claim, model/GPU result, or A4 DSE.",
+  "active_bindings": [
+    "analysis/rtl2_4_3_attention_terminal_scoreboard_binding.json",
+    "analysis/rtl2_5_5_active_state_scoreboard_binding.json"
+  ],
+  "audit": {
+    "analysis/rtl2_4_3_attention_terminal_scoreboard_binding.json": {
+      "semantic_contract_changed": false,
+      "revalidated_chisel_suites": 3,
+      "stale_source_records_repaired": 5
+    },
+    "analysis/rtl2_5_5_active_state_scoreboard_binding.json": {
+      "semantic_contract_changed": false,
+      "revalidated_chisel_suites": 3,
+      "stale_source_records_repaired": 5
+    }
+  },
+  "restored_replay": {
+    "validator": "tools/validate_rtl2_6_5c_event_capture_replay.py",
+    "cases": ["success_all_fourteen_event_types", "fault_fail_closed", "stale_response_rejected", "bounded_legal_ready_low"],
+    "scope": "testbench accepted-carrier capture and pure-software oracle replay only"
+  },
+  "historical_snapshot_rule": "Downstream historical manifests that hash an older binding snapshot are preserved. Only the two runtime-loaded binding JSON files are active replay dependencies repaired here.",
+  "disposition": {
+    "active_replay_provenance_repaired": true,
+    "rtl3_functional_realization_complete": false,
+    "next_required_closure": "rtl3_6b_same_instance_live_functional_provider_terminal_composition"
+  },
+  "forbidden": [
+    "event schema owner carrier or field change",
+    "production-top activation",
+    "live Python Chisel co-simulation",
+    "numeric memory timing or PPA claim",
+    "new A4 DSE",
+    "scheduler admission pruning or atomic-publication change",
+    "Full-KV fallback"
+  ],
+  "verification": {
+    "python_command": ".venv/bin/python -m pytest -q tests/test_rtl2_4_3_attention_terminal_scoreboard_binding.py tests/test_rtl2_5_5_active_state_scoreboard_binding.py tests/test_rtl2_6_5c_event_capture_replay.py tests/test_rtl3_6a_active_replay_provenance_repair.py",
+    "validators": [
+      ".venv/bin/python tools/validate_rtl2_4_3_attention_terminal_scoreboard_binding.py",
+      ".venv/bin/python tools/validate_rtl2_5_5_active_state_scoreboard_binding.py",
+      ".venv/bin/python tools/validate_rtl2_6_5c_event_capture_replay.py",
+      ".venv/bin/python tools/validate_rtl3_6a_active_replay_provenance_repair.py"
+    ],
+    "chisel_command": "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl2.RouteAAttentionTerminalScoreboardAdapterSpec' 'testOnly kvpress.routea.rtl2.RouteAR4R6StubTerminalIntegrationSpec' 'testOnly kvpress.routea.rtl2.RouteAR4ResultStubProviderSpec' 'testOnly kvpress.routea.r5.RouteAReclaimSpec' 'testOnly kvpress.routea.rtl2.RouteAReclaimScoreboardAdapterSpec' 'testOnly kvpress.routea.rtl2.RouteAActiveStateScoreboardIntegrationSpec'",
+    "evidence_labels": ["active testbench replay provenance repair", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL numeric correctness claim", "no production-top activation", "no new A4 DSE"]
+  },
+  "source_sha256": {
+    "analysis/README.md": "d7915141147171081eff5b81e4f9f4ed0644e23a247a09d5fef6eeaec2ceaf7e",
+    "analysis/architecture_spec.md": "5d7921a3304fd93ce977077d0abf07df92669c5f8737165d1162d8f22a48f268",
+    "analysis/rtl2_4_3_attention_terminal_scoreboard_binding.json": "4b6b294c2eaef11d472270ffb84cd55203152a8cba253a5a3fa194d0490d8690",
+    "analysis/rtl2_5_5_active_state_scoreboard_binding.json": "f6dfada4c921a5a5cd650b8874cb1e96c793617d42eec5d049dfa763a1491943",
+    "analysis/rtl2_6_5c_event_capture_replay_manifest.json": "23d0f5621e065f8b4269bdc3b12d1039fa164c465295b51dbcbe65cf94d0bce7",
+    "analysis/rtl2_phase_contract.md": "9955b62592d8ca395d8113a59deaf2c22aa0a805b7e4c7d5d930afab11fb1266",
+    "analysis/rtl3_6_functional_realization_completion_review.md": "29a21dcee691f6b0c0b77ca9ee13c888e6dcd8e79e565bc362b6ed407124672e",
+    "analysis/rtl3_6_functional_realization_completion_review_manifest.json": "4dd5e98b96158cb5f03d6b9ca98e1dd8d4c793ed19c0fa5f4cef1937ac863f4d",
+    "analysis/rtl3_6a_active_replay_provenance_repair_contract.md": "3955f566b796d000f70f20d78d1c0c9afebae97fec62551f7472fee84c6ed379",
+    "hardware/route_a/chisel/README.md": "105d31931fcdcc7eeb20db8d73d12fd66dfb85ad266de677c6478fa965fa41fd",
+    "kvpress/rtl2_6_5c_event_replay.py": "2f96fece8544cd2326fe4b1af19bc5ec2b1afab1c322d07ef35ec6732e832fb8",
+    "kvpress/rtl2_attention_terminal_scoreboard_binding.py": "2cb12da287a7ce00fd6ed9478fcad35d6614c5c878fca599a39b56110ca568a2",
+    "kvpress/rtl2_reclaim_scoreboard_binding.py": "91b81d0e92f78e3364678c42769f6283c97ba5923e45c9e6b88a901d5f17f7f6",
+    "kvpress/rtl3_6a_active_replay_provenance_repair.py": "187f12bbd1eea637d540d6e0de85a9f7391dcc789b21f76c72d37f653c04e26f",
+    "tests/test_rtl2_4_3_attention_terminal_scoreboard_binding.py": "e3fa3aa0d6e93b20a629561f4e5a7e366396c2f41c6e210b8d109b1cc5765782",
+    "tests/test_rtl2_5_5_active_state_scoreboard_binding.py": "7098b92b59a3b6ce8d47d2f5c257cf82a5948d2721ff74a97dfd8dc712fb148a",
+    "tests/test_rtl2_6_5c_event_capture_replay.py": "08e5e4ee41b6cc5fb60ab3124495a2589a0eaeab3af6617812996986e4becd08",
+    "tests/test_rtl3_6a_active_replay_provenance_repair.py": "377ff6d35588ae3d598b105f8475762f047c626e41f64aa737647d807b86a76b",
+    "tools/validate_rtl2_4_3_attention_terminal_scoreboard_binding.py": "4baa1a3a9b9421b43716eb915ed41d75e2df4b3b9a37c23bd5c34dbdbc59b06d",
+    "tools/validate_rtl2_5_5_active_state_scoreboard_binding.py": "b4bbb206bd817cb2809355033c9a9f57eda97b09d06c4418552b665cc6bbe7df",
+    "tools/validate_rtl2_6_5c_event_capture_replay.py": "210f24f8c4419ec90ab614d41b9851b6b13f8ae812ad09d95675faa9313f595f",
+    "tools/validate_rtl3_6a_active_replay_provenance_repair.py": "957bc7e6badfe36faa4025b2b9c337ce1edfbbf13b0b2d31c3abc86b2d3e2610"
+  }
+}

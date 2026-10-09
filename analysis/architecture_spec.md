@@ -685,6 +685,13 @@ stub, and RTL3.2 sidecar transport remains an explicit testbench boundary.
 The exact no-PASS and next testbench-only closure are frozen in
 `analysis/rtl3_6_functional_realization_completion_review.md`.
 
+RTL3.6-A subsequently repaired the two active terminal/reclaim replay binding
+hash maps and restored their accepted-carrier replay preflight, without
+changing the event schema, owner, carrier, or field contracts. That repair
+does not alter the RTL3.6 no-PASS: a same-instance live functional
+partial-provider-to-R4-to-R6 terminal/reclaim composition remains separate.
+See `analysis/rtl3_6a_active_replay_provenance_repair_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.

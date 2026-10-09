@@ -693,6 +693,9 @@ review with an explicit no-PASS: no same-instance live functional
 partial/R4/R6/reclaim composition exists yet, and sidecar transport remains a
 testbench ingress. The active terminal/reclaim replay bindings also require a
 narrow provenance repair before their historical replay can be revalidated.
+RTL3.6-A has now completed that repair; the active replay is current again,
+while the functional-realization no-PASS remains. The next closure is the
+separate same-instance live functional provider/R4/R6 terminal composition.
 No production-top RTL3 composition,
 physical controller, numerical microarchitecture, or performance experiment is
 authorized by these records.
@@ -812,10 +815,17 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     no-PASS).** [`rtl3_6_functional_realization_completion_review.md`](rtl3_6_functional_realization_completion_review.md)
     confirms the valid RTL3.1--3.5 slices and preserves the accepted-carrier
     success/fault/stale/ready-low evidence, but rejects a false end-to-end
-    conclusion. The first remaining closure is active terminal/reclaim replay
-    provenance repair; only then may a testbench-only same-instance live
-    functional provider/R4/R6 terminal composition be attempted. Sidecar
-    transport and full-path reset-epoch composition remain separately explicit.
+    conclusion. RTL3.6-A now repairs the active terminal/reclaim replay
+    provenance without changing its event contracts. The next remaining
+    closure is a testbench-only same-instance live functional provider/R4/R6
+    terminal composition. Sidecar transport and full-path reset-epoch
+    composition remain separately explicit.
+11. **RTL3.6-A — active replay provenance repair (complete).**
+    [`rtl3_6a_active_replay_provenance_repair_contract.md`](rtl3_6a_active_replay_provenance_repair_contract.md)
+    refreshes only the two runtime-loaded terminal/reclaim binding source maps
+    after their original no-model suites pass, restoring the RTL2.6.5c replay
+    preflight. It retains `rtl3_functional_realization_complete = false` and
+    authorizes no live composition or realization claim.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,
