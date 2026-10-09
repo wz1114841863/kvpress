@@ -62,9 +62,9 @@
     "evidence_labels": ["cross-owner functional completion review with explicit no-PASS", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL numeric correctness claim", "no production-top activation", "no new A4 DSE"]
   },
   "source_sha256": {
-    "analysis/README.md": "d7915141147171081eff5b81e4f9f4ed0644e23a247a09d5fef6eeaec2ceaf7e",
-    "analysis/architecture_spec.md": "5d7921a3304fd93ce977077d0abf07df92669c5f8737165d1162d8f22a48f268",
-    "analysis/rtl2_phase_contract.md": "9955b62592d8ca395d8113a59deaf2c22aa0a805b7e4c7d5d930afab11fb1266",
+    "analysis/README.md": "c46b1edf1d016d374a96c129a6aac386fcb8a631729f16e4755b582dd08482c8",
+    "analysis/architecture_spec.md": "19bd9a3dff9ed320a9dd75cabd2db992b71c104852faf3788a84dc9a4cf8642d",
+    "analysis/rtl2_phase_contract.md": "6b5f31d6bc506129a43e6ef6b54ee93dc6111859ee55e4115fe2eb46a106fb40",
     "analysis/rtl2_6_5c_event_capture_replay_manifest.json": "23d0f5621e065f8b4269bdc3b12d1039fa164c465295b51dbcbe65cf94d0bce7",
     "analysis/rtl2_6_5e_same_instance_witness_manifest.json": "ea00b34c1b8b2198784e0dfd348cc828dc6fcd0494d11b549f3cbbeb59221a25",
     "analysis/rtl3_1_functional_memory_environment_manifest.json": "33f70906cb9ab1ae0a4037a785bb5596cc18d7a5aafc8211079b1aa895132df8",
@@ -73,7 +73,7 @@
     "analysis/rtl3_5b_functional_attention_partial_provider_manifest.json": "dfbb34fefd1ee7cee01f8d1f2fee40a021c5f381373196d0b8a9fac483c6d3da",
     "analysis/rtl3_5c_cross_language_packet_binding_manifest.json": "f2857578ee9470d822614b616d3a3ae6ad26b15134eca090529acf9f91282c24",
     "analysis/rtl3_6_functional_realization_completion_review.md": "29a21dcee691f6b0c0b77ca9ee13c888e6dcd8e79e565bc362b6ed407124672e",
-    "hardware/route_a/chisel/README.md": "105d31931fcdcc7eeb20db8d73d12fd66dfb85ad266de677c6478fa965fa41fd",
+    "hardware/route_a/chisel/README.md": "ef8bc2d4d2fd65042026b5133fe0e41f4346a05e1a2ddaa95ec3737738db0dbc",
     "kvpress/rtl3_6_functional_realization_review.py": "40e9ee9d72688007a130ca3fe42c561831bef6e08f51117639450a8cd857c603",
     "tests/test_rtl3_6_functional_realization_review.py": "ec62cebe1a8e0ddd44e7e8de61fc46d4de45c28a6cc93479531cd455e3ec8762",
     "tools/validate_rtl3_6_functional_realization_review.py": "5878e6ce277ae63f56a1ef105f0fd90c23a29a2437f6ed39f733a330bb086908"

@@ -1,0 +1,69 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-6b-static-functional-provider-terminal-1.0",
+  "status": "completed_testbench_only_static_functional_provider_terminal_composition",
+  "scope": "One same-instance Chisel witness replays immutable Python functional-provider packet bytes through the existing source-packet/R4 structural boundary and immutable Python functional-R4-oracle success bytes through the existing R4/R6/same-R5 reclaim path. It is static testbench composition only.",
+  "fixture_path": "hardware/route_a/chisel/src/test/resources/rtl3_6b_functional_provider_terminal.fixture",
+  "binding": {
+    "packet_owner": "route_a_functional_attention_partial_provider",
+    "packet_boundary": "route_a_source_service_packet_adapter -> route_a_merge_boundary accepted-packet egress",
+    "terminal_owner": "route_a_functional_r4_merge_provider",
+    "transport": "versioned static shared fixture only",
+    "terminal_route": "route_a_merge_boundary -> route_a_lifecycle_adapter -> same-child r5 reclaim"
+  },
+  "frozen_fixture_case": {
+    "transaction_identity": {"request_id": 3, "incarnation": 0},
+    "source": {"kind": "packed", "instance_coordinate": 0, "generation": 1},
+    "source_presence": "packed_only",
+    "gqa_consumers": [0, 1, 2, 3],
+    "packet_shape": "one present 128-bit header plus eight 512-bit value fragments per consumer",
+    "terminal": "one exact 4096-bit success value per consumer; zero fixture value is interface-width inferred",
+    "acceptance_rule": "all four exact R4 accepted-packet observations precede a matching terminal offer"
+  },
+  "preserved_boundaries": [
+    "R3 pack_read/publication and same-child R5 durable reclaim are existing owners",
+    "S2 fill remains an explicit verification ingress",
+    "manual packed-offer/fragment/result-stub ingress is ready-low in fixture-selected elaboration",
+    "historical RTL3.6 no-PASS remains immutable"
+  ],
+  "remaining_open": [
+    "S2 sidecar/read transport verification ingress",
+    "full reset-epoch live functional-path composition",
+    "live Python Chisel co-simulation",
+    "production-top activation",
+    "MAC RoPE exp FP numeric implementation",
+    "HBM SRAM controller timing throughput area energy PPA",
+    "model GPU result or new A4 DSE"
+  ],
+  "disposition": {
+    "rtl3_6b_same_instance_provider_terminal_closed": true,
+    "rtl3_functional_realization_complete": false,
+    "next_required_closure": "rtl3_6c_remaining_sidecar_and_reset_epoch_composition_review"
+  },
+  "verification": {
+    "python_command": ".venv/bin/python -m pytest -q tests/test_rtl3_6b_functional_provider_terminal_fixture.py tests/test_rtl3_5b_functional_attention_partial_provider.py tests/test_rtl3_4b_functional_r4_provider.py tests/test_rtl3_6_functional_realization_review.py tests/test_rtl3_6a_active_replay_provenance_repair.py",
+    "chisel_command": "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl2.RouteARTL265eSameInstanceWitnessSpec'",
+    "validator": ".venv/bin/python tools/validate_rtl3_6b_same_instance_functional_provider_terminal.py",
+    "evidence_labels": [
+      "testbench-only static functional provider terminal composition",
+      "no model/GPU",
+      "no cycle timing throughput claim",
+      "no PPA claim",
+      "no numeric RTL correctness claim",
+      "no production-top activation",
+      "no new A4 DSE"
+    ]
+  },
+  "source_sha256": {
+    "analysis/README.md": "c46b1edf1d016d374a96c129a6aac386fcb8a631729f16e4755b582dd08482c8",
+    "analysis/architecture_spec.md": "19bd9a3dff9ed320a9dd75cabd2db992b71c104852faf3788a84dc9a4cf8642d",
+    "analysis/rtl2_phase_contract.md": "6b5f31d6bc506129a43e6ef6b54ee93dc6111859ee55e4115fe2eb46a106fb40",
+    "analysis/rtl3_6b_same_instance_functional_provider_terminal_contract.md": "50d018c0fd5964cb9c1f06d01638f24eb796ba647ea69027f6434b5b7f1dc05f",
+    "hardware/route_a/chisel/README.md": "ef8bc2d4d2fd65042026b5133fe0e41f4346a05e1a2ddaa95ec3737738db0dbc",
+    "hardware/route_a/chisel/src/test/resources/rtl3_6b_functional_provider_terminal.fixture": "3a31b7946876de8cb2f4e8599025fcd621071f3a3f53f50a67d3db86ab1ba3fe",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala": "ecd6477cf01bca3fe6016186869c686fb54a15d798218b63b03e1d87693d59f8",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL36bFunctionalFixtureBridge.scala": "381d08d29d689622cb0caa8c73b97fe1e6d4ffe76369cae1d365c4e2cb2e8766",
+    "kvpress/rtl3_6b_functional_provider_terminal_fixture.py": "9bdfccf6838fa45e5c17fdb7e56add747dabd016790f66ee0d10088bdf02e4bc",
+    "tests/test_rtl3_6b_functional_provider_terminal_fixture.py": "bdbff163bb3e4cbe0adeb88bbda21a3ccb48ecdb9aacfea0bee71bbe64fbb7d9",
+    "tools/validate_rtl3_6b_same_instance_functional_provider_terminal.py": "13eae4b584a2b698762b21bf694576247051310305be08e91c4699965eba8743"
+  }
+}

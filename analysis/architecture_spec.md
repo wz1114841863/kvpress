@@ -692,6 +692,17 @@ does not alter the RTL3.6 no-PASS: a same-instance live functional
 partial-provider-to-R4-to-R6 terminal/reclaim composition remains separate.
 See `analysis/rtl3_6a_active_replay_provenance_repair_contract.md`.
 
+RTL3.6-B closes that *specific* same-instance provider/terminal gap with a
+versioned static fixture: four Python RTL3.5-B packed-source packet bytes pass
+through the existing Chisel source-packet adapter and R4 structural acceptance,
+and only after all four accepted observations may matching Python RTL3.4-B
+functional-oracle terminal bytes enter the existing R4-to-R6-to-same-R5
+reclaim path. This remains a testbench-only fixture bridge—neither live
+Python/Chisel co-simulation nor numeric RTL—and keeps S2 fill/sidecar ingress
+and reset-epoch full-path composition open. It does not change the historical
+RTL3.6 no-PASS or establish functional-realization completion. See
+`analysis/rtl3_6b_same_instance_functional_provider_terminal_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.

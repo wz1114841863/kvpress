@@ -826,6 +826,15 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     after their original no-model suites pass, restoring the RTL2.6.5c replay
     preflight. It retains `rtl3_functional_realization_complete = false` and
     authorizes no live composition or realization claim.
+12. **RTL3.6-B — same-instance static functional-provider/R4-terminal
+    composition (complete, testbench-only).**
+    [`rtl3_6b_same_instance_functional_provider_terminal_contract.md`](rtl3_6b_same_instance_functional_provider_terminal_contract.md)
+    binds four versioned Python functional-provider packet fixtures through
+    the existing Chisel source-packet/R4 structural boundary, then supplies
+    only matching static Python R4-oracle terminal bytes to the real R6 and
+    same-child R5 reclaim path. It removes manual packet/result injection from
+    this witness, but retains the explicit S2 fill verification ingress and
+    does not create live co-simulation, production RTL, or a numeric claim.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

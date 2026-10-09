@@ -88,6 +88,13 @@ memory environment. RTL3.2-A now resolves the packed-read association-owner
 contract, while the partial-provider query/position stop remains; no production
 RTL3 closure is authorized.
 
+RTL3.6-A repaired active accepted-carrier replay provenance only. RTL3.6-B
+then closed the narrow same-instance static functional-provider/R4-terminal
+witness: four Python-generated packed packet fixtures traverse the Chisel
+source/R4 boundary before matching static functional-oracle terminals reach R6
+and same-R5 reclaim. S2 fill/sidecar ingress and full reset-epoch composition
+remain open, so RTL3 functional realization is not complete.
+
 ## Current architecture and verification records
 
 Read these only when the corresponding level of detail is required:
@@ -116,6 +123,7 @@ Read these only when the corresponding level of detail is required:
 | RTL3.5-C static cross-language partial-packet binding | [`rtl3_5c_cross_language_packet_binding_contract.md`](rtl3_5c_cross_language_packet_binding_contract.md) and [`rtl3_5c_cross_language_packet_binding_manifest.json`](rtl3_5c_cross_language_packet_binding_manifest.json) |
 | RTL3.6 functional-realization completion review | [`rtl3_6_functional_realization_completion_review.md`](rtl3_6_functional_realization_completion_review.md) and [`rtl3_6_functional_realization_completion_review_manifest.json`](rtl3_6_functional_realization_completion_review_manifest.json) |
 | RTL3.6-A active replay provenance repair | [`rtl3_6a_active_replay_provenance_repair_contract.md`](rtl3_6a_active_replay_provenance_repair_contract.md) and [`rtl3_6a_active_replay_provenance_repair_manifest.json`](rtl3_6a_active_replay_provenance_repair_manifest.json) |
+| RTL3.6-B static same-instance provider/terminal witness | [`rtl3_6b_same_instance_functional_provider_terminal_contract.md`](rtl3_6b_same_instance_functional_provider_terminal_contract.md) and [`rtl3_6b_same_instance_functional_provider_terminal_manifest.json`](rtl3_6b_same_instance_functional_provider_terminal_manifest.json) |
 | RTL2.3 active phase/event reconciliation | [`rtl2_3_reconciliation_01.md`](rtl2_3_reconciliation_01.md) and [`rtl2_scoreboard_event_phase_reconciliation_01.json`](rtl2_scoreboard_event_phase_reconciliation_01.json) |
 | RTL2.3-C6 R6 source-plan producer | [`rtl2_3_c6_source_plan_binder_contract.md`](rtl2_3_c6_source_plan_binder_contract.md) and [`rtl2_3_c6_source_plan_binder_manifest.json`](rtl2_3_c6_source_plan_binder_manifest.json) |
 | RTL2.3-C7 source-service top integration | [`rtl2_3_c7_source_service_top_integration_contract.md`](rtl2_3_c7_source_service_top_integration_contract.md) and [`rtl2_3_c7_source_service_top_integration_manifest.json`](rtl2_3_c7_source_service_top_integration_manifest.json) |
