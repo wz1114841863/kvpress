@@ -84,8 +84,9 @@ partial-producer boundary; it must not assign attention computation to a K/V
 storage owner. RTL3.0 completed that planning manifest with explicit
 packed-read-association and query/position partial-provider stop-for-review
 items. RTL3.1 subsequently completed only a testbench-side functional R1
-memory environment; neither stop is resolved and no production RTL3 closure
-is authorized.
+memory environment. RTL3.2-A now resolves the packed-read association-owner
+contract, while the partial-provider query/position stop remains; no production
+RTL3 closure is authorized.
 
 ## Current architecture and verification records
 
@@ -105,6 +106,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2 completion disposition and planned RTL3 functional-realization closure | [`rtl2_phase_contract.md`](rtl2_phase_contract.md) |
 | RTL3.0 replacement-owner / stop-for-review map | [`rtl3_0_replacement_owner_contract.md`](rtl3_0_replacement_owner_contract.md) and [`rtl3_0_replacement_owner_manifest.json`](rtl3_0_replacement_owner_manifest.json) |
 | RTL3.1 testbench-only functional memory environment | [`rtl3_1_functional_memory_environment_contract.md`](rtl3_1_functional_memory_environment_contract.md) and [`rtl3_1_functional_memory_environment_manifest.json`](rtl3_1_functional_memory_environment_manifest.json) |
+| RTL3.2-A packed-read association owner | [`rtl3_2a_packed_read_association_contract.md`](rtl3_2a_packed_read_association_contract.md) and [`rtl3_2a_packed_read_association_manifest.json`](rtl3_2a_packed_read_association_manifest.json) |
 | RTL2.3 active phase/event reconciliation | [`rtl2_3_reconciliation_01.md`](rtl2_3_reconciliation_01.md) and [`rtl2_scoreboard_event_phase_reconciliation_01.json`](rtl2_scoreboard_event_phase_reconciliation_01.json) |
 | RTL2.3-C6 R6 source-plan producer | [`rtl2_3_c6_source_plan_binder_contract.md`](rtl2_3_c6_source_plan_binder_contract.md) and [`rtl2_3_c6_source_plan_binder_manifest.json`](rtl2_3_c6_source_plan_binder_manifest.json) |
 | RTL2.3-C7 source-service top integration | [`rtl2_3_c7_source_service_top_integration_contract.md`](rtl2_3_c7_source_service_top_integration_contract.md) and [`rtl2_3_c7_source_service_top_integration_manifest.json`](rtl2_3_c7_source_service_top_integration_manifest.json) |

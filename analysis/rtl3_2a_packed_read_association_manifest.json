@@ -1,0 +1,68 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-2a-packed-read-association-1.0",
+  "status": "complete_executable_association_owner_contract_pre_rtl3_2_payload",
+  "association_owner": "route_a_packed_read_association_owner",
+  "scope": "Pure-software event-level association contract only. No Chisel production module, production-top binding, R1 request issue, payload transfer, sidecar transport, S2 deposit, scheduler, controller, timing, or PPA behavior.",
+  "grant_interfaces": [
+    {"name": "PackedSourceDemand", "producer": "upstream_preselected_packed_source_boundary", "fields": ["identity", "page_ref", "arrival_ordinal", "candidate_id", "eligibility_snapshot", "destination_endpoint"], "rule": "preselected opaque demand; association owner does not select page/source or alter R2 fields"},
+    {"name": "PublicationReadAuthorization", "producer": "route_a_m2_p3_wrapper", "fields": ["identity", "page_ref", "transaction_group_tag", "valid_records", "packed_authoritative"], "rule": "live publication authorization, never replayed publication event or authority transfer"},
+    {"name": "DescriptorLocationGrant", "producer": "route_a_page_manager", "fields": ["identity", "page_ref", "payload_handle_or_address", "sidecar_handle_or_address", "valid_records", "sidecar_records", "live_reference_held"], "rule": "R5 retains descriptor/page ownership and must hold the live reference"},
+    {"name": "S2FillLease", "producer": "route_a_s2_gqa_source_wrapper", "fields": ["identity", "page_ref", "s2_slot", "source_generation", "requires_sidecar"], "rule": "S2 owns slot selection/generation; packed path requires explicit sidecar"}
+  ],
+  "exact_join": [
+    "all identity values match",
+    "all PageRef values including generation match",
+    "publication packed_authoritative is true",
+    "publication and descriptor valid_records match within 1..64",
+    "descriptor sidecar_records equals valid_records",
+    "descriptor live_reference_held is true",
+    "lease requires_sidecar is true"
+  ],
+  "outputs": [
+    {"name": "R2PackedReadAllocationRequest", "consumer": "existing route_a_core_side_arbiter plus delivery-context registry", "rule": "opaque candidate fields forwarded unchanged; expected_fragment_count = valid_records * 8"},
+    {"name": "PackedS2ReadWork", "consumer": "existing packed-S2 typed read producer", "rule": "only after one R2 context acknowledgement; sidecar location remains an explicit obligation"},
+    {"name": "AssociationRelease", "consumer": "R5/S2 original owners", "rule": "only on later ok/fault terminal; does not imply S2 READY or attention terminal"}
+  ],
+  "lifetime_rules": [
+    "R5 invalidation may cancel only before R2 issue",
+    "issued association must terminally release before descriptor invalidation/free",
+    "reset clears association state and gates new grants until init",
+    "association owner neither creates reset epoch nor suppresses R1 stale responses"
+  ],
+  "resolved_rtl3_0_stop": "packed_read_association_owner",
+  "remaining_rtl3_0_stop": "partial_provider_query_position_contract blocks rtl3_5",
+  "forbidden": [
+    "scheduler or page-source selection",
+    "second metadata or residency authority",
+    "direct top or testbench PackedS2ReadWork producer after owner activation",
+    "descriptor inspection or inferred payload/sidecar address",
+    "S2 allocation or release policy",
+    "R2 arbitration credit FIFO or delivery-context ownership change",
+    "metadata publication or atomic-commit change",
+    "R1/HBM controller CDC burst channel latency bandwidth throughput or PPA claim",
+    "numeric partial or merge implementation",
+    "new A4 DSE",
+    "Full-KV fallback"
+  ],
+  "evidence_labels": [
+    "pure-software executable association-owner contract",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL correctness claim",
+    "no new A4 DSE"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "674f1a6f123bfc4dd8a757ae52d5bde32929ab747ed3e16ab7e8a0404bbda5fe",
+    "analysis/architecture_spec.md": "3177b293068767e10da0d49cc75cbc1267669a22b9764849cfec48506c391e4a",
+    "analysis/rtl2_phase_contract.md": "360f59df07d0a8c3c94c56abf63601e59a38443004defd317e2d757e80f2c2cc",
+    "analysis/rtl3_0_replacement_owner_contract.md": "7fffa9577f2be60f1a5c8f967ed68afc5cba13d534078c42159097abdb32322d",
+    "analysis/rtl3_1_functional_memory_environment_contract.md": "2370f936ae8ba71b6338a2ac304d657d8351e746e59f25a8724b4bbd8076f3eb",
+    "analysis/rtl3_2a_packed_read_association_contract.md": "0ee0f23b11b1328aa5dea691c1b36ece5c2f774e6f98e4c971319cce61a079b8",
+    "kvpress/rtl3_2a_packed_read_association.py": "cc5da9795be71239a69e3449c2e933eee45c166a941a2dcf856252840687a4a5",
+    "kvpress/rtl3_2a_packed_read_association_reference.py": "22dddcd38ea578002f4186bec4acd53adc43a82ae94bb4eaecf4bb23fabaec9e",
+    "tests/test_rtl3_2a_packed_read_association.py": "ed3f13eae3a9e827cae1355364de01b85c6181aa5a4fb0f836c0726502e91c42",
+    "tests/test_rtl3_2a_packed_read_association_reference.py": "006bebb5b75c253502cd11dc5e0fe44c4ee55e224765ccbf38faa85e92e92c0a",
+    "tools/validate_rtl3_2a_packed_read_association.py": "e27895ff830af12559868ccb1b0afaac48e10883275871b8d80b7cae2c434935"
+  }
+}

@@ -685,12 +685,14 @@ production bridge, profiling, optimization, synthesis, timing, or PPA claims.
 ## Planned successor — RTL3: Functional Realization Closure
 
 **Status:** RTL3.0 planning is complete with explicit stop-for-review items;
-RTL3.1 has completed its isolated testbench-only functional memory environment.
-No production-top RTL3 module, physical controller, numerical
+RTL3.1 has completed its isolated testbench-only functional memory environment,
+and RTL3.2-A has closed the packed-read association-owner contract. No
+production-top RTL3 module, physical controller, numerical
 microarchitecture, or performance experiment is authorized by these records.
 See
 [`rtl3_0_replacement_owner_contract.md`](rtl3_0_replacement_owner_contract.md)
-and [`rtl3_1_functional_memory_environment_contract.md`](rtl3_1_functional_memory_environment_contract.md).
+[`rtl3_1_functional_memory_environment_contract.md`](rtl3_1_functional_memory_environment_contract.md),
+and [`rtl3_2a_packed_read_association_contract.md`](rtl3_2a_packed_read_association_contract.md).
 
 RTL3 replaces the remaining verification-only data/numeric conveniences with
 named, functional providers while preserving every frozen authority,
@@ -733,28 +735,38 @@ MAC owner, or make a testbench default appear as an accepted production fact.
    latency/bandwidth model. It does not form packed-to-S2 association and does
    not clear either RTL3.0 stop; see
    [`rtl3_1_functional_memory_environment_contract.md`](rtl3_1_functional_memory_environment_contract.md).
-2. **RTL3.2 — packed-page functional read to S2.** Replace the packed-path
+2. **RTL3.2-A — packed-read association-owner closure (complete,
+   executable-contract only).** `route_a_packed_read_association_owner` is
+   the unique join owner for an upstream preselected packed-source demand, a
+   live R3 publication authorization, an R5 descriptor/location grant, and
+   an S2 fill lease. It passes R2 scheduler fields unchanged and requires the
+   existing R2 context acknowledgement before typed work. It resolves the
+   former packed-read association stop but does not yet implement payload or
+   sidecar transport; see
+   [`rtl3_2a_packed_read_association_contract.md`](rtl3_2a_packed_read_association_contract.md).
+3. **RTL3.2 — packed-page functional read to S2.** Replace the packed-path
    hand-filled S2 ingress with `published packed page -> R2/R1 typed read ->
    functional memory response/sidecar -> S2`. It must preserve generation,
    identity, page/slot association, sidecar completion, and fail-closed stale,
-   mismatch, and fault behavior. It does not change the single publication
-   boundary or select a source schedule.
-3. **RTL3.3 — R4 functional-realization profile and oracle binding.** Bind a
+   mismatch, and fault behavior. It consumes the RTL3.2-A association contract;
+   it does not change the single publication boundary or select a source
+   schedule.
+4. **RTL3.3 — R4 functional-realization profile and oracle binding.** Bind a
    functional implementation to the already frozen observable binary32
    packet, canonical `hot -> pending -> packed` order, normalization guard,
    fault disposition, and Python reference. This does not reopen that numeric
    contract or select exp implementation/internal precision.
-4. **RTL3.4 — oracle-consistent functional R4 merge model.** Replace the R4
+5. **RTL3.4 — oracle-consistent functional R4 merge model.** Replace the R4
    result stub with a model that derives result/fault only from accepted partial
    inputs and preserves R4-to-R6 exactly-one terminal ownership. It is not a
    claim of final synthesizable/pipelined floating-point RTL.
-5. **RTL3.5 — source-payload to partial-producer boundary closure.** Let hot,
+6. **RTL3.5 — source-payload to partial-producer boundary closure.** Let hot,
    direct-pending, and S2 owners supply only their payload, position/sideband,
    and source identity/generation facts. The unique partial producer then
    emits `(m, l, o)` through the frozen packet boundary to R4. If attention MAC
    remains outside RTL scope, that provider remains a formally replaceable
    functional PE/reference model rather than a hidden source-owner behavior.
-6. **RTL3.6 — functional-realization completion review.** Re-run the complete
+7. **RTL3.6 — functional-realization completion review.** Re-run the complete
    success and fault transactions with live accepted-carrier observations and
    the Python event/scoreboard oracle: `RETAIN -> pending -> functional memory
    -> P3 -> publication -> functional packed read -> S2 -> partial producer ->

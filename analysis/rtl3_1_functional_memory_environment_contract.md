@@ -34,7 +34,8 @@ generation and sidecar records, and payload fragments. Generation and sidecar
 are deliberately retained as fixture metadata only: they are not fields of
 `core_mem_if_v1`, so RTL3.1 neither infers nor validates them from an R1
 response and cannot publish them to S2. Their later cross-owner association is
-still the RTL3.0 `packed_read_association_owner` stop blocking RTL3.2.
+now frozen by RTL3.2-A, but remains unimplemented as an RTL payload/sidecar
+path; see [`rtl3_2a_packed_read_association_contract.md`](rtl3_2a_packed_read_association_contract.md).
 
 ## Transaction semantics
 
@@ -80,9 +81,11 @@ RTL3.1 does **not**:
 - implement a numeric partial/merge, attention MAC, model/GPU workload,
   timing, throughput, area, energy, PPA, or a new A4 DSE.
 
-It therefore does not resolve either RTL3.0 stop-for-review item. The next
-behavioral closure must first remain within its named owner contract; RTL3.2
-cannot start until `packed_read_association_owner` is explicitly resolved.
+It does not itself resolve either RTL3.0 stop-for-review item. RTL3.2-A has
+subsequently resolved `packed_read_association_owner` as an executable contract;
+the remaining partial-provider query/position stop still blocks RTL3.5. The
+next RTL3.2 payload closure must consume the named association interface rather
+than reconstructing it or using direct S2 ingress.
 
 ## Directed verification
 
