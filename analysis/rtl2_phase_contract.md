@@ -685,10 +685,12 @@ production bridge, profiling, optimization, synthesis, timing, or PPA claims.
 ## Planned successor — RTL3: Functional Realization Closure
 
 **Status:** RTL3.0 planning is complete with explicit stop-for-review items;
-no RTL3 behavioral module, physical controller, numerical microarchitecture,
-or performance experiment is authorized by this plan alone. See
+RTL3.1 has completed its isolated testbench-only functional memory environment.
+No production-top RTL3 module, physical controller, numerical
+microarchitecture, or performance experiment is authorized by these records.
+See
 [`rtl3_0_replacement_owner_contract.md`](rtl3_0_replacement_owner_contract.md)
-and its machine-readable manifest.
+and [`rtl3_1_functional_memory_environment_contract.md`](rtl3_1_functional_memory_environment_contract.md).
 
 RTL3 replaces the remaining verification-only data/numeric conveniences with
 named, functional providers while preserving every frozen authority,
@@ -721,11 +723,16 @@ MAC owner, or make a testbench default appear as an accepted production fact.
 
 ### Ordered functional closures
 
-1. **RTL3.1 — functional memory transaction environment.** Drive real accepted
-   R1 requests and responses against functional packed payload, sidecar,
-   generation, fault, and legal-stall state. This is a functional external
-   memory environment, not HBM controller, burst/channel/CDC mapping, or a
-   latency/bandwidth model.
+1. **RTL3.1 — functional memory transaction environment (complete,
+   testbench-only).** The host-side
+   `testbench_route_a_functional_memory_environment` drives real accepted R1
+   requests and responses against explicit functional packed payload,
+   sidecar, generation, fault, and legal-stall fixture state. Successful
+   writes materialize only at their accepted terminal. It is not a production
+   Chisel module, HBM controller, burst/channel/CDC mapping, or a
+   latency/bandwidth model. It does not form packed-to-S2 association and does
+   not clear either RTL3.0 stop; see
+   [`rtl3_1_functional_memory_environment_contract.md`](rtl3_1_functional_memory_environment_contract.md).
 2. **RTL3.2 — packed-page functional read to S2.** Replace the packed-path
    hand-filled S2 ingress with `published packed page -> R2/R1 typed read ->
    functional memory response/sidecar -> S2`. It must preserve generation,

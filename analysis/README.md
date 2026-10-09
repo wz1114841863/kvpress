@@ -81,9 +81,11 @@ production top, numeric/memory realization, or performance claim. The planned
 RTL3 successor begins with a replacement-owner manifest, then separately
 closes functional memory, S2 read, R4 functional merge, and the independent
 partial-producer boundary; it must not assign attention computation to a K/V
-storage owner. RTL3.0 has completed that planning manifest with explicit
+storage owner. RTL3.0 completed that planning manifest with explicit
 packed-read-association and query/position partial-provider stop-for-review
-items; it authorizes no behavioral RTL3 closure yet.
+items. RTL3.1 subsequently completed only a testbench-side functional R1
+memory environment; neither stop is resolved and no production RTL3 closure
+is authorized.
 
 ## Current architecture and verification records
 
@@ -102,6 +104,7 @@ Read these only when the corresponding level of detail is required:
 | RTL1-V executable verification closure | [`rtl1_v_verification_completion_contract.md`](rtl1_v_verification_completion_contract.md), [`rtl1_v_scoreboard_event_schema.json`](rtl1_v_scoreboard_event_schema.json), and [`rtl1_v_provenance_freeze.md`](rtl1_v_provenance_freeze.md) |
 | RTL2 completion disposition and planned RTL3 functional-realization closure | [`rtl2_phase_contract.md`](rtl2_phase_contract.md) |
 | RTL3.0 replacement-owner / stop-for-review map | [`rtl3_0_replacement_owner_contract.md`](rtl3_0_replacement_owner_contract.md) and [`rtl3_0_replacement_owner_manifest.json`](rtl3_0_replacement_owner_manifest.json) |
+| RTL3.1 testbench-only functional memory environment | [`rtl3_1_functional_memory_environment_contract.md`](rtl3_1_functional_memory_environment_contract.md) and [`rtl3_1_functional_memory_environment_manifest.json`](rtl3_1_functional_memory_environment_manifest.json) |
 | RTL2.3 active phase/event reconciliation | [`rtl2_3_reconciliation_01.md`](rtl2_3_reconciliation_01.md) and [`rtl2_scoreboard_event_phase_reconciliation_01.json`](rtl2_scoreboard_event_phase_reconciliation_01.json) |
 | RTL2.3-C6 R6 source-plan producer | [`rtl2_3_c6_source_plan_binder_contract.md`](rtl2_3_c6_source_plan_binder_contract.md) and [`rtl2_3_c6_source_plan_binder_manifest.json`](rtl2_3_c6_source_plan_binder_manifest.json) |
 | RTL2.3-C7 source-service top integration | [`rtl2_3_c7_source_service_top_integration_contract.md`](rtl2_3_c7_source_service_top_integration_contract.md) and [`rtl2_3_c7_source_service_top_integration_manifest.json`](rtl2_3_c7_source_service_top_integration_manifest.json) |

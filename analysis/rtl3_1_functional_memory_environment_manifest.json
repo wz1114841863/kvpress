@@ -1,0 +1,61 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-1-functional-memory-environment-1.0",
+  "status": "complete_testbench_only_functional_memory_environment",
+  "owner": "testbench_route_a_functional_memory_environment",
+  "scope": "Host-side testbench functional environment on the existing core_mem_if_v1 external interface. It is not production Chisel RTL, HBM, SRAM, a controller, CDC, or an authority owner.",
+  "interface": "existing core_mem_if_v1 external init/request/response interface",
+  "transaction_rules": {
+    "init": "one init_ack handshake per local reset epoch before accepted R1 traffic",
+    "request_backpressure": "request ready may legally stall; no accepted request is dropped or duplicated",
+    "read": "exact preloaded payload fragment vector only when expected_fragment_count matches, otherwise one terminal fault",
+    "write": "stage ordered write-data and materialize only on accepted successful terminal response",
+    "response_backpressure": "head response remains stable until R1 ready",
+    "reset": "suppress queued responses and staged writes while preserving fixture objects; R1 retains stale/mismatch suppression"
+  },
+  "fixture_object": {
+    "key": "explicit address_ref",
+    "fields": ["optional generation", "payload fragments", "sidecar records"],
+    "limit": "generation and sidecar are fixture metadata only and are not inferred, validated, or emitted by core_mem_if_v1"
+  },
+  "fault_injection": "one next-read or next-write terminal fault for directed fail-closed coverage only",
+  "scoreboard_observations": ["request_accept", "fragment_deliver", "write_commit"],
+  "post_replacement_prohibition": "covered directed tests may not use direct manual response pokes or direct S2 mutation as substitutes for an accepted functional-memory transaction",
+  "unresolved_stops": [
+    "packed_read_association_owner blocks rtl3_2",
+    "partial_provider_query_position_contract blocks rtl3_5"
+  ],
+  "forbidden": [
+    "production-top binding claim",
+    "HBM controller claim",
+    "SRAM or HBM macro claim",
+    "burst channel or CDC mapping",
+    "latency bandwidth throughput or PPA claim",
+    "payload metadata or residency authority transfer",
+    "S2 association or sidecar publication",
+    "scheduler admission pruning or atomic-publication change",
+    "numeric implementation claim",
+    "new A4 DSE",
+    "Full-KV fallback"
+  ],
+  "evidence_labels": [
+    "testbench-only functional memory transaction environment",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL correctness claim",
+    "no new A4 DSE"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "62593ee7c411d42147f938810f627dc9a4d3b39d8105bb22daac74bd4c533c2b",
+    "analysis/architecture_spec.md": "3177b293068767e10da0d49cc75cbc1267669a22b9764849cfec48506c391e4a",
+    "analysis/rtl2_phase_contract.md": "d7187c8901e911bb2f63d8562d4912cc65699d43e4291de34bf865b23c7ed333",
+    "analysis/rtl3_0_replacement_owner_contract.md": "7fffa9577f2be60f1a5c8f967ed68afc5cba13d534078c42159097abdb32322d",
+    "analysis/rtl3_1_functional_memory_environment_contract.md": "ac17249e46ce2fc8026a1ccbd5ccff158c9bcc72b33142dc7a1620318d1647cf",
+    "hardware/route_a/chisel/README.md": "595d2bb4abacb483e5e631ed8afae7601209e82b976c689e2be01e3850aaa8ba",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironment.scala": "21512a4614e0db319a9f85aa0a8605e61ab506dd4a3ba3e83ade188fa0167464",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironmentSpec.scala": "1639372a65d08e5102003560b11ba2c864341c281ebd01ae537dd99e2e1fa2b7",
+    "kvpress/rtl3_1_functional_memory_environment.py": "7b88e3f60099b217303d8add9a7d3a9519900ab5dcf0d5e75ab63de2b7e2444d",
+    "tests/test_rtl3_1_functional_memory_environment.py": "f73cf46a83cc41571737b3fe63346d137813f24cd19bc950d05dadab54fae9bf",
+    "tools/validate_rtl3_1_functional_memory_environment.py": "4f70069fb00e1342f9f2c5bde6a18b2f0404ec1bf0b9360788464f89b436f7a8"
+  }
+}

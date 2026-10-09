@@ -283,6 +283,19 @@ positive durable/publication order and negative P3/descriptor gates.
 R4 remains a replaceable numeric boundary. Do not select a controller or infer
 timing/PPA from the completed owner-local control bindings.
 
+## RTL3.1 testbench-only functional memory environment
+
+`src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironment.scala`
+is host-side ChiselSim infrastructure connected only to the existing external
+R1 carrier in its directed test. It replaces manual accepted-response pokes
+with fixture-backed payload fragments, optional generation/sidecar metadata,
+legal request/response backpressure, and one-shot terminal-fault injection.
+It is not emitted as a production module or attached to the top; it owns no
+publication, residency, page, S2, or source-generation authority. The exact
+scope and no-physical-memory boundary are frozen in
+`analysis/rtl3_1_functional_memory_environment_contract.md`. This work does
+not resolve the RTL3.0 packed-read or partial-provider stop-for-review items.
+
 ## RTL2.1a retained-group admission activation
 
 RTL2.1a adds `route_a_admission_publication_ingress_adapter`, the sole
