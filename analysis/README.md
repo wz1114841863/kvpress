@@ -77,7 +77,11 @@ real-owner retained transaction. RTL2.6.5e now closes that narrow testbench
 witness: it composes R3 publication, real S2 service/terminal, and the same
 R5 durable reclaim to `retire_ack` in one Chisel instance. Its completion is
 strictly testbench-only functional transaction/dataflow evidence, not a
-production top, numeric/memory realization, or performance claim.
+production top, numeric/memory realization, or performance claim. The planned
+RTL3 successor begins with a replacement-owner manifest, then separately
+closes functional memory, S2 read, R4 functional merge, and the independent
+partial-producer boundary; it must not assign attention computation to a K/V
+storage owner.
 
 ## Current architecture and verification records
 
@@ -94,7 +98,7 @@ Read these only when the corresponding level of detail is required:
 | Gate-RTL0 logical port/parameter matrix | [`rtl_entry_port_parameter_contract.md`](rtl_entry_port_parameter_contract.md), [`rtl_entry_port_parameter_provenance_freeze.md`](rtl_entry_port_parameter_provenance_freeze.md), and `tools/validate_rtl_entry_interface_manifest.py` |
 | Gate-RTL0 assertion/scoreboard/coverage plan | [`rtl_entry_assertion_verification_contract.md`](rtl_entry_assertion_verification_contract.md) and [`rtl_entry_assertion_matrix.json`](rtl_entry_assertion_matrix.json) |
 | RTL1-V executable verification closure | [`rtl1_v_verification_completion_contract.md`](rtl1_v_verification_completion_contract.md), [`rtl1_v_scoreboard_event_schema.json`](rtl1_v_scoreboard_event_schema.json), and [`rtl1_v_provenance_freeze.md`](rtl1_v_provenance_freeze.md) |
-| RTL2 production transaction/dataflow activation plan | [`rtl2_phase_contract.md`](rtl2_phase_contract.md) |
+| RTL2 completion disposition and planned RTL3 functional-realization closure | [`rtl2_phase_contract.md`](rtl2_phase_contract.md) |
 | RTL2.3 active phase/event reconciliation | [`rtl2_3_reconciliation_01.md`](rtl2_3_reconciliation_01.md) and [`rtl2_scoreboard_event_phase_reconciliation_01.json`](rtl2_scoreboard_event_phase_reconciliation_01.json) |
 | RTL2.3-C6 R6 source-plan producer | [`rtl2_3_c6_source_plan_binder_contract.md`](rtl2_3_c6_source_plan_binder_contract.md) and [`rtl2_3_c6_source_plan_binder_manifest.json`](rtl2_3_c6_source_plan_binder_manifest.json) |
 | RTL2.3-C7 source-service top integration | [`rtl2_3_c7_source_service_top_integration_contract.md`](rtl2_3_c7_source_service_top_integration_contract.md) and [`rtl2_3_c7_source_service_top_integration_manifest.json`](rtl2_3_c7_source_service_top_integration_manifest.json) |
@@ -110,7 +114,7 @@ Read these only when the corresponding level of detail is required:
 | RTL2.5.3 R6 retirement / drain fixed-membership closure | [`rtl2_5_3_retirement_drain_contract.md`](rtl2_5_3_retirement_drain_contract.md) and [`rtl2_5_3_retirement_drain_manifest.json`](rtl2_5_3_retirement_drain_manifest.json) |
 | RTL2.5.4 R5 durable invalidation-before-free closure | [`rtl2_5_4_r5_durable_invalidation_contract.md`](rtl2_5_4_r5_durable_invalidation_contract.md) and [`rtl2_5_4_r5_durable_invalidation_manifest.json`](rtl2_5_4_r5_durable_invalidation_manifest.json) |
 | RTL2.5.5 R5/R6 active-state scoreboard/oracle binding | [`rtl2_5_5_active_state_scoreboard_contract.md`](rtl2_5_5_active_state_scoreboard_contract.md), [`rtl2_5_5_active_state_scoreboard_binding.json`](rtl2_5_5_active_state_scoreboard_binding.json), and [`rtl2_5_5_active_state_scoreboard_manifest.json`](rtl2_5_5_active_state_scoreboard_manifest.json) |
-| RTL2.6 completion-review entry audit (incomplete; no PASS) | [`rtl2_6_completion_review.md`](rtl2_6_completion_review.md) and [`rtl2_6_completion_review_manifest.json`](rtl2_6_completion_review_manifest.json) |
+| RTL2.6 completion review: historical entry audit plus constrained functional disposition | [`rtl2_6_completion_review.md`](rtl2_6_completion_review.md), [`rtl2_6_completion_review_manifest.json`](rtl2_6_completion_review_manifest.json), and [`rtl2_6_5e_same_instance_witness_manifest.json`](rtl2_6_5e_same_instance_witness_manifest.json) |
 | RTL2.6.1 event field-provenance binding | [`rtl2_6_1_event_binding_contract.md`](rtl2_6_1_event_binding_contract.md) and [`rtl2_6_1_event_binding_manifest.json`](rtl2_6_1_event_binding_manifest.json) |
 | RTL2.6.2a narrow composed packed-source terminal harness | [`rtl2_6_2_composed_packed_source_harness_contract.md`](rtl2_6_2_composed_packed_source_harness_contract.md) |
 | RTL2.6.3 publication-to-S2 verification association | [`rtl2_6_3_publication_s2_association_contract.md`](rtl2_6_3_publication_s2_association_contract.md) |

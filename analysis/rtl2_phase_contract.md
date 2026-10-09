@@ -10,7 +10,8 @@ rtl2_3_c5_source_packet_r4_implemented_directed_tested_limited_protocol_closure;
 rtl2_3_r_active_phase_reconciled_no_behavioral_activation;
 rtl2_3_c6_source_plan_binder_implemented_directed_tested;
 rtl2_3_c7_source_service_top_integration_implemented_directed_tested;
-rtl2_3_c8_four_consumer_completion_implemented_directed_tested`.
+rtl2_3_c8_four_consumer_completion_implemented_directed_tested;
+rtl2_6_completion_review_complete_testbench_only_functional_transaction_dataflow`.
 
 RTL2 activates the deliberately inert production ingress left by RTL1, so that
 architecture-valid transactions carry real functional payload/sidecar facts
@@ -607,10 +608,11 @@ real S2/R4/R6 control to reach a numeric-fault terminal. It retains every
 test-only boundary and does not yet include retirement/reclaim, event replay,
 or the full retained-transaction completion disposition.
 
-**RTL2.6.5 full retained-transaction and scoreboard witness: active.**
-The authoritative ordered sub-slices and non-goals are recorded in
-[`rtl2_6_completion_review.md`](rtl2_6_completion_review.md).  Its first
-task, RTL2.6.5a.1, is now complete:
+**RTL2.6.5 full retained-transaction and scoreboard witness: complete with a
+testbench-only functional disposition.** The authoritative ordered sub-slices
+and non-goals are recorded in
+[`rtl2_6_completion_review.md`](rtl2_6_completion_review.md). RTL2.6.5a.1
+is complete:
 [`rtl2_6_5a_packed_s2_read_composition_contract.md`](rtl2_6_5a_packed_s2_read_composition_contract.md)
 uses the actual typed packed-S2 R2/R1 path before S2/R4/R6 completion.
 RTL2.6.5a.2 is now also complete:
@@ -618,7 +620,11 @@ RTL2.6.5a.2 is now also complete:
 uses the actual R3 `pack_read -> R2/R1 -> P3` path before its existing
 packed-write, descriptor, and atomic-publication sequence. It does not
 relabel a verification ingress as a producer or select a future member issue
-schedule. RTL2.6.5b--d remain required.
+schedule. RTL2.6.5b--d are complete, and RTL2.6.5e supplies the final
+same-instance R3 publication -> S2 service/terminal -> same-R5 durable reclaim
+-> `retire_ack` witness. Its constrained re-review is
+`rtl2_production_transaction_dataflow_complete` only under
+`testbench_only_functional_transaction_dataflow`.
 
 **RTL2.6.5b terminal-to-reclaim composition: complete.**
 [`rtl2_6_5b_terminal_reclaim_composition_contract.md`](rtl2_6_5b_terminal_reclaim_composition_contract.md)
@@ -641,9 +647,10 @@ under `testbench_only_functional_transaction_dataflow`. No production bridge,
 numeric realization, physical-memory choice, or timing/PPA conclusion is
 authorized.
 
-RTL2.0--RTL2.5 passing individually does not by itself complete production
-dataflow integration.  A separate completion review must consume the explicit
-scoreboard events and demonstrate at least one complete retained transaction:
+RTL2.0--RTL2.5 passing individually did not by itself complete production
+dataflow integration. The separate RTL2.6 completion review has now consumed
+the declared event/oracle evidence and demonstrated one complete retained
+transaction:
 
 ```text
 RETAIN
@@ -671,21 +678,96 @@ It must identify and justify every remaining deliberately inactive ingress;
 an unowned production carrier is a failure, not a deferral.
 
 **Pass disposition:** `rtl2_production_transaction_dataflow_complete` permits
-separate numeric/memory-realization planning.  It does not authorize profiling,
-optimization, synthesis, timing, or PPA claims by itself.
+separate numeric/memory-realization planning only under
+`testbench_only_functional_transaction_dataflow`. It does not authorize a
+production bridge, profiling, optimization, synthesis, timing, or PPA claims.
 
-## Stage boundary after RTL2
+## Planned successor — RTL3: Functional Realization Closure
+
+**Status:** planned. RTL3 begins only with RTL3.0 owner-replacement planning;
+no RTL3 behavioral module, physical controller, numerical microarchitecture,
+or performance experiment is authorized by this plan alone.
+
+RTL3 replaces the remaining verification-only data/numeric conveniences with
+named, functional providers while preserving every frozen authority,
+admission, scheduling, page, GQA, atomic-publication, and R6 terminal rule.
+Its word “functional” is deliberate: completion is not physical-memory or
+numeric-microarchitecture closure.
+
+### RTL3.0 — replacement-owner manifest and stop-for-review map
+
+Before activating a new carrier, freeze one machine-readable/Markdown map for
+each remaining verification convenience. The map must name the replacement
+owner, interface, identity/incarnation and generation source, accepted-carrier
+scoreboard observation, environment assumptions, DUT guarantees, and the
+testbench injection that becomes forbidden after replacement.
+
+| Current convenience | Planned functional replacement boundary | Non-negotiable limit |
+|---|---|---|
+| S2 payload/sidecar fill ingress | `core_mem_if_v1` response through the existing R2 typed-delivery/owner-local S2 deposition path, backed by a functional memory **environment** | The environment is not a second payload/metadata authority and is not an HBM controller. |
+| Source packet offer/value-fragment ingress | A uniquely named, replaceable attention-partial-producer boundary fed by source-owner payload/sideband facts | Hot, direct-pending, and S2 owners do not compute `(m, l, o)` merely by owning K/V storage. |
+| R4 result stub | An oracle-consistent functional R4 merge provider at the already frozen R4 boundary | It does not choose exp hardware, internal precision, state storage, pipeline, or throughput. |
+
+RTL3.0 must also resolve, or explicitly stop for review on, the source of the
+query association and position/RoPE sideband consumed by the partial producer.
+It may not invent a query source, repurpose a storage owner as an attention
+MAC owner, or make a testbench default appear as an accepted production fact.
+
+### Ordered functional closures
+
+1. **RTL3.1 — functional memory transaction environment.** Drive real accepted
+   R1 requests and responses against functional packed payload, sidecar,
+   generation, fault, and legal-stall state. This is a functional external
+   memory environment, not HBM controller, burst/channel/CDC mapping, or a
+   latency/bandwidth model.
+2. **RTL3.2 — packed-page functional read to S2.** Replace the packed-path
+   hand-filled S2 ingress with `published packed page -> R2/R1 typed read ->
+   functional memory response/sidecar -> S2`. It must preserve generation,
+   identity, page/slot association, sidecar completion, and fail-closed stale,
+   mismatch, and fault behavior. It does not change the single publication
+   boundary or select a source schedule.
+3. **RTL3.3 — R4 functional-realization profile and oracle binding.** Bind a
+   functional implementation to the already frozen observable binary32
+   packet, canonical `hot -> pending -> packed` order, normalization guard,
+   fault disposition, and Python reference. This does not reopen that numeric
+   contract or select exp implementation/internal precision.
+4. **RTL3.4 — oracle-consistent functional R4 merge model.** Replace the R4
+   result stub with a model that derives result/fault only from accepted partial
+   inputs and preserves R4-to-R6 exactly-one terminal ownership. It is not a
+   claim of final synthesizable/pipelined floating-point RTL.
+5. **RTL3.5 — source-payload to partial-producer boundary closure.** Let hot,
+   direct-pending, and S2 owners supply only their payload, position/sideband,
+   and source identity/generation facts. The unique partial producer then
+   emits `(m, l, o)` through the frozen packet boundary to R4. If attention MAC
+   remains outside RTL scope, that provider remains a formally replaceable
+   functional PE/reference model rather than a hidden source-owner behavior.
+6. **RTL3.6 — functional-realization completion review.** Re-run the complete
+   success and fault transactions with live accepted-carrier observations and
+   the Python event/scoreboard oracle: `RETAIN -> pending -> functional memory
+   -> P3 -> publication -> functional packed read -> S2 -> partial producer ->
+   functional R4 merge -> terminal -> retire -> reclaim`. Include reset,
+   stale/mismatched response, legal ready-low, and fault fail-closed coverage.
+
+RTL3 completion may establish functional owner/model closure only. It remains
+insufficient evidence for physical SRAM/HBM macros, controller realization,
+final FP/exp pipeline, frequency, timing, throughput, area, energy, PPA, or
+Gate-B.
+
+## Stage boundary after RTL2 and planned RTL3
 
 ```text
 RTL1 control-plane verification (complete)
-        -> RTL2 production transaction/dataflow correctness
+        -> RTL2 constrained transaction/dataflow closure (testbench-only)
         -> RTL2 completion review
-        -> numeric and memory realization gates
+        -> RTL3 functional realization closure
+        -> physical/numeric implementation realization
         -> profiling
         -> optimization
         -> synthesis / timing / PPA / Gate-B
 ```
 
-Profiling begins only after an appropriate numeric/memory realization has been
-separately selected and verified.  It must not retroactively turn the RTL2
-functional storage or R4 result stub into physical-performance evidence.
+Profiling begins only after the relevant functional realization and a separate
+physical/numeric realization have been selected and verified. It must not
+retroactively turn RTL2 functional storage, the RTL3 functional memory
+environment, a replaceable partial producer, or an R4 functional merge model
+into physical-performance evidence.
