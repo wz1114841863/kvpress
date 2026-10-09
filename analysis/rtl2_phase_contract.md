@@ -778,13 +778,21 @@ MAC owner, or make a testbench default appear as an accepted production fact.
    group terminal ownership.  This is not final synthesizable/pipelined
    floating-point RTL; see
    [`rtl3_4b_functional_r4_provider_contract.md`](rtl3_4b_functional_r4_provider_contract.md).
-7. **RTL3.5 — source-payload to partial-producer boundary closure.** Let hot,
-   direct-pending, and S2 owners supply only their payload, position/sideband,
-   and source identity/generation facts. The unique partial producer then
-   emits `(m, l, o)` through the frozen packet boundary to R4. If attention MAC
-   remains outside RTL scope, that provider remains a formally replaceable
-   functional PE/reference model rather than a hidden source-owner behavior.
-8. **RTL3.6 — functional-realization completion review.** Re-run the complete
+7. **RTL3.5-A — query/position/RoPE and partial-producer boundary (complete
+   interface-owner freeze).** [`rtl3_5a_attention_partial_producer_boundary_contract.md`](rtl3_5a_attention_partial_producer_boundary_contract.md)
+   resolves the former query/position stop without activating computation.
+   Hot, direct-pending, and S2 own only payload, position/sideband, and exact
+   source identity/generation.  The external common frontend owns the
+   already-RoPE-applied query and the Qwen-anchor `query_head = 4 * kv_head +
+   consumer_id` association; the unique replaceable functional partial provider
+   alone may later emit `(m, l, o)` through the frozen packet boundary to R4.
+   It is not an attention MAC, RoPE, or numerical-RTL implementation.
+8. **RTL3.5-B — functional partial-provider realization (blocked on explicit
+   implementation review).** A future functional PE/reference model may consume
+   only the RTL3.5-A boundary and produce existing packet offers/fragments.  It
+   must not make a storage owner compute attention or select FP/exp/RoPE
+   hardware, payload transport, source scheduling, or production-top behavior.
+9. **RTL3.6 — functional-realization completion review.** Re-run the complete
    success and fault transactions with live accepted-carrier observations and
    the Python event/scoreboard oracle: `RETAIN -> pending -> functional memory
    -> P3 -> publication -> functional packed read -> S2 -> partial producer ->

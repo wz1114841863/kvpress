@@ -647,6 +647,18 @@ reassembled 4,096-bit payload.  It is not a numerical datapath, production-top
 binding, physical storage, throughput, or buffering choice; the contract is
 `analysis/rtl3_4b_functional_r4_provider_contract.md`.
 
+Before any source can create a present partial, the only permitted query-to-
+partial boundary is `route_a_functional_attention_partial_provider`.  The
+common frontend (outside this subsystem) owns an already-RoPE-applied query,
+its logical query position, and the exact Qwen-anchor association
+`query_head = 4 * kv_head + consumer_id`.  Hot, direct-pending, and S2 owners
+provide only the corresponding K/V payload access, ordered logical positions,
+and exact source-instance generation; their stored K was RoPE-applied at KV
+creation and must not be rotated again.  This is an interface/ownership rule,
+not a query payload transport, RoPE implementation, attention MAC, source
+schedule, or numeric-realization selection.  The freeze is
+`analysis/rtl3_5a_attention_partial_producer_boundary_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.

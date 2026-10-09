@@ -1,0 +1,82 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-5a-attention-partial-producer-boundary-1.0",
+  "status": "complete_interface_owner_freeze_pre_functional_partial_provider",
+  "scope": "No-model RTL3.5-A interface and unique-owner freeze. It activates no Chisel provider and selects no attention MAC, RoPE arithmetic, numerical implementation, payload transport, scheduler, controller, timing, or PPA result.",
+  "owners": {
+    "query_context": "common_frontend_attention_context_provider",
+    "partial_producer": "route_a_functional_attention_partial_provider",
+    "hot": "route_a_hot_source_path",
+    "pending": "route_a_direct_pending_endpoint_v1",
+    "packed": "route_a_s2_gqa_source_wrapper"
+  },
+  "partial_packet_producer": "route_a_functional_attention_partial_provider",
+  "canonical_source_order": ["hot", "pending", "packed"],
+  "qwen_anchor_association": {
+    "layer_count": 36,
+    "kv_head_count": 8,
+    "query_head_count": 32,
+    "query_heads_per_kv_head_group": 4,
+    "consumer_ids": [0, 1, 2, 3],
+    "query_head_mapping": "query_head = 4 * kv_head + consumer_id",
+    "generalization_rule": "A non-anchor design must provide an explicit query-head-to-KV-head mapping parameter; it must not reuse the Qwen formula implicitly."
+  },
+  "attention_partial_work": {
+    "identity_key": ["request_id", "incarnation", "layer", "kv_head", "consumer_id"],
+    "frontend_fields": ["query_head", "query_position", "query_payload_handle", "rope_semantics_profile", "attention_semantics_profile"],
+    "source_owner_fields": ["source_instance.kind", "source_instance.coordinate", "source_instance.generation", "source_payload_handle", "ordered_source_logical_positions"],
+    "acceptance_rule": "all identity, Qwen GQA mapping, source generation, ordered position, profile, and causal-visibility fields match exactly before acceptance",
+    "ready_low_rule": "may delay existing partial packet offers/fragments only; cannot alter accepted work or its packet"
+  },
+  "rope_and_position_semantics": {
+    "anchor_profile": "qwen3_rope_applied_at_q_and_k_creation_v1",
+    "query_rope_state": "already_applied_by_common_frontend",
+    "key_rope_state": "already_applied_at_kv_creation",
+    "provider_rule": "provider does not apply or re-apply RoPE to Q or K",
+    "position_rule": "source positions are exact ordered semantic inputs for causal visibility and association; they do not choose a position-cache or sidecar transport"
+  },
+  "output_rule": {
+    "existing_carriers": ["SourceServicePartialOffer", "SourceServiceValueFragment"],
+    "present_source": "one present header and eight ordered 64-byte fragments per accepted source work item and consumer",
+    "excluded_source": "no provider work or data-bearing packet; existing functional R4 provider inserts only the frozen absent identity from accepted source_presence",
+    "ownership": "provider cannot commit a consumer, release a source, change authority, emit an R4 result, or emit an outward terminal"
+  },
+  "fail_closed": {
+    "rejected_before_acceptance": ["missing_or_mismatched_query_association", "invalid_query_head_mapping", "query_or_source_identity_mismatch", "source_generation_mismatch", "position_count_or_order_mismatch", "RoPE_or_attention_profile_mismatch", "causal_visibility_violation"],
+    "effects": ["no_partial_packet", "no_consumer_commit", "no_source_release", "no_authority_transition", "no_Full_KV_substitution", "no_mask_or_admission_change"],
+    "classification": "environment-interface violation, not an R4 numeric_fault"
+  },
+  "forbidden": [
+    "storage_owner_attention_partial_computation",
+    "production_top_activation",
+    "attention_mac_or_rope_rtl",
+    "physical_performance_or_ppa_claim",
+    "query_payload_wire_width_or_storage_selection",
+    "source_schedule_or_reordering_change",
+    "pruning_admission_or_atomic_commit_change",
+    "Full_KV_fallback",
+    "new_A4_DSE"
+  ],
+  "verification": {
+    "validator_command": ".venv/bin/python tools/validate_rtl3_5a_attention_partial_producer_boundary.py",
+    "pytest_command": ".venv/bin/python -m pytest -q tests/test_rtl3_5a_attention_partial_producer_boundary_manifest.py",
+    "evidence_labels": ["pure-software interface-owner freeze", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL numerical correctness claim", "no new A4 DSE"]
+  },
+  "source_sha256": {
+    "analysis/README.md": "f63e70047a3de07030d3f1d2ee9d94c959f1ace7598ee73a61a28eecfc283030",
+    "analysis/architecture_spec.md": "cd9b0987dc03ccf06ea010fee8339977766dd8a6b98ebde6c2964734b77cde40",
+    "analysis/rtl2_phase_contract.md": "cdf06d4a0079462131186962250bd3435e0576265827e81f59107e74ea276b40",
+    "analysis/rtl3_0_replacement_owner_contract.md": "7fffa9577f2be60f1a5c8f967ed68afc5cba13d534078c42159097abdb32322d",
+    "analysis/rtl3_0_replacement_owner_manifest.json": "ed4ee4c64979d06c706546b651eae21c58e87aa2b46d18648aedc74b62687b03",
+    "analysis/rtl3_5a_attention_partial_producer_boundary_contract.md": "07d684ee7f3dbf4044927a536b105fb5c04c08ceaa2a985ff26ab7af5fcea206",
+    "analysis/rtl_entry_interface_manifest.json": "bcdef5d208bde91701464a5e73706f945f87996508be18a5a55a67fada582641",
+    "analysis/rtl_entry_port_parameter_contract.md": "095bcc51e874cc1068dbf1baa1a4a68ad76af67c15cf90a79f2b90d0d4aa7a05",
+    "analysis/qwen3_8b_edge_target_v0.json": "7a287538ffa86b71a7348d68c21930a7910f9f175ddf2e7d295ec6708d837fd9",
+    "hardware/route_a/chisel/README.md": "7f1d76df2ef6a9bd6c5d8a30834b1ef84823f7d5786e4879a8a3f2589a3da964",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "d57f1b94f7ce8de180849315463fffa529c4e31c57ecbff62ad85c289fafb1fb",
+    "kvpress/rtl_entry_manifest.py": "672a57f2d692007a4dcd9db6d4fd4104f1115d23adc344e2361c5b44dbb110bb",
+    "kvpress/route_a_policy_backend.py": "14c5449684786758a74fba1aeaa62315c763d5675ab3ddf04cfc5a88491e3dfe",
+    "tests/test_rtl_entry_interface_manifest.py": "37ee95e5a64940b372a2dddac14cb309338bfa8a5e659382d1fa7bb818c8dfd4",
+    "tests/test_rtl3_5a_attention_partial_producer_boundary_manifest.py": "bb8f7a2807f3f3f6d268b0a9558d187292c7e3b21178e303c0c8b2fe6bb91ec0",
+    "tools/validate_rtl3_5a_attention_partial_producer_boundary.py": "dfcb3d90feb3d9a22465e44c8ed45a8bfd78024d1bd4086b711ac1380b4f7cd5"
+  }
+}

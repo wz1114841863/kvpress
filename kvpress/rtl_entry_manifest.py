@@ -74,6 +74,7 @@ REQUIRED_PORT_RECORD_IDS = frozenset(
         "if_source_partial_to_merge",
         "if_r4_partial_header",
         "if_r4_value_fragment",
+        "if_r4_accepted_partial_packet",
         "if_r4_result_stub",
         "if_r4_numeric_fault",
         "if_merge_source_commit",

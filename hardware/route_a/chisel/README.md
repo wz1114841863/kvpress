@@ -346,6 +346,17 @@ activate a numeric provider.  This is packet/oracle binding only, not Chisel
 FP arithmetic, an exp implementation, a production numeric core, or a
 timing/PPA claim.  See `analysis/rtl3_4b_functional_r4_provider_contract.md`.
 
+## RTL3.5-A query/position/RoPE and partial-producer boundary
+
+RTL3.5-A freezes the missing owner boundary before a source partial may be
+computed.  The common frontend environment owns the already-RoPE-applied query,
+query position, and the Qwen-anchor `query_head = 4 * kv_head + consumer_id`
+mapping.  Hot, direct-pending, and S2 remain K/V-plus-position/source-instance
+owners only; `route_a_functional_attention_partial_provider` is the sole future
+producer of existing R4 partial packets.  No Chisel partial producer, Q/K/V
+transport, RoPE/MAC/FP implementation, or top activation is introduced by this
+freeze.  See `analysis/rtl3_5a_attention_partial_producer_boundary_contract.md`.
+
 ## RTL2.1a retained-group admission activation
 
 RTL2.1a adds `route_a_admission_publication_ingress_adapter`, the sole
