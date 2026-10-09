@@ -687,8 +687,13 @@ production bridge, profiling, optimization, synthesis, timing, or PPA claims.
 **Status:** RTL3.0 replacement planning, RTL3.1 functional memory, RTL3.2
 bounded packed-S2 payload, RTL3.3/RTL3.4 R4 functional-model closure, and
 RTL3.5-A/B query/source-to-functional-partial closure and RTL3.5-C's static
-cross-language structural packet binding are complete within their
-declared testbench/reference scopes.  No production-top RTL3 composition,
+cross-language structural packet binding are complete within their declared
+testbench/reference scopes. RTL3.6 has completed the required cross-owner
+review with an explicit no-PASS: no same-instance live functional
+partial/R4/R6/reclaim composition exists yet, and sidecar transport remains a
+testbench ingress. The active terminal/reclaim replay bindings also require a
+narrow provenance repair before their historical replay can be revalidated.
+No production-top RTL3 composition,
 physical controller, numerical microarchitecture, or performance experiment is
 authorized by these records.
 See
@@ -803,12 +808,14 @@ MAC owner, or make a testbench default appear as an accepted production fact.
    production top or creating a live cross-language transport.  It preserves
    exact identity, source instance, header, eight fragments, and consumer
    association only.
-10. **RTL3.6 — functional-realization completion review.** Re-run the complete
-   success and fault transactions with live accepted-carrier observations and
-   the Python event/scoreboard oracle: `RETAIN -> pending -> functional memory
-   -> P3 -> publication -> functional packed read -> S2 -> partial producer ->
-   functional R4 merge -> terminal -> retire -> reclaim`. Include reset,
-   stale/mismatched response, legal ready-low, and fault fail-closed coverage.
+10. **RTL3.6 — functional-realization completion review (complete,
+    no-PASS).** [`rtl3_6_functional_realization_completion_review.md`](rtl3_6_functional_realization_completion_review.md)
+    confirms the valid RTL3.1--3.5 slices and preserves the accepted-carrier
+    success/fault/stale/ready-low evidence, but rejects a false end-to-end
+    conclusion. The first remaining closure is active terminal/reclaim replay
+    provenance repair; only then may a testbench-only same-instance live
+    functional provider/R4/R6 terminal composition be attempted. Sidecar
+    transport and full-path reset-epoch composition remain separately explicit.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

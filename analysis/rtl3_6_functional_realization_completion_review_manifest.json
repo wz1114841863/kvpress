@@ -1,0 +1,81 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-6-functional-realization-completion-review-1.0",
+  "status": "reviewed_incomplete_live_cross_language_functional_composition",
+  "scope": "RTL3.6 is a no-model cross-owner completion review. It records completed functional slices and the exact missing live-composition boundary; it is not production RTL, a live Python/Chisel bridge, physical memory/numeric realization, timing/PPA evidence, model/GPU execution, or a new A4 DSE.",
+  "reviewed_predecessors": {
+    "analysis/rtl3_1_functional_memory_environment_manifest.json": "complete_testbench_only_functional_memory_environment",
+    "analysis/rtl3_2_packed_read_functional_integration_manifest.json": "complete_testbench_composed_functional_packed_payload_path_with_explicit_sidecar_boundary",
+    "analysis/rtl3_4b_functional_r4_provider_manifest.json": "implemented_functional_oracle_provider_pre_rtl3_5_partial_producer",
+    "analysis/rtl3_5b_functional_attention_partial_provider_manifest.json": "implemented_pure_software_functional_partial_provider_pre_numeric_rtl",
+    "analysis/rtl3_5c_cross_language_packet_binding_manifest.json": "implemented_static_cross_language_packet_binding_pre_production_top"
+  },
+  "reviewed_evidence": [
+    "functional_memory_transaction_environment",
+    "packed_payload_to_s2_with_explicit_sidecar_boundary",
+    "functional_partial_and_r4_oracle_models",
+    "static_cross_language_structural_packet_binding",
+    "historical_accepted_carrier_replay_record_not_revalidated_due_stale_active_bindings"
+  ],
+  "open_gaps": [
+    "no_same_instance_live_functional_partial_to_r4_to_r6_terminal_binding",
+    "no_same_instance_functional_r4_terminal_to_retire_reclaim_binding",
+    "s2_sidecar_transport_remains_explicit_testbench_ingress",
+    "no_full_path_reset_epoch_composition_witness",
+    "active_terminal_and_reclaim_replay_provenance_hashes_stale"
+  ],
+  "blocked_preflight": {
+    "command": ".venv/bin/python -m pytest -q tests/test_rtl2_6_5c_event_capture_replay.py",
+    "failure_class": "active_scoreboard_binding_hash_drift_before_event_replay",
+    "bindings": [
+      "analysis/rtl2_4_3_attention_terminal_scoreboard_binding.json",
+      "analysis/rtl2_5_5_active_state_scoreboard_binding.json"
+    ]
+  },
+  "disposition": {
+    "rtl3_functional_realization_complete": false,
+    "next_required_closure": "rtl3_6a_repair_active_replay_provenance_before_live_functional_composition"
+  },
+  "forbidden": [
+    "production-top activation claim",
+    "live Python Chisel co-simulation claim",
+    "Chisel attention MAC or FP numeric RTL claim",
+    "HBM SRAM controller or physical-memory claim",
+    "timing throughput area energy or PPA claim",
+    "model GPU or new A4 DSE claim",
+    "scheduler admission pruning or atomic-publication change",
+    "Full-KV fallback"
+  ],
+  "verification": {
+    "python_command": ".venv/bin/python -m pytest -q tests/test_rtl2_6_5e_same_instance_review.py tests/test_rtl3_4b_functional_r4_provider.py tests/test_rtl3_5b_functional_attention_partial_provider.py tests/test_rtl3_5c_cross_language_packet_binding.py tests/test_rtl3_6_functional_realization_review.py",
+    "validators": [
+      ".venv/bin/python tools/validate_rtl2_6_5e_same_instance_review.py",
+      ".venv/bin/python tools/validate_rtl3_4b_functional_r4_provider.py",
+      ".venv/bin/python tools/validate_rtl3_5a_attention_partial_producer_boundary.py",
+      ".venv/bin/python tools/validate_rtl3_5b_functional_attention_partial_provider.py",
+      ".venv/bin/python tools/validate_rtl3_5c_cross_language_packet_binding.py",
+      ".venv/bin/python tools/validate_rtl3_6_functional_realization_review.py"
+    ],
+    "chisel_commands": [
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAFunctionalMemoryEnvironmentSpec' 'testOnly kvpress.routea.rtl3.RouteAPackedReadAssociationOwnerSpec'",
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl2.RouteARTL265eSameInstanceWitnessSpec' 'testOnly kvpress.routea.rtl2.RouteASourceServicePacketAdapterSpec'"
+    ],
+    "evidence_labels": ["cross-owner functional completion review with explicit no-PASS", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL numeric correctness claim", "no production-top activation", "no new A4 DSE"]
+  },
+  "source_sha256": {
+    "analysis/README.md": "2de6d5048633c0e1aeb15516f54b9522a8eaebf9d6c27c968d134fc551ee6f12",
+    "analysis/architecture_spec.md": "23705151a72962bb943fee5c134c4405884efc29965327bb792f6a3e91c435ee",
+    "analysis/rtl2_phase_contract.md": "a6994c5b4777237569d1cff340bfe966a48aa86fb92d981c7d5c42ed3a4cebd6",
+    "analysis/rtl2_6_5c_event_capture_replay_manifest.json": "23d0f5621e065f8b4269bdc3b12d1039fa164c465295b51dbcbe65cf94d0bce7",
+    "analysis/rtl2_6_5e_same_instance_witness_manifest.json": "ea00b34c1b8b2198784e0dfd348cc828dc6fcd0494d11b549f3cbbeb59221a25",
+    "analysis/rtl3_1_functional_memory_environment_manifest.json": "33f70906cb9ab1ae0a4037a785bb5596cc18d7a5aafc8211079b1aa895132df8",
+    "analysis/rtl3_2_packed_read_functional_integration_manifest.json": "76b9bc9c07b594a2b05ce7e313f95c3bba0a407c9456596ab0b0b8b6b4397cb0",
+    "analysis/rtl3_4b_functional_r4_provider_manifest.json": "ea37bfb2c6b32f260937d21657b08fb5fb4fb901fe31a9351098953b2f190249",
+    "analysis/rtl3_5b_functional_attention_partial_provider_manifest.json": "15b739333839f449639e4cea45205bd048b99a619a1be89e97b4402d24028ad0",
+    "analysis/rtl3_5c_cross_language_packet_binding_manifest.json": "2f1ae18c34e9fa9d1d89144fc6830a72597111a1db9a23be0d63fbec80f77d52",
+    "analysis/rtl3_6_functional_realization_completion_review.md": "29a21dcee691f6b0c0b77ca9ee13c888e6dcd8e79e565bc362b6ed407124672e",
+    "hardware/route_a/chisel/README.md": "b6867d52834face029a3638f0585c138bf83c3958987c5aebef6b60d7052175c",
+    "kvpress/rtl3_6_functional_realization_review.py": "40e9ee9d72688007a130ca3fe42c561831bef6e08f51117639450a8cd857c603",
+    "tests/test_rtl3_6_functional_realization_review.py": "ec62cebe1a8e0ddd44e7e8de61fc46d4de45c28a6cc93479531cd455e3ec8762",
+    "tools/validate_rtl3_6_functional_realization_review.py": "5878e6ce277ae63f56a1ef105f0fd90c23a29a2437f6ed39f733a330bb086908"
+  }
+}

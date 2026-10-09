@@ -677,6 +677,14 @@ only a fixture-mediated structural binding, not a live Python/Chisel bridge,
 production-top activation, or numeric-hardware claim; see
 `analysis/rtl3_5c_cross_language_packet_binding_contract.md`.
 
+RTL3.6 reviewed the combined functional evidence and did **not** promote it
+to an end-to-end functional-realization pass. In particular, a static packet
+fixture is not a same-instance live partial-provider-to-R4-to-R6 terminal
+binding; the RTL2.6.5e retained-path witness still uses its declared R4 result
+stub, and RTL3.2 sidecar transport remains an explicit testbench boundary.
+The exact no-PASS and next testbench-only closure are frozen in
+`analysis/rtl3_6_functional_realization_completion_review.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.

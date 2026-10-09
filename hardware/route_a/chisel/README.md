@@ -378,6 +378,16 @@ directed static fixture test only: no production-top binding, foreign-function
 runtime bridge, Chisel attention/numeric implementation, or timing/PPA claim
 is introduced.  See `analysis/rtl3_5c_cross_language_packet_binding_contract.md`.
 
+## RTL3.6 functional-realization completion review
+
+RTL3.6 records a precise no-PASS rather than treating separate functional
+fixtures as one live production dataflow. The functional memory and packed-S2
+slice, the Python partial/R4 providers, and the static packet fixture all
+remain useful bounded evidence; however, no same-instance live functional
+partial-to-R4-to-R6 terminal/reclaim binding exists, and sidecar transport is
+still an explicit testbench ingress. See
+`analysis/rtl3_6_functional_realization_completion_review.md`.
+
 ## RTL2.1a retained-group admission activation
 
 RTL2.1a adds `route_a_admission_publication_ingress_adapter`, the sole
