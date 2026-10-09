@@ -684,9 +684,11 @@ production bridge, profiling, optimization, synthesis, timing, or PPA claims.
 
 ## Planned successor — RTL3: Functional Realization Closure
 
-**Status:** planned. RTL3 begins only with RTL3.0 owner-replacement planning;
+**Status:** RTL3.0 planning is complete with explicit stop-for-review items;
 no RTL3 behavioral module, physical controller, numerical microarchitecture,
-or performance experiment is authorized by this plan alone.
+or performance experiment is authorized by this plan alone. See
+[`rtl3_0_replacement_owner_contract.md`](rtl3_0_replacement_owner_contract.md)
+and its machine-readable manifest.
 
 RTL3 replaces the remaining verification-only data/numeric conveniences with
 named, functional providers while preserving every frozen authority,
@@ -696,11 +698,15 @@ numeric-microarchitecture closure.
 
 ### RTL3.0 — replacement-owner manifest and stop-for-review map
 
-Before activating a new carrier, freeze one machine-readable/Markdown map for
-each remaining verification convenience. The map must name the replacement
-owner, interface, identity/incarnation and generation source, accepted-carrier
-scoreboard observation, environment assumptions, DUT guarantees, and the
-testbench injection that becomes forbidden after replacement.
+**Complete as planning only, with behavioral activation blocked.**
+[`rtl3_0_replacement_owner_contract.md`](rtl3_0_replacement_owner_contract.md)
+freezes the required machine-readable/Markdown map for each remaining
+verification convenience: replacement owner or explicit stop, interface,
+identity/incarnation and generation source, accepted-carrier scoreboard
+observation, environment assumptions, DUT guarantees, and the testbench
+injection that becomes forbidden after replacement. It records two mandatory
+stops: packed-read cross-owner association ownership before RTL3.2, and
+query/position/RoPE association before RTL3.5.
 
 | Current convenience | Planned functional replacement boundary | Non-negotiable limit |
 |---|---|---|

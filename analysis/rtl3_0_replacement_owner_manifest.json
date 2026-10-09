@@ -1,0 +1,127 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-0-replacement-owner-1.0",
+  "status": "implemented_planning_stop_for_review",
+  "scope": "No-model RTL3.0 replacement-owner and stop-for-review map. It changes no Chisel owner, top wiring, architecture authority, schedule, numeric observable contract, or physical realization.",
+  "inherited_frozen_rules": [
+    "R3/M2 is the sole metadata-publication and pending-to-packed authority boundary.",
+    "R5 owns packed-page and descriptor facts; R2/R1 own typed delivery, request, response, FIFO, credit, and terminal behavior.",
+    "Hot, direct-pending, and S2 owners provide payload/sideband/identity/generation facts but do not compute attention partials merely by owning K/V storage.",
+    "R4 preserves observable binary32 packet behavior, canonical hot->pending->packed order, normalization guard, and numeric-fault disposition."
+  ],
+  "replacement_records": [
+    {
+      "id": "functional_memory_environment",
+      "status": "planned_rtl3_1",
+      "current_boundary": {
+        "carrier": "external_core_mem_if_v1",
+        "current_provider": "testbench/manual external response environment",
+        "current_convenience": "tests may manually drive init acknowledgement and accepted R1 responses"
+      },
+      "replacement": {
+        "owner": "testbench_route_a_functional_memory_environment",
+        "interface": "existing core_mem_if_v1 external init/request/response interface",
+        "role": "functional external memory environment",
+        "authority": "non_authoritative",
+        "identity_source": "accepted R1 transaction_identity and reset epoch",
+        "generation_source": "only an explicitly associated logical page/sidecar model; never an inferred response default"
+      },
+      "scoreboard_observations": ["request_accept", "fragment_deliver", "write_commit"],
+      "environment_assumptions": ["accepted request may be stalled", "accepted request eventually receives one legal terminal under fairness"],
+      "dut_guarantees": ["R1/R2 never duplicate, lose, or misattribute a response", "stale or mismatched response does not deposit"],
+      "post_replacement_prohibition": "direct manual response or S2 payload/sidecar mutation cannot stand in for an accepted functional-memory transaction",
+      "forbidden": ["HBM controller claim", "burst or channel mapping", "CDC selection", "latency or bandwidth model", "memory authority transfer"]
+    },
+    {
+      "id": "packed_s2_read_association",
+      "status": "stop_for_review",
+      "current_boundary": {
+        "carriers": ["verification_s2_service_req_in", "verification_packed_s2_read_work_in", "verification_s2_sidecar_fragment_in", "verification_s2_sidecar_complete_in"],
+        "current_provider": "verification environment / RTL2.6 testbench association",
+        "current_convenience": "cross-owner packed-page request, slot, generation, and sidecar completion are supplied outside the production top"
+      },
+      "replacement": {
+        "owner": "UNRESOLVED_STOP_FOR_REVIEW",
+        "interface": "future accepted packed-read association feeding existing R2/R1 typed delivery and owner-local S2 deposition",
+        "required_fact_owners": ["route_a_lifecycle_adapter request identity", "route_a_page_manager PageRef and generation", "route_a_m2_p3_wrapper publication/authority observation", "route_a_s2_gqa_source_wrapper slot and source generation", "route_a_core_side_arbiter delivery context"],
+        "reason": "No existing owner is authorized to join these facts without selecting a scheduler or manufacturing a new cross-owner association."
+      },
+      "scoreboard_observations": ["metadata_publish_commit", "authority_transition", "fragment_deliver", "source_deliverable"],
+      "environment_assumptions": ["none may substitute for the unresolved association"],
+      "dut_guarantees": ["only exact accepted identity/page/generation/slot association may open or fill S2", "stale, mismatch, duplicate, and terminal-fault facts cannot make S2 READY"],
+      "post_replacement_prohibition": "verification packed-S2 service/work/sidecar ingress is disabled once an explicitly reviewed replacement owner exists",
+      "forbidden": ["scheduler selection", "top-level producer", "second authority owner", "sidecar inference from payload traffic"]
+    },
+    {
+      "id": "source_payload_to_partial_provider",
+      "status": "stop_for_review",
+      "current_boundary": {
+        "carriers": ["source_packet_adapter hot/pending/packed offer inputs", "source_packet_adapter hot/pending/packed value-fragment inputs"],
+        "current_provider": "structural verification packet ingress or inactive top tie-off",
+        "current_convenience": "already-computed partial packet contents may be injected without a query/position-aware partial producer"
+      },
+      "replacement": {
+        "owner": "route_a_functional_attention_partial_provider",
+        "interface": "new replaceable functional boundary from source-owner payload/sideband facts to frozen source packet/R4 partial fields",
+        "source_fact_owners": ["route_a_hot_source_path", "route_a_direct_pending_endpoint_v1", "route_a_s2_gqa_source_wrapper"],
+        "required_new_inputs": ["common-front-end query association", "position/RoPE sideband semantics"],
+        "reason": "The frozen incremental subsystem has no authorized query/position-to-partial interface; assigning computation to a storage owner would expand scope."
+      },
+      "scoreboard_observations": ["source_deliverable", "consumer_partial_commit", "source_release", "merge_request"],
+      "environment_assumptions": ["partial provider receives only an accepted source instance and its explicit query/position association"],
+      "dut_guarantees": ["source owners do not emit an attention partial by storage ownership alone", "partial provider preserves source identity, generation, canonical order, and four-consumer association"],
+      "post_replacement_prohibition": "testbench structural offers/fragments cannot substitute for the partial provider after its interface is reviewed",
+      "forbidden": ["hidden attention MAC in a storage owner", "source reordering equivalence claim", "scheduler synthesis", "physical PE throughput claim"]
+    },
+    {
+      "id": "r4_functional_merge_provider",
+      "status": "planned_rtl3_3_to_3_4",
+      "current_boundary": {
+        "carriers": ["r4_result_stub_in", "r4_numeric_fault_in"],
+        "current_provider": "testbench_route_a_r4_result_stub_provider",
+        "current_convenience": "identity-matching success or fault is stimulated without a merge calculation"
+      },
+      "replacement": {
+        "owner": "route_a_functional_r4_merge_provider",
+        "interface": "existing merge_req, partial header, value fragment, merge response, and numeric_fault boundary",
+        "identity_source": "accepted R6 merge request and matching partial source instances",
+        "generation_source": "accepted partial source-instance sideband",
+        "observable_contract": "frozen binary32 packet, canonical hot->pending->packed order, normalization guard, and numeric-fault disposition"
+      },
+      "scoreboard_observations": ["merge_request", "attention_terminal", "consumer_partial_commit"],
+      "environment_assumptions": ["provider receives only valid accepted partial packets in the frozen order"],
+      "dut_guarantees": ["one matching success XOR numeric-fault result", "R4 never bypasses R6 terminal ownership"],
+      "post_replacement_prohibition": "R4 result stub cannot provide a success outcome after the functional merge provider is active",
+      "forbidden": ["exp implementation choice", "internal precision choice", "pipeline or state-storage choice", "throughput or PPA claim", "numeric RTL completion claim"]
+    }
+  ],
+  "stop_for_review": [
+    {
+      "id": "packed_read_association_owner",
+      "blocks": ["rtl3_2"],
+      "required_resolution": "Name one association owner and accepted-carrier field map joining R6 request identity, R5 page/generation, R3 publication, S2 slot/generation, and R2 delivery context without changing scheduling."
+    },
+    {
+      "id": "partial_provider_query_position_contract",
+      "blocks": ["rtl3_5"],
+      "required_resolution": "Name the common-front-end query association and position/RoPE sideband interface, or explicitly retain a replaceable external functional PE/reference provider."
+    }
+  ],
+  "disposition": {
+    "rtl3_0_replacement_map_complete": true,
+    "rtl3_behavioral_activation_authorized": false,
+    "next_required_action": "review and resolve the two stop-for-review items before their respective behavioral closures"
+  },
+  "forbidden": ["production-top completion claim", "HBM or SRAM macro claim", "numeric RTL completion claim", "timing throughput area energy or PPA claim", "new A4 DSE", "pruning admission scheduler or atomic-publication change", "Full-KV fallback"],
+  "source_sha256": {
+    "analysis/architecture_spec.md": "3177b293068767e10da0d49cc75cbc1267669a22b9764849cfec48506c391e4a",
+    "analysis/rtl2_6_5e_same_instance_witness_contract.md": "14c63b1cd23ef1216db2b3c14ec02dfc917e39da9b1665bfb073f75c9afb2df2",
+    "analysis/rtl2_phase_contract.md": "60984e8dc496e786a8fc035b65d03937d41f50f1b49ead6492802778ceae7d33",
+    "analysis/rtl3_0_replacement_owner_contract.md": "7fffa9577f2be60f1a5c8f967ed68afc5cba13d534078c42159097abdb32322d",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "ebf0b22ab8b73794aa4e7e5461f28debf691440085ba37ac3ccf8089de1718d8",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "bdc4b137b674b44c95a165d3cf2b891db46806e0cea436bd74a5029e6459af58",
+    "kvpress/rtl3_0_replacement_owner.py": "796ead7c5572c9342972f9ef04d590cc2be1f18cdd07a3304b9cd24d4070fbba",
+    "tests/test_rtl3_0_replacement_owner.py": "75b16f7280228d999a53ad5199240b1904b78d2922becb8a9bbbc901c00697a0",
+    "tools/validate_rtl3_0_replacement_owner.py": "e1fcb64d363ea1db3cdd65eb8e8cbc4674bbc85de0d65574e8d487bc2272b1ba"
+  },
+  "evidence_labels": ["pure-software replacement-owner planning contract", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL correctness claim", "no new A4 DSE"]
+}
