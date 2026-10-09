@@ -669,6 +669,14 @@ model only through a reference-test conversion which does not replace R4's
 structural ready/valid acceptance.  See
 `analysis/rtl3_5b_functional_attention_partial_provider_contract.md`.
 
+RTL3.5-C additionally freezes one versioned static cross-language packet
+fixture from that Python provider and demonstrates its exact
+identity/source-instance/header/eight-fragment words are accepted by the
+existing Chisel source-packet adapter and R4 structural boundary.  This is
+only a fixture-mediated structural binding, not a live Python/Chisel bridge,
+production-top activation, or numeric-hardware claim; see
+`analysis/rtl3_5c_cross_language_packet_binding_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.

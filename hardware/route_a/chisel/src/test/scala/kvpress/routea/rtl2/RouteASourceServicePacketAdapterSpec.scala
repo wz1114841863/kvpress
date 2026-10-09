@@ -7,6 +7,7 @@ import kvpress.routea.incremental.{RouteALifecycleAdapter, RouteAMergeBoundary}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
+import scala.io.Source
 
 /** C5 protocol harness: R6-accepted plan copy -> packet adapter -> frozen R4 parser. */
 final class RouteASourceServicePacketAdapterHarness(p: RouteASkeletonParameters) extends Module {
@@ -128,6 +129,19 @@ final class RouteASourceServicePacketAdapterSpec extends AnyFunSpec with ChiselS
 
   private def header(kind: Int, consumer: Int): BigInt = (BigInt(kind) << 64) | (BigInt(consumer) << 66) | (BigInt(1) << 69) | (BigInt(8) << 70)
 
+  private lazy val rtl35cFixture: Map[String, String] = {
+    val resource = Source.fromResource("rtl3_5c_functional_partial_packet.fixture")
+    try resource.getLines().map(_.trim).filter(line => line.nonEmpty && !line.startsWith("#")).map { line =>
+      val pair = line.split("=", 2)
+      require(pair.length == 2, s"malformed RTL3.5-C fixture line: $line")
+      pair(0) -> pair(1)
+    }.toMap
+    finally resource.close()
+  }
+
+  private def fixtureDecimal(name: String): Int = rtl35cFixture(name).toInt
+  private def fixtureWord(name: String): BigInt = BigInt(rtl35cFixture(name), 16)
+
   private def offerChannel(d: RouteASourceServicePacketAdapterHarness, kind: Int) = kind match {
     case 0 => d.io.hot_offer
     case 1 => d.io.pending_offer
@@ -157,6 +171,35 @@ final class RouteASourceServicePacketAdapterSpec extends AnyFunSpec with ChiselS
     if (acceptCommit) {
       d.io.commit.ready.poke(true.B); d.clock.step(); d.io.commit.ready.poke(false.B)
     }
+  }
+
+  private def sendRtl35cFixturePacket(d: RouteASourceServicePacketAdapterHarness): Unit = {
+    val requestId = fixtureDecimal("request_id")
+    val incarnation = fixtureDecimal("incarnation")
+    val sourceKind = fixtureDecimal("source_kind")
+    val coordinate = fixtureDecimal("source_instance_coordinate")
+    val generation = fixtureDecimal("source_generation")
+    val consumer = fixtureDecimal("consumer_id")
+    val offer = offerChannel(d, sourceKind)
+    offer.bits.transaction_identity.request_id.poke(requestId.U); offer.bits.transaction_identity.incarnation.poke(incarnation.U)
+    driveInstance(offer.bits.source_instance, sourceKind, coordinate, generation)
+    offer.bits.consumer_id.poke(consumer.U); offer.bits.r4_header.poke(fixtureWord("header_word_hex").U); offer.bits.partial_present.poke(true.B)
+    offer.valid.poke(true.B); offer.ready.expect(true.B); d.clock.step(); offer.valid.poke(false.B)
+    d.clock.step()
+    (0 until 8).foreach { index =>
+      val fragment = fragmentChannel(d, sourceKind)
+      fragment.bits.transaction_identity.request_id.poke(requestId.U); fragment.bits.transaction_identity.incarnation.poke(incarnation.U)
+      driveInstance(fragment.bits.source_instance, sourceKind, coordinate, generation)
+      fragment.bits.consumer_id.poke(consumer.U); fragment.bits.fragment_index.poke(index.U); fragment.bits.last.poke((index == 7).B)
+      fragment.bits.data.poke(fixtureWord(s"fragment_${index}_word_hex").U)
+      fragment.valid.poke(true.B); fragment.ready.expect(true.B); d.clock.step(); fragment.valid.poke(false.B)
+    }
+    d.io.commit.valid.expect(true.B)
+    d.io.commit.bits.transaction_identity.request_id.expect(requestId.U)
+    d.io.commit.bits.transaction_identity.incarnation.expect(incarnation.U)
+    d.io.commit.bits.source_kind.expect(sourceKind.U)
+    d.io.commit.bits.consumer_id.expect(consumer.U)
+    d.io.commit.ready.poke(true.B); d.clock.step(); d.io.commit.ready.poke(false.B)
   }
 
   it("forwards every present source/consumer packet in canonical order for all seven nonempty masks") {
@@ -219,6 +262,21 @@ final class RouteASourceServicePacketAdapterSpec extends AnyFunSpec with ChiselS
       fragment.valid.poke(true.B)
       d.io.hot_fragment.ready.expect(true.B)
       fragment.valid.poke(false.B)
+    }
+  }
+
+  it("accepts the exact RTL3.5-B functional-provider shared packet fixture without a top binding") {
+    simulate(new RouteASourceServicePacketAdapterHarness(p)) { d =>
+      init(d)
+      Seq(p.r6.memInitDoneStatusCode, p.r6.m2P3InitDoneStatusCode, p.r6.pageManagerInitDoneStatusCode).foreach(status(d, _))
+      val requestId = fixtureDecimal("request_id")
+      val sourceKind = fixtureDecimal("source_kind")
+      require(rtl35cFixture("schema_version") == "kvzap-route-a-rtl3-5c-functional-partial-packet-fixture-1.0")
+      require(sourceKind == 0, "the frozen RTL3.5-C fixture deliberately covers the canonical hot source")
+      frontend(d, p.r6.sessionStartEventCode, 0, 0)
+      frontend(d, p.r6.attentionServiceEventCode, requestId, 1)
+      setAvailability(d, requestId); sendPlan(d, requestId, 1)
+      sendRtl35cFixturePacket(d)
     }
   }
 }

@@ -1,0 +1,50 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-5c-cross-language-packet-binding-1.0",
+  "status": "implemented_static_cross_language_packet_binding_pre_production_top",
+  "scope": "One versioned static shared fixture proves exact Python RTL3.5-B packet words enter the existing Chisel source-packet adapter and R4 structural boundary. It is not a live bridge, production-top binding, numeric RTL, timing/PPA claim, model/GPU result, or A4 DSE.",
+  "binding": {
+    "python_owner": "route_a_functional_attention_partial_provider",
+    "chisel_boundary": "route_a_source_service_packet_adapter -> route_a_merge_boundary",
+    "transport": "versioned static shared fixture only"
+  },
+  "fixture_path": "hardware/route_a/chisel/src/test/resources/rtl3_5c_functional_partial_packet.fixture",
+  "fixture_schema": "kvzap-route-a-rtl3-5c-functional-partial-packet-fixture-1.0",
+  "exact_fixture_association": {
+    "transaction_identity": [6, 0],
+    "source_instance": [0, 10, 1],
+    "consumer_id": 2,
+    "shape": "one present 128-bit header plus eight ordered 512-bit fragments"
+  },
+  "guarantee": "The Python regenerated packet and resource fields match exactly; the Chisel directed harness accepts those exact fields only through normal source plan, availability, header/sideband, fragment, and consumer-commit handshakes.",
+  "non_claims": [
+    "live_python_chisel_cosimulation",
+    "production_top_activation",
+    "attention_MAC_RoPE_exp_or_FP_RTL",
+    "source_owner_partial_computation",
+    "all_four_consumer_completion_or_terminal",
+    "scheduler_authority_or_payload_transport_change",
+    "timing_throughput_area_energy_or_PPA",
+    "model_GPU_or_new_A4_DSE"
+  ],
+  "verification": {
+    "python_pytest_command": ".venv/bin/python -m pytest -q tests/test_rtl3_5b_functional_attention_partial_provider.py tests/test_rtl3_5c_cross_language_packet_binding.py tests/test_rtl3_5c_cross_language_packet_binding_manifest.py",
+    "validator_command": ".venv/bin/python tools/validate_rtl3_5c_cross_language_packet_binding.py",
+    "chisel_command": "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl2.RouteASourceServicePacketAdapterSpec'",
+    "evidence_labels": ["static cross-language packet-binding test", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL numeric correctness claim", "no production-top activation", "no new A4 DSE"]
+  },
+  "source_sha256": {
+    "analysis/README.md": "3ff5cdad98ecb6cd85a017871d4eccf95ac65f8ceee2db892486b06f47af288c",
+    "analysis/architecture_spec.md": "c686799741be2af01272d351316127eb270802c4330ecba5a89e416ddb276c00",
+    "analysis/rtl2_phase_contract.md": "f84958f47a90fc8e54d648a5b72239d08f4c6e0c0d809c23f4ab1075fc7a461a",
+    "analysis/rtl3_5b_functional_attention_partial_provider_contract.md": "5a12ad017550cb414d20f13196d382a3fc1e90bd11db0d17a989b4f51c374b22",
+    "analysis/rtl3_5c_cross_language_packet_binding_contract.md": "2da012a5c584247ca46641b76f540750826a15720afd2ebd783168d46121a013",
+    "hardware/route_a/chisel/README.md": "5ca0d6e4245f7b8ac60985948b751cf997cbcbcee3195dd2dc34066b2be1d6e9",
+    "hardware/route_a/chisel/src/test/resources/rtl3_5c_functional_partial_packet.fixture": "6eda31a69c998a61fc0850df1faabe709073131706883785478b00360667da81",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteASourceServicePacketAdapterSpec.scala": "66c561e3046e7fead5be5ac7e57fd81c5e89e06edcb657ae1f7763be6433cac4",
+    "kvpress/rtl3_5b_functional_attention_partial_provider.py": "b89a4d6a46f0c89d5fcabd74741652e00cbf51cc2e54326be6f92f6712746e24",
+    "kvpress/rtl3_5c_partial_packet_fixture.py": "202b00f63126b77399d43ee1e13f63ea292ef02910ad832b74795046b86adf79",
+    "tests/test_rtl3_5c_cross_language_packet_binding.py": "43890d9c5c05dfadee5c6eb0d74af636928848c5af5a8bb8191437708f7b27ff",
+    "tests/test_rtl3_5c_cross_language_packet_binding_manifest.py": "612da8b08c73fa7706e3137f76d95c38e75c99f3ecd61a6502521f2c0116ca07",
+    "tools/validate_rtl3_5c_cross_language_packet_binding.py": "fe2061b9da8a8bc426887d69cbf59db4745166f11dabc6dcc8614db5173fb716"
+  }
+}

@@ -686,7 +686,8 @@ production bridge, profiling, optimization, synthesis, timing, or PPA claims.
 
 **Status:** RTL3.0 replacement planning, RTL3.1 functional memory, RTL3.2
 bounded packed-S2 payload, RTL3.3/RTL3.4 R4 functional-model closure, and
-RTL3.5-A/B query/source-to-functional-partial closure are complete within their
+RTL3.5-A/B query/source-to-functional-partial closure and RTL3.5-C's static
+cross-language structural packet binding are complete within their
 declared testbench/reference scopes.  No production-top RTL3 composition,
 physical controller, numerical microarchitecture, or performance experiment is
 authorized by these records.
@@ -794,9 +795,15 @@ MAC owner, or make a testbench default appear as an accepted production fact.
    query/source leases.  It produces the existing present R4 packet shape and
    can feed the RTL3.4-B model in Python tests, but is not Chisel, does not bind
    the top, and selects no FP/exp/RoPE hardware, payload transport, source
-   scheduling, or production behavior.  A separate later review must bind its
-   packet output through the existing Chisel structural acceptance boundary.
-9. **RTL3.6 — functional-realization completion review.** Re-run the complete
+   scheduling, or production behavior.
+9. **RTL3.5-C — cross-language functional packet binding (complete, static
+   fixture only).** [`rtl3_5c_cross_language_packet_binding_contract.md`](rtl3_5c_cross_language_packet_binding_contract.md)
+   proves one exact RTL3.5-B provider output is accepted by the existing
+   Chisel source-packet adapter and R4 structural boundary without binding a
+   production top or creating a live cross-language transport.  It preserves
+   exact identity, source instance, header, eight fragments, and consumer
+   association only.
+10. **RTL3.6 — functional-realization completion review.** Re-run the complete
    success and fault transactions with live accepted-carrier observations and
    the Python event/scoreboard oracle: `RETAIN -> pending -> functional memory
    -> P3 -> publication -> functional packed read -> S2 -> partial producer ->
