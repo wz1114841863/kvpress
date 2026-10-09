@@ -755,11 +755,15 @@ MAC owner, or make a testbench default appear as an accepted production fact.
    closes no sidecar transport, S2 allocation, endpoint-to-owner terminal
    adapter/release integration, source schedule, or production-top binding;
    see [`rtl3_2_packed_read_functional_integration_contract.md`](rtl3_2_packed_read_functional_integration_contract.md).
-4. **RTL3.3 — R4 functional-realization profile and oracle binding.** Bind a
-   functional implementation to the already frozen observable binary32
-   packet, canonical `hot -> pending -> packed` order, normalization guard,
-   fault disposition, and Python reference. This does not reopen that numeric
-   contract or select exp implementation/internal precision.
+4. **RTL3.3 — R4 functional-realization profile and oracle binding
+   (complete, pre-RTL3.4).** The future provider profile now freezes the
+   canonical binary32 packet/oracle, fault disposition, and 4,096-bit
+   little-endian normalized-lane representation. The existing Chisel R4
+   boundary is bound only through a shared structural fixture; it still does
+   not compute or classify numeric values. See
+   [`rtl3_3_r4_functional_profile_contract.md`](rtl3_3_r4_functional_profile_contract.md).
+   This neither reopens the numeric contract nor selects exp implementation or
+   internal precision.
 5. **RTL3.4 — oracle-consistent functional R4 merge model.** Replace the R4
    result stub with a model that derives result/fault only from accepted partial
    inputs and preserves R4-to-R6 exactly-one terminal ownership. It is not a

@@ -1,0 +1,69 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-3-r4-functional-profile-1.0",
+  "status": "complete_functional_profile_oracle_binding_pre_rtl3_4",
+  "future_provider_owner": "route_a_functional_r4_merge_provider",
+  "activation": "deferred_to_rtl3_4",
+  "profile": {
+    "canonical_source_order": ["hot", "pending", "packed"],
+    "source_ordinals": {"hot": 0, "pending": 1, "packed": 2},
+    "consumer_count": 4,
+    "merge_instance_count": 1,
+    "partial": {"m": "binary32", "l": "binary32", "o_lanes": 128, "present_fragment_count": 8, "fragment_bytes": 64},
+    "absent_identity": {"m_bits": "0xff800000", "l_bits": "0x00000000", "o_lane_bits": "0x00000000"},
+    "normalized_value": {"width_bits": 4096, "lanes": 128, "lane_bits": 32, "packing": "lane i little-endian binary32 at bits [32*i+31:32*i]"},
+    "a2_comparison": {"m": "bitwise_equal", "atol": 0.00001, "rtol": 0.0001},
+    "fixture_header_word": "0x0000000000000228402000003fa00000"
+  },
+  "oracle": {
+    "implementation": "kvpress.route_a_merge_numeric_reference",
+    "entrypoints": ["MergePacket.decode_partial", "merge_numeric_partials", "NumericMergeResult.normalized", "assert_matches_a2"],
+    "rule": "host mathematical exp defines only the selected functional oracle; it is not an exp microarchitecture choice"
+  },
+  "chisel_boundary": {
+    "module": "route_a_merge_boundary",
+    "consumes": ["R4PartialHeader", "R4SourceInstanceSideband", "R4ValueFragment", "R4ResultStub", "R4NumericFault"],
+    "guarantee": "structural packet association plus exactly-one matching R6-facing success XOR numeric-fault terminal",
+    "does_not_do": ["binary32 classification", "merge arithmetic", "normalization", "oracle invocation", "normalized-value packing"]
+  },
+  "fault_rules": [
+    "entirely empty logical source set is an assertion failure",
+    "present nonfinite input, nonfinite output, overflow, or l <= 0 is numeric_fault",
+    "numeric_fault has no normalized output, retry, Full-KV fallback, or mask/admission change"
+  ],
+  "forbidden": [
+    "activate or replace the existing RTL2 verification result stub",
+    "implement exp or floating-point datapath",
+    "choose internal precision accumulator pipeline or storage",
+    "claim arbitrary source reordering equivalence",
+    "change source ownership scheduler admission pruning or atomic publication",
+    "implement attention MAC query or RoPE provider",
+    "memory controller CDC SRAM HBM macro or physical claim",
+    "cycle timing throughput area energy or PPA claim",
+    "model GPU accuracy result or new A4 DSE"
+  ],
+  "evidence_labels": [
+    "pure-software functional R4 profile and oracle binding",
+    "structural Chisel packet-boundary fixture",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL numeric correctness claim",
+    "no new A4 DSE"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "5ec8715395b78f9fb9887f4643dba0767366b50e7904e0255d2755ebe746e6d0",
+    "analysis/architecture_spec.md": "3177b293068767e10da0d49cc75cbc1267669a22b9764849cfec48506c391e4a",
+    "analysis/rtl2_phase_contract.md": "7854aab3274e823c48718853ef05baae3ba5eb999cc78bab08c820f4ae09b629",
+    "analysis/architecture_gate_a_r4_numeric_merge_contract.md": "068372d0dd6893a2e7ac3250c26a18f76bb5368b20700f212eea97edb6d2bd86",
+    "analysis/rtl3_3_r4_functional_profile_contract.md": "37faddf1bac78451e52f561e6fc4195eea1752ea6bc674553069534ae82ff3ad",
+    "hardware/route_a/chisel/README.md": "8e1543abf458e71730f1717fdfba28c2e690b1f4c2128acbcef98a46e07efb31",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "589c4dafbeeb6619c0b9832e0660576a96c17783fd6980dc0dbbee1daf40e2ac",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "67af2611d39bbed93f82f2b98fb2bd192f4d9c186a43322673d23ca1d1da07ec",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/r4/RouteAMergeBoundarySpec.scala": "b4bbf3e1a0a4111a3412e3500a548dd4c33836bf3207ca6e0da800a650ece0cf",
+    "kvpress/route_a_merge_numeric_reference.py": "af6add96618a1bb48169140dabd038c5932251d62a63fe0ac6ea0c65c5ae31f6",
+    "kvpress/rtl3_3_r4_functional_profile.py": "0efafe5011f9b288a4db740e64e8b3731dc5c82871fc8c2e94c7d44b00677300",
+    "tests/test_route_a_merge_numeric_reference.py": "8b8660ec3e7fd2496a1c06fb4657567aefc76f09353fa3688f241061ecd0ad99",
+    "tests/test_rtl3_3_r4_functional_profile.py": "79e2274e8c4dbf0ddc3cfe77d5df873c6fa6ca44e597be1c89691eefb70c9290",
+    "tools/validate_rtl3_3_r4_functional_profile.py": "d16ecb1699cbffc6556ba2dc5a21c11b3690c7b14aaa86c1b5ca3c63cbb9f97c"
+  }
+}

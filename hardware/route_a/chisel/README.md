@@ -313,6 +313,19 @@ functional transaction test, not a production-top binding, sidecar transport,
 memory-controller/macro, latency/throughput, or PPA implementation. See
 `analysis/rtl3_2_packed_read_functional_integration_contract.md`.
 
+## RTL3.3 R4 functional profile / oracle binding
+
+RTL3.3 freezes the future functional R4 provider's packet/oracle profile, not
+its numeric implementation. It binds canonical `hot -> pending -> packed`
+binary32 packets, four consumers, one merge instance, the existing Python
+numeric oracle, fail-closed disposition, and a 128-lane little-endian binary32
+packing for the future 4096-bit `R4ResultStub` success payload. The added
+fixture test proves that the exact profile header is accepted by
+`route_a_merge_boundary`; it deliberately proves no arithmetic because that
+module remains a structural packet/terminal owner. The existing testbench
+result stub remains active until RTL3.4 supplies a separately verified
+functional provider. See `analysis/rtl3_3_r4_functional_profile_contract.md`.
+
 ## RTL2.1a retained-group admission activation
 
 RTL2.1a adds `route_a_admission_publication_ingress_adapter`, the sole

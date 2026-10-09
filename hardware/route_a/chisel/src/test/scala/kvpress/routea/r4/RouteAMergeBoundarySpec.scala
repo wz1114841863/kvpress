@@ -93,6 +93,32 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
     }
   }
 
+  it("accepts the RTL3.3 binary32 profile fixture without interpreting it as arithmetic") {
+    simulate(new RouteAMergeBoundary(p)) { dut =>
+      init(dut)
+      // m=1.25f, l=2.5f, hot ordinal, consumer 2, instance 0, present,
+      // eight fragments, and all reserved bits zero.  This fixture is shared
+      // with the Python R4 functional-profile oracle; this boundary still
+      // checks packet structure only and performs no FP computation.
+      val profileHeader = BigInt("0000000000000228402000003fa00000", 16)
+      sendHeader(dut, 7, 1, profileHeader)
+      for (fragment <- 0 until 8) {
+        dut.io.r4_value_fragment_in.bits.transaction_identity.request_id.poke(7.U)
+        dut.io.r4_value_fragment_in.bits.transaction_identity.incarnation.poke(1.U)
+        dut.io.r4_value_fragment_in.bits.fragment_index.poke(fragment.U)
+        dut.io.r4_value_fragment_in.bits.last.poke((fragment == 7).B)
+        dut.io.r4_value_fragment_in.bits.data.poke(fragment.U)
+        dut.io.r4_value_fragment_in.valid.poke(true.B)
+        dut.io.r4_value_fragment_in.ready.expect(true.B)
+        dut.clock.step()
+        dut.io.r4_value_fragment_in.valid.poke(false.B)
+      }
+      dut.io.consumer_partial_commit.valid.expect(true.B)
+      dut.io.consumer_partial_commit.bits.source_kind.expect(0.U)
+      dut.io.consumer_partial_commit.bits.consumer_id.expect(2.U)
+    }
+  }
+
   it("rejects malformed packet structure and out-of-order value fragments without a numeric fallback") {
     simulate(new RouteAMergeBoundary(p)) { dut =>
       init(dut)
