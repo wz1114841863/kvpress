@@ -58,6 +58,7 @@ private final class RouteAHotR4R6Harness(p: RouteASkeletonParameters) extends Mo
   merge.io.r4_partial_header_in <> io.r4_header
   merge.io.r4_source_instance_in <> io.r4_sideband
   StructuralTieOff.source(merge.io.r4_value_fragment_in)
+  merge.io.r4_accepted_partial_packet_out.ready := true.B
   StructuralTieOff.source(merge.io.r4_result_stub_in)
   merge.io.r4_numeric_fault_in <> io.r4_numeric_fault
   hot.io.gqa_consumer_commit_in.valid := merge.io.consumer_partial_commit.valid &&

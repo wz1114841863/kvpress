@@ -1,0 +1,80 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-4b-functional-r4-provider-1.0",
+  "status": "implemented_functional_oracle_provider_pre_rtl3_5_partial_producer",
+  "provider": {
+    "owner": "route_a_functional_r4_merge_provider",
+    "implementation": "kvpress.rtl3_4b_functional_r4_provider.RouteAFunctionalR4MergeProvider",
+    "classification": "pure_software_testbench_functional_oracle_provider",
+    "input": "only structurally accepted R4 packet bytes plus accepted RTL3.4-A merge work",
+    "source_order": ["hot", "pending", "packed"],
+    "consumer_ids": [0, 1, 2, 3],
+    "success_encoding": "128 little-endian binary32 lanes in 4096 bits",
+    "numeric_fault": "no normalized payload; existing R4-to-R6 terminal chain only"
+  },
+  "chisel_boundary": {
+    "module": "route_a_merge_boundary",
+    "egress": "r4_accepted_partial_packet_out",
+    "egress_fields": ["transaction_identity", "source_instance", "consumer_id", "header", "value_payload"],
+    "present_reassembly": "fragment 0 occupies bits [511:0] through fragment 7 at bits [4095:3584]",
+    "absent_reassembly": "header-only frozen identity with all-zero 4096-bit payload",
+    "ready_low_guarantee": "complete accepted-packet payload remains stable",
+    "production_top": "ready-high drain/discard; no functional-provider or numeric-result activation"
+  },
+  "association_rules": [
+    "packet key is exact transaction_identity plus consumer_id",
+    "header source ordinal and consumer_id must match the accepted sideband",
+    "only one accepted packet per canonical source/key is legal",
+    "missing selected packet does not synthesize a success",
+    "excluded source inserts only frozen absent identity",
+    "stale identity duplicate work invalid consumer or source-mask mismatch fail closed"
+  ],
+  "verification": {
+    "python_command": ".venv/bin/python -m pytest -q tests/test_route_a_merge_numeric_reference.py tests/test_rtl3_3_r4_functional_profile.py tests/test_rtl3_4b_functional_r4_provider.py tests/test_rtl3_4b_functional_r4_provider_manifest.py",
+    "python_result": "31 passed",
+    "chisel_commands": [
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.r4.RouteAMergeBoundarySpec'",
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.r6.RouteALifecycleAdapterSpec' 'testOnly kvpress.routea.r6.RouteASourceCompletionPlanSpec' 'testOnly kvpress.routea.rtl2.RouteAR4R6StubTerminalIntegrationSpec' 'testOnly kvpress.routea.rtl2.RouteARTL265eSameInstanceWitnessSpec'",
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec' 'testOnly kvpress.routea.rtl2.RouteAFourConsumerCompletionSpec' 'testOnly kvpress.routea.rtl2.RouteASourceServicePacketAdapterSpec' 'testOnly kvpress.routea.rtl2.RouteARTL26ComposedPackedSourceHarnessSpec' 'testOnly kvpress.routea.rtl2.RouteARTL265aPackedReadTerminalHarnessSpec' 'testOnly kvpress.routea.rtl2.RouteARTL265bTerminalReclaimSpec'"
+    ],
+    "chisel_result": "33 directed tests passed",
+    "validator_command": ".venv/bin/python tools/validate_rtl3_4b_functional_r4_provider.py",
+    "evidence_labels": ["pure-software functional oracle provider", "structural Chisel accepted-packet egress", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL numeric correctness claim", "no new A4 DSE"]
+  },
+  "forbidden": [
+    "Chisel floating-point or exp implementation",
+    "internal precision accumulator pipeline or storage choice",
+    "attention MAC query or RoPE realization",
+    "source-owner attention computation",
+    "source scheduling pruning admission publication or atomic-commit change",
+    "production-top numeric-provider activation",
+    "memory controller CDC SRAM HBM macro or physical claim",
+    "frequency timing throughput area energy PPA claim",
+    "model GPU accuracy result or new A4 DSE"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "8ea14275537772bf9e028089eb35bdfe0c1638ab9151013b70b206382195230c",
+    "analysis/architecture_spec.md": "aa0a3291742800aeb7ebcab41ace3c7d881a479501b6adc147a83ecd88749667",
+    "analysis/rtl2_phase_contract.md": "538a3744cecd6ef525c8ae9438fb2dcf8cdc8fb9a3067d352f5625deae4eb67c",
+    "analysis/rtl_entry_interface_manifest.json": "b645935cb39de9aba4f1c1a2de5883339a5564c3c99c1eec64c9736908853b1f",
+    "analysis/rtl3_3_r4_functional_profile_contract.md": "811cda4d8e618c660dd99791f3e186e746bfe34ae8c5e46d86925f9815628db4",
+    "analysis/rtl3_4a_r4_consumer_result_association_contract.md": "303227e664c067ba36a474a424170dc456b2f2f173e9417e02bb11c6bc9de667",
+    "analysis/rtl3_4b_functional_r4_provider_contract.md": "e2775a66620774abac664a20feb38d521b5bc7d3460e257e7432add7a23858fd",
+    "hardware/route_a/chisel/README.md": "907201ba920ee7e88a48a12b4b1cf1d13af57879b9eefba9ae304c771f7abcf1",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "d57f1b94f7ce8de180849315463fffa529c4e31c57ecbff62ad85c289fafb1fb",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "68ef30c6a0b8195b734fe2fd3c744de5c23b85c972e1485e775acd74563d766a",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "465a0ca5d0bc4b934afac79f4bd9c6b801afb91f3dda7c18dffc8ab51ec5ce21",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/r4/RouteAMergeBoundarySpec.scala": "63448508ec6815a57bd999dd8ca32bfefa17b088f6e73611789b8d92b9ae8044",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/RouteASourceCompletionPlanSpec.scala": "d864372a5d76c7eb70ea5d0e1a94641be58d3402d4b9c78a9ef9372e051d1db0",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAFourConsumerCompletionSpec.scala": "ae98ffbea038da3d4775931bd1d526c203f3b26d63be6fe11b1e49f3ef595ec6",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4R6StubTerminalIntegrationSpec.scala": "0f1bb67835b32fcf72deab8c838358f9d8253dcd2f2f492f41d14061eced4e47",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265aPackedReadTerminalHarnessSpec.scala": "4c8fb52419b4e9589ea40a5d8decf6652f0d873b3533ebb23fe93be353d49b55",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265bTerminalReclaimSpec.scala": "97b9e035b78c2022d2f8edcd16509496bb108ac8208a76d2046c136c507f10a6",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala": "791e0b82fa644022ceb38ce40b3fc956895e4821907ea4f8982996e3ad5b2944",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26ComposedPackedSourceHarnessSpec.scala": "06b4dfefbb176a30a5138ff8c676bf2a93345e9123498025f798e7abc56a4f3f",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteASourceServicePacketAdapterSpec.scala": "2f2f3b25a47cb23fa45c07754879e8db874606b7522b9367beee757f0a0c2632",
+    "kvpress/rtl3_4b_functional_r4_provider.py": "8de527191887731f9b8ccc5c851dad8dbea2f794e22e5a8fa9ea542fcef3aaf0",
+    "tests/test_rtl3_4b_functional_r4_provider.py": "8ae392e00159e3d3714138e2098b9d330650df900a3b57d3e9aab3cf33a30973",
+    "tests/test_rtl3_4b_functional_r4_provider_manifest.py": "b13efcfb4d301760ace3540a181c5364935677121415e393a4f541c4adc3731f",
+    "tools/validate_rtl3_4b_functional_r4_provider.py": "0c08d82e53edd8d6cc8f690a0a275970a433ad9c2b26f24781f5fe001e04b1d2"
+  }
+}

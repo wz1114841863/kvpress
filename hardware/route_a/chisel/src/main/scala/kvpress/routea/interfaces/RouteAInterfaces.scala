@@ -503,6 +503,20 @@ final class R4ValueFragment extends Bundle {
   val data = UInt(RouteAAnchorWidths.MergeValueFragmentWidth.W)
 }
 
+/**
+  * One structurally accepted R4 partial packet, reassembled solely for the
+  * replaceable RTL3.4 functional-provider boundary.  This is a core-local
+  * logical packet observation, never an HBM transaction, PE lane, or selected
+  * storage realization.
+  */
+final class R4AcceptedPartialPacket(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val source_instance = new SourceInstance(p)
+  val consumer_id = UInt(RouteAAnchorWidths.ConsumerIdWidth.W)
+  val header = UInt(RouteAAnchorWidths.MergePartialHeaderWidth.W)
+  val value_payload = UInt(RouteAAnchorWidths.NormalizedValueWidth.W)
+}
+
 /** Replaceable numeric-core success slot; R4 boundary forwards it without arithmetic. */
 final class R4ResultStub extends Bundle {
   val transaction_identity = new TransactionIdentity
@@ -988,6 +1002,7 @@ object RouteAChannels {
   def merge_terminal_rsp = Decoupled(new MergeTerminalResponse)
   def r4_partial_header = Decoupled(new R4PartialHeader)
   def r4_value_fragment = Decoupled(new R4ValueFragment)
+  def r4_accepted_partial_packet(p: RouteASkeletonParameters) = Decoupled(new R4AcceptedPartialPacket(p))
   def r4_result_stub = Decoupled(new R4ResultStub)
   def r4_numeric_fault = Decoupled(new R4NumericFault)
   def source_candidate(p: RouteASkeletonParameters) = Decoupled(new SourceCandidate(p))

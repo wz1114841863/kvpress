@@ -770,11 +770,14 @@ MAC owner, or make a testbench default appear as an accepted production fact.
    consumer work items and aggregates four successes into one group success;
    a matching numeric fault remains fail-closed group termination. See
    [`rtl3_4a_r4_consumer_result_association_contract.md`](rtl3_4a_r4_consumer_result_association_contract.md).
-6. **RTL3.4-B — oracle-consistent functional R4 merge model.** Replace the R4
-   result stub with a model that derives each consumer result/fault only from
-   accepted partial inputs, obeys RTL3.3 and RTL3.4-A, and preserves R6's
-   exactly-one group terminal ownership. It is not a claim of final
-   synthesizable/pipelined floating-point RTL.
+6. **RTL3.4-B — oracle-consistent functional R4 merge model (complete).**
+   `route_a_merge_boundary` now emits a lossless complete accepted-packet
+   egress; the pure-software `route_a_functional_r4_merge_provider` derives
+   each consumer result/fault from only those packet bytes and the accepted
+   R6 work fact.  It obeys RTL3.3 and RTL3.4-A and retains R6's exactly-one
+   group terminal ownership.  This is not final synthesizable/pipelined
+   floating-point RTL; see
+   [`rtl3_4b_functional_r4_provider_contract.md`](rtl3_4b_functional_r4_provider_contract.md).
 7. **RTL3.5 — source-payload to partial-producer boundary closure.** Let hot,
    direct-pending, and S2 owners supply only their payload, position/sideband,
    and source identity/generation facts. The unique partial producer then

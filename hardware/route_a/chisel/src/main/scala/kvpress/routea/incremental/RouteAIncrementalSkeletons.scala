@@ -2216,6 +2216,10 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
     val r4_partial_header_in = Flipped(RouteAChannels.r4_partial_header)
     val r4_source_instance_in = Flipped(RouteAChannels.r4_source_instance_sideband(p))
     val r4_value_fragment_in = Flipped(RouteAChannels.r4_value_fragment)
+    // RTL3.4-B functional-provider ingress.  It observes only a complete
+    // structurally accepted packet; it neither changes packet parsing nor
+    // creates an alternate terminal route.
+    val r4_accepted_partial_packet_out = RouteAChannels.r4_accepted_partial_packet(p)
     val r4_result_stub_in = Flipped(RouteAChannels.r4_result_stub)
     val r4_numeric_fault_in = Flipped(RouteAChannels.r4_numeric_fault)
     // RTL2.4.1 verification-only observation: this does not create a second
@@ -2230,12 +2234,20 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   val packetSource = Reg(UInt(RouteAAnchorWidths.SourceKindWidth.W))
   val packetSourceInstance = Reg(new SourceInstance(p))
   val packetConsumer = Reg(UInt(RouteAAnchorWidths.ConsumerIdWidth.W))
+  val packetHeader = Reg(UInt(RouteAAnchorWidths.MergePartialHeaderWidth.W))
+  val packetFragments = Reg(Vec(7, UInt(RouteAAnchorWidths.MergeValueFragmentWidth.W)))
   val nextFragment = RegInit(0.U(3.W))
   val commitPending = RegInit(false.B)
   val commitIdentity = Reg(new TransactionIdentity)
   val commitSource = Reg(UInt(RouteAAnchorWidths.SourceKindWidth.W))
   val commitSourceInstance = Reg(new SourceInstance(p))
   val commitConsumer = Reg(UInt(RouteAAnchorWidths.ConsumerIdWidth.W))
+  val packetObservationPending = RegInit(false.B)
+  val packetObservationIdentity = Reg(new TransactionIdentity)
+  val packetObservationSourceInstance = Reg(new SourceInstance(p))
+  val packetObservationConsumer = Reg(UInt(RouteAAnchorWidths.ConsumerIdWidth.W))
+  val packetObservationHeader = Reg(UInt(RouteAAnchorWidths.MergePartialHeaderWidth.W))
+  val packetObservationValue = Reg(UInt(RouteAAnchorWidths.NormalizedValueWidth.W))
 
   val mergeActive = RegInit(false.B)
   val mergeIdentity = Reg(new TransactionIdentity)
@@ -2265,7 +2277,8 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   val sidebandMatchesHeader = sourceSideband.transaction_identity.asUInt === io.r4_partial_header_in.bits.transaction_identity.asUInt &&
     sourceSideband.source_instance.source_kind === headerSource && sourceSideband.consumer_id === headerConsumer &&
     sourceSideband.source_instance.source_kind <= RouteASourceKind.Packed.U
-  val headerAndSidebandReady = !packetActive && !commitPending && headerStructureLegal && sidebandMatchesHeader
+  val headerAndSidebandReady = !packetActive && !commitPending && !packetObservationPending &&
+    headerStructureLegal && sidebandMatchesHeader
   io.r4_partial_header_in.ready := headerAndSidebandReady && io.r4_source_instance_in.valid
   io.r4_source_instance_in.ready := headerAndSidebandReady && io.r4_partial_header_in.valid
   when(io.r4_partial_header_in.fire) {
@@ -2276,6 +2289,7 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
       packetSource := headerSource
       packetSourceInstance := sourceSideband.source_instance
       packetConsumer := headerConsumer
+      packetHeader := header
       nextFragment := 0.U
     }.otherwise {
       commitPending := true.B
@@ -2283,6 +2297,12 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
       commitSource := headerSource
       commitSourceInstance := sourceSideband.source_instance
       commitConsumer := headerConsumer
+      packetObservationPending := true.B
+      packetObservationIdentity := io.r4_partial_header_in.bits.transaction_identity
+      packetObservationSourceInstance := sourceSideband.source_instance
+      packetObservationConsumer := headerConsumer
+      packetObservationHeader := header
+      packetObservationValue := 0.U
     }
   }
 
@@ -2299,9 +2319,27 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
       commitSource := packetSource
       commitSourceInstance := packetSourceInstance
       commitConsumer := packetConsumer
+      packetObservationPending := true.B
+      packetObservationIdentity := packetIdentity
+      packetObservationSourceInstance := packetSourceInstance
+      packetObservationConsumer := packetConsumer
+      packetObservationHeader := packetHeader
+      packetObservationValue := Cat(fragment.data, packetFragments(6), packetFragments(5),
+        packetFragments(4), packetFragments(3), packetFragments(2), packetFragments(1), packetFragments(0))
     }.otherwise {
+      packetFragments(nextFragment) := fragment.data
       nextFragment := nextFragment + 1.U
     }
+  }
+
+  io.r4_accepted_partial_packet_out.valid := packetObservationPending
+  io.r4_accepted_partial_packet_out.bits.transaction_identity := packetObservationIdentity
+  io.r4_accepted_partial_packet_out.bits.source_instance := packetObservationSourceInstance
+  io.r4_accepted_partial_packet_out.bits.consumer_id := packetObservationConsumer
+  io.r4_accepted_partial_packet_out.bits.header := packetObservationHeader
+  io.r4_accepted_partial_packet_out.bits.value_payload := packetObservationValue
+  when(io.r4_accepted_partial_packet_out.fire) {
+    packetObservationPending := false.B
   }
 
   io.consumer_partial_commit.valid := commitPending
@@ -2380,6 +2418,11 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   when(RegNext(io.consumer_partial_commit.valid && !io.consumer_partial_commit.ready, false.B)) {
     assert(io.consumer_partial_commit.bits.asUInt === heldCommit.asUInt)
   }
+  val heldPacketObservation = RegEnable(io.r4_accepted_partial_packet_out.bits,
+    io.r4_accepted_partial_packet_out.valid && !io.r4_accepted_partial_packet_out.ready)
+  when(RegNext(io.r4_accepted_partial_packet_out.valid && !io.r4_accepted_partial_packet_out.ready, false.B)) {
+    assert(io.r4_accepted_partial_packet_out.bits.asUInt === heldPacketObservation.asUInt)
+  }
   val heldTerminal = RegEnable(io.merge_rsp_or_numeric_fault.bits,
     io.merge_rsp_or_numeric_fault.valid && !io.merge_rsp_or_numeric_fault.ready)
   when(RegNext(io.merge_rsp_or_numeric_fault.valid && !io.merge_rsp_or_numeric_fault.ready, false.B)) {
@@ -2387,7 +2430,7 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   }
 
   StructuralTieOff.sink(io.source_partial_in)
-  val locallyDrained = !packetActive && !commitPending && !mergeActive && !terminalPending
+  val locallyDrained = !packetActive && !commitPending && !packetObservationPending && !mergeActive && !terminalPending
   io.component_status_out.valid := io.drain_collection_enable && locallyDrained
   io.component_status_out.bits.acknowledgement_name := p.r6.mergeDrainedStatusCode.U
   io.component_status_out.bits.asserted := true.B

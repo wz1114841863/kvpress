@@ -31,6 +31,7 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
     dut.io.r4_source_instance_in.valid.poke(false.B)
     dut.io.r4_value_fragment_in.valid.poke(false.B); dut.io.r4_result_stub_in.valid.poke(false.B)
     dut.io.r4_numeric_fault_in.valid.poke(false.B); dut.io.merge_rsp_or_numeric_fault.ready.poke(true.B)
+    dut.io.r4_accepted_partial_packet_out.ready.poke(true.B)
     dut.io.merge_req_in.bits.transaction_identity.request_id.poke(0.U); dut.io.merge_req_in.bits.transaction_identity.incarnation.poke(0.U)
     dut.io.merge_req_in.bits.source_presence.poke(0.U)
     dut.io.merge_req_in.bits.consumer_id.poke(0.U)
@@ -228,6 +229,37 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
       dut.io.merge_rsp_or_numeric_fault.bits.consumer_id.expect(2.U)
       dut.io.merge_rsp_or_numeric_fault.bits.normalized_value.expect("h77".U)
       dut.clock.step()
+    }
+  }
+
+  it("exports one stable complete accepted packet for the functional-provider boundary") {
+    simulate(new RouteAMergeBoundary(p)) { dut =>
+      init(dut)
+      sendHeader(dut, 3, 1, headerWord(source = 1, consumer = 2, present = true))
+      for (fragment <- 0 until 8) {
+        dut.io.r4_value_fragment_in.bits.transaction_identity.request_id.poke(3.U)
+        dut.io.r4_value_fragment_in.bits.transaction_identity.incarnation.poke(1.U)
+        dut.io.r4_value_fragment_in.bits.fragment_index.poke(fragment.U)
+        dut.io.r4_value_fragment_in.bits.last.poke((fragment == 7).B)
+        dut.io.r4_value_fragment_in.bits.data.poke((BigInt(fragment) << 504).U)
+        dut.io.r4_value_fragment_in.valid.poke(true.B)
+        dut.io.r4_value_fragment_in.ready.expect(true.B)
+        dut.clock.step()
+        dut.io.r4_value_fragment_in.valid.poke(false.B)
+      }
+      dut.io.r4_accepted_partial_packet_out.valid.expect(true.B)
+      dut.io.r4_accepted_partial_packet_out.ready.poke(false.B)
+      dut.clock.step()
+      dut.io.r4_accepted_partial_packet_out.bits.transaction_identity.request_id.expect(3.U)
+      dut.io.r4_accepted_partial_packet_out.bits.consumer_id.expect(2.U)
+      dut.io.r4_accepted_partial_packet_out.bits.source_instance.source_kind.expect(1.U)
+      // Fragment zero occupies the low 512 bits and fragment seven the high 512 bits.
+      val payload = dut.io.r4_accepted_partial_packet_out.bits.value_payload.peek().litValue
+      assert(((payload >> 504) & 0xff) == 0)
+      assert(((payload >> 4088) & 0xff) == 7)
+      dut.io.r4_accepted_partial_packet_out.ready.poke(true.B)
+      dut.clock.step()
+      dut.io.r4_accepted_partial_packet_out.valid.expect(false.B)
     }
   }
 }

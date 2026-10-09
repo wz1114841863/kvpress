@@ -157,6 +157,7 @@ final class RouteARTL265eSameInstanceWitnessHarness(p: RouteASkeletonParameters)
   merge.io.r4_partial_header_in <> packets.io.r4_partial_header_out
   merge.io.r4_source_instance_in <> packets.io.r4_source_instance_out
   merge.io.r4_value_fragment_in <> packets.io.r4_value_fragment_out
+  merge.io.r4_accepted_partial_packet_out.ready := true.B
   merge.io.r4_result_stub_in <> io.resultStub
   merge.io.r4_numeric_fault_in <> io.numericFault
   merge.io.merge_req_in <> r6.io.merge_req

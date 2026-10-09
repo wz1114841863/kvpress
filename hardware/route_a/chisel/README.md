@@ -336,6 +336,16 @@ fault remains fail-closed.  This is logical association/control only: it does
 not implement arithmetic or select a numerical/physical realization.  See
 `analysis/rtl3_4a_r4_consumer_result_association_contract.md`.
 
+## RTL3.4-B functional R4 provider boundary
+
+After structural acceptance, `route_a_merge_boundary` can emit one lossless
+complete packet record (identity, source instance, consumer, header, and
+4,096-bit value payload) to the testbench-only functional R4 oracle provider.
+The production composition top deliberately drains/discards this egress and does not
+activate a numeric provider.  This is packet/oracle binding only, not Chisel
+FP arithmetic, an exp implementation, a production numeric core, or a
+timing/PPA claim.  See `analysis/rtl3_4b_functional_r4_provider_contract.md`.
+
 ## RTL2.1a retained-group admission activation
 
 RTL2.1a adds `route_a_admission_publication_ingress_adapter`, the sole

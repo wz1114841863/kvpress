@@ -639,6 +639,14 @@ current serial `0 -> 1 -> 2 -> 3` handoff is a functional association baseline
 for the one-active R4 boundary, not a PE schedule, port count, or performance
 selection; see `analysis/rtl3_4a_r4_consumer_result_association_contract.md`.
 
+For functional-model verification only, the R4 structural boundary may expose
+one complete, ready/valid accepted-packet record to the replaceable numeric
+oracle provider after header/sideband plus absent-or-eight-fragment acceptance.
+That record preserves identity, source instance, consumer ID, header, and the
+reassembled 4,096-bit payload.  It is not a numerical datapath, production-top
+binding, physical storage, throughput, or buffering choice; the contract is
+`analysis/rtl3_4b_functional_r4_provider_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.

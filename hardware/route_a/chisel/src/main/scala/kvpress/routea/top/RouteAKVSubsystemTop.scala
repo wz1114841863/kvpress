@@ -181,6 +181,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     merge.io.r4_partial_header_in <> source_packet_adapter.io.r4_partial_header_out
     merge.io.r4_source_instance_in <> source_packet_adapter.io.r4_source_instance_out
     merge.io.r4_value_fragment_in <> source_packet_adapter.io.r4_value_fragment_out
+    // RTL3.4-B functional-provider observation remains unbound in the
+    // production composition top.  Dropping it here cannot create a result
+    // or terminal; the functional-provider harness binds it explicitly.
+    merge.io.r4_accepted_partial_packet_out.ready := true.B
     merge.io.r4_result_stub_in <> r4_result_stub
     merge.io.r4_numeric_fault_in <> r4_numeric_fault
 

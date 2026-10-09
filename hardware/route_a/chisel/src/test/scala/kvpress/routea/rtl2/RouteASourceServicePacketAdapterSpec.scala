@@ -49,6 +49,7 @@ final class RouteASourceServicePacketAdapterHarness(p: RouteASkeletonParameters)
   merge.io.r4_partial_header_in <> adapter.io.r4_partial_header_out
   merge.io.r4_source_instance_in <> adapter.io.r4_source_instance_out
   merge.io.r4_value_fragment_in <> adapter.io.r4_value_fragment_out
+  merge.io.r4_accepted_partial_packet_out.ready := true.B
   StructuralTieOff.source(merge.io.r4_result_stub_in)
   StructuralTieOff.source(merge.io.r4_numeric_fault_in)
   io.commit <> merge.io.consumer_partial_commit

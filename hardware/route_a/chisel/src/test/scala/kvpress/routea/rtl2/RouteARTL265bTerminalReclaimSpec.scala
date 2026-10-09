@@ -178,6 +178,7 @@ final class RouteARTL265bTerminalReclaimHarness(p: RouteASkeletonParameters) ext
   merge.io.r4_partial_header_in <> packets.io.r4_partial_header_out
   merge.io.r4_source_instance_in <> packets.io.r4_source_instance_out
   merge.io.r4_value_fragment_in <> packets.io.r4_value_fragment_out
+  merge.io.r4_accepted_partial_packet_out.ready := true.B
   StructuralTieOff.source(merge.io.r4_result_stub_in)
   merge.io.r4_numeric_fault_in <> io.numeric_fault
   merge.io.merge_req_in <> r6.io.merge_req

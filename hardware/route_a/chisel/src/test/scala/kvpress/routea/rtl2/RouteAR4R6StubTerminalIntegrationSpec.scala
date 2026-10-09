@@ -57,6 +57,7 @@ final class RouteAR4R6StubTerminalHarness(p: RouteASkeletonParameters) extends M
   StructuralTieOff.source(merge.io.r4_partial_header_in)
   StructuralTieOff.source(merge.io.r4_source_instance_in)
   StructuralTieOff.source(merge.io.r4_value_fragment_in)
+  merge.io.r4_accepted_partial_packet_out.ready := true.B
   StructuralTieOff.sink(merge.io.consumer_partial_commit)
   StructuralTieOff.sink(merge.io.component_status_out)
   merge.io.merge_req_in <> lifecycle.io.merge_req
