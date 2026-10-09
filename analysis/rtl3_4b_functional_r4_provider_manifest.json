@@ -52,14 +52,14 @@
     "model GPU accuracy result or new A4 DSE"
   ],
   "source_sha256": {
-    "analysis/README.md": "f63e70047a3de07030d3f1d2ee9d94c959f1ace7598ee73a61a28eecfc283030",
-    "analysis/architecture_spec.md": "cd9b0987dc03ccf06ea010fee8339977766dd8a6b98ebde6c2964734b77cde40",
-    "analysis/rtl2_phase_contract.md": "cdf06d4a0079462131186962250bd3435e0576265827e81f59107e74ea276b40",
+    "analysis/README.md": "4f1e4ff2d8953ec4956f27005582a1a9ffc75aa503730f2300cd290de5af8d9d",
+    "analysis/architecture_spec.md": "9558e9e0ca7e813f1622a6203f91f91c52fce8ba690f5ed04803e21e4dcd9191",
+    "analysis/rtl2_phase_contract.md": "9faff5ae3c55eabbcf5cfeec66ef1ffb936e48f2338e1e22cce3d1ea7702aab9",
     "analysis/rtl_entry_interface_manifest.json": "bcdef5d208bde91701464a5e73706f945f87996508be18a5a55a67fada582641",
     "analysis/rtl3_3_r4_functional_profile_contract.md": "811cda4d8e618c660dd99791f3e186e746bfe34ae8c5e46d86925f9815628db4",
     "analysis/rtl3_4a_r4_consumer_result_association_contract.md": "303227e664c067ba36a474a424170dc456b2f2f173e9417e02bb11c6bc9de667",
     "analysis/rtl3_4b_functional_r4_provider_contract.md": "e2775a66620774abac664a20feb38d521b5bc7d3460e257e7432add7a23858fd",
-    "hardware/route_a/chisel/README.md": "7f1d76df2ef6a9bd6c5d8a30834b1ef84823f7d5786e4879a8a3f2589a3da964",
+    "hardware/route_a/chisel/README.md": "2e094ff14505dac143a7a6f6932dde563dc22099dae34bde0c87fe68fd7dec64",
     "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "d57f1b94f7ce8de180849315463fffa529c4e31c57ecbff62ad85c289fafb1fb",
     "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "68ef30c6a0b8195b734fe2fd3c744de5c23b85c972e1485e775acd74563d766a",
     "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "465a0ca5d0bc4b934afac79f4bd9c6b801afb91f3dda7c18dffc8ab51ec5ce21",

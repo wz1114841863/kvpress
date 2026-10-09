@@ -659,6 +659,16 @@ not a query payload transport, RoPE implementation, attention MAC, source
 schedule, or numeric-realization selection.  The freeze is
 `analysis/rtl3_5a_attention_partial_producer_boundary_contract.md`.
 
+For functional-model evidence only, RTL3.5-B provides a stateless software
+reference implementation of that boundary.  It consumes the already-RoPE-
+applied 128-lane Qwen-anchor query and one source-owner K/V/ordered-position
+lease, evaluates the causal scaled partial, and emits the existing present R4
+header plus eight fragments.  It has no Chisel/top binding and does not choose
+RoPE/MAC/exp/FP hardware or source scheduling; its output reaches the RTL3.4-B
+model only through a reference-test conversion which does not replace R4's
+structural ready/valid acceptance.  See
+`analysis/rtl3_5b_functional_attention_partial_provider_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.

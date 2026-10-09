@@ -357,6 +357,16 @@ producer of existing R4 partial packets.  No Chisel partial producer, Q/K/V
 transport, RoPE/MAC/FP implementation, or top activation is introduced by this
 freeze.  See `analysis/rtl3_5a_attention_partial_producer_boundary_contract.md`.
 
+## RTL3.5-B functional partial-provider reference model
+
+RTL3.5-B adds only the Python `route_a_functional_attention_partial_provider`.
+It receives the RTL3.5-A frontend query/source lease association and emits the
+already frozen present packet shape for reference tests with the RTL3.4-B
+provider.  It is not instantiated in Chisel, does not drive the production
+composition top, and does not select MAC/RoPE/exp/FP RTL, a source schedule, or
+physical implementation.  See
+`analysis/rtl3_5b_functional_attention_partial_provider_contract.md`.
+
 ## RTL2.1a retained-group admission activation
 
 RTL2.1a adds `route_a_admission_publication_ingress_adapter`, the sole

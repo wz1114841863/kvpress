@@ -684,11 +684,12 @@ production bridge, profiling, optimization, synthesis, timing, or PPA claims.
 
 ## Planned successor — RTL3: Functional Realization Closure
 
-**Status:** RTL3.0 planning and RTL3.1 functional memory environment are
-complete; RTL3.2-A's association contract is implemented by a bounded,
-testbench-composed RTL3.2 functional packed-payload path. No production-top
-RTL3 composition, physical controller, numerical microarchitecture, or
-performance experiment is authorized by these records.
+**Status:** RTL3.0 replacement planning, RTL3.1 functional memory, RTL3.2
+bounded packed-S2 payload, RTL3.3/RTL3.4 R4 functional-model closure, and
+RTL3.5-A/B query/source-to-functional-partial closure are complete within their
+declared testbench/reference scopes.  No production-top RTL3 composition,
+physical controller, numerical microarchitecture, or performance experiment is
+authorized by these records.
 See
 [`rtl3_0_replacement_owner_contract.md`](rtl3_0_replacement_owner_contract.md)
 [`rtl3_1_functional_memory_environment_contract.md`](rtl3_1_functional_memory_environment_contract.md),
@@ -787,11 +788,14 @@ MAC owner, or make a testbench default appear as an accepted production fact.
    consumer_id` association; the unique replaceable functional partial provider
    alone may later emit `(m, l, o)` through the frozen packet boundary to R4.
    It is not an attention MAC, RoPE, or numerical-RTL implementation.
-8. **RTL3.5-B — functional partial-provider realization (blocked on explicit
-   implementation review).** A future functional PE/reference model may consume
-   only the RTL3.5-A boundary and produce existing packet offers/fragments.  It
-   must not make a storage owner compute attention or select FP/exp/RoPE
-   hardware, payload transport, source scheduling, or production-top behavior.
+8. **RTL3.5-B — functional partial-provider realization (complete,
+   pure-software).** [`rtl3_5b_functional_attention_partial_provider_contract.md`](rtl3_5b_functional_attention_partial_provider_contract.md)
+   implements a stateless functional PE/reference model over only RTL3.5-A
+   query/source leases.  It produces the existing present R4 packet shape and
+   can feed the RTL3.4-B model in Python tests, but is not Chisel, does not bind
+   the top, and selects no FP/exp/RoPE hardware, payload transport, source
+   scheduling, or production behavior.  A separate later review must bind its
+   packet output through the existing Chisel structural acceptance boundary.
 9. **RTL3.6 — functional-realization completion review.** Re-run the complete
    success and fault transactions with live accepted-carrier observations and
    the Python event/scoreboard oracle: `RETAIN -> pending -> functional memory

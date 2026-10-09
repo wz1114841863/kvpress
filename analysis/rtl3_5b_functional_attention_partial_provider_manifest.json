@@ -1,0 +1,63 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-5b-functional-attention-partial-provider-1.0",
+  "status": "implemented_pure_software_functional_partial_provider_pre_numeric_rtl",
+  "scope": "Pure-software functional reference model for the already frozen RTL3.5-A query/source association. No Chisel partial producer, production top activation, numerical RTL, cycle/timing/throughput, PPA, model/GPU, or A4 DSE claim.",
+  "partial_owner": "route_a_functional_attention_partial_provider",
+  "input_profiles": {
+    "rope": "qwen3_rope_applied_at_q_and_k_creation_v1",
+    "attention": "qwen3_gqa_scaled_causal_attention_v1"
+  },
+  "qwen_anchor": {
+    "layer_count": 36,
+    "kv_head_count": 8,
+    "query_head_count": 32,
+    "query_heads_per_kv_head_group": 4,
+    "query_head_mapping": "query_head = 4 * kv_head + consumer_id",
+    "head_dim": 128,
+    "semantic_attention_scale": "1 / sqrt(128)"
+  },
+  "accepted_inputs": {
+    "query": ["transaction_identity", "layer", "kv_head", "consumer_id", "query_head", "query_position", "already_RoPE_applied_128_lane_query"],
+    "source_lease": ["transaction_identity", "layer", "kv_head", "source_kind", "source_instance_coordinate", "source_generation", "increasing_logical_positions", "already_RoPE_applied_128_lane_K", "128_lane_V"],
+    "acceptance": "exact association plus causal source positions at or before query_position"
+  },
+  "existing_output_carriers": ["SourceServicePartialOffer", "SourceServiceValueFragment"],
+  "output": {
+    "partial": "one present binary32 (m,l,o[128]) packet per accepted source lease and consumer",
+    "packet": "one existing header plus eight ordered 64-byte fragments",
+    "reference_bridge": "as_r4_accepted_packet is test-only conversion for RTL3.4-B provider and cannot bypass Chisel structural acceptance"
+  },
+  "failure": {
+    "class": "rejected_before_acceptance_environment_interface_violation",
+    "cases": ["identity_layer_or_kv_head_mismatch", "invalid_GQA_mapping", "source_generation_or_profile_mismatch", "empty_or_unordered_position_sequence", "causal_visibility_violation", "nonfinite_Q_K_or_V", "unencodable_partial"],
+    "effects": ["no_partial_offer", "no_fragment", "no_consumer_commit", "no_source_release", "no_authority_transition", "no_Full_KV_fallback"]
+  },
+  "forbidden": [
+    "Chisel_attention_MAC_or_RoPE_RTL",
+    "production_top_activation",
+    "source_owner_partial_computation",
+    "scheduler_or_authority_change",
+    "timing_throughput_or_PPA_claim",
+    "new_A4_DSE"
+  ],
+  "verification": {
+    "pytest_command": ".venv/bin/python -m pytest -q tests/test_route_a_merge_numeric_reference.py tests/test_rtl3_4b_functional_r4_provider.py tests/test_rtl3_5b_functional_attention_partial_provider.py tests/test_rtl3_5b_functional_attention_partial_provider_manifest.py",
+    "validator_command": ".venv/bin/python tools/validate_rtl3_5b_functional_attention_partial_provider.py",
+    "evidence_labels": ["pure-software functional PE/reference model", "no model/GPU", "no cycle/timing/throughput claim", "no PPA claim", "no RTL numeric correctness claim", "no new A4 DSE"]
+  },
+  "source_sha256": {
+    "analysis/README.md": "4f1e4ff2d8953ec4956f27005582a1a9ffc75aa503730f2300cd290de5af8d9d",
+    "analysis/rtl3_5a_attention_partial_producer_boundary_contract.md": "07d684ee7f3dbf4044927a536b105fb5c04c08ceaa2a985ff26ab7af5fcea206",
+    "analysis/rtl3_5b_functional_attention_partial_provider_contract.md": "5a12ad017550cb414d20f13196d382a3fc1e90bd11db0d17a989b4f51c374b22",
+    "analysis/architecture_spec.md": "9558e9e0ca7e813f1622a6203f91f91c52fce8ba690f5ed04803e21e4dcd9191",
+    "analysis/rtl2_phase_contract.md": "9faff5ae3c55eabbcf5cfeec66ef1ffb936e48f2338e1e22cce3d1ea7702aab9",
+    "hardware/route_a/chisel/README.md": "2e094ff14505dac143a7a6f6932dde563dc22099dae34bde0c87fe68fd7dec64",
+    "kvpress/route_a_merge_numeric_reference.py": "af6add96618a1bb48169140dabd038c5932251d62a63fe0ac6ea0c65c5ae31f6",
+    "kvpress/rtl3_4b_functional_r4_provider.py": "8de527191887731f9b8ccc5c851dad8dbea2f794e22e5a8fa9ea542fcef3aaf0",
+    "kvpress/rtl3_5b_functional_attention_partial_provider.py": "b89a4d6a46f0c89d5fcabd74741652e00cbf51cc2e54326be6f92f6712746e24",
+    "kvpress/route_a_policy_backend.py": "14c5449684786758a74fba1aeaa62315c763d5675ab3ddf04cfc5a88491e3dfe",
+    "tests/test_rtl3_5b_functional_attention_partial_provider.py": "a21323ed1bef3df38c07045bad8099063f760bf5f89673bb83f8b38d2457b7b9",
+    "tests/test_rtl3_5b_functional_attention_partial_provider_manifest.py": "5b5b5d927c1d0412d99846dc7c98ee21aab4b1188c3fe871d4daee0e5a34f541",
+    "tools/validate_rtl3_5b_functional_attention_partial_provider.py": "0cb63c994648d2a349794a02a3d13269ce13f83e0ea49b97f677cf4a170cd3f7"
+  }
+}
