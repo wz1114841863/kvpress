@@ -848,7 +848,9 @@ final class RouteAPackedS2ReadProducer(p: RouteASkeletonParameters) extends Modu
 
   io.read_issue_out.valid := state === StateIssue
   io.read_issue_out.bits := 0.U.asTypeOf(new ReadIssueDescriptor(p))
-  io.read_issue_out.bits.delivery_context_ref := 0.U
+  // RTL3.2 may supply an already acknowledged association; the historical
+  // C4 ingress supplies zero and is bound by the common bridge instead.
+  io.read_issue_out.bits.delivery_context_ref := work.delivery_context_ref
   io.read_issue_out.bits.candidate_class := p.r2S2PackedClassCode.U
   io.read_issue_out.bits.arrival_ordinal := work.arrival_ordinal
   io.read_issue_out.bits.candidate_id := work.candidate_id

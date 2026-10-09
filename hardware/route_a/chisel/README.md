@@ -293,8 +293,25 @@ legal request/response backpressure, and one-shot terminal-fault injection.
 It is not emitted as a production module or attached to the top; it owns no
 publication, residency, page, S2, or source-generation authority. The exact
 scope and no-physical-memory boundary are frozen in
-`analysis/rtl3_1_functional_memory_environment_contract.md`. This work does
-not resolve the RTL3.0 packed-read or partial-provider stop-for-review items.
+`analysis/rtl3_1_functional_memory_environment_contract.md`. It does not by
+itself resolve either RTL3.0 stop-for-review item.
+
+## RTL3.2 bounded functional packed read
+
+`route_a_packed_read_association_owner` is now a main-source Chisel module
+that joins an already selected packed demand with live R3 publication, R5
+location, and S2 lease facts. It passes one exact allocation to the existing
+delivery-context registry and emits packed-S2 work only after the registry's
+matching acknowledgement. The work enters the existing packed producer,
+R2/R1, typed delivery, endpoint, and S2 wrapper path.
+
+`RouteAPackedReadAssociationOwnerSpec` is a test-only composed harness. Its
+payload replies originate from `RouteAFunctionalMemoryEnvironment` over the
+real R1 external carrier; its sidecar input remains explicit, so payload
+traffic is never reinterpreted as sidecar completion. This is a bounded
+functional transaction test, not a production-top binding, sidecar transport,
+memory-controller/macro, latency/throughput, or PPA implementation. See
+`analysis/rtl3_2_packed_read_functional_integration_contract.md`.
 
 ## RTL2.1a retained-group admission activation
 

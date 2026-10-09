@@ -33,9 +33,10 @@ request/response and stale-response owners.
 generation and sidecar records, and payload fragments. Generation and sidecar
 are deliberately retained as fixture metadata only: they are not fields of
 `core_mem_if_v1`, so RTL3.1 neither infers nor validates them from an R1
-response and cannot publish them to S2. Their later cross-owner association is
-now frozen by RTL3.2-A, but remains unimplemented as an RTL payload/sidecar
-path; see [`rtl3_2a_packed_read_association_contract.md`](rtl3_2a_packed_read_association_contract.md).
+response and cannot publish them to S2. Their cross-owner association is now
+implemented in the bounded RTL3.2 functional packed-payload slice, while
+sidecar transport remains deliberately explicit rather than inferred from an
+R1 response; see [`rtl3_2_packed_read_functional_integration_contract.md`](rtl3_2_packed_read_functional_integration_contract.md).
 
 ## Transaction semantics
 
@@ -71,21 +72,23 @@ functional-memory transaction with a direct manual R1 response poke or direct
 S2 mutation. This does not prohibit targeted R1 stale-response unit tests that
 exercise the R1 owner itself.
 
-RTL3.1 does **not**:
+RTL3.1 does **not**, by itself:
 
 - bind the functional environment to the production top;
 - select HBM addressing, burst/channel mapping, CDC, latency, bandwidth, or
   physical memory;
-- create packed-page-to-S2 association, sidecar completion, source scheduling,
-  authority transfer, or publication;
+- create sidecar transport/completion, source scheduling, authority transfer,
+  or publication; RTL3.2 consumes its payload interface under a separately
+  reviewed association owner;
 - implement a numeric partial/merge, attention MAC, model/GPU workload,
   timing, throughput, area, energy, PPA, or a new A4 DSE.
 
-It does not itself resolve either RTL3.0 stop-for-review item. RTL3.2-A has
-subsequently resolved `packed_read_association_owner` as an executable contract;
-the remaining partial-provider query/position stop still blocks RTL3.5. The
-next RTL3.2 payload closure must consume the named association interface rather
-than reconstructing it or using direct S2 ingress.
+It does not itself resolve either RTL3.0 stop-for-review item. RTL3.2-A
+resolved `packed_read_association_owner` as an executable contract and RTL3.2
+now consumes that named association in a bounded Chisel composed path. The
+remaining partial-provider query/position stop still blocks RTL3.5. Sidecar
+transport must still be supplied through a named future owner rather than
+reconstructed from direct S2 ingress.
 
 ## Directed verification
 

@@ -1,0 +1,63 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-2-packed-read-functional-integration-1.0",
+  "status": "complete_testbench_composed_functional_packed_payload_path_with_explicit_sidecar_boundary",
+  "owner": "route_a_packed_read_association_owner",
+  "implemented_path": [
+    "four exact live grants",
+    "delivery-context registry allocation and exact acknowledgement",
+    "PackedS2ReadWork with acknowledged context reference",
+    "existing packed-S2 producer / R2 / R1 / typed delivery",
+    "testbench-only functional memory environment",
+    "existing packed-S2 endpoint and S2 wrapper"
+  ],
+  "covered_properties": [
+    "arbitrary grant arrival order",
+    "exact identity and PageRef join",
+    "publication authority and R5 live-reference checks",
+    "allocation and work ready-low stability",
+    "no work before exact allocation acknowledgement",
+    "page mismatch fails closed",
+    "functional payload response cannot make S2 READY without explicit matching sidecar completion"
+  ],
+  "residual_boundaries": [
+    "sidecar request/response transport remains explicit testbench ingress",
+    "S2 service lease remains an existing explicit boundary",
+    "endpoint-to-owner terminal adapter and owner release integration are not activated",
+    "production top remains unbound"
+  ],
+  "forbidden": [
+    "scheduler or packed-source selection",
+    "R2 FIFO credit arbitration or registry owner change",
+    "R3 atomic-publication or R5 invalidation-before-free change",
+    "second metadata/page/residency authority",
+    "memory controller HBM SRAM burst channel or CDC claim",
+    "latency bandwidth throughput area energy or PPA claim",
+    "numeric merge or attention MAC implementation",
+    "model GPU or new A4 DSE",
+    "Full-KV fallback"
+  ],
+  "evidence_labels": [
+    "testbench-composed functional RTL transaction evidence",
+    "no model/GPU",
+    "no cycle/timing/throughput claim",
+    "no PPA claim",
+    "no RTL correctness claim",
+    "no new A4 DSE"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "ef41af6c3da5ad2f0644528245cd1b6b90e675306cd5f867c90bbcb53ae40285",
+    "analysis/architecture_spec.md": "3177b293068767e10da0d49cc75cbc1267669a22b9764849cfec48506c391e4a",
+    "analysis/rtl2_phase_contract.md": "802fdcc023a730cb3e92cafd1decb29709ac472f2372b7a37618a17401c9eb5d",
+    "analysis/rtl3_0_replacement_owner_contract.md": "7fffa9577f2be60f1a5c8f967ed68afc5cba13d534078c42159097abdb32322d",
+    "analysis/rtl3_1_functional_memory_environment_contract.md": "0fd96975c7df0d07f3f76ac2ec2d0a3ccf91793c6dd0d0d0ccf85e5d9881606f",
+    "analysis/rtl3_2a_packed_read_association_contract.md": "0ee0f23b11b1328aa5dea691c1b36ece5c2f774e6f98e4c971319cce61a079b8",
+    "analysis/rtl3_2_packed_read_functional_integration_contract.md": "1ab75f7ab2c5658cd28f475afbdf516b5dbdbd92f3f48f6aa25bf95fddee334e",
+    "hardware/route_a/chisel/README.md": "2dbda9b4b05f44232b17c35efae394df609148c5dba0c7ac697fcade69e3a8b4",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "589c4dafbeeb6619c0b9832e0660576a96c17783fd6980dc0dbbee1daf40e2ac",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "c52047ad9b45e60d94d878ce46440c5556492c58e9f3231032ece36dcee4d7de",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "67af2611d39bbed93f82f2b98fb2bd192f4d9c186a43322673d23ca1d1da07ec",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironment.scala": "44daa92c309b09a899cc334a148ab64d9514a9b755e51c5d2945a48d4cbc57fe",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadAssociationOwnerSpec.scala": "0336eeb64b770dcff649136ee815cbc1ea121c677880a6eb637f4756b7ab64b2",
+    "tools/validate_rtl3_2_packed_read_functional_integration.py": "a3178bd3bfaae64874d43b943fd9ef1f11e26ab3ec89aa933face06906e3606e"
+  }
+}

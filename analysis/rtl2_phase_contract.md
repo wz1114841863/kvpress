@@ -684,15 +684,16 @@ production bridge, profiling, optimization, synthesis, timing, or PPA claims.
 
 ## Planned successor — RTL3: Functional Realization Closure
 
-**Status:** RTL3.0 planning is complete with explicit stop-for-review items;
-RTL3.1 has completed its isolated testbench-only functional memory environment,
-and RTL3.2-A has closed the packed-read association-owner contract. No
-production-top RTL3 module, physical controller, numerical
-microarchitecture, or performance experiment is authorized by these records.
+**Status:** RTL3.0 planning and RTL3.1 functional memory environment are
+complete; RTL3.2-A's association contract is implemented by a bounded,
+testbench-composed RTL3.2 functional packed-payload path. No production-top
+RTL3 composition, physical controller, numerical microarchitecture, or
+performance experiment is authorized by these records.
 See
 [`rtl3_0_replacement_owner_contract.md`](rtl3_0_replacement_owner_contract.md)
 [`rtl3_1_functional_memory_environment_contract.md`](rtl3_1_functional_memory_environment_contract.md),
-and [`rtl3_2a_packed_read_association_contract.md`](rtl3_2a_packed_read_association_contract.md).
+[`rtl3_2a_packed_read_association_contract.md`](rtl3_2a_packed_read_association_contract.md),
+and [`rtl3_2_packed_read_functional_integration_contract.md`](rtl3_2_packed_read_functional_integration_contract.md).
 
 RTL3 replaces the remaining verification-only data/numeric conveniences with
 named, functional providers while preserving every frozen authority,
@@ -744,13 +745,16 @@ MAC owner, or make a testbench default appear as an accepted production fact.
    former packed-read association stop but does not yet implement payload or
    sidecar transport; see
    [`rtl3_2a_packed_read_association_contract.md`](rtl3_2a_packed_read_association_contract.md).
-3. **RTL3.2 — packed-page functional read to S2.** Replace the packed-path
-   hand-filled S2 ingress with `published packed page -> R2/R1 typed read ->
-   functional memory response/sidecar -> S2`. It must preserve generation,
-   identity, page/slot association, sidecar completion, and fail-closed stale,
-   mismatch, and fault behavior. It consumes the RTL3.2-A association contract;
-   it does not change the single publication boundary or select a source
-   schedule.
+3. **RTL3.2 — packed-page functional read to S2 (complete, bounded
+   testbench-composed payload slice).** The real
+   `route_a_packed_read_association_owner` joins live R3/R5/S2/demand grants,
+   receives the existing registry acknowledgement, and feeds the existing
+   R2/R1 typed packed-read and S2 deposition path. A preloaded RTL3.1
+   functional-memory object supplies the payload; payload completion remains
+   insufficient for S2 READY until explicit matching sidecar completion. This
+   closes no sidecar transport, S2 allocation, endpoint-to-owner terminal
+   adapter/release integration, source schedule, or production-top binding;
+   see [`rtl3_2_packed_read_functional_integration_contract.md`](rtl3_2_packed_read_functional_integration_contract.md).
 4. **RTL3.3 — R4 functional-realization profile and oracle binding.** Bind a
    functional implementation to the already frozen observable binary32
    packet, canonical `hot -> pending -> packed` order, normalization guard,

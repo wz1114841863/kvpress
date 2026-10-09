@@ -3,6 +3,7 @@ package kvpress.routea.rtl3
 import chisel3._
 import chisel3.simulator.PeekPokeAPI._
 import kvpress.routea.common.RouteACoreMemIfV1
+import kvpress.routea.interfaces.CoreMemoryExternalPort
 import kvpress.routea.params.RouteASkeletonParameters
 
 import scala.collection.mutable
@@ -99,27 +100,32 @@ final class RouteAFunctionalMemoryEnvironment(p: RouteASkeletonParameters) {
 
   /** Drive all environment-owned signals for the current simulated cycle. */
   def drive(dut: RouteACoreMemIfV1): Unit = {
-    dut.io.external_core_mem_if_v1.init_ack.valid.poke(initPending.B)
-    dut.io.external_core_mem_if_v1.init_ack.bits.adapter_epoch_ready.poke(true.B)
-    dut.io.external_core_mem_if_v1.request.ready.poke(requestAcceptanceEnabled.B)
+    drive(dut.io.external_core_mem_if_v1)
+  }
+
+  /** Bind the same test-only environment to a composed harness boundary. */
+  def drive(port: CoreMemoryExternalPort): Unit = {
+    port.init_ack.valid.poke(initPending.B)
+    port.init_ack.bits.adapter_epoch_ready.poke(true.B)
+    port.request.ready.poke(requestAcceptanceEnabled.B)
 
     responses.headOption match {
       case Some(response) =>
-        dut.io.external_core_mem_if_v1.response.valid.poke(true.B)
-        dut.io.external_core_mem_if_v1.response.bits.transaction_identity.request_id.poke(response.identity.requestId.U)
-        dut.io.external_core_mem_if_v1.response.bits.transaction_identity.incarnation.poke(response.identity.incarnation.U)
-        dut.io.external_core_mem_if_v1.response.bits.fragment_index.poke(response.fragmentIndex.U)
-        dut.io.external_core_mem_if_v1.response.bits.last.poke(response.last.B)
-        dut.io.external_core_mem_if_v1.response.bits.status.poke(response.status.U)
-        dut.io.external_core_mem_if_v1.response.bits.data.poke(response.data.U)
+        port.response.valid.poke(true.B)
+        port.response.bits.transaction_identity.request_id.poke(response.identity.requestId.U)
+        port.response.bits.transaction_identity.incarnation.poke(response.identity.incarnation.U)
+        port.response.bits.fragment_index.poke(response.fragmentIndex.U)
+        port.response.bits.last.poke(response.last.B)
+        port.response.bits.status.poke(response.status.U)
+        port.response.bits.data.poke(response.data.U)
       case None =>
-        dut.io.external_core_mem_if_v1.response.valid.poke(false.B)
-        dut.io.external_core_mem_if_v1.response.bits.transaction_identity.request_id.poke(0.U)
-        dut.io.external_core_mem_if_v1.response.bits.transaction_identity.incarnation.poke(0.U)
-        dut.io.external_core_mem_if_v1.response.bits.fragment_index.poke(0.U)
-        dut.io.external_core_mem_if_v1.response.bits.last.poke(false.B)
-        dut.io.external_core_mem_if_v1.response.bits.status.poke(p.coreMemoryOkStatusCode.U)
-        dut.io.external_core_mem_if_v1.response.bits.data.poke(0.U)
+        port.response.valid.poke(false.B)
+        port.response.bits.transaction_identity.request_id.poke(0.U)
+        port.response.bits.transaction_identity.incarnation.poke(0.U)
+        port.response.bits.fragment_index.poke(0.U)
+        port.response.bits.last.poke(false.B)
+        port.response.bits.status.poke(p.coreMemoryOkStatusCode.U)
+        port.response.bits.data.poke(0.U)
     }
   }
 
@@ -130,33 +136,38 @@ final class RouteAFunctionalMemoryEnvironment(p: RouteASkeletonParameters) {
     * it, so this helper has no hidden timing or service-rate behavior.
     */
   def observeAccepted(dut: RouteACoreMemIfV1): Unit = {
-    if (initPending && bool(dut.io.external_core_mem_if_v1.init_ack.valid) && bool(dut.io.external_core_mem_if_v1.init_ack.ready)) {
+    observeAccepted(dut.io.external_core_mem_if_v1)
+  }
+
+  /** Observe a composed harness boundary; semantics are identical to R1 binding. */
+  def observeAccepted(port: CoreMemoryExternalPort): Unit = {
+    if (initPending && bool(port.init_ack.valid) && bool(port.init_ack.ready)) {
       initPending = false
     }
 
-    if (responses.headOption.nonEmpty && bool(dut.io.external_core_mem_if_v1.response.valid) && bool(dut.io.external_core_mem_if_v1.response.ready)) {
+    if (responses.headOption.nonEmpty && bool(port.response.valid) && bool(port.response.ready)) {
       responses.dequeue().onAccepted()
     }
 
-    if (bool(dut.io.external_core_mem_if_v1.request.valid) && bool(dut.io.external_core_mem_if_v1.request.ready)) {
-      acceptRequest(dut)
+    if (bool(port.request.valid) && bool(port.request.ready)) {
+      acceptRequest(port)
     }
   }
 
   private def bool(signal: Bool): Boolean = signal.peek().litToBoolean
 
-  private def identity(dut: RouteACoreMemIfV1): Identity = Identity(
-    dut.io.external_core_mem_if_v1.request.bits.transaction_identity.request_id.peek().litValue,
-    dut.io.external_core_mem_if_v1.request.bits.transaction_identity.incarnation.peek().litValue,
+  private def identity(port: CoreMemoryExternalPort): Identity = Identity(
+    port.request.bits.transaction_identity.request_id.peek().litValue,
+    port.request.bits.transaction_identity.incarnation.peek().litValue,
   )
 
   private def queueFault(identity: Identity): Unit = {
     responses.enqueue(PendingResponse(identity, fragmentIndex = 0, last = true, p.coreMemoryFaultStatusCode, data = 0))
   }
 
-  private def acceptRequest(dut: RouteACoreMemIfV1): Unit = {
-    val request = dut.io.external_core_mem_if_v1.request.bits
-    val acceptedIdentity = identity(dut)
+  private def acceptRequest(port: CoreMemoryExternalPort): Unit = {
+    val request = port.request.bits
+    val acceptedIdentity = identity(port)
     val kind = request.request_kind.peek().litValue.toInt
     val addressRef = request.address_ref.peek().litValue
 

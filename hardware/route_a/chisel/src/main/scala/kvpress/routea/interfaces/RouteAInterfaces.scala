@@ -620,6 +620,11 @@ final class DirectPendingReadWork(p: RouteASkeletonParameters) extends Bundle {
   */
 final class PackedS2ReadWork(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
+  // A nonzero value is an already acknowledged registry association supplied
+  // by the RTL3.2 packed-read association owner.  The historical RTL2.3-C4
+  // ingress leaves it at zero and is still bound by the common allocation
+  // bridge; zero is therefore not a new validity encoding.
+  val delivery_context_ref = UInt(p.sourceDeliveryOpaqueWidth.W)
   val page_ref = new PageRef
   val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
   val source_generation = UInt(p.sourceGenerationWidth.W)
@@ -629,6 +634,78 @@ final class PackedS2ReadWork(p: RouteASkeletonParameters) extends Bundle {
   val eligibility_snapshot = UInt(p.candidatePredicateWidth.W)
   val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
   val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
+}
+
+/**
+  * Immutable, already-selected packed-source demand.  This is intentionally
+  * not a scheduler request: the upstream boundary has selected the page and
+  * R2 ordering facts before this carrier exists.
+  */
+final class PackedSourceDemand(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val page_ref = new PageRef
+  val arrival_ordinal = UInt(p.candidateOrdinalWidth.W)
+  val candidate_id = UInt(p.candidateIdWidth.W)
+  val eligibility_snapshot = UInt(p.candidatePredicateWidth.W)
+  val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
+}
+
+/** R3/M2 current, identity-bound publication permission for one packed read. */
+final class PublicationReadAuthorization(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val page_ref = new PageRef
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val packed_authoritative = Bool()
+}
+
+/**
+  * R5-owned opaque location facts.  The association owner transports these
+  * facts only; it neither decodes a descriptor image nor derives addresses.
+  */
+final class DescriptorLocationGrant(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val page_ref = new PageRef
+  val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+  val sidecar_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val sidecar_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val live_reference_held = Bool()
+}
+
+/** S2-owned reservation facts for one future packed fill. */
+final class S2FillLease(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val page_ref = new PageRef
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val requires_sidecar = Bool()
+}
+
+/** Terminal release observation returned to the R5/S2 fact owners. */
+final class PackedReadReleaseObservation(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val page_ref = new PageRef
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val delivery_context_ref = UInt(p.sourceDeliveryOpaqueWidth.W)
+  val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
+}
+
+/** R5 invalidation notice that may cancel a packed association only pre-issue. */
+final class PackedReadInvalidation extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val page_ref = new PageRef
+}
+
+/** Typed packed-read endpoint terminal, before any S2 READY implication. */
+final class PackedReadTerminal(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val page_ref = new PageRef
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val delivery_context_ref = UInt(p.sourceDeliveryOpaqueWidth.W)
+  val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
 }
 
 final class CoreMemoryResponse(p: RouteASkeletonParameters) extends Bundle {
@@ -909,6 +986,12 @@ object RouteAChannels {
   def p3_pack_read_work(p: RouteASkeletonParameters) = Decoupled(new P3PackReadWork(p))
   def direct_pending_read_work(p: RouteASkeletonParameters) = Decoupled(new DirectPendingReadWork(p))
   def packed_s2_read_work(p: RouteASkeletonParameters) = Decoupled(new PackedS2ReadWork(p))
+  def packed_source_demand(p: RouteASkeletonParameters) = Decoupled(new PackedSourceDemand(p))
+  def publication_read_authorization(p: RouteASkeletonParameters) = Decoupled(new PublicationReadAuthorization(p))
+  def descriptor_location_grant(p: RouteASkeletonParameters) = Decoupled(new DescriptorLocationGrant(p))
+  def s2_fill_lease(p: RouteASkeletonParameters) = Decoupled(new S2FillLease(p))
+  def packed_read_release_observation(p: RouteASkeletonParameters) = Decoupled(new PackedReadReleaseObservation(p))
+  def packed_read_terminal(p: RouteASkeletonParameters) = Decoupled(new PackedReadTerminal(p))
   def direct_pending_payload_fragment(p: RouteASkeletonParameters) = Decoupled(new DirectPendingPayloadFragment(p))
   def core_mem_req(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryRequest(p))
   def core_mem_rsp(p: RouteASkeletonParameters) = Decoupled(new CoreMemoryResponse(p))

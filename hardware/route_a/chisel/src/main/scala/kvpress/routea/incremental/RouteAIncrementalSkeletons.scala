@@ -1,9 +1,257 @@
 package kvpress.routea.incremental
 
 import chisel3._
-import chisel3.util.{Cat, Enum, Fill, MuxCase, PopCount, PriorityEncoder, RegEnable, Valid, log2Ceil}
+import chisel3.util.{Cat, Enum, Fill, MuxCase, PopCount, PriorityEncoder, RegEnable, Valid, is, log2Ceil, switch}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteADescriptorOperationKind, RouteAM2GroupMember, RouteAPublicationStatus, RouteASkeletonParameters}
+
+/**
+  * RTL3.2 sole join owner for a selected packed source, its live R3/M2
+  * publication authorization, R5 location grant, and S2 fill lease.
+  *
+  * This module deliberately has one bounded in-flight association.  That is
+  * a functional realization baseline, not an R2 scheduling rule or an
+  * outstanding-request limit.  It never selects a page, allocates a slot,
+  * decodes an R5 descriptor, or creates a second publication/authority table.
+  */
+final class RouteAPackedReadAssociationOwner(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_packed_read_association_owner"
+
+  val io = IO(new Bundle {
+    val mem_init_done = Input(Bool())
+    val demand_in = Flipped(RouteAChannels.packed_source_demand(p))
+    val publication_authorization_in = Flipped(RouteAChannels.publication_read_authorization(p))
+    val descriptor_grant_in = Flipped(RouteAChannels.descriptor_location_grant(p))
+    val s2_fill_lease_in = Flipped(RouteAChannels.s2_fill_lease(p))
+    // R5 may invalidate an incomplete association.  This is intentionally a
+    // pre-issue observation rather than a second page-manager command path.
+    val invalidation_in = Input(Valid(new PackedReadInvalidation))
+    // Existing registry interface; this is the concrete realization of the
+    // contract's R2PackedReadAllocationRequest.
+    val registry_allocate_out = RouteAChannels.delivery_context_allocate(p)
+    val registry_allocation_ack_in = Flipped(RouteAChannels.delivery_context_allocation_ack(p))
+    val packed_s2_work_out = RouteAChannels.packed_s2_read_work(p)
+    // Endpoint terminal is only a transport completion.  It cannot mark S2
+    // READY, release GQA consumers, or imply R4/attention completion.
+    val terminal_in = Flipped(RouteAChannels.packed_read_terminal(p))
+    val release_observation_out = RouteAChannels.packed_read_release_observation(p)
+    val association_active = Output(Bool())
+  })
+
+  private val Collect = 0.U(3.W)
+  private val Evaluate = 1.U(3.W)
+  private val AwaitAck = 2.U(3.W)
+  private val EmitWork = 3.U(3.W)
+  private val AwaitTerminal = 4.U(3.W)
+  private val EmitRelease = 5.U(3.W)
+  private val Faulted = 6.U(3.W)
+  val state = RegInit(Collect)
+
+  val haveDemand = RegInit(false.B)
+  val havePublication = RegInit(false.B)
+  val haveDescriptor = RegInit(false.B)
+  val haveLease = RegInit(false.B)
+  val demand = Reg(new PackedSourceDemand(p))
+  val publication = Reg(new PublicationReadAuthorization(p))
+  val descriptor = Reg(new DescriptorLocationGrant(p))
+  val lease = Reg(new S2FillLease(p))
+  val deliveryContextRef = Reg(UInt(p.sourceDeliveryOpaqueWidth.W))
+  val terminalStatus = Reg(UInt(RouteAAnchorWidths.TerminalStatusWidth.W))
+  val issued = RegInit(false.B)
+  val terminalSeen = RegInit(false.B)
+
+  private def sameIdentity(left: TransactionIdentity, right: TransactionIdentity): Bool =
+    left.asUInt === right.asUInt
+  private def samePage(left: PageRef, right: PageRef): Bool = left.asUInt === right.asUInt
+  private def fragments(records: UInt): UInt = (records << 3).asUInt
+
+  val recordsLegal = publication.valid_records =/= 0.U && publication.valid_records <= 64.U
+  val joinedExactly =
+    sameIdentity(demand.transaction_identity, publication.transaction_identity) &&
+      sameIdentity(demand.transaction_identity, descriptor.transaction_identity) &&
+      sameIdentity(demand.transaction_identity, lease.transaction_identity) &&
+      samePage(demand.page_ref, publication.page_ref) &&
+      samePage(demand.page_ref, descriptor.page_ref) &&
+      samePage(demand.page_ref, lease.page_ref) &&
+      publication.packed_authoritative && recordsLegal &&
+      publication.valid_records === descriptor.valid_records &&
+      descriptor.sidecar_records === descriptor.valid_records &&
+      descriptor.live_reference_held && lease.requires_sidecar
+
+  val preIssueInvalidation = io.invalidation_in.valid && haveDemand &&
+    sameIdentity(io.invalidation_in.bits.transaction_identity, demand.transaction_identity) &&
+    samePage(io.invalidation_in.bits.page_ref, demand.page_ref)
+
+  io.demand_in.ready := false.B
+  io.publication_authorization_in.ready := false.B
+  io.descriptor_grant_in.ready := false.B
+  io.s2_fill_lease_in.ready := false.B
+  io.registry_allocate_out.valid := false.B
+  io.registry_allocate_out.bits := 0.U.asTypeOf(new DeliveryContextAllocation(p))
+  io.registry_allocation_ack_in.ready := false.B
+  io.packed_s2_work_out.valid := false.B
+  io.packed_s2_work_out.bits := 0.U.asTypeOf(new PackedS2ReadWork(p))
+  io.terminal_in.ready := false.B
+  io.release_observation_out.valid := false.B
+  io.release_observation_out.bits := 0.U.asTypeOf(new PackedReadReleaseObservation(p))
+  io.association_active := state =/= Collect && state =/= Faulted
+
+  when(!io.mem_init_done) {
+    // A destructive reset/init loss cannot leave an incomplete or issued
+    // association live.  R1 separately owns external stale-response gating.
+    state := Collect
+    haveDemand := false.B
+    havePublication := false.B
+    haveDescriptor := false.B
+    haveLease := false.B
+    issued := false.B
+    terminalSeen := false.B
+  }.otherwise {
+    switch(state) {
+      is(Collect) {
+        io.demand_in.ready := !haveDemand
+        io.publication_authorization_in.ready := !havePublication
+        io.descriptor_grant_in.ready := !haveDescriptor
+        io.s2_fill_lease_in.ready := !haveLease
+        when(io.demand_in.fire) { demand := io.demand_in.bits; haveDemand := true.B }
+        when(io.publication_authorization_in.fire) { publication := io.publication_authorization_in.bits; havePublication := true.B }
+        when(io.descriptor_grant_in.fire) { descriptor := io.descriptor_grant_in.bits; haveDescriptor := true.B }
+        when(io.s2_fill_lease_in.fire) { lease := io.s2_fill_lease_in.bits; haveLease := true.B }
+        when(preIssueInvalidation) {
+          haveDemand := false.B
+          havePublication := false.B
+          haveDescriptor := false.B
+          haveLease := false.B
+        }.elsewhen(haveDemand && havePublication && haveDescriptor && haveLease) {
+          state := Evaluate
+        }
+      }
+      is(Evaluate) {
+        when(joinedExactly) { state := AwaitAck }.otherwise { state := Faulted }
+      }
+      is(AwaitAck) {
+        io.registry_allocate_out.valid := !preIssueInvalidation
+        io.registry_allocate_out.bits.candidate_class := p.r2S2PackedClassCode.U
+        io.registry_allocate_out.bits.transaction_identity := demand.transaction_identity
+        io.registry_allocate_out.bits.target_kind := RouteADeliveryTargetKind.S2PackedFill.U
+        io.registry_allocate_out.bits.target_identity_generation := lease.source_generation
+        io.registry_allocate_out.bits.expected_fragment_count := fragments(publication.valid_records)
+        io.registry_allocate_out.bits.target_descriptor.write_endpoint := 0.U
+        io.registry_allocate_out.bits.target_descriptor.p3_layer := 0.U
+        io.registry_allocate_out.bits.target_descriptor.p3_stage_generation := 0.U
+        io.registry_allocate_out.bits.target_descriptor.transaction_group_tag := publication.transaction_group_tag
+        io.registry_allocate_out.bits.target_descriptor.descriptor_kind := 0.U
+        io.registry_allocate_out.bits.target_descriptor.descriptor_page_ref := demand.page_ref
+        io.registry_allocate_out.bits.target_descriptor.descriptor_line := descriptor.sidecar_handle_or_address
+        io.registry_allocate_out.bits.target_descriptor.s2_slot := lease.s2_slot
+        io.registry_allocate_out.bits.target_descriptor.source_generation := lease.source_generation
+        io.registry_allocate_out.bits.target_descriptor.requires_sidecar := true.B
+        io.registry_allocate_out.bits.target_descriptor.pending_ordinal := 0.U
+        io.registry_allocate_out.bits.target_descriptor.p3_member_payload_ref := 0.U
+        io.registry_allocate_out.bits.target_descriptor.direct_source_last := false.B
+        io.registry_allocate_out.bits.target_descriptor.pending_explicit_empty := false.B
+        when(preIssueInvalidation) { state := Faulted }
+        when(io.registry_allocate_out.fire) { state := EmitWork }
+      }
+      is(EmitWork) {
+        val ack = io.registry_allocation_ack_in.bits
+        val ackMatches = ack.allocation.candidate_class === p.r2S2PackedClassCode.U &&
+          sameIdentity(ack.allocation.transaction_identity, demand.transaction_identity) &&
+          ack.allocation.target_kind === RouteADeliveryTargetKind.S2PackedFill.U &&
+          ack.allocation.target_identity_generation === lease.source_generation &&
+          ack.allocation.expected_fragment_count === fragments(publication.valid_records) &&
+          samePage(ack.allocation.target_descriptor.descriptor_page_ref, demand.page_ref) &&
+          ack.allocation.target_descriptor.descriptor_line === descriptor.sidecar_handle_or_address &&
+          ack.allocation.target_descriptor.s2_slot === lease.s2_slot &&
+          ack.allocation.target_descriptor.source_generation === lease.source_generation &&
+          ack.allocation.target_descriptor.requires_sidecar &&
+          ack.allocation.target_descriptor.transaction_group_tag === publication.transaction_group_tag &&
+          !ack.allocation.target_descriptor.pending_explicit_empty
+        io.registry_allocation_ack_in.ready := ackMatches
+        when(io.registry_allocation_ack_in.fire) {
+          deliveryContextRef := ack.delivery_context_ref
+          state := AwaitTerminal
+        }
+      }
+      is(AwaitTerminal) {
+        // The work carrier is emitted exactly once, immediately after the
+        // registry's exact acknowledgement.  The producer below it owns the
+        // S2-open/read-issue serialization, not this association owner.
+        io.packed_s2_work_out.valid := true.B
+        io.packed_s2_work_out.bits.transaction_identity := demand.transaction_identity
+        io.packed_s2_work_out.bits.delivery_context_ref := deliveryContextRef
+        io.packed_s2_work_out.bits.page_ref := demand.page_ref
+        io.packed_s2_work_out.bits.s2_slot := lease.s2_slot
+        io.packed_s2_work_out.bits.source_generation := lease.source_generation
+        io.packed_s2_work_out.bits.valid_records := publication.valid_records
+        io.packed_s2_work_out.bits.arrival_ordinal := demand.arrival_ordinal
+        io.packed_s2_work_out.bits.candidate_id := demand.candidate_id
+        io.packed_s2_work_out.bits.eligibility_snapshot := demand.eligibility_snapshot
+        io.packed_s2_work_out.bits.payload_handle_or_address := descriptor.payload_handle_or_address
+        io.packed_s2_work_out.bits.destination_endpoint := demand.destination_endpoint
+        when(io.packed_s2_work_out.fire) {
+          issued := true.B
+          state := EmitRelease // Work has issued; now await a matching terminal via release state.
+        }
+      }
+      is(EmitRelease) {
+        val terminalMatches = sameIdentity(io.terminal_in.bits.transaction_identity, demand.transaction_identity) &&
+          samePage(io.terminal_in.bits.page_ref, demand.page_ref) &&
+          io.terminal_in.bits.s2_slot === lease.s2_slot &&
+          io.terminal_in.bits.source_generation === lease.source_generation &&
+          io.terminal_in.bits.delivery_context_ref === deliveryContextRef
+        io.terminal_in.ready := terminalMatches
+        when(io.terminal_in.fire) {
+          terminalStatus := io.terminal_in.bits.status
+          terminalSeen := true.B
+          state := Faulted
+        }
+      }
+      is(Faulted) {
+        // `Faulted` is also the terminal-release holding state.  A release is
+        // visible regardless of transport success/fault, but does not confer
+        // S2 READY or any later source/attention outcome.
+        when(issued && terminalSeen && haveDemand && haveLease) {
+          io.release_observation_out.valid := true.B
+          io.release_observation_out.bits.transaction_identity := demand.transaction_identity
+          io.release_observation_out.bits.page_ref := demand.page_ref
+          io.release_observation_out.bits.s2_slot := lease.s2_slot
+          io.release_observation_out.bits.source_generation := lease.source_generation
+          io.release_observation_out.bits.delivery_context_ref := deliveryContextRef
+          io.release_observation_out.bits.status := terminalStatus
+          when(io.release_observation_out.fire) {
+            haveDemand := false.B
+            havePublication := false.B
+            haveDescriptor := false.B
+            haveLease := false.B
+            issued := false.B
+            terminalSeen := false.B
+            state := Collect
+          }
+        }.otherwise {
+          issued := false.B
+          terminalSeen := false.B
+          haveDemand := false.B
+          havePublication := false.B
+          haveDescriptor := false.B
+          haveLease := false.B
+          state := Collect
+        }
+      }
+    }
+  }
+
+  val heldAllocation = RegEnable(io.registry_allocate_out.bits,
+    io.registry_allocate_out.valid && !io.registry_allocate_out.ready)
+  when(RegNext(io.registry_allocate_out.valid && !io.registry_allocate_out.ready, false.B)) {
+    assert(io.registry_allocate_out.bits.asUInt === heldAllocation.asUInt)
+  }
+  val heldWork = RegEnable(io.packed_s2_work_out.bits,
+    io.packed_s2_work_out.valid && !io.packed_s2_work_out.ready)
+  when(RegNext(io.packed_s2_work_out.valid && !io.packed_s2_work_out.ready, false.B)) {
+    assert(io.packed_s2_work_out.bits.asUInt === heldWork.asUInt)
+  }
+}
 
 /**
   * RTL2.3-C6 finite binder from an upstream immutable source declaration to
