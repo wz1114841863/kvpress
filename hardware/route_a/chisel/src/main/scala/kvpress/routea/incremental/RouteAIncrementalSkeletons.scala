@@ -396,6 +396,12 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val mergePending = RegInit(false.B)
   val mergeIdentity = Reg(new TransactionIdentity)
   val mergePresence = Reg(UInt(RouteAAnchorWidths.SourcePresenceWidth.W))
+  // RTL3.4-A: the group-level source completion is expanded into four
+  // explicitly associated R4 work items.  This ordered issue state is a
+  // conservative functional baseline for the single-active R4 boundary, not
+  // a change to Route-A source scheduling or a performance claim.
+  val mergeConsumer = RegInit(0.U(RouteAAnchorWidths.ConsumerIdWidth.W))
+  val mergeInFlight = RegInit(false.B)
   val mergeTrackerSlot = Reg(UInt(trackerIndexWidth.W))
   val terminalPending = RegInit(false.B)
   val terminalIdentity = Reg(new TransactionIdentity)
@@ -602,6 +608,8 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
         mergePending := true.B
         mergeIdentity := attentionIdentity(slot)
         mergePresence := sourcePlanPresence(slot)
+        mergeConsumer := 0.U
+        mergeInFlight := false.B
         mergeTrackerSlot := slot
         sourcePlanValid(slot) := false.B
       }
@@ -610,7 +618,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val hotReleaseMatches = releaseMatches(io.hot_source_release_in.bits, RouteASourceKind.Hot, sourcePlanHot)
   val pendingReleaseMatches = releaseMatches(io.pending_source_release_in.bits, RouteASourceKind.Pending, sourcePlanPending)
   val packedReleaseMatches = releaseMatches(io.packed_source_release_in.bits, RouteASourceKind.Packed, sourcePlanPacked)
-  val sourceReleaseEnabled = (state === StateActive || state === StateRetiring) && !mergePending && !terminalPending
+  val sourceReleaseEnabled = (state === StateActive || state === StateRetiring) && !mergePending && !mergeInFlight && !terminalPending
   io.hot_source_release_in.ready := sourceReleaseEnabled && hotReleaseMatches.asUInt.orR
   io.pending_source_release_in.ready := sourceReleaseEnabled && !hotReleaseMatches.asUInt.orR && pendingReleaseMatches.asUInt.orR
   io.packed_source_release_in.ready := sourceReleaseEnabled && !hotReleaseMatches.asUInt.orR &&
@@ -626,21 +634,25 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
       identityMatches(attentionIdentity(slot), mergeReady.transaction_identity),
   ))
   val mergeReadySlot = PriorityEncoder(mergeReadyMatches)
-  io.merge_ready_in.ready := (state === StateActive || state === StateRetiring) && !mergePending &&
+  io.merge_ready_in.ready := (state === StateActive || state === StateRetiring) && !mergePending && !mergeInFlight &&
     mergeReady.source_presence.orR && mergeReadyMatches.asUInt.orR
   when(io.merge_ready_in.fire) {
     mergePending := true.B
     mergeIdentity := mergeReady.transaction_identity
     mergePresence := mergeReady.source_presence
+    mergeConsumer := 0.U
+    mergeInFlight := false.B
     mergeTrackerSlot := mergeReadySlot
   }
 
   io.merge_req.valid := mergePending
   io.merge_req.bits.transaction_identity := mergeIdentity
   io.merge_req.bits.source_presence := mergePresence
+  io.merge_req.bits.consumer_id := mergeConsumer
   when(io.merge_req.fire) {
     attentionStage(mergeTrackerSlot) := MergeIssued
     mergePending := false.B
+    mergeInFlight := true.B
   }
 
   val mergeTerminal = io.merge_terminal_in.bits
@@ -652,16 +664,34 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val terminalStatusKnown = mergeTerminal.status === p.coreMemoryOkStatusCode.U ||
     mergeTerminal.status === p.coreMemoryFaultStatusCode.U
   io.merge_terminal_in.ready := (state === StateActive || state === StateRetiring) && !terminalPending &&
-    terminalStatusKnown && terminalMatches.asUInt.orR
+    mergeInFlight && terminalStatusKnown && terminalMatches.asUInt.orR &&
+    mergeTerminal.consumer_id === mergeConsumer
   when(io.merge_terminal_in.fire) {
     when(mergeTerminal.status === p.coreMemoryFaultStatusCode.U) {
       // a_numeric_fault_consumer: fault is accepted only after merge-ready/GQA completion.
-      assert(terminalMatches.asUInt.orR && !terminalPending)
+      assert(terminalMatches.asUInt.orR && !terminalPending && mergeInFlight &&
+        mergeTerminal.consumer_id === mergeConsumer)
     }
-    terminalPending := true.B
-    terminalIdentity := mergeTerminal.transaction_identity
-    terminalStatus := mergeTerminal.status
-    terminalTrackerSlot := terminalMatchSlot
+    mergeInFlight := false.B
+    when(mergeTerminal.status === p.coreMemoryFaultStatusCode.U) {
+      // A matching per-consumer numeric fault is fail-closed and consumes the
+      // group's one outward terminal.  It neither retries nor asks the other
+      // consumers to fabricate results.
+      terminalPending := true.B
+      terminalIdentity := mergeTerminal.transaction_identity
+      terminalStatus := mergeTerminal.status
+      terminalTrackerSlot := terminalMatchSlot
+    }.elsewhen(mergeConsumer === 3.U) {
+      // Group success is legal only after the fixed four associations have
+      // each returned a matching success in consumer-ID order 0..3.
+      terminalPending := true.B
+      terminalIdentity := mergeTerminal.transaction_identity
+      terminalStatus := mergeTerminal.status
+      terminalTrackerSlot := terminalMatchSlot
+    }.otherwise {
+      mergePending := true.B
+      mergeConsumer := mergeConsumer + 1.U
+    }
   }
 
   io.attention_terminal_rsp.valid := terminalPending
@@ -2210,8 +2240,10 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   val mergeActive = RegInit(false.B)
   val mergeIdentity = Reg(new TransactionIdentity)
   val mergeSourcePresence = Reg(UInt(RouteAAnchorWidths.SourcePresenceWidth.W))
+  val mergeConsumer = Reg(UInt(RouteAAnchorWidths.ConsumerIdWidth.W))
   val terminalPending = RegInit(false.B)
   val terminalIdentity = Reg(new TransactionIdentity)
+  val terminalConsumer = Reg(UInt(RouteAAnchorWidths.ConsumerIdWidth.W))
   val terminalStatus = Reg(UInt(RouteAAnchorWidths.TerminalStatusWidth.W))
   val terminalValue = Reg(UInt(RouteAAnchorWidths.NormalizedValueWidth.W))
 
@@ -2281,24 +2313,30 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
     commitPending := false.B
   }
 
-  io.merge_req_in.ready := !mergeActive && !terminalPending && io.merge_req_in.bits.source_presence.orR
+  io.merge_req_in.ready := !mergeActive && !terminalPending && io.merge_req_in.bits.source_presence.orR &&
+    io.merge_req_in.bits.consumer_id < 4.U
   when(io.merge_req_in.fire) {
     mergeActive := true.B
     mergeIdentity := io.merge_req_in.bits.transaction_identity
     mergeSourcePresence := io.merge_req_in.bits.source_presence
+    mergeConsumer := io.merge_req_in.bits.consumer_id
   }
 
   io.r4_active_merge_observation.valid := mergeActive
   io.r4_active_merge_observation.bits.transaction_identity := mergeIdentity
   io.r4_active_merge_observation.bits.source_presence := mergeSourcePresence
+  io.r4_active_merge_observation.bits.consumer_id := mergeConsumer
   when(io.r4_active_merge_observation.valid) {
-    assert(io.r4_active_merge_observation.bits.source_presence.orR)
+    assert(io.r4_active_merge_observation.bits.source_presence.orR &&
+      io.r4_active_merge_observation.bits.consumer_id < 4.U)
   }
 
   val resultMatches = mergeActive && !terminalPending &&
-    identityMatches(mergeIdentity, io.r4_result_stub_in.bits.transaction_identity)
+    identityMatches(mergeIdentity, io.r4_result_stub_in.bits.transaction_identity) &&
+    io.r4_result_stub_in.bits.consumer_id === mergeConsumer
   val faultMatches = mergeActive && !terminalPending &&
-    identityMatches(mergeIdentity, io.r4_numeric_fault_in.bits.transaction_identity)
+    identityMatches(mergeIdentity, io.r4_numeric_fault_in.bits.transaction_identity) &&
+    io.r4_numeric_fault_in.bits.consumer_id === mergeConsumer
   // A simultaneous success and fault is an upstream protocol violation; neither
   // slot is accepted, so the boundary cannot manufacture a terminal outcome.
   io.r4_result_stub_in.ready := resultMatches && !io.r4_numeric_fault_in.valid
@@ -2306,18 +2344,21 @@ final class RouteAMergeBoundary(p: RouteASkeletonParameters) extends Module {
   when(io.r4_result_stub_in.fire) {
     terminalPending := true.B
     terminalIdentity := io.r4_result_stub_in.bits.transaction_identity
+    terminalConsumer := io.r4_result_stub_in.bits.consumer_id
     terminalStatus := p.coreMemoryOkStatusCode.U
     terminalValue := io.r4_result_stub_in.bits.normalized_value
   }
   when(io.r4_numeric_fault_in.fire) {
     terminalPending := true.B
     terminalIdentity := io.r4_numeric_fault_in.bits.transaction_identity
+    terminalConsumer := io.r4_numeric_fault_in.bits.consumer_id
     terminalStatus := p.coreMemoryFaultStatusCode.U
     terminalValue := 0.U
   }
 
   io.merge_rsp_or_numeric_fault.valid := terminalPending
   io.merge_rsp_or_numeric_fault.bits.transaction_identity := terminalIdentity
+  io.merge_rsp_or_numeric_fault.bits.consumer_id := terminalConsumer
   io.merge_rsp_or_numeric_fault.bits.status := terminalStatus
   io.merge_rsp_or_numeric_fault.bits.normalized_value := terminalValue
   when(io.merge_rsp_or_numeric_fault.fire) {

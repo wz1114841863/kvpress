@@ -630,6 +630,15 @@ contract and executable reference are in
 revision-specific binding is
 `analysis/architecture_gate_a_r4_provenance_freeze.md`.
 
+For RTL3 functional realization, each 4,096-bit normalized result is one
+query-head consumer result, never an implicit group-packed value.  `consumer_id`
+therefore binds R6's per-consumer merge work to R4's result/fault terminal;
+R6 alone aggregates the four successes into the single group-level outward
+success terminal, while a matching numeric fault remains fail-closed.  The
+current serial `0 -> 1 -> 2 -> 3` handoff is a functional association baseline
+for the one-active R4 boundary, not a PE schedule, port count, or performance
+selection; see `analysis/rtl3_4a_r4_consumer_result_association_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.

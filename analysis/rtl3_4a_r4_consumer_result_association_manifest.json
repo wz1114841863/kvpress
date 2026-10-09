@@ -1,0 +1,63 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-4a-r4-consumer-result-association-1.0",
+  "status": "complete_consumer_result_association_control_closure_pre_rtl3_4b_numeric_provider",
+  "scope": "logical R4 per-consumer association and R6 group-terminal aggregation only",
+  "association": {
+    "consumer_ids": [0, 1, 2, 3],
+    "functional_baseline_issue_order": [0, 1, 2, 3],
+    "merge_request": "transaction_identity + source_presence + consumer_id",
+    "per_consumer_terminal": "transaction_identity + consumer_id + success payload XOR numeric fault",
+    "group_success": "only after four matching success terminals",
+    "group_fault": "a matching numeric fault immediately produces the sole fail-closed group fault terminal",
+    "rejected_without_state_change": ["stale identity", "duplicate terminal", "invalid consumer_id", "mismatched consumer_id"]
+  },
+  "owners": {
+    "group_ready_and_group_terminal": "route_a_lifecycle_adapter",
+    "active_request_and_terminal_association": "route_a_merge_boundary",
+    "current_test_only_provider": "testbench_route_a_r4_result_stub_provider",
+    "future_numeric_provider": "route_a_functional_r4_merge_provider (deferred to RTL3.4-B)"
+  },
+  "interface_manifest_update": {
+    "artifact": "analysis/rtl_entry_interface_manifest.json",
+    "records": ["if_r4_result_stub", "if_r4_numeric_fault", "if_lifecycle_merge_req", "if_merge_lifecycle_rsp"],
+    "rule": "consumer_id is mandatory on every R4 work/result/fault/terminal carrier"
+  },
+  "verification": {
+    "python_command": ".venv/bin/python -m pytest -q tests/test_route_a_merge_numeric_reference.py tests/test_rtl3_3_r4_functional_profile.py",
+    "python_result": "19 passed",
+    "chisel_commands": [
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.r4.RouteAMergeBoundarySpec' 'testOnly kvpress.routea.r6.RouteALifecycleAdapterSpec' 'testOnly kvpress.routea.rtl2.RouteAR4R6StubTerminalIntegrationSpec'",
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.r6.RouteASourceCompletionPlanSpec' 'testOnly kvpress.routea.rtl2.RouteARTL265aPackedReadTerminalHarnessSpec' 'testOnly kvpress.routea.rtl2.RouteARTL265bTerminalReclaimSpec' 'testOnly kvpress.routea.rtl2.RouteARTL265eSameInstanceWitnessSpec'",
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl2.RouteAR4ResultStubProviderSpec'"
+    ],
+    "chisel_result": "25 directed tests passed",
+    "coverage": ["R4 result/fault consumer matching", "mismatch fail-closed", "four-success group aggregation", "first matching numeric-fault group termination", "ready-low result stability", "reset/stale incarnation exclusion", "same-instance retained transaction regression"],
+    "evidence_labels": ["no model/GPU", "functional logical-control evidence", "no cycle/timing/throughput claim", "no PPA claim", "no RTL numeric correctness claim", "no new A4 DSE"]
+  },
+  "forbidden": [
+    "numeric merge arithmetic or exp implementation",
+    "internal precision accumulator pipeline or storage selection",
+    "source scheduling or source-order change",
+    "pruning admission publication or atomic-commit change",
+    "attention MAC query or RoPE realization",
+    "HBM SRAM controller CDC macro or physical claim",
+    "frequency timing throughput area energy PPA claim",
+    "model GPU accuracy result or new A4 DSE"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "9e9fe96f4c4f1c653ef9e95cad16acbba784de8fc1f89fac7b39c81507e82647",
+    "analysis/architecture_spec.md": "6f994b5a1445736028388732f55e9e15e77ac992f6bcaedb4b67164a3e51babe",
+    "analysis/rtl2_phase_contract.md": "554c6d94b974a7a9bcf94bd07bd8ef359940ba4997bf246be54e5cda91b94d4f",
+    "analysis/rtl3_3_r4_functional_profile_contract.md": "811cda4d8e618c660dd99791f3e186e746bfe34ae8c5e46d86925f9815628db4",
+    "analysis/rtl_entry_interface_manifest.json": "86e21890f38caef784f1b34e302fa4ef361af39c6cbd5d40fb681d8facbece9d",
+    "analysis/rtl3_4a_r4_consumer_result_association_contract.md": "303227e664c067ba36a474a424170dc456b2f2f173e9417e02bb11c6bc9de667",
+    "hardware/route_a/chisel/README.md": "bb9d1e355f668addef8fb7187c9c76ead0b45b425318084612dbe1f07b4fba82",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "f4616ef29ec73bf3547baaae33436d1f5c0973075941a0c2a94f6ba16880e259",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "9e9e54223185e4ab11d03ed0207907546ec7a9342f64e18f07d2e426a2da126d",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/r4/RouteAMergeBoundarySpec.scala": "9da402422548e857f3e7d09e9ab43b447245cd17020607914e88deb83933b8d5",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/RouteALifecycleAdapterSpec.scala": "7a50a38a9c5e5d32de729ed5593923a35fd542d046044f7a662841341d02cbf0",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4ResultStubProviderSpec.scala": "012503078f82d43d2bab8a664e76a6c9b6d1165e7ed2ab08b084ddbc941157c4",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4R6StubTerminalIntegrationSpec.scala": "9fe9616076decf4ff92d003d82c77bdc3eb286ad88098e3612fa8240d16225c5",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala": "e967fca4a61c4aa062ebbca90209bc56b61a6e7d4c8a77b7e455055bc6fe6234"
+  }
+}

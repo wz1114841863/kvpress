@@ -20,6 +20,7 @@ object RouteAR4StubScenarioDisposition {
   */
 final class R4StubScenario extends Bundle {
   val transaction_identity = new TransactionIdentity
+  val consumer_id = UInt(RouteAAnchorWidths.ConsumerIdWidth.W)
   val disposition = UInt(RouteAR4StubScenarioDisposition.Width.W)
   val normalized_value = UInt(RouteAAnchorWidths.NormalizedValueWidth.W)
 }
@@ -45,6 +46,7 @@ final class RouteAR4ResultStubProvider extends Module {
 
   val held = RegInit(false.B)
   val heldIdentity = Reg(new TransactionIdentity)
+  val heldConsumer = Reg(UInt(RouteAAnchorWidths.ConsumerIdWidth.W))
   val heldDisposition = Reg(UInt(RouteAR4StubScenarioDisposition.Width.W))
   val heldValue = Reg(UInt(RouteAAnchorWidths.NormalizedValueWidth.W))
   // Retire a completed scenario until R4 has stopped exposing that exact
@@ -56,6 +58,7 @@ final class RouteAR4ResultStubProvider extends Module {
   val active = io.active_merge_observation.bits
   val activeNonempty = io.active_merge_observation.valid && active.source_presence.orR
   val scenarioMatches = identityMatches(scenario.transaction_identity, active.transaction_identity)
+  val consumerMatches = scenario.consumer_id === active.consumer_id
   val dispositionLegal = scenario.disposition === RouteAR4StubScenarioDisposition.Success.U ||
     scenario.disposition === RouteAR4StubScenarioDisposition.NumericFault.U
   val faultValueLegal = scenario.disposition =/= RouteAR4StubScenarioDisposition.NumericFault.U ||
@@ -64,15 +67,17 @@ final class RouteAR4ResultStubProvider extends Module {
     identityMatches(completedIdentity, active.transaction_identity)
 
   io.scenario_in.ready := !held && !completedSameActive && activeNonempty &&
-    scenarioMatches && dispositionLegal && faultValueLegal
+    scenarioMatches && consumerMatches && dispositionLegal && faultValueLegal
 
   io.r4_result_stub_out.valid := held &&
     heldDisposition === RouteAR4StubScenarioDisposition.Success.U
   io.r4_result_stub_out.bits.transaction_identity := heldIdentity
+  io.r4_result_stub_out.bits.consumer_id := heldConsumer
   io.r4_result_stub_out.bits.normalized_value := heldValue
   io.r4_numeric_fault_out.valid := held &&
     heldDisposition === RouteAR4StubScenarioDisposition.NumericFault.U
   io.r4_numeric_fault_out.bits.transaction_identity := heldIdentity
+  io.r4_numeric_fault_out.bits.consumer_id := heldConsumer
 
   when(completed && (!io.active_merge_observation.valid ||
     !identityMatches(completedIdentity, active.transaction_identity))) {
@@ -81,6 +86,7 @@ final class RouteAR4ResultStubProvider extends Module {
   when(io.scenario_in.fire) {
     held := true.B
     heldIdentity := scenario.transaction_identity
+    heldConsumer := scenario.consumer_id
     heldDisposition := scenario.disposition
     heldValue := scenario.normalized_value
   }
@@ -92,7 +98,7 @@ final class RouteAR4ResultStubProvider extends Module {
 
   assert(!(io.r4_result_stub_out.valid && io.r4_numeric_fault_out.valid))
   when(io.scenario_in.fire) {
-    assert(activeNonempty && scenarioMatches && dispositionLegal && faultValueLegal)
+    assert(activeNonempty && scenarioMatches && consumerMatches && dispositionLegal && faultValueLegal)
   }
   val heldResult = RegEnable(io.r4_result_stub_out.bits,
     io.r4_result_stub_out.valid && !io.r4_result_stub_out.ready)
@@ -113,14 +119,16 @@ final class RouteAR4ResultStubProviderSpec extends AnyFunSpec with ChiselSim {
     identity.incarnation.poke(incarnation.U)
   }
 
-  private def driveActive(dut: RouteAR4ResultStubProvider, valid: Boolean, requestId: Int, incarnation: Int, sourcePresence: Int): Unit = {
+  private def driveActive(dut: RouteAR4ResultStubProvider, valid: Boolean, requestId: Int, incarnation: Int, sourcePresence: Int, consumer: Int = 0): Unit = {
     dut.io.active_merge_observation.valid.poke(valid.B)
     driveIdentity(dut.io.active_merge_observation.bits.transaction_identity, requestId, incarnation)
     dut.io.active_merge_observation.bits.source_presence.poke(sourcePresence.U)
+    dut.io.active_merge_observation.bits.consumer_id.poke(consumer.U)
   }
 
-  private def driveScenario(dut: RouteAR4ResultStubProvider, requestId: Int, incarnation: Int, disposition: Int, value: BigInt): Unit = {
+  private def driveScenario(dut: RouteAR4ResultStubProvider, requestId: Int, incarnation: Int, disposition: Int, value: BigInt, consumer: Int = 0): Unit = {
     driveIdentity(dut.io.scenario_in.bits.transaction_identity, requestId, incarnation)
+    dut.io.scenario_in.bits.consumer_id.poke(consumer.U)
     dut.io.scenario_in.bits.disposition.poke(disposition.U)
     dut.io.scenario_in.bits.normalized_value.poke(value.U)
   }
@@ -168,7 +176,7 @@ final class RouteAR4ResultStubProviderSpec extends AnyFunSpec with ChiselSim {
     }
   }
 
-  it("fails closed before an active merge and on empty stale mismatched or malformed scenarios") {
+  it("fails closed before an active merge and on empty stale identity/consumer mismatched or malformed scenarios") {
     simulate(new RouteAR4ResultStubProvider) { dut =>
       init(dut)
       driveScenario(dut, requestId = 1, incarnation = 0, RouteAR4StubScenarioDisposition.Success, BigInt(0))
@@ -176,6 +184,9 @@ final class RouteAR4ResultStubProviderSpec extends AnyFunSpec with ChiselSim {
       driveActive(dut, valid = true, requestId = 1, incarnation = 0, sourcePresence = 0)
       dut.io.scenario_in.ready.expect(false.B)
       driveActive(dut, valid = true, requestId = 2, incarnation = 0, sourcePresence = 1)
+      dut.io.scenario_in.ready.expect(false.B)
+      driveActive(dut, valid = true, requestId = 2, incarnation = 0, sourcePresence = 1, consumer = 2)
+      driveScenario(dut, requestId = 2, incarnation = 0, RouteAR4StubScenarioDisposition.Success, BigInt(0), consumer = 1)
       dut.io.scenario_in.ready.expect(false.B)
       driveScenario(dut, requestId = 2, incarnation = 0, disposition = 2, value = BigInt(0))
       dut.io.scenario_in.ready.expect(false.B)

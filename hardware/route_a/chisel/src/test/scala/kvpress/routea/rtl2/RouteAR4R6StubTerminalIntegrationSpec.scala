@@ -93,6 +93,7 @@ final class RouteAR4R6StubTerminalIntegrationSpec extends AnyFunSpec with Chisel
     dut.io.status.bits.asserted.poke(false.B)
     identity(dut.io.merge_ready.bits.transaction_identity, 0, 0); dut.io.merge_ready.bits.source_presence.poke(0.U)
     identity(dut.io.scenario.bits.transaction_identity, 0, 0)
+    dut.io.scenario.bits.consumer_id.poke(0.U)
     dut.io.scenario.bits.disposition.poke(RouteAR4StubScenarioDisposition.Success.U)
     dut.io.scenario.bits.normalized_value.poke(0.U)
   }
@@ -128,19 +129,24 @@ final class RouteAR4R6StubTerminalIntegrationSpec extends AnyFunSpec with Chisel
     dut.clock.step()
   }
 
-  private def offerScenario(dut: RouteAR4R6StubTerminalHarness, rid: Int, incarnation: Int, disposition: Int, value: BigInt): Unit = {
+  private def offerScenario(dut: RouteAR4R6StubTerminalHarness, rid: Int, incarnation: Int, disposition: Int, value: BigInt, consumer: Int = 0): Unit = {
     identity(dut.io.scenario.bits.transaction_identity, rid, incarnation)
+    dut.io.scenario.bits.consumer_id.poke(consumer.U)
     dut.io.scenario.bits.disposition.poke(disposition.U); dut.io.scenario.bits.normalized_value.poke(value.U)
     dut.io.scenario.valid.poke(true.B); dut.io.scenario.ready.expect(true.B)
     dut.clock.step(); dut.io.scenario.valid.poke(false.B)
-    // provider -> R4 terminal, then R4 -> R6 terminal
-    dut.clock.step(2)
+    // provider -> R4 terminal, then R4 -> R6 terminal.  A successful
+    // per-consumer result also lets R6 issue the next consumer work item.
+    dut.clock.step(3)
   }
 
   it("routes one matching success through R4 and R6, withholding the event until the atomic terminal handoff") {
     simulate(new RouteAR4R6StubTerminalHarness(p)) { dut =>
       init(dut); startSession(dut); issueMerge(dut, rid = 1, incarnation = 1, presence = 3)
-      offerScenario(dut, rid = 1, incarnation = 1, RouteAR4StubScenarioDisposition.Success, BigInt("1234", 16))
+      (0 until 4).foreach { consumer =>
+        offerScenario(dut, rid = 1, incarnation = 1, RouteAR4StubScenarioDisposition.Success,
+          BigInt("1234", 16) + consumer, consumer)
+      }
       dut.io.attention_terminal.valid.expect(true.B)
       dut.io.attention_terminal.bits.transaction_identity.request_id.expect(1.U)
       dut.io.attention_terminal.bits.transaction_identity.incarnation.expect(1.U)
@@ -162,6 +168,7 @@ final class RouteAR4R6StubTerminalIntegrationSpec extends AnyFunSpec with Chisel
     simulate(new RouteAR4R6StubTerminalHarness(p)) { dut =>
       init(dut); startSession(dut); issueMerge(dut, rid = 2, incarnation = 0, presence = 5)
       identity(dut.io.scenario.bits.transaction_identity, 3, 0)
+      dut.io.scenario.bits.consumer_id.poke(0.U)
       dut.io.scenario.bits.disposition.poke(RouteAR4StubScenarioDisposition.NumericFault.U)
       dut.io.scenario.bits.normalized_value.poke(0.U); dut.io.scenario.valid.poke(true.B)
       dut.io.scenario.ready.expect(false.B); dut.io.scenario.valid.poke(false.B)

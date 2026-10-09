@@ -764,17 +764,24 @@ MAC owner, or make a testbench default appear as an accepted production fact.
    [`rtl3_3_r4_functional_profile_contract.md`](rtl3_3_r4_functional_profile_contract.md).
    This neither reopens the numeric contract nor selects exp implementation or
    internal precision.
-5. **RTL3.4 — oracle-consistent functional R4 merge model.** Replace the R4
-   result stub with a model that derives result/fault only from accepted partial
-   inputs and preserves R4-to-R6 exactly-one terminal ownership. It is not a
-   claim of final synthesizable/pipelined floating-point RTL.
-6. **RTL3.5 — source-payload to partial-producer boundary closure.** Let hot,
+5. **RTL3.4-A — R4 per-consumer result association (complete).** Every
+   `MergeRequest`, R4 success/fault carrier, and R4-to-R6 terminal now carries
+   an exact query-head `consumer_id`. R6 serially issues the four logical
+   consumer work items and aggregates four successes into one group success;
+   a matching numeric fault remains fail-closed group termination. See
+   [`rtl3_4a_r4_consumer_result_association_contract.md`](rtl3_4a_r4_consumer_result_association_contract.md).
+6. **RTL3.4-B — oracle-consistent functional R4 merge model.** Replace the R4
+   result stub with a model that derives each consumer result/fault only from
+   accepted partial inputs, obeys RTL3.3 and RTL3.4-A, and preserves R6's
+   exactly-one group terminal ownership. It is not a claim of final
+   synthesizable/pipelined floating-point RTL.
+7. **RTL3.5 — source-payload to partial-producer boundary closure.** Let hot,
    direct-pending, and S2 owners supply only their payload, position/sideband,
    and source identity/generation facts. The unique partial producer then
    emits `(m, l, o)` through the frozen packet boundary to R4. If attention MAC
    remains outside RTL scope, that provider remains a formally replaceable
    functional PE/reference model rather than a hidden source-owner behavior.
-7. **RTL3.6 — functional-realization completion review.** Re-run the complete
+8. **RTL3.6 — functional-realization completion review.** Re-run the complete
    success and fault transactions with live accepted-carrier observations and
    the Python event/scoreboard oracle: `RETAIN -> pending -> functional memory
    -> P3 -> publication -> functional packed read -> S2 -> partial producer ->

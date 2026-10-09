@@ -71,6 +71,7 @@ final class RouteALifecycleAdapterSpec extends AnyFunSpec with ChiselSim {
     dut.io.merge_ready_in.bits.transaction_identity.request_id.poke(0.U); dut.io.merge_ready_in.bits.transaction_identity.incarnation.poke(0.U)
     dut.io.merge_ready_in.bits.source_presence.poke(0.U)
     dut.io.merge_terminal_in.bits.transaction_identity.request_id.poke(0.U); dut.io.merge_terminal_in.bits.transaction_identity.incarnation.poke(0.U)
+    dut.io.merge_terminal_in.bits.consumer_id.poke(0.U)
     dut.io.merge_terminal_in.bits.status.poke(p.coreMemoryOkStatusCode.U); dut.io.merge_terminal_in.bits.normalized_value.poke(0.U)
   }
 
@@ -99,13 +100,27 @@ final class RouteALifecycleAdapterSpec extends AnyFunSpec with ChiselSim {
     dut.io.merge_ready_in.bits.source_presence.poke(presence.U); dut.io.merge_ready_in.valid.poke(true.B)
     dut.io.merge_ready_in.ready.expect(true.B); dut.clock.step(); dut.io.merge_ready_in.valid.poke(false.B)
     dut.io.merge_req.valid.expect(true.B); dut.io.merge_req.bits.transaction_identity.request_id.expect(rid.U)
+    dut.io.merge_req.bits.consumer_id.expect(0.U)
     dut.io.merge_req.ready.poke(true.B); dut.clock.step()
   }
 
-  private def terminalize(dut: RouteALifecycleAdapter, rid: Int, incarnation: Int, status: Int): Unit = {
+  private def terminalize(dut: RouteALifecycleAdapter, rid: Int, incarnation: Int, status: Int, consumer: Int = 0): Unit = {
     dut.io.merge_terminal_in.bits.transaction_identity.request_id.poke(rid.U); dut.io.merge_terminal_in.bits.transaction_identity.incarnation.poke(incarnation.U)
+    dut.io.merge_terminal_in.bits.consumer_id.poke(consumer.U)
     dut.io.merge_terminal_in.bits.status.poke(status.U); dut.io.merge_terminal_in.valid.poke(true.B)
     dut.io.merge_terminal_in.ready.expect(true.B); dut.clock.step(); dut.io.merge_terminal_in.valid.poke(false.B)
+  }
+
+  private def terminalizeAllSuccess(dut: RouteALifecycleAdapter, rid: Int, incarnation: Int): Unit = {
+    (0 until 4).foreach { consumer =>
+      terminalize(dut, rid, incarnation, p.coreMemoryOkStatusCode, consumer)
+      if (consumer < 3) {
+        dut.io.merge_req.valid.expect(true.B)
+        dut.io.merge_req.bits.transaction_identity.request_id.expect(rid.U)
+        dut.io.merge_req.bits.consumer_id.expect((consumer + 1).U)
+        dut.clock.step()
+      }
+    }
   }
 
   it("gates session init and emits stable hot plus authority events without copying authority state") {
@@ -153,6 +168,27 @@ final class RouteALifecycleAdapterSpec extends AnyFunSpec with ChiselSim {
     }
   }
 
+  it("aggregates four consumer-associated successes into one group terminal in frozen ID order") {
+    simulate(new RouteALifecycleAdapter(p)) { dut =>
+      init(dut); initializeSession(dut); sendAttention(dut, 7, 1)
+      issueMerge(dut, 7, 1, presence = 5)
+      (0 until 3).foreach { consumer =>
+        terminalize(dut, 7, 1, p.coreMemoryOkStatusCode, consumer)
+        dut.io.attention_terminal_rsp.valid.expect(false.B)
+        dut.io.merge_req.valid.expect(true.B)
+        dut.io.merge_req.bits.consumer_id.expect((consumer + 1).U)
+        dut.clock.step()
+      }
+      terminalize(dut, 7, 1, p.coreMemoryOkStatusCode, consumer = 3)
+      dut.io.attention_terminal_rsp.valid.expect(true.B)
+      dut.io.attention_terminal_rsp.bits.transaction_identity.request_id.expect(7.U)
+      dut.io.attention_terminal_rsp.bits.terminal_status.expect(p.coreMemoryOkStatusCode.U)
+      dut.io.attention_terminal_rsp.ready.poke(true.B)
+      dut.clock.step()
+      dut.io.attention_terminal_rsp.valid.expect(false.B)
+    }
+  }
+
   it("emits only the frozen hot-to-drop authority edge for a DROP maturity") {
     simulate(new RouteALifecycleAdapter(p)) { dut =>
       init(dut); initializeSession(dut)
@@ -176,7 +212,7 @@ final class RouteALifecycleAdapterSpec extends AnyFunSpec with ChiselSim {
       dut.io.runtime_retire_req.bits.transaction_identity.incarnation.poke(1.U); dut.io.runtime_retire_req.valid.poke(true.B)
       dut.io.runtime_retire_req.ready.expect(true.B); dut.clock.step(); dut.io.runtime_retire_req.valid.poke(false.B)
       driveFrontend(dut, p.r6.kvArrivalEventCode, entry = 0, position = 0); dut.io.frontend_lifecycle_req.valid.poke(true.B); dut.io.frontend_lifecycle_req.ready.expect(false.B); dut.io.frontend_lifecycle_req.valid.poke(false.B)
-      issueMerge(dut, 2, 0); terminalize(dut, 2, 0, p.coreMemoryOkStatusCode); dut.clock.step()
+      issueMerge(dut, 2, 0); terminalizeAllSuccess(dut, 2, 0); dut.clock.step()
       val drains = Seq(
         p.r6.r1MemoryDrainedStatusCode, p.r6.r2PayloadDrainedStatusCode, p.r6.r2DescriptorDrainedStatusCode,
         p.r6.r3M2P3DrainedStatusCode, p.r6.r5PageManagerDrainedStatusCode, p.r6.s2GqaDrainedStatusCode,

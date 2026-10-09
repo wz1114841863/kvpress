@@ -474,10 +474,17 @@ final class ConsumerPartialCommit(p: RouteASkeletonParameters) extends Bundle {
 final class MergeRequest extends Bundle {
   val transaction_identity = new TransactionIdentity
   val source_presence = UInt(RouteAAnchorWidths.SourcePresenceWidth.W)
+  // One group-level source-set completion yields one merge work item for each
+  // legal GQA query-head consumer.  This is a logical association field, not
+  // a PE lane, scheduler grant, or physical port selection.
+  val consumer_id = UInt(RouteAAnchorWidths.ConsumerIdWidth.W)
 }
 
 final class MergeTerminalResponse extends Bundle {
   val transaction_identity = new TransactionIdentity
+  // Must match the unique outstanding MergeRequest consumer association.
+  // R6 aggregates these per-consumer outcomes into its sole group terminal.
+  val consumer_id = UInt(RouteAAnchorWidths.ConsumerIdWidth.W)
   val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
   val normalized_value = UInt(RouteAAnchorWidths.NormalizedValueWidth.W)
 }
@@ -499,12 +506,14 @@ final class R4ValueFragment extends Bundle {
 /** Replaceable numeric-core success slot; R4 boundary forwards it without arithmetic. */
 final class R4ResultStub extends Bundle {
   val transaction_identity = new TransactionIdentity
+  val consumer_id = UInt(RouteAAnchorWidths.ConsumerIdWidth.W)
   val normalized_value = UInt(RouteAAnchorWidths.NormalizedValueWidth.W)
 }
 
 /** Explicit R4 fail-closed numeric-fault slot; R6 receives the existing fault status. */
 final class R4NumericFault extends Bundle {
   val transaction_identity = new TransactionIdentity
+  val consumer_id = UInt(RouteAAnchorWidths.ConsumerIdWidth.W)
 }
 
 /**

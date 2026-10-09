@@ -326,6 +326,16 @@ module remains a structural packet/terminal owner. The existing testbench
 result stub remains active until RTL3.4 supplies a separately verified
 functional provider. See `analysis/rtl3_3_r4_functional_profile_contract.md`.
 
+## RTL3.4-A R4 per-consumer result association
+
+`MergeRequest`, `R4ResultStub`, `R4NumericFault`, and
+`MergeTerminalResponse` carry an explicit GQA `consumer_id`.  R6 issues the
+four consumer work items in a conservative serial functional baseline and
+aggregates their matching successes to one group terminal; a matching numeric
+fault remains fail-closed.  This is logical association/control only: it does
+not implement arithmetic or select a numerical/physical realization.  See
+`analysis/rtl3_4a_r4_consumer_result_association_contract.md`.
+
 ## RTL2.1a retained-group admission activation
 
 RTL2.1a adds `route_a_admission_publication_ingress_adapter`, the sole

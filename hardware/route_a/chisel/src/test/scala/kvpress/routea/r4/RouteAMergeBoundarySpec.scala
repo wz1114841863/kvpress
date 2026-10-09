@@ -33,6 +33,7 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
     dut.io.r4_numeric_fault_in.valid.poke(false.B); dut.io.merge_rsp_or_numeric_fault.ready.poke(true.B)
     dut.io.merge_req_in.bits.transaction_identity.request_id.poke(0.U); dut.io.merge_req_in.bits.transaction_identity.incarnation.poke(0.U)
     dut.io.merge_req_in.bits.source_presence.poke(0.U)
+    dut.io.merge_req_in.bits.consumer_id.poke(0.U)
     dut.io.r4_partial_header_in.bits.transaction_identity.request_id.poke(0.U); dut.io.r4_partial_header_in.bits.transaction_identity.incarnation.poke(0.U)
     dut.io.r4_partial_header_in.bits.header.poke(0.U)
     dut.io.r4_source_instance_in.bits.transaction_identity.request_id.poke(0.U); dut.io.r4_source_instance_in.bits.transaction_identity.incarnation.poke(0.U)
@@ -41,8 +42,10 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
     dut.io.r4_value_fragment_in.bits.transaction_identity.request_id.poke(0.U); dut.io.r4_value_fragment_in.bits.transaction_identity.incarnation.poke(0.U)
     dut.io.r4_value_fragment_in.bits.fragment_index.poke(0.U); dut.io.r4_value_fragment_in.bits.last.poke(false.B); dut.io.r4_value_fragment_in.bits.data.poke(0.U)
     dut.io.r4_result_stub_in.bits.transaction_identity.request_id.poke(0.U); dut.io.r4_result_stub_in.bits.transaction_identity.incarnation.poke(0.U)
+    dut.io.r4_result_stub_in.bits.consumer_id.poke(0.U)
     dut.io.r4_result_stub_in.bits.normalized_value.poke(0.U)
     dut.io.r4_numeric_fault_in.bits.transaction_identity.request_id.poke(0.U); dut.io.r4_numeric_fault_in.bits.transaction_identity.incarnation.poke(0.U)
+    dut.io.r4_numeric_fault_in.bits.consumer_id.poke(0.U)
   }
 
   private def headerWord(source: Int, consumer: Int, present: Boolean, reserved: BigInt = 0): BigInt = {
@@ -65,9 +68,9 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
     dut.io.r4_partial_header_in.ready.expect(true.B); dut.io.r4_source_instance_in.ready.expect(true.B); dut.clock.step(); dut.io.r4_partial_header_in.valid.poke(false.B); dut.io.r4_source_instance_in.valid.poke(false.B)
   }
 
-  private def sendMergeRequest(dut: RouteAMergeBoundary, rid: Int, incarnation: Int, presence: Int): Unit = {
+  private def sendMergeRequest(dut: RouteAMergeBoundary, rid: Int, incarnation: Int, presence: Int, consumer: Int = 0): Unit = {
     dut.io.merge_req_in.bits.transaction_identity.request_id.poke(rid.U); dut.io.merge_req_in.bits.transaction_identity.incarnation.poke(incarnation.U)
-    dut.io.merge_req_in.bits.source_presence.poke(presence.U); dut.io.merge_req_in.valid.poke(true.B)
+    dut.io.merge_req_in.bits.source_presence.poke(presence.U); dut.io.merge_req_in.bits.consumer_id.poke(consumer.U); dut.io.merge_req_in.valid.poke(true.B)
     dut.io.merge_req_in.ready.expect(true.B); dut.clock.step(); dut.io.merge_req_in.valid.poke(false.B)
   }
 
@@ -154,9 +157,11 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
       dut.io.r4_active_merge_observation.bits.transaction_identity.request_id.expect(3.U)
       dut.io.r4_active_merge_observation.bits.transaction_identity.incarnation.expect(1.U)
       dut.io.r4_active_merge_observation.bits.source_presence.expect(5.U)
+      dut.io.r4_active_merge_observation.bits.consumer_id.expect(0.U)
 
       dut.io.r4_result_stub_in.bits.transaction_identity.request_id.poke(3.U)
       dut.io.r4_result_stub_in.bits.transaction_identity.incarnation.poke(1.U)
+      dut.io.r4_result_stub_in.bits.consumer_id.poke(0.U)
       dut.io.r4_result_stub_in.bits.normalized_value.poke("h55".U)
       dut.io.r4_result_stub_in.valid.poke(true.B); dut.io.r4_result_stub_in.ready.expect(true.B)
       dut.clock.step(); dut.io.r4_result_stub_in.valid.poke(false.B)
@@ -174,14 +179,16 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
       dut.io.merge_req_in.bits.source_presence.poke(0.U); dut.io.merge_req_in.valid.poke(true.B); dut.io.merge_req_in.ready.expect(false.B); dut.io.merge_req_in.valid.poke(false.B)
       sendMergeRequest(dut, 4, 0, presence = 3)
       dut.io.r4_numeric_fault_in.bits.transaction_identity.request_id.poke(5.U); dut.io.r4_numeric_fault_in.bits.transaction_identity.incarnation.poke(0.U)
+      dut.io.r4_numeric_fault_in.bits.consumer_id.poke(0.U)
       dut.io.r4_numeric_fault_in.valid.poke(true.B); dut.io.r4_numeric_fault_in.ready.expect(false.B); dut.io.r4_numeric_fault_in.valid.poke(false.B)
-      dut.io.r4_numeric_fault_in.bits.transaction_identity.request_id.poke(4.U); dut.io.r4_numeric_fault_in.valid.poke(true.B); dut.io.r4_numeric_fault_in.ready.expect(true.B); dut.clock.step(); dut.io.r4_numeric_fault_in.valid.poke(false.B)
+      dut.io.r4_numeric_fault_in.bits.transaction_identity.request_id.poke(4.U); dut.io.r4_numeric_fault_in.bits.consumer_id.poke(0.U); dut.io.r4_numeric_fault_in.valid.poke(true.B); dut.io.r4_numeric_fault_in.ready.expect(true.B); dut.clock.step(); dut.io.r4_numeric_fault_in.valid.poke(false.B)
       dut.io.merge_rsp_or_numeric_fault.valid.expect(true.B); dut.io.merge_rsp_or_numeric_fault.ready.poke(false.B); dut.clock.step()
       dut.io.merge_rsp_or_numeric_fault.bits.status.expect(p.coreMemoryFaultStatusCode.U); dut.io.merge_rsp_or_numeric_fault.bits.transaction_identity.request_id.expect(4.U)
       dut.io.merge_rsp_or_numeric_fault.ready.poke(true.B); dut.clock.step(); dut.io.r4_numeric_fault_in.valid.poke(true.B); dut.io.r4_numeric_fault_in.ready.expect(false.B); dut.io.r4_numeric_fault_in.valid.poke(false.B)
 
       sendMergeRequest(dut, 6, 1, presence = 7)
       dut.io.r4_result_stub_in.bits.transaction_identity.request_id.poke(6.U); dut.io.r4_result_stub_in.bits.transaction_identity.incarnation.poke(1.U)
+      dut.io.r4_result_stub_in.bits.consumer_id.poke(0.U)
       dut.io.r4_result_stub_in.bits.normalized_value.poke("h1234".U); dut.io.r4_result_stub_in.valid.poke(true.B)
       dut.io.r4_result_stub_in.ready.expect(true.B); dut.clock.step(); dut.io.r4_result_stub_in.valid.poke(false.B)
       dut.io.merge_rsp_or_numeric_fault.valid.expect(true.B); dut.io.merge_rsp_or_numeric_fault.bits.status.expect(p.coreMemoryOkStatusCode.U)
@@ -195,10 +202,32 @@ final class RouteAMergeBoundarySpec extends AnyFunSpec with ChiselSim {
         sendMergeRequest(dut, rid, 0, presence)
         dut.io.r4_numeric_fault_in.bits.transaction_identity.request_id.poke(rid.U)
         dut.io.r4_numeric_fault_in.bits.transaction_identity.incarnation.poke(0.U)
+        dut.io.r4_numeric_fault_in.bits.consumer_id.poke(0.U)
         dut.io.r4_numeric_fault_in.valid.poke(true.B); dut.io.r4_numeric_fault_in.ready.expect(true.B)
         dut.clock.step(); dut.io.r4_numeric_fault_in.valid.poke(false.B)
         dut.io.merge_rsp_or_numeric_fault.valid.expect(true.B); dut.clock.step()
       }
+    }
+  }
+
+  it("binds every R4 result or fault to the accepted per-consumer merge work") {
+    simulate(new RouteAMergeBoundary(p)) { dut =>
+      init(dut)
+      sendMergeRequest(dut, rid = 9, incarnation = 1, presence = 7, consumer = 2)
+      dut.io.r4_result_stub_in.bits.transaction_identity.request_id.poke(9.U)
+      dut.io.r4_result_stub_in.bits.transaction_identity.incarnation.poke(1.U)
+      dut.io.r4_result_stub_in.bits.consumer_id.poke(1.U)
+      dut.io.r4_result_stub_in.bits.normalized_value.poke("h77".U)
+      dut.io.r4_result_stub_in.valid.poke(true.B)
+      dut.io.r4_result_stub_in.ready.expect(false.B)
+      dut.io.r4_result_stub_in.bits.consumer_id.poke(2.U)
+      dut.io.r4_result_stub_in.ready.expect(true.B)
+      dut.clock.step()
+      dut.io.r4_result_stub_in.valid.poke(false.B)
+      dut.io.merge_rsp_or_numeric_fault.valid.expect(true.B)
+      dut.io.merge_rsp_or_numeric_fault.bits.consumer_id.expect(2.U)
+      dut.io.merge_rsp_or_numeric_fault.bits.normalized_value.expect("h77".U)
+      dut.clock.step()
     }
   }
 }

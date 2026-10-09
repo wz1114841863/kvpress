@@ -62,10 +62,14 @@ binding, not a cross-language FP implementation equivalence proof.
 | Role | Rule |
 |---|---|
 | source/partial producer (deferred RTL3.5) | supplies only accepted packet data and the explicit query/position association; it does not choose R4 order by storage ownership |
-| `route_a_functional_r4_merge_provider` (deferred RTL3.4) | will be the sole numeric/oracle provider and emit exactly one matching success or numeric fault |
+| `route_a_functional_r4_merge_provider` (deferred RTL3.4-B) | will be the sole numeric/oracle provider and emit exactly one matching per-consumer success or numeric fault under RTL3.4-A |
 | `RouteAMergeBoundary` / R6 | retain packet commit, active merge, R6-facing terminal, and outward terminal ownership |
 | environment assumption | a future functional provider receives only structurally accepted packets with their existing identity/consumer associations |
-| DUT guarantee after RTL3.4 | no result before accepted nonempty merge; success XOR fault; fault has no normalized payload; R6 remains the only outward terminal consumer |
+| DUT guarantee after RTL3.4-B | no result before accepted nonempty per-consumer merge; success XOR fault; fault has no normalized payload; R6 remains the only outward group-terminal consumer |
+
+The former implicit association between the four query-head consumers and the
+single 4,096-bit result wire is closed separately by
+[`rtl3_4a_r4_consumer_result_association_contract.md`](rtl3_4a_r4_consumer_result_association_contract.md).
 
 ## Deliberate exclusions
 
