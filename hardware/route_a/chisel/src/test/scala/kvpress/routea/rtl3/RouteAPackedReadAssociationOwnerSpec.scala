@@ -14,7 +14,11 @@ import org.scalatest.funspec.AnyFunSpec
   * transport; packed payload responses originate in the RTL3.1 environment
   * through the real R1 external port.
   */
-final class RouteARTL32PackedReadFunctionalHarness(p: RouteASkeletonParameters) extends Module {
+final class RouteARTL32PackedReadFunctionalHarness(
+    p: RouteASkeletonParameters,
+    useRtl36cSidecarFixture: Boolean = false,
+    sidecarFixture: RouteARTL36cSidecarFixture = RouteARTL36cSidecarFixture.Default,
+) extends Module {
   val io = IO(new Bundle {
     val demand = Flipped(RouteAChannels.packed_source_demand(p))
     val publication = Flipped(RouteAChannels.publication_read_authorization(p))
@@ -27,6 +31,10 @@ final class RouteARTL32PackedReadFunctionalHarness(p: RouteASkeletonParameters) 
     val s2_state = Output(UInt(3.W))
     val payload_read_req = Flipped(RouteAChannels.s2_payload_read_req(p))
     val payload_read_rsp = RouteAChannels.s2_payload_read_rsp(p)
+    val sidecar_read_req = Flipped(RouteAChannels.s2_sidecar_read_req(p))
+    val sidecar_read_rsp = RouteAChannels.s2_sidecar_read_rsp(p)
+    val sidecar_fixture_complete = Output(Bool())
+    val sidecar_fixture_faulted = Output(Bool())
   })
 
   val owner = Module(new RouteAPackedReadAssociationOwner(p))
@@ -40,6 +48,8 @@ final class RouteARTL32PackedReadFunctionalHarness(p: RouteASkeletonParameters) 
   val endpointDemux = Module(new RouteAReadEndpointDemultiplexer(p))
   val endpoint = Module(new RouteAPackedS2ReadEndpoint(p))
   val s2 = Module(new RouteAS2GqaSourceWrapper(p))
+  val sidecarTap = if (useRtl36cSidecarFixture) Some(Module(new RouteARTL36cAllocationSidecarTap(p))) else None
+  val sidecarFixtureTransport = if (useRtl36cSidecarFixture) Some(Module(new RouteARTL36cSidecarFixtureTransport(p, sidecarFixture))) else None
 
   owner.io.mem_init_done := r1.io.r1_init_complete
   owner.io.demand_in <> io.demand
@@ -48,7 +58,12 @@ final class RouteARTL32PackedReadFunctionalHarness(p: RouteASkeletonParameters) 
   owner.io.s2_fill_lease_in <> io.lease
   owner.io.invalidation_in.valid := false.B
   owner.io.invalidation_in.bits := 0.U.asTypeOf(new PackedReadInvalidation)
-  owner.io.registry_allocate_out <> registry.io.allocation_in
+  if (useRtl36cSidecarFixture) {
+    owner.io.registry_allocate_out <> sidecarTap.get.io.allocation_in
+    sidecarTap.get.io.registry_allocation_out <> registry.io.allocation_in
+  } else {
+    owner.io.registry_allocate_out <> registry.io.allocation_in
+  }
   owner.io.registry_allocation_ack_in <> registry.io.allocation_ack_out
   owner.io.packed_s2_work_out <> producer.io.work_in
   StructuralTieOff.source(owner.io.terminal_in)
@@ -94,12 +109,30 @@ final class RouteARTL32PackedReadFunctionalHarness(p: RouteASkeletonParameters) 
   endpoint.io.endpoint_generation_in := s2.io.s2_observe_generation
   s2.io.s2_payload_fragment_in <> endpoint.io.s2_payload_fragment_out
   s2.io.s2_fill_terminal_in <> endpoint.io.s2_fill_terminal_out
-  s2.io.s2_sidecar_fragment_in <> io.sidecar_fragment
-  s2.io.s2_sidecar_complete_in <> io.sidecar_complete
+  if (useRtl36cSidecarFixture) {
+    val transport = sidecarFixtureTransport.get
+    sidecarTap.get.io.sidecar_obligation_out <> transport.io.obligation_in
+    transport.io.observed_filling := s2.io.s2_observe_filling
+    transport.io.observed_fill_open := s2.io.s2_observe_fill_open
+    transport.io.observed_identity := s2.io.s2_observe_identity
+    transport.io.observed_page_ref := s2.io.s2_observe_page_ref
+    transport.io.observed_generation := s2.io.s2_observe_generation
+    s2.io.s2_sidecar_fragment_in <> transport.io.sidecar_fragment_out
+    s2.io.s2_sidecar_complete_in <> transport.io.sidecar_complete_out
+    io.sidecar_fragment.ready := false.B
+    io.sidecar_complete.ready := false.B
+    io.sidecar_fixture_complete := transport.io.complete
+    io.sidecar_fixture_faulted := transport.io.faulted
+  } else {
+    s2.io.s2_sidecar_fragment_in <> io.sidecar_fragment
+    s2.io.s2_sidecar_complete_in <> io.sidecar_complete
+    io.sidecar_fixture_complete := false.B
+    io.sidecar_fixture_faulted := false.B
+  }
   s2.io.s2_payload_read_req_in <> io.payload_read_req
   io.payload_read_rsp <> s2.io.s2_payload_read_rsp_out
-  StructuralTieOff.source(s2.io.s2_sidecar_read_req_in)
-  StructuralTieOff.sink(s2.io.s2_sidecar_read_rsp_out)
+  s2.io.s2_sidecar_read_req_in <> io.sidecar_read_req
+  io.sidecar_read_rsp <> s2.io.s2_sidecar_read_rsp_out
   StructuralTieOff.source(s2.io.gqa_consumer_commit_in)
   StructuralTieOff.sink(s2.io.s2_release_out)
   s2.io.s2_observe_slot := 0.U
@@ -256,6 +289,7 @@ final class RouteAPackedReadAssociationOwnerSpec extends AnyFunSpec with ChiselS
       d.io.descriptor.valid.poke(false.B); d.io.lease.valid.poke(false.B)
       d.io.service.valid.poke(false.B); d.io.sidecar_fragment.valid.poke(false.B); d.io.sidecar_complete.valid.poke(false.B)
       d.io.payload_read_req.valid.poke(false.B); d.io.payload_read_rsp.ready.poke(false.B)
+      d.io.sidecar_read_req.valid.poke(false.B); d.io.sidecar_read_rsp.ready.poke(false.B)
       var requestCount = 0
       var responseCount = 0
       def tick(): Unit = {
@@ -308,6 +342,60 @@ final class RouteAPackedReadAssociationOwnerSpec extends AnyFunSpec with ChiselS
       d.io.payload_read_req.valid.poke(true.B); d.io.payload_read_req.ready.expect(true.B); tick(); d.io.payload_read_req.valid.poke(false.B)
       d.io.payload_read_rsp.valid.expect(true.B); d.io.payload_read_rsp.bits.data.expect(0x40f.U)
       d.io.payload_read_rsp.ready.poke(true.B); tick(); d.io.payload_read_rsp.ready.poke(false.B)
+    }
+  }
+
+  it("closes the explicit sidecar ingress with a named fixture transport after the accepted RTL3.2 allocation") {
+    simulate(new RouteARTL32PackedReadFunctionalHarness(p, useRtl36cSidecarFixture = true)) { d =>
+      val memory = new RouteAFunctionalMemoryEnvironment(p)
+      memory.preload(0x99, Some(1), (0 until 16).map(i => BigInt(0x400 + i)).toVector,
+        RouteARTL36cSidecarFixture.Default.records)
+      d.io.demand.valid.poke(false.B); d.io.publication.valid.poke(false.B)
+      d.io.descriptor.valid.poke(false.B); d.io.lease.valid.poke(false.B)
+      d.io.service.valid.poke(false.B); d.io.sidecar_fragment.valid.poke(false.B); d.io.sidecar_complete.valid.poke(false.B)
+      d.io.payload_read_req.valid.poke(false.B); d.io.payload_read_rsp.ready.poke(false.B)
+      d.io.sidecar_read_req.valid.poke(false.B); d.io.sidecar_read_rsp.ready.poke(false.B)
+      var requestCount = 0
+      def tick(): Unit = {
+        memory.drive(d.io.external)
+        if (d.io.external.request.valid.peek().litToBoolean && d.io.external.request.ready.peek().litToBoolean) { requestCount += 1 }
+        memory.observeAccepted(d.io.external)
+        d.clock.step()
+      }
+      tick(); tick(); tick()
+
+      identity(d.io.service.bits.transaction_identity); page(d.io.service.bits.page_ref); d.io.service.bits.s2_slot.poke(0.U)
+      d.io.service.valid.poke(true.B); d.io.service.ready.expect(true.B); tick(); d.io.service.valid.poke(false.B)
+      identity(d.io.demand.bits.transaction_identity); page(d.io.demand.bits.page_ref)
+      d.io.demand.bits.arrival_ordinal.poke(2.U); d.io.demand.bits.candidate_id.poke(1.U)
+      d.io.demand.bits.eligibility_snapshot.poke(0x3f.U); d.io.demand.bits.destination_endpoint.poke(0.U)
+      d.io.demand.valid.poke(true.B); d.io.demand.ready.expect(true.B); tick(); d.io.demand.valid.poke(false.B)
+      identity(d.io.publication.bits.transaction_identity); page(d.io.publication.bits.page_ref)
+      d.io.publication.bits.transaction_group_tag.poke(1.U); d.io.publication.bits.valid_records.poke(2.U); d.io.publication.bits.packed_authoritative.poke(true.B)
+      d.io.publication.valid.poke(true.B); d.io.publication.ready.expect(true.B); tick(); d.io.publication.valid.poke(false.B)
+      identity(d.io.descriptor.bits.transaction_identity); page(d.io.descriptor.bits.page_ref)
+      d.io.descriptor.bits.payload_handle_or_address.poke(0x99.U); d.io.descriptor.bits.sidecar_handle_or_address.poke(0xaa.U)
+      d.io.descriptor.bits.valid_records.poke(2.U); d.io.descriptor.bits.sidecar_records.poke(2.U); d.io.descriptor.bits.live_reference_held.poke(true.B)
+      d.io.descriptor.valid.poke(true.B); d.io.descriptor.ready.expect(true.B); tick(); d.io.descriptor.valid.poke(false.B)
+      identity(d.io.lease.bits.transaction_identity); page(d.io.lease.bits.page_ref)
+      d.io.lease.bits.s2_slot.poke(0.U); d.io.lease.bits.source_generation.poke(1.U); d.io.lease.bits.requires_sidecar.poke(true.B)
+      d.io.lease.valid.poke(true.B); d.io.lease.ready.expect(true.B); tick(); d.io.lease.valid.poke(false.B)
+
+      (0 until 120).foreach(_ => tick())
+      assert(requestCount == 1, s"expected one functional-memory payload read, observed $requestCount")
+      d.io.sidecar_fragment.ready.expect(false.B); d.io.sidecar_complete.ready.expect(false.B)
+      d.io.sidecar_fixture_faulted.expect(false.B); d.io.sidecar_fixture_complete.expect(true.B)
+      d.io.s2_state.expect(2.U) // READY only after the fixture-owned sidecar completion.
+      identity(d.io.payload_read_req.bits.transaction_identity)
+      d.io.payload_read_req.bits.s2_slot.poke(0.U); d.io.payload_read_req.bits.source_generation.poke(1.U); d.io.payload_read_req.bits.fragment_index.poke(15.U)
+      d.io.payload_read_req.valid.poke(true.B); d.io.payload_read_req.ready.expect(true.B); tick(); d.io.payload_read_req.valid.poke(false.B)
+      d.io.payload_read_rsp.valid.expect(true.B); d.io.payload_read_rsp.bits.data.expect(0x40f.U)
+      d.io.payload_read_rsp.ready.poke(true.B); tick(); d.io.payload_read_rsp.ready.poke(false.B)
+      identity(d.io.sidecar_read_req.bits.transaction_identity)
+      d.io.sidecar_read_req.bits.s2_slot.poke(0.U); d.io.sidecar_read_req.bits.source_generation.poke(1.U); d.io.sidecar_read_req.bits.record_ordinal.poke(0.U)
+      d.io.sidecar_read_req.valid.poke(true.B); d.io.sidecar_read_req.ready.expect(true.B); tick(); d.io.sidecar_read_req.valid.poke(false.B)
+      d.io.sidecar_read_rsp.valid.expect(true.B); d.io.sidecar_read_rsp.bits.data.expect(0x900.U)
+      d.io.sidecar_read_rsp.ready.poke(true.B); tick(); d.io.sidecar_read_rsp.ready.poke(false.B)
     }
   }
 }

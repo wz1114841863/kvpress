@@ -93,6 +93,18 @@ and is not a production top, live co-simulation, numeric implementation, or
 timing/PPA result. The authority record is
 `analysis/rtl3_6b_same_instance_functional_provider_terminal_contract.md`.
 
+## RTL3.6-C1 test-only sidecar fixture transport
+
+`RouteARTL36cAllocationSidecarTap` and
+`RouteARTL36cSidecarFixtureTransport`, both in test scope, replace manual
+sidecar ingress only in the RTL3.2 functional packed-read harness. The tap
+copies an accepted allocation's existing descriptor-sidecar obligation without
+decoding it; the transport emits fixture sidecar records only after exact S2
+fill identity/page/generation observation. They do not alter the production
+top, select a sidecar memory transaction, or realize a sidecar macro. The
+authority record is
+`analysis/rtl3_6c1_sidecar_fixture_transport_contract.md`.
+
 ## Local no-model preflight
 
 Use a command-scoped JDK path so no global `JAVA_HOME` change is required:

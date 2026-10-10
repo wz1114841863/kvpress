@@ -703,6 +703,17 @@ and reset-epoch full-path composition open. It does not change the historical
 RTL3.6 no-PASS or establish functional-realization completion. See
 `analysis/rtl3_6b_same_instance_functional_provider_terminal_contract.md`.
 
+RTL3.6-C1 closes the narrower RTL3.2 **verification** sidecar ingress with a
+named testbench-only fixture transport. It receives only a copied accepted
+packed allocation's descriptor-sidecar handle/count and waits for an exact S2
+fill observation before sending the existing sidecar fragment/complete
+carriers. It does not infer sidecar data from payload traffic or select a
+sidecar request protocol; the production top's verification ingress remains
+outside this closure. Unknown handles/counts and stale identity/page/generation
+fail closed. Full reset-epoch composition and the unified functional dataflow
+witness remain open. See
+`analysis/rtl3_6c1_sidecar_fixture_transport_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.

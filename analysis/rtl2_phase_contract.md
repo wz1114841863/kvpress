@@ -835,6 +835,15 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     same-child R5 reclaim path. It removes manual packet/result injection from
     this witness, but retains the explicit S2 fill verification ingress and
     does not create live co-simulation, production RTL, or a numeric claim.
+13. **RTL3.6-C1 — named S2 sidecar fixture transport (complete,
+    testbench-only).**
+    [`rtl3_6c1_sidecar_fixture_transport_contract.md`](rtl3_6c1_sidecar_fixture_transport_contract.md)
+    replaces direct sidecar fragment/complete injection in the RTL3.2
+    functional packed-read harness with a handle-keyed fixture transport fed
+    only by a copied accepted allocation and exact S2 fill observation. It
+    covers unknown-handle/count and stale-generation fail-closed cases while
+    retaining reset-epoch composition and a full same-instance dataflow as
+    the next RTL3 closure.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,
