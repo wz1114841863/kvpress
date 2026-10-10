@@ -766,6 +766,16 @@ subsystem** result only, never a claim to execute complete LLM inference or a
 physical/numeric realization.  The review and its functional-closure rubric
 are `analysis/rtl3_completion_cross_owner_review_03.md`.
 
+RTL3.8.0 records the required retirement map before any further functional
+activation: C2 demand/publication/descriptor/lease, sidecar fixture transport,
+verification work ingress, and static partial/R4 fixtures must be replaced by
+one named owner or isolated from the exercised functional top.  Only the
+already named common frontend, functional R1 memory, functional partial, and
+functional R4 boundaries may remain outer environments.  This does not choose
+a physical memory, request/burst format, bank/port count, numeric datapath, or
+PPA model; see
+`analysis/rtl3_8_0_functional_closure_ingress_retirement_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.

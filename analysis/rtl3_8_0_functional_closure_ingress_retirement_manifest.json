@@ -1,0 +1,64 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-8-0-functional-closure-ingress-retirement-1.0",
+  "status": "complete_planning_ingress_retirement_freeze_pre_rtl3_8_activation",
+  "scope": "No-model, no-Chisel-activation retirement map for the Review-03 testbench ingress and static-fixture boundaries. It names future responsibility without changing an owner, carrier, top, scheduler, authority, memory/numeric realization, or physical implementation.",
+  "inherited_rules": [
+    "R3/M2 is the only metadata-publication and pending-to-packed authority boundary; R5 owns page and descriptor facts.",
+    "R2/R1 remains the only typed delivery/request/response/FIFO/credit owner; functional memory is non-authoritative.",
+    "hot/direct-pending/S2 supply K/V-sideband identity/generation but do not create attention partials merely by storage ownership.",
+    "RTL3.5-A partial-provider and RTL3.4-B R4 boundaries remain frozen; canonical hot->pending->packed order and R6 terminal ownership remain unchanged."
+  ],
+  "retirement_records": {
+    "I0": {"current": "c2Demand PackedSourceDemand", "future_owner": "route_a_packed_read_activation_binder", "consumer": "RouteAPackedReadAssociationOwner", "disposition": "retire", "forbidden": "binder must not select a scheduler or create a conflicting live association"},
+    "I1": {"current": "c2Publication and verificationAssociation publication coupling", "future_owner": "route_a_packed_read_activation_binder observing accepted R3 publication", "consumer": "association owner and S2 service path", "disposition": "retire", "forbidden": "no second publication or authority transition"},
+    "I2": {"current": "c2Descriptor DescriptorLocationGrant", "future_owner": "route_a_packed_read_activation_binder observing existing R5 descriptor", "consumer": "association owner", "disposition": "retire", "forbidden": "no descriptor reconstruction or mutation"},
+    "I3": {"current": "c2Lease S2FillLease", "future_owner": "route_a_packed_read_activation_binder receiving owner-local S2 lease", "consumer": "association owner", "disposition": "retire", "forbidden": "no slot/generation inference from page ID or test default"},
+    "I4": {"current": "RTL3.6-C1 sidecar fixture plus verification S2 sidecar ingress", "future_owner": "route_a_functional_sidecar_delivery_adapter", "consumer": "S2 sidecar ingress", "disposition": "retire", "forbidden": "payload traffic may not infer sidecar completion"},
+    "I5": {"current": "verification p3-pack-read/S2-service/packed-S2-read work ingress", "future_owner": "activation binder plus existing typed-delivery path", "consumer": "R2/R1/S2", "disposition": "isolate_then_retire_from_functional_top", "forbidden": "no new scheduler or arbitration policy"},
+    "I6": {"current": "verification direct-pending-open and direct-pending-read-work ingress", "future_owner": "existing R6 direct-pending plan and endpoint-local state", "consumer": "direct endpoint and typed path", "disposition": "isolate", "forbidden": "must not be conflated with packed C2 activation"},
+    "I7": {"current": "static RTL3.6-B packet/terminal fixture and manual packet/result harness ingress", "future_owner": "dynamic functional partial provider and dynamic functional R4 provider", "consumer": "source-packet adapter and merge boundary", "disposition": "retire", "forbidden": "static packet/result replay"},
+    "I8": {"current": "structural top source and R4 tie-offs", "future_owner": "replaceable partial/R4 boundary or declared synthesis blackbox", "consumer": "source-packet adapter and merge boundary", "disposition": "isolate", "forbidden": "tie-off on an exercised functional source path"}
+  },
+  "allowed_outer_environments": [
+    "common_frontend_attention_context_provider supplies only accepted query/position/GQA facts",
+    "route_a_functional_memory_environment supplies only accepted core_mem_if_v1 init and response/terminal behavior",
+    "route_a_functional_attention_partial_provider supplies only dynamic partial packets after accepted source/query leases",
+    "route_a_functional_r4_merge_provider supplies only dynamic success XOR numeric fault after accepted packets and R6 work"
+  ],
+  "ordered_successors": [
+    "rtl3_8_1_packed_activation_binding: I0-I3",
+    "rtl3_8_2_functional_sidecar_delivery: I4",
+    "rtl3_8_3_source_payload_partial_boundary_activation: I5-I6",
+    "rtl3_8_4_dynamic_functional_r4_activation: I7-I8",
+    "rtl3_8_5_full_path_coverage_and_current_aggregate_provenance"
+  ],
+  "disposition": {
+    "rtl3_8_0_ingress_retirement_contract_complete": true,
+    "rtl3_8_behavioral_activation_authorized": false,
+    "rtl3_functional_realization_complete": false,
+    "next_required_action": "rtl3_8_1_packed_activation_binding"
+  },
+  "evidence_labels": [
+    "pure-software functional-closure planning contract",
+    "no model/GPU",
+    "no RTL correctness claim",
+    "no cycle/timing/throughput/deadlock claim",
+    "no PPA or DC claim",
+    "no new A4 DSE"
+  ],
+  "source_sha256": {
+    "analysis/README.md": "0d614f43e0ac74a89fb0c71b91e15e31e40e6e8c794609043a3657955e8d235c",
+    "analysis/architecture_spec.md": "47d90291c0efda729bc3a3a219e5ca7f150021f8438d152db4ba67fe9246f173",
+    "analysis/rtl2_phase_contract.md": "f767bd9493df78696096b43b0b4a827db0d95422655bcdb0ea2440cd5b933d0e",
+    "analysis/rtl3_completion_cross_owner_review_03.md": "4aafbba939a8050be2e2c6c5807e94dc363febe80e60aba37de10614bcfde840",
+    "analysis/rtl3_completion_cross_owner_review_03_manifest.json": "8cbc60283179ffae211e913ebdeab99e66b177e900204ac2f6078fad3babeab4",
+    "analysis/rtl3_8_0_functional_closure_ingress_retirement_contract.md": "fdf3c01dae3fd70b13c4aec7b0fa8c9a30a6a09c14bd1d9432ff4b803aaa2501",
+    "analysis/rtl3_0_replacement_owner_contract.md": "7fffa9577f2be60f1a5c8f967ed68afc5cba13d534078c42159097abdb32322d",
+    "analysis/rtl3_5a_attention_partial_producer_boundary_contract.md": "07d684ee7f3dbf4044927a536b105fb5c04c08ceaa2a985ff26ab7af5fcea206",
+    "analysis/rtl3_4b_functional_r4_provider_contract.md": "e2775a66620774abac664a20feb38d521b5bc7d3460e257e7432add7a23858fd",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "465a0ca5d0bc4b934afac79f4bd9c6b801afb91f3dda7c18dffc8ab51ec5ce21",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala": "42c3c04bf61778522494b52362e99652dc1cdc8450f1a4f25689100ad6ab3326",
+    "tests/test_rtl3_8_0_functional_closure_ingress_retirement.py": "6726a188c464725f265b7161bd7d7acab6802bd23ca9eb426e01bcb87c4f3168",
+    "tools/validate_rtl3_8_0_functional_closure_ingress_retirement.py": "fa167acb0354d7ea777f6224dae05067e7a605030ecdd622510e987c2c6323cf"
+  }
+}

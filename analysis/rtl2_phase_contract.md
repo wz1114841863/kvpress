@@ -893,6 +893,14 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     coverage remain explicit.  It defines the narrower RTL3 functional-closure
     rubric without authorizing complete LLM inference, physical realization,
     or performance work.
+19. **RTL3.8.0 — functional-closure ingress retirement contract (complete,
+    planning only).**
+    [`rtl3_8_0_functional_closure_ingress_retirement_contract.md`](rtl3_8_0_functional_closure_ingress_retirement_contract.md)
+    freezes I0--I8: each test-only C2 grant, sidecar fixture, verification
+    ingress, static partial/R4 fixture, and structural tie-off has one future
+    owner or an explicit allowed outer environment.  It authorizes no Chisel
+    activation; RTL3.8.1 must first bind the packed C2 activation facts without
+    changing scheduling, authority, or publication semantics.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,
