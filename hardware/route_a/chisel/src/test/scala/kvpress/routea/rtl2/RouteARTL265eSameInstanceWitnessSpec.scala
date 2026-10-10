@@ -6,7 +6,7 @@ import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADe
 import kvpress.routea.incremental.{RouteALifecycleAdapter, RouteAMergeBoundary, RouteAPackedReadAssociationOwner}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAM2GroupMember, RouteAR6Encoding, RouteASkeletonParameters}
-import kvpress.routea.rtl3.{RouteAFunctionalMemoryEnvironment, RouteAFunctionalMemoryStore, RouteARTL36bFixture, RouteARTL36bFunctionalTerminalFixture, RouteARTL36bPackedFixtureProvider, RouteARTL36cAllocationSidecarTap, RouteARTL36cSidecarFixture, RouteARTL36cSidecarFixtureTransport}
+import kvpress.routea.rtl3.{RouteAFunctionalMemoryEnvironment, RouteAFunctionalMemoryStore, RouteARTL36bFixture, RouteARTL36bFunctionalTerminalFixture, RouteARTL36bPackedFixtureProvider, RouteARTL36cAllocationSidecarTap, RouteARTL36cSidecarFixture, RouteARTL36cSidecarFixtureTransport, RouteARTL37bPackedReadTerminalBridge, RouteARTL37bReleaseRetireGate}
 import kvpress.routea.top.RouteAComponentStatusCollector
 import org.scalatest.funspec.AnyFunSpec
 
@@ -44,6 +44,9 @@ final class RouteARTL265eSameInstanceWitnessHarness(
     val c2Descriptor = Flipped(RouteAChannels.descriptor_location_grant(p))
     val c2Lease = Flipped(RouteAChannels.s2_fill_lease(p))
     val c2External = new CoreMemoryExternalPort(p)
+    // RTL3.7-B testbench-only observation. It must be accepted before this
+    // C2 transaction's matching runtime retirement can reach real R6.
+    val c2ReleaseObservation = RouteAChannels.packed_read_release_observation(p)
     val m2MemberRequest = RouteAChannels.m2_group_member_req(p)
     val m2MemberResponse = Flipped(RouteAChannels.m2_group_member_rsp(p))
     val m2PublicationCandidate = RouteAChannels.metadata_publish_req(p)
@@ -97,6 +100,8 @@ final class RouteARTL265eSameInstanceWitnessHarness(
   val c2SidecarTap = if (useRtl36c2FunctionalSource) Some(Module(new RouteARTL36cAllocationSidecarTap(p))) else None
   val c2SidecarTransport = if (useRtl36c2FunctionalSource) Some(Module(new RouteARTL36cSidecarFixtureTransport(
     p, RouteARTL36cSidecarFixture(BigInt(0xaa), Vector(BigInt(0x900)))))) else None
+  val c2TerminalBridge = if (useRtl36c2FunctionalSource) Some(Module(new RouteARTL37bPackedReadTerminalBridge(p))) else None
+  val c2ReleaseRetireGate = if (useRtl36c2FunctionalSource) Some(Module(new RouteARTL37bReleaseRetireGate(p))) else None
 
   publication.io.mem_init_done := io.memInitDone
   publication.io.r5_allocate <> io.r5Allocate
@@ -125,7 +130,6 @@ final class RouteARTL265eSameInstanceWitnessHarness(
   publication.io.r1_drain_permitted := collector.io.r1_drain_permitted
   publication.io.reclaim_permit <> r6.io.reclaim_permit_out
   r6.io.r5_reclaim_complete_in := publication.io.reclaim_complete
-  terminalAssociation.io.runtime_retire_in <> io.runtimeRetire
   r6.io.runtime_retire_req <> terminalAssociation.io.runtime_retire_out
   terminalAssociation.io.terminal_in <> r6.io.attention_terminal_rsp
   io.attentionTerminal <> terminalAssociation.io.terminal_out
@@ -173,6 +177,8 @@ final class RouteARTL265eSameInstanceWitnessHarness(
     val endpoint = c2Endpoint.get
     val tap = c2SidecarTap.get
     val sidecar = c2SidecarTransport.get
+    val terminalBridge = c2TerminalBridge.get
+    val releaseRetireGate = c2ReleaseRetireGate.get
 
     association.io.mem_init_done := r1.io.r1_init_complete
     association.io.demand_in <> io.c2Demand
@@ -185,9 +191,13 @@ final class RouteARTL265eSameInstanceWitnessHarness(
     tap.io.registry_allocation_out <> registry.io.allocation_in
     tap.io.sidecar_obligation_out <> sidecar.io.obligation_in
     association.io.registry_allocation_ack_in <> registry.io.allocation_ack_out
-    association.io.packed_s2_work_out <> producer.io.work_in
-    StructuralTieOff.source(association.io.terminal_in)
-    StructuralTieOff.sink(association.io.release_observation_out)
+    association.io.packed_s2_work_out <> terminalBridge.io.work_in
+    terminalBridge.io.work_out <> producer.io.work_in
+    terminalBridge.io.association_terminal_out <> association.io.terminal_in
+    association.io.release_observation_out <> releaseRetireGate.io.release_in
+    io.c2ReleaseObservation <> releaseRetireGate.io.release_observation_out
+    releaseRetireGate.io.runtime_retire_in <> io.runtimeRetire
+    terminalAssociation.io.runtime_retire_in <> releaseRetireGate.io.runtime_retire_out
 
     producer.io.s2_fill_open_out <> s2.io.s2_fill_open_in
     producer.io.read_issue_out <> issueAdapter.io.read_issue_in
@@ -225,7 +235,8 @@ final class RouteARTL265eSameInstanceWitnessHarness(
     endpoint.io.endpoint_page_ref_in := s2.io.s2_observe_page_ref
     endpoint.io.endpoint_generation_in := s2.io.s2_observe_generation
     s2.io.s2_payload_fragment_in <> endpoint.io.s2_payload_fragment_out
-    s2.io.s2_fill_terminal_in <> endpoint.io.s2_fill_terminal_out
+    terminalBridge.io.endpoint_terminal_in <> endpoint.io.s2_fill_terminal_out
+    s2.io.s2_fill_terminal_in <> terminalBridge.io.s2_terminal_out
     sidecar.io.observed_filling := s2.io.s2_observe_filling
     sidecar.io.observed_fill_open := s2.io.s2_observe_fill_open
     sidecar.io.observed_identity := s2.io.s2_observe_identity
@@ -252,8 +263,11 @@ final class RouteARTL265eSameInstanceWitnessHarness(
     io.c2External.request.valid := false.B
     io.c2External.request.bits := 0.U.asTypeOf(new CoreMemoryRequest(p))
     io.c2External.response.ready := false.B
+    io.c2ReleaseObservation.valid := false.B
+    io.c2ReleaseObservation.bits := 0.U.asTypeOf(new PackedReadReleaseObservation(p))
     io.c2SidecarFixtureComplete := false.B
     io.c2SidecarFixtureFaulted := false.B
+    terminalAssociation.io.runtime_retire_in <> io.runtimeRetire
   }
   StructuralTieOff.source(s2.io.s2_payload_read_req_in)
   StructuralTieOff.sink(s2.io.s2_payload_read_rsp_out)
@@ -334,7 +348,7 @@ final class RouteARTL265eSameInstanceWitnessSpec extends AnyFunSpec with ChiselS
   private def init(d: RouteARTL265eSameInstanceWitnessHarness): Unit = {
     d.io.memInitDone.poke(false.B); d.io.r5Allocate.valid.poke(false.B); d.io.r5AllocationRsp.ready.poke(true.B); d.io.p3Claim.valid.poke(false.B); d.io.admissionContext.valid.poke(false.B); d.io.admissionAuthority.valid.poke(false.B); d.io.packReadWork.valid.poke(false.B); d.io.p3Sidecar.valid.poke(false.B)
     d.io.m2MemberRequest.ready.poke(false.B); d.io.m2MemberResponse.valid.poke(false.B); d.io.m2PublicationCandidate.ready.poke(false.B); d.io.m2PublicationRequest.valid.poke(false.B); d.io.verificationAssociation.valid.poke(false.B)
-    d.io.frontend.valid.poke(false.B); d.io.directStatus.valid.poke(false.B); d.io.runtimeRetire.valid.poke(false.B); d.io.sourcePlan.valid.poke(false.B); d.io.s2FillOpen.valid.poke(false.B); d.io.s2Payload.valid.poke(false.B); d.io.s2Terminal.valid.poke(false.B); d.io.packedOffer.valid.poke(false.B); d.io.packedFragment.valid.poke(false.B); d.io.resultStub.valid.poke(false.B); d.io.numericFault.valid.poke(false.B); d.io.resultStub.bits.consumer_id.poke(0.U); d.io.numericFault.bits.consumer_id.poke(0.U); d.io.attentionTerminal.ready.poke(false.B); d.io.retireAck.ready.poke(false.B)
+    d.io.frontend.valid.poke(false.B); d.io.directStatus.valid.poke(false.B); d.io.runtimeRetire.valid.poke(false.B); d.io.sourcePlan.valid.poke(false.B); d.io.s2FillOpen.valid.poke(false.B); d.io.s2Payload.valid.poke(false.B); d.io.s2Terminal.valid.poke(false.B); d.io.packedOffer.valid.poke(false.B); d.io.packedFragment.valid.poke(false.B); d.io.resultStub.valid.poke(false.B); d.io.numericFault.valid.poke(false.B); d.io.resultStub.bits.consumer_id.poke(0.U); d.io.numericFault.bits.consumer_id.poke(0.U); d.io.attentionTerminal.ready.poke(false.B); d.io.retireAck.ready.poke(false.B); d.io.c2ReleaseObservation.ready.poke(false.B)
     d.io.external.init_ack.valid.poke(false.B); d.io.external.request.ready.poke(false.B); d.io.external.response.valid.poke(false.B); d.io.external.init_ack.bits.adapter_epoch_ready.poke(true.B); id(d.io.external.response.bits.transaction_identity,0); d.io.external.response.bits.fragment_index.poke(0.U); d.io.external.response.bits.last.poke(true.B); d.io.external.response.bits.status.poke(p.coreMemoryOkStatusCode.U); d.io.external.response.bits.data.poke(0.U)
     d.io.c2Demand.valid.poke(false.B); d.io.c2Publication.valid.poke(false.B); d.io.c2Descriptor.valid.poke(false.B); d.io.c2Lease.valid.poke(false.B)
     d.io.c2External.init_ack.valid.poke(false.B); d.io.c2External.request.ready.poke(false.B); d.io.c2External.response.valid.poke(false.B); d.io.c2External.init_ack.bits.adapter_epoch_ready.poke(true.B); id(d.io.c2External.response.bits.transaction_identity,0); d.io.c2External.response.bits.fragment_index.poke(0.U); d.io.c2External.response.bits.last.poke(true.B); d.io.c2External.response.bits.status.poke(p.coreMemoryOkStatusCode.U); d.io.c2External.response.bits.data.poke(0.U)
@@ -345,7 +359,7 @@ final class RouteARTL265eSameInstanceWitnessSpec extends AnyFunSpec with ChiselS
   private def waitRequest(d: RouteARTL265eSameInstanceWitnessHarness, kind: Int, index: Int): Unit = { var n=0; while(!d.io.external.request.valid.peek().litToBoolean && n<128){d.clock.step();n+=1}; require(n<128,s"timed out waiting for request kind=$kind index=$index"); d.io.external.request.bits.request_kind.expect(kind.U); d.io.external.request.bits.fragment_index.expect(index.U); d.io.external.request.ready.poke(true.B); d.clock.step(); d.io.external.request.ready.poke(false.B) }
   private def response(d: RouteARTL265eSameInstanceWitnessHarness, request: Int, fragment: Int, last: Boolean, fault: Boolean=false): Unit = { val x=d.io.external.response.bits; id(x.transaction_identity,request); x.fragment_index.poke(fragment.U); x.last.poke(last.B); x.status.poke((if(fault)p.coreMemoryFaultStatusCode else p.coreMemoryOkStatusCode).U); x.data.poke((0x100+fragment).U); d.io.external.response.valid.poke(true.B); var n=0; while(!d.io.external.response.ready.peek().litToBoolean&&n<128){d.clock.step();n+=1}; require(n<128,"timed out waiting for response"); d.clock.step(); d.io.external.response.valid.poke(false.B); d.clock.step(2) }
   private def waitC2Request(d: RouteARTL265eSameInstanceWitnessHarness, index: Int): Unit = { var n=0; while(!d.io.c2External.request.valid.peek().litToBoolean && n<128){d.clock.step();n+=1}; require(n<128,s"timed out waiting for C2 read index=$index"); d.io.c2External.request.bits.request_kind.expect(p.coreMemoryReadRequestCode.U); d.io.c2External.request.bits.fragment_index.expect(index.U); d.io.c2External.request.ready.poke(true.B); d.clock.step(); d.io.c2External.request.ready.poke(false.B) }
-  private def c2Response(d: RouteARTL265eSameInstanceWitnessHarness, fragment: Int, last: Boolean): Unit = { val x=d.io.c2External.response.bits; id(x.transaction_identity,3); x.fragment_index.poke(fragment.U); x.last.poke(last.B); x.status.poke(p.coreMemoryOkStatusCode.U); x.data.poke((0x400+fragment).U); d.io.c2External.response.valid.poke(true.B); var n=0; while(!d.io.c2External.response.ready.peek().litToBoolean&&n<128){d.clock.step();n+=1}; require(n<128,"timed out waiting for C2 response"); d.clock.step(); d.io.c2External.response.valid.poke(false.B); d.clock.step(2) }
+  private def c2Response(d: RouteARTL265eSameInstanceWitnessHarness, fragment: Int, last: Boolean): Unit = { val x=d.io.c2External.response.bits; id(x.transaction_identity,3); x.fragment_index.poke(fragment.U); x.last.poke(last.B); x.status.poke(p.coreMemoryOkStatusCode.U); x.data.poke((0x400+fragment).U); d.io.c2External.response.valid.poke(true.B); var n=0; while(!d.io.c2External.response.ready.peek().litToBoolean&&n<128){d.clock.step();n+=1}; require(n<128,s"timed out waiting for C2 response fragment=$fragment"); d.clock.step(); d.io.c2External.response.valid.poke(false.B); d.clock.step(2) }
   private def admitAndRead(d: RouteARTL265eSameInstanceWitnessHarness): Unit = {
     val a=d.io.r5Allocate.bits; a.layer.poke(0.U);a.kv_head.poke(0.U);a.valid_records.poke(1.U);a.transaction_group_tag.poke(1.U);d.io.r5Allocate.valid.poke(true.B);d.io.r5Allocate.ready.expect(true.B);d.clock.step();d.io.r5Allocate.valid.poke(false.B)
     val c=d.io.p3Claim.bits;c.layer.poke(0.U);c.kv_head.poke(0.U);c.owner.poke(0.U);c.page_ref.page_id.poke(0.U);c.page_ref.generation.poke(0.U);c.valid_records.poke(1.U);c.requires_tail_link.poke(false.B);c.transaction_group_tag.poke(1.U);d.io.p3Claim.valid.poke(true.B);d.io.p3Claim.ready.expect(true.B);d.clock.step();d.io.p3Claim.valid.poke(false.B)
@@ -358,6 +372,30 @@ final class RouteARTL265eSameInstanceWitnessSpec extends AnyFunSpec with ChiselS
   private def publish(d: RouteARTL265eSameInstanceWitnessHarness): Unit = { def member(m:Int):Unit={var n=0;while(!d.io.m2MemberRequest.valid.peek().litToBoolean&&n<128){d.clock.step();n+=1};require(n<128,"timed out M2 member");d.io.m2MemberRequest.bits.member.expect(m.U);d.io.m2MemberRequest.ready.poke(true.B);d.clock.step();d.io.m2MemberRequest.ready.poke(false.B);val r=d.io.m2MemberResponse.bits;r.layer.poke(0.U);r.stage_generation.poke(1.U);r.transaction_group_tag.poke(1.U);r.member.poke(m.U);r.status.poke(p.coreMemoryOkStatusCode.U);d.io.m2MemberResponse.valid.poke(true.B);d.io.m2MemberResponse.ready.expect(true.B);d.clock.step();d.io.m2MemberResponse.valid.poke(false.B)};member(RouteAM2GroupMember.HeadControlRmw);member(RouteAM2GroupMember.SpanOwnerRmw);var n=0;while(!d.io.m2PublicationCandidate.valid.peek().litToBoolean&&n<128){d.clock.step();n+=1};require(n<128,"timed out publication candidate");d.io.m2PublicationCandidate.ready.poke(true.B);d.clock.step();d.io.m2PublicationCandidate.ready.poke(false.B);val r=d.io.m2PublicationRequest.bits;r.transaction_group_tag.poke(1.U);r.p3_layer.poke(0.U);r.p3_stage_generation.poke(1.U);d.io.m2PublicationRequest.valid.poke(true.B);d.io.m2PublicationRequest.ready.expect(true.B);d.clock.step();d.io.m2PublicationRequest.valid.poke(false.B) }
   private def frontend(d: RouteARTL265eSameInstanceWitnessHarness,event:Int,request:Int):Unit={val x=d.io.frontend.bits;x.event_kind.poke(event.U);x.session_id.poke(false.B);x.context_tokens.poke(32768.U);x.entry_id.poke(0.U);x.layer.poke(0.U);x.kv_head.poke(0.U);x.logical_position.poke(0.U);x.payload_ref.poke(0.U);x.disposition.poke(false.B);id(x.transaction_identity,request);x.admission_group_tag.poke(0.U);x.admission_member_ordinal.poke(0.U);x.admission_group_valid_records.poke(1.U);d.io.frontend.valid.poke(true.B);var n=0;while(!d.io.frontend.ready.peek().litToBoolean&&n<128){d.clock.step();n+=1};require(n<128,"timed out frontend");d.clock.step();d.io.frontend.valid.poke(false.B)}
   private def directStatus(d: RouteARTL265eSameInstanceWitnessHarness, code:Int):Unit={d.io.directStatus.bits.acknowledgement_name.poke(code.U);d.io.directStatus.bits.asserted.poke(true.B);d.io.directStatus.valid.poke(true.B);var n=0;while(!d.io.directStatus.ready.peek().litToBoolean&&n<128){d.clock.step();n+=1};require(n<128,s"timed out direct status $code");d.clock.step();d.io.directStatus.valid.poke(false.B)}
+  private def acceptC2Release(d: RouteARTL265eSameInstanceWitnessHarness): Unit = {
+    var n = 0
+    while (!d.io.c2ReleaseObservation.valid.peek().litToBoolean && n < 128) { d.clock.step(); n += 1 }
+    require(n < 128, "timed out C2 terminal release observation")
+    d.io.c2ReleaseObservation.bits.transaction_identity.request_id.expect(3.U)
+    d.io.c2ReleaseObservation.bits.transaction_identity.incarnation.expect(0.U)
+    d.io.c2ReleaseObservation.bits.page_ref.page_id.expect(0.U)
+    d.io.c2ReleaseObservation.bits.page_ref.generation.expect(0.U)
+    d.io.c2ReleaseObservation.bits.s2_slot.expect(0.U)
+    d.io.c2ReleaseObservation.bits.source_generation.expect(1.U)
+    d.io.c2ReleaseObservation.bits.status.expect(p.coreMemoryOkStatusCode.U)
+    d.clock.step()
+    d.io.c2ReleaseObservation.valid.expect(true.B)
+    d.io.c2ReleaseObservation.ready.poke(true.B)
+    d.clock.step()
+    d.io.c2ReleaseObservation.ready.poke(false.B)
+  }
+  private def requireC2RetireBlocked(d: RouteARTL265eSameInstanceWitnessHarness, request: Int): Unit = {
+    val retire = d.io.runtimeRetire.bits
+    retire.session_id.poke(false.B); id(retire.transaction_identity, request)
+    d.io.runtimeRetire.valid.poke(true.B)
+    d.io.runtimeRetire.ready.expect(false.B)
+    d.io.runtimeRetire.valid.poke(false.B)
+  }
   private def serviceAndTerminal(d: RouteARTL265eSameInstanceWitnessHarness, rtl36bFunctionalFixtures:Boolean=false, rtl36c2FunctionalSource:Boolean=false):Unit={
     frontend(d,p.r6.sessionStartEventCode,0);frontend(d,p.r6.attentionServiceEventCode,3)
     val plan=d.io.sourcePlan.bits;id(plan.transaction_identity,3);plan.source_presence.poke(4.U);instance(plan.hot_instance,0,0,0);instance(plan.pending_instance,1,0,0);instance(plan.packed_instance,2,0,1);d.io.sourcePlan.valid.poke(true.B);var n=0;while(!d.io.sourcePlan.ready.peek().litToBoolean&&n<128){d.clock.step();n+=1};require(n<128,"timed out plan");d.clock.step();d.io.sourcePlan.valid.poke(false.B)
@@ -377,6 +415,12 @@ final class RouteARTL265eSameInstanceWitnessSpec extends AnyFunSpec with ChiselS
       d.io.c2Lease.valid.poke(true.B); d.io.c2Lease.ready.expect(true.B); d.clock.step(); d.io.c2Lease.valid.poke(false.B)
       waitC2Request(d, 0); (0 until 8).foreach(i => c2Response(d, i, i == 7))
       var readyWait=0; while(!d.io.s2Ready.peek().litToBoolean && readyWait<128){d.clock.step();readyWait+=1}; require(readyWait<128,"timed out C2 S2 READY"); d.io.c2SidecarFixtureFaulted.expect(false.B); d.io.c2SidecarFixtureComplete.expect(true.B)
+      // The C2 association may not enter the existing R6 retirement path
+      // until its release has been observed.
+      requireC2RetireBlocked(d, 3)
+      acceptC2Release(d)
+      // A release for request 3 does not authorize a different identity.
+      requireC2RetireBlocked(d, 2)
     } else {
       val o=d.io.s2FillOpen.bits;id(o.transaction_identity,3);o.page_ref.page_id.poke(0.U);o.page_ref.generation.poke(0.U);o.s2_slot.poke(0.U);o.source_generation.poke(1.U);o.expected_fragment_count.poke(1.U);o.expected_sidecar_records.poke(0.U);o.requires_sidecar.poke(false.B);d.io.s2FillOpen.valid.poke(true.B);d.io.s2FillOpen.ready.expect(true.B);d.clock.step();d.io.s2FillOpen.valid.poke(false.B)
       val q=d.io.s2Payload.bits;id(q.transaction_identity,3);q.s2_slot.poke(0.U);q.source_generation.poke(1.U);q.fragment_index.poke(0.U);q.last.poke(true.B);q.data.poke(0.U);d.io.s2Payload.valid.poke(true.B);d.io.s2Payload.ready.expect(true.B);d.clock.step();d.io.s2Payload.valid.poke(false.B);val t=d.io.s2Terminal.bits;id(t.transaction_identity,3);t.s2_slot.poke(0.U);t.source_generation.poke(1.U);t.fragment_index.poke(0.U);t.last.poke(true.B);t.status.poke(p.coreMemoryOkStatusCode.U);d.io.s2Terminal.valid.poke(true.B);d.io.s2Terminal.ready.expect(true.B);d.clock.step();d.io.s2Terminal.valid.poke(false.B);d.io.s2Ready.expect(true.B)
@@ -449,6 +493,28 @@ final class RouteARTL265eSameInstanceWitnessSpec extends AnyFunSpec with ChiselS
     require(waited < limit, message)
   }
 
+  private def acceptSharedC2Release(
+      d: RouteARTL265eSameInstanceWitnessHarness,
+      publicationMemory: RouteAFunctionalMemoryEnvironment,
+      sourceMemory: RouteAFunctionalMemoryEnvironment,
+  ): Unit = {
+    waitShared(d, publicationMemory, sourceMemory, "timed out shared-object C2 terminal release") {
+      d.io.c2ReleaseObservation.valid.peek().litToBoolean
+    }
+    d.io.c2ReleaseObservation.bits.transaction_identity.request_id.expect(3.U)
+    d.io.c2ReleaseObservation.bits.transaction_identity.incarnation.expect(0.U)
+    d.io.c2ReleaseObservation.bits.page_ref.page_id.expect(0.U)
+    d.io.c2ReleaseObservation.bits.page_ref.generation.expect(0.U)
+    d.io.c2ReleaseObservation.bits.s2_slot.expect(0.U)
+    d.io.c2ReleaseObservation.bits.source_generation.expect(1.U)
+    d.io.c2ReleaseObservation.bits.status.expect(p.coreMemoryOkStatusCode.U)
+    sharedMemoryStep(d, publicationMemory, sourceMemory)
+    d.io.c2ReleaseObservation.valid.expect(true.B)
+    d.io.c2ReleaseObservation.ready.poke(true.B)
+    sharedMemoryStep(d, publicationMemory, sourceMemory)
+    d.io.c2ReleaseObservation.ready.poke(false.B)
+  }
+
   private def admitPublishWithSharedMemory(
       d: RouteARTL265eSameInstanceWitnessHarness,
       publicationMemory: RouteAFunctionalMemoryEnvironment,
@@ -509,6 +575,9 @@ final class RouteARTL265eSameInstanceWitnessSpec extends AnyFunSpec with ChiselS
     d.io.c2Lease.valid.poke(true.B); d.io.c2Lease.ready.expect(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.c2Lease.valid.poke(false.B)
     waitShared(d, publicationMemory, sourceMemory, "timed out shared-object S2 READY") { d.io.s2Ready.peek().litToBoolean }
     d.io.c2SidecarFixtureFaulted.expect(false.B); d.io.c2SidecarFixtureComplete.expect(true.B)
+    requireC2RetireBlocked(d, 3)
+    acceptSharedC2Release(d, publicationMemory, sourceMemory)
+    requireC2RetireBlocked(d, 2)
     waitShared(d, publicationMemory, sourceMemory, "timed out static terminal") { d.io.attentionTerminal.valid.peek().litToBoolean }
     d.io.functionalFixtureProviderComplete.expect(true.B); d.io.functionalFixturePacketsAccepted.expect(true.B)
     d.io.attentionTerminal.ready.poke(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.attentionTerminal.ready.poke(false.B)

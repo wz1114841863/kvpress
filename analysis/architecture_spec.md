@@ -735,9 +735,14 @@ descriptor line at the same opaque `address_ref` is distinct in that store by
 the already-carried R1 expected-fragment cardinality; this is a testbench
 reference-model key, not a new physical address format or deployed controller
 choice.  C2 demand/publication/descriptor/lease grants, C1 sidecar transport,
-the static R4 fixture, terminal release, and global drain remain open as
-declared boundaries.  See
-`analysis/rtl3_7a_shared_functional_memory_continuity_contract.md`.
+and the static R4 fixture remain declared boundaries. RTL3.7-B additionally
+closes the bounded testbench terminal-to-release-to-retire ordering: every C2
+endpoint terminal reaches S2, only the final terminal completes the frozen
+packed-read association, and its accepted release is required before the same
+runtime retire may enter the existing R6/R5 drain/reclaim path. It neither
+changes R6 global-membership collection nor activates a production-top bridge.
+See `analysis/rtl3_7a_shared_functional_memory_continuity_contract.md` and
+`analysis/rtl3_7b_terminal_release_global_drain_contract.md`.
 
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common

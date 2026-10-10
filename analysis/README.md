@@ -106,8 +106,12 @@ a production common-memory realization. RTL3 completion still requires a
 cross-owner review. RTL3.7-A further closes only shared functional object
 continuity: C2 consumes the exact eight-fragment object written durably by R3
 through a host-side store shared by the two test harness endpoints. Its
-fragment-count key is not a deployed address format; C2 grants, sidecar/R4
-fixtures, terminal release, and global drain remain open.
+fragment-count key is not a deployed address format; C2 grants and sidecar/R4
+fixtures remain open. RTL3.7-B additionally closes the testbench-only C2
+terminal/release/retire order: every endpoint terminal reaches S2, only the
+final one releases the frozen association, and that release is observed before
+the matching retire enters existing R6/R5 drain/reclaim. It does not alter the
+production top or R6 global-membership collection.
 
 ## Current architecture and verification records
 
@@ -141,6 +145,7 @@ Read these only when the corresponding level of detail is required:
 | RTL3.6-C1 named sidecar fixture transport | [`rtl3_6c1_sidecar_fixture_transport_contract.md`](rtl3_6c1_sidecar_fixture_transport_contract.md) and [`rtl3_6c1_sidecar_fixture_transport_manifest.json`](rtl3_6c1_sidecar_fixture_transport_manifest.json) |
 | RTL3.6-C2 same-instance dataflow/reset-epoch witness | [`rtl3_6c2_same_instance_dataflow_reset_contract.md`](rtl3_6c2_same_instance_dataflow_reset_contract.md) and [`rtl3_6c2_same_instance_dataflow_reset_manifest.json`](rtl3_6c2_same_instance_dataflow_reset_manifest.json) |
 | RTL3.7-A shared functional-memory object continuity | [`rtl3_7a_shared_functional_memory_continuity_contract.md`](rtl3_7a_shared_functional_memory_continuity_contract.md) and [`rtl3_7a_shared_functional_memory_continuity_manifest.json`](rtl3_7a_shared_functional_memory_continuity_manifest.json) |
+| RTL3.7-B C2 terminal/release/retire ordering | [`rtl3_7b_terminal_release_global_drain_contract.md`](rtl3_7b_terminal_release_global_drain_contract.md) and [`rtl3_7b_terminal_release_global_drain_manifest.json`](rtl3_7b_terminal_release_global_drain_manifest.json) |
 | RTL2.3 active phase/event reconciliation | [`rtl2_3_reconciliation_01.md`](rtl2_3_reconciliation_01.md) and [`rtl2_scoreboard_event_phase_reconciliation_01.json`](rtl2_scoreboard_event_phase_reconciliation_01.json) |
 | RTL2.3-C6 R6 source-plan producer | [`rtl2_3_c6_source_plan_binder_contract.md`](rtl2_3_c6_source_plan_binder_contract.md) and [`rtl2_3_c6_source_plan_binder_manifest.json`](rtl2_3_c6_source_plan_binder_manifest.json) |
 | RTL2.3-C7 source-service top integration | [`rtl2_3_c7_source_service_top_integration_contract.md`](rtl2_3_c7_source_service_top_integration_contract.md) and [`rtl2_3_c7_source_service_top_integration_manifest.json`](rtl2_3_c7_source_service_top_integration_manifest.json) |

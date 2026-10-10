@@ -1,0 +1,54 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-7b-terminal-release-retire-1.0",
+  "status": "completed_testbench_only_terminal_release_retire_ordering",
+  "scope": "One bounded same-instance Chisel witness forwards C2 endpoint terminals into S2, forms the existing packed-read association terminal only on the final fragment, observes its release, and then admits the matching existing R6 retirement/reclaim transaction.",
+  "boundary": {
+    "scope": "testbench-only association release-to-retire ordering",
+    "terminal_bridge": "testbench RouteARTL37bPackedReadTerminalBridge; forwards each endpoint terminal to S2 and emits one association terminal only when last is asserted",
+    "retire_gate": "testbench RouteARTL37bReleaseRetireGate; accepts the association release before forwarding only a matching runtime retirement",
+    "r6_r5_owner": "existing R6/R5 global drain, durable reclaim, and retire acknowledgement",
+    "production_top": "unchanged",
+    "unclosed": "C2 grants remain verification facts; C1 sidecar and static R4 fixtures remain; C2 R1/R2 status is not added to the R6 global collector"
+  },
+  "invariants": [
+    "every exact endpoint terminal is forwarded to S2",
+    "only the final endpoint terminal creates one packed-read association terminal",
+    "the association terminal uses captured work identity/page/slot/generation/delivery context and endpoint status",
+    "association release must be accepted before a matching runtime retirement can reach R6",
+    "missing or mismatched identities cannot pass the testbench-only retire gate",
+    "ready-low carriers remain stable at work, S2-terminal, association-terminal, release, and gated-retire boundaries",
+    "R6/R5 retain global drain, durable reclaim, and retire acknowledgement ownership",
+    "no production-top or global-collector topology change"
+  ],
+  "verification": {
+    "chisel_commands": [
+      "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteARTL265eSameInstanceWitnessSpec -- -z \"composes real publication\"'",
+      "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteARTL265eSameInstanceWitnessSpec -- -z \"reads the exact R3-durable\"'"
+    ],
+    "validator": ".venv/bin/python tools/validate_rtl3_7b_terminal_release_global_drain.py",
+    "evidence_labels": [
+      "testbench-only terminal release retire ordering",
+      "no model/GPU",
+      "no cycle timing throughput deadlock claim",
+      "no PPA claim",
+      "no production-top activation",
+      "no new A4 DSE"
+    ]
+  },
+  "disposition": {
+    "rtl3_7b_terminal_release_retire_ordering_closed": true,
+    "rtl3_functional_realization_complete": false,
+    "next_required_gate": "rtl3_completion_cross_owner_review_03"
+  },
+  "source_sha256": {
+    "analysis/README.md": "494cec0f98bfbfb6e6cc14b70d3e5f09428aaa3a3fd6fd25d2da45211c2bc601",
+    "analysis/architecture_spec.md": "a8c4bd3cf37d02a96ddc39498001b3187b70388f94a9935a6686bb24c57e4f70",
+    "analysis/rtl2_phase_contract.md": "bc1ad92f1b480783207668d6c6d21476af87be5347b4975cb214ea9308fcee63",
+    "analysis/rtl3_7b_terminal_release_global_drain_contract.md": "e609464fc6d8a04ed5f6af641147371056a793d428c9b395a392403f50feff04",
+    "hardware/route_a/chisel/README.md": "e1b0c77b3bffc0046c2fa1ad4be5c52c7e636ef92f941b3ef0f312b6d1dad166",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala": "0b80d576521cd7f8c5bfa1acd4746ae07bc5eb11a33bf1ac1549259ecd1119b9",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37bTerminalReleaseBridge.scala": "a2e8cc5b6b993173b1ce5e1dd5ad6b5d525902c2117550794346372212be098f",
+    "tests/test_rtl3_7b_terminal_release_global_drain.py": "2efb3166782fe228e32fb189a47ca715b4c4e91d296cdb35fba5cdbb6e21df5b",
+    "tools/validate_rtl3_7b_terminal_release_global_drain.py": "52cfa093a54e7b5663a2cbb1eea3502a3421ee9b8f68a87e72a81c24ac25acea"
+  }
+}

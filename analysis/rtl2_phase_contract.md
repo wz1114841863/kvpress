@@ -859,8 +859,16 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     an eight-fragment payload from a one-fragment descriptor at a coincident
     opaque `address_ref` only through the existing R1 expected-fragment count.
     It is neither a common controller/physical address format nor an
-    autonomous C2-grant closure. The next required closure is RTL3.7-B
-    terminal release and global drain association.
+    autonomous C2-grant closure.
+16. **RTL3.7-B — C2 terminal/release/retire ordering (complete,
+    testbench-only).**
+    [`rtl3_7b_terminal_release_global_drain_contract.md`](rtl3_7b_terminal_release_global_drain_contract.md)
+    forwards each typed endpoint terminal to S2 but permits only the final
+    terminal to form the existing packed-read association terminal. Its release
+    observation must be accepted before the matching runtime retire reaches the
+    existing R6/R5 drain/reclaim path. It neither changes C2 grant provenance,
+    production-top topology, nor R6 global-membership collection. The next
+    action is RTL3 completion cross-owner review 03.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

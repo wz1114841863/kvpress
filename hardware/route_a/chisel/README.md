@@ -130,6 +130,17 @@ common deployed controller. C2 grant inputs, C1 sidecar data, and static R4
 terminal fixtures remain outside this closure. The authority record is
 `analysis/rtl3_7a_shared_functional_memory_continuity_contract.md`.
 
+## RTL3.7-B test-only terminal/release/retire ordering
+
+The C2 witness now routes each typed endpoint terminal through S2. Only the
+final fragment terminal produces the frozen packed-read association terminal,
+whose ready/valid release observation must be accepted before the matching
+runtime retire reaches the existing R6/R5 drain/reclaim path. The bridge is
+test-harness-only: it does not add a production-top connection, C2 grant
+producer, R6 global-status membership, controller, or memory realization. The
+authority record is
+`analysis/rtl3_7b_terminal_release_global_drain_contract.md`.
+
 ## Local no-model preflight
 
 Use a command-scoped JDK path so no global `JAVA_HOME` change is required:
