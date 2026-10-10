@@ -883,6 +883,16 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     deadlock/performance claim.  C2 grants, C1 sidecar fixture transport, and
     static partial/R4 fixtures remain open; the next action is RTL3 completion
     cross-owner review 03.
+18. **RTL3 completion cross-owner review 03 (complete, no-PASS).**
+    [`rtl3_completion_cross_owner_review_03.md`](rtl3_completion_cross_owner_review_03.md)
+    confirms that RTL3.7-A/B/C close bounded C2 data continuity,
+    terminal/release/retire ordering, and joined drain membership, but rejects
+    a functional-realization pass.  The C2 grant producer, sidecar source,
+    dynamic source-to-partial path, dynamic functional R4 path, production-top
+    verification ingress, aggregate provenance replay, and full source-set
+    coverage remain explicit.  It defines the narrower RTL3 functional-closure
+    rubric without authorizing complete LLM inference, physical realization,
+    or performance work.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

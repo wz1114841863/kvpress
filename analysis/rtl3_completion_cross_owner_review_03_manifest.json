@@ -1,0 +1,72 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-completion-cross-owner-review-03-1.0",
+  "status": "reviewed_no_pass_remaining_functional_source_replacement",
+  "scope": "No-model cross-owner audit after RTL3.7-A/B/C. It records current bounded witness closure and remaining functional-source replacement gaps; it changes no hardware behavior or architecture contract.",
+  "reviewed_current_closures": {
+    "rtl3_7a": "shared R3-durable eight-fragment payload continuity into the testbench C2 R1 path",
+    "rtl3_7b": "endpoint terminal to final association release to matching R6 retirement ordering",
+    "rtl3_7c": "C2/publication R1-R2 drain-fact join before the unchanged R6 collector plus bounded fault/stall/reset event evidence"
+  },
+  "review_findings": {
+    "r03_1_c2_grant_owner": "open: C2 demand/publication/descriptor/lease are test-harness facts, not a functional producer",
+    "r03_2_sidecar_source": "open: S2 sidecar remains a named static fixture transport",
+    "r03_3_dynamic_partial_path": "open: top-level source packet offers/value fragments are tied inactive; source owners are not bound through the functional partial provider",
+    "r03_4_dynamic_r4_path": "open: top-level R4 result/numeric fault are tied inactive; same-instance result is static fixture replay",
+    "r03_5_verification_ingress": "open: production top retains explicit verification ingress and inert read/maintenance carriers",
+    "r03_6_provenance_replay": "open provenance hygiene: RTL3.7-A/B immutable historical manifests do not validate against the newer shared source snapshot",
+    "r03_7_dynamic_coverage": "open: current same-instance functional witness is packed-only and does not cover all source subsets or a dynamic full-path fault"
+  },
+  "rtl3_functional_closure_criteria": [
+    "one same-instance retained transaction reaches hot->pending->packed->packed read->S2->source service->partial producer->R4->R6 terminal->retire->durable reclaim->retire_ack without interior testbench injection",
+    "each cross-owner fact has exactly one named producer and frozen consumer while R3 publication remains the only pending-to-packed authority handoff",
+    "frontend query/position and R1 functional memory are explicit non-authoritative environments rather than substitutes for scheduling, metadata authority, or terminal ownership",
+    "hot/direct-pending/S2 provide payload-sideband only; the unique partial provider emits dynamic frozen-order partials; R4 returns one matching success XOR fault to R6",
+    "directed dynamic tests cover all nonempty legal source subsets, four GQA completions, backpressure, stale/mismatch, reset, and fault outcomes",
+    "a current aggregate manifest binds the review sources/tests/oracle while older manifests remain immutable historical snapshots"
+  ],
+  "not_implied": [
+    "complete LLM inference",
+    "model accuracy or generated-token equivalence",
+    "HBM controller, SRAM macro, or physical memory realization",
+    "FP/exp pipeline or attention MAC realization",
+    "timing, throughput, deadlock freedom, area, energy, PPA, profiling, optimization, Gate-B, model/GPU, or A4-DSE evidence"
+  ],
+  "disposition": {
+    "rtl3_7abc_bounded_witness_closed": true,
+    "rtl3_functional_realization_complete": false,
+    "next_required_action": "plan RTL3 functional-source replacement for R03-1 through R03-4, then dynamic full-path coverage and aggregate provenance closure"
+  },
+  "verification": {
+    "chisel_commands": [
+      "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec'",
+      "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteARTL265eSameInstanceWitnessSpec -- -z \"retains event order\"'"
+    ],
+    "validators": [
+      ".venv/bin/python tools/validate_rtl3_7c_drain_fault_stall_reset_scoreboard.py",
+      ".venv/bin/python tools/validate_rtl3_completion_cross_owner_review_03.py"
+    ],
+    "pytest": ".venv/bin/python -m pytest -q tests/test_rtl3_completion_cross_owner_review_03.py",
+    "evidence_labels": [
+      "cross-owner functional-closure review with explicit no-PASS",
+      "no model/GPU",
+      "no cycle/timing/throughput/deadlock claim",
+      "no PPA claim",
+      "no production-top activation",
+      "no new A4 DSE"
+    ]
+  },
+  "source_sha256": {
+    "analysis/README.md": "98fdc26edb71469aa7b761c870ed9102009bd3f3771a5fb2418614049cf594ab",
+    "analysis/architecture_spec.md": "cc43f50499df2e288089dd95cb43120d9a842a84304ab1a6bbe143f29cc575fc",
+    "analysis/rtl2_phase_contract.md": "c2f28561ca5a7883530cf77088419dbd9b3ccc6e96c12ba22623b25dd7744158",
+    "analysis/rtl3_completion_cross_owner_review_03.md": "4aafbba939a8050be2e2c6c5807e94dc363febe80e60aba37de10614bcfde840",
+    "analysis/rtl3_7c_drain_fault_stall_reset_scoreboard_contract.md": "b8c00edbab8ddf43628b75efd060abd23a0ffb3f08ed6505f9c5182cd219d5b0",
+    "analysis/rtl3_7c_drain_fault_stall_reset_scoreboard_manifest.json": "7be0a8b5fde239719f19bd4567d85a7cf645d00730dc400768190581d7c5a5bd",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "465a0ca5d0bc4b934afac79f4bd9c6b801afb91f3dda7c18dffc8ab51ec5ce21",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala": "9dc4864155bbf7c8d2011f788669ef6fbbf9f5094dadba2c36af8dfb7f34ae66",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala": "42c3c04bf61778522494b52362e99652dc1cdc8450f1a4f25689100ad6ab3326",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cDrainMembershipJoin.scala": "3654fedbd68dee941947ed289d40c5ce0d85831c95906c6dee7e72188ae90719",
+    "tests/test_rtl3_completion_cross_owner_review_03.py": "d43572ea071e48a0b9a871fa55c2363f0a91686385ab919cec35e981ecca8358",
+    "tools/validate_rtl3_completion_cross_owner_review_03.py": "6d4f09a2a985b73aa528ab3c8eab1d452d62e4daea6abbc253237df602146dbb"
+  }
+}

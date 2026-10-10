@@ -757,6 +757,15 @@ replace C2 grants, C1 sidecar fixture transport, or the static partial/R4
 fixtures with functional producers.  See
 `analysis/rtl3_7c_drain_fault_stall_reset_scoreboard_contract.md`.
 
+RTL3 completion cross-owner review 03 records a no-PASS after that bounded
+closure: the C2 grant facts and sidecar remain testbench fixtures, source
+owners are not yet connected through the frozen query/position and functional
+partial-provider boundary, and the production top still ties off dynamic R4
+results/faults.  A future RTL3 PASS is therefore a Route-A **functional
+subsystem** result only, never a claim to execute complete LLM inference or a
+physical/numeric realization.  The review and its functional-closure rubric
+are `analysis/rtl3_completion_cross_owner_review_03.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.
