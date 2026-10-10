@@ -116,6 +116,20 @@ shows stale external-response suppression followed by fresh R1 init
 acknowledgements and a clean restart.  The authority record is
 `analysis/rtl3_6c2_same_instance_dataflow_reset_contract.md`.
 
+## RTL3.7-A test-only shared functional-memory continuity
+
+The C2 variant of `RouteARTL265eSameInstanceWitnessSpec` now uses two separate
+`RouteAFunctionalMemoryEnvironment` endpoints backed by one host-side
+`RouteAFunctionalMemoryStore`. The C2 descriptor takes the actual accepted R3
+packed-write handle, so its typed source read deposits the exact R3 durable
+eight-fragment object into S2. The test-only store distinguishes an
+eight-fragment payload from a one-fragment descriptor record that happens to
+have the same opaque `address_ref`; this is a reference-model key based on an
+already present R1 field, not an R1 interface change, physical memory map, or
+common deployed controller. C2 grant inputs, C1 sidecar data, and static R4
+terminal fixtures remain outside this closure. The authority record is
+`analysis/rtl3_7a_shared_functional_memory_continuity_contract.md`.
+
 ## Local no-model preflight
 
 Use a command-scoped JDK path so no global `JAVA_HOME` change is required:

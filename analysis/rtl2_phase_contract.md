@@ -684,19 +684,14 @@ production bridge, profiling, optimization, synthesis, timing, or PPA claims.
 
 ## Planned successor — RTL3: Functional Realization Closure
 
-**Status:** RTL3.0 replacement planning, RTL3.1 functional memory, RTL3.2
-bounded packed-S2 payload, RTL3.3/RTL3.4 R4 functional-model closure, and
-RTL3.5-A/B query/source-to-functional-partial closure and RTL3.5-C's static
-cross-language structural packet binding are complete within their declared
-testbench/reference scopes. RTL3.6 has completed the required cross-owner
-review with an explicit no-PASS: no same-instance live functional
-partial/R4/R6/reclaim composition exists yet, and sidecar transport remains a
-testbench ingress. The active terminal/reclaim replay bindings also require a
-narrow provenance repair before their historical replay can be revalidated.
-RTL3.6-A has now completed that repair; the active replay is current again,
-while the functional-realization no-PASS remains. The next closure is the
-separate same-instance live functional provider/R4/R6 terminal composition.
-No production-top RTL3 composition,
+**Status:** RTL3.0--RTL3.5-C are complete only within their declared
+testbench/reference scopes. RTL3.6 correctly recorded a historical no-PASS,
+then RTL3.6-A repaired the active replay provenance, RTL3.6-B/C1/C2 assembled
+the bounded same-instance witness, and RTL3.7-A now binds the C2 packed read
+to the exact R3-durable functional payload object.  The functional-realization
+no-PASS remains: C2 grants are verification facts, sidecar and R4 remain
+declared fixtures, and terminal-release/global-drain association is not yet
+closed. No production-top RTL3 composition,
 physical controller, numerical microarchitecture, or performance experiment is
 authorized by these records.
 See
@@ -855,6 +850,17 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     a separate source-read R1 port, not a production common-memory or
     controller implementation.  The next action is a cross-owner RTL3
     completion review, not a performance or PPA phase.
+15. **RTL3.7-A — shared functional-memory object continuity (complete,
+    testbench-only).**
+    [`rtl3_7a_shared_functional_memory_continuity_contract.md`](rtl3_7a_shared_functional_memory_continuity_contract.md)
+    derives the C2 source descriptor's payload handle from the accepted real
+    R3 packed write and makes two independently reset functional-memory
+    endpoints share that host-side object.  Its testbench store distinguishes
+    an eight-fragment payload from a one-fragment descriptor at a coincident
+    opaque `address_ref` only through the existing R1 expected-fragment count.
+    It is neither a common controller/physical address format nor an
+    autonomous C2-grant closure. The next required closure is RTL3.7-B
+    terminal release and global drain association.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

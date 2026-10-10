@@ -29,6 +29,80 @@ final case class FunctionalPackedObject(
   sidecarRecords: Vector[BigInt],
 )
 
+/**
+  * Accepted functional write observation; test-only provenance, never timing.
+  * `expectedFragments` is part of this environment's lookup key, taken from
+  * the existing accepted R1 request. It prevents a one-fragment descriptor
+  * line and an eight-fragment packed payload with the same opaque
+  * `address_ref` from aliasing in the host-side reference store.
+  */
+final case class FunctionalWriteCommit(
+  addressRef: BigInt,
+  expectedFragments: Int,
+  payloadFragments: Vector[BigInt],
+)
+
+private final case class FunctionalObjectKey(addressRef: BigInt, expectedFragments: Int)
+
+/**
+  * Testbench-only functional object store that may be shared by independently
+  * reset R1 environment endpoints.  Sharing this store is a data-continuity
+  * convenience for composed tests; it is not a deployed common-memory fabric,
+  * controller, arbitration point, or Route-A authority owner.
+  */
+final class RouteAFunctionalMemoryStore {
+  private[rtl3] val objects = mutable.Map.empty[FunctionalObjectKey, FunctionalPackedObject]
+  private val commits = mutable.ArrayBuffer.empty[FunctionalWriteCommit]
+
+  def preload(
+    addressRef: BigInt,
+    generation: Option[BigInt],
+    payloadFragments: Vector[BigInt],
+    sidecarRecords: Vector[BigInt],
+    expectedFragments: Int = -1,
+  ): Unit = {
+    require(addressRef >= 0, "functional address_ref must be non-negative")
+    require(payloadFragments.nonEmpty, "functional packed object needs at least one payload fragment")
+    val fragmentCount = if (expectedFragments < 0) payloadFragments.size else expectedFragments
+    require(fragmentCount == payloadFragments.size,
+      "functional object expected fragment count must equal payload fragment count")
+    require(payloadFragments.forall(_ >= 0), "functional payload fragments must be non-negative")
+    require(sidecarRecords.forall(_ >= 0), "functional sidecar records must be non-negative")
+    objects(FunctionalObjectKey(addressRef, fragmentCount)) =
+      FunctionalPackedObject(generation, payloadFragments, sidecarRecords)
+  }
+
+  /**
+    * Compatibility lookup for unit tests that have exactly one functional
+    * object at an opaque address.  Composed tests must use the explicit R1
+    * expected-fragment count overload below.
+    */
+  def objectAt(addressRef: BigInt): Option[FunctionalPackedObject] = {
+    val matches = objects.collect { case (FunctionalObjectKey(`addressRef`, _), value) => value }.toVector
+    if (matches.size == 1) Some(matches.head) else None
+  }
+
+  def objectAt(addressRef: BigInt, expectedFragments: Int): Option[FunctionalPackedObject] =
+    objects.get(FunctionalObjectKey(addressRef, expectedFragments))
+
+  def committedWrites: Vector[FunctionalWriteCommit] = commits.toVector
+
+  private[rtl3] def commitWrite(
+    addressRef: BigInt,
+    expectedFragments: Int,
+    payloadFragments: Vector[BigInt],
+  ): Unit = {
+    val key = FunctionalObjectKey(addressRef, expectedFragments)
+    val old = objects.get(key)
+    objects(key) = FunctionalPackedObject(
+      generation = old.flatMap(_.generation),
+      payloadFragments = payloadFragments,
+      sidecarRecords = old.map(_.sidecarRecords).getOrElse(Vector.empty),
+    )
+    commits += FunctionalWriteCommit(addressRef, expectedFragments, payloadFragments)
+  }
+}
+
 private object RouteAFunctionalMemoryEnvironment {
   final case class Identity(requestId: BigInt, incarnation: BigInt)
   final case class WriteTransaction(
@@ -47,10 +121,12 @@ private object RouteAFunctionalMemoryEnvironment {
   )
 }
 
-final class RouteAFunctionalMemoryEnvironment(p: RouteASkeletonParameters) {
+final class RouteAFunctionalMemoryEnvironment(
+  p: RouteASkeletonParameters,
+  store: RouteAFunctionalMemoryStore = new RouteAFunctionalMemoryStore,
+) {
   import RouteAFunctionalMemoryEnvironment._
 
-  private val objects = mutable.Map.empty[BigInt, FunctionalPackedObject]
   private val writes = mutable.Map.empty[Identity, WriteTransaction]
   private val responses = mutable.Queue.empty[PendingResponse]
   private var initPending = true
@@ -65,14 +141,13 @@ final class RouteAFunctionalMemoryEnvironment(p: RouteASkeletonParameters) {
     payloadFragments: Vector[BigInt],
     sidecarRecords: Vector[BigInt],
   ): Unit = {
-    require(addressRef >= 0, "functional address_ref must be non-negative")
-    require(payloadFragments.nonEmpty, "functional packed object needs at least one payload fragment")
-    require(payloadFragments.forall(_ >= 0), "functional payload fragments must be non-negative")
-    require(sidecarRecords.forall(_ >= 0), "functional sidecar records must be non-negative")
-    objects(addressRef) = FunctionalPackedObject(generation, payloadFragments, sidecarRecords)
+    store.preload(addressRef, generation, payloadFragments, sidecarRecords)
   }
 
-  def objectAt(addressRef: BigInt): Option[FunctionalPackedObject] = objects.get(addressRef)
+  def objectAt(addressRef: BigInt): Option[FunctionalPackedObject] = store.objectAt(addressRef)
+
+  def objectAt(addressRef: BigInt, expectedFragments: Int): Option[FunctionalPackedObject] =
+    store.objectAt(addressRef, expectedFragments)
 
   /** Legal environment backpressure only: disabling it cannot drop a request. */
   def setRequestAcceptance(enabled: Boolean): Unit = requestAcceptanceEnabled = enabled
@@ -175,7 +250,7 @@ final class RouteAFunctionalMemoryEnvironment(p: RouteASkeletonParameters) {
       val expected = request.expected_fragment_count.peek().litValue.toInt
       val fault = nextReadFault
       nextReadFault = false
-      objects.get(addressRef) match {
+      store.objectAt(addressRef, expected) match {
         case Some(objectValue) if !fault && objectValue.payloadFragments.size == expected =>
           objectValue.payloadFragments.zipWithIndex.foreach { case (data, index) =>
             responses.enqueue(PendingResponse(
@@ -212,12 +287,7 @@ final class RouteAFunctionalMemoryEnvironment(p: RouteASkeletonParameters) {
               writes.remove(acceptedIdentity)
               val commit = () => {
                 if (!transaction.faultOnTerminal) {
-                  val old = objects.get(transaction.addressRef)
-                  objects(transaction.addressRef) = FunctionalPackedObject(
-                    generation = old.flatMap(_.generation),
-                    payloadFragments = nextFragments,
-                    sidecarRecords = old.map(_.sidecarRecords).getOrElse(Vector.empty),
-                  )
+                  store.commitWrite(transaction.addressRef, transaction.expectedFragments, nextFragments)
                 }
               }
               responses.enqueue(PendingResponse(

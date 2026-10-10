@@ -78,6 +78,21 @@ final class RouteAFunctionalMemoryEnvironmentSpec extends AnyFunSpec with Chisel
     dut.io.core_mem_req_in.valid.poke(false.B)
   }
 
+  it("keeps a payload object and descriptor object distinct when their opaque address_ref is equal") {
+    val store = new RouteAFunctionalMemoryStore
+    val payload = Vector(BigInt(0x100), BigInt(0x101), BigInt(0x102), BigInt(0x103),
+      BigInt(0x104), BigInt(0x105), BigInt(0x106), BigInt(0x107))
+    store.preload(addressRef = 0, generation = Some(BigInt(0)), payloadFragments = payload, sidecarRecords = Vector(BigInt(0x900)))
+    // A one-fragment descriptor update may use the same still-opaque R1
+    // address_ref.  Existing R1 transaction granularity keeps it a distinct
+    // logical object in this testbench-only functional model.
+    store.commitWrite(addressRef = 0, expectedFragments = 1, payloadFragments = Vector(BigInt(0xdead)))
+
+    store.objectAt(0, payload.size).get shouldBe FunctionalPackedObject(Some(BigInt(0)), payload, Vector(BigInt(0x900)))
+    store.objectAt(0, 1).get.payloadFragments shouldBe Vector(BigInt(0xdead))
+    store.objectAt(0) shouldBe None
+  }
+
   it("materializes a successful write only at its accepted terminal and returns the stored payload through an accepted read") {
     simulate(new RouteACoreMemIfV1(p)) { dut =>
       val environment = new RouteAFunctionalMemoryEnvironment(p)

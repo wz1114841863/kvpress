@@ -1,0 +1,53 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-7a-shared-functional-memory-continuity-1.0",
+  "status": "completed_testbench_only_shared_functional_memory_continuity",
+  "scope": "One bounded same-instance Chisel witness derives the C2 packed-read handle from a successful R3 packed durable write and reads the exact eight-fragment object through two independently reset testbench functional-memory endpoints sharing only host-side object contents.",
+  "boundary": {
+    "store_owner": "testbench_route_a_functional_memory_store",
+    "object_key": "testbench-only (opaque address_ref, existing expected_fragment_count); not a deployed physical address format",
+    "publication_endpoint": "testbench_route_a_functional_memory_environment bound at the real R3/R5 R1 external port",
+    "source_endpoint": "testbench_route_a_functional_memory_environment bound at the C2 source-read R1 external port",
+    "continuity_rule": "C2 descriptor payload handle is the accepted R3 eight-fragment packed-write address_ref; both endpoints use the same testbench-only object store",
+    "unclosed": "C2 grants remain verification facts; C1 sidecar and RTL3.6-B/R4 static fixtures remain; no terminal-release/global-drain closure"
+  },
+  "invariants": [
+    "one successful R3 eight-fragment packed write materializes only at its accepted terminal",
+    "C2 reads the exact R3 durable payload object rather than an independently injected payload",
+    "a one-fragment descriptor object cannot overwrite an eight-fragment payload object at the same opaque address_ref in the testbench store",
+    "payload and descriptor functional objects are selected by existing R1 expected-fragment cardinality only",
+    "no production common-memory/controller or physical-address claim",
+    "no ownership, authority, publication, scheduler, or atomic-commit semantic change"
+  ],
+  "verification": {
+    "chisel_commands": [
+      "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl3.RouteAFunctionalMemoryEnvironmentSpec'",
+      "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteARTL265eSameInstanceWitnessSpec -- -z \"reads the exact R3-durable\"'"
+    ],
+    "validator": ".venv/bin/python tools/validate_rtl3_7a_shared_functional_memory_continuity.py",
+    "evidence_labels": [
+      "testbench-only shared functional object continuity",
+      "no model/GPU",
+      "no cycle timing throughput claim",
+      "no PPA claim",
+      "no production-top activation",
+      "no new A4 DSE"
+    ]
+  },
+  "disposition": {
+    "rtl3_7a_shared_functional_memory_continuity_closed": true,
+    "rtl3_functional_realization_complete": false,
+    "next_required_gate": "rtl3_7b_terminal_release_and_global_drain_closure"
+  },
+  "source_sha256": {
+    "analysis/README.md": "029a87e79f55e393264ae6b2b1bcd730099282311f468570e653bf62944b3ce5",
+    "analysis/architecture_spec.md": "453ac5692aa997a7bf3890382d17033ea9530222512b3bc02a4e6d9d7b5838b5",
+    "analysis/rtl2_phase_contract.md": "7a25268e6c6e83be10d33a29fd19c0bab81d665215f8b57fa4d76feb4f4c4e3d",
+    "analysis/rtl3_7a_shared_functional_memory_continuity_contract.md": "797d395af562ae6ebdda2d0baf6692e889e9c08c075fb8f2c4899ea3b4413222",
+    "hardware/route_a/chisel/README.md": "2181b9a70f71582778400e2119d127609141d6cc523d9be3a6e80ea0b21792c7",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala": "5216fa7f7e89d2dfdeb17c0d1f92300d38cef535a68d419a06561f0cddbfab22",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironment.scala": "69e9f470163427ce739e60ec4a5cbe4027ad6d1767abd653a9410ee810f285cc",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironmentSpec.scala": "345e12f766bd8907c1ab06435684f175141a5b3af0b09fa210e6ee66f522c3a4",
+    "tests/test_rtl3_7a_shared_functional_memory_continuity.py": "75ccc7792c1aee3db75031fce60892208ecb7654c175cc152447aaa559070982",
+    "tools/validate_rtl3_7a_shared_functional_memory_continuity.py": "21fa09d4578ba46cbcf9b27a7d7b07c1fb41f731f2e168ba9b7ae535a3bec0a5"
+  }
+}

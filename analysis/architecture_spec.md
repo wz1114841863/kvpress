@@ -726,6 +726,19 @@ not activate the production top, select a common controller/HBM interface or
 schedule, or establish numeric/physical realization.  See
 `analysis/rtl3_6c2_same_instance_dataflow_reset_contract.md`.
 
+RTL3.7-A narrows the remaining C2 data-continuity gap without promoting its
+verification boundaries.  In the same bounded witness, the successful R3
+eight-fragment packed-write observation supplies the C2 descriptor's payload
+handle, and two independently reset testbench functional-memory endpoints
+share only the corresponding host-side object store.  A one-fragment
+descriptor line at the same opaque `address_ref` is distinct in that store by
+the already-carried R1 expected-fragment cardinality; this is a testbench
+reference-model key, not a new physical address format or deployed controller
+choice.  C2 demand/publication/descriptor/lease grants, C1 sidecar transport,
+the static R4 fixture, terminal release, and global drain remain open as
+declared boundaries.  See
+`analysis/rtl3_7a_shared_functional_memory_continuity_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.

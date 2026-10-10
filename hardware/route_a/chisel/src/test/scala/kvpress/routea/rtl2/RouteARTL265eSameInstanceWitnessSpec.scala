@@ -6,7 +6,7 @@ import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADe
 import kvpress.routea.incremental.{RouteALifecycleAdapter, RouteAMergeBoundary, RouteAPackedReadAssociationOwner}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAM2GroupMember, RouteAR6Encoding, RouteASkeletonParameters}
-import kvpress.routea.rtl3.{RouteARTL36bFixture, RouteARTL36bFunctionalTerminalFixture, RouteARTL36bPackedFixtureProvider, RouteARTL36cAllocationSidecarTap, RouteARTL36cSidecarFixture, RouteARTL36cSidecarFixtureTransport}
+import kvpress.routea.rtl3.{RouteAFunctionalMemoryEnvironment, RouteAFunctionalMemoryStore, RouteARTL36bFixture, RouteARTL36bFunctionalTerminalFixture, RouteARTL36bPackedFixtureProvider, RouteARTL36cAllocationSidecarTap, RouteARTL36cSidecarFixture, RouteARTL36cSidecarFixtureTransport}
 import kvpress.routea.top.RouteAComponentStatusCollector
 import org.scalatest.funspec.AnyFunSpec
 
@@ -416,8 +416,136 @@ final class RouteARTL265eSameInstanceWitnessSpec extends AnyFunSpec with ChiselS
     d.clock.step(); d.io.external.init_ack.valid.poke(false.B); d.io.c2External.init_ack.valid.poke(false.B)
   }
 
+  /**
+    * RTL3.7-A uses two independently reset R1 environment endpoints backed by
+    * one testbench-only functional object store.  The endpoints retain their
+    * own request/response queues; sharing is only the checked logical object
+    * continuity between a real R3 write and the later C2 packed read.
+    */
+  private def sharedMemoryStep(
+      d: RouteARTL265eSameInstanceWitnessHarness,
+      publicationMemory: RouteAFunctionalMemoryEnvironment,
+      sourceMemory: RouteAFunctionalMemoryEnvironment,
+  ): Unit = {
+    publicationMemory.drive(d.io.external)
+    sourceMemory.drive(d.io.c2External)
+    publicationMemory.observeAccepted(d.io.external)
+    sourceMemory.observeAccepted(d.io.c2External)
+    d.clock.step()
+  }
+
+  private def waitShared(
+      d: RouteARTL265eSameInstanceWitnessHarness,
+      publicationMemory: RouteAFunctionalMemoryEnvironment,
+      sourceMemory: RouteAFunctionalMemoryEnvironment,
+      message: String,
+      limit: Int = 256,
+  )(predicate: => Boolean): Unit = {
+    var waited = 0
+    while (!predicate && waited < limit) {
+      sharedMemoryStep(d, publicationMemory, sourceMemory)
+      waited += 1
+    }
+    require(waited < limit, message)
+  }
+
+  private def admitPublishWithSharedMemory(
+      d: RouteARTL265eSameInstanceWitnessHarness,
+      publicationMemory: RouteAFunctionalMemoryEnvironment,
+      sourceMemory: RouteAFunctionalMemoryEnvironment,
+  ): Unit = {
+    val a=d.io.r5Allocate.bits; a.layer.poke(0.U);a.kv_head.poke(0.U);a.valid_records.poke(1.U);a.transaction_group_tag.poke(1.U)
+    d.io.r5Allocate.valid.poke(true.B); d.io.r5Allocate.ready.expect(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.r5Allocate.valid.poke(false.B)
+    val c=d.io.p3Claim.bits;c.layer.poke(0.U);c.kv_head.poke(0.U);c.owner.poke(0.U);c.page_ref.page_id.poke(0.U);c.page_ref.generation.poke(0.U);c.valid_records.poke(1.U);c.requires_tail_link.poke(false.B);c.transaction_group_tag.poke(1.U)
+    d.io.p3Claim.valid.poke(true.B); d.io.p3Claim.ready.expect(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.p3Claim.valid.poke(false.B)
+    val x=d.io.admissionContext.bits;x.entry_id.poke(0.U);x.layer.poke(0.U);x.kv_head.poke(0.U);x.logical_position.poke(0.U);x.payload_ref.poke(55.U);x.transaction_group_tag.poke(1.U);x.group_member_ordinal.poke(0.U);x.group_valid_records.poke(1.U)
+    val h=d.io.admissionAuthority.bits;h.entry_id.poke(0.U);h.from_authority.poke(RouteAAuthorityStateCode.Hot.U);h.to_authority.poke(RouteAAuthorityStateCode.Pending.U);h.transaction_group_tag.poke(1.U)
+    d.io.admissionContext.valid.poke(true.B);d.io.admissionAuthority.valid.poke(true.B);d.io.admissionContext.ready.expect(true.B);sharedMemoryStep(d, publicationMemory, sourceMemory);d.io.admissionContext.valid.poke(false.B);d.io.admissionAuthority.valid.poke(false.B)
+    val s=d.io.p3Sidecar.bits;s.layer.poke(0.U);s.stage_generation.poke(1.U);s.record_ordinal.poke(0.U);s.payload_ref.poke(55.U);s.logical_position.poke(0.U)
+    d.io.p3Sidecar.valid.poke(true.B);d.io.p3Sidecar.ready.expect(true.B);sharedMemoryStep(d, publicationMemory, sourceMemory);d.io.p3Sidecar.valid.poke(false.B)
+    val w=d.io.packReadWork.bits;w.layer.poke(0.U);w.stage_generation.poke(1.U);w.member_ordinal.poke(0.U);w.payload_ref.poke(55.U);id(w.transaction_identity,3);w.arrival_ordinal.poke(0.U);w.candidate_id.poke(0.U);w.eligibility_snapshot.poke(packReadEligibility.U);w.payload_handle_or_address.poke(55.U);w.destination_endpoint.poke(0.U);w.source_generation.poke(1.U)
+    d.io.packReadWork.valid.poke(true.B)
+    waitShared(d, publicationMemory, sourceMemory, "timed out accepting R3 pack-read work") { d.io.packReadWork.ready.peek().litToBoolean }
+    sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.packReadWork.valid.poke(false.B)
+    waitShared(d, publicationMemory, sourceMemory, "timed out reaching R3 payload-durable state") { d.io.p3State.peek().litValue == 5 }
+
+    def member(memberId: Int): Unit = {
+      waitShared(d, publicationMemory, sourceMemory, s"timed out M2 member $memberId") { d.io.m2MemberRequest.valid.peek().litToBoolean }
+      d.io.m2MemberRequest.bits.member.expect(memberId.U); d.io.m2MemberRequest.ready.poke(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.m2MemberRequest.ready.poke(false.B)
+      val r=d.io.m2MemberResponse.bits;r.layer.poke(0.U);r.stage_generation.poke(1.U);r.transaction_group_tag.poke(1.U);r.member.poke(memberId.U);r.status.poke(p.coreMemoryOkStatusCode.U)
+      d.io.m2MemberResponse.valid.poke(true.B); d.io.m2MemberResponse.ready.expect(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.m2MemberResponse.valid.poke(false.B)
+    }
+    member(RouteAM2GroupMember.HeadControlRmw); member(RouteAM2GroupMember.SpanOwnerRmw)
+    waitShared(d, publicationMemory, sourceMemory, "timed out publication candidate") { d.io.m2PublicationCandidate.valid.peek().litToBoolean }
+    d.io.m2PublicationCandidate.ready.poke(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.m2PublicationCandidate.ready.poke(false.B)
+    val r=d.io.m2PublicationRequest.bits;r.transaction_group_tag.poke(1.U);r.p3_layer.poke(0.U);r.p3_stage_generation.poke(1.U)
+    d.io.m2PublicationRequest.valid.poke(true.B); d.io.m2PublicationRequest.ready.expect(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.m2PublicationRequest.valid.poke(false.B)
+  }
+
+  private def serviceTerminalAndRetireWithSharedMemory(
+      d: RouteARTL265eSameInstanceWitnessHarness,
+      publicationMemory: RouteAFunctionalMemoryEnvironment,
+      sourceMemory: RouteAFunctionalMemoryEnvironment,
+      payloadAddress: BigInt,
+  ): Unit = {
+    frontend(d,p.r6.sessionStartEventCode,0); frontend(d,p.r6.attentionServiceEventCode,3)
+    val plan=d.io.sourcePlan.bits;id(plan.transaction_identity,3);plan.source_presence.poke(4.U);instance(plan.hot_instance,0,0,0);instance(plan.pending_instance,1,0,0);instance(plan.packed_instance,2,0,1)
+    d.io.sourcePlan.valid.poke(true.B)
+    waitShared(d, publicationMemory, sourceMemory, "timed out source plan") { d.io.sourcePlan.ready.peek().litToBoolean }
+    sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.sourcePlan.valid.poke(false.B)
+    val association=d.io.verificationAssociation.bits;id(association.transaction_identity,3);association.page_ref.page_id.poke(0.U);association.page_ref.generation.poke(0.U);association.transaction_group_tag.poke(1.U);association.valid_records.poke(1.U);association.s2_slot.poke(0.U);association.source_generation.poke(1.U)
+    d.io.verificationAssociation.valid.poke(true.B)
+    waitShared(d, publicationMemory, sourceMemory, "timed out publication/S2 verification association") { d.io.verificationAssociation.ready.peek().litToBoolean }
+    sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.verificationAssociation.valid.poke(false.B)
+    val demand=d.io.c2Demand.bits;id(demand.transaction_identity,3);demand.page_ref.page_id.poke(0.U);demand.page_ref.generation.poke(0.U);demand.arrival_ordinal.poke(0.U);demand.candidate_id.poke(0.U);demand.eligibility_snapshot.poke(0x1f.U);demand.destination_endpoint.poke(0.U)
+    d.io.c2Demand.valid.poke(true.B); d.io.c2Demand.ready.expect(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.c2Demand.valid.poke(false.B)
+    val publication=d.io.c2Publication.bits;id(publication.transaction_identity,3);publication.page_ref.page_id.poke(0.U);publication.page_ref.generation.poke(0.U);publication.transaction_group_tag.poke(1.U);publication.valid_records.poke(1.U);publication.packed_authoritative.poke(true.B)
+    d.io.c2Publication.valid.poke(true.B); d.io.c2Publication.ready.expect(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.c2Publication.valid.poke(false.B)
+    // The descriptor receives the exact address observed at the R3 durable
+    // payload write.  It is not reconstructed from a page-id test default.
+    val descriptor=d.io.c2Descriptor.bits;id(descriptor.transaction_identity,3);descriptor.page_ref.page_id.poke(0.U);descriptor.page_ref.generation.poke(0.U);descriptor.payload_handle_or_address.poke(payloadAddress.U);descriptor.sidecar_handle_or_address.poke(0xaa.U);descriptor.valid_records.poke(1.U);descriptor.sidecar_records.poke(1.U);descriptor.live_reference_held.poke(true.B)
+    d.io.c2Descriptor.valid.poke(true.B); d.io.c2Descriptor.ready.expect(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.c2Descriptor.valid.poke(false.B)
+    val lease=d.io.c2Lease.bits;id(lease.transaction_identity,3);lease.page_ref.page_id.poke(0.U);lease.page_ref.generation.poke(0.U);lease.s2_slot.poke(0.U);lease.source_generation.poke(1.U);lease.requires_sidecar.poke(true.B)
+    d.io.c2Lease.valid.poke(true.B); d.io.c2Lease.ready.expect(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.c2Lease.valid.poke(false.B)
+    waitShared(d, publicationMemory, sourceMemory, "timed out shared-object S2 READY") { d.io.s2Ready.peek().litToBoolean }
+    d.io.c2SidecarFixtureFaulted.expect(false.B); d.io.c2SidecarFixtureComplete.expect(true.B)
+    waitShared(d, publicationMemory, sourceMemory, "timed out static terminal") { d.io.attentionTerminal.valid.peek().litToBoolean }
+    d.io.functionalFixtureProviderComplete.expect(true.B); d.io.functionalFixturePacketsAccepted.expect(true.B)
+    d.io.attentionTerminal.ready.poke(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.attentionTerminal.ready.poke(false.B)
+    val retire=d.io.runtimeRetire.bits;retire.session_id.poke(false.B);id(retire.transaction_identity,3);d.io.runtimeRetire.valid.poke(true.B)
+    waitShared(d, publicationMemory, sourceMemory, "timed out retire") { d.io.runtimeRetire.ready.peek().litToBoolean }
+    sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.runtimeRetire.valid.poke(false.B)
+    d.io.directStatus.bits.acknowledgement_name.poke(p.r6.directPendingDrainedStatusCode.U);d.io.directStatus.bits.asserted.poke(true.B);d.io.directStatus.valid.poke(true.B)
+    waitShared(d, publicationMemory, sourceMemory, "timed out direct drain status") { d.io.directStatus.ready.peek().litToBoolean }
+    sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.directStatus.valid.poke(false.B)
+    waitShared(d, publicationMemory, sourceMemory, "timed out retire acknowledgement") { d.io.retireAck.valid.peek().litToBoolean }
+    d.io.retireAck.ready.poke(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.retireAck.ready.poke(false.B)
+  }
+
   it("keeps one real R3 pack-read/publication, S2 terminal, and same-R5 durable reclaim in one Chisel instance") { simulate(new RouteARTL265eSameInstanceWitnessHarness(p)) { d => init(d); admitAndRead(d); publish(d); serviceAndTerminal(d); retireAndReclaim(d) } }
   it("replays the static Python functional-provider/R4-oracle fixture through the same R3, R4, R6, and R5 instance") { simulate(new RouteARTL265eSameInstanceWitnessHarness(p, useRtl36bFunctionalFixtures=true)) { d => init(d); admitAndRead(d); publish(d); serviceAndTerminal(d, rtl36bFunctionalFixtures=true); retireAndReclaim(d) } }
   it("composes real publication, C1 typed source delivery, static functional terminal, and same-R5 reclaim in one instance") { simulate(new RouteARTL265eSameInstanceWitnessHarness(p, useRtl36bFunctionalFixtures=true, useRtl36c2FunctionalSource=true)) { d => init(d); admitAndRead(d); publish(d); serviceAndTerminal(d, rtl36bFunctionalFixtures=true, rtl36c2FunctionalSource=true); retireAndReclaim(d) } }
   it("rejects a stale C2 response until both post-reset R1 epochs reinitialize before the composed path restarts") { simulate(new RouteARTL265eSameInstanceWitnessHarness(p, useRtl36bFunctionalFixtures=true, useRtl36c2FunctionalSource=true)) { d => init(d); resetAndReinitializeC2(d); admitAndRead(d); publish(d); serviceAndTerminal(d, rtl36bFunctionalFixtures=true, rtl36c2FunctionalSource=true); retireAndReclaim(d) } }
+  it("reads the exact R3-durable packed object through the C2 association rather than an independently injected payload") { simulate(new RouteARTL265eSameInstanceWitnessHarness(p, useRtl36bFunctionalFixtures=true, useRtl36c2FunctionalSource=true)) { d =>
+    init(d)
+    val store = new RouteAFunctionalMemoryStore
+    val packedPayload = Vector.tabulate(8)(index => BigInt(0x100 + index))
+    // Address 55 is the original pending payload. A placeholder at address 0
+    // retains the fixture sidecar if R3 selects that page payload location.
+    store.preload(55, Some(1), packedPayload, Vector.empty)
+    store.preload(0, Some(0), Vector.fill(8)(BigInt(0)), Vector(BigInt(0x900)))
+    val publicationMemory = new RouteAFunctionalMemoryEnvironment(p, store)
+    val sourceMemory = new RouteAFunctionalMemoryEnvironment(p, store)
+    admitPublishWithSharedMemory(d, publicationMemory, sourceMemory)
+    val matchingWrites = store.committedWrites.filter(write =>
+      write.expectedFragments == packedPayload.size && write.payloadFragments == packedPayload,
+    )
+    require(matchingWrites.size == 1, s"expected one R3 packed durable write, saw ${matchingWrites.map(_.addressRef)}")
+    val payloadAddress = matchingWrites.head.addressRef
+    require(
+      store.objectAt(payloadAddress, packedPayload.size).exists(_.payloadFragments == packedPayload),
+      s"R3 packed object at $payloadAddress was not preserved through publication",
+    )
+    serviceTerminalAndRetireWithSharedMemory(d, publicationMemory, sourceMemory, payloadAddress)
+  } }
 }
