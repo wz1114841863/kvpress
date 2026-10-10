@@ -688,10 +688,12 @@ production bridge, profiling, optimization, synthesis, timing, or PPA claims.
 testbench/reference scopes. RTL3.6 correctly recorded a historical no-PASS,
 then RTL3.6-A repaired the active replay provenance, RTL3.6-B/C1/C2 assembled
 the bounded same-instance witness, and RTL3.7-A now binds the C2 packed read
-to the exact R3-durable functional payload object.  The functional-realization
-no-PASS remains: C2 grants are verification facts, sidecar and R4 remain
-declared fixtures, and terminal-release/global-drain association is not yet
-closed. No production-top RTL3 composition,
+to the exact R3-durable functional payload object. RTL3.7-B closes bounded
+terminal-to-release-to-retire ordering, and RTL3.7-C joins C2's existing
+R1/R2 drain facts with their publication-wrapper counterparts before the
+unchanged R6 collector.  The functional-realization no-PASS remains: C2
+grants are verification facts, sidecar and R4 remain declared fixtures, and
+there is no production-top RTL3 composition,
 physical controller, numerical microarchitecture, or performance experiment is
 authorized by these records.
 See
@@ -869,6 +871,18 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     existing R6/R5 drain/reclaim path. It neither changes C2 grant provenance,
     production-top topology, nor R6 global-membership collection. The next
     action is RTL3 completion cross-owner review 03.
+17. **RTL3.7-C — C2 drain membership plus fault/stall/reset/event-scoreboard
+    closure (complete, testbench-only).**
+    [`rtl3_7c_drain_fault_stall_reset_scoreboard_contract.md`](rtl3_7c_drain_fault_stall_reset_scoreboard_contract.md)
+    joins matching existing publication and C2 R1/R2 wrapper status facts
+    before the unchanged R6 collector: dual R1 init/drain, R2 payload drain,
+    and R2 descriptor drain.  It also records bounded observed-event order
+    through legal C2 response backpressure and relies on directed stale-reset
+    and endpoint-fault fail-closed evidence.  It adds no status code, global
+    collector owner, production-top bridge, physical-memory realization, or
+    deadlock/performance claim.  C2 grants, C1 sidecar fixture transport, and
+    static partial/R4 fixtures remain open; the next action is RTL3 completion
+    cross-owner review 03.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

@@ -141,6 +141,20 @@ producer, R6 global-status membership, controller, or memory realization. The
 authority record is
 `analysis/rtl3_7b_terminal_release_global_drain_contract.md`.
 
+## RTL3.7-C test-only C2 drain membership and event scoreboarding
+
+`RouteARTL37cDrainMembershipJoin`, in test scope, waits for the C2 and
+publication wrappers to assert the same existing R1/R2 status before emitting
+one unchanged fact to the existing R6 collector.  It covers the dual R1
+initialization/drain facts and both R2 drain kinds without adding a status,
+collector owner, top wire, or controller.  The companion host-side
+`RouteARTL37cEventScoreboard` records only observed ready/valid milestones in
+the bounded witness, including legal C2 response backpressure.  Reset stale
+suppression and typed-endpoint fault behavior remain directed test evidence;
+this does not replace C2 grants, C1 sidecar fixtures, static partial/R4
+fixtures, or any production realization. The authority record is
+`analysis/rtl3_7c_drain_fault_stall_reset_scoreboard_contract.md`.
+
 ## Local no-model preflight
 
 Use a command-scoped JDK path so no global `JAVA_HOME` change is required:

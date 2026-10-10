@@ -1,0 +1,57 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-7c-c2-drain-fault-stall-reset-scoreboard-1.0",
+  "status": "completed_testbench_only_c2_drain_fault_stall_reset_scoreboard",
+  "scope": "One bounded same-instance Chisel witness joins the separately-bound C2 R1/R2 wrapper drain facts with the corresponding existing publication-wrapper facts before the unchanged R6 collector, and records observed event order through legal C2 response backpressure.",
+  "boundary": {
+    "scope": "testbench-only C2 drain membership and event-scoreboard evidence",
+    "joiner": "testbench RouteARTL37cDrainMembershipJoin; accepts only matching asserted existing status facts and emits one existing fact",
+    "r1_facts": "mem_init_done followed by R1 drain; both publication and C2 R1 wrappers must participate",
+    "r2_facts": "payload drain and descriptor drain; both publication and C2 R2 wrappers must participate",
+    "collector_owner": "existing R6 collector and status-code set are unchanged",
+    "event_oracle": "host-side RouteARTL37cEventScoreboard records only observed ready/valid milestones",
+    "unclosed": "C2 demand/publication/descriptor/lease grants remain verification facts; C1 sidecar fixture transport and static partial/R4 fixtures remain; no production common-memory, controller, or top composition"
+  },
+  "invariants": [
+    "a joined status is emitted only after publication and C2 wrappers assert the same existing logical fact",
+    "a joined status holds its exact payload stable under ready-low",
+    "C2 R1/R2 status cannot bypass the existing R6 collector through an added status or owner",
+    "legal C2 response backpressure delays but does not remove the request or change observed event order",
+    "a stale pre-reset C2 response cannot restart the fresh composed path before both R1 wrappers reinitialize",
+    "a matching packed endpoint terminal fault cannot deposit payload, make S2 READY, or emit a release",
+    "this bounded evidence makes no deadlock, timing, throughput, PPA, production-RTL, model/GPU, or A4-DSE claim"
+  ],
+  "verification": {
+    "chisel_commands": [
+      "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteARTL265eSameInstanceWitnessSpec -- -z \"retains event order\"'",
+      "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteARTL265eSameInstanceWitnessSpec -- -z \"rejects a stale C2 response\"'",
+      "cd hardware/route_a/chisel && env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'testOnly kvpress.routea.rtl2.RouteAPackedS2ReadPathSpec -- -z \"converts a matching terminal R1 fault\"'"
+    ],
+    "validator": ".venv/bin/python tools/validate_rtl3_7c_drain_fault_stall_reset_scoreboard.py",
+    "pytest": ".venv/bin/python -m pytest -q tests/test_rtl3_7c_drain_fault_stall_reset_scoreboard.py",
+    "evidence_labels": [
+      "pure testbench executable architecture contract",
+      "no model/GPU",
+      "no cycle timing throughput deadlock claim",
+      "no PPA claim",
+      "no production-top activation",
+      "no new A4 DSE"
+    ]
+  },
+  "disposition": {
+    "rtl3_7c_c2_drain_fault_stall_reset_scoreboard_closed": true,
+    "rtl3_functional_realization_complete": false,
+    "next_required_gate": "rtl3_completion_cross_owner_review_03"
+  },
+  "source_sha256": {
+    "analysis/README.md": "5ca542e0cb04c262e2ec760057e764721af50d2e9118afb8bc36d79c54214f3a",
+    "analysis/architecture_spec.md": "8e1aab1a04e675f39dc3c7c5356dbd12e0d4adb502103afc53b5c2be70b96ef2",
+    "analysis/rtl2_phase_contract.md": "d7f809989c8f589257703ab2dc5373e239f860734c87289f1fdca033e93c495b",
+    "analysis/rtl3_7c_drain_fault_stall_reset_scoreboard_contract.md": "b8c00edbab8ddf43628b75efd060abd23a0ffb3f08ed6505f9c5182cd219d5b0",
+    "hardware/route_a/chisel/README.md": "ab44f23e32d91b90159f4ea8523ff428e96cfe343573b9329473c37c4d4e970a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala": "42c3c04bf61778522494b52362e99652dc1cdc8450f1a4f25689100ad6ab3326",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cDrainMembershipJoin.scala": "3654fedbd68dee941947ed289d40c5ce0d85831c95906c6dee7e72188ae90719",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cEventScoreboard.scala": "6682d08f5cc22f9a499c6227ab4c0a3fbac33ff91dc0ad96bf98bfcb5691d86f",
+    "tests/test_rtl3_7c_drain_fault_stall_reset_scoreboard.py": "0bc92c459d391ace269262f2c3f00ca2f986c2a5ca1859ce14d3f4361010d881",
+    "tools/validate_rtl3_7c_drain_fault_stall_reset_scoreboard.py": "f6fa54113ff5e565615a19eb28c01e49d94fbb35370d7b83d2d326cc5da7d0d5"
+  }
+}

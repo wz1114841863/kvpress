@@ -6,7 +6,7 @@ import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADe
 import kvpress.routea.incremental.{RouteALifecycleAdapter, RouteAMergeBoundary, RouteAPackedReadAssociationOwner}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAM2GroupMember, RouteAR6Encoding, RouteASkeletonParameters}
-import kvpress.routea.rtl3.{RouteAFunctionalMemoryEnvironment, RouteAFunctionalMemoryStore, RouteARTL36bFixture, RouteARTL36bFunctionalTerminalFixture, RouteARTL36bPackedFixtureProvider, RouteARTL36cAllocationSidecarTap, RouteARTL36cSidecarFixture, RouteARTL36cSidecarFixtureTransport, RouteARTL37bPackedReadTerminalBridge, RouteARTL37bReleaseRetireGate}
+import kvpress.routea.rtl3.{RouteAFunctionalMemoryEnvironment, RouteAFunctionalMemoryStore, RouteARTL36bFixture, RouteARTL36bFunctionalTerminalFixture, RouteARTL36bPackedFixtureProvider, RouteARTL36cAllocationSidecarTap, RouteARTL36cSidecarFixture, RouteARTL36cSidecarFixtureTransport, RouteARTL37bPackedReadTerminalBridge, RouteARTL37bReleaseRetireGate, RouteARTL37cDrainMembershipJoin, RouteARTL37cEventScoreboard}
 import kvpress.routea.top.RouteAComponentStatusCollector
 import org.scalatest.funspec.AnyFunSpec
 
@@ -102,6 +102,10 @@ final class RouteARTL265eSameInstanceWitnessHarness(
     p, RouteARTL36cSidecarFixture(BigInt(0xaa), Vector(BigInt(0x900)))))) else None
   val c2TerminalBridge = if (useRtl36c2FunctionalSource) Some(Module(new RouteARTL37bPackedReadTerminalBridge(p))) else None
   val c2ReleaseRetireGate = if (useRtl36c2FunctionalSource) Some(Module(new RouteARTL37bReleaseRetireGate(p))) else None
+  val c2R1DrainJoin = if (useRtl36c2FunctionalSource) Some(Module(new RouteARTL37cDrainMembershipJoin(
+    p, p.r6.r1MemoryDrainedStatusCode, Some(p.r6.memInitDoneStatusCode)))) else None
+  val c2R2PayloadDrainJoin = if (useRtl36c2FunctionalSource) Some(Module(new RouteARTL37cDrainMembershipJoin(p, p.r6.r2PayloadDrainedStatusCode))) else None
+  val c2R2DescriptorDrainJoin = if (useRtl36c2FunctionalSource) Some(Module(new RouteARTL37cDrainMembershipJoin(p, p.r6.r2DescriptorDrainedStatusCode))) else None
 
   publication.io.mem_init_done := io.memInitDone
   publication.io.r5_allocate <> io.r5Allocate
@@ -149,9 +153,6 @@ final class RouteARTL265eSameInstanceWitnessHarness(
   StructuralTieOff.sink(r6.io.metadata_publish_req)
   StructuralTieOff.source(r6.io.metadata_publish_ack_in)
 
-  collector.io.status_sources(0) <> publication.io.r1_status
-  collector.io.status_sources(1) <> publication.io.r2_payload_status
-  collector.io.status_sources(2) <> publication.io.r2_descriptor_status
   collector.io.status_sources(3) <> publication.io.r3_status
   collector.io.status_sources(4) <> publication.io.r5_status
   collector.io.status_sources(5) <> s2.io.component_status_out
@@ -179,6 +180,19 @@ final class RouteARTL265eSameInstanceWitnessHarness(
     val sidecar = c2SidecarTransport.get
     val terminalBridge = c2TerminalBridge.get
     val releaseRetireGate = c2ReleaseRetireGate.get
+    val r1DrainJoin = c2R1DrainJoin.get
+    val r2PayloadDrainJoin = c2R2PayloadDrainJoin.get
+    val r2DescriptorDrainJoin = c2R2DescriptorDrainJoin.get
+
+    r1DrainJoin.io.publication_status_in <> publication.io.r1_status
+    r1DrainJoin.io.c2_status_in <> r1.io.component_status_out
+    collector.io.status_sources(0) <> r1DrainJoin.io.joined_status_out
+    r2PayloadDrainJoin.io.publication_status_in <> publication.io.r2_payload_status
+    r2PayloadDrainJoin.io.c2_status_in <> r2.io.payload_drain_status_out
+    collector.io.status_sources(1) <> r2PayloadDrainJoin.io.joined_status_out
+    r2DescriptorDrainJoin.io.publication_status_in <> publication.io.r2_descriptor_status
+    r2DescriptorDrainJoin.io.c2_status_in <> r2.io.descriptor_drain_status_out
+    collector.io.status_sources(2) <> r2DescriptorDrainJoin.io.joined_status_out
 
     association.io.mem_init_done := r1.io.r1_init_complete
     association.io.demand_in <> io.c2Demand
@@ -206,15 +220,12 @@ final class RouteARTL265eSameInstanceWitnessHarness(
     StructuralTieOff.source(readIngress.io.r3_direct_pending_in)
     r2.io.read_candidate_in <> readIngress.io.candidate_out
     StructuralTieOff.source(r2.io.candidate_in)
-    r2.io.drain_collection_enable := false.B
+    r2.io.drain_collection_enable := r6.io.drain_collection_enable
     r2.io.reclaim_maintenance_enable := false.B
     r1.io.core_mem_req_in <> r2.io.core_mem_req
     r2.io.core_mem_rsp_in <> r1.io.core_mem_rsp
     r1.io.external_core_mem_if_v1 <> io.c2External
-    r1.io.r1_drain_permitted := false.B
-    StructuralTieOff.sink(r1.io.component_status_out)
-    StructuralTieOff.sink(r2.io.payload_drain_status_out)
-    StructuralTieOff.sink(r2.io.descriptor_drain_status_out)
+    r1.io.r1_drain_permitted := collector.io.r1_drain_permitted
 
     registry.io.mem_init_done := r1.io.r1_init_complete
     registry.io.resolve_in <> r2.io.source_delivery_out
@@ -250,6 +261,9 @@ final class RouteARTL265eSameInstanceWitnessHarness(
     io.c2SidecarFixtureComplete := sidecar.io.complete
     io.c2SidecarFixtureFaulted := sidecar.io.faulted
   } else {
+    collector.io.status_sources(0) <> publication.io.r1_status
+    collector.io.status_sources(1) <> publication.io.r2_payload_status
+    collector.io.status_sources(2) <> publication.io.r2_descriptor_status
     s2.io.s2_fill_open_in <> io.s2FillOpen
     s2.io.s2_payload_fragment_in <> io.s2Payload
     StructuralTieOff.source(s2.io.s2_sidecar_fragment_in)
@@ -553,16 +567,20 @@ final class RouteARTL265eSameInstanceWitnessSpec extends AnyFunSpec with ChiselS
       publicationMemory: RouteAFunctionalMemoryEnvironment,
       sourceMemory: RouteAFunctionalMemoryEnvironment,
       payloadAddress: BigInt,
+      sourceStallCycles: Int = 0,
+      events: Option[RouteARTL37cEventScoreboard] = None,
   ): Unit = {
     frontend(d,p.r6.sessionStartEventCode,0); frontend(d,p.r6.attentionServiceEventCode,3)
     val plan=d.io.sourcePlan.bits;id(plan.transaction_identity,3);plan.source_presence.poke(4.U);instance(plan.hot_instance,0,0,0);instance(plan.pending_instance,1,0,0);instance(plan.packed_instance,2,0,1)
     d.io.sourcePlan.valid.poke(true.B)
     waitShared(d, publicationMemory, sourceMemory, "timed out source plan") { d.io.sourcePlan.ready.peek().litToBoolean }
     sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.sourcePlan.valid.poke(false.B)
+    events.foreach(_.record("source_plan_accept"))
     val association=d.io.verificationAssociation.bits;id(association.transaction_identity,3);association.page_ref.page_id.poke(0.U);association.page_ref.generation.poke(0.U);association.transaction_group_tag.poke(1.U);association.valid_records.poke(1.U);association.s2_slot.poke(0.U);association.source_generation.poke(1.U)
     d.io.verificationAssociation.valid.poke(true.B)
     waitShared(d, publicationMemory, sourceMemory, "timed out publication/S2 verification association") { d.io.verificationAssociation.ready.peek().litToBoolean }
     sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.verificationAssociation.valid.poke(false.B)
+    sourceMemory.setRequestAcceptance(false)
     val demand=d.io.c2Demand.bits;id(demand.transaction_identity,3);demand.page_ref.page_id.poke(0.U);demand.page_ref.generation.poke(0.U);demand.arrival_ordinal.poke(0.U);demand.candidate_id.poke(0.U);demand.eligibility_snapshot.poke(0x1f.U);demand.destination_endpoint.poke(0.U)
     d.io.c2Demand.valid.poke(true.B); d.io.c2Demand.ready.expect(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.c2Demand.valid.poke(false.B)
     val publication=d.io.c2Publication.bits;id(publication.transaction_identity,3);publication.page_ref.page_id.poke(0.U);publication.page_ref.generation.poke(0.U);publication.transaction_group_tag.poke(1.U);publication.valid_records.poke(1.U);publication.packed_authoritative.poke(true.B)
@@ -573,22 +591,39 @@ final class RouteARTL265eSameInstanceWitnessSpec extends AnyFunSpec with ChiselS
     d.io.c2Descriptor.valid.poke(true.B); d.io.c2Descriptor.ready.expect(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.c2Descriptor.valid.poke(false.B)
     val lease=d.io.c2Lease.bits;id(lease.transaction_identity,3);lease.page_ref.page_id.poke(0.U);lease.page_ref.generation.poke(0.U);lease.s2_slot.poke(0.U);lease.source_generation.poke(1.U);lease.requires_sidecar.poke(true.B)
     d.io.c2Lease.valid.poke(true.B); d.io.c2Lease.ready.expect(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.c2Lease.valid.poke(false.B)
+    if (sourceStallCycles > 0) {
+      waitShared(d, publicationMemory, sourceMemory,
+        "RTL3.7-C timed out producing a C2 request for legal environment stall") {
+        d.io.c2External.request.valid.peek().litToBoolean
+      }
+      (0 until sourceStallCycles).foreach { _ =>
+        d.io.c2External.request.valid.expect(true.B)
+        sharedMemoryStep(d, publicationMemory, sourceMemory)
+      }
+      events.foreach(_.record("c2_request_stalled"))
+    }
+    sourceMemory.setRequestAcceptance(true)
     waitShared(d, publicationMemory, sourceMemory, "timed out shared-object S2 READY") { d.io.s2Ready.peek().litToBoolean }
+    events.foreach(_.record("s2_ready"))
     d.io.c2SidecarFixtureFaulted.expect(false.B); d.io.c2SidecarFixtureComplete.expect(true.B)
     requireC2RetireBlocked(d, 3)
     acceptSharedC2Release(d, publicationMemory, sourceMemory)
+    events.foreach(_.record("c2_release_accepted"))
     requireC2RetireBlocked(d, 2)
     waitShared(d, publicationMemory, sourceMemory, "timed out static terminal") { d.io.attentionTerminal.valid.peek().litToBoolean }
     d.io.functionalFixtureProviderComplete.expect(true.B); d.io.functionalFixturePacketsAccepted.expect(true.B)
     d.io.attentionTerminal.ready.poke(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.attentionTerminal.ready.poke(false.B)
+    events.foreach(_.record("attention_terminal_accepted"))
     val retire=d.io.runtimeRetire.bits;retire.session_id.poke(false.B);id(retire.transaction_identity,3);d.io.runtimeRetire.valid.poke(true.B)
     waitShared(d, publicationMemory, sourceMemory, "timed out retire") { d.io.runtimeRetire.ready.peek().litToBoolean }
     sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.runtimeRetire.valid.poke(false.B)
+    events.foreach(_.record("runtime_retire_accepted"))
     d.io.directStatus.bits.acknowledgement_name.poke(p.r6.directPendingDrainedStatusCode.U);d.io.directStatus.bits.asserted.poke(true.B);d.io.directStatus.valid.poke(true.B)
     waitShared(d, publicationMemory, sourceMemory, "timed out direct drain status") { d.io.directStatus.ready.peek().litToBoolean }
     sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.directStatus.valid.poke(false.B)
     waitShared(d, publicationMemory, sourceMemory, "timed out retire acknowledgement") { d.io.retireAck.valid.peek().litToBoolean }
     d.io.retireAck.ready.poke(true.B); sharedMemoryStep(d, publicationMemory, sourceMemory); d.io.retireAck.ready.poke(false.B)
+    events.foreach(_.record("retire_ack_accepted"))
   }
 
   it("keeps one real R3 pack-read/publication, S2 terminal, and same-R5 durable reclaim in one Chisel instance") { simulate(new RouteARTL265eSameInstanceWitnessHarness(p)) { d => init(d); admitAndRead(d); publish(d); serviceAndTerminal(d); retireAndReclaim(d) } }
@@ -616,5 +651,24 @@ final class RouteARTL265eSameInstanceWitnessSpec extends AnyFunSpec with ChiselS
       s"R3 packed object at $payloadAddress was not preserved through publication",
     )
     serviceTerminalAndRetireWithSharedMemory(d, publicationMemory, sourceMemory, payloadAddress)
+  } }
+
+  it("retains event order across legal C2 memory backpressure before the joined R1/R2 drain admits retire acknowledgement") { simulate(new RouteARTL265eSameInstanceWitnessHarness(p, useRtl36bFunctionalFixtures=true, useRtl36c2FunctionalSource=true)) { d =>
+    init(d)
+    val store = new RouteAFunctionalMemoryStore
+    store.preload(55, Some(1), Vector.tabulate(8)(index => BigInt(0x100 + index)), Vector.empty)
+    store.preload(0, Some(0), Vector.fill(8)(BigInt(0)), Vector(BigInt(0x900)))
+    val publicationMemory = new RouteAFunctionalMemoryEnvironment(p, store)
+    val sourceMemory = new RouteAFunctionalMemoryEnvironment(p, store)
+    admitPublishWithSharedMemory(d, publicationMemory, sourceMemory)
+    val payloadAddress = store.committedWrites.find(_.expectedFragments == 8).get.addressRef
+    val scoreboard = new RouteARTL37cEventScoreboard
+    scoreboard.record("r3_payload_durable")
+    serviceTerminalAndRetireWithSharedMemory(d, publicationMemory, sourceMemory, payloadAddress,
+      sourceStallCycles = 3, events = Some(scoreboard))
+    scoreboard.requireOrdered(Seq(
+      "r3_payload_durable", "source_plan_accept", "c2_request_stalled", "s2_ready",
+      "c2_release_accepted", "attention_terminal_accepted", "runtime_retire_accepted",
+      "retire_ack_accepted"))
   } }
 }

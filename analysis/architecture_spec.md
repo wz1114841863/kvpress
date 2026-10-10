@@ -744,6 +744,19 @@ changes R6 global-membership collection nor activates a production-top bridge.
 See `analysis/rtl3_7a_shared_functional_memory_continuity_contract.md` and
 `analysis/rtl3_7b_terminal_release_global_drain_contract.md`.
 
+RTL3.7-C closes only the remaining **testbench C2 drain-membership** aspect of
+that witness.  A test-scope join accepts the existing publication-wrapper and
+C2-wrapper assertions for the same logical R1/R2 fact, then presents one
+unchanged status to the existing R6 collector.  R1 initialization and drain,
+R2 payload drain, and R2 descriptor drain are covered; no new R6 status,
+collector ownership, production-top wire, controller, or physical-memory
+claim is introduced.  The bounded witness also records observed handshake
+order across legal C2 response backpressure, stale-after-reset suppression,
+and inherited fail-closed endpoint-fault tests.  It remains insufficient to
+replace C2 grants, C1 sidecar fixture transport, or the static partial/R4
+fixtures with functional producers.  See
+`analysis/rtl3_7c_drain_fault_stall_reset_scoreboard_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.
