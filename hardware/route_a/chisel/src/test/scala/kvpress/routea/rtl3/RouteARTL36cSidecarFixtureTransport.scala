@@ -121,6 +121,11 @@ final class RouteARTL36cSidecarFixtureTransport(
   val ordinal = RegInit(0.U(RouteAAnchorWidths.P3ValidRecordsWidth.W))
   val data = VecInit(fixture.records.map(_.U(64.W)))
   private val fixtureIndexWidth = math.max(1, log2Ceil(fixture.records.size))
+  private val selectedFixtureData = if (fixture.records.size == 1) {
+    fixture.records.head.U(64.W)
+  } else {
+    data(ordinal(fixtureIndexWidth - 1, 0))
+  }
 
   private def sameIdentity(left: TransactionIdentity, right: TransactionIdentity): Bool = left.asUInt === right.asUInt
   private def samePage(left: PageRef, right: PageRef): Bool = left.asUInt === right.asUInt
@@ -145,7 +150,7 @@ final class RouteARTL36cSidecarFixtureTransport(
   io.sidecar_fragment_out.bits.s2_slot := obligation.s2_slot
   io.sidecar_fragment_out.bits.source_generation := obligation.source_generation
   io.sidecar_fragment_out.bits.record_ordinal := ordinal
-  io.sidecar_fragment_out.bits.data := data(ordinal(fixtureIndexWidth - 1, 0))
+  io.sidecar_fragment_out.bits.data := selectedFixtureData
   when(io.sidecar_fragment_out.fire) {
     when(ordinal === (fixture.records.size - 1).U) { state := complete }
       .otherwise { ordinal := ordinal + 1.U }

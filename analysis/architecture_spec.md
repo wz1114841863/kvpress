@@ -714,6 +714,18 @@ fail closed. Full reset-epoch composition and the unified functional dataflow
 witness remain open. See
 `analysis/rtl3_6c1_sidecar_fixture_transport_contract.md`.
 
+RTL3.6-C2 composes the prior slices in one testbench-only Chisel witness:
+real R3 publication and its authority observation enter the retained
+verification association, then C1's typed R2/R1 packed-read, allocation-bound
+sidecar fixture, S2 service, static functional R4 terminal, real R6
+retirement, and the same R5 durable reclaim reach `retire_ack`.  Its separate
+test-harness R1 port is not a deployed second memory path.  The witness also
+resets both R1 wrappers, consumes-and-suppresses an unmatched stale external
+response, and requires fresh init acknowledgements before restart.  This does
+not activate the production top, select a common controller/HBM interface or
+schedule, or establish numeric/physical realization.  See
+`analysis/rtl3_6c2_same_instance_dataflow_reset_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.

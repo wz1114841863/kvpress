@@ -105,6 +105,17 @@ top, select a sidecar memory transaction, or realize a sidecar macro. The
 authority record is
 `analysis/rtl3_6c1_sidecar_fixture_transport_contract.md`.
 
+## RTL3.6-C2 test-only composed dataflow/reset witness
+
+`RouteARTL265eSameInstanceWitnessHarness` has an opt-in C2 composition that
+keeps the real R3/R5/R6 children and replaces its manual S2 fill with the
+RTL3.2 typed packed read plus C1 sidecar fixture.  Its additional R1 port and
+publication/descriptor/lease inputs are testbench verification boundaries, not
+a second production memory interface or scheduler.  The directed reset case
+shows stale external-response suppression followed by fresh R1 init
+acknowledgements and a clean restart.  The authority record is
+`analysis/rtl3_6c2_same_instance_dataflow_reset_contract.md`.
+
 ## Local no-model preflight
 
 Use a command-scoped JDK path so no global `JAVA_HOME` change is required:

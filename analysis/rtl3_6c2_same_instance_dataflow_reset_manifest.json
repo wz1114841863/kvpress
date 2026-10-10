@@ -1,0 +1,54 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-6c2-same-instance-dataflow-reset-1.0",
+  "status": "completed_testbench_only_composed_dataflow_reset_epoch_witness",
+  "scope": "One bounded Chisel instance composes real R3 publication, the frozen verification join, C1 typed packed source delivery and sidecar fixture, static functional R4 terminal, real R6 retirement, and same-R5 reclaim. It adds stale-response suppression plus fresh dual-R1 init acknowledgement after reset; it does not activate production hardware.",
+  "boundary": {
+    "composition": "testbench-only same-instance R3 publication through C1 typed source delivery, static R4 terminal, R6 retirement, and same-R5 reclaim",
+    "publication_to_service_join": "existing verification-only identity/page/slot association",
+    "source_read": "RTL3.2 association owner plus typed R2/R1 endpoint chain",
+    "sidecar": "RTL3.6-C1 copied-allocation handle-keyed fixture transport",
+    "reset": "both test-harness R1 wrappers require fresh external init_ack; unmatched old response is consumed-and-suppressed"
+  },
+  "invariants": [
+    "real publication precedes S2 service join",
+    "S2Packed uses published-metadata eligibility",
+    "sidecar is copied-allocation fixture data only",
+    "S2 READY requires payload and sidecar completion",
+    "all four static packets accepted before static terminal",
+    "R6 owns terminal retirement and same R5 owns reclaim",
+    "stale response consumed-and-suppressed before fresh init_ack",
+    "no production-top activation"
+  ],
+  "verification": {
+    "chisel_commands": [
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl2.RouteARTL265eSameInstanceWitnessSpec -- -z \"composes real publication\"'",
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl2.RouteARTL265eSameInstanceWitnessSpec -- -z \"rejects a stale C2 response\"'"
+    ],
+    "validator": ".venv/bin/python tools/validate_rtl3_6c2_same_instance_dataflow_reset.py",
+    "evidence_labels": [
+      "testbench-only composed functional transaction witness",
+      "no model/GPU",
+      "no cycle timing throughput claim",
+      "no PPA claim",
+      "no production-top activation",
+      "no new A4 DSE"
+    ]
+  },
+  "disposition": {
+    "rtl3_6c2_composed_dataflow_reset_epoch_closed": true,
+    "rtl3_functional_realization_complete": false,
+    "next_required_gate": "rtl3_completion_cross_owner_review_02"
+  },
+  "source_sha256": {
+    "analysis/README.md": "18718b5cb52db1f0724608448a2d615ef73d6856d6d834ad7d9d15d5245da015",
+    "analysis/architecture_spec.md": "c76fd7c37c02785b8f9c202eea631488736af1f93afb433c8d3579207e72b3a4",
+    "analysis/rtl2_phase_contract.md": "f1c3b52e4264008e67f7f0f99112ab84cb5ea3547aac1b1269c32650a1fff854",
+    "analysis/rtl3_6c1_sidecar_fixture_transport_contract.md": "eae2f30b1c7202c29d8a13fd7201c20016f97fdbe5520f83088cb88ca7f69bc4",
+    "analysis/rtl3_6c2_same_instance_dataflow_reset_contract.md": "027c4a8811c5e7e6392f388495f1f6fa42efc43782ca4dce66127679a9d8a078",
+    "hardware/route_a/chisel/README.md": "0d9514a5f0d5055bb1a3cad567a4029b0089d122c9280443ef4373c934245bec",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala": "6279a94ac51865f911f45217c38c4f9300eea32df2a7ee08af0bb4c07c16c3f9",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL36cSidecarFixtureTransport.scala": "612bf7081e96a4a69e3446a283c44b744d15f1039102c8fd3fd9c0c8d167ed7c",
+    "tests/test_rtl3_6c2_same_instance_dataflow_reset.py": "89289ac0fd995b8b06e06501f3d30da93459ba795690f4d486de6c48506c04c0",
+    "tools/validate_rtl3_6c2_same_instance_dataflow_reset.py": "cd49479027a1f039333cc27cf794f74c2dfe4097f19d4f1a649018dd17f7abf0"
+  }
+}

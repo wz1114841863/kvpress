@@ -13,9 +13,9 @@
   "python_adapter":{"path":"kvpress/rtl2_reclaim_scoreboard_binding.py","class":"RouteARTL2ReclaimScoreboardAdapter","oracles":["kvpress/route_a_page_manager_reference.py","kvpress/route_a_lifecycle_adapter_reference.py"],"setup_rule":"R5 reclaimability and R6 drain completion are explicit testbench mirror setup, never inferred from RTL state."},
   "forbidden":["rewrite historical rtl2_scoreboard_event_schema.json","infer event from arbitrary internal state","production-top scoreboard adapter instantiation","allocator free command from event","physical HBM or descriptor-macro claim","cycle latency throughput PPA model GPU numeric or A4 DSE claim"],
   "source_sha256": {
-    "analysis/README.md": "dc8cf086173bfb27fde4f9d08e3b50c87a8d8c9f8ecfe23f04fb71191e19333e",
+    "analysis/README.md": "18718b5cb52db1f0724608448a2d615ef73d6856d6d834ad7d9d15d5245da015",
     "analysis/rtl2_5_5_active_state_scoreboard_contract.md": "2f1468cbb65668db3a5b2464a2e06086b3befb8eb8d20faf6dfa80319ad9281a",
-    "analysis/rtl2_phase_contract.md": "3050d3df39b041fd2109d05cf01f37aab708d5d22095ce2357d50a78a8d79941",
+    "analysis/rtl2_phase_contract.md": "f1c3b52e4264008e67f7f0f99112ab84cb5ea3547aac1b1269c32650a1fff854",
     "analysis/rtl2_scoreboard_event_phase_reconciliation_01.json": "7dcaff1a0f20f63e5255a148f8cd7cddaca76b7fe7e57269ec05e32a993fb042",
     "analysis/rtl2_scoreboard_event_schema.json": "c7329a3537dc968f8c7beec525ff30a9f564f9e42f4b6c9d70017ddf8bf8db53",
     "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "68ef30c6a0b8195b734fe2fd3c744de5c23b85c972e1485e775acd74563d766a",

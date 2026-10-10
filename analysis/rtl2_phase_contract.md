@@ -844,6 +844,17 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     covers unknown-handle/count and stale-generation fail-closed cases while
     retaining reset-epoch composition and a full same-instance dataflow as
     the next RTL3 closure.
+14. **RTL3.6-C2 — same-instance dataflow and reset-epoch composition
+    (complete, testbench-only).**
+    [`rtl3_6c2_same_instance_dataflow_reset_contract.md`](rtl3_6c2_same_instance_dataflow_reset_contract.md)
+    joins real R3 publication, the frozen verification association, C1 typed
+    delivery and sidecar transport, static R4 terminal fixture, real R6
+    retirement, and same-R5 reclaim.  It also demonstrates stale-response
+    suppression plus fresh dual-R1 init acknowledgements after destructive
+    reset.  It remains a bounded witness with testbench verification facts and
+    a separate source-read R1 port, not a production common-memory or
+    controller implementation.  The next action is a cross-owner RTL3
+    completion review, not a performance or PPA phase.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,
