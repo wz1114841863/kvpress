@@ -1759,6 +1759,10 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     val descriptor_maintenance_terminal_in = Flipped(RouteAChannels.descriptor_maintenance_terminal(p))
     val metadata_publish_visibility_in = Flipped(RouteAChannels.metadata_publish_visibility(p))
     val metadata_publish_visibility_ack = RouteAChannels.metadata_publish_visibility_ack
+    // RTL3.8.1 owner-local, read-only descriptor lookup.  R5 alone derives
+    // the functional payload/sidecar handles and validates published liveness.
+    val descriptor_location_request_in = Flipped(RouteAChannels.descriptor_location_request(p))
+    val descriptor_location_grant_out = RouteAChannels.descriptor_location_grant(p)
     val component_status_out = RouteAChannels.component_status(p)
   })
 
@@ -1819,6 +1823,10 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   // 128-bit lanes when producing the frozen 64-B maintenance line; it is not
   // an HBM macro/cache/controller implementation or a PPA claim.
   val descriptorEntryImage = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(0.U(128.W))))
+  val descriptorReadable = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))
+  val descriptorValidRecords = Reg(Vec(p.r5AllocatorEntries, UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)))
+  val descriptorGrantPending = RegInit(false.B)
+  val descriptorGrant = Reg(new DescriptorLocationGrant(p))
   private def allocatorIndex(pageId: UInt): UInt = pageId(allocatorIndexWidth - 1, 0)
   private val AppendIdle = 0.U(2.W)
   private val AppendRequest = 1.U(2.W)
@@ -1853,7 +1861,37 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     descriptorLaneImage(3), descriptorLaneImage(2), descriptorLaneImage(1), descriptorLaneImage(0),
   )
   val reclaimActive = reclaimState =/= ReclaimIdle
-  val reclaimLocalSafe = !buildActive.asUInt.orR && !allocationRspValid && !visibilityAckPending
+  val reclaimLocalSafe = !buildActive.asUInt.orR && !allocationRspValid && !visibilityAckPending &&
+    !descriptorGrantPending
+
+  io.descriptor_location_grant_out.valid := descriptorGrantPending
+  io.descriptor_location_grant_out.bits := descriptorGrant
+  when(io.descriptor_location_grant_out.fire) { descriptorGrantPending := false.B }
+
+  val descriptorRequest = io.descriptor_location_request_in.bits
+  val descriptorRequestIndex = allocatorIndex(descriptorRequest.page_ref.page_id)
+  val descriptorPageInRange = descriptorRequest.page_ref.page_id < p.r5AllocatorEntries.U
+  val descriptorRequestMatches = descriptorPageInRange && allocated(descriptorRequestIndex) &&
+    descriptorReadable(descriptorRequestIndex) &&
+    generations(descriptorRequestIndex) === descriptorRequest.page_ref.generation &&
+    descriptorValidRecords(descriptorRequestIndex) === descriptorRequest.valid_records &&
+    descriptorRequest.valid_records =/= 0.U && descriptorRequest.valid_records <= 64.U
+  io.descriptor_location_request_in.ready := initialized && !io.drain_collection_enable && !reclaimPermitted &&
+    !descriptorGrantPending && descriptorRequestMatches
+  when(io.descriptor_location_request_in.fire) {
+    val payloadHandle = Wire(UInt(p.coreMemoryAddressRefWidth.W))
+    val sidecarHandle = Wire(UInt(p.coreMemoryAddressRefWidth.W))
+    payloadHandle := descriptorRequest.page_ref.page_id * 33280.U
+    sidecarHandle := descriptorRequest.page_ref.page_id * 33280.U + 32768.U
+    descriptorGrantPending := true.B
+    descriptorGrant.transaction_identity := descriptorRequest.transaction_identity
+    descriptorGrant.page_ref := descriptorRequest.page_ref
+    descriptorGrant.payload_handle_or_address := payloadHandle
+    descriptorGrant.sidecar_handle_or_address := sidecarHandle
+    descriptorGrant.valid_records := descriptorRequest.valid_records
+    descriptorGrant.sidecar_records := descriptorRequest.valid_records
+    descriptorGrant.live_reference_held := true.B
+  }
 
   val releaseAny = releasePending.asUInt.orR
   val releaseIndex = PriorityEncoder(releasePending)
@@ -1933,6 +1971,7 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
           releasePending(line * 4 + lane) := true.B
           durableInvalidation(line * 4 + lane) := true.B
           allocated(line * 4 + lane) := false.B
+          descriptorReadable(line * 4 + lane) := false.B
           generations(line * 4 + lane) := generations(line * 4 + lane) + 1.U
         }
       }
@@ -1996,6 +2035,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
       0.U(76.W), generations(freeIndex), 0.U(8.W), Fill(18, 1.U(1.W)),
       alloc.valid_records, alloc.kv_head, alloc.layer, 1.U(2.W),
     )
+    descriptorReadable(freeIndex) := false.B
+    descriptorValidRecords(freeIndex) := alloc.valid_records
     allocationRspValid := true.B
     allocationRsp.layer := alloc.layer
     allocationRsp.kv_head := alloc.kv_head
@@ -2177,6 +2218,7 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     visibleTailPresent(visibilityAckSlot) := true.B
     visibleTailId(visibilityAckSlot) := visibilityAckPageRef.page_id
     visibleTailGeneration(visibilityAckSlot) := visibilityAckPageRef.generation
+    descriptorReadable(allocatorIndex(visibilityAckPageRef.page_id)) := true.B
     buildActive(visibilityAckSlot) := false.B
     visibilityAckPending := false.B
   }
@@ -2187,7 +2229,7 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   }
   val allocatorEmpty = !allocated.asUInt.orR
   val buildsEmpty = !buildActive.asUInt.orR
-  val locallyDrained = allocatorEmpty && buildsEmpty && !allocationRspValid && !visibilityAckPending &&
+  val locallyDrained = allocatorEmpty && buildsEmpty && !allocationRspValid && !visibilityAckPending && !descriptorGrantPending &&
     !reclaimActive && (!reclaimPermitted || io.reclaim_complete)
   val initStatusPending = initialized && !initStatusReported
   io.component_status_out.valid := initStatusPending ||

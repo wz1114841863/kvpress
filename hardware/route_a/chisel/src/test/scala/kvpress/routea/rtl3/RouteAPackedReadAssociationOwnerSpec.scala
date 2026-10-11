@@ -48,6 +48,8 @@ final class RouteARTL32PackedReadFunctionalHarness(
   val endpointDemux = Module(new RouteAReadEndpointDemultiplexer(p))
   val endpoint = Module(new RouteAPackedS2ReadEndpoint(p))
   val s2 = Module(new RouteAS2GqaSourceWrapper(p))
+  StructuralTieOff.source(s2.io.s2_fill_lease_request_in)
+  StructuralTieOff.sink(s2.io.s2_fill_lease_out)
   val sidecarTap = if (useRtl36cSidecarFixture) Some(Module(new RouteARTL36cAllocationSidecarTap(p))) else None
   val sidecarFixtureTransport = if (useRtl36cSidecarFixture) Some(Module(new RouteARTL36cSidecarFixtureTransport(p, sidecarFixture))) else None
 

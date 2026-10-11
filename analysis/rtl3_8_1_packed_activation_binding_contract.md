@@ -1,6 +1,6 @@
 # RTL3.8.1 — packed activation binding
 
-**Status:** `complete_functional_owner_binding_not_yet_functional_top_replacement`.
+**Status:** `complete_owner_fact_integration_not_yet_functional_top_replacement`.
 
 RTL3.8.1 implements `route_a_packed_read_activation_binder`, the narrow
 I0--I3 materializer named by the RTL3.8.0 ingress-retirement freeze.  It turns
@@ -15,6 +15,8 @@ S2 owner-local S2FillLease
                          |
                          v
 route_a_packed_read_activation_binder
+  -> DescriptorLocationRequest -> R5 -> DescriptorLocationGrant
+  -> S2FillLeaseRequest        -> S2 -> S2FillLease
   -> PackedSourceDemand
   -> PublicationReadAuthorization
   -> DescriptorLocationGrant
@@ -31,7 +33,10 @@ model.
 ## Ownership and exact join
 
 The binder is the sole owner of **materializing the four association inputs**;
-it is not the owner of any input fact.
+it is not the owner of any input fact.  It now issues two address-free owner
+queries after holding the R6 plan and R3 publication fact.  The R5 and S2
+responses are connected back to the binder in one same-instance integration
+harness; tests no longer supply descriptor handles or lease slot values.
 
 | Fact | Sole producer/owner | Binder responsibility |
 |---|---|---|
@@ -39,6 +44,26 @@ it is not the owner of any input fact.
 | published page, tag, valid-record count | R3 post-atomic commit observation | Require legal `1..64` record count and copy it only after exact page join. |
 | payload/sidecar handles and live descriptor reference | R5 | Require exact page/count and `live_reference_held`; never decode or mutate the descriptor. |
 | S2 slot, generation, sidecar requirement | S2 | Require exact identity/page and exact match to R6 packed `SourceInstance`; never allocate or infer a slot. |
+
+R5 accepts a descriptor query only for an allocated, post-publication readable
+page with exact generation and record count.  It owns the existing functional
+page layout mapping: payload handle `page_id * 33,280` and sidecar handle
+`payload + 32,768`.  These are logical functional-memory handles inherited
+from the packed-page realization, not HBM physical addresses or a controller
+mapping.
+
+The binder does not request S2 state until the R5 descriptor grant has arrived
+and itself matches the held identity, page, record count, sidecar count, and
+live-reference requirements.  Thus a stale, unpublished, aliased, or malformed
+R5 page cannot strand an S2 slot in FILLING while waiting for a usable
+descriptor response.  R5 additionally rejects page IDs outside its allocator
+entry range rather than allowing low-bit index aliasing.
+
+S2 accepts a lease request only when the selected source kind is packed, the
+selected coordinate names one of its two logical slots, that slot is EMPTY,
+and its next owner generation equals the R6-selected generation.  Acceptance
+atomically reserves the slot as FILLING and returns the exact lease.  A legacy
+explicit service request and a lease request cannot win simultaneously.
 
 The R3 observation has no transaction identity by design.  It is safe to bind
 it to the R6 transaction only after `PageRef`, record-count, S2 lease, and R5
@@ -76,6 +101,10 @@ Closed for RTL3.8.1:
 
 - I0--I3 have an executable **single exact association materializer** with
   ready/valid stability assertions;
+- R5 and S2 have explicit owner-local request/grant protocols wired directly
+  to the binder in a same-instance functional integration harness;
+- descriptor handles and S2 lease slot/generation are no longer testbench
+  inputs in that integration path;
 - a demand cannot be created from a plan lacking packed presence;
 - page, descriptor, lease slot/generation, record-count, sidecar, and
   identity disagreement are fail-closed;
@@ -85,8 +114,9 @@ Closed for RTL3.8.1:
 Not closed:
 
 - production-top replacement of the current verification ingress;
-- an R5 top-level readable-descriptor producer and S2 top-level lease producer
-  connected to this binder;
+- replacement of the historical structural top's verification ingress and
+  activation of the downstream association/read path in that production-shaped
+  top; the new owner-fact ports remain explicitly isolated there;
 - I4 functional sidecar delivery, I5/I6 source payload activation, I7/I8
   dynamic partial/R4 replacement, and RTL3.8.5 full-path coverage;
 - physical memory, numeric FP/exp, controller, macro, timing, area, energy,
@@ -103,12 +133,17 @@ The exact no-model command is:
 
 ```bash
 cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAPackedReadActivationBinderSpec'
+cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAPackedActivationOwnerFactIntegrationSpec'
 ```
 
-The four deterministic checks cover exact positive materialization,
+The four binder checks cover exact positive materialization,
 ready-low stability, descriptor/page mismatch, absent packed source, and S2
-lease slot/generation mismatch.  The separate provenance validator verifies
-the hash-bound source set.
+lease slot/generation mismatch.  Four same-instance owner tests additionally
+cover an R5-published descriptor plus S2 reservation without test-supplied
+handle/slot facts, stale R5 generation plus invalid S2 next-generation
+fail-closed behavior, and rejection of an out-of-range page ID that would
+otherwise alias an allocator entry.  The separate provenance validator
+verifies the hash-bound source set.
 
 ## Evidence boundary
 

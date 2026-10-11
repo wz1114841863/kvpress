@@ -80,6 +80,8 @@ final class RouteARTL265eSameInstanceWitnessHarness(
   val r6 = Module(new RouteALifecycleAdapter(p))
   val collector = Module(new RouteAComponentStatusCollector(p))
   val s2 = Module(new RouteAS2GqaSourceWrapper(p))
+  StructuralTieOff.source(s2.io.s2_fill_lease_request_in)
+  StructuralTieOff.sink(s2.io.s2_fill_lease_out)
   val packets = Module(new RouteASourceServicePacketAdapter(p))
   val merge = Module(new RouteAMergeBoundary(p))
   val publicationAssociation = Module(new RouteARTL26PublicationS2Association(p))

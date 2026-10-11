@@ -25,6 +25,8 @@ private final class RouteAFairReclaimHarness(p: RouteASkeletonParameters) extend
 
   val r6 = Module(new RouteALifecycleAdapter(p))
   val r5 = Module(new RouteAPageManager(p))
+  StructuralTieOff.source(r5.io.descriptor_location_request_in)
+  StructuralTieOff.sink(r5.io.descriptor_location_grant_out)
   val r2 = Module(new RouteACoreSideArbiter(p))
   val r1 = Module(new RouteACoreMemIfV1(p))
 

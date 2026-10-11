@@ -108,8 +108,10 @@ final class RouteAPackedReadActivationBinderSpec extends AnyFunSpec with ChiselS
       drivePlan(dut); send(dut.io.accepted_plan_in.valid, dut.io.accepted_plan_in.ready, dut.clock)
       drivePublication(dut); send(dut.io.publication_commit_in.valid, dut.io.publication_commit_in.ready, dut.clock)
       driveDescriptor(dut, pageId = 6); send(dut.io.descriptor_grant_in.valid, dut.io.descriptor_grant_in.ready, dut.clock)
-      driveLease(dut); send(dut.io.s2_fill_lease_in.valid, dut.io.s2_fill_lease_in.ready, dut.clock)
-      dut.clock.step(); dut.clock.step()
+      // A mismatched R5 fact must be rejected before any scarce S2 lease is
+      // requested; the test therefore does not manufacture a lease response.
+      dut.io.s2_fill_lease_request_out.valid.expect(false.B)
+      dut.clock.step()
       dut.io.demand_out.valid.expect(false.B); dut.io.publication_authorization_out.valid.expect(false.B)
       dut.io.rejected_observation.valid.expect(true.B); dut.io.rejected_observation.bits.request_id.expect(3.U)
     }

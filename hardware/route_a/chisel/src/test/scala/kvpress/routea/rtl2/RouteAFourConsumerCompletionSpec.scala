@@ -37,6 +37,8 @@ final class RouteAFourConsumerCompletionHarness(p: RouteASkeletonParameters) ext
   val hot = Module(new RouteAHotSourcePath(p))
   val direct = Module(new RouteADirectPendingEndpointV1(p))
   val s2 = Module(new RouteAS2GqaSourceWrapper(p))
+  StructuralTieOff.source(s2.io.s2_fill_lease_request_in)
+  StructuralTieOff.sink(s2.io.s2_fill_lease_out)
   val packetAdapter = Module(new RouteASourceServicePacketAdapter(p))
   val commitDemux = Module(new RouteASourceCommitDemultiplexer(p))
   val merge = Module(new RouteAMergeBoundary(p))

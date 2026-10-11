@@ -175,6 +175,10 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     val mem_init_done = Input(Bool())
     val drain_collection_enable = Input(Bool())
     val service_req_in = Flipped(RouteAChannels.s2_service_req)
+    // RTL3.8.1 owner-local lease protocol.  The request carries the already
+    // selected R6 SourceInstance; S2 alone validates/reserves its slot/generation.
+    val s2_fill_lease_request_in = Flipped(RouteAChannels.s2_fill_lease_request(p))
+    val s2_fill_lease_out = RouteAChannels.s2_fill_lease(p)
     val s2_fill_open_in = Flipped(RouteAChannels.s2_fill_open(p))
     val s2_payload_fragment_in = Flipped(RouteAChannels.s2_payload_fragment(p))
     val s2_sidecar_fragment_in = Flipped(RouteAChannels.s2_sidecar_fragment(p))
@@ -232,10 +236,28 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   val payloadReadRsp = Reg(new S2PayloadReadResponse(p))
   val sidecarReadRspValid = RegInit(false.B)
   val sidecarReadRsp = Reg(new S2SidecarReadResponse(p))
+  val leasePending = RegInit(false.B)
+  val leaseGrant = Reg(new S2FillLease(p))
+
+  io.s2_fill_lease_out.valid := leasePending
+  io.s2_fill_lease_out.bits := leaseGrant
+  when(io.s2_fill_lease_out.fire) { leasePending := false.B }
+
+  val leaseRequest = io.s2_fill_lease_request_in.bits
+  val leaseCoordinateLegal = leaseRequest.selected_instance.instance_coordinate < slots.U
+  val leaseSlot = leaseRequest.selected_instance.instance_coordinate(RouteAAnchorWidths.S2SlotWidth - 1, 0)
+  val leaseGenerationMatches = slotGeneration(leaseSlot) + 1.U === leaseRequest.selected_instance.generation
+  val leaseRequestLegal = leaseRequest.selected_instance.source_kind === RouteASourceKind.Packed.U &&
+    leaseCoordinateLegal && slotState(leaseSlot) === StateEmpty && leaseGenerationMatches
 
   val service = io.service_req_in.bits
   val serviceSlot = service.s2_slot
-  io.service_req_in.ready := initialized && slotState(serviceSlot) === StateEmpty
+  // Legacy explicit service and the owner-local lease request are two ways to
+  // reserve the same S2 state.  They never arbitrate by priority: simultaneous
+  // offers are rejected so composition must name exactly one producer.
+  io.service_req_in.ready := initialized && !io.s2_fill_lease_request_in.valid && !leasePending &&
+    slotState(serviceSlot) === StateEmpty
+  io.s2_fill_lease_request_in.ready := initialized && !io.service_req_in.valid && !leasePending && leaseRequestLegal
   when(io.service_req_in.fire) {
     slotState(serviceSlot) := StateFilling
     slotGeneration(serviceSlot) := slotGeneration(serviceSlot) + 1.U
@@ -248,6 +270,26 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     requiresSidecar(serviceSlot) := false.B
     sidecarComplete(serviceSlot) := false.B
     consumerMask(serviceSlot) := 0.U
+  }
+  when(io.s2_fill_lease_request_in.fire) {
+    val nextGeneration = slotGeneration(leaseSlot) + 1.U
+    slotState(leaseSlot) := StateFilling
+    slotGeneration(leaseSlot) := nextGeneration
+    slotIdentity(leaseSlot) := leaseRequest.transaction_identity
+    slotPageRef(leaseSlot) := leaseRequest.page_ref
+    fillOpened(leaseSlot) := false.B
+    nextFragment(leaseSlot) := 0.U
+    payloadNext(leaseSlot) := 0.U
+    sidecarNext(leaseSlot) := 0.U
+    requiresSidecar(leaseSlot) := false.B
+    sidecarComplete(leaseSlot) := false.B
+    consumerMask(leaseSlot) := 0.U
+    leasePending := true.B
+    leaseGrant.transaction_identity := leaseRequest.transaction_identity
+    leaseGrant.page_ref := leaseRequest.page_ref
+    leaseGrant.s2_slot := leaseSlot
+    leaseGrant.source_generation := nextGeneration
+    leaseGrant.requires_sidecar := true.B
   }
 
   val fillOpen = io.s2_fill_open_in.bits
@@ -435,7 +477,7 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   io.s2_observe_instance.source_kind := RouteASourceKind.Packed.U
   io.s2_observe_instance.instance_coordinate := io.s2_observe_slot
   io.s2_observe_instance.generation := slotGeneration(io.s2_observe_slot)
-  val locallyDrained = VecInit((0 until slots).map(slot => slotState(slot) === StateEmpty)).asUInt.andR
+  val locallyDrained = VecInit((0 until slots).map(slot => slotState(slot) === StateEmpty)).asUInt.andR && !leasePending
   io.component_status_out.valid := initialized && io.drain_collection_enable && locallyDrained
   io.component_status_out.bits.acknowledgement_name := p.r6.s2GqaDrainedStatusCode.U
   io.component_status_out.bits.asserted := true.B

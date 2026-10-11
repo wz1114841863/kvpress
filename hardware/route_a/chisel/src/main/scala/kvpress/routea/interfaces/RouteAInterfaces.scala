@@ -696,6 +696,17 @@ final class DescriptorLocationGrant(p: RouteASkeletonParameters) extends Bundle 
   val live_reference_held = Bool()
 }
 
+/**
+  * Identity-bound, read-only query for an already-published R5 descriptor.
+  * The requester supplies no address or pointer and therefore cannot invent
+  * the R5-owned payload/sidecar mapping.
+  */
+final class DescriptorLocationRequest(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val page_ref = new PageRef
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+}
+
 /** S2-owned reservation facts for one future packed fill. */
 final class S2FillLease(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
@@ -703,6 +714,17 @@ final class S2FillLease(p: RouteASkeletonParameters) extends Bundle {
   val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
   val source_generation = UInt(p.sourceGenerationWidth.W)
   val requires_sidecar = Bool()
+}
+
+/**
+  * Request for S2 to validate and reserve the packed SourceInstance already
+  * selected in the accepted R6 plan.  S2 remains the sole slot/generation
+  * owner; the requester cannot infer a lease from PageRef.
+  */
+final class S2FillLeaseRequest(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val page_ref = new PageRef
+  val selected_instance = new SourceInstance(p)
 }
 
 /** Terminal release observation returned to the R5/S2 fact owners. */
@@ -1013,7 +1035,9 @@ object RouteAChannels {
   def packed_source_demand(p: RouteASkeletonParameters) = Decoupled(new PackedSourceDemand(p))
   def publication_read_authorization(p: RouteASkeletonParameters) = Decoupled(new PublicationReadAuthorization(p))
   def descriptor_location_grant(p: RouteASkeletonParameters) = Decoupled(new DescriptorLocationGrant(p))
+  def descriptor_location_request(p: RouteASkeletonParameters) = Decoupled(new DescriptorLocationRequest(p))
   def s2_fill_lease(p: RouteASkeletonParameters) = Decoupled(new S2FillLease(p))
+  def s2_fill_lease_request(p: RouteASkeletonParameters) = Decoupled(new S2FillLeaseRequest(p))
   def packed_read_release_observation(p: RouteASkeletonParameters) = Decoupled(new PackedReadReleaseObservation(p))
   def packed_read_terminal(p: RouteASkeletonParameters) = Decoupled(new PackedReadTerminal(p))
   def direct_pending_payload_fragment(p: RouteASkeletonParameters) = Decoupled(new DirectPendingPayloadFragment(p))

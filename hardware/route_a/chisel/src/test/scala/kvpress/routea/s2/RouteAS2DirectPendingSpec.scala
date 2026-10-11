@@ -27,6 +27,7 @@ final class RouteAS2DirectPendingSpec extends AnyFunSpec with ChiselSim {
 
   private def initS2(dut: RouteAS2GqaSourceWrapper): Unit = {
     dut.io.mem_init_done.poke(false.B); dut.io.s2_observe_slot.poke(0.U)
+    dut.io.s2_fill_lease_request_in.valid.poke(false.B); dut.io.s2_fill_lease_out.ready.poke(true.B)
     dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
     dut.io.service_req_in.valid.poke(false.B); dut.io.s2_fill_open_in.valid.poke(false.B)
     dut.io.s2_payload_fragment_in.valid.poke(false.B); dut.io.s2_sidecar_fragment_in.valid.poke(false.B)

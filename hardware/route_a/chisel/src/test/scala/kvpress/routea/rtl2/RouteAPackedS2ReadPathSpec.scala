@@ -42,6 +42,8 @@ final class RouteAPackedS2ReadPathHarness(p: RouteASkeletonParameters) extends M
   val endpointDemux = Module(new RouteAReadEndpointDemultiplexer(p))
   val endpoint = Module(new RouteAPackedS2ReadEndpoint(p))
   val s2 = Module(new RouteAS2GqaSourceWrapper(p))
+  StructuralTieOff.source(s2.io.s2_fill_lease_request_in)
+  StructuralTieOff.sink(s2.io.s2_fill_lease_out)
 
   producer.io.work_in <> io.work
   producer.io.s2_fill_open_out <> s2.io.s2_fill_open_in

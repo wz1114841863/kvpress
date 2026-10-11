@@ -60,6 +60,13 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val m2_p3 = Module(new RouteAM2P3Wrapper(p))
     val m2_reference_protocol = Module(new RouteAM2ReferenceProtocolProvider(p))
     val page_manager = Module(new RouteAPageManager(p))
+    // RTL3.8.1 owner-fact ports remain isolated from this historical
+    // structural top until the complete activation/association path replaces
+    // the verification ingress in one later functional-top patch.
+    StructuralTieOff.source(s2.io.s2_fill_lease_request_in)
+    StructuralTieOff.sink(s2.io.s2_fill_lease_out)
+    StructuralTieOff.source(page_manager.io.descriptor_location_request_in)
+    StructuralTieOff.sink(page_manager.io.descriptor_location_grant_out)
     val admission_group_builder = Module(new RouteAAdmissionPublicationIngressAdapter(p))
     val r2_write_ingress = Module(new RouteAR2WriteIngressMerge(p))
     val r2_read_ingress = Module(new RouteAR2ReadIngressMerge(p))

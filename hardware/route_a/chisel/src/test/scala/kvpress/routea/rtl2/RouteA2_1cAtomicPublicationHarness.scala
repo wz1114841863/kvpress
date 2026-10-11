@@ -38,6 +38,8 @@ final class RouteA2_1cAtomicPublicationHarness(p: RouteASkeletonParameters) exte
 
   val r3 = Module(new RouteAM2P3Wrapper(p))
   val r5 = Module(new RouteAPageManager(p))
+  StructuralTieOff.source(r5.io.descriptor_location_request_in)
+  StructuralTieOff.sink(r5.io.descriptor_location_grant_out)
   val r2 = Module(new RouteACoreSideArbiter(p))
   val r1 = Module(new RouteACoreMemIfV1(p))
   val ingress = Module(new RouteAR2WriteIngressMerge(p))

@@ -26,6 +26,7 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
     dut.io.mem_init_done.poke(false.B); dut.io.drain_collection_enable.poke(false.B); dut.io.reclaim_permit_in.valid.poke(false.B)
     dut.io.reclaim_permit_in.bits.transaction_identity.request_id.poke(0.U); dut.io.reclaim_permit_in.bits.transaction_identity.incarnation.poke(0.U)
     dut.io.page_allocation_req_in.valid.poke(false.B); dut.io.page_allocation_rsp.ready.poke(true.B)
+    dut.io.descriptor_location_request_in.valid.poke(false.B); dut.io.descriptor_location_grant_out.ready.poke(true.B)
     dut.io.descriptor_maintenance_terminal_in.valid.poke(false.B); dut.io.metadata_publish_visibility_in.valid.poke(false.B)
     dut.io.metadata_publish_visibility_ack.ready.poke(true.B); dut.io.reclaim_candidate_out.ready.poke(false.B)
     dut.io.reclaim_delivery_in.valid.poke(false.B); dut.io.component_status_out.ready.poke(true.B)

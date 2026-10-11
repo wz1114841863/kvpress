@@ -54,6 +54,8 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
 
   val r3 = Module(new RouteAM2P3Wrapper(p))
   val r5 = Module(new RouteAPageManager(p))
+  StructuralTieOff.source(r5.io.descriptor_location_request_in)
+  StructuralTieOff.sink(r5.io.descriptor_location_grant_out)
   val r2 = Module(new RouteACoreSideArbiter(p))
   val r1 = Module(new RouteACoreMemIfV1(p))
   val issueAdapter = Module(new RouteAReadIssueCandidateAdapter(p))

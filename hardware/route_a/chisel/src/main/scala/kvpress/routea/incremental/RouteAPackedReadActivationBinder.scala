@@ -31,8 +31,11 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
     // has no query identity; the binder binds it to the accepted R6 identity
     // only after PageRef/record-count checks below.
     val publication_commit_in = Flipped(RouteAChannels.publication_commit_observation(p))
-    // R5/S2 owner facts.  Their future production bindings are deliberately
-    // separate from this materializer so it cannot infer handles or slots.
+    // The binder requests, but never constructs, the two owner-local facts.
+    // Requests contain no address and preserve R6's selected SourceInstance.
+    val descriptor_location_request_out = RouteAChannels.descriptor_location_request(p)
+    val s2_fill_lease_request_out = RouteAChannels.s2_fill_lease_request(p)
+    // R5/S2 owner responses; the binder cannot infer handles or slots.
     val descriptor_grant_in = Flipped(RouteAChannels.descriptor_location_grant(p))
     val s2_fill_lease_in = Flipped(RouteAChannels.s2_fill_lease(p))
     val demand_out = RouteAChannels.packed_source_demand(p)
@@ -72,18 +75,21 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
   val planLegal = io.accepted_plan_in.bits.source_presence(RouteASourceKind.Packed) &&
     io.accepted_plan_in.bits.packed_instance.source_kind === RouteASourceKind.Packed.U
   val recordsLegal = publication.valid_records =/= 0.U && publication.valid_records <= 64.U
+  val descriptorMatchesHeldFacts =
+    sameIdentity(plan.transaction_identity, descriptor.transaction_identity) &&
+      samePage(publication.page_ref, descriptor.page_ref) &&
+      recordsLegal && publication.valid_records === descriptor.valid_records &&
+      descriptor.sidecar_records === descriptor.valid_records &&
+      descriptor.live_reference_held
   val joinedExactly =
     plan.source_presence(RouteASourceKind.Packed) &&
       plan.packed_instance.source_kind === RouteASourceKind.Packed.U &&
-      sameIdentity(plan.transaction_identity, descriptor.transaction_identity) &&
+      descriptorMatchesHeldFacts &&
       sameIdentity(plan.transaction_identity, lease.transaction_identity) &&
-      samePage(publication.page_ref, descriptor.page_ref) &&
       samePage(publication.page_ref, lease.page_ref) &&
       plan.packed_instance.instance_coordinate === lease.s2_slot &&
       plan.packed_instance.generation === lease.source_generation &&
-      recordsLegal && publication.valid_records === descriptor.valid_records &&
-      descriptor.sidecar_records === descriptor.valid_records &&
-      descriptor.live_reference_held && lease.requires_sidecar
+      lease.requires_sidecar
 
   val packedEligibility = (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.FifoPredecessor) |
     (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.Ownership) |
@@ -95,6 +101,18 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
   io.publication_commit_in.ready := false.B
   io.descriptor_grant_in.ready := false.B
   io.s2_fill_lease_in.ready := false.B
+  io.descriptor_location_request_out.valid := havePlan && havePublication && !haveDescriptor
+  io.descriptor_location_request_out.bits.transaction_identity := plan.transaction_identity
+  io.descriptor_location_request_out.bits.page_ref := publication.page_ref
+  io.descriptor_location_request_out.bits.valid_records := publication.valid_records
+  // Reserve scarce S2 state only after R5 has proved that the exact published
+  // descriptor is readable.  A stale/unpublished page therefore cannot leak
+  // a FILLING slot while the binder waits for an impossible R5 response.
+  io.s2_fill_lease_request_out.valid := havePlan && havePublication && haveDescriptor &&
+    descriptorMatchesHeldFacts && !haveLease
+  io.s2_fill_lease_request_out.bits.transaction_identity := plan.transaction_identity
+  io.s2_fill_lease_request_out.bits.page_ref := publication.page_ref
+  io.s2_fill_lease_request_out.bits.selected_instance := plan.packed_instance
   io.demand_out.valid := false.B
   io.demand_out.bits := 0.U.asTypeOf(new PackedSourceDemand(p))
   io.publication_authorization_out.valid := false.B
@@ -129,7 +147,16 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
         when(io.publication_commit_in.fire) { publication := io.publication_commit_in.bits; havePublication := true.B }
         when(io.descriptor_grant_in.fire) { descriptor := io.descriptor_grant_in.bits; haveDescriptor := true.B }
         when(io.s2_fill_lease_in.fire) { lease := io.s2_fill_lease_in.bits; haveLease := true.B }
-        when(havePlan && havePublication && haveDescriptor && haveLease) {
+        when(havePlan && havePublication && haveDescriptor && !descriptorMatchesHeldFacts) {
+          // Never reserve scarce S2 state after a malformed/stale R5 fact.
+          // The owner response is rejected before a lease request can escape.
+          rejected := true.B
+          rejectedIdentity := plan.transaction_identity
+          havePlan := false.B
+          havePublication := false.B
+          haveDescriptor := false.B
+          haveLease := false.B
+        }.elsewhen(havePlan && havePublication && haveDescriptor && haveLease) {
           state := Evaluate
         }
       }
@@ -206,5 +233,15 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
   val heldLease = RegEnable(io.s2_fill_lease_out.bits, io.s2_fill_lease_out.valid && !io.s2_fill_lease_out.ready)
   when(RegNext(io.s2_fill_lease_out.valid && !io.s2_fill_lease_out.ready, false.B)) {
     assert(io.s2_fill_lease_out.bits.asUInt === heldLease.asUInt)
+  }
+  val heldDescriptorRequest = RegEnable(io.descriptor_location_request_out.bits,
+    io.descriptor_location_request_out.valid && !io.descriptor_location_request_out.ready)
+  when(RegNext(io.descriptor_location_request_out.valid && !io.descriptor_location_request_out.ready, false.B)) {
+    assert(io.descriptor_location_request_out.bits.asUInt === heldDescriptorRequest.asUInt)
+  }
+  val heldLeaseRequest = RegEnable(io.s2_fill_lease_request_out.bits,
+    io.s2_fill_lease_request_out.valid && !io.s2_fill_lease_request_out.ready)
+  when(RegNext(io.s2_fill_lease_request_out.valid && !io.s2_fill_lease_request_out.ready, false.B)) {
+    assert(io.s2_fill_lease_request_out.bits.asUInt === heldLeaseRequest.asUInt)
   }
 }

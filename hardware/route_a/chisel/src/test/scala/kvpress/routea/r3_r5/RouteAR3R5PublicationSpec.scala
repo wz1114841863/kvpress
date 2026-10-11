@@ -241,6 +241,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
 
   private def initR5(dut: RouteAPageManager): Unit = {
     dut.io.mem_init_done.poke(false.B); dut.io.page_allocation_req_in.valid.poke(false.B)
+    dut.io.descriptor_location_request_in.valid.poke(false.B); dut.io.descriptor_location_grant_out.ready.poke(true.B)
     dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
     dut.io.reclaim_permit_in.valid.poke(false.B); dut.io.reclaim_permit_in.bits.transaction_identity.request_id.poke(0.U)
     dut.io.reclaim_permit_in.bits.transaction_identity.incarnation.poke(0.U); dut.io.reclaim_candidate_out.ready.poke(false.B)

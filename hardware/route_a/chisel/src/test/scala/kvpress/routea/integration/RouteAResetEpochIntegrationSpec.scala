@@ -76,6 +76,7 @@ final class RouteAResetEpochIntegrationSpec extends AnyFunSpec with ChiselSim {
     dut.io.mem_init_done.poke(false.B); dut.io.drain_collection_enable.poke(false.B); dut.io.reclaim_permit_in.valid.poke(false.B)
     dut.io.reclaim_permit_in.bits.transaction_identity.request_id.poke(0.U); dut.io.reclaim_permit_in.bits.transaction_identity.incarnation.poke(0.U)
     dut.io.page_allocation_req_in.valid.poke(false.B); dut.io.page_allocation_rsp.ready.poke(true.B)
+    dut.io.descriptor_location_request_in.valid.poke(false.B); dut.io.descriptor_location_grant_out.ready.poke(true.B)
     dut.io.descriptor_maintenance_terminal_in.valid.poke(false.B); dut.io.metadata_publish_visibility_in.valid.poke(false.B)
     dut.io.metadata_publish_visibility_ack.ready.poke(true.B); dut.io.reclaim_candidate_out.ready.poke(true.B)
     dut.io.reclaim_delivery_in.valid.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
@@ -115,6 +116,7 @@ final class RouteAResetEpochIntegrationSpec extends AnyFunSpec with ChiselSim {
 
   private def initS2(dut: RouteAS2GqaSourceWrapper): Unit = {
     dut.io.mem_init_done.poke(false.B); dut.io.s2_observe_slot.poke(0.U); dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
+    dut.io.s2_fill_lease_request_in.valid.poke(false.B); dut.io.s2_fill_lease_out.ready.poke(true.B)
     dut.io.service_req_in.valid.poke(false.B); dut.io.s2_fill_open_in.valid.poke(false.B); dut.io.s2_payload_fragment_in.valid.poke(false.B)
     dut.io.s2_sidecar_fragment_in.valid.poke(false.B); dut.io.s2_fill_terminal_in.valid.poke(false.B); dut.io.s2_sidecar_complete_in.valid.poke(false.B)
     dut.io.s2_payload_read_req_in.valid.poke(false.B); dut.io.s2_payload_read_rsp_out.ready.poke(true.B)

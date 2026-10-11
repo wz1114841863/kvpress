@@ -20,6 +20,8 @@ private final class RouteAR5ScoreboardBindingHarness(p: RouteASkeletonParameters
     val descriptor_event = Decoupled(new DescriptorInvalidateScoreboardEvent(p)); val page_free_event = Decoupled(new PageFreeScoreboardEvent)
   })
   val r5 = Module(new RouteAPageManager(p)); val adapter = Module(new RouteAReclaimScoreboardAdapter(p))
+  StructuralTieOff.source(r5.io.descriptor_location_request_in)
+  StructuralTieOff.sink(r5.io.descriptor_location_grant_out)
   r5.io.mem_init_done := io.mem_init_done; r5.io.drain_collection_enable := false.B
   r5.io.reclaim_permit_in <> io.reclaim_permit; r5.io.page_allocation_req_in <> io.allocation; io.allocation_rsp <> r5.io.page_allocation_rsp
   r5.io.descriptor_maintenance_terminal_in <> io.descriptor_terminal; r5.io.metadata_publish_visibility_in <> io.visibility

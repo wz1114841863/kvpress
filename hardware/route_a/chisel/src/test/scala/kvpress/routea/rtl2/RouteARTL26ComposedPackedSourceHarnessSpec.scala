@@ -31,6 +31,8 @@ final class RouteARTL26ComposedPackedSourceHarness(p: RouteASkeletonParameters) 
 
   val lifecycle = Module(new RouteALifecycleAdapter(p))
   val s2 = Module(new RouteAS2GqaSourceWrapper(p))
+  StructuralTieOff.source(s2.io.s2_fill_lease_request_in)
+  StructuralTieOff.sink(s2.io.s2_fill_lease_out)
   val packets = Module(new RouteASourceServicePacketAdapter(p))
   val merge = Module(new RouteAMergeBoundary(p))
 
