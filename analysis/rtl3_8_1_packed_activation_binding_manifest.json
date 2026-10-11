@@ -1,0 +1,48 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-8-1-packed-activation-binding-1.0",
+  "status": "complete_functional_owner_binding_not_yet_functional_top_replacement",
+  "scope": "Finite fail-closed materialization of RouteAPackedReadAssociationOwner inputs from existing R6/R3/R5/S2 owner facts. No top replacement, memory/numeric/physical realization, scheduler change, or PPA claim.",
+  "predecessor": {
+    "contract": "analysis/rtl3_8_0_functional_closure_ingress_retirement_contract.md",
+    "sha256": "fdf3c01dae3fd70b13c4aec7b0fa8c9a30a6a09c14bd1d9432ff4b803aaa2501"
+  },
+  "implemented_retirement_boundaries": ["I0", "I1", "I2", "I3"],
+  "owner_map": {
+    "R6": "accepted SourceCompletionPlan and source-set selection",
+    "R3": "post-atomic publication observation",
+    "R5": "readable descriptor location/live-reference fact",
+    "S2": "owner-local fill lease",
+    "route_a_packed_read_activation_binder": "sole materializer of four association-input carriers",
+    "route_a_packed_read_association_owner": "sole downstream association/typed-read owner"
+  },
+  "fail_closed_checks": [
+    "packed source presence and SourceInstance kind",
+    "descriptor and lease identities match the accepted R6 plan",
+    "R3/R5/S2 PageRef equality",
+    "R6 packed SourceInstance slot/generation equals S2 lease",
+    "valid_records in 1..64 and equals descriptor/sidecar counts",
+    "R5 live reference and S2 sidecar requirement"
+  ],
+  "disposition": {
+    "verification_ingress_retired_from_functional_top": false,
+    "r5_s2_top_fact_producers_connected": false,
+    "functional_sidecar_delivery_complete": false,
+    "physical_or_numeric_realization_complete": false,
+    "rtl3_final_review_authorized": false
+  },
+  "test_command": "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAPackedReadActivationBinderSpec'",
+  "test_result": {
+    "status": "pass",
+    "tests": 4,
+    "failed": 0,
+    "evidence": "directed ChiselSim only; no model/GPU, timing, throughput, PPA, DC, or full-inference claim"
+  },
+  "source_sha256": {
+    "analysis/rtl3_8_1_packed_activation_binding_contract.md": "f09793a4546b6f958641f02bcb8ff203971f8a80df7e284dfac6ece843b527f0",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala": "bd8fcb06fed14aa1f6c707ad29609f8634cd1531b78a2b503f7d73efd0d621c3",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "68ef30c6a0b8195b734fe2fd3c744de5c23b85c972e1485e775acd74563d766a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadActivationBinderSpec.scala": "3c4216f4b3a0b1e8a069a84a6601a83380c0b40af3debe9e0151d6fcf84e020f",
+    "tools/validate_rtl3_8_1_packed_activation_binding.py": "0a308f0fbb0cd3d8e774b234918614339d9c861165d45551506ab3163c0d28a4",
+    "tests/test_rtl3_8_1_packed_activation_binding.py": "b273997f58ee32ed1e6092a646509493d99f8a75dd1df7df1bcf8e76ecfbbe0a"
+  }
+}
