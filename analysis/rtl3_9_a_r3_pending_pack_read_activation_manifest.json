@@ -1,0 +1,43 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-a-r3-pending-pack-read-activation-1.0",
+  "status": "complete_functional_pending_to_p3_fill_activation",
+  "owners": {
+    "materializer": "route_a_m2_p3_wrapper",
+    "top": "composition_only",
+    "r2": "existing_frozen_fifo_eligibility_credit_arbitration",
+    "r1": "existing_core_mem_if_v1",
+    "endpoint": "route_a_r3_pack_read_endpoint"
+  },
+  "activation": {
+    "record_granularity": "one_retained_member_equals_one_eight_fragment_pack_read",
+    "work_provenance": ["r3_immutable_member", "a0_pending_payload_read_binding", "r3_live_stage"],
+    "sidecar_provenance": "same_r3_immutable_member",
+    "active_members_per_live_stage": 1,
+    "member_order": "ascending_immutable_ordinal",
+    "permanent_architecture_schedule": false
+  },
+  "ingress_exclusion": {
+    "hot_payload_invalid_during_reservation": true,
+    "hot_sidecar_invalid_during_reservation": true,
+    "payload_simultaneous_offer": "assert_fail_closed_no_priority",
+    "sidecar_simultaneous_offer": "assert_fail_closed_no_priority"
+  },
+  "disposition": {
+    "p3_pack_read_work_top_tieoff_removed": true,
+    "p3_packed_write_top_still_inert": true,
+    "metadata_publish_or_authority_changed": false,
+    "r2_scheduler_changed": false,
+    "memory_controller_or_address_selected": false,
+    "rtl3_completion_authorized": false
+  },
+  "source_sha256": {
+    "analysis/rtl3_9_a_r3_pending_pack_read_activation_contract.md": "c1ae16f6594e07d4921fe654d89d34c8b7edd9a8072fafcac35bdfe63cb624d1",
+    "tools/validate_rtl3_9_a_r3_pending_pack_read_activation.py": "555a8e0374bd2608664760f282a818cdc6310880b0908d4e3305ed87843b96eb",
+    "tests/test_rtl3_9_a_r3_pending_pack_read_activation.py": "f3a8b76eb091eefe656150a183e7eae669f298956da9ec695020d9afcfe78ea5",
+    "analysis/rtl2_phase_contract.md": "922709abbb29003fb13dc186a0a39f03faa94d6a43cc50760d6d356f88bb6c68",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "461f32bf20e60257bc6012d60f05b29fbeeb53f2179b3d699b3a920b4b19c92b",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "3203e2cb583cf18701af901675f1b7fab3cab0a67fcc4abc66d3eed7270652a6",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "f1f49381febfec4c0eb9fcb98f6734758c6808f612830a956c0f8ced950dd901",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL39AMaterializationSpec.scala": "f809cf25ac95408126b4072eaf40b0645591a781e1f9e3c2826d5b78464d63fd"
+  }
+}

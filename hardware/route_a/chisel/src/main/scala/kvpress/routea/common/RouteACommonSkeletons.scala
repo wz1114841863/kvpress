@@ -1576,6 +1576,32 @@ final class RouteAExclusiveP3PendingIngress(p: RouteASkeletonParameters) extends
 }
 
 /**
+  * Sidecar counterpart to `RouteAExclusiveP3PendingIngress`.  A P3 record is
+  * complete only after its matching logical-position sidecar arrives, so a
+  * hidden hot-versus-pack sidecar priority would be just as semantically
+  * unsafe as a hidden payload priority.  The environment must exclude the
+  * two offers while an R3 pack-fill reservation is live; this component only
+  * checks that contract and never selects a schedule.
+  */
+final class RouteAExclusiveP3SidecarIngress(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_exclusive_p3_sidecar_ingress"
+
+  val io = IO(new Bundle {
+    val hot_in = Flipped(RouteAChannels.p3_sidecar_bind(p))
+    val pack_read_in = Flipped(RouteAChannels.p3_sidecar_bind(p))
+    val out = RouteAChannels.p3_sidecar_bind(p)
+  })
+
+  val simultaneous = io.hot_in.valid && io.pack_read_in.valid
+  io.out.valid := (io.hot_in.valid || io.pack_read_in.valid) && !simultaneous
+  io.out.bits := Mux(io.hot_in.valid, io.hot_in.bits, io.pack_read_in.bits)
+  io.hot_in.ready := !io.pack_read_in.valid && io.out.ready
+  io.pack_read_in.ready := !io.hot_in.valid && io.out.ready
+  assert(!simultaneous,
+    "RTL3.9-A P3 sidecar ingress requires environment exclusion; no hidden priority/schedule is authorized")
+}
+
+/**
   * RTL2.3-C2 endpoint for a registry-resolved R3 pending-member pack read.
   * It translates only an exact typed response into P3's existing logical
   * fragment carrier.  It owns no association, source scheduling, P3 state,

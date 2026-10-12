@@ -1198,6 +1198,14 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     // the admitted member and stores it for the later, separate pack-read
     // work materializer; it does not create an R2/R1 request in this step.
     val pending_payload_binding_in = Flipped(RouteAChannels.pending_payload_read_binding(p))
+    // RTL3.9-A: R3's own immutable ledger and A0 provenance binding are the
+    // only source of this functional-baseline work producer.  This output is
+    // connected back to the existing checked input only by the composition
+    // top; it does not give the top an association, scheduling, or address
+    // construction role.
+    val p3_pack_read_materialized_work_out = RouteAChannels.p3_pack_read_work(p)
+    val p3_materialized_sidecar_out = RouteAChannels.p3_sidecar_bind(p)
+    val p3_pack_fill_reservation_out = Output(Bool())
     val authority_transition_out = RouteAChannels.r6_authority_transition(p)
     val publication_commit_observation = RouteAChannels.publication_commit_observation(p)
     val publication_member_observation = RouteAChannels.publication_member_observation(p)
@@ -1269,6 +1277,15 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val membershipEntries = Reg(Vec(stages, Vec(64, new AdmissionContext(p))))
   val membershipPayloadBindingPresent = RegInit(VecInit(Seq.fill(stages)(0.U(64.W))))
   val membershipPayloadBindings = Reg(Vec(stages, Vec(64, new PendingPayloadReadBinding(p))))
+  // RTL3.9-A materialization state is intentionally small functional control
+  // only.  It neither holds KV payload nor grants R2 service.  A bit is set
+  // only after the pre-existing work input accepts the exact generated item.
+  val materializedMembers = RegInit(VecInit(Seq.fill(stages)(0.U(64.W))))
+  val materializerActive = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  val materializerOrdinal = RegInit(VecInit(Seq.fill(stages)(0.U(RouteAAnchorWidths.P3ValidRecordsWidth.W))))
+  val materializerPayloadDone = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  val materializerSidecarDone = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  val materializerSequence = RegInit(0.U((RouteAAnchorWidths.RequestIdWidth + RouteAAnchorWidths.IncarnationWidth).W))
   val observationActive = RegInit(VecInit(Seq.fill(stages)(false.B)))
   val observationCommitSent = RegInit(VecInit(Seq.fill(stages)(false.B)))
   val observationMemberOrdinal = RegInit(VecInit(Seq.fill(stages)(0.U(RouteAAnchorWidths.P3ValidRecordsWidth.W))))
@@ -1315,6 +1332,10 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     payloadDurablePending(claimLayer) := false.B
     membershipPresent(claimLayer) := 0.U
     membershipPayloadBindingPresent(claimLayer) := 0.U
+    materializedMembers(claimLayer) := 0.U
+    materializerActive(claimLayer) := false.B
+    materializerPayloadDone(claimLayer) := false.B
+    materializerSidecarDone(claimLayer) := false.B
     claimAckValid := true.B
     claimAckLayer := claimLayer
     claimAckGeneration := nextGeneration
@@ -1379,6 +1400,71 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   when(io.pending_payload_binding_in.fire) {
     assert(io.admission_context_in.fire && io.admission_authority_in.fire)
   }
+  // RTL3.9-A: materialize one immutable eight-fragment pending-member work
+  // item only from R3's own recorded member/binding association.  This is a
+  // producer-local baseline; R2 still owns all eligibility interpretation and
+  // arbitration after the existing checked input below accepts this carrier.
+  val materializerCandidateMasks = VecInit((0 until stages).map { layer =>
+    val stageMayRead = (stageState(layer) === StateReserved || stageState(layer) === StateFilling) &&
+      !materializerActive(layer)
+    membershipPresent(layer) & membershipPayloadBindingPresent(layer) & ~materializedMembers(layer) &
+      Mux(stageValidRecords(layer) === 64.U, Fill(64, 1.U(1.W)), (1.U(64.W) << stageValidRecords(layer)) - 1.U) &
+      Fill(64, stageMayRead)
+  })
+  val materializerCandidateStages = VecInit((0 until stages).map(layer => materializerCandidateMasks(layer).orR))
+  val materializerCandidateAny = materializerCandidateStages.asUInt.orR
+  val materializerCandidateLayer = PriorityEncoder(materializerCandidateStages)
+  val materializerCandidateOrdinal = PriorityEncoder(materializerCandidateMasks(materializerCandidateLayer))(5, 0)
+  val materializerCandidateMember = membershipEntries(materializerCandidateLayer)(materializerCandidateOrdinal)
+  val materializerCandidateBinding = membershipPayloadBindings(materializerCandidateLayer)(materializerCandidateOrdinal)
+  val packReadEligibility = (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.FifoPredecessor) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.Ownership) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.SourceCredit) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.DestinationReady) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.PendingAuthoritative) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.P3StageReadyOwned)
+  io.p3_pack_read_materialized_work_out.valid := materializerCandidateAny
+  io.p3_pack_read_materialized_work_out.bits.layer := materializerCandidateLayer
+  io.p3_pack_read_materialized_work_out.bits.stage_generation := stageGeneration(materializerCandidateLayer)
+  io.p3_pack_read_materialized_work_out.bits.member_ordinal := materializerCandidateOrdinal
+  io.p3_pack_read_materialized_work_out.bits.payload_ref := materializerCandidateMember.payload_ref
+  io.p3_pack_read_materialized_work_out.bits.transaction_identity := materializerCandidateBinding.transaction_identity
+  io.p3_pack_read_materialized_work_out.bits.arrival_ordinal := materializerSequence
+  io.p3_pack_read_materialized_work_out.bits.candidate_id := materializerSequence
+  io.p3_pack_read_materialized_work_out.bits.eligibility_snapshot := packReadEligibility
+  io.p3_pack_read_materialized_work_out.bits.payload_handle_or_address := materializerCandidateBinding.payload_handle_or_address
+  io.p3_pack_read_materialized_work_out.bits.destination_endpoint := materializerCandidateBinding.destination_endpoint
+  io.p3_pack_read_materialized_work_out.bits.source_generation := materializerCandidateBinding.source_generation
+  when(io.p3_pack_read_materialized_work_out.fire) {
+    val issuedMask = 1.U(64.W) << materializerCandidateOrdinal
+    materializedMembers(materializerCandidateLayer) := materializedMembers(materializerCandidateLayer) | issuedMask
+    materializerActive(materializerCandidateLayer) := true.B
+    materializerOrdinal(materializerCandidateLayer) := materializerCandidateOrdinal
+    materializerPayloadDone(materializerCandidateLayer) := false.B
+    materializerSidecarDone(materializerCandidateLayer) := false.B
+    materializerSequence := materializerSequence + 1.U
+  }
+
+  val materializerSidecarEligible = VecInit((0 until stages).map { layer =>
+    materializerActive(layer) && !materializerSidecarDone(layer) &&
+      (stageState(layer) === StateReserved || stageState(layer) === StateFilling) &&
+      stageSidecarNext(layer) === materializerOrdinal(layer)
+  })
+  val materializerSidecarAny = materializerSidecarEligible.asUInt.orR
+  val materializerSidecarLayer = PriorityEncoder(materializerSidecarEligible)
+  val materializerSidecarOrdinal = materializerOrdinal(materializerSidecarLayer)(5, 0)
+  val materializerSidecarMember = membershipEntries(materializerSidecarLayer)(materializerSidecarOrdinal)
+  io.p3_materialized_sidecar_out.valid := materializerSidecarAny
+  io.p3_materialized_sidecar_out.bits.layer := materializerSidecarLayer
+  io.p3_materialized_sidecar_out.bits.stage_generation := stageGeneration(materializerSidecarLayer)
+  io.p3_materialized_sidecar_out.bits.record_ordinal := materializerSidecarOrdinal
+  io.p3_materialized_sidecar_out.bits.payload_ref := materializerSidecarMember.payload_ref
+  io.p3_materialized_sidecar_out.bits.logical_position := materializerSidecarMember.logical_position
+  when(io.p3_materialized_sidecar_out.fire) {
+    materializerSidecarDone(materializerSidecarLayer) := true.B
+  }
+  io.p3_pack_fill_reservation_out := materializerActive.asUInt.orR
+
   // RTL2.3-C2: a retained P3 member has exactly one logical pack-read work
   // item, with eight 64-B fragments.  The work carrier supplies only
   // transaction/eligibility and opaque transport facts.  Layer, generation,
@@ -1485,6 +1571,29 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     stageSidecarNext(sidecarLayer) := nextSidecar
     when(stageFragmentNext(sidecarLayer) === expectedFragments(sidecarLayer) && nextSidecar === stageValidRecords(sidecarLayer)) {
       stageState(sidecarLayer) := StateComplete
+    }
+  }
+
+  // A reservation lasts through both the matching payload terminal and its
+  // sidecar acceptance.  The `P3PendingFragment` path has already checked
+  // generation, ordinal order, payload_ref, and terminal legality above; this
+  // bookkeeping only retires the producer-local baseline state.  A fault is
+  // terminal for the active member and leaves the stage faulted, so no later
+  // member can be materialized from that stage.
+  for (layer <- 0 until stages) {
+    val activeFragmentTerminal = io.p3_pending_fragment_in.fire && fragmentLayer === layer.U &&
+      materializerActive(layer) && fragmentRecordOrdinal === materializerOrdinal(layer) &&
+      (fragment.last || fragmentFault)
+    val activeSidecarAccepted = io.p3_materialized_sidecar_out.fire && materializerSidecarLayer === layer.U
+    when(activeFragmentTerminal) {
+      materializerPayloadDone(layer) := true.B
+    }
+    val payloadDoneNow = materializerPayloadDone(layer) || activeFragmentTerminal
+    val sidecarDoneNow = materializerSidecarDone(layer) || activeSidecarAccepted
+    when(activeFragmentTerminal && fragmentFault) {
+      materializerActive(layer) := false.B
+    }.elsewhen(materializerActive(layer) && payloadDoneNow && sidecarDoneNow) {
+      materializerActive(layer) := false.B
     }
   }
 

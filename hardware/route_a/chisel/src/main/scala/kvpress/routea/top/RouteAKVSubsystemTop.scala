@@ -85,6 +85,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val typed_delivery_router = Module(new RouteATypedDeliveryRouter(p))
     val read_endpoint_demultiplexer = Module(new RouteAReadEndpointDemultiplexer(p))
     val p3_pending_ingress = Module(new RouteAExclusiveP3PendingIngress(p))
+    val p3_sidecar_ingress = Module(new RouteAExclusiveP3SidecarIngress(p))
     val p3_pack_read_issue_adapter = Module(new RouteAReadIssueCandidateAdapter(p))
     val direct_pending_read_producer = Module(new RouteAR3DirectPendingReadProducer(p))
     val direct_pending_read_issue_adapter = Module(new RouteAReadIssueCandidateAdapter(p))
@@ -300,18 +301,31 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     p3_pending_ingress.io.hot_in <> hot_payload_fragment_in
     p3_pending_ingress.io.pack_read_in <> p3_pack_read_endpoint.io.p3_pending_fragment_out
     val p3_fragment = p3_pending_ingress.io.out
-    val p3_sidecar = hot_position_sidecar_in
-    // I5 has no separately authorized R3 producer at this top yet.  Keeping
-    // this named carrier inactive is fail-closed and avoids turning the top
-    // into a P3 scheduler or retaining a verification ingress.
-    val p3_pack_read_work = Wire(RouteAChannels.p3_pack_read_work(p))
-    StructuralTieOff.source(p3_pack_read_work)
+    // RTL3.9-A: the R3 wrapper materializes work only from its own immutable
+    // ledger and A0 binding, then reuses the pre-existing checked R3->R2
+    // carrier. The top neither creates a member association nor chooses an
+    // R2 winner. This local feedback path is deliberately explicit so it
+    // cannot be mistaken for a verification ingress.
+    m2_p3.io.p3_pack_read_work_in.valid := m2_p3.io.p3_pack_read_materialized_work_out.valid
+    m2_p3.io.p3_pack_read_work_in.bits := m2_p3.io.p3_pack_read_materialized_work_out.bits
+    m2_p3.io.p3_pack_read_materialized_work_out.ready := m2_p3.io.p3_pack_read_work_in.ready
+    // Payload and sidecar are both excluded while a generated pack fill is
+    // active. The two ingress components remain fail-closed guards rather
+    // than introducing a priority or a new service schedule.
+    when(m2_p3.io.p3_pack_fill_reservation_out) {
+      assert(!hot_payload_fragment_in.valid,
+        "RTL3.9-A hot P3 payload ingress must remain invalid during an R3 pack-fill reservation")
+      assert(!hot_position_sidecar_in.valid,
+        "RTL3.9-A hot P3 sidecar ingress must remain invalid during an R3 pack-fill reservation")
+    }
+    p3_sidecar_ingress.io.hot_in <> hot_position_sidecar_in
+    p3_sidecar_ingress.io.pack_read_in <> m2_p3.io.p3_materialized_sidecar_out
+    val p3_sidecar = p3_sidecar_ingress.io.out
     val p3_pack_read_issue = p3_pack_read_issue_adapter.io.read_issue_in
     val p3_write_issue = Wire(RouteAChannels.p3_packed_write_issue(p)); StructuralTieOff.source(p3_write_issue)
     val p3_write_terminal = Wire(RouteAChannels.p3_packed_write_terminal(p)); StructuralTieOff.source(p3_write_terminal)
     m2_p3.io.p3_pending_fragment_in <> p3_fragment
     m2_p3.io.p3_sidecar_bind_in <> p3_sidecar
-    m2_p3.io.p3_pack_read_work_in <> p3_pack_read_work
     p3_pack_read_issue <> m2_p3.io.p3_pack_read_issue_out
     p3_pack_read_issue_adapter.io.candidate_out <> delivery_context_composition.io.r3_pack_read_in
     m2_p3.io.p3_packed_write_issue_in <> p3_write_issue

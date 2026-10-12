@@ -970,6 +970,13 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     schedule, and makes hot/P3 payload plus sidecar exclusion explicit and
     fail-closed. The top work tie-off and packed-write inertness remain until
     RTL3.9-A provides directed functional activation coverage.
+27. **RTL3.9-A — R3 pending pack-read functional activation (complete).**
+    [`rtl3_9_a_r3_pending_pack_read_activation_contract.md`](rtl3_9_a_r3_pending_pack_read_activation_contract.md)
+    removes only the production top's inert P3 pack-read-work tie-off. R3
+    materializes A0-bound member work and matching sidecar from its immutable
+    ledger, reuses the existing checked R2/R1/typed endpoint path, and guards
+    both hot/P3 ingress forms with fail-closed exclusion. Packed write,
+    publication, and authority semantics remain unchanged and inert here.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,
