@@ -215,6 +215,27 @@ final class AdmissionContext(p: RouteASkeletonParameters) extends Bundle {
 }
 
 /**
+  * Immutable pending-payload location association for exactly one admitted
+  * member.  The pending payload owner supplies the opaque handle and source
+  * generation; R3 only validates, records, and later consumes this association.
+  * It is neither a physical address format nor an R2 scheduling grant.
+  */
+final class PendingPayloadReadBinding(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val entry_id = UInt(RouteAAnchorWidths.EntryIdWidth.W)
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val logical_position = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
+  val payload_ref = UInt(RouteAAnchorWidths.PayloadRefWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val group_member_ordinal = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val group_valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
+}
+
+/**
   * Control observation emitted only after the existing atomic metadata
   * publication acknowledgement.  It is not a second publication command.
   */
@@ -1016,6 +1037,7 @@ object RouteAChannels {
   def hot_source_open(p: RouteASkeletonParameters) = Decoupled(new HotSourceOpen(p))
   def r6_authority_transition(p: RouteASkeletonParameters) = Decoupled(new R6AuthorityTransition(p))
   def admission_context(p: RouteASkeletonParameters) = Decoupled(new AdmissionContext(p))
+  def pending_payload_read_binding(p: RouteASkeletonParameters) = Decoupled(new PendingPayloadReadBinding(p))
   def publication_commit_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationCommitObservation(p))
   def publication_member_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationMemberObservation(p))
   def r6_merge_ready = Decoupled(new R6MergeReady)

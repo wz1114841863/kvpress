@@ -25,6 +25,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
     val p3_claim = Flipped(RouteAChannels.p3_claim(p))
     val admission_context = Flipped(RouteAChannels.admission_context(p))
     val admission_authority = Flipped(RouteAChannels.r6_authority_transition(p))
+    val pending_payload_binding = Flipped(RouteAChannels.pending_payload_read_binding(p))
     val pack_read_work = Flipped(RouteAChannels.p3_pack_read_work(p))
     val p3_sidecar = Flipped(RouteAChannels.p3_sidecar_bind(p))
     val external = new CoreMemoryExternalPort(p)
@@ -78,6 +79,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   r3.io.p3_claim_ack.ready := true.B
   r3.io.admission_context_in <> io.admission_context
   r3.io.admission_authority_in <> io.admission_authority
+  r3.io.pending_payload_binding_in <> io.pending_payload_binding
   r3.io.p3_pack_read_work_in <> io.pack_read_work
   issueAdapter.io.read_issue_in <> r3.io.p3_pack_read_issue_out
   bridge.io.r3_pack_read_in <> issueAdapter.io.candidate_out
@@ -175,7 +177,7 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
 
   private def init(d: RouteARTL265a2PackReadPublicationHarness): Unit = {
     d.io.mem_init_done.poke(false.B); d.io.r5_allocate.valid.poke(false.B); d.io.r5_allocation_rsp.ready.poke(true.B)
-    d.io.p3_claim.valid.poke(false.B); d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B)
+    d.io.p3_claim.valid.poke(false.B); d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B); d.io.pending_payload_binding.valid.poke(false.B)
     d.io.pack_read_work.valid.poke(false.B); d.io.p3_sidecar.valid.poke(false.B)
     d.io.m2_member_request.ready.poke(false.B); d.io.m2_member_response.valid.poke(false.B)
     d.io.m2_publication_candidate.ready.poke(false.B); d.io.m2_publication_request.valid.poke(false.B)
@@ -217,7 +219,14 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     d.io.p3_claim.valid.poke(true.B); d.io.p3_claim.ready.expect(true.B); d.clock.step(); d.io.p3_claim.valid.poke(false.B)
     val x = d.io.admission_context.bits; x.entry_id.poke(0.U); x.layer.poke(0.U); x.kv_head.poke(0.U); x.logical_position.poke(0.U); x.payload_ref.poke(55.U); x.transaction_group_tag.poke(1.U); x.group_member_ordinal.poke(0.U); x.group_valid_records.poke(1.U)
     val h = d.io.admission_authority.bits; h.entry_id.poke(0.U); h.from_authority.poke(RouteAAuthorityStateCode.Hot.U); h.to_authority.poke(RouteAAuthorityStateCode.Pending.U); h.transaction_group_tag.poke(1.U)
-    d.io.admission_context.valid.poke(true.B); d.io.admission_authority.valid.poke(true.B); d.io.admission_context.ready.expect(true.B); d.clock.step(); d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B)
+    val b = d.io.pending_payload_binding.bits
+    b.transaction_identity.request_id.poke(3.U); b.transaction_identity.incarnation.poke(0.U)
+    b.entry_id.poke(0.U); b.layer.poke(0.U); b.kv_head.poke(0.U); b.logical_position.poke(0.U); b.payload_ref.poke(55.U)
+    b.transaction_group_tag.poke(1.U); b.group_member_ordinal.poke(0.U); b.group_valid_records.poke(1.U)
+    b.payload_handle_or_address.poke(55.U); b.source_generation.poke(1.U); b.destination_endpoint.poke(0.U)
+    d.io.admission_context.valid.poke(true.B); d.io.admission_authority.valid.poke(true.B); d.io.pending_payload_binding.valid.poke(true.B)
+    d.io.admission_context.ready.expect(true.B); d.io.pending_payload_binding.ready.expect(true.B); d.clock.step()
+    d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B); d.io.pending_payload_binding.valid.poke(false.B)
     val s = d.io.p3_sidecar.bits; s.layer.poke(0.U); s.stage_generation.poke(1.U); s.record_ordinal.poke(0.U); s.payload_ref.poke(55.U); s.logical_position.poke(0.U)
     d.io.p3_sidecar.valid.poke(true.B); d.io.p3_sidecar.ready.expect(true.B); d.clock.step(); d.io.p3_sidecar.valid.poke(false.B)
   }

@@ -20,6 +20,7 @@ final class RouteAR3PackReadPathHarness(p: RouteASkeletonParameters) extends Mod
     val p3_claim = Flipped(RouteAChannels.p3_claim(p))
     val admission_context = Flipped(RouteAChannels.admission_context(p))
     val admission_authority = Flipped(RouteAChannels.r6_authority_transition(p))
+    val pending_payload_binding = Flipped(RouteAChannels.pending_payload_read_binding(p))
     val pack_read_work = Flipped(RouteAChannels.p3_pack_read_work(p))
     val p3_sidecar = Flipped(RouteAChannels.p3_sidecar_bind(p))
     val external = new CoreMemoryExternalPort(p)
@@ -48,6 +49,7 @@ final class RouteAR3PackReadPathHarness(p: RouteASkeletonParameters) extends Mod
   StructuralTieOff.sink(r3.io.p3_claim_ack)
   r3.io.admission_context_in <> io.admission_context
   r3.io.admission_authority_in <> io.admission_authority
+  r3.io.pending_payload_binding_in <> io.pending_payload_binding
   r3.io.p3_pack_read_work_in <> io.pack_read_work
   issueAdapter.io.read_issue_in <> r3.io.p3_pack_read_issue_out
   bridge.io.r3_pack_read_in <> issueAdapter.io.candidate_out
@@ -136,6 +138,7 @@ final class RouteAR3PackReadPathSpec extends AnyFunSpec with ChiselSim {
   private def init(d: RouteAR3PackReadPathHarness): Unit = {
     d.io.p3_mem_init_done.poke(false.B); d.io.p3_claim.valid.poke(false.B)
     d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B)
+    d.io.pending_payload_binding.valid.poke(false.B)
     d.io.pack_read_work.valid.poke(false.B); d.io.p3_sidecar.valid.poke(false.B)
     d.io.external.init_ack.valid.poke(false.B); d.io.external.request.ready.poke(false.B); d.io.external.response.valid.poke(false.B)
     d.io.external.init_ack.bits.adapter_epoch_ready.poke(true.B)
@@ -156,9 +159,14 @@ final class RouteAR3PackReadPathSpec extends AnyFunSpec with ChiselSim {
     admission.payload_ref.poke(payloadRef.U); admission.transaction_group_tag.poke(1.U); admission.group_member_ordinal.poke(0.U); admission.group_valid_records.poke(1.U)
     val authority = d.io.admission_authority.bits
     authority.entry_id.poke(0.U); authority.from_authority.poke(RouteAAuthorityStateCode.Hot.U); authority.to_authority.poke(RouteAAuthorityStateCode.Pending.U); authority.transaction_group_tag.poke(1.U)
-    d.io.admission_context.valid.poke(true.B); d.io.admission_authority.valid.poke(true.B)
-    d.io.admission_context.ready.expect(true.B); d.io.admission_authority.ready.expect(true.B); d.clock.step()
-    d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B)
+    val binding = d.io.pending_payload_binding.bits
+    binding.transaction_identity.request_id.poke(3.U); binding.transaction_identity.incarnation.poke(1.U)
+    binding.entry_id.poke(0.U); binding.layer.poke(0.U); binding.kv_head.poke(0.U); binding.logical_position.poke(0.U)
+    binding.payload_ref.poke(payloadRef.U); binding.transaction_group_tag.poke(1.U); binding.group_member_ordinal.poke(0.U); binding.group_valid_records.poke(1.U)
+    binding.payload_handle_or_address.poke(payloadRef.U); binding.source_generation.poke(1.U); binding.destination_endpoint.poke(0.U)
+    d.io.admission_context.valid.poke(true.B); d.io.admission_authority.valid.poke(true.B); d.io.pending_payload_binding.valid.poke(true.B)
+    d.io.admission_context.ready.expect(true.B); d.io.admission_authority.ready.expect(true.B); d.io.pending_payload_binding.ready.expect(true.B); d.clock.step()
+    d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B); d.io.pending_payload_binding.valid.poke(false.B)
   }
 
   private def bindSidecar(d: RouteAR3PackReadPathHarness, payloadRef: Int = 55): Unit = {
@@ -211,6 +219,10 @@ final class RouteAR3PackReadPathSpec extends AnyFunSpec with ChiselSim {
   it("drops stale identity and refuses mismatched member work without P3 deposit") {
     simulate(new RouteAR3PackReadPathHarness(p)) { d =>
       init(d); claimAndAdmit(d); bindSidecar(d); offerWork(d, payloadRef = 54)
+      d.clock.step(3); d.io.pack_read_work.ready.expect(false.B); d.io.external.request.valid.expect(false.B); d.io.p3_state.expect(1.U)
+      // A correct member reference is still insufficient when the work tries
+      // to replace the pending owner's generation/identity binding.
+      d.io.pack_read_work.valid.poke(false.B); offerWork(d, generation = 0)
       d.clock.step(3); d.io.pack_read_work.ready.expect(false.B); d.io.external.request.valid.expect(false.B); d.io.p3_state.expect(1.U)
       d.io.pack_read_work.valid.poke(false.B); offerWork(d); acceptRead(d)
       respond(d, index = 0, last = false, requestId = 2, incarnation = 0)

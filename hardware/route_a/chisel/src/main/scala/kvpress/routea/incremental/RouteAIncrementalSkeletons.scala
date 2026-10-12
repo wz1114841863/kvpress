@@ -827,12 +827,17 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
   val io = IO(new Bundle {
     val r6_admission_context_in = Flipped(RouteAChannels.admission_context(p))
     val r6_authority_in = Flipped(RouteAChannels.r6_authority_transition(p))
+    // Owned by the pending-payload location map.  This is the third immutable
+    // member fact in the retained admission join; it cannot be reconstructed
+    // from payload_ref, entry_id, or a later packed-page descriptor.
+    val pending_payload_binding_in = Flipped(RouteAChannels.pending_payload_read_binding(p))
     val r5_allocation_req = RouteAChannels.page_allocation_req(p)
     val r5_allocation_rsp_in = Flipped(RouteAChannels.page_allocation_rsp(p))
     val r3_p3_claim = RouteAChannels.p3_claim(p)
     val r3_p3_claim_ack_in = Flipped(RouteAChannels.p3_claim_ack(p))
     val r3_admission_context_out = RouteAChannels.admission_context(p)
     val r3_admission_authority_out = RouteAChannels.r6_authority_transition(p)
+    val r3_pending_payload_binding_out = RouteAChannels.pending_payload_read_binding(p)
   })
 
   private val states = Enum(7)
@@ -854,12 +859,14 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
   val groupValidRecords = Reg(UInt(ordinalWidth.W))
   val members = Reg(Vec(MemberCount, new AdmissionContext(p)))
   val authorities = Reg(Vec(MemberCount, new R6AuthorityTransition(p)))
+  val payloadBindings = Reg(Vec(MemberCount, new PendingPayloadReadBinding(p)))
   val allocatedPageRef = Reg(new PageRef)
   val allocatedRequiresTailLink = RegInit(false.B)
   val relayOrdinal = RegInit(0.U(ordinalWidth.W))
 
   val context = io.r6_admission_context_in.bits
   val authority = io.r6_authority_in.bits
+  val payloadBinding = io.pending_payload_binding_in.bits
   val contextCoordinate = context.logical_position * 288.U + context.layer * 8.U + context.kv_head
   val ordinalInRange = context.group_member_ordinal < context.group_valid_records &&
     context.group_valid_records =/= 0.U && context.group_valid_records <= MemberCount.U
@@ -871,15 +878,27 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
     authority.from_authority === RouteAAuthorityStateCode.Hot.U &&
     authority.to_authority === RouteAAuthorityStateCode.Pending.U &&
     authority.transaction_group_tag === context.transaction_group_tag
+  val payloadBindingMatches =
+    payloadBinding.entry_id === context.entry_id &&
+      payloadBinding.layer === context.layer &&
+      payloadBinding.kv_head === context.kv_head &&
+      payloadBinding.logical_position === context.logical_position &&
+      payloadBinding.payload_ref === context.payload_ref &&
+      payloadBinding.transaction_group_tag === context.transaction_group_tag &&
+      payloadBinding.group_member_ordinal === context.group_member_ordinal &&
+      payloadBinding.group_valid_records === context.group_valid_records
   val acceptedMember = state === StateCollect && ordinalInRange && authorityMatches &&
-    context.entry_id === contextCoordinate && (firstMember || groupMatches) && (present & ordinalMask) === 0.U
+    payloadBindingMatches && context.entry_id === contextCoordinate &&
+    (firstMember || groupMatches) && (present & ordinalMask) === 0.U
 
   // R6 emits these as two independent decoupled channels, but the frozen
   // retained admission contract permits only an atomic pair at this ingress.
-  io.r6_admission_context_in.ready := acceptedMember && io.r6_authority_in.valid
-  io.r6_authority_in.ready := acceptedMember && io.r6_admission_context_in.valid
+  io.r6_admission_context_in.ready := acceptedMember && io.r6_authority_in.valid && io.pending_payload_binding_in.valid
+  io.r6_authority_in.ready := acceptedMember && io.r6_admission_context_in.valid && io.pending_payload_binding_in.valid
+  io.pending_payload_binding_in.ready := acceptedMember && io.r6_admission_context_in.valid && io.r6_authority_in.valid
   when(io.r6_admission_context_in.fire) {
     assert(io.r6_authority_in.fire)
+    assert(io.pending_payload_binding_in.fire)
     when(firstMember) {
       groupLayer := context.layer
       groupHead := context.kv_head
@@ -890,11 +909,15 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
     present := nextPresent
     members(context.group_member_ordinal(5, 0)) := context
     authorities(context.group_member_ordinal(5, 0)) := authority
+    payloadBindings(context.group_member_ordinal(5, 0)) := payloadBinding
     when(PopCount(nextPresent) === context.group_valid_records) {
       state := StateAllocate
     }
   }
   when(io.r6_authority_in.fire) { assert(io.r6_admission_context_in.fire) }
+  when(io.pending_payload_binding_in.fire) {
+    assert(io.r6_admission_context_in.fire && io.r6_authority_in.fire)
+  }
 
   io.r5_allocation_req.valid := state === StateAllocate
   io.r5_allocation_req.bits.layer := groupLayer
@@ -936,15 +959,20 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
 
   val relayMember = members(relayOrdinal(5, 0))
   val relayAuthority = authorities(relayOrdinal(5, 0))
+  val relayPayloadBinding = payloadBindings(relayOrdinal(5, 0))
   val relayActive = state === StateRelay && relayOrdinal < groupValidRecords
   io.r3_admission_context_out.valid := relayActive
   io.r3_admission_context_out.bits := relayMember
   io.r3_admission_authority_out.valid := relayActive
   io.r3_admission_authority_out.bits := relayAuthority
-  when(io.r3_admission_context_out.fire || io.r3_admission_authority_out.fire) {
-    // The frozen R3 join makes the two fires simultaneous.  This assertion
-    // prevents a future alternate consumer from silently accepting one half.
-    assert(io.r3_admission_context_out.fire && io.r3_admission_authority_out.fire)
+  io.r3_pending_payload_binding_out.valid := relayActive
+  io.r3_pending_payload_binding_out.bits := relayPayloadBinding
+  when(io.r3_admission_context_out.fire || io.r3_admission_authority_out.fire ||
+      io.r3_pending_payload_binding_out.fire) {
+    // The frozen R3 join makes the three retained-member facts simultaneous.
+    // A future alternate consumer must not accept only a subset.
+    assert(io.r3_admission_context_out.fire && io.r3_admission_authority_out.fire &&
+      io.r3_pending_payload_binding_out.fire)
     when(relayOrdinal + 1.U === groupValidRecords) {
       state := StateDone
     }.otherwise {
@@ -963,6 +991,10 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
     assert(relayAuthority.entry_id === relayMember.entry_id)
     assert(relayAuthority.from_authority === RouteAAuthorityStateCode.Hot.U)
     assert(relayAuthority.to_authority === RouteAAuthorityStateCode.Pending.U)
+    assert(io.r3_pending_payload_binding_out.valid)
+    assert(relayPayloadBinding.entry_id === relayMember.entry_id)
+    assert(relayPayloadBinding.payload_ref === relayMember.payload_ref)
+    assert(relayPayloadBinding.transaction_group_tag === relayMember.transaction_group_tag)
   }
 
   val heldAllocation = RegEnable(io.r5_allocation_req.bits, io.r5_allocation_req.valid && !io.r5_allocation_req.ready)
@@ -977,6 +1009,11 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
     io.r3_admission_context_out.valid && !io.r3_admission_context_out.ready)
   when(RegNext(io.r3_admission_context_out.valid && !io.r3_admission_context_out.ready, false.B)) {
     assert(io.r3_admission_context_out.bits.asUInt === heldRelayContext.asUInt)
+  }
+  val heldRelayBinding = RegEnable(io.r3_pending_payload_binding_out.bits,
+    io.r3_pending_payload_binding_out.valid && !io.r3_pending_payload_binding_out.ready)
+  when(RegNext(io.r3_pending_payload_binding_out.valid && !io.r3_pending_payload_binding_out.ready, false.B)) {
+    assert(io.r3_pending_payload_binding_out.bits.asUInt === heldRelayBinding.asUInt)
   }
 }
 
@@ -1157,6 +1194,10 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     val p3_claim_ack = RouteAChannels.p3_claim_ack(p)
     val admission_context_in = Flipped(RouteAChannels.admission_context(p))
     val admission_authority_in = Flipped(RouteAChannels.r6_authority_transition(p))
+    // RTL3.9-A0 pending-payload provenance.  R3 validates this together with
+    // the admitted member and stores it for the later, separate pack-read
+    // work materializer; it does not create an R2/R1 request in this step.
+    val pending_payload_binding_in = Flipped(RouteAChannels.pending_payload_read_binding(p))
     val authority_transition_out = RouteAChannels.r6_authority_transition(p)
     val publication_commit_observation = RouteAChannels.publication_commit_observation(p)
     val publication_member_observation = RouteAChannels.publication_member_observation(p)
@@ -1226,6 +1267,8 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   // sidecar/payload references only, never K/V data or authoritative residency.
   val membershipPresent = RegInit(VecInit(Seq.fill(stages)(0.U(64.W))))
   val membershipEntries = Reg(Vec(stages, Vec(64, new AdmissionContext(p))))
+  val membershipPayloadBindingPresent = RegInit(VecInit(Seq.fill(stages)(0.U(64.W))))
+  val membershipPayloadBindings = Reg(Vec(stages, Vec(64, new PendingPayloadReadBinding(p))))
   val observationActive = RegInit(VecInit(Seq.fill(stages)(false.B)))
   val observationCommitSent = RegInit(VecInit(Seq.fill(stages)(false.B)))
   val observationMemberOrdinal = RegInit(VecInit(Seq.fill(stages)(0.U(RouteAAnchorWidths.P3ValidRecordsWidth.W))))
@@ -1271,6 +1314,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     stageDescriptorPrerequisite(claimLayer) := false.B
     payloadDurablePending(claimLayer) := false.B
     membershipPresent(claimLayer) := 0.U
+    membershipPayloadBindingPresent(claimLayer) := 0.U
     claimAckValid := true.B
     claimAckLayer := claimLayer
     claimAckGeneration := nextGeneration
@@ -1282,12 +1326,22 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val admission = io.admission_context_in.bits
   val admissionLayer = admission.layer
   val admissionAuthority = io.admission_authority_in.bits
+  val pendingPayloadBinding = io.pending_payload_binding_in.bits
   val admissionCoordinate = admission.logical_position * 288.U + admission.layer * 8.U + admission.kv_head
   val admissionOrdinalMask = 1.U(64.W) << admission.group_member_ordinal
   val admissionAuthorityMatches = admissionAuthority.entry_id === admission.entry_id &&
     admissionAuthority.from_authority === RouteAAuthorityStateCode.Hot.U &&
     admissionAuthority.to_authority === RouteAAuthorityStateCode.Pending.U &&
     admissionAuthority.transaction_group_tag === admission.transaction_group_tag
+  val pendingPayloadBindingMatches =
+    pendingPayloadBinding.entry_id === admission.entry_id &&
+      pendingPayloadBinding.layer === admission.layer &&
+      pendingPayloadBinding.kv_head === admission.kv_head &&
+      pendingPayloadBinding.logical_position === admission.logical_position &&
+      pendingPayloadBinding.payload_ref === admission.payload_ref &&
+      pendingPayloadBinding.transaction_group_tag === admission.transaction_group_tag &&
+      pendingPayloadBinding.group_member_ordinal === admission.group_member_ordinal &&
+      pendingPayloadBinding.group_valid_records === admission.group_valid_records
   val admissionStageMatches = initialized && !observationActive(admissionLayer) &&
     (stageState(admissionLayer) === StateReserved || stageState(admissionLayer) === StateFilling ||
       stageState(admissionLayer) === StateComplete || stageState(admissionLayer) === StateWriteIssued ||
@@ -1299,15 +1353,32 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     admission.group_member_ordinal < admission.group_valid_records &&
     admission.entry_id === admissionCoordinate &&
     (membershipPresent(admissionLayer) & admissionOrdinalMask) === 0.U
-  val admissionJoinReady = admissionStageMatches && admissionAuthorityMatches
+  // The generic R3 wrapper still supports its historical hot-payload unit
+  // tests without a pending-memory read.  When a binding is offered, however,
+  // it must join atomically with the context/authority pair and becomes
+  // mandatory for any later P3 pack-read work from that member.
+  val pendingBindingOffered = io.pending_payload_binding_in.valid
+  val admissionJoinReady = admissionStageMatches && admissionAuthorityMatches &&
+    (!pendingBindingOffered || pendingPayloadBindingMatches)
   io.admission_context_in.ready := admissionJoinReady && io.admission_authority_in.valid
   io.admission_authority_in.ready := admissionJoinReady && io.admission_context_in.valid
+  io.pending_payload_binding_in.ready := admissionJoinReady && io.admission_context_in.valid && io.admission_authority_in.valid
   when(io.admission_context_in.fire) {
     assert(io.admission_authority_in.fire)
     membershipPresent(admissionLayer) := membershipPresent(admissionLayer) | admissionOrdinalMask
     membershipEntries(admissionLayer)(admission.group_member_ordinal(5, 0)) := admission
+    when(pendingBindingOffered) {
+      assert(io.pending_payload_binding_in.fire)
+      membershipPayloadBindingPresent(admissionLayer) := membershipPayloadBindingPresent(admissionLayer) | admissionOrdinalMask
+      membershipPayloadBindings(admissionLayer)(admission.group_member_ordinal(5, 0)) := pendingPayloadBinding
+    }
   }
-
+  when(io.admission_authority_in.fire) {
+    assert(io.admission_context_in.fire)
+  }
+  when(io.pending_payload_binding_in.fire) {
+    assert(io.admission_context_in.fire && io.admission_authority_in.fire)
+  }
   // RTL2.3-C2: a retained P3 member has exactly one logical pack-read work
   // item, with eight 64-B fragments.  The work carrier supplies only
   // transaction/eligibility and opaque transport facts.  Layer, generation,
@@ -1320,13 +1391,20 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val packReadOrdinal = packReadWork.member_ordinal(5, 0)
   val packReadOrdinalMask = 1.U(64.W) << packReadOrdinal
   val packReadMemberPresent = membershipPresent(packReadLayer) & packReadOrdinalMask
+  val packReadBindingPresent = membershipPayloadBindingPresent(packReadLayer) & packReadOrdinalMask
   val packReadMember = membershipEntries(packReadLayer)(packReadOrdinal)
+  val packReadBinding = membershipPayloadBindings(packReadLayer)(packReadOrdinal)
   val packReadStageLive = initialized &&
     (stageState(packReadLayer) === StateReserved || stageState(packReadLayer) === StateFilling) &&
     stageGeneration(packReadLayer) === packReadWork.stage_generation
   val packReadLegal = packReadStageLive && packReadMemberPresent =/= 0.U &&
     packReadWork.member_ordinal < stageValidRecords(packReadLayer) &&
-    packReadWork.payload_ref === packReadMember.payload_ref
+    packReadBindingPresent =/= 0.U &&
+    packReadWork.payload_ref === packReadMember.payload_ref &&
+    packReadWork.transaction_identity.asUInt === packReadBinding.transaction_identity.asUInt &&
+    packReadWork.payload_handle_or_address === packReadBinding.payload_handle_or_address &&
+    packReadWork.source_generation === packReadBinding.source_generation &&
+    packReadWork.destination_endpoint === packReadBinding.destination_endpoint
 
   io.p3_pack_read_issue_out.valid := io.p3_pack_read_work_in.valid && packReadLegal
   io.p3_pack_read_issue_out.bits := 0.U.asTypeOf(new ReadIssueDescriptor(p))

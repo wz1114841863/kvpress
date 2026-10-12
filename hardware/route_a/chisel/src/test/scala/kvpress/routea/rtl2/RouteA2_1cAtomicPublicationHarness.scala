@@ -54,6 +54,7 @@ final class RouteA2_1cAtomicPublicationHarness(p: RouteASkeletonParameters) exte
   r3.io.p3_claim_in <> io.p3_claim
   r3.io.admission_context_in <> io.admission_context
   r3.io.admission_authority_in <> io.admission_authority
+  StructuralTieOff.source(r3.io.pending_payload_binding_in)
   r3.io.p3_pending_fragment_in <> io.hot_payload
   r3.io.p3_sidecar_bind_in <> io.hot_sidecar
   StructuralTieOff.source(r3.io.p3_pack_read_work_in)

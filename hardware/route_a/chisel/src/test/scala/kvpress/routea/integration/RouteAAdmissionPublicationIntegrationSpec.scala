@@ -83,6 +83,7 @@ private final class RouteAAdmissionPublicationHarness(p: RouteASkeletonParameter
   r3.io.admission_authority_in.bits := lifecycle.io.authority_transition_out.bits
   lifecycle.io.authority_transition_out.ready := Mux(r6ToPending, r3.io.admission_authority_in.ready, true.B)
   r3.io.admission_context_in <> lifecycle.io.admission_context_out
+  StructuralTieOff.source(r3.io.pending_payload_binding_in)
   lifecycle.io.authority_transition_in <> r3.io.authority_transition_out
   io.commit_observation <> r3.io.publication_commit_observation
   io.member_observation <> r3.io.publication_member_observation

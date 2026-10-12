@@ -94,6 +94,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
 
     Seq(
       "frontend_lifecycle_req",
+      "pending_payload_read_binding_in",
       "runtime_retire_req",
       "source_plan_declaration_in",
       "attention_terminal_rsp",

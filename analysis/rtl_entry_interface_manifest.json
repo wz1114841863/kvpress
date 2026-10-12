@@ -104,6 +104,11 @@
       "name": "route_a_functional_r4_merge_provider",
       "role": "Consumes the R4 complete accepted-packet observation as a testbench-only pure-software functional oracle provider; it is not a Route-A DUT module or production numeric core.",
       "contract_reference": "analysis/rtl3_4b_functional_r4_provider_contract.md"
+    },
+    {
+      "name": "pending_payload_storage_owner",
+      "role": "Supplies the immutable opaque pending-payload handle, source generation, destination endpoint, and matching R1 transaction identity for accepted RETAIN members; it is outside the Route-A DUT hierarchy and selects no physical memory realization.",
+      "contract_reference": "analysis/rtl3_9_a0_pending_payload_read_association_contract.md"
     }
   ],
   "owner_claims": [
@@ -311,6 +316,13 @@
       "consumer": "route_a_lifecycle_adapter",
       "purpose": "External logical retirement request and matching acknowledgement boundary.",
       "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"
+    },
+    {
+      "id": "pending_payload_owner_to_top",
+      "producer": "pending_payload_storage_owner",
+      "consumer": "route_a_kv_subsystem_top",
+      "purpose": "Immutable pending-payload provenance binding enters only with the matching retained admission and hot-to-pending authority transition; it does not issue a read request.",
+      "contract_reference": "analysis/rtl3_9_a0_pending_payload_read_association_contract.md"
     }
   ],
   "interface_records": {
@@ -335,6 +347,14 @@
         "producer": "frontend_post_decision_adapter", "consumer": "route_a_lifecycle_adapter", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md",
         "applicability": "session_start, kv_arrival, maturity_disposition, and attention_service only; admission_group_* is meaningful only for accepted RETAIN maturity", "contract_reference": "analysis/rtl1_i2_admission_publication_contract.md",
         "fields": [{"name": "session_id", "width": "1", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "context_tokens", "width": "16", "parameter_source": "analysis/architecture_gate_a3_rtl_entry_qwen3_8b_32k_s1_v1.json#/deployment_envelope/max_context_tokens"}, {"name": "entry_id", "width": "24", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "layer", "width": "6", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "kv_head", "width": "3", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "logical_position/query_position", "width": "15", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "payload_ref", "width": "64 opaque", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "disposition", "width": "1 {DROP,RETAIN}", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "transaction_identity", "width": "rid[2:0]+incarnation[1:0]", "parameter_source": "analysis/architecture_gate_a3_rtl_entry_qwen3_8b_32k_s1_v1.json#/transaction_identity"}, {"name": "admission_group_tag", "width": "transactionGroupTagWidth opaque", "parameter_source": "analysis/rtl1_i2_admission_publication_contract.md"}, {"name": "admission_member_ordinal", "width": "7", "parameter_source": "analysis/rtl1_i2_admission_publication_contract.md"}, {"name": "admission_group_valid_records", "width": "7; legal 1..64", "parameter_source": "analysis/rtl1_i2_admission_publication_contract.md"}]
+      },
+      {
+        "record_id": "if_pending_payload_read_binding",
+        "module": "route_a_kv_subsystem_top", "port": "pending_payload_read_binding_in", "peer_port": "route_a_admission_publication_ingress_adapter.pending_payload_binding_in", "direction": "input",
+        "width": "logical immutable identity/member coordinates plus opaque pending handle, generation, and endpoint", "clock": "core_clk", "reset": "destructive_reset; no retained binding survives reset", "handshake": "ready_valid",
+        "producer": "pending_payload_storage_owner", "consumer": "route_a_kv_subsystem_top", "parameter_source": "analysis/rtl3_9_a0_pending_payload_read_association_contract.md",
+        "applicability": "only accepted RETAIN maturity; must fire atomically with its matching AdmissionContext and hot-to-pending authority transition", "contract_reference": "analysis/rtl3_9_a0_pending_payload_read_association_contract.md",
+        "fields": [{"name": "transaction_identity", "width": "rid[2:0]+incarnation[1:0]", "parameter_source": "analysis/architecture_gate_a3_rtl_entry_qwen3_8b_32k_s1_v1.json#/transaction_identity"}, {"name": "entry_id/layer/kv_head/logical_position/payload_ref", "width": "existing immutable admission coordinates", "parameter_source": "analysis/rtl1_i2_admission_publication_contract.md"}, {"name": "transaction_group_tag/member_ordinal/valid_records", "width": "opaque tag + 7 + 7", "parameter_source": "analysis/rtl1_i2_admission_publication_contract.md"}, {"name": "payload_handle_or_address", "width": "coreMemoryAddressRefWidth opaque", "parameter_source": "analysis/rtl3_9_a0_pending_payload_read_association_contract.md"}, {"name": "source_generation", "width": "sourceGenerationWidth", "parameter_source": "analysis/rtl1_i3_delivery_source_contract.md"}, {"name": "destination_endpoint", "width": "coreMemoryDestinationWidth opaque", "parameter_source": "analysis/rtl3_9_a0_pending_payload_read_association_contract.md"}]
       },
       {
         "record_id": "if_runtime_retire_req", "module": "route_a_lifecycle_adapter", "port": "runtime_retire_req", "peer_port": "session_retire_req_out", "direction": "input", "width": "session_id[0:0] + transaction_identity[4:0]", "clock": "core_clk", "reset": "destructive_reset", "handshake": "ready_valid", "producer": "runtime_session_manager", "consumer": "route_a_lifecycle_adapter", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md", "applicability": "one active anchor session", "contract_reference": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md", "fields": [{"name": "session_id", "width": "1", "parameter_source": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md"}, {"name": "transaction_identity", "width": "5", "parameter_source": "analysis/architecture_gate_a3_rtl_entry_qwen3_8b_32k_s1_v1.json#/transaction_identity"}]

@@ -34,6 +34,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
   // data, address, admission, authority, or delivery-context fact.
   val hot_payload_fragment_in = IO(Flipped(RouteAChannels.p3_pending_fragment(p)))
   val hot_position_sidecar_in = IO(Flipped(RouteAChannels.p3_sidecar_bind(p)))
+  // Pending-payload owner association for a retained member's later
+  // pending->P3 read.  This carries opaque location/generation provenance;
+  // it is not a physical address, R2 candidate, or scheduler command.
+  val pending_payload_read_binding_in = IO(Flipped(RouteAChannels.pending_payload_read_binding(p)))
   // The only outer functional source-packet boundary.  It is the named,
   // replaceable attention-partial provider from RTL3.5-A, not a storage owner
   // or a verification ingress.  It may provide only partial packet carriers;
@@ -285,12 +289,14 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     admission_group_builder.io.r6_authority_in.valid := lifecycle.io.authority_transition_out.valid && r6ToPending
     admission_group_builder.io.r6_authority_in.bits := lifecycle.io.authority_transition_out.bits
     lifecycle.io.authority_transition_out.ready := Mux(r6ToPending, admission_group_builder.io.r6_authority_in.ready, true.B)
+    admission_group_builder.io.pending_payload_binding_in <> pending_payload_read_binding_in
     admission_group_builder.io.r5_allocation_req <> page_manager.io.page_allocation_req_in
     admission_group_builder.io.r5_allocation_rsp_in <> page_manager.io.page_allocation_rsp
     admission_group_builder.io.r3_p3_claim <> m2_p3.io.p3_claim_in
     admission_group_builder.io.r3_p3_claim_ack_in <> m2_p3.io.p3_claim_ack
     admission_group_builder.io.r3_admission_context_out <> m2_p3.io.admission_context_in
     admission_group_builder.io.r3_admission_authority_out <> m2_p3.io.admission_authority_in
+    admission_group_builder.io.r3_pending_payload_binding_out <> m2_p3.io.pending_payload_binding_in
     p3_pending_ingress.io.hot_in <> hot_payload_fragment_in
     p3_pending_ingress.io.pack_read_in <> p3_pack_read_endpoint.io.p3_pending_fragment_out
     val p3_fragment = p3_pending_ingress.io.out

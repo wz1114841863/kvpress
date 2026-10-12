@@ -64,6 +64,7 @@ REQUIRED_OWNER_RESOURCES = frozenset(
 REQUIRED_PORT_RECORD_IDS = frozenset(
     {
         "if_frontend_lifecycle_req",
+        "if_pending_payload_read_binding",
         "if_runtime_retire_req",
         "if_lifecycle_terminal_rsp",
         "if_lifecycle_retire_ack",

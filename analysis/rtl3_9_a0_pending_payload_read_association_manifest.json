@@ -1,0 +1,85 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-a0-pending-payload-read-association-1.0",
+  "status": "complete_pending_payload_provenance_binding_pre_rtl3_9_a_materialization",
+  "scope": "Immutable pending-payload provenance association only; no P3 work materializer, scheduler, numeric, physical-memory, timing, or PPA conclusion.",
+  "owner": {
+    "sole_producer": "pending_payload_storage_owner",
+    "frozen_consumers": [
+      "route_a_admission_publication_ingress_adapter",
+      "route_a_m2_p3_wrapper"
+    ],
+    "top_port": "pending_payload_read_binding_in"
+  },
+  "atomic_join": {
+    "inputs": [
+      "AdmissionContext",
+      "R6AuthorityTransition hot_to_pending",
+      "PendingPayloadReadBinding"
+    ],
+    "coordinate_fields": [
+      "entry_id", "layer", "kv_head", "logical_position", "payload_ref",
+      "transaction_group_tag", "group_member_ordinal", "group_valid_records"
+    ],
+    "binding_only_fields": [
+      "transaction_identity", "payload_handle_or_address", "source_generation", "destination_endpoint"
+    ]
+  },
+  "p3_pack_read_gate": {
+    "top_work_producer_active": false,
+    "future_materializer_authorized": false,
+    "accepted_work_requires_exact_binding": [
+      "payload_ref", "transaction_identity", "payload_handle_or_address",
+      "source_generation", "destination_endpoint"
+    ]
+  },
+  "disposition": {
+    "r3_pending_member_binding_ledger": true,
+    "p3_pack_read_work_top_tieoff_retained": true,
+    "r2_scheduler_or_arbitration_changed": false,
+    "authority_or_atomic_publication_changed": false,
+    "physical_address_or_memory_controller_selected": false,
+    "rtl3_9_a_materializer_complete": false,
+    "rtl3_final_review_authorized": false
+  },
+  "verification": {
+    "chisel_command": "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl2.RouteAAdmissionPublicationIngressAdapterSpec' 'testOnly kvpress.routea.rtl2.RouteAR3PackReadPathSpec' 'testOnly kvpress.routea.rtl2.RouteARTL265a2PackReadPublicationSpec' 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec'",
+    "chisel_result": "PASS: Test / compile; ingress-adapter suite 2/2; RTL2.1b real R3-pack-read/write/publication focused success case 1/1; R3 pack-read stale/mismatched-member fail-closed focused case 1/1; structural-top suite 3/3.",
+    "executed_commands": [
+      "cd hardware/route_a/chisel && sbt -batch 'Test / compile'",
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl2.RouteAAdmissionPublicationIngressAdapterSpec'",
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl2.RouteARTL265a2PackReadPublicationSpec -- -z \"uses the actual R3 pack-read path\"'",
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl2.RouteAR3PackReadPathSpec -- -z \"drops stale identity and refuses mismatched member work\"'",
+      "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec'",
+      ".venv/bin/pytest -q tests/test_rtl_entry_interface_manifest.py tests/test_rtl3_9_a0_pending_payload_read_association.py"
+    ],
+    "evidence_labels": [
+      "directed Chisel functional control/provenance protocol",
+      "no model/GPU",
+      "no cycle/timing/throughput/deadlock claim",
+      "no numeric RTL correctness claim",
+      "no PPA claim",
+      "no new A4 DSE"
+    ]
+  },
+  "source_sha256": {
+    "analysis/rtl3_9_a0_pending_payload_read_association_contract.md": "a3e3d7625bb3d21345c533485de431b66cb3740da46522caca2fffe08bd9fc21",
+    "analysis/rtl2_phase_contract.md": "95572a4b72af5528b4033ea116e198c492567afc5c6c92ebaddb37138e747f81",
+    "analysis/rtl_entry_interface_manifest.json": "7085a9e39d41c78b83bea3d1e2548c93699d0b5a2fec0f1a41116441948b6f2f",
+    "analysis/rtl_entry_port_parameter_contract.md": "dd4dae2de78c747f4f9dd7b4822f301e62bece4a6f13781b114e7a2c33ec7bcd",
+    "kvpress/rtl_entry_manifest.py": "75925384d6890152556e41a8dac1f7fc0f127a2915fb657ffda419ec4f8facd7",
+    "tests/test_rtl_entry_interface_manifest.py": "75eb14ba2a40a45cdcec025aa60c9897a647aa8d40cefabacf295b7cd6d5bbf5",
+    "tools/validate_rtl3_9_a0_pending_payload_read_association.py": "e29933248967bcad46f730eeb0654563a1f32c836c607df59555def3dad373ee",
+    "tests/test_rtl3_9_a0_pending_payload_read_association.py": "e59916faf7ec30295062f605462403263ed5f0de24f3db4f2dd5338a96d4ec1e",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "f0c26e05b820d1d76ee074d120937dbbeb943fc118169406cd040fcd454628ca",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "32e9c732722e918cdbc37cc70fae11ba0fd6349a80c023b3fdceb81986bd6770",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "e76647ec3fb02d49d9064c413d44fd684ea883713e9d5d1138ae769668e6066a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAAdmissionPublicationIntegrationSpec.scala": "7aa2855d0486c819a2acc0de2c45ba60accf41cd92e568679840474f3299a7e9",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1bWritePathHarness.scala": "2d0ecc95850a4f9280391fff5b906cea845e6dd804feb227b3c716cca70a5865",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1cAtomicPublicationHarness.scala": "7e09a21d4fcf81c150a7ee2bb838fe13c0dc3b6454b45ebbcd6633c3498a615a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAdmissionPublicationIngressAdapterSpec.scala": "e161fff0acc631765d279d408179934f5e47c5aaad4bd53eec35274808db8473",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR3PackReadPathSpec.scala": "d81961ecce2cfc854fbc51b1cafc8c26154bdffc2c41da0a2b7d61a06faca93b",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala": "6f0978d152c3884795e4eea60c8fcb362dd76304e278a6299e471f123fd45f08",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/r3_r5/RouteAR3R5PublicationSpec.scala": "1b511244036be0328416e1f7dd5f937f7c770f86c4854e522a1d4f24f33c3d84",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala": "aace7dec8b4f5480e26dc16d015812bb54e2002c1a9aab2690ad6d1e9937a405"
+  }
+}

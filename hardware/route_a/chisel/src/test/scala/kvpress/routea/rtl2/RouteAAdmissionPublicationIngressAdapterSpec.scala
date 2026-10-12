@@ -32,12 +32,14 @@ final class RouteAAdmissionPublicationIngressAdapterSpec extends AnyFunSpec with
   private def init(dut: RouteAAdmissionPublicationIngressAdapter): Unit = {
     dut.io.r6_admission_context_in.valid.poke(false.B)
     dut.io.r6_authority_in.valid.poke(false.B)
+    dut.io.pending_payload_binding_in.valid.poke(false.B)
     dut.io.r5_allocation_req.ready.poke(false.B)
     dut.io.r5_allocation_rsp_in.valid.poke(false.B)
     dut.io.r3_p3_claim.ready.poke(false.B)
     dut.io.r3_p3_claim_ack_in.valid.poke(false.B)
     dut.io.r3_admission_context_out.ready.poke(false.B)
     dut.io.r3_admission_authority_out.ready.poke(false.B)
+    dut.io.r3_pending_payload_binding_out.ready.poke(false.B)
     dut.io.r5_allocation_rsp_in.bits.layer.poke(0.U)
     dut.io.r5_allocation_rsp_in.bits.kv_head.poke(0.U)
     dut.io.r5_allocation_rsp_in.bits.page_ref.page_id.poke(0.U)
@@ -46,6 +48,19 @@ final class RouteAAdmissionPublicationIngressAdapterSpec extends AnyFunSpec with
     dut.io.r5_allocation_rsp_in.bits.transaction_group_tag.poke(0.U)
     dut.io.r3_p3_claim_ack_in.bits.layer.poke(0.U)
     dut.io.r3_p3_claim_ack_in.bits.stage_generation.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.transaction_identity.request_id.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.transaction_identity.incarnation.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.entry_id.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.layer.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.kv_head.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.logical_position.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.payload_ref.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.transaction_group_tag.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.group_member_ordinal.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.group_valid_records.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.payload_handle_or_address.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.source_generation.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.destination_endpoint.poke(0.U)
   }
 
   private def driveMember(
@@ -64,14 +79,20 @@ final class RouteAAdmissionPublicationIngressAdapterSpec extends AnyFunSpec with
     val authority = dut.io.r6_authority_in.bits
     authority.entry_id.poke(entry.U); authority.from_authority.poke(RouteAAuthorityStateCode.Hot.U)
     authority.to_authority.poke(authorityTo.U); authority.transaction_group_tag.poke(tag.U)
+    val binding = dut.io.pending_payload_binding_in.bits
+    binding.transaction_identity.request_id.poke((ordinal + 1).U); binding.transaction_identity.incarnation.poke(0.U)
+    binding.entry_id.poke(entry.U); binding.layer.poke(0.U); binding.kv_head.poke(0.U)
+    binding.logical_position.poke(position.U); binding.payload_ref.poke((position + 10).U)
+    binding.transaction_group_tag.poke(tag.U); binding.group_member_ordinal.poke(ordinal.U); binding.group_valid_records.poke(records.U)
+    binding.payload_handle_or_address.poke((0x40 + ordinal).U); binding.source_generation.poke(1.U); binding.destination_endpoint.poke(0.U)
   }
 
   private def offerMember(dut: RouteAAdmissionPublicationIngressAdapter, ordinal: Int, records: Int, position: Int): Unit = {
     driveMember(dut, ordinal, records, position)
-    dut.io.r6_admission_context_in.valid.poke(true.B); dut.io.r6_authority_in.valid.poke(true.B)
-    dut.io.r6_admission_context_in.ready.expect(true.B); dut.io.r6_authority_in.ready.expect(true.B)
+    dut.io.r6_admission_context_in.valid.poke(true.B); dut.io.r6_authority_in.valid.poke(true.B); dut.io.pending_payload_binding_in.valid.poke(true.B)
+    dut.io.r6_admission_context_in.ready.expect(true.B); dut.io.r6_authority_in.ready.expect(true.B); dut.io.pending_payload_binding_in.ready.expect(true.B)
     dut.clock.step()
-    dut.io.r6_admission_context_in.valid.poke(false.B); dut.io.r6_authority_in.valid.poke(false.B)
+    dut.io.r6_admission_context_in.valid.poke(false.B); dut.io.r6_authority_in.valid.poke(false.B); dut.io.pending_payload_binding_in.valid.poke(false.B)
   }
 
   private def offerAllocation(dut: RouteAAdmissionPublicationIngressAdapter, pageId: Int, tag: Int = 1): Unit = {
@@ -123,21 +144,21 @@ final class RouteAAdmissionPublicationIngressAdapterSpec extends AnyFunSpec with
       offerClaimAck(dut, generation = 3)
 
       // Relay canonical ordinal order, not arrival order; both R3 facts must fire together.
-      dut.io.r3_admission_context_out.valid.expect(true.B); dut.io.r3_admission_authority_out.valid.expect(true.B)
+      dut.io.r3_admission_context_out.valid.expect(true.B); dut.io.r3_admission_authority_out.valid.expect(true.B); dut.io.r3_pending_payload_binding_out.valid.expect(true.B)
       dut.io.r3_admission_context_out.bits.entry_id.expect((2 * 288).U)
       dut.io.r3_admission_context_out.bits.payload_ref.expect(12.U)
       dut.clock.step()
       dut.io.r3_admission_context_out.bits.entry_id.expect((2 * 288).U)
-      dut.io.r3_admission_context_out.ready.poke(true.B); dut.io.r3_admission_authority_out.ready.poke(true.B)
+      dut.io.r3_admission_context_out.ready.poke(true.B); dut.io.r3_admission_authority_out.ready.poke(true.B); dut.io.r3_pending_payload_binding_out.ready.poke(true.B)
       dut.clock.step()
-      dut.io.r3_admission_context_out.ready.poke(false.B); dut.io.r3_admission_authority_out.ready.poke(false.B)
+      dut.io.r3_admission_context_out.ready.poke(false.B); dut.io.r3_admission_authority_out.ready.poke(false.B); dut.io.r3_pending_payload_binding_out.ready.poke(false.B)
       dut.io.r3_admission_context_out.valid.expect(true.B)
       dut.io.r3_admission_context_out.bits.entry_id.expect((7 * 288).U)
       dut.io.r3_admission_authority_out.bits.from_authority.expect(RouteAAuthorityStateCode.Hot.U)
       dut.io.r3_admission_authority_out.bits.to_authority.expect(RouteAAuthorityStateCode.Pending.U)
-      dut.io.r3_admission_context_out.ready.poke(true.B); dut.io.r3_admission_authority_out.ready.poke(true.B)
+      dut.io.r3_admission_context_out.ready.poke(true.B); dut.io.r3_admission_authority_out.ready.poke(true.B); dut.io.r3_pending_payload_binding_out.ready.poke(true.B)
       dut.clock.step()
-      dut.io.r3_admission_context_out.ready.poke(false.B); dut.io.r3_admission_authority_out.ready.poke(false.B)
+      dut.io.r3_admission_context_out.ready.poke(false.B); dut.io.r3_admission_authority_out.ready.poke(false.B); dut.io.r3_pending_payload_binding_out.ready.poke(false.B)
       dut.io.r3_admission_context_out.valid.expect(false.B); dut.io.r3_admission_authority_out.valid.expect(false.B)
     }
   }
@@ -149,6 +170,15 @@ final class RouteAAdmissionPublicationIngressAdapterSpec extends AnyFunSpec with
       dut.io.r6_admission_context_in.valid.poke(true.B); dut.io.r6_authority_in.valid.poke(false.B)
       dut.io.r6_admission_context_in.ready.expect(false.B)
       dut.io.r6_admission_context_in.valid.poke(false.B)
+
+      // An opaque payload handle/generation may vary, but the immutable
+      // admission coordinate cannot.  A mismatched binding must not consume
+      // either half of the RETAIN pair.
+      driveMember(dut, ordinal = 0, records = 2, position = 0)
+      dut.io.pending_payload_binding_in.bits.payload_ref.poke(99.U)
+      dut.io.r6_admission_context_in.valid.poke(true.B); dut.io.r6_authority_in.valid.poke(true.B); dut.io.pending_payload_binding_in.valid.poke(true.B)
+      dut.io.r6_admission_context_in.ready.expect(false.B); dut.io.r6_authority_in.ready.expect(false.B); dut.io.pending_payload_binding_in.ready.expect(false.B)
+      dut.io.r6_admission_context_in.valid.poke(false.B); dut.io.r6_authority_in.valid.poke(false.B); dut.io.pending_payload_binding_in.valid.poke(false.B)
 
       driveMember(dut, ordinal = 0, records = 2, position = 0, authorityTo = RouteAAuthorityStateCode.Packed)
       dut.io.r6_admission_context_in.valid.poke(true.B); dut.io.r6_authority_in.valid.poke(true.B)

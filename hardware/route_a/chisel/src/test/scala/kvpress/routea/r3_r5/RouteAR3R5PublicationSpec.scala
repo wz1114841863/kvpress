@@ -31,6 +31,9 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
     dut.io.p3_claim_in.valid.poke(false.B); dut.io.p3_claim_ack.ready.poke(true.B)
     dut.io.admission_context_in.valid.poke(false.B); dut.io.admission_authority_in.valid.poke(false.B)
+    // This legacy hot-payload-only R3 test intentionally does not authorize a
+    // pending-memory pack read.  Keep the RTL3.9-A0 binding ingress inactive.
+    dut.io.pending_payload_binding_in.valid.poke(false.B)
     dut.io.authority_transition_out.ready.poke(true.B)
     dut.io.publication_commit_observation.ready.poke(true.B); dut.io.publication_member_observation.ready.poke(true.B)
     dut.io.p3_pending_fragment_in.valid.poke(false.B); dut.io.p3_sidecar_bind_in.valid.poke(false.B)

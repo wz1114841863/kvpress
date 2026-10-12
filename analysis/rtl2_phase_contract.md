@@ -949,6 +949,17 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     completion observer and dynamic response fixture are test-only; it adds no
     source owner, numeric hardware, physical implementation, timing, or PPA
     claim.
+25. **RTL3.9-A0 — pending-payload read-association closure (complete;
+    pre-materialization).**
+    [`rtl3_9_a0_pending_payload_read_association_contract.md`](rtl3_9_a0_pending_payload_read_association_contract.md)
+    introduces the sole pending-payload owner's immutable identity/handle/
+    generation binding and requires its exact atomic join with a retained R6
+    admission pair before R3 records it beside the member ledger.  Existing
+    `P3PackReadWork` is strengthened to reject a work item whose identity,
+    opaque handle, generation, or endpoint does not equal that binding.
+    The production top still ties P3 pack-read work inactive: RTL3.9-A must
+    separately choose only a materialization mechanism, not a new scheduler
+    or memory realization.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,
