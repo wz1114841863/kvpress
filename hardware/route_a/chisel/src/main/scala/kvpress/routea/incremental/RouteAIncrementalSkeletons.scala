@@ -35,6 +35,9 @@ final class RouteAPackedReadAssociationOwner(p: RouteASkeletonParameters) extend
     val registry_allocation_candidate_id_out = Output(UInt(p.candidateIdWidth.W))
     val registry_allocation_ack_in = Flipped(RouteAChannels.delivery_context_allocation_ack(p))
     val packed_s2_work_out = RouteAChannels.packed_s2_read_work(p)
+    // Exact sidecar obligation from the same accepted descriptor/lease.  Its
+    // later adapter cannot issue until the payload terminal has completed.
+    val sidecar_read_work_out = RouteAChannels.sidecar_read_work(p)
     // Endpoint terminal is only a transport completion.  It cannot mark S2
     // READY, release GQA consumers, or imply R4/attention completion.
     val terminal_in = Flipped(RouteAChannels.packed_read_terminal(p))
@@ -62,6 +65,7 @@ final class RouteAPackedReadAssociationOwner(p: RouteASkeletonParameters) extend
   val deliveryContextRef = Reg(UInt(p.sourceDeliveryOpaqueWidth.W))
   val terminalStatus = Reg(UInt(RouteAAnchorWidths.TerminalStatusWidth.W))
   val issued = RegInit(false.B)
+  val sidecarWorkSent = RegInit(false.B)
   val terminalSeen = RegInit(false.B)
 
   private def sameIdentity(left: TransactionIdentity, right: TransactionIdentity): Bool =
@@ -97,6 +101,8 @@ final class RouteAPackedReadAssociationOwner(p: RouteASkeletonParameters) extend
   io.registry_allocation_ack_in.ready := false.B
   io.packed_s2_work_out.valid := false.B
   io.packed_s2_work_out.bits := 0.U.asTypeOf(new PackedS2ReadWork(p))
+  io.sidecar_read_work_out.valid := false.B
+  io.sidecar_read_work_out.bits := 0.U.asTypeOf(new SidecarReadWork(p))
   io.terminal_in.ready := false.B
   io.release_observation_out.valid := false.B
   io.release_observation_out.bits := 0.U.asTypeOf(new PackedReadReleaseObservation(p))
@@ -111,6 +117,7 @@ final class RouteAPackedReadAssociationOwner(p: RouteASkeletonParameters) extend
     haveDescriptor := false.B
     haveLease := false.B
     issued := false.B
+    sidecarWorkSent := false.B
     terminalSeen := false.B
   }.otherwise {
     switch(state) {
@@ -183,7 +190,7 @@ final class RouteAPackedReadAssociationOwner(p: RouteASkeletonParameters) extend
         // The work carrier is emitted exactly once, immediately after the
         // registry's exact acknowledgement.  The producer below it owns the
         // S2-open/read-issue serialization, not this association owner.
-        io.packed_s2_work_out.valid := true.B
+        io.packed_s2_work_out.valid := !issued
         io.packed_s2_work_out.bits.transaction_identity := demand.transaction_identity
         io.packed_s2_work_out.bits.delivery_context_ref := deliveryContextRef
         io.packed_s2_work_out.bits.page_ref := demand.page_ref
@@ -195,9 +202,23 @@ final class RouteAPackedReadAssociationOwner(p: RouteASkeletonParameters) extend
         io.packed_s2_work_out.bits.eligibility_snapshot := demand.eligibility_snapshot
         io.packed_s2_work_out.bits.payload_handle_or_address := descriptor.payload_handle_or_address
         io.packed_s2_work_out.bits.destination_endpoint := demand.destination_endpoint
+        io.sidecar_read_work_out.valid := !sidecarWorkSent
+        io.sidecar_read_work_out.bits.transaction_identity := demand.transaction_identity
+        io.sidecar_read_work_out.bits.page_ref := demand.page_ref
+        io.sidecar_read_work_out.bits.s2_slot := lease.s2_slot
+        io.sidecar_read_work_out.bits.source_generation := lease.source_generation
+        io.sidecar_read_work_out.bits.sidecar_handle_or_address := descriptor.sidecar_handle_or_address
+        io.sidecar_read_work_out.bits.valid_records := publication.valid_records
+        io.sidecar_read_work_out.bits.arrival_ordinal := demand.arrival_ordinal
+        io.sidecar_read_work_out.bits.candidate_id := demand.candidate_id
+        io.sidecar_read_work_out.bits.eligibility_snapshot := demand.eligibility_snapshot
+        io.sidecar_read_work_out.bits.destination_endpoint := demand.destination_endpoint
+        when(io.sidecar_read_work_out.fire) { sidecarWorkSent := true.B }
         when(io.packed_s2_work_out.fire) {
           issued := true.B
-          state := EmitRelease // Work has issued; now await a matching terminal via release state.
+        }
+        when((issued || io.packed_s2_work_out.fire) && (sidecarWorkSent || io.sidecar_read_work_out.fire)) {
+          state := EmitRelease // Both immutable work facts have issued.
         }
       }
       is(EmitRelease) {
@@ -232,11 +253,13 @@ final class RouteAPackedReadAssociationOwner(p: RouteASkeletonParameters) extend
             haveLease := false.B
             issued := false.B
             terminalSeen := false.B
+            sidecarWorkSent := false.B
             state := Collect
           }
         }.otherwise {
           issued := false.B
           terminalSeen := false.B
+          sidecarWorkSent := false.B
           haveDemand := false.B
           havePublication := false.B
           haveDescriptor := false.B
@@ -256,6 +279,11 @@ final class RouteAPackedReadAssociationOwner(p: RouteASkeletonParameters) extend
     io.packed_s2_work_out.valid && !io.packed_s2_work_out.ready)
   when(RegNext(io.packed_s2_work_out.valid && !io.packed_s2_work_out.ready, false.B)) {
     assert(io.packed_s2_work_out.bits.asUInt === heldWork.asUInt)
+  }
+  val heldSidecarWork = RegEnable(io.sidecar_read_work_out.bits,
+    io.sidecar_read_work_out.valid && !io.sidecar_read_work_out.ready)
+  when(RegNext(io.sidecar_read_work_out.valid && !io.sidecar_read_work_out.ready, false.B)) {
+    assert(io.sidecar_read_work_out.bits.asUInt === heldSidecarWork.asUInt)
   }
 }
 

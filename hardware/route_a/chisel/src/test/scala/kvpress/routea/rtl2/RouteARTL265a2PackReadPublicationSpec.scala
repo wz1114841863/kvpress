@@ -135,6 +135,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   endpoint.io.resolved_fragment_in <> endpointDemux.io.p3_pack_read_out
   StructuralTieOff.sink(endpointDemux.io.direct_pending_out)
   StructuralTieOff.sink(endpointDemux.io.packed_s2_out)
+  StructuralTieOff.sink(endpointDemux.io.packed_s2_sidecar_out)
 
   StructuralTieOff.source(p3Ingress.io.hot_in)
   p3Ingress.io.pack_read_in <> endpoint.io.p3_pending_fragment_out

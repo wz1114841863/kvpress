@@ -54,6 +54,9 @@ object RouteADeliveryTargetKind {
   final val DirectPendingRead = 3
   final val PackedWriteTerminal = 4
   final val DescriptorMaintenanceTerminal = 5
+  // Logical sidecar-response route for the already selected packed source.
+  // It reuses the frozen packed read class and selects no new R2 class.
+  final val S2PackedSidecar = 6
 }
 
 /** Registry-selected write endpoint; it is not a physical crossbar encoding. */
@@ -660,6 +663,23 @@ final class PackedS2ReadWork(p: RouteASkeletonParameters) extends Bundle {
 }
 
 /**
+  * Exact sidecar-read obligation copied from an accepted packed association.
+  * This is not a physical sidecar layout or a new source-selection command.
+  */
+final class SidecarReadWork(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val page_ref = new PageRef
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val sidecar_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val arrival_ordinal = UInt(p.candidateOrdinalWidth.W)
+  val candidate_id = UInt(p.candidateIdWidth.W)
+  val eligibility_snapshot = UInt(p.candidatePredicateWidth.W)
+  val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
+}
+
+/**
   * Immutable, already-selected packed-source demand.  This is intentionally
   * not a scheduler request: the upstream boundary has selected the page and
   * R2 ordering facts before this carrier exists.
@@ -1032,6 +1052,7 @@ object RouteAChannels {
   def p3_pack_read_work(p: RouteASkeletonParameters) = Decoupled(new P3PackReadWork(p))
   def direct_pending_read_work(p: RouteASkeletonParameters) = Decoupled(new DirectPendingReadWork(p))
   def packed_s2_read_work(p: RouteASkeletonParameters) = Decoupled(new PackedS2ReadWork(p))
+  def sidecar_read_work(p: RouteASkeletonParameters) = Decoupled(new SidecarReadWork(p))
   def packed_source_demand(p: RouteASkeletonParameters) = Decoupled(new PackedSourceDemand(p))
   def publication_read_authorization(p: RouteASkeletonParameters) = Decoupled(new PublicationReadAuthorization(p))
   def descriptor_location_grant(p: RouteASkeletonParameters) = Decoupled(new DescriptorLocationGrant(p))

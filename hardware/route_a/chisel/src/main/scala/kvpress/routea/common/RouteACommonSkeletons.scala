@@ -36,7 +36,8 @@ final class RouteADeliveryContextRegistry(p: RouteASkeletonParameters) extends M
       (allocation.candidate_class === p.r2S2FullClassCode.U) ->
         (allocation.target_kind === RouteADeliveryTargetKind.S2FullFill.U),
       (allocation.candidate_class === p.r2S2PackedClassCode.U) ->
-        (allocation.target_kind === RouteADeliveryTargetKind.S2PackedFill.U),
+        (allocation.target_kind === RouteADeliveryTargetKind.S2PackedFill.U ||
+          allocation.target_kind === RouteADeliveryTargetKind.S2PackedSidecar.U),
       (allocation.candidate_class === p.r2DirectPendingClassCode.U) ->
         (allocation.target_kind === RouteADeliveryTargetKind.DirectPendingRead.U),
       (allocation.candidate_class === p.r2PackWriteClassCode.U) ->
@@ -1298,7 +1299,8 @@ final class RouteAUnifiedDeliveryContextAllocationBridge(p: RouteASkeletonParame
 
   val packedAssociationLegal =
     io.packed_association_allocate_in.bits.candidate_class === p.r2S2PackedClassCode.U &&
-      io.packed_association_allocate_in.bits.target_kind === RouteADeliveryTargetKind.S2PackedFill.U
+      (io.packed_association_allocate_in.bits.target_kind === RouteADeliveryTargetKind.S2PackedFill.U ||
+        io.packed_association_allocate_in.bits.target_kind === RouteADeliveryTargetKind.S2PackedSidecar.U)
   val packedLaneConflict = io.packed_association_allocate_in.valid && io.r5_s2_packed_in.valid
   when(packedLaneConflict) {
     assert(false.B, "packed allocation lane has more than one producer")
@@ -1463,7 +1465,8 @@ final class RouteATypedDeliveryRouter(p: RouteASkeletonParameters) extends Modul
     (source.candidate_class === p.r2S2FullClassCode.U &&
       allocation.target_kind === RouteADeliveryTargetKind.S2FullFill.U) ||
     (source.candidate_class === p.r2S2PackedClassCode.U &&
-      allocation.target_kind === RouteADeliveryTargetKind.S2PackedFill.U) ||
+      (allocation.target_kind === RouteADeliveryTargetKind.S2PackedFill.U ||
+        allocation.target_kind === RouteADeliveryTargetKind.S2PackedSidecar.U)) ||
     (source.candidate_class === p.r2DirectPendingClassCode.U &&
       allocation.target_kind === RouteADeliveryTargetKind.DirectPendingRead.U)
 
@@ -1515,6 +1518,7 @@ final class RouteAReadEndpointDemultiplexer(p: RouteASkeletonParameters) extends
     val p3_pack_read_out = RouteAChannels.resolved_delivery(p)
     val direct_pending_out = RouteAChannels.resolved_delivery(p)
     val packed_s2_out = RouteAChannels.resolved_delivery(p)
+    val packed_s2_sidecar_out = RouteAChannels.resolved_delivery(p)
   })
 
   val resolved = io.resolved_in.bits
@@ -1529,6 +1533,9 @@ final class RouteAReadEndpointDemultiplexer(p: RouteASkeletonParameters) extends
   val isPackedS2 = source.candidate_class === p.r2S2PackedClassCode.U &&
     allocation.candidate_class === p.r2S2PackedClassCode.U &&
     allocation.target_kind === RouteADeliveryTargetKind.S2PackedFill.U
+  val isPackedS2Sidecar = source.candidate_class === p.r2S2PackedClassCode.U &&
+    allocation.candidate_class === p.r2S2PackedClassCode.U &&
+    allocation.target_kind === RouteADeliveryTargetKind.S2PackedSidecar.U
 
   io.p3_pack_read_out.valid := io.resolved_in.valid && isP3PackRead
   io.p3_pack_read_out.bits := resolved
@@ -1536,9 +1543,12 @@ final class RouteAReadEndpointDemultiplexer(p: RouteASkeletonParameters) extends
   io.direct_pending_out.bits := resolved
   io.packed_s2_out.valid := io.resolved_in.valid && isPackedS2
   io.packed_s2_out.bits := resolved
+  io.packed_s2_sidecar_out.valid := io.resolved_in.valid && isPackedS2Sidecar
+  io.packed_s2_sidecar_out.bits := resolved
   io.resolved_in.ready := Mux(isP3PackRead, io.p3_pack_read_out.ready,
     Mux(isDirectPending, io.direct_pending_out.ready,
-      Mux(isPackedS2, io.packed_s2_out.ready, false.B)))
+      Mux(isPackedS2, io.packed_s2_out.ready,
+        Mux(isPackedS2Sidecar, io.packed_s2_sidecar_out.ready, false.B))))
 }
 
 /**
@@ -2255,4 +2265,93 @@ final class RouteACoreMemIfV1(p: RouteASkeletonParameters) extends Module {
   when(io.component_status_out.fire && initStatusPending) {
     initStatusReported := true.B
   }
+}
+
+/**
+  * RTL3.8.2 typed endpoint for one logical 8-B position-sidecar record per
+  * R1 response.  It accepts only a registry-bound sidecar route; no payload
+  * response can be reinterpreted as a sidecar.  A terminal fault is forwarded
+  * to S2 as a fault terminal, never as sidecar completion.
+  */
+final class RouteAS2PackedSidecarReadEndpoint(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_s2_packed_sidecar_read_endpoint"
+  val io = IO(new Bundle {
+    val resolved_fragment_in = Flipped(RouteAChannels.resolved_delivery(p))
+    val endpoint_filling_in = Input(Bool())
+    val endpoint_identity_in = Input(new TransactionIdentity)
+    val endpoint_page_ref_in = Input(new PageRef)
+    val endpoint_generation_in = Input(UInt(p.sourceGenerationWidth.W))
+    val sidecar_fragment_out = RouteAChannels.s2_sidecar_fragment(p)
+    val sidecar_complete_out = RouteAChannels.s2_sidecar_complete(p)
+    val s2_fault_terminal_out = RouteAChannels.s2_fill_terminal(p)
+  })
+  private val StateIdle = 0.U(2.W)
+  private val StateFragment = 1.U(2.W)
+  private val StateComplete = 2.U(2.W)
+  private val StateFault = 3.U(2.W)
+  val state = RegInit(StateIdle)
+  val fragment = Reg(new S2SidecarFragment(p))
+  val complete = Reg(new S2SidecarComplete(p))
+  val fault = Reg(new S2FillTerminal(p))
+  val fragmentIsFinal = RegInit(false.B)
+  val resolved = io.resolved_fragment_in.bits
+  val source = resolved.source_delivery
+  val allocation = resolved.allocation
+  val descriptor = allocation.target_descriptor
+  val response = source.r1_response
+  val expected = allocation.expected_fragment_count
+  val responseOk = response.status === p.coreMemoryOkStatusCode.U
+  val responseFault = response.status === p.coreMemoryFaultStatusCode.U
+  val identityMatches = allocation.transaction_identity.asUInt === response.transaction_identity.asUInt &&
+    io.endpoint_identity_in.asUInt === allocation.transaction_identity.asUInt
+  val endpointMatches = io.endpoint_filling_in && source.candidate_class === p.r2S2PackedClassCode.U &&
+    allocation.candidate_class === p.r2S2PackedClassCode.U &&
+    allocation.target_kind === RouteADeliveryTargetKind.S2PackedSidecar.U &&
+    descriptor.requires_sidecar && io.endpoint_page_ref_in.asUInt === descriptor.descriptor_page_ref.asUInt &&
+    io.endpoint_generation_in === descriptor.source_generation && identityMatches && expected =/= 0.U && expected <= 64.U
+  val onePast = response.fragment_index + 1.U
+  val okLegal = response.fragment_index < expected && response.last === (onePast === expected)
+  val faultLegal = response.last
+  val inputLegal = endpointMatches && ((responseOk && okLegal) || (responseFault && faultLegal))
+  io.resolved_fragment_in.ready := state === StateIdle && inputLegal
+  io.sidecar_fragment_out.valid := state === StateFragment
+  io.sidecar_fragment_out.bits := fragment
+  io.sidecar_complete_out.valid := state === StateComplete
+  io.sidecar_complete_out.bits := complete
+  io.s2_fault_terminal_out.valid := state === StateFault
+  io.s2_fault_terminal_out.bits := fault
+  when(io.resolved_fragment_in.fire) {
+    when(responseOk) {
+      fragment.transaction_identity := allocation.transaction_identity
+      fragment.s2_slot := descriptor.s2_slot
+      fragment.source_generation := descriptor.source_generation
+      fragment.record_ordinal := response.fragment_index
+      fragment.data := response.data(63, 0)
+      fragmentIsFinal := response.last
+      state := StateFragment
+      when(response.last) {
+        complete.transaction_identity := allocation.transaction_identity
+        complete.s2_slot := descriptor.s2_slot
+        complete.source_generation := descriptor.source_generation
+      }
+    }.otherwise {
+      fault.transaction_identity := allocation.transaction_identity
+      fault.s2_slot := descriptor.s2_slot
+      fault.source_generation := descriptor.source_generation
+      fault.fragment_index := response.fragment_index
+      fault.last := true.B
+      fault.status := response.status
+      state := StateFault
+    }
+  }
+  // The final sidecar record is accepted before completion can be offered.
+  // This preserves S2's fragment-before-complete ordering without selecting a
+  // physical sidecar port or cycle schedule.
+  when(io.sidecar_fragment_out.fire) {
+    state := Mux(fragmentIsFinal, StateComplete, StateIdle)
+  }
+  when(io.sidecar_complete_out.fire) { state := StateIdle }
+  when(io.s2_fault_terminal_out.fire) { state := StateIdle }
+  assert(!(io.sidecar_fragment_out.valid && io.s2_fault_terminal_out.valid))
+  assert(!(io.sidecar_complete_out.valid && io.s2_fault_terminal_out.valid))
 }

@@ -35,8 +35,6 @@ final class RouteAInitDrainHarness(p: RouteASkeletonParameters) extends Module {
   StructuralTieOff.source(subsystem.verification_p3_pack_read_work_in)
   StructuralTieOff.source(subsystem.verification_direct_pending_open_in)
   StructuralTieOff.source(subsystem.verification_direct_pending_read_work_in)
-  StructuralTieOff.source(subsystem.verification_s2_sidecar_fragment_in)
-  StructuralTieOff.source(subsystem.verification_s2_sidecar_complete_in)
   StructuralTieOff.sink(subsystem.verification_direct_pending_payload_fragment_out)
   io.attention_terminal_rsp <> subsystem.attention_terminal_rsp
   io.session_retire_ack <> subsystem.session_retire_ack

@@ -43,8 +43,6 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
   val verification_p3_pack_read_work_in = IO(Flipped(RouteAChannels.p3_pack_read_work(p)))
   val verification_direct_pending_open_in = IO(Flipped(RouteAChannels.direct_pending_open(p)))
   val verification_direct_pending_read_work_in = IO(Flipped(RouteAChannels.direct_pending_read_work(p)))
-  val verification_s2_sidecar_fragment_in = IO(Flipped(RouteAChannels.s2_sidecar_fragment(p)))
-  val verification_s2_sidecar_complete_in = IO(Flipped(RouteAChannels.s2_sidecar_complete(p)))
   val verification_direct_pending_payload_fragment_out = IO(RouteAChannels.direct_pending_payload_fragment(p))
   val external_core_mem_if_v1 = IO(new CoreMemoryExternalPort(p))
 
@@ -62,6 +60,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val packed_association_owner = Module(new RouteAPackedReadAssociationOwner(p))
     val packed_plan_fork = Module(new RouteASourceCompletionPlanActivationFork(p))
     val packed_terminal_bridge = Module(new RouteAPackedReadTerminalBridge(p))
+    val packed_allocation_mux = Module(new RouteAPackedAllocationOwnerMux(p))
+    val functional_sidecar_delivery = Module(new RouteAFunctionalSidecarDeliveryAdapter(p))
+    val packed_s2_read_ingress = Module(new RouteAExclusivePackedS2ReadIngress(p))
+    val s2_fill_terminal_ingress = Module(new RouteAExclusiveS2FillTerminalIngress(p))
     val admission_group_builder = Module(new RouteAAdmissionPublicationIngressAdapter(p))
     val r2_write_ingress = Module(new RouteAR2WriteIngressMerge(p))
     val r2_read_ingress = Module(new RouteAR2ReadIngressMerge(p))
@@ -75,9 +77,11 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val direct_pending_read_issue_adapter = Module(new RouteAReadIssueCandidateAdapter(p))
     val packed_s2_read_producer = Module(new RouteAPackedS2ReadProducer(p))
     val packed_s2_read_issue_adapter = Module(new RouteAReadIssueCandidateAdapter(p))
+    val packed_s2_sidecar_read_issue_adapter = Module(new RouteAReadIssueCandidateAdapter(p))
     val p3_pack_read_endpoint = Module(new RouteAR3PackReadEndpoint(p))
     val direct_pending_read_endpoint = Module(new RouteADirectPendingReadEndpoint(p))
     val packed_s2_read_endpoint = Module(new RouteAPackedS2ReadEndpoint(p))
+    val packed_s2_sidecar_endpoint = Module(new RouteAS2PackedSidecarReadEndpoint(p))
     val source_plan_binder = Module(new RouteASourcePlanBinder(p))
     val source_packet_adapter = Module(new RouteASourceServicePacketAdapter(p))
     val source_commit_demultiplexer = Module(new RouteASourceCommitDemultiplexer(p))
@@ -113,9 +117,9 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     s2.io.service_req_in <> lifecycle.io.s2_service_req
     val s2_fill_open = packed_s2_read_producer.io.s2_fill_open_out
     val s2_payload_fragment = packed_s2_read_endpoint.io.s2_payload_fragment_out
-    val s2_sidecar_fragment = verification_s2_sidecar_fragment_in
-    val s2_fill_terminal = packed_terminal_bridge.io.s2_terminal_out
-    val s2_sidecar_complete = verification_s2_sidecar_complete_in
+    val s2_sidecar_fragment = packed_s2_sidecar_endpoint.io.sidecar_fragment_out
+    val s2_fill_terminal = s2_fill_terminal_ingress.io.out
+    val s2_sidecar_complete = packed_s2_sidecar_endpoint.io.sidecar_complete_out
     val s2_payload_read_req = Wire(RouteAChannels.s2_payload_read_req(p)); StructuralTieOff.source(s2_payload_read_req)
     val s2_sidecar_read_req = Wire(RouteAChannels.s2_sidecar_read_req(p)); StructuralTieOff.source(s2_sidecar_read_req)
     val s2_release = Wire(RouteAChannels.source_release(p))
@@ -150,7 +154,8 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     packed_association_owner.io.s2_fill_lease_in <> packed_activation_binder.io.s2_fill_lease_out
     packed_association_owner.io.invalidation_in.valid := false.B
     packed_association_owner.io.invalidation_in.bits := 0.U.asTypeOf(new PackedReadInvalidation)
-    packed_association_owner.io.release_observation_out.ready := true.B
+    packed_association_owner.io.sidecar_read_work_out <> functional_sidecar_delivery.io.work_in
+    packed_association_owner.io.release_observation_out <> functional_sidecar_delivery.io.payload_release_in
     direct_pending.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     val directOpenIngress = Wire(RouteAChannels.direct_pending_open(p))
     val simultaneousDirectOpen = lifecycle.io.direct_pending_open.valid && verification_direct_pending_open_in.valid
@@ -251,6 +256,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     p3_pack_read_endpoint.io.resolved_fragment_in <> read_endpoint_demultiplexer.io.p3_pack_read_out
     direct_pending_read_endpoint.io.resolved_fragment_in <> read_endpoint_demultiplexer.io.direct_pending_out
     packed_s2_read_endpoint.io.resolved_fragment_in <> read_endpoint_demultiplexer.io.packed_s2_out
+    packed_s2_sidecar_endpoint.io.resolved_fragment_in <> read_endpoint_demultiplexer.io.packed_s2_sidecar_out
 
     m2_p3.io.mem_init_done := core_memory.io.r1_init_complete
     m2_p3.io.drain_collection_enable := lifecycle.io.drain_collection_enable
@@ -315,21 +321,28 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     packed_s2_read_producer.io.work_in <> packed_terminal_bridge.io.work_out
     packed_s2_read_issue_adapter.io.read_issue_in <> packed_s2_read_producer.io.read_issue_out
     StructuralTieOff.source(delivery_context_composition.io.r5_s2_packed_in)
-    delivery_context_composition.io.packed_association_allocate_in <>
-      packed_association_owner.io.registry_allocate_out
-    delivery_context_composition.io.packed_association_arrival_ordinal_in :=
-      packed_association_owner.io.registry_allocation_arrival_ordinal_out
-    delivery_context_composition.io.packed_association_candidate_id_in :=
-      packed_association_owner.io.registry_allocation_candidate_id_out
-    packed_association_owner.io.registry_allocation_ack_in <>
-      delivery_context_composition.io.packed_association_allocation_ack_out
+    packed_allocation_mux.io.payload_allocate_in <> packed_association_owner.io.registry_allocate_out
+    packed_allocation_mux.io.payload_ordinal_in := packed_association_owner.io.registry_allocation_arrival_ordinal_out
+    packed_allocation_mux.io.payload_candidate_id_in := packed_association_owner.io.registry_allocation_candidate_id_out
+    packed_allocation_mux.io.sidecar_allocate_in <> functional_sidecar_delivery.io.registry_allocate_out
+    packed_allocation_mux.io.sidecar_ordinal_in := functional_sidecar_delivery.io.registry_allocation_arrival_ordinal_out
+    packed_allocation_mux.io.sidecar_candidate_id_in := functional_sidecar_delivery.io.registry_allocation_candidate_id_out
+    delivery_context_composition.io.packed_association_allocate_in <> packed_allocation_mux.io.allocate_out
+    delivery_context_composition.io.packed_association_arrival_ordinal_in := packed_allocation_mux.io.ordinal_out
+    delivery_context_composition.io.packed_association_candidate_id_in := packed_allocation_mux.io.candidate_id_out
+    packed_allocation_mux.io.ack_in <> delivery_context_composition.io.packed_association_allocation_ack_out
+    packed_association_owner.io.registry_allocation_ack_in <> packed_allocation_mux.io.payload_ack_out
+    functional_sidecar_delivery.io.registry_allocation_ack_in <> packed_allocation_mux.io.sidecar_ack_out
     delivery_context_composition.io.r3_packed_write_in <> m2_p3.io.p3_packed_write_candidate_out
     delivery_context_composition.io.r5_append_in <> page_manager.io.append_candidate_out
     delivery_context_composition.io.r5_reclaim_in <> page_manager.io.reclaim_candidate_out
     r2_read_ingress.io.r3_pack_read_in <> delivery_context_composition.io.r3_pack_read_out
     r2_read_ingress.io.r3_direct_pending_in <> delivery_context_composition.io.r3_direct_pending_out
     StructuralTieOff.sink(delivery_context_composition.io.r5_s2_packed_out)
-    r2_read_ingress.io.r5_s2_packed_in <> packed_s2_read_issue_adapter.io.candidate_out
+    packed_s2_sidecar_read_issue_adapter.io.read_issue_in <> functional_sidecar_delivery.io.read_issue_out
+    packed_s2_read_ingress.io.payload_in <> packed_s2_read_issue_adapter.io.candidate_out
+    packed_s2_read_ingress.io.sidecar_in <> packed_s2_sidecar_read_issue_adapter.io.candidate_out
+    r2_read_ingress.io.r5_s2_packed_in <> packed_s2_read_ingress.io.out
     r2_write_ingress.io.r3_packed_write_in <> delivery_context_composition.io.r3_packed_write_out
     r2_write_ingress.io.r5_append_in <> delivery_context_composition.io.r5_append_out
     r2_write_ingress.io.r5_reclaim_in <> delivery_context_composition.io.r5_reclaim_out
@@ -348,7 +361,13 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     packed_s2_read_endpoint.io.endpoint_page_ref_in := s2.io.s2_observe_page_ref
     packed_s2_read_endpoint.io.endpoint_generation_in := s2.io.s2_observe_generation
     packed_terminal_bridge.io.endpoint_terminal_in <> packed_s2_read_endpoint.io.s2_fill_terminal_out
+    s2_fill_terminal_ingress.io.payload_in <> packed_terminal_bridge.io.s2_terminal_out
+    s2_fill_terminal_ingress.io.sidecar_in <> packed_s2_sidecar_endpoint.io.s2_fault_terminal_out
     packed_association_owner.io.terminal_in <> packed_terminal_bridge.io.association_terminal_out
+    packed_s2_sidecar_endpoint.io.endpoint_filling_in := s2.io.s2_observe_filling
+    packed_s2_sidecar_endpoint.io.endpoint_identity_in := s2.io.s2_observe_identity
+    packed_s2_sidecar_endpoint.io.endpoint_page_ref_in := s2.io.s2_observe_page_ref
+    packed_s2_sidecar_endpoint.io.endpoint_generation_in := s2.io.s2_observe_generation
     page_manager.io.p3_payload_durable_in <> m2_p3.io.p3_payload_durable_out
     m2_p3.io.descriptor_durability_prerequisite_in <> page_manager.io.descriptor_durability_prerequisite_out
     page_manager.io.metadata_publish_visibility_in <> m2_p3.io.metadata_publish_visibility_apply

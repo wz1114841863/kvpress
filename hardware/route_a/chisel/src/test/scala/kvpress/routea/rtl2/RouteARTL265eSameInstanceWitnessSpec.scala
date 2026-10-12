@@ -208,6 +208,7 @@ final class RouteARTL265eSameInstanceWitnessHarness(
     tap.io.sidecar_obligation_out <> sidecar.io.obligation_in
     association.io.registry_allocation_ack_in <> registry.io.allocation_ack_out
     association.io.packed_s2_work_out <> terminalBridge.io.work_in
+    StructuralTieOff.sink(association.io.sidecar_read_work_out)
     terminalBridge.io.work_out <> producer.io.work_in
     terminalBridge.io.association_terminal_out <> association.io.terminal_in
     association.io.release_observation_out <> releaseRetireGate.io.release_in
@@ -237,6 +238,7 @@ final class RouteARTL265eSameInstanceWitnessHarness(
     endpoint.io.resolved_fragment_in <> endpointDemux.io.packed_s2_out
     StructuralTieOff.sink(endpointDemux.io.p3_pack_read_out)
     StructuralTieOff.sink(endpointDemux.io.direct_pending_out)
+    StructuralTieOff.sink(endpointDemux.io.packed_s2_sidecar_out)
     StructuralTieOff.sink(router.io.r3_packed_write_out)
     StructuralTieOff.sink(router.io.r5_append_out)
     StructuralTieOff.sink(router.io.r5_reclaim_out)

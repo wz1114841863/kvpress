@@ -911,6 +911,16 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     `verification_packed_s2_read_work_in`; sidecar verification ingress is
     still explicit for RTL3.8.2.  It adds no source selection, R2 policy,
     metadata authority, physical-memory/numeric realization, or PPA claim.
+21. **RTL3.8.2 — functional sidecar delivery (complete for I4; I5--I8
+    remain open).**
+    [`rtl3_8_2_functional_sidecar_delivery_contract.md`](rtl3_8_2_functional_sidecar_delivery_contract.md)
+    retires the top sidecar fragment/complete verification ingress and the
+    prior fixture transport.  The accepted association's successful payload
+    terminal gates one separately allocated `S2PackedSidecar` typed read using
+    the existing registry/R2/R1 path; the typed endpoint serializes final
+    sidecar fragment before S2 complete and maps sidecar fault only to S2
+    fault.  It introduces no R2 class, priority, scheduler policy, metadata
+    authority, memory/controller/numeric realization, or PPA claim.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

@@ -68,6 +68,9 @@ final class RouteARTL32PackedReadFunctionalHarness(
   }
   owner.io.registry_allocation_ack_in <> registry.io.allocation_ack_out
   owner.io.packed_s2_work_out <> producer.io.work_in
+  // RTL3.8.2 moves I4 to its own production-sidecar adapter.  This historical
+  // payload-only harness deliberately observes no sidecar transport.
+  StructuralTieOff.sink(owner.io.sidecar_read_work_out)
   StructuralTieOff.source(owner.io.terminal_in)
   StructuralTieOff.sink(owner.io.release_observation_out)
 
@@ -96,6 +99,7 @@ final class RouteARTL32PackedReadFunctionalHarness(
   endpoint.io.resolved_fragment_in <> endpointDemux.io.packed_s2_out
   StructuralTieOff.sink(endpointDemux.io.p3_pack_read_out)
   StructuralTieOff.sink(endpointDemux.io.direct_pending_out)
+  StructuralTieOff.sink(endpointDemux.io.packed_s2_sidecar_out)
   StructuralTieOff.sink(router.io.r3_packed_write_out)
   StructuralTieOff.sink(router.io.r5_append_out)
   StructuralTieOff.sink(router.io.r5_reclaim_out)
@@ -170,6 +174,7 @@ final class RouteAPackedReadAssociationOwnerSpec extends AnyFunSpec with ChiselS
     d.io.registry_allocate_out.ready.poke(false.B)
     d.io.registry_allocation_ack_in.valid.poke(false.B)
     d.io.packed_s2_work_out.ready.poke(false.B)
+    d.io.sidecar_read_work_out.ready.poke(true.B)
     d.io.terminal_in.valid.poke(false.B)
     d.io.release_observation_out.ready.poke(false.B)
     d.clock.step()

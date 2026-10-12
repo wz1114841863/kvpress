@@ -1,0 +1,74 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-8-2-functional-sidecar-delivery-1.0",
+  "status": "complete_i4_functional_sidecar_delivery_i5_i8_open",
+  "scope": "Retire only I4 sidecar fixture/top ingress by routing an accepted packed association's sidecar obligation through a separate typed context and the existing registry/R2/R1 response path. No physical memory, numeric realization, source selection, authority, scheduler, timing, throughput, or PPA claim.",
+  "predecessor": {
+    "contract": "analysis/rtl3_8_0_functional_closure_ingress_retirement_contract.md",
+    "sha256": "fdf3c01dae3fd70b13c4aec7b0fa8c9a30a6a09c14bd1d9432ff4b803aaa2501",
+    "rtl3_8_1_manifest": "analysis/rtl3_8_1_packed_activation_binding_manifest.json",
+    "rtl3_8_1_manifest_sha256": "0107651bff0be7e6a68c49543d6210f9814bcc4e5a8ef6240abd5298dd28f433"
+  },
+  "implemented_retirement_boundaries": ["I4"],
+  "owner_map": {
+    "R5": "accepted immutable descriptor handle/count and live-reference fact",
+    "R3": "already-published packed authority and record-count prerequisite",
+    "S2": "filling lease, sidecar fragment/complete consumer, and fault state",
+    "route_a_packed_read_association_owner": "exact payload association plus immutable sidecar obligation",
+    "route_a_functional_sidecar_delivery_adapter": "payload-success-gated typed sidecar allocation/read issue",
+    "delivery_context_registry_R2_R1": "sole typed association, request, response, FIFO/credit and stale-response path",
+    "route_a_s2_packed_sidecar_read_endpoint": "exact typed response to S2 record/complete or S2 fault translation"
+  },
+  "fail_closed_checks": [
+    "valid sidecar record count is 1..64",
+    "payload release identity/page/slot/generation matches held immutable work",
+    "payload terminal fault suppresses sidecar allocation and read issue",
+    "allocation acknowledgement exactly echoes sidecar target descriptor",
+    "sidecar response route requires packed class and S2PackedSidecar target kind",
+    "sidecar endpoint requires filling lease identity/page/generation and legal ordinal/last",
+    "sidecar terminal fault cannot emit fragment or complete",
+    "final sidecar fragment handshakes before complete is offered"
+  ],
+  "disposition": {
+    "functional_sidecar_delivery_complete": true,
+    "verification_sidecar_ingress_retired_from_functional_top": true,
+    "fixture_transport_retired_from_functional_top": true,
+    "sidecar_uses_existing_registry_r2_r1_path": true,
+    "new_r2_class_or_priority_created": false,
+    "i5_i8_functional_replacement_complete": false,
+    "physical_or_numeric_realization_complete": false,
+    "rtl3_final_review_authorized": false
+  },
+  "test_commands": [
+    "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAFunctionalSidecarDeliverySpec'",
+    "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAPackedReadAssociationOwnerSpec -- -z \"joins arbitrary-order\"'",
+    "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec'",
+    ".venv/bin/python tools/validate_rtl3_8_2_functional_sidecar_delivery.py",
+    ".venv/bin/python -m pytest -q tests/test_rtl3_8_2_functional_sidecar_delivery.py"
+  ],
+  "test_result": {
+    "status": "pass",
+    "tests": 7,
+    "failed": 0,
+    "evidence": "directed ChiselSim plus structural elaboration only; no model/GPU, timing, throughput, PPA, DC, or full-inference claim"
+  },
+  "source_sha256": {
+    "analysis/rtl3_8_2_functional_sidecar_delivery_contract.md": "ca85fcf5b163cf0de3d8e08bf8f114c840802f11834c09700d97c730fde3081a",
+    "analysis/rtl2_phase_contract.md": "83931d9f9c49c5dc9c3fa7edd5a8d7fbf5c90cf59b45a58f021f804fb714790a",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "0c0db6c6212c1d5649b270d6c7e3d1c24a07cfeacbd042689320870da19dbb79",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "3c32e158b726d5b2ed33e6f8ea889a3dcca14c070da6dd3b16598f346337498c",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "79e09f9d856dedf6575b41d18c4d4d7ee03029bb8237c81d19ae3eb223821811",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala": "06ad078f9bde78b2b235fc457f2ab7fa2dc5486775b4bf5705a0e749adf899f9",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "cb755d68501e100f92f6be8d2d04dcd91e088947263a1152d5876e8d719c8724",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalSidecarDeliverySpec.scala": "eae915c45c1c5aa2e617f2906f87e3709de799aab46b6d342ed62994e6c231bb",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala": "fcfd78fbb173fbf7efb8b44f72d5c73bb6e82411f3d0c083f92e640af745f81e",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAInitDrainIntegrationSpec.scala": "7bd51006192f9d0c13793a4ed61bc3afdca80d7b5edb6be797f2e60adb2a70f1",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteADirectPendingReadPathSpec.scala": "03861bb5bc9548d41969a04898c86a266a30f0f1f4a4314b4bc818a580000f5a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAPackedS2ReadPathSpec.scala": "a5105075b86685006edc96b6d9ca1c76c3614513c1689e05f04f00b3e2c70586",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR3PackReadPathSpec.scala": "387230606144ab22fa1ae18fc46baab29b4903a29c68e2dd7dff085905123c37",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala": "ba2049124d3d74723219150e735ed55ac51ff1e1f4f996dc579a815d484d280a",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala": "88f5c346525d5ada64d0996a0f90e175d8106c3f04721e49837b82d7c4590bf0",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadAssociationOwnerSpec.scala": "c335cf47724b80f1b21d40389f314dd1ae98a27c230dbd89343bdb95617c63c3",
+    "tools/validate_rtl3_8_2_functional_sidecar_delivery.py": "a4c62efafc443e846738ce914a56394c2f808b3a69027c9bf59ddef4a3a3e620",
+    "tests/test_rtl3_8_2_functional_sidecar_delivery.py": "608b2a43f40a652b35483d4270b10b38bc6d473d9b12080d75e11d82f7c33ce2"
+  }
+}

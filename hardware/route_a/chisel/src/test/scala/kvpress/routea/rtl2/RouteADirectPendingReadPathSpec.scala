@@ -76,6 +76,7 @@ final class RouteADirectPendingReadPathHarness(p: RouteASkeletonParameters) exte
   endpoint.io.resolved_fragment_in <> endpointDemux.io.direct_pending_out
   StructuralTieOff.sink(endpointDemux.io.p3_pack_read_out)
   StructuralTieOff.sink(endpointDemux.io.packed_s2_out)
+  StructuralTieOff.sink(endpointDemux.io.packed_s2_sidecar_out)
   StructuralTieOff.sink(router.io.r3_packed_write_out)
   StructuralTieOff.sink(router.io.r5_append_out)
   StructuralTieOff.sink(router.io.r5_reclaim_out)

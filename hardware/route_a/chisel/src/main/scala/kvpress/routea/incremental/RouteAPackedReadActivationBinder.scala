@@ -371,3 +371,212 @@ final class RouteAPackedReadTerminalBridge(p: RouteASkeletonParameters) extends 
     assert(io.association_terminal_out.bits.asUInt === heldAssociationTerminal.asUInt)
   }
 }
+
+/**
+  * Lossless two-owner allocation join for the existing packed allocation lane.
+  * The payload association and its later sidecar read are mutually exclusive
+  * by contract; this module rejects a simultaneous offer rather than creating
+  * a local priority policy.
+  */
+final class RouteAPackedAllocationOwnerMux(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_packed_allocation_owner_mux"
+  val io = IO(new Bundle {
+    val payload_allocate_in = Flipped(RouteAChannels.delivery_context_allocate(p))
+    val payload_ordinal_in = Input(UInt(p.candidateOrdinalWidth.W))
+    val payload_candidate_id_in = Input(UInt(p.candidateIdWidth.W))
+    val payload_ack_out = RouteAChannels.delivery_context_allocation_ack(p)
+    val sidecar_allocate_in = Flipped(RouteAChannels.delivery_context_allocate(p))
+    val sidecar_ordinal_in = Input(UInt(p.candidateOrdinalWidth.W))
+    val sidecar_candidate_id_in = Input(UInt(p.candidateIdWidth.W))
+    val sidecar_ack_out = RouteAChannels.delivery_context_allocation_ack(p)
+    val allocate_out = RouteAChannels.delivery_context_allocate(p)
+    val ordinal_out = Output(UInt(p.candidateOrdinalWidth.W))
+    val candidate_id_out = Output(UInt(p.candidateIdWidth.W))
+    val ack_in = Flipped(RouteAChannels.delivery_context_allocation_ack(p))
+  })
+  val sidecarSelected = RegInit(false.B)
+  val active = RegInit(false.B)
+  val held = Reg(new DeliveryContextAllocation(p))
+  val simultaneous = io.payload_allocate_in.valid && io.sidecar_allocate_in.valid
+  assert(!simultaneous, "packed allocation mux requires one owner at a time")
+  val chooseSidecar = io.sidecar_allocate_in.valid && !io.payload_allocate_in.valid
+  io.allocate_out.valid := !active && (io.payload_allocate_in.valid || io.sidecar_allocate_in.valid) && !simultaneous
+  io.allocate_out.bits := Mux(chooseSidecar, io.sidecar_allocate_in.bits, io.payload_allocate_in.bits)
+  io.ordinal_out := Mux(chooseSidecar, io.sidecar_ordinal_in, io.payload_ordinal_in)
+  io.candidate_id_out := Mux(chooseSidecar, io.sidecar_candidate_id_in, io.payload_candidate_id_in)
+  io.payload_allocate_in.ready := io.allocate_out.fire && !chooseSidecar
+  io.sidecar_allocate_in.ready := io.allocate_out.fire && chooseSidecar
+  when(io.allocate_out.fire) { held := io.allocate_out.bits; sidecarSelected := chooseSidecar; active := true.B }
+  val ackMatches = io.ack_in.bits.allocation.asUInt === held.asUInt
+  io.ack_in.ready := active && ackMatches && Mux(sidecarSelected, io.sidecar_ack_out.ready, io.payload_ack_out.ready)
+  io.payload_ack_out.valid := active && !sidecarSelected && io.ack_in.valid && ackMatches
+  io.payload_ack_out.bits := io.ack_in.bits
+  io.sidecar_ack_out.valid := active && sidecarSelected && io.ack_in.valid && ackMatches
+  io.sidecar_ack_out.bits := io.ack_in.bits
+  when(active && io.ack_in.valid) { assert(ackMatches) }
+  when(io.ack_in.fire) { active := false.B }
+}
+
+/**
+  * RTL3.8.2 functional sidecar delivery owner.
+  *
+  * It receives an immutable sidecar obligation only from an accepted packed
+  * association, waits for that association's payload terminal observation,
+  * and then allocates/issues one typed sidecar read through the existing
+  * packed R2 class.  The module deliberately creates neither a PageRef,
+  * sidecar handle, S2 lease, delivery context, memory response, nor a new R2
+  * scheduling class.  A payload fault consumes the obligation without issue;
+  * malformed release or allocation acknowledgement remains backpressured.
+  */
+final class RouteAFunctionalSidecarDeliveryAdapter(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_functional_sidecar_delivery_adapter"
+
+  val io = IO(new Bundle {
+    val work_in = Flipped(RouteAChannels.sidecar_read_work(p))
+    val payload_release_in = Flipped(RouteAChannels.packed_read_release_observation(p))
+    val registry_allocate_out = RouteAChannels.delivery_context_allocate(p)
+    val registry_allocation_arrival_ordinal_out = Output(UInt(p.candidateOrdinalWidth.W))
+    val registry_allocation_candidate_id_out = Output(UInt(p.candidateIdWidth.W))
+    val registry_allocation_ack_in = Flipped(RouteAChannels.delivery_context_allocation_ack(p))
+    val read_issue_out = RouteAChannels.read_issue_descriptor(p)
+  })
+
+  private val Idle = 0.U(2.W)
+  private val AwaitPayloadTerminal = 1.U(2.W)
+  private val AwaitAllocationAck = 2.U(2.W)
+  private val EmitReadIssue = 3.U(2.W)
+  val state = RegInit(Idle)
+  val work = Reg(new SidecarReadWork(p))
+
+  private def sameIdentity(left: TransactionIdentity, right: TransactionIdentity): Bool =
+    left.asUInt === right.asUInt
+  private def samePage(left: PageRef, right: PageRef): Bool = left.asUInt === right.asUInt
+
+  val workLegal = io.work_in.bits.valid_records =/= 0.U && io.work_in.bits.valid_records <= 64.U
+  io.work_in.ready := state === Idle && workLegal
+  io.payload_release_in.ready := false.B
+  io.registry_allocate_out.valid := false.B
+  io.registry_allocate_out.bits := 0.U.asTypeOf(new DeliveryContextAllocation(p))
+  io.registry_allocation_arrival_ordinal_out := work.arrival_ordinal
+  io.registry_allocation_candidate_id_out := work.candidate_id
+  io.registry_allocation_ack_in.ready := false.B
+  io.read_issue_out.valid := false.B
+  io.read_issue_out.bits := 0.U.asTypeOf(new ReadIssueDescriptor(p))
+
+  when(io.work_in.fire) {
+    work := io.work_in.bits
+    state := AwaitPayloadTerminal
+  }
+
+  val payloadReleaseMatches =
+    sameIdentity(io.payload_release_in.bits.transaction_identity, work.transaction_identity) &&
+      samePage(io.payload_release_in.bits.page_ref, work.page_ref) &&
+      io.payload_release_in.bits.s2_slot === work.s2_slot &&
+      io.payload_release_in.bits.source_generation === work.source_generation
+
+  val allocation = Wire(new DeliveryContextAllocation(p))
+  allocation.candidate_class := p.r2S2PackedClassCode.U
+  allocation.transaction_identity := work.transaction_identity
+  allocation.target_kind := RouteADeliveryTargetKind.S2PackedSidecar.U
+  allocation.target_identity_generation := work.source_generation
+  allocation.expected_fragment_count := work.valid_records
+  allocation.target_descriptor.write_endpoint := 0.U
+  allocation.target_descriptor.p3_layer := 0.U
+  allocation.target_descriptor.p3_stage_generation := 0.U
+  allocation.target_descriptor.transaction_group_tag := 0.U
+  allocation.target_descriptor.descriptor_kind := 0.U
+  allocation.target_descriptor.descriptor_page_ref := work.page_ref
+  allocation.target_descriptor.descriptor_line := work.sidecar_handle_or_address
+  allocation.target_descriptor.s2_slot := work.s2_slot
+  allocation.target_descriptor.source_generation := work.source_generation
+  allocation.target_descriptor.requires_sidecar := true.B
+  allocation.target_descriptor.pending_ordinal := 0.U
+  allocation.target_descriptor.p3_member_payload_ref := 0.U
+  allocation.target_descriptor.direct_source_last := false.B
+  allocation.target_descriptor.pending_explicit_empty := false.B
+
+  val allocationAckMatches = io.registry_allocation_ack_in.bits.allocation.asUInt === allocation.asUInt
+
+  when(state === AwaitPayloadTerminal) {
+    io.payload_release_in.ready := payloadReleaseMatches
+    when(io.payload_release_in.fire) {
+      when(io.payload_release_in.bits.status === p.coreMemoryOkStatusCode.U) {
+        state := AwaitAllocationAck
+      }.otherwise {
+        // Payload must have completed successfully before position sidecar
+        // traffic may start. A fault remains an S2 fault path, never a
+        // sidecar completion or a fallback request.
+        state := Idle
+      }
+    }
+  }
+  when(state === AwaitAllocationAck) {
+    io.registry_allocate_out.valid := true.B
+    io.registry_allocate_out.bits := allocation
+    when(io.registry_allocate_out.fire) { state := EmitReadIssue }
+  }
+  when(state === EmitReadIssue) {
+    io.read_issue_out.valid := io.registry_allocation_ack_in.valid && allocationAckMatches
+    io.read_issue_out.bits.delivery_context_ref := io.registry_allocation_ack_in.bits.delivery_context_ref
+    io.read_issue_out.bits.candidate_class := p.r2S2PackedClassCode.U
+    io.read_issue_out.bits.arrival_ordinal := work.arrival_ordinal
+    io.read_issue_out.bits.candidate_id := work.candidate_id
+    io.read_issue_out.bits.eligibility_snapshot := work.eligibility_snapshot
+    io.read_issue_out.bits.transaction_identity := work.transaction_identity
+    io.read_issue_out.bits.source_kind := RouteASourceKind.Packed.U
+    io.read_issue_out.bits.payload_handle_or_address := work.sidecar_handle_or_address
+    io.read_issue_out.bits.valid_count := work.valid_records
+    io.read_issue_out.bits.expected_generation_or_validity := work.source_generation
+    io.read_issue_out.bits.destination_endpoint := work.destination_endpoint
+    io.read_issue_out.bits.expected_fragment_count := work.valid_records
+    io.read_issue_out.bits.target_descriptor := allocation.target_descriptor
+    // The acknowledgement and issue form a single lossless handoff: the
+    // source adapter may not consume the ack unless R2 can accept its exact
+    // immutable candidate in this same transaction.
+    io.registry_allocation_ack_in.ready := allocationAckMatches && io.read_issue_out.ready
+    when(io.read_issue_out.fire) { state := Idle }
+  }
+
+  val heldAllocation = RegEnable(io.registry_allocate_out.bits,
+    io.registry_allocate_out.valid && !io.registry_allocate_out.ready)
+  when(RegNext(io.registry_allocate_out.valid && !io.registry_allocate_out.ready, false.B)) {
+    assert(io.registry_allocate_out.bits.asUInt === heldAllocation.asUInt)
+  }
+  val heldIssue = RegEnable(io.read_issue_out.bits,
+    io.read_issue_out.valid && !io.read_issue_out.ready)
+  when(RegNext(io.read_issue_out.valid && !io.read_issue_out.ready, false.B)) {
+    assert(io.read_issue_out.bits.asUInt === heldIssue.asUInt)
+  }
+}
+
+/** Strict non-arbitrating merge for sequential payload and sidecar R2 reads. */
+final class RouteAExclusivePackedS2ReadIngress(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_exclusive_packed_s2_read_ingress"
+  val io = IO(new Bundle {
+    val payload_in = Flipped(RouteAChannels.source_candidate(p))
+    val sidecar_in = Flipped(RouteAChannels.source_candidate(p))
+    val out = RouteAChannels.source_candidate(p)
+  })
+  val simultaneous = io.payload_in.valid && io.sidecar_in.valid
+  assert(!simultaneous, "payload and sidecar packed reads must be sequenced")
+  io.out.valid := (io.payload_in.valid || io.sidecar_in.valid) && !simultaneous
+  io.out.bits := Mux(io.payload_in.valid, io.payload_in.bits, io.sidecar_in.bits)
+  io.payload_in.ready := io.out.ready && !io.sidecar_in.valid
+  io.sidecar_in.ready := io.out.ready && !io.payload_in.valid
+}
+
+/** Strict terminal join; a sidecar fault may fault S2 but never make it READY. */
+final class RouteAExclusiveS2FillTerminalIngress(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_exclusive_s2_fill_terminal_ingress"
+  val io = IO(new Bundle {
+    val payload_in = Flipped(RouteAChannels.s2_fill_terminal(p))
+    val sidecar_in = Flipped(RouteAChannels.s2_fill_terminal(p))
+    val out = RouteAChannels.s2_fill_terminal(p)
+  })
+  val simultaneous = io.payload_in.valid && io.sidecar_in.valid
+  assert(!simultaneous, "payload and sidecar terminals must be sequenced")
+  io.out.valid := (io.payload_in.valid || io.sidecar_in.valid) && !simultaneous
+  io.out.bits := Mux(io.payload_in.valid, io.payload_in.bits, io.sidecar_in.bits)
+  io.payload_in.ready := io.out.ready && !io.sidecar_in.valid
+  io.sidecar_in.ready := io.out.ready && !io.payload_in.valid
+}
