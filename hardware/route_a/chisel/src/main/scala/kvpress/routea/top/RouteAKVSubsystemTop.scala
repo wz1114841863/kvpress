@@ -43,8 +43,6 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
   val verification_p3_pack_read_work_in = IO(Flipped(RouteAChannels.p3_pack_read_work(p)))
   val verification_direct_pending_open_in = IO(Flipped(RouteAChannels.direct_pending_open(p)))
   val verification_direct_pending_read_work_in = IO(Flipped(RouteAChannels.direct_pending_read_work(p)))
-  val verification_s2_service_req_in = IO(Flipped(RouteAChannels.s2_service_req))
-  val verification_packed_s2_read_work_in = IO(Flipped(RouteAChannels.packed_s2_read_work(p)))
   val verification_s2_sidecar_fragment_in = IO(Flipped(RouteAChannels.s2_sidecar_fragment(p)))
   val verification_s2_sidecar_complete_in = IO(Flipped(RouteAChannels.s2_sidecar_complete(p)))
   val verification_direct_pending_payload_fragment_out = IO(RouteAChannels.direct_pending_payload_fragment(p))
@@ -60,13 +58,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val m2_p3 = Module(new RouteAM2P3Wrapper(p))
     val m2_reference_protocol = Module(new RouteAM2ReferenceProtocolProvider(p))
     val page_manager = Module(new RouteAPageManager(p))
-    // RTL3.8.1 owner-fact ports remain isolated from this historical
-    // structural top until the complete activation/association path replaces
-    // the verification ingress in one later functional-top patch.
-    StructuralTieOff.source(s2.io.s2_fill_lease_request_in)
-    StructuralTieOff.sink(s2.io.s2_fill_lease_out)
-    StructuralTieOff.source(page_manager.io.descriptor_location_request_in)
-    StructuralTieOff.sink(page_manager.io.descriptor_location_grant_out)
+    val packed_activation_binder = Module(new RouteAPackedReadActivationBinder(p))
+    val packed_association_owner = Module(new RouteAPackedReadAssociationOwner(p))
+    val packed_plan_fork = Module(new RouteASourceCompletionPlanActivationFork(p))
+    val packed_terminal_bridge = Module(new RouteAPackedReadTerminalBridge(p))
     val admission_group_builder = Module(new RouteAAdmissionPublicationIngressAdapter(p))
     val r2_write_ingress = Module(new RouteAR2WriteIngressMerge(p))
     val r2_read_ingress = Module(new RouteAR2ReadIngressMerge(p))
@@ -105,24 +100,21 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     lifecycle.io.merge_ready_in <> r6_merge_ready
     source_plan_binder.io.declaration_in <> source_plan_declaration_in
     lifecycle.io.source_completion_plan_in <> source_plan_binder.io.completion_plan_out
-    // C7: R6 retains plan ownership.  Its exact accepted copy feeds the
-    // packet adapter; the top does not inspect, construct, or choose a plan.
-    source_packet_adapter.io.accepted_plan_in <> lifecycle.io.source_completion_plan_copy_out
+    // R6 retains plan ownership.  The exact-copy fork delivers every plan to
+    // the packet path and only a packed-present copy to the activation binder;
+    // it makes no source selection and tolerates independent backpressure.
+    packed_plan_fork.io.accepted_plan_in <> lifecycle.io.source_completion_plan_copy_out
+    source_packet_adapter.io.accepted_plan_in <> packed_plan_fork.io.packet_plan_out
+    packed_activation_binder.io.accepted_plan_in <> packed_plan_fork.io.packed_activation_plan_out
     lifecycle.io.hot_source_release_in <> hot_release
     s2.io.drain_collection_enable := lifecycle.io.drain_collection_enable
-    val s2ServiceIngress = Wire(RouteAChannels.s2_service_req)
-    val simultaneousS2Service = lifecycle.io.s2_service_req.valid && verification_s2_service_req_in.valid
-    s2ServiceIngress.valid := (lifecycle.io.s2_service_req.valid || verification_s2_service_req_in.valid) && !simultaneousS2Service
-    s2ServiceIngress.bits := Mux(lifecycle.io.s2_service_req.valid,
-      lifecycle.io.s2_service_req.bits, verification_s2_service_req_in.bits)
-    lifecycle.io.s2_service_req.ready := !verification_s2_service_req_in.valid && s2ServiceIngress.ready
-    verification_s2_service_req_in.ready := !lifecycle.io.s2_service_req.valid && s2ServiceIngress.ready
-    assert(!simultaneousS2Service, "C9 S2 service ingress requires one declared producer")
-    s2.io.service_req_in <> s2ServiceIngress
+    // Packed S2 reservation is now owner-local through the binder lease
+    // request.  The historical verification service request is retired.
+    s2.io.service_req_in <> lifecycle.io.s2_service_req
     val s2_fill_open = packed_s2_read_producer.io.s2_fill_open_out
     val s2_payload_fragment = packed_s2_read_endpoint.io.s2_payload_fragment_out
     val s2_sidecar_fragment = verification_s2_sidecar_fragment_in
-    val s2_fill_terminal = packed_s2_read_endpoint.io.s2_fill_terminal_out
+    val s2_fill_terminal = packed_terminal_bridge.io.s2_terminal_out
     val s2_sidecar_complete = verification_s2_sidecar_complete_in
     val s2_payload_read_req = Wire(RouteAChannels.s2_payload_read_req(p)); StructuralTieOff.source(s2_payload_read_req)
     val s2_sidecar_read_req = Wire(RouteAChannels.s2_sidecar_read_req(p)); StructuralTieOff.source(s2_sidecar_read_req)
@@ -142,6 +134,23 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     // state is observed.  Exact identity/instance matching remains in the
     // adapter, and an out-of-range coordinate fails closed there.
     s2.io.s2_observe_slot := source_packet_adapter.io.packed_observe_slot_out
+
+    packed_activation_binder.io.mem_init_done := core_memory.io.r1_init_complete
+    packed_association_owner.io.mem_init_done := core_memory.io.r1_init_complete
+    page_manager.io.descriptor_location_request_in <>
+      packed_activation_binder.io.descriptor_location_request_out
+    packed_activation_binder.io.descriptor_grant_in <>
+      page_manager.io.descriptor_location_grant_out
+    s2.io.s2_fill_lease_request_in <> packed_activation_binder.io.s2_fill_lease_request_out
+    packed_activation_binder.io.s2_fill_lease_in <> s2.io.s2_fill_lease_out
+    packed_association_owner.io.demand_in <> packed_activation_binder.io.demand_out
+    packed_association_owner.io.publication_authorization_in <>
+      packed_activation_binder.io.publication_authorization_out
+    packed_association_owner.io.descriptor_grant_in <> packed_activation_binder.io.descriptor_grant_out
+    packed_association_owner.io.s2_fill_lease_in <> packed_activation_binder.io.s2_fill_lease_out
+    packed_association_owner.io.invalidation_in.valid := false.B
+    packed_association_owner.io.invalidation_in.bits := 0.U.asTypeOf(new PackedReadInvalidation)
+    packed_association_owner.io.release_observation_out.ready := true.B
     direct_pending.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     val directOpenIngress = Wire(RouteAChannels.direct_pending_open(p))
     val simultaneousDirectOpen = lifecycle.io.direct_pending_open.valid && verification_direct_pending_open_in.valid
@@ -287,9 +296,9 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     // second publication initiator.  R3 owns the issued candidate above.
     StructuralTieOff.sink(lifecycle.io.metadata_publish_req)
     lifecycle.io.authority_transition_in <> m2_p3.io.authority_transition_out
-    // These are non-authoritative monitor attachment points.  I2's directed
-    // harness attaches to them; the inert production top has no group source.
-    m2_p3.io.publication_commit_observation.ready := true.B
+    // R3's post-atomic observation is the sole publication fact consumed by
+    // the activation binder.  No second publication/authority edge is made.
+    packed_activation_binder.io.publication_commit_in <> m2_p3.io.publication_commit_observation
     m2_p3.io.publication_member_observation.ready := true.B
     page_manager.io.mem_init_done := core_memory.io.r1_init_complete
     page_manager.io.drain_collection_enable := lifecycle.io.drain_collection_enable
@@ -297,21 +306,30 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     lifecycle.io.r5_reclaim_complete_in := page_manager.io.reclaim_complete
     val descriptor_maintenance_terminal = Wire(RouteAChannels.descriptor_maintenance_terminal(p)); StructuralTieOff.source(descriptor_maintenance_terminal)
     page_manager.io.descriptor_maintenance_terminal_in <> descriptor_maintenance_terminal
-    // C9 leaves allocation to the pre-existing sole bridge.  The C3/C4
-    // stateless producers only bind their immutable environment work to its
-    // respective lane; neither producer selects a source-service schedule.
+    // Existing direct-pending work remains a verification ingress.  Packed
+    // S2 work now comes only from the exact association owner.
     direct_pending_read_producer.io.work_in <> verification_direct_pending_read_work_in
     direct_pending_read_issue_adapter.io.read_issue_in <> direct_pending_read_producer.io.read_issue_out
     delivery_context_composition.io.r3_direct_pending_in <> direct_pending_read_issue_adapter.io.candidate_out
-    packed_s2_read_producer.io.work_in <> verification_packed_s2_read_work_in
+    packed_terminal_bridge.io.work_in <> packed_association_owner.io.packed_s2_work_out
+    packed_s2_read_producer.io.work_in <> packed_terminal_bridge.io.work_out
     packed_s2_read_issue_adapter.io.read_issue_in <> packed_s2_read_producer.io.read_issue_out
-    delivery_context_composition.io.r5_s2_packed_in <> packed_s2_read_issue_adapter.io.candidate_out
+    StructuralTieOff.source(delivery_context_composition.io.r5_s2_packed_in)
+    delivery_context_composition.io.packed_association_allocate_in <>
+      packed_association_owner.io.registry_allocate_out
+    delivery_context_composition.io.packed_association_arrival_ordinal_in :=
+      packed_association_owner.io.registry_allocation_arrival_ordinal_out
+    delivery_context_composition.io.packed_association_candidate_id_in :=
+      packed_association_owner.io.registry_allocation_candidate_id_out
+    packed_association_owner.io.registry_allocation_ack_in <>
+      delivery_context_composition.io.packed_association_allocation_ack_out
     delivery_context_composition.io.r3_packed_write_in <> m2_p3.io.p3_packed_write_candidate_out
     delivery_context_composition.io.r5_append_in <> page_manager.io.append_candidate_out
     delivery_context_composition.io.r5_reclaim_in <> page_manager.io.reclaim_candidate_out
     r2_read_ingress.io.r3_pack_read_in <> delivery_context_composition.io.r3_pack_read_out
     r2_read_ingress.io.r3_direct_pending_in <> delivery_context_composition.io.r3_direct_pending_out
-    r2_read_ingress.io.r5_s2_packed_in <> delivery_context_composition.io.r5_s2_packed_out
+    StructuralTieOff.sink(delivery_context_composition.io.r5_s2_packed_out)
+    r2_read_ingress.io.r5_s2_packed_in <> packed_s2_read_issue_adapter.io.candidate_out
     r2_write_ingress.io.r3_packed_write_in <> delivery_context_composition.io.r3_packed_write_out
     r2_write_ingress.io.r5_append_in <> delivery_context_composition.io.r5_append_out
     r2_write_ingress.io.r5_reclaim_in <> delivery_context_composition.io.r5_reclaim_out
@@ -329,6 +347,8 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     packed_s2_read_endpoint.io.endpoint_identity_in := s2.io.s2_observe_identity
     packed_s2_read_endpoint.io.endpoint_page_ref_in := s2.io.s2_observe_page_ref
     packed_s2_read_endpoint.io.endpoint_generation_in := s2.io.s2_observe_generation
+    packed_terminal_bridge.io.endpoint_terminal_in <> packed_s2_read_endpoint.io.s2_fill_terminal_out
+    packed_association_owner.io.terminal_in <> packed_terminal_bridge.io.association_terminal_out
     page_manager.io.p3_payload_durable_in <> m2_p3.io.p3_payload_durable_out
     m2_p3.io.descriptor_durability_prerequisite_in <> page_manager.io.descriptor_durability_prerequisite_out
     page_manager.io.metadata_publish_visibility_in <> m2_p3.io.metadata_publish_visibility_apply

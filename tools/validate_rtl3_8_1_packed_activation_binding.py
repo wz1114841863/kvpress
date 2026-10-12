@@ -18,10 +18,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repository-root", type=Path, default=Path("."))
     args = parser.parse_args(argv)
     data = json.loads(args.manifest.read_text())
-    assert data["status"] == "complete_owner_fact_integration_not_yet_functional_top_replacement"
+    assert data["status"] == "complete_production_shaped_i0_i3_owner_binding_i4_sidecar_open"
     assert data["implemented_retirement_boundaries"] == ["I0", "I1", "I2", "I3"]
-    assert data["disposition"]["verification_ingress_retired_from_functional_top"] is False
+    assert data["disposition"]["packed_i0_i3_verification_ingress_retired_from_functional_top"] is True
+    assert data["disposition"]["remaining_i4_sidecar_verification_ingress"] is True
     assert data["disposition"]["r5_s2_owner_fact_integration_complete"] is True
+    assert data["disposition"]["r5_s2_production_top_fact_producers_connected"] is True
+    assert data["disposition"]["production_shaped_packed_activation_path_connected"] is True
     assert data["disposition"]["physical_or_numeric_realization_complete"] is False
     for relative_path, expected in data["source_sha256"].items():
         actual = hashlib.sha256((args.repository_root / relative_path).read_bytes()).hexdigest()

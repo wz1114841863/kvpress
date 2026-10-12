@@ -68,6 +68,10 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
       "route_a_page_manager",
       "route_a_admission_publication_ingress_adapter",
       "route_a_source_plan_binder",
+      "route_a_source_completion_plan_activation_fork",
+      "route_a_packed_read_activation_binder",
+      "route_a_packed_read_association_owner",
+      "route_a_packed_read_terminal_bridge",
       "route_a_source_service_packet_adapter",
       "route_a_source_commit_demultiplexer",
       "route_a_read_endpoint_demultiplexer",
@@ -121,7 +125,8 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     chirrtl should include("packed_observe_slot_out")
     chirrtl should include("verification_p3_pack_read_work_in")
     chirrtl should include("verification_direct_pending_read_work_in")
-    chirrtl should include("verification_packed_s2_read_work_in")
+    chirrtl should not include "verification_s2_service_req_in"
+    chirrtl should not include "verification_packed_s2_read_work_in"
   }
 
   it should "preserve the selected, non-opaque Route-A anchor widths" in {

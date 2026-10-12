@@ -29,6 +29,10 @@ final class RouteAPackedReadAssociationOwner(p: RouteASkeletonParameters) extend
     // Existing registry interface; this is the concrete realization of the
     // contract's R2PackedReadAllocationRequest.
     val registry_allocate_out = RouteAChannels.delivery_context_allocate(p)
+    // Existing ordering key accompanying the exact prebuilt allocation.  The
+    // shared allocation bridge uses it at the frozen packed-source lane.
+    val registry_allocation_arrival_ordinal_out = Output(UInt(p.candidateOrdinalWidth.W))
+    val registry_allocation_candidate_id_out = Output(UInt(p.candidateIdWidth.W))
     val registry_allocation_ack_in = Flipped(RouteAChannels.delivery_context_allocation_ack(p))
     val packed_s2_work_out = RouteAChannels.packed_s2_read_work(p)
     // Endpoint terminal is only a transport completion.  It cannot mark S2
@@ -88,6 +92,8 @@ final class RouteAPackedReadAssociationOwner(p: RouteASkeletonParameters) extend
   io.s2_fill_lease_in.ready := false.B
   io.registry_allocate_out.valid := false.B
   io.registry_allocate_out.bits := 0.U.asTypeOf(new DeliveryContextAllocation(p))
+  io.registry_allocation_arrival_ordinal_out := demand.arrival_ordinal
+  io.registry_allocation_candidate_id_out := demand.candidate_id
   io.registry_allocation_ack_in.ready := false.B
   io.packed_s2_work_out.valid := false.B
   io.packed_s2_work_out.bits := 0.U.asTypeOf(new PackedS2ReadWork(p))

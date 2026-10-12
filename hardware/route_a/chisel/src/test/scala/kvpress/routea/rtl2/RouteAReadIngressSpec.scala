@@ -21,6 +21,10 @@ final class RouteAReadIngressHarness(p: RouteASkeletonParameters) extends Module
     val release_event = Input(Valid(new DeliveryContextRelease(p)))
   })
   val bridge = Module(new RouteAUnifiedDeliveryContextAllocationBridge(p))
+  StructuralTieOff.source(bridge.io.packed_association_allocate_in)
+  bridge.io.packed_association_arrival_ordinal_in := 0.U
+  bridge.io.packed_association_candidate_id_in := 0.U
+  StructuralTieOff.sink(bridge.io.packed_association_allocation_ack_out)
   val registry = Module(new RouteADeliveryContextRegistry(p))
   val merge = Module(new RouteAR2ReadIngressMerge(p))
   bridge.io.r3_pack_read_in <> io.r3_pack

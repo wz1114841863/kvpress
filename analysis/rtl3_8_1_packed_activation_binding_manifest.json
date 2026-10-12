@@ -1,7 +1,7 @@
 {
-  "schema_version": "kvzap-route-a-rtl3-8-1-packed-activation-binding-1.1",
-  "status": "complete_owner_fact_integration_not_yet_functional_top_replacement",
-  "scope": "Finite fail-closed materialization plus same-instance R5 descriptor-query and S2 lease-request owner integration. No production-top replacement, sidecar delivery, physical memory/numeric realization, scheduler change, or PPA claim.",
+  "schema_version": "kvzap-route-a-rtl3-8-1-packed-activation-binding-1.2",
+  "status": "complete_production_shaped_i0_i3_owner_binding_i4_sidecar_open",
+  "scope": "Finite fail-closed I0-I3 materialization, exact plan fanout, owner-built allocation through the existing packed lane, and packed terminal association in the production-shaped top. I4 sidecar remains an explicit verification ingress; no physical memory/numeric realization, scheduler change, or PPA claim.",
   "predecessor": {
     "contract": "analysis/rtl3_8_0_functional_closure_ingress_retirement_contract.md",
     "sha256": "fdf3c01dae3fd70b13c4aec7b0fa8c9a30a6a09c14bd1d9432ff4b803aaa2501"
@@ -24,9 +24,11 @@
     "R5 live reference and S2 sidecar requirement"
   ],
   "disposition": {
-    "verification_ingress_retired_from_functional_top": false,
+    "packed_i0_i3_verification_ingress_retired_from_functional_top": true,
+    "remaining_i4_sidecar_verification_ingress": true,
     "r5_s2_owner_fact_integration_complete": true,
-    "r5_s2_production_top_fact_producers_connected": false,
+    "r5_s2_production_top_fact_producers_connected": true,
+    "production_shaped_packed_activation_path_connected": true,
     "functional_sidecar_delivery_complete": false,
     "physical_or_numeric_realization_complete": false,
     "rtl3_final_review_authorized": false
@@ -34,26 +36,38 @@
   "test_commands": [
     "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAPackedReadActivationBinderSpec'",
     "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAPackedActivationOwnerFactIntegrationSpec'",
-    "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAPackedReadAssociationOwnerSpec'",
-    "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.s2.RouteAS2DirectPendingSpec'",
+    "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAPackedReadAssociationOwnerSpec -- -z \"joins arbitrary-order\"'",
+    "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAPackedActivationCompositionSpec'",
+    "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAPackedAssociationAllocationBridgeSpec'",
     "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec'"
   ],
   "test_result": {
     "status": "pass",
-    "tests": 18,
+    "tests": 15,
     "failed": 0,
     "evidence": "directed ChiselSim only; no model/GPU, timing, throughput, PPA, DC, or full-inference claim"
   },
   "source_sha256": {
-    "analysis/rtl3_8_1_packed_activation_binding_contract.md": "f9789ceed41240255bc835e85c3f5fb1791d5e1b20ac6c5f0a572c18f87e278f",
+    "analysis/rtl3_8_1_packed_activation_binding_contract.md": "a7d633ae6edf6e3ddec786bdabc4f451dd3b95d81be9f7a0bf23cccda5eac48a",
+    "analysis/rtl2_phase_contract.md": "d507acf5b269cea78c422ec84719d14fa47ee7020a06898a990f4911296f8f30",
     "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "9c4de48de39a965a9a10aa37973bf7929916ce24ee0c8921b7204f0068af8411",
-    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "4493e6bce44b59efb11c05160c2325b420f963d7875d9a92cb8b0f130402236a",
-    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "b52184cec26f65ae81ad32460fdd16003e41206d9552e46b41cd7cd2fe0bb81d",
-    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala": "f17e3e76718db07b8433b6fb6043326cd55c5a5c247c66442bdee358454d77fe",
-    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "34b4c0a58e415c6f0c1c803b149944c3f5a1f04d9b64675f6d53866245fffa78",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "20b5c69765608ec14751cecdaf5ac31623f481d5b14e751f638056d0c865237f",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "d9d1a6521771ad956c491b27050f368a12ec1caee64cea4a391fd7390ca30259",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala": "2d67821a96144397da08e7120042f727e9ca977adb9c0fe8d1d48909ee6ac6e1",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "984142f5ed256a5ac5d0d7421da1a6a99ba08eb19f18fc827b2c231c1af222a1",
     "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadActivationBinderSpec.scala": "b03bc2e495ce0c32f87c4999966c7c6090afcb438c05378b0fee0d068ef6f8ea",
     "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedActivationOwnerFactIntegrationSpec.scala": "0d32b23c172b06c8e9854dafdddae36bc187b75e92df78aaa054795a33c67343",
-    "tools/validate_rtl3_8_1_packed_activation_binding.py": "24bbd03780d8ba4e2a4f1efea301bd10991525995d5b4d1dd969c0dc85ee3898",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadAssociationOwnerSpec.scala": "91f329ce9c46616b120c260c8f030c4f3b8f7a2c21eb2f5c45281226984ad4ae",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedActivationCompositionSpec.scala": "acebf2da0384c8714a5ab6c9376e910bb551609face3ed2adfdd8a80252072d5",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedAssociationAllocationBridgeSpec.scala": "088fce9049ff857ce789eab6c64ab6ea54e29c9b64ac3461be92a40597e4eaf3",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala": "a21c9f38ba35c988120570d263c01203d4d4ff870741764774df2eddb1a88664",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAInitDrainIntegrationSpec.scala": "714782adc2bd750bde526e40d3350c540a3655dc365aeea99f096006b944d9a0",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteADirectPendingReadPathSpec.scala": "dc3ef087c2ce6ac9a5eb70515c5a3a25d54cd2d3f4860fda0e7348ca2bac5346",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAPackedS2ReadPathSpec.scala": "7f6ae45797ed17f9cfadc2e5375d1a0d9d83a90ead9d218f058f8198a00d1b37",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR3PackReadPathSpec.scala": "234d3183f93ca4d6ab04580bab39f8412179fbeb48b4de6f176d8e4300399b23",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala": "ffc7c4265991d71b1168bb3c219ca094d934b9387bacecdfaf6ec09fc46cbc08",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReadIngressSpec.scala": "640e082ad06d9b3a93c78030ad9b7afd24e81df2b6ee1ec34fa5ce85cce41113",
+    "tools/validate_rtl3_8_1_packed_activation_binding.py": "71accaeaf5d8cb812cf903d762fa609c56ce70ba9f5c322772a59cb7173ee893",
     "tests/test_rtl3_8_1_packed_activation_binding.py": "b273997f58ee32ed1e6092a646509493d99f8a75dd1df7df1bcf8e76ecfbbe0a"
   }
 }

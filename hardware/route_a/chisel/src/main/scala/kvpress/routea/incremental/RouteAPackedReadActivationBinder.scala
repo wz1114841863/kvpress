@@ -6,6 +6,59 @@ import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
 
 /**
+  * Lossless exact-copy fork for the one R6-accepted completion plan.
+  *
+  * The packet path observes every nonempty accepted plan.  The packed
+  * activation path receives the same bits only when packed is present.  Each
+  * consumer may backpressure independently; this module chooses no source and
+  * creates no second plan.
+  */
+final class RouteASourceCompletionPlanActivationFork(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_source_completion_plan_activation_fork"
+
+  val io = IO(new Bundle {
+    val accepted_plan_in = Flipped(RouteAChannels.source_completion_plan(p))
+    val packet_plan_out = RouteAChannels.source_completion_plan(p)
+    val packed_activation_plan_out = RouteAChannels.source_completion_plan(p)
+  })
+
+  val full = RegInit(false.B)
+  val packetPending = RegInit(false.B)
+  val packedPending = RegInit(false.B)
+  val held = Reg(new SourceCompletionPlan(p))
+
+  io.accepted_plan_in.ready := !full
+  io.packet_plan_out.valid := full && packetPending
+  io.packet_plan_out.bits := held
+  io.packed_activation_plan_out.valid := full && packedPending
+  io.packed_activation_plan_out.bits := held
+
+  when(io.accepted_plan_in.fire) {
+    held := io.accepted_plan_in.bits
+    full := true.B
+    packetPending := true.B
+    packedPending := io.accepted_plan_in.bits.source_presence(RouteASourceKind.Packed)
+  }
+  when(io.packet_plan_out.fire) { packetPending := false.B }
+  when(io.packed_activation_plan_out.fire) { packedPending := false.B }
+  when(full && (!packetPending || io.packet_plan_out.fire) &&
+      (!packedPending || io.packed_activation_plan_out.fire)) {
+    full := false.B
+  }
+
+  val heldPacket = RegEnable(io.packet_plan_out.bits,
+    io.packet_plan_out.valid && !io.packet_plan_out.ready)
+  when(RegNext(io.packet_plan_out.valid && !io.packet_plan_out.ready, false.B)) {
+    assert(io.packet_plan_out.bits.asUInt === heldPacket.asUInt)
+  }
+  val heldPacked = RegEnable(io.packed_activation_plan_out.bits,
+    io.packed_activation_plan_out.valid && !io.packed_activation_plan_out.ready)
+  when(RegNext(io.packed_activation_plan_out.valid && !io.packed_activation_plan_out.ready, false.B)) {
+    assert(io.packed_activation_plan_out.bits.asUInt === heldPacked.asUInt)
+  }
+}
+
+/**
   * RTL3.8.1 finite, fail-closed materializer for one already selected packed
   * source activation.
   *
@@ -243,5 +296,78 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
     io.s2_fill_lease_request_out.valid && !io.s2_fill_lease_request_out.ready)
   when(RegNext(io.s2_fill_lease_request_out.valid && !io.s2_fill_lease_request_out.ready, false.B)) {
     assert(io.s2_fill_lease_request_out.bits.asUInt === heldLeaseRequest.asUInt)
+  }
+}
+
+/**
+  * Production-shaped terminal association for one owner-materialized packed
+  * read.  Every endpoint terminal reaches S2; only the final terminal becomes
+  * the association terminal carrying the remembered PageRef/context ref.
+  *
+  * This is protocol association only.  It does not create a memory response,
+  * decide success/fault, mark S2 READY, release a source, or retire a request.
+  */
+final class RouteAPackedReadTerminalBridge(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_packed_read_terminal_bridge"
+
+  val io = IO(new Bundle {
+    val work_in = Flipped(RouteAChannels.packed_s2_read_work(p))
+    val work_out = RouteAChannels.packed_s2_read_work(p)
+    val endpoint_terminal_in = Flipped(RouteAChannels.s2_fill_terminal(p))
+    val s2_terminal_out = RouteAChannels.s2_fill_terminal(p)
+    val association_terminal_out = RouteAChannels.packed_read_terminal(p)
+  })
+
+  val workActive = RegInit(false.B)
+  val work = Reg(new PackedS2ReadWork(p))
+  val terminalPending = RegInit(false.B)
+  val terminal = Reg(new PackedReadTerminal(p))
+
+  io.work_out.valid := io.work_in.valid && !workActive && !terminalPending
+  io.work_out.bits := io.work_in.bits
+  io.work_in.ready := io.work_out.ready && !workActive && !terminalPending
+  when(io.work_in.fire) {
+    work := io.work_in.bits
+    workActive := true.B
+  }
+
+  val endpoint = io.endpoint_terminal_in.bits
+  val endpointMatches = workActive && !terminalPending &&
+    endpoint.transaction_identity.asUInt === work.transaction_identity.asUInt &&
+    endpoint.s2_slot === work.s2_slot &&
+    endpoint.source_generation === work.source_generation
+  io.s2_terminal_out.valid := io.endpoint_terminal_in.valid && endpointMatches
+  io.s2_terminal_out.bits := endpoint
+  io.endpoint_terminal_in.ready := io.s2_terminal_out.ready && endpointMatches
+  when(io.endpoint_terminal_in.fire && endpoint.last) {
+    terminal.transaction_identity := work.transaction_identity
+    terminal.page_ref := work.page_ref
+    terminal.s2_slot := work.s2_slot
+    terminal.source_generation := work.source_generation
+    terminal.delivery_context_ref := work.delivery_context_ref
+    terminal.status := endpoint.status
+    terminalPending := true.B
+  }
+
+  io.association_terminal_out.valid := terminalPending
+  io.association_terminal_out.bits := terminal
+  when(io.association_terminal_out.fire) {
+    terminalPending := false.B
+    workActive := false.B
+  }
+
+  val heldWork = RegEnable(io.work_out.bits, io.work_out.valid && !io.work_out.ready)
+  when(RegNext(io.work_out.valid && !io.work_out.ready, false.B)) {
+    assert(io.work_out.bits.asUInt === heldWork.asUInt)
+  }
+  val heldS2Terminal = RegEnable(io.s2_terminal_out.bits,
+    io.s2_terminal_out.valid && !io.s2_terminal_out.ready)
+  when(RegNext(io.s2_terminal_out.valid && !io.s2_terminal_out.ready, false.B)) {
+    assert(io.s2_terminal_out.bits.asUInt === heldS2Terminal.asUInt)
+  }
+  val heldAssociationTerminal = RegEnable(io.association_terminal_out.bits,
+    io.association_terminal_out.valid && !io.association_terminal_out.ready)
+  when(RegNext(io.association_terminal_out.valid && !io.association_terminal_out.ready, false.B)) {
+    assert(io.association_terminal_out.bits.asUInt === heldAssociationTerminal.asUInt)
   }
 }

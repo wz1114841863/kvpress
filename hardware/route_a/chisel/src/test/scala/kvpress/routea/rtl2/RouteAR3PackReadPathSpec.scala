@@ -29,6 +29,10 @@ final class RouteAR3PackReadPathHarness(p: RouteASkeletonParameters) extends Mod
   val r3 = Module(new RouteAM2P3Wrapper(p))
   val issueAdapter = Module(new RouteAReadIssueCandidateAdapter(p))
   val bridge = Module(new RouteAUnifiedDeliveryContextAllocationBridge(p))
+  StructuralTieOff.source(bridge.io.packed_association_allocate_in)
+  bridge.io.packed_association_arrival_ordinal_in := 0.U
+  bridge.io.packed_association_candidate_id_in := 0.U
+  StructuralTieOff.sink(bridge.io.packed_association_allocation_ack_out)
   val readIngress = Module(new RouteAR2ReadIngressMerge(p))
   val r2 = Module(new RouteACoreSideArbiter(p))
   val r1 = Module(new RouteACoreMemIfV1(p))

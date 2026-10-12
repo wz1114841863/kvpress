@@ -901,6 +901,16 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     owner or an explicit allowed outer environment.  It authorizes no Chisel
     activation; RTL3.8.1 must first bind the packed C2 activation facts without
     changing scheduling, authority, or publication semantics.
+20. **RTL3.8.1 — packed activation binding (complete for production-shaped
+    I0--I3 owner binding; I4 remains open).**
+    [`rtl3_8_1_packed_activation_binding_contract.md`](rtl3_8_1_packed_activation_binding_contract.md)
+    connects the exact R6 plan fork, R3 publication observation, R5 descriptor
+    query/grant, S2 lease request/grant, association allocation through the
+    existing packed lane, and final terminal association in the composed top.
+    It retires only `verification_s2_service_req_in` and
+    `verification_packed_s2_read_work_in`; sidecar verification ingress is
+    still explicit for RTL3.8.2.  It adds no source selection, R2 policy,
+    metadata authority, physical-memory/numeric realization, or PPA claim.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

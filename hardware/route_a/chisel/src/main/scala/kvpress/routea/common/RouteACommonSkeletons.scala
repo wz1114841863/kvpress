@@ -1246,6 +1246,13 @@ final class RouteAUnifiedDeliveryContextAllocationBridge(p: RouteASkeletonParame
     val r3_packed_write_out = RouteAChannels.source_candidate(p)
     val r5_append_out = RouteAChannels.source_candidate(p)
     val r5_reclaim_out = RouteAChannels.source_candidate(p)
+    // RTL3.8.1 production-shaped packed association input.  It occupies the
+    // existing R5/S2 packed ordering lane and therefore does not add a new
+    // arbitration class or priority rule.
+    val packed_association_allocate_in = Flipped(RouteAChannels.delivery_context_allocate(p))
+    val packed_association_arrival_ordinal_in = Input(UInt(p.candidateOrdinalWidth.W))
+    val packed_association_candidate_id_in = Input(UInt(p.candidateIdWidth.W))
+    val packed_association_allocation_ack_out = RouteAChannels.delivery_context_allocation_ack(p)
     val registry_allocate_out = RouteAChannels.delivery_context_allocate(p)
     val registry_allocation_ack_in = Flipped(RouteAChannels.delivery_context_allocation_ack(p))
     val release_event_in = Input(Valid(new DeliveryContextRelease(p)))
@@ -1267,10 +1274,11 @@ final class RouteAUnifiedDeliveryContextAllocationBridge(p: RouteASkeletonParame
   val refs = Reg(Vec(producerCount, UInt(p.sourceDeliveryOpaqueWidth.W)))
   val allocationActive = RegInit(false.B)
   val allocationProducer = Reg(UInt(producerIndexWidth.W))
+  val allocationFromPackedAssociation = RegInit(false.B)
+  val capturedPackedAssociation = Reg(new DeliveryContextAllocation(p))
 
-  private def earlier(left: SourceCandidate, right: SourceCandidate): Bool =
-    left.arrival_ordinal < right.arrival_ordinal ||
-      (left.arrival_ordinal === right.arrival_ordinal && left.candidate_id < right.candidate_id)
+  private def earlierKey(leftOrdinal: UInt, leftId: UInt, rightOrdinal: UInt, rightId: UInt): Bool =
+    leftOrdinal < rightOrdinal || (leftOrdinal === rightOrdinal && leftId < rightId)
   private def targetKind(candidate: SourceCandidate): UInt = MuxCase(0.U(RouteADeliveryTargetKind.Width.W), Seq(
     (candidate.candidate_class === p.r2PackReadClassCode.U) -> RouteADeliveryTargetKind.P3PendingRead.U,
     (candidate.candidate_class === p.r2S2FullClassCode.U) -> RouteADeliveryTargetKind.S2FullFill.U,
@@ -1288,47 +1296,97 @@ final class RouteAUnifiedDeliveryContextAllocationBridge(p: RouteASkeletonParame
     p.r2DescriptorMaintenanceClassCode,
   )
 
+  val packedAssociationLegal =
+    io.packed_association_allocate_in.bits.candidate_class === p.r2S2PackedClassCode.U &&
+      io.packed_association_allocate_in.bits.target_kind === RouteADeliveryTargetKind.S2PackedFill.U
+  val packedLaneConflict = io.packed_association_allocate_in.valid && io.r5_s2_packed_in.valid
+  when(packedLaneConflict) {
+    assert(false.B, "packed allocation lane has more than one producer")
+  }
+
   var found: Bool = false.B
   var selected = 0.U(producerIndexWidth.W)
-  var best = 0.U.asTypeOf(new SourceCandidate(p))
+  var bestOrdinal = 0.U(p.candidateOrdinalWidth.W)
+  var bestId = 0.U(p.candidateIdWidth.W)
   for (index <- 0 until producerCount) {
     // A class may be legal at R2 yet illegal on this named owner lane.  This
     // closes the route-a producer ownership boundary before the shared bridge
     // can allocate an association for a misdirected carrier.
     val laneClassMatches = inputs(index).bits.candidate_class === expectedLaneClasses(index).U
-    val eligible = inputs(index).valid && laneClassMatches && !bound(index) && !awaitingRelease(index)
-    val take = eligible && (!found || earlier(inputs(index).bits, best))
+    val packedAssociationAtLane = if (index == 2) {
+      io.packed_association_allocate_in.valid && packedAssociationLegal && !packedLaneConflict
+    } else {
+      false.B
+    }
+    val ordinaryAtLane = inputs(index).valid && laneClassMatches && !packedLaneConflict
+    val eligible = (ordinaryAtLane || packedAssociationAtLane) && !bound(index) && !awaitingRelease(index)
+    val laneOrdinal = Mux(packedAssociationAtLane,
+      io.packed_association_arrival_ordinal_in, inputs(index).bits.arrival_ordinal)
+    val laneId = Mux(packedAssociationAtLane,
+      io.packed_association_candidate_id_in, inputs(index).bits.candidate_id)
+    val take = eligible && (!found || earlierKey(laneOrdinal, laneId, bestOrdinal, bestId))
     selected = Mux(take, index.U(producerIndexWidth.W), selected)
-    best = Mux(take, inputs(index).bits, best)
+    bestOrdinal = Mux(take, laneOrdinal, bestOrdinal)
+    bestId = Mux(take, laneId, bestId)
     found = found || eligible
   }
 
+  val selectedCandidate = VecInit(inputs.map(_.bits))(selected)
+  val packedAssociationSelected = selected === 2.U &&
+    io.packed_association_allocate_in.valid && packedAssociationLegal && !packedLaneConflict
+  val selectedAllocation = Wire(new DeliveryContextAllocation(p))
+  selectedAllocation.candidate_class := selectedCandidate.candidate_class
+  selectedAllocation.transaction_identity := selectedCandidate.r1_request.transaction_identity
+  selectedAllocation.target_kind := targetKind(selectedCandidate)
+  selectedAllocation.target_identity_generation := selectedCandidate.delivery_target_descriptor.source_generation
+  selectedAllocation.expected_fragment_count := selectedCandidate.r1_request.expected_fragment_count
+  selectedAllocation.target_descriptor := selectedCandidate.delivery_target_descriptor
+  when(packedAssociationSelected) {
+    selectedAllocation := io.packed_association_allocate_in.bits
+  }
+
   io.registry_allocate_out.valid := !allocationActive && found
-  io.registry_allocate_out.bits.candidate_class := best.candidate_class
-  io.registry_allocate_out.bits.transaction_identity := best.r1_request.transaction_identity
-  io.registry_allocate_out.bits.target_kind := targetKind(best)
-  io.registry_allocate_out.bits.target_identity_generation := best.delivery_target_descriptor.source_generation
-  io.registry_allocate_out.bits.expected_fragment_count := best.r1_request.expected_fragment_count
-  io.registry_allocate_out.bits.target_descriptor := best.delivery_target_descriptor
-  io.registry_allocation_ack_in.ready := allocationActive
+  io.registry_allocate_out.bits := selectedAllocation
+  io.packed_association_allocate_in.ready := !allocationActive && found && packedAssociationSelected &&
+    io.registry_allocate_out.ready
+  io.packed_association_allocation_ack_out.valid := false.B
+  io.packed_association_allocation_ack_out.bits := io.registry_allocation_ack_in.bits
+
+  val packedAssociationAckMatches =
+    io.registry_allocation_ack_in.bits.allocation.asUInt === capturedPackedAssociation.asUInt
+  io.packed_association_allocation_ack_out.valid := allocationActive && allocationFromPackedAssociation &&
+    io.registry_allocation_ack_in.valid && packedAssociationAckMatches
+  io.registry_allocation_ack_in.ready := allocationActive && Mux(allocationFromPackedAssociation,
+    packedAssociationAckMatches && io.packed_association_allocation_ack_out.ready, true.B)
 
   when(io.registry_allocate_out.fire) {
-    captured(selected) := best
+    when(packedAssociationSelected) {
+      capturedPackedAssociation := io.packed_association_allocate_in.bits
+    }.otherwise {
+      captured(selected) := selectedCandidate
+    }
     allocationProducer := selected
+    allocationFromPackedAssociation := packedAssociationSelected
     allocationActive := true.B
+  }
+  when(allocationActive && allocationFromPackedAssociation && io.registry_allocation_ack_in.valid) {
+    assert(packedAssociationAckMatches)
   }
   when(io.registry_allocation_ack_in.fire) {
     val pending = allocationProducer
-    assert(io.registry_allocation_ack_in.bits.allocation.candidate_class === captured(pending).candidate_class)
-    assert(io.registry_allocation_ack_in.bits.allocation.transaction_identity.asUInt ===
-      captured(pending).r1_request.transaction_identity.asUInt)
-    assert(io.registry_allocation_ack_in.bits.allocation.expected_fragment_count ===
-      captured(pending).r1_request.expected_fragment_count)
-    assert(io.registry_allocation_ack_in.bits.allocation.target_descriptor.asUInt ===
-      captured(pending).delivery_target_descriptor.asUInt)
-    refs(pending) := io.registry_allocation_ack_in.bits.delivery_context_ref
-    bound(pending) := true.B
+    when(!allocationFromPackedAssociation) {
+      assert(io.registry_allocation_ack_in.bits.allocation.candidate_class === captured(pending).candidate_class)
+      assert(io.registry_allocation_ack_in.bits.allocation.transaction_identity.asUInt ===
+        captured(pending).r1_request.transaction_identity.asUInt)
+      assert(io.registry_allocation_ack_in.bits.allocation.expected_fragment_count ===
+        captured(pending).r1_request.expected_fragment_count)
+      assert(io.registry_allocation_ack_in.bits.allocation.target_descriptor.asUInt ===
+        captured(pending).delivery_target_descriptor.asUInt)
+      refs(pending) := io.registry_allocation_ack_in.bits.delivery_context_ref
+      bound(pending) := true.B
+    }
     allocationActive := false.B
+    allocationFromPackedAssociation := false.B
   }
 
   for (index <- 0 until producerCount) {
