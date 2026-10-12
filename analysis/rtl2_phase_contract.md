@@ -930,6 +930,15 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     packet boundary to the existing source-packet adapter.  It adds no K/V
     lease export, source selection, numeric computation, R4 result, R2
     policy, controller/macro, timing, or PPA claim.
+23. **RTL3.8.4 — dynamic R4 functional-reference protocol activation
+    (complete for I7/I8 protocol binding; numeric implementation remains
+    external).**
+    [`rtl3_8_4_dynamic_r4_functional_reference_contract.md`](rtl3_8_4_dynamic_r4_functional_reference_contract.md)
+    replaces the exercised functional top's local R4 terminal tie-offs with a
+    packet-receipt and exact-work-gated reference-environment boundary.  The
+    existing pure-software RTL3.4-B oracle remains its only permitted numeric
+    evaluator; this step adds neither Chisel FP/exp/MAC/RoPE arithmetic nor a
+    physical/numeric RTL, controller/macro, timing, or PPA claim.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

@@ -2048,6 +2048,150 @@ final class RouteAFunctionalPartialProviderBoundary(p: RouteASkeletonParameters)
 }
 
 /**
+  * RTL3.8.4 protocol boundary for the replaceable, non-synthesizable
+  * functional R4 reference environment.  It does not evaluate `(m,l,o)`,
+  * binary32, exp, or normalization.  Instead, it proves that an external
+  * oracle can see each accepted packet and receives one exact merge-work item
+  * only after the complete selected source set has crossed this boundary.
+  *
+  * The merge boundary remains the only structural packet acceptor and R6
+  * remains the only outward-terminal owner.  This child only owns the
+  * reference-environment association/response protocol.
+  */
+final class RouteAFunctionalR4ReferenceBoundary(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_functional_r4_reference_boundary"
+
+  val io = IO(new Bundle {
+    val accepted_packet_in = Flipped(RouteAChannels.r4_accepted_partial_packet(p))
+    val active_merge_observation_in = Input(Valid(new MergeRequest))
+    val accepted_packet_out = RouteAChannels.r4_accepted_partial_packet(p)
+    val merge_work_out = RouteAChannels.merge_req
+    val functional_result_in = Flipped(RouteAChannels.r4_result_stub)
+    val functional_numeric_fault_in = Flipped(RouteAChannels.r4_numeric_fault)
+    val r4_result_stub_out = RouteAChannels.r4_result_stub
+    val r4_numeric_fault_out = RouteAChannels.r4_numeric_fault
+  })
+
+  private def identityMatches(left: TransactionIdentity, right: TransactionIdentity): Bool =
+    left.asUInt === right.asUInt
+
+  val observedIdentityValid = RegInit(false.B)
+  val observedIdentity = Reg(new TransactionIdentity)
+  // One three-bit canonical-source receipt mask per GQA consumer.  This is
+  // association state only, not partial storage or a numeric accumulator.
+  val packetMasks = RegInit(VecInit(Seq.fill(4)(0.U(3.W))))
+  val workPending = RegInit(false.B)
+  val workIssued = RegInit(false.B)
+  val work = Reg(new MergeRequest)
+
+  val packet = io.accepted_packet_in.bits
+  val packetConsumerLegal = packet.consumer_id < 4.U
+  val packetSourceLegal = packet.source_instance.source_kind <= RouteASourceKind.Packed.U
+  val packetHeaderMatches = packet.header(65, 64) === packet.source_instance.source_kind &&
+    packet.header(67, 66) === packet.consumer_id
+  val packetIdentityCompatible = !observedIdentityValid ||
+    identityMatches(observedIdentity, packet.transaction_identity)
+  val packetSourceBit = UIntToOH(packet.source_instance.source_kind, 3)
+  val packetNotDuplicate = packetConsumerLegal &&
+    (packetMasks(packet.consumer_id) & packetSourceBit) === 0.U
+  val packetAllowed = packetConsumerLegal && packetSourceLegal && packetHeaderMatches &&
+    packetIdentityCompatible && packetNotDuplicate
+
+  io.accepted_packet_out.valid := io.accepted_packet_in.valid && packetAllowed
+  io.accepted_packet_out.bits := packet
+  io.accepted_packet_in.ready := packetAllowed && io.accepted_packet_out.ready
+  when(io.accepted_packet_out.fire) {
+    when(!observedIdentityValid) {
+      observedIdentityValid := true.B
+      observedIdentity := packet.transaction_identity
+    }
+    packetMasks(packet.consumer_id) := packetMasks(packet.consumer_id) | packetSourceBit
+  }
+
+  val active = io.active_merge_observation_in
+  val activeConsumerLegal = active.bits.consumer_id < 4.U
+  val activeIdentityMatches = observedIdentityValid &&
+    identityMatches(observedIdentity, active.bits.transaction_identity)
+  val selectedPacketsObserved = activeConsumerLegal &&
+    packetMasks(active.bits.consumer_id) === active.bits.source_presence
+  when(!workPending && !workIssued && active.valid && active.bits.source_presence.orR &&
+    activeConsumerLegal && activeIdentityMatches && selectedPacketsObserved) {
+    workPending := true.B
+    work := active.bits
+  }
+
+  io.merge_work_out.valid := workPending
+  io.merge_work_out.bits := work
+  when(io.merge_work_out.fire) {
+    workPending := false.B
+    workIssued := true.B
+  }
+
+  val activeMatchesWork = active.valid && workIssued &&
+    identityMatches(active.bits.transaction_identity, work.transaction_identity) &&
+    active.bits.consumer_id === work.consumer_id &&
+    active.bits.source_presence === work.source_presence
+  val resultMatches = activeMatchesWork &&
+    identityMatches(io.functional_result_in.bits.transaction_identity, work.transaction_identity) &&
+    io.functional_result_in.bits.consumer_id === work.consumer_id
+  val faultMatches = activeMatchesWork &&
+    identityMatches(io.functional_numeric_fault_in.bits.transaction_identity, work.transaction_identity) &&
+    io.functional_numeric_fault_in.bits.consumer_id === work.consumer_id
+
+  // A simultaneous success/fault is an environment violation.  Neither
+  // response is accepted, so no terminal is manufactured.
+  io.r4_result_stub_out.valid := io.functional_result_in.valid && resultMatches &&
+    !io.functional_numeric_fault_in.valid
+  io.r4_result_stub_out.bits := io.functional_result_in.bits
+  io.r4_numeric_fault_out.valid := io.functional_numeric_fault_in.valid && faultMatches &&
+    !io.functional_result_in.valid
+  io.r4_numeric_fault_out.bits := io.functional_numeric_fault_in.bits
+  io.functional_result_in.ready := resultMatches && !io.functional_numeric_fault_in.valid &&
+    io.r4_result_stub_out.ready
+  io.functional_numeric_fault_in.ready := faultMatches && !io.functional_result_in.valid &&
+    io.r4_numeric_fault_out.ready
+
+  when(io.r4_result_stub_out.fire) {
+    workIssued := false.B
+    // The frozen functional baseline issues consumers 0 -> 1 -> 2 -> 3.
+    // Retire receipt state only after the fourth success; a numeric fault
+    // below clears it immediately because R6 terminates the group fail-closed.
+    when(work.consumer_id === 3.U) {
+      observedIdentityValid := false.B
+      packetMasks.foreach(_ := 0.U)
+    }
+  }
+  when(io.r4_numeric_fault_out.fire) {
+    workIssued := false.B
+    observedIdentityValid := false.B
+    packetMasks.foreach(_ := 0.U)
+  }
+
+  assert(!(io.r4_result_stub_out.valid && io.r4_numeric_fault_out.valid))
+  when(io.accepted_packet_out.fire) { assert(packetAllowed) }
+  when(io.merge_work_out.fire) {
+    assert(activeMatchesWork || (active.valid && activeIdentityMatches && selectedPacketsObserved))
+  }
+  when(io.r4_result_stub_out.fire) { assert(resultMatches && !io.functional_numeric_fault_in.valid) }
+  when(io.r4_numeric_fault_out.fire) { assert(faultMatches && !io.functional_result_in.valid) }
+
+  val heldWork = RegEnable(io.merge_work_out.bits, io.merge_work_out.valid && !io.merge_work_out.ready)
+  when(RegNext(io.merge_work_out.valid && !io.merge_work_out.ready, false.B)) {
+    assert(io.merge_work_out.valid && io.merge_work_out.bits.asUInt === heldWork.asUInt)
+  }
+  val heldResult = RegEnable(io.r4_result_stub_out.bits,
+    io.r4_result_stub_out.valid && !io.r4_result_stub_out.ready)
+  when(RegNext(io.r4_result_stub_out.valid && !io.r4_result_stub_out.ready, false.B)) {
+    assert(io.r4_result_stub_out.valid && io.r4_result_stub_out.bits.asUInt === heldResult.asUInt)
+  }
+  val heldFault = RegEnable(io.r4_numeric_fault_out.bits,
+    io.r4_numeric_fault_out.valid && !io.r4_numeric_fault_out.ready)
+  when(RegNext(io.r4_numeric_fault_out.valid && !io.r4_numeric_fault_out.ready, false.B)) {
+    assert(io.r4_numeric_fault_out.valid && io.r4_numeric_fault_out.bits.asUInt === heldFault.asUInt)
+  }
+}
+
+/**
   * C8 exact R4-commit router. It has no source state: it accepts a commit only
   * when both frozen source-kind fields agree, then forwards the exact identity,
   * SourceInstance, and consumer ID to that one owner. Owner-local four-bit

@@ -78,6 +78,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
       "route_a_exclusive_s2_fill_terminal_ingress",
       "route_a_source_service_packet_adapter",
       "route_a_functional_partial_provider_boundary",
+      "route_a_functional_r4_reference_boundary",
       "route_a_source_commit_demultiplexer",
       "route_a_read_endpoint_demultiplexer",
       "route_a_exclusive_p3_pending_ingress",
@@ -131,6 +132,10 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     chirrtl should include("packed_observe_slot_out")
     chirrtl should include("functional_partial_hot_offer_in")
     chirrtl should include("functional_partial_packed_fragment_in")
+    chirrtl should include("functional_r4_accepted_packet_out")
+    chirrtl should include("functional_r4_merge_work_out")
+    chirrtl should include("functional_r4_result_in")
+    chirrtl should include("functional_r4_numeric_fault_in")
     chirrtl should not include "verification_s2_service_req_in"
     chirrtl should not include "verification_packed_s2_read_work_in"
     chirrtl should not include "verification_s2_sidecar_fragment_in"

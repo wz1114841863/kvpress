@@ -38,6 +38,13 @@ final class RouteAInitDrainHarness(p: RouteASkeletonParameters) extends Module {
   StructuralTieOff.source(subsystem.functional_partial_hot_fragment_in)
   StructuralTieOff.source(subsystem.functional_partial_pending_fragment_in)
   StructuralTieOff.source(subsystem.functional_partial_packed_fragment_in)
+  // RTL3.8.4 exposes the reference-only R4 environment explicitly.  This
+  // init/drain harness has no accepted packet or merge work, so it drains the
+  // observations and keeps the sole environment response inputs inactive.
+  StructuralTieOff.sink(subsystem.functional_r4_accepted_packet_out)
+  StructuralTieOff.sink(subsystem.functional_r4_merge_work_out)
+  StructuralTieOff.source(subsystem.functional_r4_result_in)
+  StructuralTieOff.source(subsystem.functional_r4_numeric_fault_in)
   StructuralTieOff.sink(subsystem.verification_direct_pending_payload_fragment_out)
   io.attention_terminal_rsp <> subsystem.attention_terminal_rsp
   io.session_retire_ack <> subsystem.session_retire_ack

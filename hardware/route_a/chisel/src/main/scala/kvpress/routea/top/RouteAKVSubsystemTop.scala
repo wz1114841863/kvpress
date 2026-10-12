@@ -44,6 +44,14 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
   val functional_partial_hot_fragment_in = IO(Flipped(RouteAChannels.source_service_value_fragment(p)))
   val functional_partial_pending_fragment_in = IO(Flipped(RouteAChannels.source_service_value_fragment(p)))
   val functional_partial_packed_fragment_in = IO(Flipped(RouteAChannels.source_service_value_fragment(p)))
+  // RTL3.8.4 named functional R4 environment boundary.  The outer provider is
+  // reference-only and receives only packets structurally accepted by R4 plus
+  // an exact R6 merge work item.  It may return one matching success XOR
+  // numeric fault; it owns neither packet acceptance nor the R6 terminal.
+  val functional_r4_accepted_packet_out = IO(RouteAChannels.r4_accepted_partial_packet(p))
+  val functional_r4_merge_work_out = IO(RouteAChannels.merge_req)
+  val functional_r4_result_in = IO(Flipped(RouteAChannels.r4_result_stub))
+  val functional_r4_numeric_fault_in = IO(Flipped(RouteAChannels.r4_numeric_fault))
   val verification_direct_pending_payload_fragment_out = IO(RouteAChannels.direct_pending_payload_fragment(p))
   val external_core_mem_if_v1 = IO(new CoreMemoryExternalPort(p))
 
@@ -86,6 +94,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val source_plan_binder = Module(new RouteASourcePlanBinder(p))
     val source_packet_adapter = Module(new RouteASourceServicePacketAdapter(p))
     val functional_partial_provider = Module(new RouteAFunctionalPartialProviderBoundary(p))
+    val functional_r4_reference = Module(new RouteAFunctionalR4ReferenceBoundary(p))
     val source_commit_demultiplexer = Module(new RouteASourceCommitDemultiplexer(p))
     val merge = Module(new RouteAMergeBoundary(p))
     val status_collector = Module(new RouteAComponentStatusCollector(p))
@@ -201,17 +210,20 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     source_packet_adapter.io.pending_fragment_in <> functional_partial_provider.io.pending_fragment_out
     source_packet_adapter.io.packed_fragment_in <> functional_partial_provider.io.packed_fragment_out
 
-    val r4_result_stub = Wire(RouteAChannels.r4_result_stub); StructuralTieOff.source(r4_result_stub)
-    val r4_numeric_fault = Wire(RouteAChannels.r4_numeric_fault); StructuralTieOff.source(r4_numeric_fault)
     merge.io.r4_partial_header_in <> source_packet_adapter.io.r4_partial_header_out
     merge.io.r4_source_instance_in <> source_packet_adapter.io.r4_source_instance_out
     merge.io.r4_value_fragment_in <> source_packet_adapter.io.r4_value_fragment_out
-    // RTL3.4-B functional-provider observation remains unbound in the
-    // production composition top.  Dropping it here cannot create a result
-    // or terminal; the functional-provider harness binds it explicitly.
-    merge.io.r4_accepted_partial_packet_out.ready := true.B
-    merge.io.r4_result_stub_in <> r4_result_stub
-    merge.io.r4_numeric_fault_in <> r4_numeric_fault
+    // I7/I8 are now a named, work-gated functional-reference environment
+    // boundary.  It does not compute numeric results in Chisel: the existing
+    // RTL3.4-B pure-software oracle remains the only reference evaluator.
+    functional_r4_reference.io.accepted_packet_in <> merge.io.r4_accepted_partial_packet_out
+    functional_r4_reference.io.active_merge_observation_in := merge.io.r4_active_merge_observation
+    functional_r4_accepted_packet_out <> functional_r4_reference.io.accepted_packet_out
+    functional_r4_merge_work_out <> functional_r4_reference.io.merge_work_out
+    functional_r4_reference.io.functional_result_in <> functional_r4_result_in
+    functional_r4_reference.io.functional_numeric_fault_in <> functional_r4_numeric_fault_in
+    merge.io.r4_result_stub_in <> functional_r4_reference.io.r4_result_stub_out
+    merge.io.r4_numeric_fault_in <> functional_r4_reference.io.r4_numeric_fault_out
 
     // C8 keeps the top composition-only: the named child rejects a mismatch
     // between R4's header source ordinal and sideband SourceInstance, then
