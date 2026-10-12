@@ -1,0 +1,77 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-8-5-full-path-closure-coverage-1.0",
+  "status": "complete_directed_functional_path_coverage_pre_final_rtl3_review",
+  "scope": "Current aggregate directed coverage for the existing functional Route-A path. It is not a production source-owner realization, numeric RTL, physical implementation, performance, or PPA result.",
+  "predecessors": {
+    "rtl3_8_0_contract_sha256": "fdf3c01dae3fd70b13c4aec7b0fa8c9a30a6a09c14bd1d9432ff4b803aaa2501",
+    "rtl3_8_4_manifest_sha256": "455bca1702c7deb0443facf5c110b0c461e7bedfbe16cd16f829e32fc331b4ef",
+    "historical_manifests": "immutable; not replayed or rewritten against later shared-source snapshots"
+  },
+  "composition": {
+    "functional_path": [
+      "route_a_lifecycle_adapter",
+      "route_a_functional_partial_provider_boundary",
+      "route_a_source_service_packet_adapter",
+      "route_a_merge_boundary",
+      "route_a_functional_r4_reference_boundary",
+      "testbench_rtl3_8_5_reference_environment"
+    ],
+    "test_only_completion_observer": "observes four exact ConsumerPartialCommit carriers and emits existing SourceRelease only; it is not a source owner, scheduler, partial producer, or synthesis candidate"
+  },
+  "coverage": {
+    "nonempty_source_presence_masks": [1, 2, 3, 4, 5, 6, 7],
+    "gqa_consumers": [0, 1, 2, 3],
+    "success_terminal": true,
+    "numeric_fault_terminal": true,
+    "packet_ready_low": true,
+    "work_ready_low": true,
+    "stale_response_fail_closed": true,
+    "destructive_reset": true,
+    "same_elaborated_harness": true,
+    "reset_epoch_between_independent_subset_transactions": true
+  },
+  "protocol_repair": {
+    "module": "route_a_functional_r4_reference_boundary",
+    "issue": "active R4 observation persisted during accepted terminal handoff and could reissue the completed consumer",
+    "repair": "completion-quiescent identity/consumer association blocks repeat work until observation disappears or changes",
+    "architecture_change": false
+  },
+  "disposition": {
+    "test_only_completion_observer": true,
+    "top_or_production_source_owner_changed": false,
+    "live_r3_direct_source_work_producers_complete": false,
+    "source_payload_position_lease_export_complete": false,
+    "same_simulation_python_chisel_cosimulation_complete": false,
+    "chisel_numeric_r4_complete": false,
+    "physical_memory_controller_or_macro_complete": false,
+    "rtl3_final_review_authorized": false
+  },
+  "verification": {
+    "chisel_command": "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteARTL385FullPathClosureSpec' 'testOnly kvpress.routea.rtl3.RouteAFunctionalR4ReferenceBoundarySpec' 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec' 'testOnly kvpress.routea.integration.RouteAInitDrainIntegrationSpec'",
+    "chisel_result": "9 directed tests passed (0 failures)",
+    "python_command": ".venv/bin/python -m pytest -q tests/test_route_a_merge_numeric_reference.py tests/test_rtl3_3_r4_functional_profile.py tests/test_rtl3_4b_functional_r4_provider.py tests/test_rtl3_8_5_full_path_closure_coverage.py",
+    "python_result": "31 passed; two external-package deprecation warnings",
+    "validator_command": ".venv/bin/python tools/validate_rtl3_8_5_full_path_closure_coverage.py",
+    "evidence_labels": [
+      "directed Chisel functional-protocol coverage",
+      "separate pure-software RTL3.4-B oracle evidence",
+      "no model/GPU",
+      "no cycle/timing/throughput/deadlock claim",
+      "no PPA claim",
+      "no RTL numeric correctness claim",
+      "no new A4 DSE"
+    ]
+  },
+  "source_sha256": {
+    "analysis/rtl3_8_0_functional_closure_ingress_retirement_contract.md": "fdf3c01dae3fd70b13c4aec7b0fa8c9a30a6a09c14bd1d9432ff4b803aaa2501",
+    "analysis/rtl3_8_5_full_path_closure_coverage_contract.md": "fbda548da3837a0bdb1460f8168be134db752c3c76577f633d2e19282c50be0f",
+    "analysis/rtl2_phase_contract.md": "a451da2c4abb8f4462d7a869ea56657eae0eb3fc4dc7e764c6026f92f7670604",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "27101aa060193e2f8cb89bf701a1d4711b74736b759536d4b7a2a2b2807d441e",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL385FullPathClosureSpec.scala": "8c7f9bf0b25e4014c7915f40b5ba3609140d1c44c15b94ed8796bf45e6cd64ed",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalR4ReferenceBoundarySpec.scala": "a2ba9c54d43a3e87e1cce96703db8d0d6b9e3bd8d7a35f22b70395177e6ae6b3",
+    "kvpress/rtl3_4b_functional_r4_provider.py": "8de527191887731f9b8ccc5c851dad8dbea2f794e22e5a8fa9ea542fcef3aaf0",
+    "tests/test_rtl3_4b_functional_r4_provider.py": "8ae392e00159e3d3714138e2098b9d330650df900a3b57d3e9aab3cf33a30973",
+    "tests/test_rtl3_8_5_full_path_closure_coverage.py": "887d95ff87fc6a3866580ab3a4d70883c09f956b464ece92ada032c45620644d",
+    "tools/validate_rtl3_8_5_full_path_closure_coverage.py": "aacb0ba9b4e4b2c1593d2db6a8114b950a69a9920fae94cdbe341b9b637a724d"
+  }
+}

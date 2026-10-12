@@ -939,6 +939,16 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     existing pure-software RTL3.4-B oracle remains its only permitted numeric
     evaluator; this step adds neither Chisel FP/exp/MAC/RoPE arithmetic nor a
     physical/numeric RTL, controller/macro, timing, or PPA claim.
+24. **RTL3.8.5 — full-path closure coverage (complete directed coverage;
+    final RTL3 review remains separate).**
+    [`rtl3_8_5_full_path_closure_coverage_contract.md`](rtl3_8_5_full_path_closure_coverage_contract.md)
+    covers all seven legal nonempty source subsets, four R6/R4 consumer
+    associations, success/fault, legal stall, stale response, and reset in a
+    single elaborated functional-path harness.  It also fixes the discovered
+    no-repeat-work handoff condition after an accepted R4 response.  Its
+    completion observer and dynamic response fixture are test-only; it adds no
+    source owner, numeric hardware, physical implementation, timing, or PPA
+    claim.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

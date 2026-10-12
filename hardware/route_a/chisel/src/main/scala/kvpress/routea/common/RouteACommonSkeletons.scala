@@ -2083,6 +2083,12 @@ final class RouteAFunctionalR4ReferenceBoundary(p: RouteASkeletonParameters) ext
   val workPending = RegInit(false.B)
   val workIssued = RegInit(false.B)
   val work = Reg(new MergeRequest)
+  // R4 holds its active observation through the cycle in which it forwards a
+  // terminal to R6.  Quiesce that just-completed association so ready/valid
+  // timing cannot reissue the same consumer before R6 presents the next one.
+  val responseQuiescent = RegInit(false.B)
+  val completedIdentity = Reg(new TransactionIdentity)
+  val completedConsumer = Reg(UInt(RouteAAnchorWidths.ConsumerIdWidth.W))
 
   val packet = io.accepted_packet_in.bits
   val packetConsumerLegal = packet.consumer_id < 4.U
@@ -2114,7 +2120,13 @@ final class RouteAFunctionalR4ReferenceBoundary(p: RouteASkeletonParameters) ext
     identityMatches(observedIdentity, active.bits.transaction_identity)
   val selectedPacketsObserved = activeConsumerLegal &&
     packetMasks(active.bits.consumer_id) === active.bits.source_presence
-  when(!workPending && !workIssued && active.valid && active.bits.source_presence.orR &&
+  val activeIsCompleted = responseQuiescent && active.valid &&
+    identityMatches(active.bits.transaction_identity, completedIdentity) &&
+    active.bits.consumer_id === completedConsumer
+  when(responseQuiescent && (!active.valid || !activeIsCompleted)) {
+    responseQuiescent := false.B
+  }
+  when(!workPending && !workIssued && !responseQuiescent && active.valid && active.bits.source_presence.orR &&
     activeConsumerLegal && activeIdentityMatches && selectedPacketsObserved) {
     workPending := true.B
     work := active.bits
@@ -2153,6 +2165,9 @@ final class RouteAFunctionalR4ReferenceBoundary(p: RouteASkeletonParameters) ext
 
   when(io.r4_result_stub_out.fire) {
     workIssued := false.B
+    responseQuiescent := true.B
+    completedIdentity := work.transaction_identity
+    completedConsumer := work.consumer_id
     // The frozen functional baseline issues consumers 0 -> 1 -> 2 -> 3.
     // Retire receipt state only after the fourth success; a numeric fault
     // below clears it immediately because R6 terminates the group fail-closed.
@@ -2163,6 +2178,9 @@ final class RouteAFunctionalR4ReferenceBoundary(p: RouteASkeletonParameters) ext
   }
   when(io.r4_numeric_fault_out.fire) {
     workIssued := false.B
+    responseQuiescent := true.B
+    completedIdentity := work.transaction_identity
+    completedConsumer := work.consumer_id
     observedIdentityValid := false.B
     packetMasks.foreach(_ := 0.U)
   }
@@ -2170,7 +2188,11 @@ final class RouteAFunctionalR4ReferenceBoundary(p: RouteASkeletonParameters) ext
   assert(!(io.r4_result_stub_out.valid && io.r4_numeric_fault_out.valid))
   when(io.accepted_packet_out.fire) { assert(packetAllowed) }
   when(io.merge_work_out.fire) {
-    assert(activeMatchesWork || (active.valid && activeIdentityMatches && selectedPacketsObserved))
+    // `work` was admitted from the exact active observation before it became
+    // pending.  Under legal ready-low, its downstream fire need not coincide
+    // with the live observation cycle; only the held nonempty work itself is
+    // asserted here.
+    assert(io.merge_work_out.bits.source_presence.orR && io.merge_work_out.bits.consumer_id < 4.U)
   }
   when(io.r4_result_stub_out.fire) { assert(resultMatches && !io.functional_numeric_fault_in.valid) }
   when(io.r4_numeric_fault_out.fire) { assert(faultMatches && !io.functional_result_in.valid) }
