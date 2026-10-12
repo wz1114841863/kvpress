@@ -977,6 +977,14 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     ledger, reuses the existing checked R2/R1/typed endpoint path, and guards
     both hot/P3 ingress forms with fail-closed exclusion. Packed write,
     publication, and authority semantics remain unchanged and inert here.
+28. **RTL3.9-B0 — durable-write/publication association audit (complete;
+    pre-activation).**
+    [`rtl3_9_b0_durable_publication_association_contract.md`](rtl3_9_b0_durable_publication_association_contract.md)
+    freezes the exact R3 stage/page/tag association across the existing
+    packed-write candidate, R2/R1 typed terminal, R5 descriptor prerequisite,
+    publication visibility acknowledgement, and R6 authority acceptance. It
+    leaves both top packed-write carriers inert and authorizes only B1's
+    narrow write-path activation.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

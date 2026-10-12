@@ -1,0 +1,9 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-b0-durable-publication-association-1.0",
+  "status": "complete_pre_activation_association_audit",
+  "association_key": ["layer", "stage_generation", "transaction_group_tag", "page_ref"],
+  "owners": {"r3": ["p3_state", "packed_write_candidate", "payload_durable_acceptance", "publication_candidate", "post_publication_authority_transition"], "r2_r1_registry_router": ["transaction_identity", "typed_terminal_delivery"], "r5": ["descriptor_durability", "visibility"], "r6": ["authority_transition_acceptance"], "top": "composition_only"},
+  "activation": {"p3_packed_write_issue_top_active": false, "p3_packed_write_terminal_top_active": false, "metadata_publish_or_authority_activation": false},
+  "mandatory_fail_closed": ["write_terminal_identity_and_last", "stage_page_tag", "descriptor_mask", "visibility_ack_page_ref", "single_publication_authority_handoff"],
+  "source_sha256": {"analysis/rtl3_9_b0_durable_publication_association_contract.md": "3121927d49a919f95b00f877270c357c68891070c50ec360b7b5423d9ad471a3", "tools/validate_rtl3_9_b0_durable_publication_association.py": "6f7e61d954d18d9ab72c72fef69bd43cc98233be18946f7edf51570e85bfa05d", "tests/test_rtl3_9_b0_durable_publication_association.py": "de3d0fc309d4c23c20aff3c253cf1c91bd4a418f07c85a9d4d6ab165a80e7254", "analysis/rtl2_phase_contract.md": "8a978aead7c93970c0c76db8231f426a1205bd80709cbd406c5cb7abad527354", "analysis/architecture_spec.md": "47d90291c0efda729bc3a3a219e5ca7f150021f8438d152db4ba67fe9246f173", "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "f1f49381febfec4c0eb9fcb98f6734758c6808f612830a956c0f8ced950dd901", "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "3203e2cb583cf18701af901675f1b7fab3cab0a67fcc4abc66d3eed7270652a6"}
+}
