@@ -1,0 +1,63 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-a1-r3-materialization-ingress-exclusion-1.0",
+  "status": "complete_pre_activation_materialization_and_ingress_contract",
+  "scope": "R3-only work/sidecar materialization provenance and fail-closed hot/P3 ingress exclusion; no active top producer, scheduler change, physical-memory, numeric, timing, or PPA conclusion.",
+  "owner": {
+    "sole_materializer": "route_a_m2_p3_wrapper",
+    "top_role": "composition_only",
+    "a0_binding_owner": "pending_payload_storage_owner"
+  },
+  "work_provenance": {
+    "immutable_member_fields": ["member_ordinal", "payload_ref", "logical_position"],
+    "a0_binding_fields": ["transaction_identity", "payload_handle_or_address", "source_generation", "destination_endpoint"],
+    "r3_stage_fields": ["layer", "stage_generation", "transaction_group_tag", "valid_records"],
+    "fixed_c2_semantics": {"source_kind": "pending", "candidate_class": "pack_read", "expected_fragment_count": 8},
+    "submission_key": {
+      "owner": "route_a_m2_p3_wrapper",
+      "kind": "local_monotonic_materialization_sequence",
+      "advance": "exactly_once_on_accepted_work",
+      "not_a": ["r2_winner_decision", "global_queue_index", "physical_fifo", "permanent_schedule"]
+    },
+    "eligibility_snapshot": {
+      "predicate_meanings": ["fifo_predecessor", "ownership", "source_credit", "destination_ready", "pending_authoritative", "p3_stage_ready_owned"],
+      "baseline_offer_rule": "all_named_logical_predicates_true_only"
+    }
+  },
+  "baseline": {
+    "active_work_per_live_stage": 1,
+    "member_scan_order": "ascending_immutable_ordinal",
+    "permanent_architecture_schedule": false,
+    "future_concurrency_requires_separate_closure": true
+  },
+  "sidecar_and_ingress_exclusion": {
+    "sidecar_owner": "route_a_m2_p3_wrapper",
+    "sidecar_provenance": "same_immutable_member_association",
+    "pack_fill_reservation_interval": "accepted_work_through_matching_terminal_and_sidecar_acceptance",
+    "environment_assumption": "frontend_hot_p3_payload_and_sidecar_invalid_while_pack_fill_reservation_active",
+    "payload_simultaneous_offer": "assert_fail_closed_no_priority",
+    "sidecar_simultaneous_offer": "assert_fail_closed_no_priority"
+  },
+  "disposition": {
+    "top_p3_pack_read_work_still_inactive": true,
+    "p3_packed_write_still_inert": true,
+    "r2_fifo_eligibility_credit_arbitration_changed": false,
+    "authority_or_atomic_publication_changed": false,
+    "memory_controller_or_address_selected": false,
+    "rtl3_9_a_functional_activation_complete": false,
+    "rtl3_final_review_authorized": false
+  },
+  "evidence_labels": [
+    "pure-software contract and provenance validation",
+    "no model/GPU",
+    "no cycle/timing/throughput/deadlock claim",
+    "no numeric RTL correctness claim",
+    "no PPA claim",
+    "no new A4 DSE"
+  ],
+  "source_sha256": {
+    "analysis/rtl3_9_a1_r3_materialization_ingress_exclusion_contract.md": "4b26f9701301247d3bdae1feb3ccc6335189bc578acaa26f5c4e9f27f8c90aca",
+    "tools/validate_rtl3_9_a1_r3_materialization_ingress_exclusion.py": "cdd17d7a0c510dbe9ce3d7a410df10f781859c3f77bfabf5a2fbe9e1860158f1",
+    "tests/test_rtl3_9_a1_r3_materialization_ingress_exclusion.py": "fe2bea95ee34e1514c6f11cec2f45db95d4ad4ae0303a603b690a5662c6dbeab",
+    "analysis/rtl2_phase_contract.md": "18cd8d328b99a073030997f1f5fad9cbbec56e13a0d5bd4e5c3c21c3833da1fb"
+  }
+}

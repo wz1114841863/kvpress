@@ -960,6 +960,16 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     The production top still ties P3 pack-read work inactive: RTL3.9-A must
     separately choose only a materialization mechanism, not a new scheduler
     or memory realization.
+26. **RTL3.9-A1 — R3 materialization and P3-ingress exclusion contract
+    (complete; pre-activation).**
+    [`rtl3_9_a1_r3_materialization_ingress_exclusion_contract.md`](rtl3_9_a1_r3_materialization_ingress_exclusion_contract.md)
+    freezes `route_a_m2_p3_wrapper` as the only future materializer of a
+    pending member's exact A0 binding into a C2 eight-fragment pack-read work
+    item and matching position sidecar. It scopes a one-active-item,
+    ordinal-ascending functional baseline without selecting a permanent R2/R3
+    schedule, and makes hot/P3 payload plus sidecar exclusion explicit and
+    fail-closed. The top work tie-off and packed-write inertness remain until
+    RTL3.9-A provides directed functional activation coverage.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,
