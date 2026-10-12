@@ -2010,6 +2010,44 @@ final class RouteASourceServicePacketAdapter(p: RouteASkeletonParameters) extend
 }
 
 /**
+  * RTL3.8.3 named outer boundary for the replaceable functional attention
+  * partial provider.  It is deliberately transport-only: source owners still
+  * own K/V/position/generation facts, while the provider remains the only
+  * possible producer of present partial packet carriers.  This child neither
+  * evaluates attention nor chooses a source, packet order, or R4 result.
+  */
+final class RouteAFunctionalPartialProviderBoundary(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_functional_partial_provider_boundary"
+
+  val io = IO(new Bundle {
+    val hot_offer_in = Flipped(RouteAChannels.source_service_partial_offer(p))
+    val pending_offer_in = Flipped(RouteAChannels.source_service_partial_offer(p))
+    val packed_offer_in = Flipped(RouteAChannels.source_service_partial_offer(p))
+    val hot_fragment_in = Flipped(RouteAChannels.source_service_value_fragment(p))
+    val pending_fragment_in = Flipped(RouteAChannels.source_service_value_fragment(p))
+    val packed_fragment_in = Flipped(RouteAChannels.source_service_value_fragment(p))
+    val hot_offer_out = RouteAChannels.source_service_partial_offer(p)
+    val pending_offer_out = RouteAChannels.source_service_partial_offer(p)
+    val packed_offer_out = RouteAChannels.source_service_partial_offer(p)
+    val hot_fragment_out = RouteAChannels.source_service_value_fragment(p)
+    val pending_fragment_out = RouteAChannels.source_service_value_fragment(p)
+    val packed_fragment_out = RouteAChannels.source_service_value_fragment(p)
+  })
+
+  private def forward[T <: Data](in: chisel3.util.DecoupledIO[T], out: chisel3.util.DecoupledIO[T]): Unit = {
+    out.valid := in.valid
+    out.bits := in.bits
+    in.ready := out.ready
+  }
+  forward(io.hot_offer_in, io.hot_offer_out)
+  forward(io.pending_offer_in, io.pending_offer_out)
+  forward(io.packed_offer_in, io.packed_offer_out)
+  forward(io.hot_fragment_in, io.hot_fragment_out)
+  forward(io.pending_fragment_in, io.pending_fragment_out)
+  forward(io.packed_fragment_in, io.packed_fragment_out)
+}
+
+/**
   * C8 exact R4-commit router. It has no source state: it accepts a commit only
   * when both frozen source-kind fields agree, then forwards the exact identity,
   * SourceInstance, and consumer ID to that one owner. Owner-local four-bit

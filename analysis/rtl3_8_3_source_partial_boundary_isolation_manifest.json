@@ -1,0 +1,61 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-8-3-source-partial-boundary-isolation-1.0",
+  "status": "complete_i5_i6_ingress_isolation_partial_boundary_i7_i8_open",
+  "scope": "Retire remaining P3/direct verification ingress from the composed top, keep unowned R3/direct work fail-closed inactive, and replace structural source-packet tie-offs with the named outer functional partial-provider boundary. This is not live source payload realization, numeric RTL, physical memory, performance, or PPA closure.",
+  "predecessor": {
+    "contract": "analysis/rtl3_8_0_functional_closure_ingress_retirement_contract.md",
+    "sha256": "fdf3c01dae3fd70b13c4aec7b0fa8c9a30a6a09c14bd1d9432ff4b803aaa2501",
+    "rtl3_8_2_manifest": "analysis/rtl3_8_2_functional_sidecar_delivery_manifest.json",
+    "rtl3_8_2_manifest_sha256": "31a84c7a98b15354aa96cb2db5028a9d94516707636cce2579d4468ad03cb8ed"
+  },
+  "implemented_retirement_boundaries": ["I5", "I6"],
+  "owner_map": {
+    "R6_lifecycle": "sole direct-pending open producer when that carrier becomes live",
+    "R3_direct_work_producer": "not yet implemented; unowned P3 pack-read work remains inactive",
+    "direct_pending_work_owner": "not yet implemented; unowned direct read work remains inactive",
+    "route_a_functional_attention_partial_provider": "sole allowed outer producer of present source packet offer/fragment carriers",
+    "route_a_functional_partial_provider_boundary": "transparent named transport from the allowed outer provider to the existing packet adapter",
+    "route_a_source_service_packet_adapter": "sole existing packet acceptance checker for accepted plan, availability, source order, identity, instance, consumer, and packet structure"
+  },
+  "fail_closed_checks": [
+    "P3 pack-read work has no top-level verification ingress and is explicitly inactive without a named owner",
+    "direct read work has no top-level verification ingress and is explicitly inactive without a named owner",
+    "direct-pending open cannot be mixed between R6 and a verification producer",
+    "outer provider packet lanes remain distinct and preserve ready-low carrier contents",
+    "packet adapter continues to reject any offer/fragment that disagrees with accepted source plan or owner availability"
+  ],
+  "disposition": {
+    "verification_p3_and_direct_ingress_retired": true,
+    "partial_provider_boundary_connected": true,
+    "r6_is_only_direct_open_path": true,
+    "live_r3_direct_work_producers_complete": false,
+    "source_payload_lease_export_complete": false,
+    "dynamic_r4_replacement_complete": false,
+    "numeric_or_physical_realization_complete": false,
+    "rtl3_final_review_authorized": false
+  },
+  "test_commands": [
+    "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAFunctionalPartialProviderBoundarySpec'",
+    "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec'",
+    "cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.integration.RouteAInitDrainIntegrationSpec'",
+    ".venv/bin/python tools/validate_rtl3_8_3_source_partial_boundary_isolation.py",
+    ".venv/bin/python -m pytest -q tests/test_rtl3_8_3_source_partial_boundary_isolation.py"
+  ],
+  "test_result": {
+    "status": "pass",
+    "tests": 7,
+    "failed": 0,
+    "evidence": "directed ChiselSim boundary/structural checks only; no model/GPU, attention arithmetic, timing, throughput, PPA, DC, or full-inference claim"
+  },
+  "source_sha256": {
+    "analysis/rtl3_8_3_source_partial_boundary_isolation_contract.md": "638b4975aa1a0d902e8bed4b78d8875239a6cc2dc79ba36a10506e65d16c393a",
+    "analysis/rtl2_phase_contract.md": "1ec7a9d4c7db50ec1f1d804c91d01d819a3c62449500ab794536756d73517a82",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "2246fb2e694908b976795445c82dd2249395985dfcf404c0d749f26303467ebb",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "e440f095e8658102c296956b04148b510cf929b13251066fc12c03f6271cb749",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalPartialProviderBoundarySpec.scala": "ea6ff535f960a047827a08a85512a512520486b2ba8311eddbc13beb51a324eb",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala": "e9fe08fe7f1db318e3b0897a7e21ee70083e41d7141c866800564d83e99f22f8",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAInitDrainIntegrationSpec.scala": "e811c7ab280e05726de11ae1efe47e2facfd4bcc74170c5c4b238e50b403837a",
+    "tools/validate_rtl3_8_3_source_partial_boundary_isolation.py": "86cb2364225e09e7ab2a76b191a6e82aa55e6d3e07596c52b3d06851c3108543",
+    "tests/test_rtl3_8_3_source_partial_boundary_isolation.py": "bf6b742558d825340615d7fa0211e8fe33e5f325f654a74653fc95c3ec28d9a4"
+  }
+}

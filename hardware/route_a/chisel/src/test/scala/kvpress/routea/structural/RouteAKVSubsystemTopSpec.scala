@@ -77,6 +77,7 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
       "route_a_exclusive_packed_s2_read_ingress",
       "route_a_exclusive_s2_fill_terminal_ingress",
       "route_a_source_service_packet_adapter",
+      "route_a_functional_partial_provider_boundary",
       "route_a_source_commit_demultiplexer",
       "route_a_read_endpoint_demultiplexer",
       "route_a_exclusive_p3_pending_ingress",
@@ -128,12 +129,15 @@ final class RouteAKVSubsystemTopSpec extends AnyFlatSpec with Matchers {
     systemVerilog should include("external_core_mem_if_v1_request_valid")
     systemVerilog should include("source_packet_adapter")
     chirrtl should include("packed_observe_slot_out")
-    chirrtl should include("verification_p3_pack_read_work_in")
-    chirrtl should include("verification_direct_pending_read_work_in")
+    chirrtl should include("functional_partial_hot_offer_in")
+    chirrtl should include("functional_partial_packed_fragment_in")
     chirrtl should not include "verification_s2_service_req_in"
     chirrtl should not include "verification_packed_s2_read_work_in"
     chirrtl should not include "verification_s2_sidecar_fragment_in"
     chirrtl should not include "verification_s2_sidecar_complete_in"
+    chirrtl should not include "verification_p3_pack_read_work_in"
+    chirrtl should not include "verification_direct_pending_open_in"
+    chirrtl should not include "verification_direct_pending_read_work_in"
   }
 
   it should "preserve the selected, non-opaque Route-A anchor widths" in {

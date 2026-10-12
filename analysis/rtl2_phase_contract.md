@@ -921,6 +921,15 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     sidecar fragment before S2 complete and maps sidecar fault only to S2
     fault.  It introduces no R2 class, priority, scheduler policy, metadata
     authority, memory/controller/numeric realization, or PPA claim.
+22. **RTL3.8.3 — source/partial boundary isolation (complete for I5/I6
+    isolation; live source realization remains open).**
+    [`rtl3_8_3_source_partial_boundary_isolation_contract.md`](rtl3_8_3_source_partial_boundary_isolation_contract.md)
+    retires the composed top's remaining P3/direct verification ingress,
+    preserves an inactive carrier where a named R3/direct producer does not
+    yet exist, and connects the sole named outer functional partial-provider
+    packet boundary to the existing source-packet adapter.  It adds no K/V
+    lease export, source selection, numeric computation, R4 result, R2
+    policy, controller/macro, timing, or PPA claim.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

@@ -34,15 +34,16 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
   // data, address, admission, authority, or delivery-context fact.
   val hot_payload_fragment_in = IO(Flipped(RouteAChannels.p3_pending_fragment(p)))
   val hot_position_sidecar_in = IO(Flipped(RouteAChannels.p3_sidecar_bind(p)))
-  // RTL2.3-C9 verification-environment ingress.  These carriers make the
-  // already specified C2/C3/C4 endpoint paths observable from the composed
-  // top while assigning no source-plan, admission, ownership, scheduling, or
-  // numeric responsibility to this top.  Production realization replaces
-  // these explicit harness ingress points with their separately-authorized
-  // owners; opaque source-service packets remain inactive below.
-  val verification_p3_pack_read_work_in = IO(Flipped(RouteAChannels.p3_pack_read_work(p)))
-  val verification_direct_pending_open_in = IO(Flipped(RouteAChannels.direct_pending_open(p)))
-  val verification_direct_pending_read_work_in = IO(Flipped(RouteAChannels.direct_pending_read_work(p)))
+  // The only outer functional source-packet boundary.  It is the named,
+  // replaceable attention-partial provider from RTL3.5-A, not a storage owner
+  // or a verification ingress.  It may provide only partial packet carriers;
+  // the child below and the packet adapter preserve all source-plan checks.
+  val functional_partial_hot_offer_in = IO(Flipped(RouteAChannels.source_service_partial_offer(p)))
+  val functional_partial_pending_offer_in = IO(Flipped(RouteAChannels.source_service_partial_offer(p)))
+  val functional_partial_packed_offer_in = IO(Flipped(RouteAChannels.source_service_partial_offer(p)))
+  val functional_partial_hot_fragment_in = IO(Flipped(RouteAChannels.source_service_value_fragment(p)))
+  val functional_partial_pending_fragment_in = IO(Flipped(RouteAChannels.source_service_value_fragment(p)))
+  val functional_partial_packed_fragment_in = IO(Flipped(RouteAChannels.source_service_value_fragment(p)))
   val verification_direct_pending_payload_fragment_out = IO(RouteAChannels.direct_pending_payload_fragment(p))
   val external_core_mem_if_v1 = IO(new CoreMemoryExternalPort(p))
 
@@ -84,6 +85,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val packed_s2_sidecar_endpoint = Module(new RouteAS2PackedSidecarReadEndpoint(p))
     val source_plan_binder = Module(new RouteASourcePlanBinder(p))
     val source_packet_adapter = Module(new RouteASourceServicePacketAdapter(p))
+    val functional_partial_provider = Module(new RouteAFunctionalPartialProviderBoundary(p))
     val source_commit_demultiplexer = Module(new RouteASourceCommitDemultiplexer(p))
     val merge = Module(new RouteAMergeBoundary(p))
     val status_collector = Module(new RouteAComponentStatusCollector(p))
@@ -157,15 +159,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     packed_association_owner.io.sidecar_read_work_out <> functional_sidecar_delivery.io.work_in
     packed_association_owner.io.release_observation_out <> functional_sidecar_delivery.io.payload_release_in
     direct_pending.io.drain_collection_enable := lifecycle.io.drain_collection_enable
-    val directOpenIngress = Wire(RouteAChannels.direct_pending_open(p))
-    val simultaneousDirectOpen = lifecycle.io.direct_pending_open.valid && verification_direct_pending_open_in.valid
-    directOpenIngress.valid := (lifecycle.io.direct_pending_open.valid || verification_direct_pending_open_in.valid) && !simultaneousDirectOpen
-    directOpenIngress.bits := Mux(lifecycle.io.direct_pending_open.valid,
-      lifecycle.io.direct_pending_open.bits, verification_direct_pending_open_in.bits)
-    lifecycle.io.direct_pending_open.ready := !verification_direct_pending_open_in.valid && directOpenIngress.ready
-    verification_direct_pending_open_in.ready := !lifecycle.io.direct_pending_open.valid && directOpenIngress.ready
-    assert(!simultaneousDirectOpen, "C9 direct-pending open requires one declared producer")
-    direct_pending.io.pending_source_open_in <> directOpenIngress
+    // I6 has no authorized direct-pending work producer yet.  Its open fact
+    // therefore comes only from R6's existing lifecycle carrier; the top no
+    // longer merges a testbench carrier with it or manufactures an open.
+    direct_pending.io.pending_source_open_in <> lifecycle.io.direct_pending_open
     val direct_record_terminal = direct_pending_read_endpoint.io.record_terminal_out
     val direct_release = Wire(RouteAChannels.source_release(p))
     direct_pending.io.direct_pending_record_terminal_in <> direct_record_terminal
@@ -178,9 +175,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     merge.io.source_partial_in <> source_partial_to_merge
 
     // C7 connects the already accepted plan and exact owner observations into
-    // the C5 packet adapter.  Current owners still have no numeric partial
-    // producer, so their packet ingress remains explicitly inactive until the
-    // later source-service closure; this top manufactures no packet.
+    // the C5 packet adapter.  RTL3.8.3 replaces the old structural tie-offs
+    // with the sole named outer functional-partial-provider boundary.  The
+    // provider does not own K/V storage, source selection, or a numeric R4
+    // result; packet-adapter checks remain the acceptance authority.
     source_packet_adapter.io.hot_available_in.valid := hot.io.hot_observe_active
     source_packet_adapter.io.hot_available_in.transaction_identity := hot.io.hot_observe_identity
     source_packet_adapter.io.hot_available_in.source_instance := hot.io.hot_observe_instance
@@ -190,12 +188,18 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     source_packet_adapter.io.packed_available_in.valid := s2.io.s2_observe_available
     source_packet_adapter.io.packed_available_in.transaction_identity := s2.io.s2_observe_identity
     source_packet_adapter.io.packed_available_in.source_instance := s2.io.s2_observe_instance
-    StructuralTieOff.source(source_packet_adapter.io.hot_offer_in)
-    StructuralTieOff.source(source_packet_adapter.io.pending_offer_in)
-    StructuralTieOff.source(source_packet_adapter.io.packed_offer_in)
-    StructuralTieOff.source(source_packet_adapter.io.hot_fragment_in)
-    StructuralTieOff.source(source_packet_adapter.io.pending_fragment_in)
-    StructuralTieOff.source(source_packet_adapter.io.packed_fragment_in)
+    functional_partial_provider.io.hot_offer_in <> functional_partial_hot_offer_in
+    functional_partial_provider.io.pending_offer_in <> functional_partial_pending_offer_in
+    functional_partial_provider.io.packed_offer_in <> functional_partial_packed_offer_in
+    functional_partial_provider.io.hot_fragment_in <> functional_partial_hot_fragment_in
+    functional_partial_provider.io.pending_fragment_in <> functional_partial_pending_fragment_in
+    functional_partial_provider.io.packed_fragment_in <> functional_partial_packed_fragment_in
+    source_packet_adapter.io.hot_offer_in <> functional_partial_provider.io.hot_offer_out
+    source_packet_adapter.io.pending_offer_in <> functional_partial_provider.io.pending_offer_out
+    source_packet_adapter.io.packed_offer_in <> functional_partial_provider.io.packed_offer_out
+    source_packet_adapter.io.hot_fragment_in <> functional_partial_provider.io.hot_fragment_out
+    source_packet_adapter.io.pending_fragment_in <> functional_partial_provider.io.pending_fragment_out
+    source_packet_adapter.io.packed_fragment_in <> functional_partial_provider.io.packed_fragment_out
 
     val r4_result_stub = Wire(RouteAChannels.r4_result_stub); StructuralTieOff.source(r4_result_stub)
     val r4_numeric_fault = Wire(RouteAChannels.r4_numeric_fault); StructuralTieOff.source(r4_numeric_fault)
@@ -279,10 +283,11 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     p3_pending_ingress.io.pack_read_in <> p3_pack_read_endpoint.io.p3_pending_fragment_out
     val p3_fragment = p3_pending_ingress.io.out
     val p3_sidecar = hot_position_sidecar_in
-    // C9 activates the already-frozen C2 work/issue carrier only through an
-    // explicit verification environment ingress.  R3 validates the immutable
-    // member association before the sole bridge allocates a delivery context.
-    val p3_pack_read_work = verification_p3_pack_read_work_in
+    // I5 has no separately authorized R3 producer at this top yet.  Keeping
+    // this named carrier inactive is fail-closed and avoids turning the top
+    // into a P3 scheduler or retaining a verification ingress.
+    val p3_pack_read_work = Wire(RouteAChannels.p3_pack_read_work(p))
+    StructuralTieOff.source(p3_pack_read_work)
     val p3_pack_read_issue = p3_pack_read_issue_adapter.io.read_issue_in
     val p3_write_issue = Wire(RouteAChannels.p3_packed_write_issue(p)); StructuralTieOff.source(p3_write_issue)
     val p3_write_terminal = Wire(RouteAChannels.p3_packed_write_terminal(p)); StructuralTieOff.source(p3_write_terminal)
@@ -312,9 +317,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     lifecycle.io.r5_reclaim_complete_in := page_manager.io.reclaim_complete
     val descriptor_maintenance_terminal = Wire(RouteAChannels.descriptor_maintenance_terminal(p)); StructuralTieOff.source(descriptor_maintenance_terminal)
     page_manager.io.descriptor_maintenance_terminal_in <> descriptor_maintenance_terminal
-    // Existing direct-pending work remains a verification ingress.  Packed
-    // S2 work now comes only from the exact association owner.
-    direct_pending_read_producer.io.work_in <> verification_direct_pending_read_work_in
+    // I6 direct-pending read work remains inactive until its named R6/direct
+    // owner can materialize an immutable work record.  No top fallback or
+    // synthetic producer is permitted here.
+    StructuralTieOff.source(direct_pending_read_producer.io.work_in)
     direct_pending_read_issue_adapter.io.read_issue_in <> direct_pending_read_producer.io.read_issue_out
     delivery_context_composition.io.r3_direct_pending_in <> direct_pending_read_issue_adapter.io.candidate_out
     packed_terminal_bridge.io.work_in <> packed_association_owner.io.packed_s2_work_out

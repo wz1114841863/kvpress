@@ -29,12 +29,15 @@ final class RouteAInitDrainHarness(p: RouteASkeletonParameters) extends Module {
   StructuralTieOff.source(subsystem.source_plan_declaration_in)
   StructuralTieOff.source(subsystem.hot_payload_fragment_in)
   StructuralTieOff.source(subsystem.hot_position_sidecar_in)
-  // C9 adds named verification-environment ingress for the composed C2/C3/C4
-  // endpoint path.  Init/drain deliberately exercises none of those paths;
-  // make that inert boundary explicit rather than leaving inputs implicit.
-  StructuralTieOff.source(subsystem.verification_p3_pack_read_work_in)
-  StructuralTieOff.source(subsystem.verification_direct_pending_open_in)
-  StructuralTieOff.source(subsystem.verification_direct_pending_read_work_in)
+  // RTL3.8.3's only outer source-packet boundary is the named functional
+  // partial provider. Init/drain exercises no attention source, so keep each
+  // provider carrier inert without restoring an interior verification ingress.
+  StructuralTieOff.source(subsystem.functional_partial_hot_offer_in)
+  StructuralTieOff.source(subsystem.functional_partial_pending_offer_in)
+  StructuralTieOff.source(subsystem.functional_partial_packed_offer_in)
+  StructuralTieOff.source(subsystem.functional_partial_hot_fragment_in)
+  StructuralTieOff.source(subsystem.functional_partial_pending_fragment_in)
+  StructuralTieOff.source(subsystem.functional_partial_packed_fragment_in)
   StructuralTieOff.sink(subsystem.verification_direct_pending_payload_fragment_out)
   io.attention_terminal_rsp <> subsystem.attention_terminal_rsp
   io.session_retire_ack <> subsystem.session_retire_ack
