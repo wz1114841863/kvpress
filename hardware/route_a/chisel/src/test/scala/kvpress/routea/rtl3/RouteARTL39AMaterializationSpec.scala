@@ -110,4 +110,83 @@ final class RouteARTL39AMaterializationSpec extends AnyFunSpec with ChiselSim {
       d.io.p3_observe_state.expect(6.U)
     }
   }
+
+  it("automatically emits the exact packed-write sequence after a complete materialized P3 record and accepts only its matching terminal") {
+    simulate(new RouteAM2P3Wrapper(p)) { d =>
+      init(d); claimAndAdmitBoundMember(d)
+
+      // Complete the RTL3.9-A materialized member, but hold the next R3-owned
+      // write candidate.  This makes the pre-R2 producer descriptor observable
+      // without replacing the production R2/R1/registry/router transport.
+      d.io.p3_packed_write_candidate_out.ready.poke(false.B)
+      d.io.p3_pack_read_materialized_work_out.ready.poke(true.B); d.clock.step()
+      d.io.p3_pack_read_materialized_work_out.ready.poke(false.B)
+      val sidecar = d.io.p3_sidecar_bind_in.bits
+      sidecar.layer.poke(0.U); sidecar.stage_generation.poke(1.U); sidecar.record_ordinal.poke(0.U)
+      sidecar.payload_ref.poke(99.U); sidecar.logical_position.poke(7.U)
+      d.io.p3_sidecar_bind_in.valid.poke(true.B); d.io.p3_materialized_sidecar_out.ready.poke(true.B); d.clock.step()
+      d.io.p3_sidecar_bind_in.valid.poke(false.B); d.io.p3_materialized_sidecar_out.ready.poke(false.B)
+      val fragment = d.io.p3_pending_fragment_in.bits
+      fragment.layer.poke(0.U); fragment.stage_generation.poke(1.U); fragment.status.poke(p.coreMemoryOkStatusCode.U); fragment.payload_ref.poke(99.U)
+      for (index <- 0 until 8) {
+        fragment.fragment_index.poke(index.U); fragment.last.poke((index == 7).B); fragment.data.poke((0x40 + index).U)
+        d.io.p3_pending_fragment_in.valid.poke(true.B); d.io.p3_pending_fragment_in.ready.expect(true.B); d.clock.step()
+      }
+      d.io.p3_pending_fragment_in.valid.poke(false.B)
+      d.io.p3_observe_state.expect(3.U) // COMPLETE, not durable or published.
+
+      // The local functional sequencer may only select the completed stage;
+      // it is neither an R2 arbitration result nor a service-rate claim.
+      d.clock.step()
+      d.io.p3_packed_write_candidate_out.valid.expect(true.B)
+      val candidate = d.io.p3_packed_write_candidate_out.bits
+      candidate.candidate_class.expect(p.r2PackWriteClassCode.U)
+      candidate.candidate_id.expect(0.U); candidate.arrival_ordinal.expect(0.U)
+      candidate.delivery_target_descriptor.write_endpoint.expect(0.U) // P3PackedWrite
+      candidate.delivery_target_descriptor.p3_layer.expect(0.U)
+      candidate.delivery_target_descriptor.p3_stage_generation.expect(1.U)
+      candidate.delivery_target_descriptor.transaction_group_tag.expect(1.U)
+      candidate.r1_request.request_kind.expect(p.coreMemoryWriteRequestCode.U)
+      candidate.r1_request.transaction_identity.request_id.expect(0.U)
+      candidate.r1_request.transaction_identity.incarnation.expect(0.U)
+      candidate.r1_request.expected_fragment_count.expect(8.U)
+      candidate.r1_request.fragment_index.expect(0.U); candidate.r1_request.last.expect(false.B)
+      candidate.r1_request.address_ref.expect((1 * 33280).U)
+      d.clock.step()
+      candidate.candidate_id.expect(0.U); candidate.r1_request.fragment_index.expect(0.U)
+
+      d.io.p3_packed_write_candidate_out.ready.poke(true.B); d.clock.step()
+      for (index <- 0 until 8) {
+        d.io.p3_packed_write_candidate_out.valid.expect(true.B)
+        candidate.r1_request.request_kind.expect(p.coreMemoryWriteDataCode.U)
+        candidate.r1_request.fragment_index.expect(index.U)
+        candidate.r1_request.last.expect((index == 7).B)
+        candidate.r1_request.data.expect((0x40 + index).U)
+        d.clock.step()
+      }
+      d.io.p3_packed_write_candidate_out.valid.expect(false.B)
+      d.io.p3_observe_state.expect(4.U) // WRITE_ISSUED, awaiting the typed terminal.
+
+      val terminal = d.io.p3_packed_write_delivery_in.bits
+      terminal.candidate_class.poke(p.r2PackWriteClassCode.U); terminal.candidate_id.poke(1.U)
+      terminal.destination.poke(0.U); terminal.delivery_context_ref.poke(0.U)
+      terminal.r1_response.transaction_identity.request_id.poke(0.U); terminal.r1_response.transaction_identity.incarnation.poke(0.U)
+      terminal.r1_response.status.poke(p.coreMemoryOkStatusCode.U); terminal.r1_response.fragment_index.poke(7.U)
+      terminal.r1_response.last.poke(true.B); terminal.r1_response.data.poke(0.U)
+      d.io.p3_packed_write_delivery_in.valid.poke(true.B)
+      d.io.p3_packed_write_delivery_in.ready.expect(false.B)
+      d.clock.step()
+      d.io.p3_observe_state.expect(4.U)
+
+      terminal.candidate_id.poke(0.U)
+      d.io.p3_packed_write_delivery_in.ready.expect(true.B)
+      d.clock.step(); d.io.p3_packed_write_delivery_in.valid.poke(false.B)
+      d.io.p3_observe_state.expect(5.U) // DURABLE only after the exact terminal.
+      d.io.p3_payload_durable_out.valid.expect(true.B)
+      d.io.p3_payload_durable_out.bits.layer.expect(0.U)
+      d.io.p3_payload_durable_out.bits.page_ref.page_id.expect(1.U)
+      d.io.p3_payload_durable_out.bits.stage_generation.expect(1.U)
+      d.io.p3_payload_durable_out.bits.transaction_group_tag.expect(1.U)
+    }
+  }
 }

@@ -985,6 +985,16 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     publication visibility acknowledgement, and R6 authority acceptance. It
     leaves both top packed-write carriers inert and authorizes only B1's
     narrow write-path activation.
+29. **RTL3.9-B1 — R3 automatic packed-write activation (complete).
+    **
+    [`rtl3_9_b1_r3_packed_write_activation_contract.md`](rtl3_9_b1_r3_packed_write_activation_contract.md)
+    records that the production-shaped candidate path was already composed:
+    RTL3.9-A can now make the R3 stage complete, which reaches R3's sole
+    request-plus-eight-fragment packed-write candidate, then the existing
+    R2/R1/registry/router typed terminal and R3 payload-durable fact. The
+    historical direct `p3_packed_write_issue`/`terminal` test carriers remain
+    inactive. B1 explicitly does not make payload durability publication,
+    visibility, or authority.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,
