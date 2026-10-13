@@ -36,7 +36,8 @@ final class RouteAPackedReadActivationBinderSpec extends AnyFunSpec with ChiselS
   private def init(dut: RouteAPackedReadActivationBinder): Unit = {
     dut.io.mem_init_done.poke(false.B)
     dut.io.accepted_plan_in.valid.poke(false.B)
-    dut.io.publication_commit_in.valid.poke(false.B)
+    dut.io.publication_member_in.valid.poke(false.B)
+    dut.io.post_r6_page_ready_in.valid.poke(false.B)
     dut.io.descriptor_grant_in.valid.poke(false.B)
     dut.io.s2_fill_lease_in.valid.poke(false.B)
     dut.io.demand_out.ready.poke(false.B)
@@ -53,9 +54,15 @@ final class RouteAPackedReadActivationBinderSpec extends AnyFunSpec with ChiselS
     source(bits.hot_instance, 0, 0, 0); source(bits.pending_instance, 1, 0, 0); source(bits.packed_instance, 2, slot, gen)
   }
   private def drivePublication(dut: RouteAPackedReadActivationBinder, pageId: Int = 5, generation: Int = 2, records: Int = 2): Unit = {
-    val bits = dut.io.publication_commit_in.bits
+    val bits = dut.io.post_r6_page_ready_in.bits
     bits.p3_layer.poke(0.U); bits.p3_stage_generation.poke(1.U); page(bits.page_ref, pageId, generation)
     bits.transaction_group_tag.poke(6.U); bits.valid_records.poke(records.U)
+  }
+  private def driveMember(dut: RouteAPackedReadActivationBinder, ordinal: Int, records: Int = 2): Unit = {
+    val bits = dut.io.publication_member_in.bits
+    bits.entry_id.poke((0x20 + ordinal).U); bits.layer.poke(0.U); bits.kv_head.poke(0.U)
+    bits.logical_position.poke((0x40 + ordinal).U); bits.payload_ref.poke((0x60 + ordinal).U)
+    bits.transaction_group_tag.poke(6.U); bits.group_member_ordinal.poke(ordinal.U)
   }
   private def driveDescriptor(dut: RouteAPackedReadActivationBinder, pageId: Int = 5, generation: Int = 2, records: Int = 2, rid: Int = 3): Unit = {
     val bits = dut.io.descriptor_grant_in.bits
@@ -74,7 +81,10 @@ final class RouteAPackedReadActivationBinderSpec extends AnyFunSpec with ChiselS
 
   private def loadExactFacts(dut: RouteAPackedReadActivationBinder): Unit = {
     drivePlan(dut); send(dut.io.accepted_plan_in.valid, dut.io.accepted_plan_in.ready, dut.clock)
-    drivePublication(dut); send(dut.io.publication_commit_in.valid, dut.io.publication_commit_in.ready, dut.clock)
+    (0 until 2).foreach { ordinal =>
+      driveMember(dut, ordinal); send(dut.io.publication_member_in.valid, dut.io.publication_member_in.ready, dut.clock)
+    }
+    drivePublication(dut); send(dut.io.post_r6_page_ready_in.valid, dut.io.post_r6_page_ready_in.ready, dut.clock)
     driveDescriptor(dut); send(dut.io.descriptor_grant_in.valid, dut.io.descriptor_grant_in.ready, dut.clock)
     driveLease(dut); send(dut.io.s2_fill_lease_in.valid, dut.io.s2_fill_lease_in.ready, dut.clock)
     dut.clock.step() // Collect -> Evaluate
@@ -106,7 +116,10 @@ final class RouteAPackedReadActivationBinderSpec extends AnyFunSpec with ChiselS
     simulate(new RouteAPackedReadActivationBinder(p)) { dut =>
       init(dut)
       drivePlan(dut); send(dut.io.accepted_plan_in.valid, dut.io.accepted_plan_in.ready, dut.clock)
-      drivePublication(dut); send(dut.io.publication_commit_in.valid, dut.io.publication_commit_in.ready, dut.clock)
+      (0 until 2).foreach { ordinal =>
+        driveMember(dut, ordinal); send(dut.io.publication_member_in.valid, dut.io.publication_member_in.ready, dut.clock)
+      }
+      drivePublication(dut); send(dut.io.post_r6_page_ready_in.valid, dut.io.post_r6_page_ready_in.ready, dut.clock)
       driveDescriptor(dut, pageId = 6); send(dut.io.descriptor_grant_in.valid, dut.io.descriptor_grant_in.ready, dut.clock)
       // A mismatched R5 fact must be rejected before any scarce S2 lease is
       // requested; the test therefore does not manufacture a lease response.
@@ -114,6 +127,22 @@ final class RouteAPackedReadActivationBinderSpec extends AnyFunSpec with ChiselS
       dut.clock.step()
       dut.io.demand_out.valid.expect(false.B); dut.io.publication_authorization_out.valid.expect(false.B)
       dut.io.rejected_observation.valid.expect(true.B); dut.io.rejected_observation.bits.request_id.expect(3.U)
+    }
+  }
+
+  it("never begins first use from a committed page whose R3 member stream is incomplete") {
+    simulate(new RouteAPackedReadActivationBinder(p)) { dut =>
+      init(dut)
+      drivePlan(dut); send(dut.io.accepted_plan_in.valid, dut.io.accepted_plan_in.ready, dut.clock)
+      driveMember(dut, ordinal = 0); send(dut.io.publication_member_in.valid, dut.io.publication_member_in.ready, dut.clock)
+      // This malformed test-only sequence represents a missing R6-accepted
+      // ordinal.  It must not issue even the address-free R5 query.
+      drivePublication(dut); send(dut.io.post_r6_page_ready_in.valid, dut.io.post_r6_page_ready_in.ready, dut.clock)
+      dut.io.descriptor_location_request_out.valid.expect(false.B)
+      dut.clock.step()
+      dut.io.descriptor_location_request_out.valid.expect(false.B)
+      dut.io.demand_out.valid.expect(false.B)
+      dut.io.rejected_observation.valid.expect(true.B)
     }
   }
 
@@ -130,7 +159,10 @@ final class RouteAPackedReadActivationBinderSpec extends AnyFunSpec with ChiselS
     simulate(new RouteAPackedReadActivationBinder(p)) { dut =>
       init(dut)
       drivePlan(dut, slot = 1, gen = 3); send(dut.io.accepted_plan_in.valid, dut.io.accepted_plan_in.ready, dut.clock)
-      drivePublication(dut); send(dut.io.publication_commit_in.valid, dut.io.publication_commit_in.ready, dut.clock)
+      (0 until 2).foreach { ordinal =>
+        driveMember(dut, ordinal); send(dut.io.publication_member_in.valid, dut.io.publication_member_in.ready, dut.clock)
+      }
+      drivePublication(dut); send(dut.io.post_r6_page_ready_in.valid, dut.io.post_r6_page_ready_in.ready, dut.clock)
       driveDescriptor(dut); send(dut.io.descriptor_grant_in.valid, dut.io.descriptor_grant_in.ready, dut.clock)
       driveLease(dut, slot = 0, sourceGen = 2); send(dut.io.s2_fill_lease_in.valid, dut.io.s2_fill_lease_in.ready, dut.clock)
       dut.clock.step(); dut.clock.step()

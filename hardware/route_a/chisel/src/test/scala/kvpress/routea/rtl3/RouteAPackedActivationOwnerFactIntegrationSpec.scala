@@ -19,7 +19,8 @@ private final class RouteAPackedActivationOwnerFactHarness(p: RouteASkeletonPara
     val descriptor_terminal = Flipped(RouteAChannels.descriptor_maintenance_terminal(p))
     val visibility = Flipped(RouteAChannels.metadata_publish_visibility(p))
     val accepted_plan = Flipped(RouteAChannels.source_completion_plan(p))
-    val publication = Flipped(RouteAChannels.publication_commit_observation(p))
+    val publication_member = Flipped(RouteAChannels.publication_member_observation(p))
+    val page_ready = Flipped(RouteAChannels.post_r6_packed_page_ready_observation(p))
     val demand = RouteAChannels.packed_source_demand(p)
     val authorization = RouteAChannels.publication_read_authorization(p)
     val descriptor = RouteAChannels.descriptor_location_grant(p)
@@ -66,7 +67,8 @@ private final class RouteAPackedActivationOwnerFactHarness(p: RouteASkeletonPara
 
   binder.io.mem_init_done := io.mem_init_done
   binder.io.accepted_plan_in <> io.accepted_plan
-  binder.io.publication_commit_in <> io.publication
+  binder.io.publication_member_in <> io.publication_member
+  binder.io.post_r6_page_ready_in <> io.page_ready
   r5.io.descriptor_location_request_in <> binder.io.descriptor_location_request_out
   binder.io.descriptor_grant_in <> r5.io.descriptor_location_grant_out
   s2.io.s2_fill_lease_request_in <> binder.io.s2_fill_lease_request_out
@@ -98,7 +100,7 @@ final class RouteAPackedActivationOwnerFactIntegrationSpec extends AnyFunSpec wi
   private def init(d: RouteAPackedActivationOwnerFactHarness): Unit = {
     d.io.mem_init_done.poke(false.B)
     d.io.allocation.valid.poke(false.B); d.io.descriptor_terminal.valid.poke(false.B); d.io.visibility.valid.poke(false.B)
-    d.io.accepted_plan.valid.poke(false.B); d.io.publication.valid.poke(false.B)
+    d.io.accepted_plan.valid.poke(false.B); d.io.publication_member.valid.poke(false.B); d.io.page_ready.valid.poke(false.B)
     d.io.demand.ready.poke(false.B); d.io.authorization.ready.poke(false.B)
     d.io.descriptor.ready.poke(false.B); d.io.lease.ready.poke(false.B)
     d.clock.step(); d.io.mem_init_done.poke(true.B); d.clock.step()
@@ -131,10 +133,18 @@ final class RouteAPackedActivationOwnerFactIntegrationSpec extends AnyFunSpec wi
     plan.pending_instance.source_kind.poke(1.U); plan.pending_instance.instance_coordinate.poke(0.U); plan.pending_instance.generation.poke(0.U)
     plan.packed_instance.source_kind.poke(2.U); plan.packed_instance.instance_coordinate.poke(1.U); plan.packed_instance.generation.poke(sourceGeneration.U)
     d.io.accepted_plan.valid.poke(true.B); d.io.accepted_plan.ready.expect(true.B); d.clock.step(); d.io.accepted_plan.valid.poke(false.B)
-    val pub = d.io.publication.bits
+    (0 until 2).foreach { ordinal =>
+      val member = d.io.publication_member.bits
+      member.entry_id.poke((0x20 + ordinal).U); member.layer.poke(0.U); member.kv_head.poke(0.U)
+      member.logical_position.poke((0x40 + ordinal).U); member.payload_ref.poke((0x60 + ordinal).U)
+      member.transaction_group_tag.poke(6.U); member.group_member_ordinal.poke(ordinal.U)
+      d.io.publication_member.valid.poke(true.B); d.io.publication_member.ready.expect(true.B)
+      d.clock.step(); d.io.publication_member.valid.poke(false.B)
+    }
+    val pub = d.io.page_ready.bits
     pub.p3_layer.poke(0.U); pub.p3_stage_generation.poke(1.U); pub.page_ref.page_id.poke(pageId.U)
     pub.page_ref.generation.poke(pageGeneration.U); pub.transaction_group_tag.poke(6.U); pub.valid_records.poke(2.U)
-    d.io.publication.valid.poke(true.B); d.io.publication.ready.expect(true.B); d.clock.step(); d.io.publication.valid.poke(false.B)
+    d.io.page_ready.valid.poke(true.B); d.io.page_ready.ready.expect(true.B); d.clock.step(); d.io.page_ready.valid.poke(false.B)
   }
 
   it("joins actual R5 descriptor and S2 lease owner responses without test-supplied handles or slot defaults") {

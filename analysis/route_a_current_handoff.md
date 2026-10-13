@@ -85,16 +85,34 @@ remain explicitly replaceable **outer functional environments** during RTL3.
 They must not silently become an HBM controller, SRAM macro, attention MAC,
 RoPE/exp/FP pipeline, or performance model.
 
-## Next RTL3 plan — RTL3.9-C (planning target, not yet implemented)
+## RTL3.9-C0 — association/first-use audit and baseline (implemented; final validation pending)
+
+C0 keeps R3 as the immutable page/member-ledger owner and treats the existing
+`authority_transition_out.fire` as the actual R6 acceptance handshake.  It
+does not add an R6 ordinal/page table or a second authority owner.  R3 emits a
+read-only page-ready observation only after every ordinal in `[0,
+valid_records)` has fired to R6; the activation binder now consumes the real
+member-observation stream and requires it to match that summary before it can
+query R5 or request an S2 lease.  The exact contract is
+[`rtl3_9_c0_post_r6_first_use_association_contract.md`](rtl3_9_c0_post_r6_first_use_association_contract.md).
+
+This is solely a page first-use delay.  It does not change pruning, admission,
+page size, M2/P3, GQA, R2 scheduler/FIFO semantics, or R3's single atomic
+publication boundary.  C1 remains separately scoped: it must activate only
+the post-C0 owner-correct demand/lease path in the composed top.
+
+C0 intentionally permits one completed page association at a time, so a later
+member-observation stream is backpressured while the held page awaits/uses its
+post-R6 summary.  This is conservative functional flow control because the
+member carrier has no `PageRef`; it is not a second authority, admission,
+selection, or scheduling mechanism.
+
+## Remaining RTL3.9-C plan
 
 The detailed planned wording is in `rtl2_phase_contract.md`. Work should be
 split so that each step has one owner and a reviewable failure boundary:
 
-1. **C0 — association/first-use audit.** Freeze the exact join from R3
-   post-commit observation, R5 visible descriptor, and R6 accepted packed
-   authority to the existing packed-read association owner. Specify the
-   descriptor/page/generation/identity checks and forbid pre-publication reads.
-2. **C1 — post-publication demand activation.** Activate only the owner-correct
+1. **C1 — post-publication demand activation.** Activate only the owner-correct
    packed demand/lease path in the composed top. The top may compose facts but
    may not manufacture a source plan, descriptor, authority, or scheduler
    decision.
@@ -107,7 +125,7 @@ split so that each step has one owner and a reviewable failure boundary:
    functional boundary, then to R6 terminal, release, retire, and matching
    reclaim. Do not assign `(m,l,o)` computation to an S2/direct/hot storage
    owner.
-5. **C4 — event/scoreboard and cross-owner review.** Require a same-instance
+4. **C4 — event/scoreboard and cross-owner review.** Require a same-instance
    success path plus bounded legal stall, stale/mismatch, fault, and reset
    cases. Replay only accepted architectural events through the existing
    scoreboard contract. Request an RTL3 completion review only after C0--C3

@@ -80,10 +80,14 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
     // Exact copy of an R6-accepted plan.  It is intentionally an input rather
     // than a source-plan declaration: this module cannot select a source set.
     val accepted_plan_in = Flipped(RouteAChannels.source_completion_plan(p))
-    // R3 emits this only after its atomic publication boundary.  The carrier
-    // has no query identity; the binder binds it to the accepted R6 identity
-    // only after PageRef/record-count checks below.
-    val publication_commit_in = Flipped(RouteAChannels.publication_commit_observation(p))
+    // R3's immutable member stream is consumed here rather than discarded by
+    // the top.  R3 still owns its ledger and observes R6 acceptance; this
+    // binder only validates the emitted stream against the later page-ready
+    // summary and never becomes an authority owner.
+    val publication_member_in = Flipped(RouteAChannels.publication_member_observation(p))
+    // R3 emits this read-only fact only after the committed page's complete
+    // member ledger has seen the actual R3->R6 acceptance handshakes.
+    val post_r6_page_ready_in = Flipped(RouteAChannels.post_r6_packed_page_ready_observation(p))
     // The binder requests, but never constructs, the two owner-local facts.
     // Requests contain no address and preserve R6's selected SourceInstance.
     val descriptor_location_request_out = RouteAChannels.descriptor_location_request(p)
@@ -106,11 +110,16 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
   val state = RegInit(Collect)
 
   val havePlan = RegInit(false.B)
-  val havePublication = RegInit(false.B)
+  val havePageReady = RegInit(false.B)
+  val haveMemberStream = RegInit(false.B)
+  val memberStreamPoisoned = RegInit(false.B)
+  val memberStreamLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
+  val memberStreamTag = Reg(UInt(p.transactionGroupTagWidth.W))
+  val memberNextOrdinal = RegInit(0.U(RouteAAnchorWidths.P3ValidRecordsWidth.W))
   val haveDescriptor = RegInit(false.B)
   val haveLease = RegInit(false.B)
   val plan = Reg(new SourceCompletionPlan(p))
-  val publication = Reg(new PublicationCommitObservation(p))
+  val publication = Reg(new PostR6PackedPageReadyObservation(p))
   val descriptor = Reg(new DescriptorLocationGrant(p))
   val lease = Reg(new S2FillLease(p))
   val demandOrdinal = RegInit(0.U(p.candidateOrdinalWidth.W))
@@ -128,6 +137,10 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
   val planLegal = io.accepted_plan_in.bits.source_presence(RouteASourceKind.Packed) &&
     io.accepted_plan_in.bits.packed_instance.source_kind === RouteASourceKind.Packed.U
   val recordsLegal = publication.valid_records =/= 0.U && publication.valid_records <= 64.U
+  val memberStreamMatchesReady = haveMemberStream && !memberStreamPoisoned &&
+    memberStreamLayer === publication.p3_layer &&
+    memberStreamTag === publication.transaction_group_tag &&
+    memberNextOrdinal === publication.valid_records
   val descriptorMatchesHeldFacts =
     sameIdentity(plan.transaction_identity, descriptor.transaction_identity) &&
       samePage(publication.page_ref, descriptor.page_ref) &&
@@ -151,17 +164,18 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
     (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.PackedMetadataPublished)
 
   io.accepted_plan_in.ready := false.B
-  io.publication_commit_in.ready := false.B
+  io.publication_member_in.ready := false.B
+  io.post_r6_page_ready_in.ready := false.B
   io.descriptor_grant_in.ready := false.B
   io.s2_fill_lease_in.ready := false.B
-  io.descriptor_location_request_out.valid := havePlan && havePublication && !haveDescriptor
+  io.descriptor_location_request_out.valid := havePlan && havePageReady && memberStreamMatchesReady && !haveDescriptor
   io.descriptor_location_request_out.bits.transaction_identity := plan.transaction_identity
   io.descriptor_location_request_out.bits.page_ref := publication.page_ref
   io.descriptor_location_request_out.bits.valid_records := publication.valid_records
   // Reserve scarce S2 state only after R5 has proved that the exact published
   // descriptor is readable.  A stale/unpublished page therefore cannot leak
   // a FILLING slot while the binder waits for an impossible R5 response.
-  io.s2_fill_lease_request_out.valid := havePlan && havePublication && haveDescriptor &&
+  io.s2_fill_lease_request_out.valid := havePlan && havePageReady && memberStreamMatchesReady && haveDescriptor &&
     descriptorMatchesHeldFacts && !haveLease
   io.s2_fill_lease_request_out.bits.transaction_identity := plan.transaction_identity
   io.s2_fill_lease_request_out.bits.page_ref := publication.page_ref
@@ -180,7 +194,10 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
   when(!io.mem_init_done) {
     state := Collect
     havePlan := false.B
-    havePublication := false.B
+    havePageReady := false.B
+    haveMemberStream := false.B
+    memberStreamPoisoned := false.B
+    memberNextOrdinal := 0.U
     haveDescriptor := false.B
     haveLease := false.B
     sentDemand := false.B
@@ -193,23 +210,64 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
     switch(state) {
       is(Collect) {
         io.accepted_plan_in.ready := !havePlan && planLegal
-        io.publication_commit_in.ready := !havePublication
+        // Consume the owner-produced member stream in exact ordinal order.
+        // A malformed/duplicate fact is consumed once and poisons this
+        // bounded association, so it can never produce first-use work.
+        // C0 intentionally keeps one bounded page association in flight.  Do
+        // not consume a later page's member stream while this completed stream
+        // is awaiting/using its page-ready summary: that later stream has no
+        // PageRef on this channel and must not be mistaken for a malformed
+        // continuation of the current immutable ledger.  This is flow control
+        // only; R3 and R6 retain all membership and authority ownership.
+        io.publication_member_in.ready := !havePageReady &&
+          !io.post_r6_page_ready_in.valid && !memberStreamPoisoned && memberNextOrdinal =/= 64.U
+        io.post_r6_page_ready_in.ready := !havePageReady
         io.descriptor_grant_in.ready := !haveDescriptor
         io.s2_fill_lease_in.ready := !haveLease
         when(io.accepted_plan_in.fire) { plan := io.accepted_plan_in.bits; havePlan := true.B }
-        when(io.publication_commit_in.fire) { publication := io.publication_commit_in.bits; havePublication := true.B }
+        when(io.publication_member_in.fire) {
+          val member = io.publication_member_in.bits
+          val firstMember = !haveMemberStream
+          val memberMatches = (firstMember ||
+            (member.layer === memberStreamLayer && member.transaction_group_tag === memberStreamTag)) &&
+            member.group_member_ordinal === memberNextOrdinal
+          when(memberMatches) {
+            when(firstMember) {
+              haveMemberStream := true.B
+              memberStreamLayer := member.layer
+              memberStreamTag := member.transaction_group_tag
+            }
+            memberNextOrdinal := memberNextOrdinal + 1.U
+          }.otherwise {
+            memberStreamPoisoned := true.B
+          }
+        }
+        when(io.post_r6_page_ready_in.fire) { publication := io.post_r6_page_ready_in.bits; havePageReady := true.B }
         when(io.descriptor_grant_in.fire) { descriptor := io.descriptor_grant_in.bits; haveDescriptor := true.B }
         when(io.s2_fill_lease_in.fire) { lease := io.s2_fill_lease_in.bits; haveLease := true.B }
-        when(havePlan && havePublication && haveDescriptor && !descriptorMatchesHeldFacts) {
+        when(havePageReady && (!recordsLegal || !memberStreamMatchesReady)) {
+          rejected := true.B
+          rejectedIdentity := plan.transaction_identity
+          havePlan := false.B
+          havePageReady := false.B
+          haveDescriptor := false.B
+          haveLease := false.B
+          haveMemberStream := false.B
+          memberStreamPoisoned := false.B
+          memberNextOrdinal := 0.U
+        }.elsewhen(havePlan && havePageReady && haveDescriptor && !descriptorMatchesHeldFacts) {
           // Never reserve scarce S2 state after a malformed/stale R5 fact.
           // The owner response is rejected before a lease request can escape.
           rejected := true.B
           rejectedIdentity := plan.transaction_identity
           havePlan := false.B
-          havePublication := false.B
+          havePageReady := false.B
           haveDescriptor := false.B
           haveLease := false.B
-        }.elsewhen(havePlan && havePublication && haveDescriptor && haveLease) {
+          haveMemberStream := false.B
+          memberStreamPoisoned := false.B
+          memberNextOrdinal := 0.U
+        }.elsewhen(havePlan && havePageReady && haveDescriptor && haveLease && memberStreamMatchesReady) {
           state := Evaluate
         }
       }
@@ -220,9 +278,12 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
           rejected := true.B
           rejectedIdentity := plan.transaction_identity
           havePlan := false.B
-          havePublication := false.B
+          havePageReady := false.B
           haveDescriptor := false.B
           haveLease := false.B
+          haveMemberStream := false.B
+          memberStreamPoisoned := false.B
+          memberNextOrdinal := 0.U
           state := Collect
         }
       }
@@ -256,9 +317,12 @@ final class RouteAPackedReadActivationBinder(p: RouteASkeletonParameters) extend
           (sentLease || io.s2_fill_lease_out.fire)) {
           demandOrdinal := demandOrdinal + 1.U
           havePlan := false.B
-          havePublication := false.B
+          havePageReady := false.B
           haveDescriptor := false.B
           haveLease := false.B
+          haveMemberStream := false.B
+          memberStreamPoisoned := false.B
+          memberNextOrdinal := 0.U
           sentDemand := false.B
           sentPublication := false.B
           sentDescriptor := false.B

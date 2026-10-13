@@ -66,6 +66,7 @@ final class RouteA2_1bWritePathHarness(p: RouteASkeletonParameters) extends Modu
   StructuralTieOff.sink(r3.io.authority_transition_out)
   StructuralTieOff.sink(r3.io.publication_commit_observation)
   StructuralTieOff.sink(r3.io.publication_member_observation)
+  StructuralTieOff.sink(r3.io.post_r6_packed_page_ready_observation)
   StructuralTieOff.sink(r3.io.component_status_out)
   r3.io.p3_observe_layer := 0.U
 

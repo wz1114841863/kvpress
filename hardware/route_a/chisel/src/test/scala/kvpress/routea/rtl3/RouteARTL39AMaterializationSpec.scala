@@ -35,6 +35,7 @@ final class RouteARTL39AMaterializationSpec extends AnyFunSpec with ChiselSim {
     d.io.metadata_publish_visibility_apply.ready.poke(true.B); d.io.metadata_publish_visibility_ack_in.valid.poke(false.B)
     d.io.m2_publish_ack.ready.poke(true.B); d.io.authority_transition_out.ready.poke(true.B)
     d.io.publication_commit_observation.ready.poke(true.B); d.io.publication_member_observation.ready.poke(true.B)
+    d.io.post_r6_packed_page_ready_observation.ready.poke(true.B)
     d.io.component_status_out.ready.poke(true.B)
     d.io.mem_init_done.poke(true.B); d.clock.step()
   }

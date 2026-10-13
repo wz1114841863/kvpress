@@ -259,6 +259,20 @@ final class PublicationMemberObservation(p: RouteASkeletonParameters) extends Bu
 }
 
 /**
+  * Read-only R3 observation emitted only after a committed page's complete
+  * immutable member ledger has seen its real R6 pending->packed acceptance
+  * handshakes.  It is neither a second authority transition nor a new
+  * publication command.
+  */
+final class PostR6PackedPageReadyObservation(p: RouteASkeletonParameters) extends Bundle {
+  val p3_layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val p3_stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val page_ref = new PageRef
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+}
+
+/**
   * Source-service evidence that the selected canonical source set has
   * completed all four GQA consumer updates and may enter R4. Bit positions are
   * the frozen hot/pending/packed order; there is deliberately no Full-KV bit.
@@ -1040,6 +1054,7 @@ object RouteAChannels {
   def pending_payload_read_binding(p: RouteASkeletonParameters) = Decoupled(new PendingPayloadReadBinding(p))
   def publication_commit_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationCommitObservation(p))
   def publication_member_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationMemberObservation(p))
+  def post_r6_packed_page_ready_observation(p: RouteASkeletonParameters) = Decoupled(new PostR6PackedPageReadyObservation(p))
   def r6_merge_ready = Decoupled(new R6MergeReady)
   def source_plan_declaration(p: RouteASkeletonParameters) = Decoupled(new SourcePlanDeclaration(p))
   def source_completion_plan(p: RouteASkeletonParameters) = Decoupled(new SourceCompletionPlan(p))

@@ -36,6 +36,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.io.pending_payload_binding_in.valid.poke(false.B)
     dut.io.authority_transition_out.ready.poke(true.B)
     dut.io.publication_commit_observation.ready.poke(true.B); dut.io.publication_member_observation.ready.poke(true.B)
+    dut.io.post_r6_packed_page_ready_observation.ready.poke(true.B)
     dut.io.p3_pending_fragment_in.valid.poke(false.B); dut.io.p3_sidecar_bind_in.valid.poke(false.B)
     dut.io.p3_pack_read_work_in.valid.poke(false.B); dut.io.p3_pack_read_issue_out.ready.poke(true.B)
     dut.io.p3_packed_write_issue_in.valid.poke(false.B); dut.io.p3_packed_write_terminal_in.valid.poke(false.B)
@@ -239,6 +240,14 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
         dut.clock.step()
       }
       dut.io.publication_member_observation.valid.expect(false.B); dut.io.authority_transition_out.valid.expect(false.B)
+      // C0 page readiness is withheld until every exact member transition has
+      // actually fired into the R6-facing authority channel, then remains
+      // stable under consumer ready-low.
+      dut.io.post_r6_packed_page_ready_observation.valid.expect(true.B)
+      dut.io.post_r6_packed_page_ready_observation.bits.valid_records.expect(3.U)
+      dut.io.post_r6_packed_page_ready_observation.ready.poke(false.B); dut.clock.step()
+      dut.io.post_r6_packed_page_ready_observation.valid.expect(true.B)
+      dut.io.post_r6_packed_page_ready_observation.ready.poke(true.B); dut.clock.step()
     }
   }
 

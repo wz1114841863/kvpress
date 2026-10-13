@@ -114,6 +114,7 @@ final class RouteAR3PackReadPathHarness(p: RouteASkeletonParameters) extends Mod
   StructuralTieOff.sink(r3.io.authority_transition_out)
   StructuralTieOff.sink(r3.io.publication_commit_observation)
   StructuralTieOff.sink(r3.io.publication_member_observation)
+  StructuralTieOff.sink(r3.io.post_r6_packed_page_ready_observation)
   StructuralTieOff.sink(r3.io.component_status_out)
   r3.io.p3_observe_layer := 0.U
   io.p3_state := r3.io.p3_observe_state

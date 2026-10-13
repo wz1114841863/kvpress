@@ -1019,12 +1019,24 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     retains publication membership.  This is functional no-model control/dataflow
     evidence, not a physical M2/SRAM/HBM implementation, timing, throughput,
     numeric, model/GPU, or PPA result.
-32. **RTL3.9-C — post-publication packed first-use closure (planned;
-    implementation requires a separate plan/approval).** This is the next
-    functional closure, not a new scheduler or memory realization. It must
-    prove in one owner-correct functional path that only an R3-committed
-    publication plus matching R5-visible descriptor and accepted R6 packed
-    authority can create a packed-read association/demand; that the existing
+32. **RTL3.9-C0 — post-R6 first-use association baseline (implemented;
+    C1--C4 remain separate).**
+    [`rtl3_9_c0_post_r6_first_use_association_contract.md`](rtl3_9_c0_post_r6_first_use_association_contract.md)
+    keeps R3 as the sole immutable member/ordinal owner and observes each
+    actual `authority_transition_out.fire` into R6.  Only after all ordinals
+    `[0, valid_records)` are accepted does R3 emit one read-only page-ready
+    observation.  The activation binder consumes the real R3 member stream,
+    checks its exact layer/tag/ordinal coverage against that summary, and only
+    then may begin the existing R5 descriptor query and S2 lease sequence.
+    R6 gets no new table, output, or authority role; the top remains
+    composition-only.  C0 delays only first use and changes neither pruning,
+    admission, 64-token pages, M2/P3, R2 scheduling, GQA legality, nor the
+    single publication boundary.
+33. **RTL3.9-C1--C4 — remaining post-publication packed first-use closure
+    (planned; implementation requires separate approval).** This is not a new
+    scheduler or memory realization. It must prove in one owner-correct
+    functional path that the post-C0 R5-visible descriptor and packed authority
+    create the already-authorized packed-read association/demand; that the existing
     typed R2/R1 read and permitted functional memory environment supply the
     exact payload/sidecar to S2; and that matching S2 source service reaches
     the already-frozen outer partial-provider/R4 boundary, R6 terminal, and

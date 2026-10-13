@@ -1209,6 +1209,10 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     val authority_transition_out = RouteAChannels.r6_authority_transition(p)
     val publication_commit_observation = RouteAChannels.publication_commit_observation(p)
     val publication_member_observation = RouteAChannels.publication_member_observation(p)
+    // C0 read-only post-acceptance fact.  It is emitted only after every
+    // member of the immutable published-page ledger has actually fired into
+    // R6; R3 remains the only membership/ordinal owner.
+    val post_r6_packed_page_ready_observation = RouteAChannels.post_r6_packed_page_ready_observation(p)
     // An explicit member work item is the R3-owned entry to the minimal
     // pending -> P3 pack-read path.  R3 validates it against the immutable
     // admitted-member ledger before emitting a pre-R2 descriptor; this port
@@ -1802,6 +1806,11 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
       stageDescriptorPrerequisite(layer) &&
       PopCount(membershipPresent(layer)) === stageValidRecords(layer)
   })
+  val postR6PageReadyActive = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  val postR6PageReadyPageRef = Reg(Vec(stages, new PageRef))
+  val postR6PageReadyGeneration = Reg(Vec(stages, UInt(p.p3StageGenerationWidth.W)))
+  val postR6PageReadyTag = Reg(Vec(stages, UInt(p.transactionGroupTagWidth.W)))
+  val postR6PageReadyRecords = Reg(Vec(stages, UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)))
   val publicationEligibleAny = publicationEligible.asUInt.orR
   val publicationEligibleLayer = PriorityEncoder(publicationEligible)
   io.m2_publish_candidate_out.valid := initialized && !publicationActive &&
@@ -1927,6 +1936,15 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     observationMemberSent(observationLayer) := false.B
     observationAuthoritySent(observationLayer) := false.B
     when(nextOrdinal === stageValidRecords(observationLayer)) {
+      // C0: this condition is reached only after every immutable member was
+      // offered as its exact ordinal and each matching R3->R6 transition
+      // actually fired.  Capture the page facts before retiring the mutable
+      // membership ledger, then expose one read-only page-ready observation.
+      postR6PageReadyActive(observationLayer) := true.B
+      postR6PageReadyPageRef(observationLayer) := stagePageRef(observationLayer)
+      postR6PageReadyGeneration(observationLayer) := stageGeneration(observationLayer)
+      postR6PageReadyTag(observationLayer) := stageTag(observationLayer)
+      postR6PageReadyRecords(observationLayer) := stageValidRecords(observationLayer)
       observationActive(observationLayer) := false.B
       observationCommitSent(observationLayer) := false.B
       membershipPresent(observationLayer) := 0.U
@@ -1937,10 +1955,30 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     assert(io.authority_transition_out.bits.to_authority === RouteAAuthorityStateCode.Packed.U)
   }
 
+  val anyPostR6PageReady = postR6PageReadyActive.asUInt.orR
+  val postR6PageReadyLayer = PriorityEncoder(postR6PageReadyActive)
+  io.post_r6_packed_page_ready_observation.valid := anyPostR6PageReady
+  io.post_r6_packed_page_ready_observation.bits.p3_layer := postR6PageReadyLayer
+  io.post_r6_packed_page_ready_observation.bits.p3_stage_generation :=
+    postR6PageReadyGeneration(postR6PageReadyLayer)
+  io.post_r6_packed_page_ready_observation.bits.page_ref :=
+    postR6PageReadyPageRef(postR6PageReadyLayer)
+  io.post_r6_packed_page_ready_observation.bits.transaction_group_tag :=
+    postR6PageReadyTag(postR6PageReadyLayer)
+  io.post_r6_packed_page_ready_observation.bits.valid_records :=
+    postR6PageReadyRecords(postR6PageReadyLayer)
+  when(io.post_r6_packed_page_ready_observation.fire) {
+    postR6PageReadyActive(postR6PageReadyLayer) := false.B
+  }
+  when(io.post_r6_packed_page_ready_observation.valid) {
+    assert(io.post_r6_packed_page_ready_observation.bits.valid_records =/= 0.U)
+    assert(io.post_r6_packed_page_ready_observation.bits.valid_records <= 64.U)
+  }
+
   io.p3_observe_state := stageState(io.p3_observe_layer)
   io.p3_observe_generation := stageGeneration(io.p3_observe_layer)
   val stagesEmpty = VecInit((0 until stages).map(stage => stageState(stage) === StateEmpty)).asUInt.andR
-  val locallyDrained = stagesEmpty && !observationActive.asUInt.orR && !claimAckValid && !publicationActive &&
+  val locallyDrained = stagesEmpty && !observationActive.asUInt.orR && !postR6PageReadyActive.asUInt.orR && !claimAckValid && !publicationActive &&
     !publicationAwaitingVisibilityAck && !publishAckValid
   val initStatusPending = initialized && !initStatusReported
   io.component_status_out.valid := initStatusPending ||

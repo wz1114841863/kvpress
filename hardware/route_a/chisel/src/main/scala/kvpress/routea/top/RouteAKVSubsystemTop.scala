@@ -339,10 +339,14 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     // second publication initiator.  R3 owns the issued candidate above.
     StructuralTieOff.sink(lifecycle.io.metadata_publish_req)
     lifecycle.io.authority_transition_in <> m2_p3.io.authority_transition_out
-    // R3's post-atomic observation is the sole publication fact consumed by
-    // the activation binder.  No second publication/authority edge is made.
-    packed_activation_binder.io.publication_commit_in <> m2_p3.io.publication_commit_observation
-    m2_p3.io.publication_member_observation.ready := true.B
+    // C0 preserves R3 as the sole immutable member/ordinal owner.  The binder
+    // consumes that real member stream and only receives page readiness after
+    // every matching R3->R6 authority transition has actually fired.  The
+    // legacy post-commit observation remains an observation, never a first-use
+    // authorization by itself.
+    m2_p3.io.publication_commit_observation.ready := true.B
+    packed_activation_binder.io.publication_member_in <> m2_p3.io.publication_member_observation
+    packed_activation_binder.io.post_r6_page_ready_in <> m2_p3.io.post_r6_packed_page_ready_observation
     page_manager.io.mem_init_done := core_memory.io.r1_init_complete
     page_manager.io.drain_collection_enable := lifecycle.io.drain_collection_enable
     page_manager.io.reclaim_permit_in <> lifecycle.io.reclaim_permit_out

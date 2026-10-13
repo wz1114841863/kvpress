@@ -68,6 +68,7 @@ final class RouteA2_1cAtomicPublicationHarness(p: RouteASkeletonParameters) exte
   io.authority_transition <> r3.io.authority_transition_out
   io.publication_commit <> r3.io.publication_commit_observation
   io.publication_member <> r3.io.publication_member_observation
+  StructuralTieOff.sink(r3.io.post_r6_packed_page_ready_observation)
   io.publication_ack <> r3.io.m2_publish_ack
   StructuralTieOff.sink(r3.io.component_status_out)
   r3.io.p3_observe_layer := 0.U

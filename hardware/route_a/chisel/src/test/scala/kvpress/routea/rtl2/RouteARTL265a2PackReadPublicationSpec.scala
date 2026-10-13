@@ -261,6 +261,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   io.r6_authority_transition := r3.io.authority_transition_out.bits
   io.publication_commit <> r3.io.publication_commit_observation
   io.publication_member <> r3.io.publication_member_observation
+  StructuralTieOff.sink(r3.io.post_r6_packed_page_ready_observation)
   io.r3_status <> r3.io.component_status_out
   r3.io.p3_observe_layer := 0.U
   io.p3_state := r3.io.p3_observe_state

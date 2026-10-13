@@ -87,6 +87,7 @@ private final class RouteAAdmissionPublicationHarness(p: RouteASkeletonParameter
   lifecycle.io.authority_transition_in <> r3.io.authority_transition_out
   io.commit_observation <> r3.io.publication_commit_observation
   io.member_observation <> r3.io.publication_member_observation
+  StructuralTieOff.sink(r3.io.post_r6_packed_page_ready_observation)
 }
 
 /** RTL1-I2 cross-owner directed control check; no payload/HBM/controller/PPA model. */
