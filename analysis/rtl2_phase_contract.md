@@ -684,18 +684,18 @@ production bridge, profiling, optimization, synthesis, timing, or PPA claims.
 
 ## Planned successor — RTL3: Functional Realization Closure
 
-**Status:** RTL3.0--RTL3.5-C are complete only within their declared
-testbench/reference scopes. RTL3.6 correctly recorded a historical no-PASS,
-then RTL3.6-A repaired the active replay provenance, RTL3.6-B/C1/C2 assembled
-the bounded same-instance witness, and RTL3.7-A now binds the C2 packed read
-to the exact R3-durable functional payload object. RTL3.7-B closes bounded
-terminal-to-release-to-retire ordering, and RTL3.7-C joins C2's existing
-R1/R2 drain facts with their publication-wrapper counterparts before the
-unchanged R6 collector.  The functional-realization no-PASS remains: C2
-grants are verification facts, sidecar and R4 remain declared fixtures, and
-there is no production-top RTL3 composition,
-physical controller, numerical microarchitecture, or performance experiment is
-authorized by these records.
+**Status:** RTL3.0--RTL3.8.5 have closed their declared replacement-owner,
+functional-reference, and production-shaped top-binding scopes; the historical
+RTL3.6 and review-03 no-PASS records remain immutable. RTL3.9-A0/A1/A then
+bind and activate the pending member's exact pack-read materialization without
+changing schedule, while RTL3.9-B0/B1/B2/B3 close the matching durable packed
+write, descriptor durability, R3 atomic publication, R5 visibility, and R6
+`pending -> packed` authority acceptance in a functional instance. The
+functional-realization no-PASS remains: the newly published packed page has
+not yet traversed its first post-publication production-shaped read/S2/source
+service path, and the permitted functional partial/R4 boundaries are not
+physical implementations. No physical controller, numerical microarchitecture,
+profiling, or performance experiment is authorized by these records.
 See
 [`rtl3_0_replacement_owner_contract.md`](rtl3_0_replacement_owner_contract.md)
 [`rtl3_1_functional_memory_environment_contract.md`](rtl3_1_functional_memory_environment_contract.md),
@@ -1019,6 +1019,22 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     retains publication membership.  This is functional no-model control/dataflow
     evidence, not a physical M2/SRAM/HBM implementation, timing, throughput,
     numeric, model/GPU, or PPA result.
+32. **RTL3.9-C — post-publication packed first-use closure (planned;
+    implementation requires a separate plan/approval).** This is the next
+    functional closure, not a new scheduler or memory realization. It must
+    prove in one owner-correct functional path that only an R3-committed
+    publication plus matching R5-visible descriptor and accepted R6 packed
+    authority can create a packed-read association/demand; that the existing
+    typed R2/R1 read and permitted functional memory environment supply the
+    exact payload/sidecar to S2; and that matching S2 source service reaches
+    the already-frozen outer partial-provider/R4 boundary, R6 terminal, and
+    R5/R6 retirement/reclaim sequence. The plan must separately cover legal
+    stall, stale/mismatch/fault, reset, event-scoreboard replay, and the
+    no-repeat/no-early-read invariants. It may retain the already-authorized
+    functional memory, partial-provider, and R4 reference **environment**
+    boundaries, but may not turn any of them into an HBM controller, SRAM
+    macro, numeric pipeline, schedule, timing, or PPA claim. A dedicated
+    RTL3 completion review follows only after this path is closed.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

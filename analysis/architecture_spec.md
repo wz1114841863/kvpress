@@ -1,13 +1,18 @@
-# Route-A architecture specification — pre-RTL interface boundary
+# Route-A architecture specification — frozen interface boundary
 
 ## 1. Status and scope
 
-**Status:** architecture-contract freeze, Reviewer-02 passed, 2026-09-29.
-A4.14.1 conditionally authorized this architecture specification and
-Reviewer-02 closed the R1--R6 cross-contract review. This permits only a
-separately reviewed RTL-entry design/verification plan; it does not authorize
-RTL implementation, Chisel, PDK/PPA, physical SRAM macros, a native HBM
-controller, or measured performance claims.
+**Status:** architecture-contract freeze, Reviewer-02 passed, 2026-09-29;
+Gate-RTL0 subsequently passed and staged RTL is active through RTL3.9-B3 as of
+2026-10-13. A4.14.1 conditionally authorized this architecture specification
+and Reviewer-02 closed the R1--R6 cross-contract review. Gate-RTL0 then
+authorized staged control-first RTL only under its separate hierarchy,
+interface, assertion, and oracle contracts. The live implementation status is
+[`analysis/route_a_current_handoff.md`](route_a_current_handoff.md) and the
+detailed activation ledger is [`analysis/rtl2_phase_contract.md`](rtl2_phase_contract.md).
+Neither this specification nor those functional closures authorize PDK/PPA,
+physical SRAM macros, a native HBM controller, numeric microarchitecture, or
+measured performance claims.
 
 This specification preserves the original per-layer/per-KV-head KVzap mask.
 It does not train or modify the predictor, restructure the mask, prune before
@@ -776,6 +781,20 @@ a physical memory, request/burst format, bank/port count, numeric datapath, or
 PPA model; see
 `analysis/rtl3_8_0_functional_closure_ingress_retirement_contract.md`.
 
+RTL3.8.1--RTL3.8.5 subsequently bind the production-shaped packed activation,
+functional sidecar delivery, isolated source/partial and dynamic R4 reference
+boundaries, and all legal nonempty source-subset directed coverage. RTL3.9-A
+then activates only R3's exact pending-member pack-read materialization;
+RTL3.9-B1/B2/B3 close the same member's automatic packed write, descriptor
+durability, and unique R3 metadata publication with R5 visibility and R6's
+accepted `pending -> packed` authority observation. These are
+implementation-status facts, not architecture-contract changes: publication
+remains the sole linearization boundary and no physical memory or numeric result
+follows. The next unclosed functional path is the first owner-correct packed
+read of that newly published page into S2 and through the existing
+source/R4/R6 lifecycle; its plan is recorded as RTL3.9-C in
+`analysis/rtl2_phase_contract.md`.
+
 Two buffers hide a next fill only when `T_consume(current) >= T_fill(next)`;
 warm-up and drain remain.  This symbolic condition neither provides a common
 clock with M2 nor demonstrates a physical SRAM port implementation.
@@ -1095,5 +1114,6 @@ differential cost against the A4.14.1 omitted-cost budget.  Gate B is the
 first point at which implementation evidence may support a PPA or service
 claim; it is not a prerequisite artificially assumed by Gate A.
 
-This remains a pre-RTL interface boundary. It does not authorize A4.14 variants
-or changes to frozen Route-A semantics.
+This remains an architecture interface boundary rather than implementation or
+physical-realization evidence. It does not authorize A4.14 variants or changes
+to frozen Route-A semantics.

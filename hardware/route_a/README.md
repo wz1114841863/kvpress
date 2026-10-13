@@ -6,13 +6,23 @@ keeps future payload-path and Chisel work separate.
 
 ## Status and authority
 
-The workspace has passed Gate-RTL0 and has entered the **RTL1 Chisel bootstrap**.
-`analysis/rtl1_phase_contract.md` authorizes this initial build/toolchain
-workspace and then staged control-first RTL; it does not establish functional
-RTL correctness, formal proof, PDK/PPA, native HBM-controller behavior,
-timing, or measured performance.  It does not change KVzap pruning, admission,
-transaction semantics, A4.9.2 record-granular execution, or the A4.10
-`HA8-wide + local32/shared256/staging512` logical contract.
+The workspace has passed Gate-RTL0, completed RTL1 control-plane and constrained
+RTL2 transaction/dataflow closure, and is now in **RTL3 functional subsystem
+closure**. The latest completed slice is RTL3.9-B3: in one functional Chisel
+instance, R3's sole atomic publication is sequenced after payload and
+descriptor durability, R5 visibility acknowledgement, and R6's matching
+`pending -> packed` authority acceptance. The next planned slice is RTL3.9-C,
+the first post-publication owner-correct packed read into S2/source service.
+
+The current state and ordered plan are maintained in
+`analysis/route_a_current_handoff.md`; the detailed live phase ledger is
+`analysis/rtl2_phase_contract.md`. The original RTL1 entry contract remains
+historical provenance, not the current completion claim. None of these
+functional closures establishes formal proof, PDK/PPA, native HBM-controller
+behavior, timing, throughput, or measured performance. They do not change
+KVzap pruning, admission, transaction semantics, A4.9.2 record-granular
+execution, or the A4.10 `HA8-wide + local32/shared256/staging512` logical
+contract.
 
 The frozen A4.12.0 interface table is the input authority for this workspace:
 
@@ -25,15 +35,15 @@ The frozen A4.12.0 interface table is the input authority for this workspace:
 | 64-token packed page, 32-KiB source page buffer, legal four-query-head GQA reuse | A4.13.3--A4.13.5 | Declared payload dataflow/interface, not a native HBM transaction or controller schedule. |
 | M2 metadata proxy, P3 staging envelope and A4.14.1 omitted-cost budget | A4.12/A4.14 | M2 area is public-CACTI proxy; P3 and merge/control terms remain unestimated. |
 
-`mem/` provides a reproducible public-CACTI proxy runner.  `chisel/` is the
-isolated RTL1 workspace; RTL1.0.a has a nonfunctional structural skeleton,
-while verification attachment and all control behavior remain pending. A4.12
-CACTI area and per-access numbers are
+`mem/` provides a reproducible public-CACTI proxy runner. `chisel/` contains
+the staged RTL1--RTL3 Chisel sources and directed functional harnesses; it is
+not a completed numeric/memory realization. A4.12 CACTI area and per-access
+numbers are
 estimates from a public technology model; they are not PDK, macro-compiler,
 synthesis, layout, timing, throughput, workload-energy, architecture, or RTL
 evidence.
 
-The reviewed pre-RTL interface boundary is `analysis/architecture_spec.md`.
+The reviewed frozen interface boundary is `analysis/architecture_spec.md`.
 It defines the common S2 versus Route-A incremental split, M2/P3/page/merge
 interfaces, parameterized realization fields, omitted costs, and the separate
 RTL gate.  It does not select a production macro, controller, clock, or RTL
@@ -44,7 +54,7 @@ implementation.
 ```text
 hardware/route_a/
   mem/                 generic MacroSpec and verified-CACTI runner
-  chisel/              RTL1 Chisel bootstrap and later staged RTL sources
+  chisel/              staged RTL1--RTL3 Chisel sources and functional harnesses
   docs/                evidence and stage-boundary notes
 ```
 

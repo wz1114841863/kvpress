@@ -13,9 +13,32 @@ deleting or rewriting frozen evidence.
 | 3 | [`../KVZAP_ARCHITECTURE_PATH.md`](../KVZAP_ARCHITECTURE_PATH.md) | Longitudinal architecture route and stage transitions. |
 | 4 | [`../TRACE_SCHEMA.md`](../TRACE_SCHEMA.md) | Continuous trace/event-schema record and trace-to-model mapping. |
 | 5 | [`route_a_research_plan.md`](route_a_research_plan.md) | Continuous Route-A plan/progress record through A4.14 and Gate A. |
-| 6 | [`architecture_spec.md`](architecture_spec.md) | **Current technical authority**: frozen pre-RTL interface contract. |
+| 6 | [`architecture_spec.md`](architecture_spec.md) | **Technical authority**: frozen architecture interface/semantic contract and its evidence limits. |
+| 7 | [`route_a_current_handoff.md`](route_a_current_handoff.md) | **Current implementation handoff**: compact RTL3 status, next closure, and post-RTL3 decision path. |
+| 8 | [`rtl2_phase_contract.md`](rtl2_phase_contract.md) | **Live phase ledger**: detailed RTL2/RTL3 activation history and current planned work. |
 
-**Current disposition:** A4.11--A4.14 research DSE is closed; Reviewer-02
+## Current disposition (2026-10-13)
+
+The A4.11--A4.14 research DSE, architecture Reviewer-02, Gate-RTL0, RTL1,
+and constrained RTL2 closure are complete at their declared evidence levels.
+RTL3 remains active as a **functional subsystem closure**, not a physical or
+numeric realization.
+
+The latest completed slice is **RTL3.9-B3**: in one functional Chisel instance
+it closes the R3-owned atomic-publication sequence after matching payload and
+descriptor durability—two M2 member round trips, R5 visibility acknowledgement,
+one R3 publication acknowledgement/linearization, and matching R6
+`pending -> packed` authority acceptance. It is not a physical M2/SRAM/HBM,
+numeric, timing, throughput, or PPA result.
+
+The immediate planned work is RTL3.9-C: the first owner-correct packed read of
+that newly published page into S2, source service, the permitted functional
+partial/R4 boundaries, terminal, and reclaim. The compact state, open items,
+and ordered plan are maintained in [`route_a_current_handoff.md`](route_a_current_handoff.md).
+
+### Historical detailed status (through RTL3.7)
+
+A4.11--A4.14 research DSE is closed; Reviewer-02
 passed the R1--R6 architecture cross-closure; Gate-RTL0 passed and RTL1
 owner-local control is complete. RTL1-I1--I4 have subsequently closed safe
 start/empty retirement, retained-record publication association,
@@ -155,6 +178,10 @@ Read these only when the corresponding level of detail is required:
 | RTL3.7-C C2 drain membership / fault-stall-reset event-scoreboard closure | [`rtl3_7c_drain_fault_stall_reset_scoreboard_contract.md`](rtl3_7c_drain_fault_stall_reset_scoreboard_contract.md) and [`rtl3_7c_drain_fault_stall_reset_scoreboard_manifest.json`](rtl3_7c_drain_fault_stall_reset_scoreboard_manifest.json) |
 | RTL3 completion cross-owner review 03 | [`rtl3_completion_cross_owner_review_03.md`](rtl3_completion_cross_owner_review_03.md) and [`rtl3_completion_cross_owner_review_03_manifest.json`](rtl3_completion_cross_owner_review_03_manifest.json) |
 | RTL3.8.0 functional-closure ingress retirement freeze | [`rtl3_8_0_functional_closure_ingress_retirement_contract.md`](rtl3_8_0_functional_closure_ingress_retirement_contract.md) and [`rtl3_8_0_functional_closure_ingress_retirement_manifest.json`](rtl3_8_0_functional_closure_ingress_retirement_manifest.json) |
+| RTL3.8.1--RTL3.8.5 functional-top activation and all-source directed coverage | [`rtl3_8_5_full_path_closure_coverage_contract.md`](rtl3_8_5_full_path_closure_coverage_contract.md) and [`rtl3_8_5_full_path_closure_coverage_manifest.json`](rtl3_8_5_full_path_closure_coverage_manifest.json) |
+| RTL3.9-A pending payload materialization/read activation | [`rtl3_9_a_r3_pending_pack_read_activation_contract.md`](rtl3_9_a_r3_pending_pack_read_activation_contract.md) and [`rtl3_9_a_r3_pending_pack_read_activation_manifest.json`](rtl3_9_a_r3_pending_pack_read_activation_manifest.json) |
+| RTL3.9-B1/B2 durable packed payload and descriptor activation | [`rtl3_9_b1_r3_packed_write_activation_contract.md`](rtl3_9_b1_r3_packed_write_activation_contract.md) and [`rtl3_9_b2_descriptor_durability_activation_contract.md`](rtl3_9_b2_descriptor_durability_activation_contract.md) |
+| RTL3.9-B3 atomic publication, R5 visibility, and R6 authority acceptance | [`rtl3_9_b3_atomic_publication_authority_activation_contract.md`](rtl3_9_b3_atomic_publication_authority_activation_contract.md) and [`rtl3_9_b3_atomic_publication_authority_activation_manifest.json`](rtl3_9_b3_atomic_publication_authority_activation_manifest.json) |
 | RTL2.3 active phase/event reconciliation | [`rtl2_3_reconciliation_01.md`](rtl2_3_reconciliation_01.md) and [`rtl2_scoreboard_event_phase_reconciliation_01.json`](rtl2_scoreboard_event_phase_reconciliation_01.json) |
 | RTL2.3-C6 R6 source-plan producer | [`rtl2_3_c6_source_plan_binder_contract.md`](rtl2_3_c6_source_plan_binder_contract.md) and [`rtl2_3_c6_source_plan_binder_manifest.json`](rtl2_3_c6_source_plan_binder_manifest.json) |
 | RTL2.3-C7 source-service top integration | [`rtl2_3_c7_source_service_top_integration_contract.md`](rtl2_3_c7_source_service_top_integration_contract.md) and [`rtl2_3_c7_source_service_top_integration_manifest.json`](rtl2_3_c7_source_service_top_integration_manifest.json) |
@@ -223,19 +250,24 @@ per-revision provenance freezes are intentionally retained at their existing
 paths. Many freezes name exact source paths and SHA-256 values; moving or
 deleting them would make old evidence difficult to materialize and review.
 
-For routine work, do not begin with those files. Start with the six living
-documents above, then open a historical record only through a link from the
-current plan/specification or when auditing a frozen claim.
+For routine work, do not begin with those files. Start with the living
+documents above—especially `route_a_current_handoff.md` and the phase ledger—
+then open a historical record only through a link from the current
+plan/specification or when auditing a frozen claim.
 
 ## Maintenance rule
 
 Update the appropriate living document when a gate or experiment changes
-current status. Append compatible trace schema records to `TRACE_SCHEMA.md`;
-append Route-A stage progress to `route_a_research_plan.md`; update
-`architecture_spec.md` only for accepted interface-contract changes. Create a
-new numbered volume only when a continuous living record becomes impractical to
-navigate. Freeze/provenance/experiment/handoff documents remain append-free
-historical evidence unless a separately authorized correction is required.
+current status: refresh `route_a_current_handoff.md` for the compact current
+disposition, append detailed RTL phase progress to `rtl2_phase_contract.md`,
+append compatible trace schema records to `TRACE_SCHEMA.md`, and append Route-A
+research progress to `route_a_research_plan.md`. Update `architecture_spec.md`
+only for accepted interface-contract changes or a clearly labelled status
+alignment. Create a new numbered volume only when a continuous living record
+becomes impractical to navigate. The specifically named current handoff is a
+living document; dated/archived handoffs, freezes, provenance, and experiment
+records remain append-free historical evidence unless a separately authorized
+correction is required.
 
 ## Documentation-consolidation revision (2026-09-29)
 

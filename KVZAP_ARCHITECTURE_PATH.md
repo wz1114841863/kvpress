@@ -19,7 +19,7 @@ The current main hypothesis is:
 
 > KVzap's token-level pruning lacks sufficient regularity for direct coarse-grained block mapping, but the retained KV entries can be reorganized with very low capacity loss into per-head packed fixed-size pages. A dedicated architecture can therefore preserve the original pruning decisions while using streaming admission, variable-length page management, and load-balanced attention scheduling to convert logical compression into physical memory, bandwidth, and throughput gains.
 
-### 1.1 Current Route-A status (2026-09-29)
+### 1.1 Current Route-A status (2026-10-13)
 
 The exploratory DSE described below has now closed through A4.14.1.  The
 accepted path is not “put all KV in SRAM”: it is HBM-resident packed cold KV,
@@ -38,13 +38,16 @@ coordinates; CACTI is a public proxy; P3 macro/energy, queue/staging activity,
 partial merge, controller/interconnect and physical implementation remain
 unestimated.  No RTL or PPA claim follows.
 
-The reviewed pre-RTL interface boundary is `analysis/architecture_spec.md`.
-Reviewer-02 has passed its R1--R6 cross-closure review; this permits definition
-of a separately reviewed RTL-entry design/verification gate, not RTL
-implementation or a physical/PPA claim. It preserves this document's historical
-research path while recording the current common-versus-incremental split,
-parameterized payload realization, unestimated-cost budget, and separate RTL
-gate. The current-document and frozen-evidence index is `analysis/README.md`.
+The reviewed frozen interface boundary is `analysis/architecture_spec.md`.
+Reviewer-02 and the separate Gate-RTL0 have both passed; staged Chisel RTL is
+therefore active, but only as a functional contract-closure effort. The latest
+completed slice, RTL3.9-B3, closes the R3-owned atomic publication/R5
+visibility/R6 `pending -> packed` handoff in one functional instance. The next
+planned functional slice is the first owner-correct packed read after that
+publication. This historical research path remains authoritative for its DSE
+evidence, while the live implementation state and next plan are maintained in
+`analysis/route_a_current_handoff.md` and `analysis/rtl2_phase_contract.md`.
+No physical/PPA claim follows.
 
 ---
 

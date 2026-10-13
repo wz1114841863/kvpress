@@ -92,13 +92,19 @@ target-service proxy 的组合，不是实测 HBM 或 speedup。所有 workload 
 
 Architecture specification 已完成并经 Reviewer-02 cross-closure review 通过。当前权威
 接口合同是 `analysis/architecture_spec.md`，审查结论与哈希绑定见
-`analysis/architecture_gate_a_reviewer_02.md` 及其 provenance freeze。该 PASS 只冻结
-architecture contract，并只允许定义单独的 RTL-entry design/verification gate；它**不是**
-RTL implementation、PPA、controller、native-HBM 或 speedup 许可。
+`analysis/architecture_gate_a_reviewer_02.md` 及其 provenance freeze。该 PASS 当时只冻结
+architecture contract，并要求单独的 RTL-entry design/verification gate；该 Gate-RTL0 已
+随后通过，因此当前可以进行受合同约束的 staged RTL functional closure，但仍不构成
+PPA、controller、native-HBM、numeric microarchitecture 或 speedup 许可。
 
 P3 staging macro/energy、M2 pooled queue/staging dynamic access、partial-softmax/merge、
-controller/interconnect/clock/wire/leakage 仍未物理化，任何结论都不能越过这些边界。当前
-文档导航、活文档与冻结证据的分层见 `analysis/README.md`。
+controller/interconnect/clock/wire/leakage 仍未物理化，任何结论都不能越过这些边界。截至
+2026-10-13，RTL3 已完成到 RTL3.9-B3：R3 的 packed-payload/descriptor prerequisites、唯一
+metadata publication、R5 visibility 与 R6 `pending -> packed` authority acceptance 已在同一
+功能性 Chisel instance 闭合。下一项是 RTL3.9-C 的 post-publication packed first-use path；它
+仍只允许 functional memory/partial/R4 environment，不允许物理实现或性能结论。新对话应从
+`analysis/route_a_current_handoff.md` 开始，再查 `analysis/rtl2_phase_contract.md`。文档导航、
+活文档与冻结证据的分层见 `analysis/README.md`。
 
 ### 路线 B：无训练的结构化稀疏（冻结的备选）
 
