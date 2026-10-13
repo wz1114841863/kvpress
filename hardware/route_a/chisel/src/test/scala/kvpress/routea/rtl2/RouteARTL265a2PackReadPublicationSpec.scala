@@ -26,6 +26,9 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
     val admission_context = Flipped(RouteAChannels.admission_context(p))
     val admission_authority = Flipped(RouteAChannels.r6_authority_transition(p))
     val pending_payload_binding = Flipped(RouteAChannels.pending_payload_read_binding(p))
+    // B2 selects the already production-shaped R3 materializer feedback.
+    // False preserves the historical direct-work compatibility harness.
+    val materialize_from_binding = Input(Bool())
     val pack_read_work = Flipped(RouteAChannels.p3_pack_read_work(p))
     val p3_sidecar = Flipped(RouteAChannels.p3_sidecar_bind(p))
     val external = new CoreMemoryExternalPort(p)
@@ -80,7 +83,14 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   r3.io.admission_context_in <> io.admission_context
   r3.io.admission_authority_in <> io.admission_authority
   r3.io.pending_payload_binding_in <> io.pending_payload_binding
-  r3.io.p3_pack_read_work_in <> io.pack_read_work
+  r3.io.p3_pack_read_work_in.valid := Mux(
+    io.materialize_from_binding, r3.io.p3_pack_read_materialized_work_out.valid, io.pack_read_work.valid,
+  )
+  r3.io.p3_pack_read_work_in.bits := Mux(
+    io.materialize_from_binding, r3.io.p3_pack_read_materialized_work_out.bits, io.pack_read_work.bits,
+  )
+  r3.io.p3_pack_read_materialized_work_out.ready := io.materialize_from_binding && r3.io.p3_pack_read_work_in.ready
+  io.pack_read_work.ready := !io.materialize_from_binding && r3.io.p3_pack_read_work_in.ready
   issueAdapter.io.read_issue_in <> r3.io.p3_pack_read_issue_out
   bridge.io.r3_pack_read_in <> issueAdapter.io.candidate_out
   StructuralTieOff.source(bridge.io.r3_direct_pending_in)
@@ -142,7 +152,14 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   StructuralTieOff.source(p3Ingress.io.hot_in)
   p3Ingress.io.pack_read_in <> endpoint.io.p3_pending_fragment_out
   r3.io.p3_pending_fragment_in <> p3Ingress.io.out
-  r3.io.p3_sidecar_bind_in <> io.p3_sidecar
+  r3.io.p3_sidecar_bind_in.valid := Mux(
+    io.materialize_from_binding, r3.io.p3_materialized_sidecar_out.valid, io.p3_sidecar.valid,
+  )
+  r3.io.p3_sidecar_bind_in.bits := Mux(
+    io.materialize_from_binding, r3.io.p3_materialized_sidecar_out.bits, io.p3_sidecar.bits,
+  )
+  r3.io.p3_materialized_sidecar_out.ready := io.materialize_from_binding && r3.io.p3_sidecar_bind_in.ready
+  io.p3_sidecar.ready := !io.materialize_from_binding && r3.io.p3_sidecar_bind_in.ready
   StructuralTieOff.source(r3.io.p3_packed_write_issue_in)
   StructuralTieOff.source(r3.io.p3_packed_write_terminal_in)
   io.m2_member_request <> r3.io.m2_group_member_req_out
@@ -178,6 +195,7 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
   private def init(d: RouteARTL265a2PackReadPublicationHarness): Unit = {
     d.io.mem_init_done.poke(false.B); d.io.r5_allocate.valid.poke(false.B); d.io.r5_allocation_rsp.ready.poke(true.B)
     d.io.p3_claim.valid.poke(false.B); d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B); d.io.pending_payload_binding.valid.poke(false.B)
+    d.io.materialize_from_binding.poke(false.B)
     d.io.pack_read_work.valid.poke(false.B); d.io.p3_sidecar.valid.poke(false.B)
     d.io.m2_member_request.ready.poke(false.B); d.io.m2_member_response.valid.poke(false.B)
     d.io.m2_publication_candidate.ready.poke(false.B); d.io.m2_publication_request.valid.poke(false.B)
@@ -192,18 +210,21 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     d.io.mem_init_done.poke(true.B); d.io.external.init_ack.valid.poke(true.B); d.clock.step(); d.io.external.init_ack.valid.poke(false.B)
   }
 
-  private def waitRequest(d: RouteARTL265a2PackReadPublicationHarness, kind: Int, index: Int): Unit = {
+  private def waitRequest(d: RouteARTL265a2PackReadPublicationHarness, kind: Int, index: Int): (Int, Int) = {
     var waited = 0
     while (!d.io.external.request.valid.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
     require(waited < 64, s"timed out waiting for kind=$kind index=$index")
     d.io.external.request.bits.request_kind.expect(kind.U)
     d.io.external.request.bits.fragment_index.expect(index.U)
+    val requestId = d.io.external.request.bits.transaction_identity.request_id.peek().litValue.toInt
+    val incarnation = d.io.external.request.bits.transaction_identity.incarnation.peek().litValue.toInt
     d.io.external.request.ready.poke(true.B); d.clock.step(); d.io.external.request.ready.poke(false.B)
+    (requestId, incarnation)
   }
 
-  private def response(d: RouteARTL265a2PackReadPublicationHarness, requestId: Int, fragment: Int, last: Boolean, fault: Boolean = false): Unit = {
+  private def response(d: RouteARTL265a2PackReadPublicationHarness, requestId: Int, fragment: Int, last: Boolean, fault: Boolean = false, incarnation: Int = 0): Unit = {
     val rsp = d.io.external.response.bits
-    rsp.transaction_identity.request_id.poke(requestId.U); rsp.transaction_identity.incarnation.poke(0.U)
+    rsp.transaction_identity.request_id.poke(requestId.U); rsp.transaction_identity.incarnation.poke(incarnation.U)
     rsp.fragment_index.poke(fragment.U); rsp.last.poke(last.B); rsp.status.poke((if (fault) p.coreMemoryFaultStatusCode else p.coreMemoryOkStatusCode).U); rsp.data.poke((0x100 + fragment).U)
     d.io.external.response.valid.poke(true.B)
     var waited = 0
@@ -212,7 +233,7 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     d.clock.step(); d.io.external.response.valid.poke(false.B); d.clock.step(2)
   }
 
-  private def admit(d: RouteARTL265a2PackReadPublicationHarness): Unit = {
+  private def admit(d: RouteARTL265a2PackReadPublicationHarness, manualSidecar: Boolean = true): Unit = {
     val a = d.io.r5_allocate.bits; a.layer.poke(0.U); a.kv_head.poke(0.U); a.valid_records.poke(1.U); a.transaction_group_tag.poke(1.U)
     d.io.r5_allocate.valid.poke(true.B); d.io.r5_allocate.ready.expect(true.B); d.clock.step(); d.io.r5_allocate.valid.poke(false.B)
     val c = d.io.p3_claim.bits; c.layer.poke(0.U); c.kv_head.poke(0.U); c.owner.poke(0.U); c.page_ref.page_id.poke(0.U); c.page_ref.generation.poke(0.U); c.valid_records.poke(1.U); c.requires_tail_link.poke(false.B); c.transaction_group_tag.poke(1.U)
@@ -227,8 +248,10 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     d.io.admission_context.valid.poke(true.B); d.io.admission_authority.valid.poke(true.B); d.io.pending_payload_binding.valid.poke(true.B)
     d.io.admission_context.ready.expect(true.B); d.io.pending_payload_binding.ready.expect(true.B); d.clock.step()
     d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B); d.io.pending_payload_binding.valid.poke(false.B)
-    val s = d.io.p3_sidecar.bits; s.layer.poke(0.U); s.stage_generation.poke(1.U); s.record_ordinal.poke(0.U); s.payload_ref.poke(55.U); s.logical_position.poke(0.U)
-    d.io.p3_sidecar.valid.poke(true.B); d.io.p3_sidecar.ready.expect(true.B); d.clock.step(); d.io.p3_sidecar.valid.poke(false.B)
+    if (manualSidecar) {
+      val s = d.io.p3_sidecar.bits; s.layer.poke(0.U); s.stage_generation.poke(1.U); s.record_ordinal.poke(0.U); s.payload_ref.poke(55.U); s.logical_position.poke(0.U)
+      d.io.p3_sidecar.valid.poke(true.B); d.io.p3_sidecar.ready.expect(true.B); d.clock.step(); d.io.p3_sidecar.valid.poke(false.B)
+    }
   }
 
   private def offerPackRead(d: RouteARTL265a2PackReadPublicationHarness): Unit = {
@@ -296,6 +319,44 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       d.io.p3_state.expect(6.U)
       d.io.m2_member_request.valid.expect(false.B)
       d.io.m2_publication_candidate.valid.expect(false.B)
+    }
+  }
+
+  it("materializes an A0-bound record through payload durability before one matching R5 descriptor terminal enables M2") {
+    simulate(new RouteARTL265a2PackReadPublicationHarness(p)) { d =>
+      init(d)
+      d.io.materialize_from_binding.poke(true.B)
+      admit(d, manualSidecar = false)
+
+      // The work and sidecar are now R3-owned feedback facts, not externally
+      // supplied `P3PackReadWork` or sidecar fixtures.
+      waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      (0 until 8).foreach { index => response(d, 3, index, index == 7) }
+      d.io.p3_state.expect(3.U)
+
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      (0 until 8).foreach { index => waitRequest(d, p.coreMemoryWriteDataCode, index) }
+      response(d, 0, 0, last = true)
+      d.io.p3_state.expect(5.U)
+      d.io.m2_member_request.valid.expect(false.B)
+
+      // R5's real append candidate uses the same R2/R1/router path.  Payload
+      // durability alone must not make its aggregate prerequisite visible.
+      // The external-memory response interface only acknowledges transport;
+      // exact append-delivery matching is owned by the existing typed R2/R5
+      // boundary and is covered there, rather than by interpreting an
+      // environment-port `ready` as an architectural identity verdict.
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      val (descriptorRequestId, descriptorIncarnation) = waitRequest(d, p.coreMemoryWriteDataCode, 0)
+      d.io.m2_member_request.valid.expect(false.B)
+
+      response(d, descriptorRequestId, 0, last = true, incarnation = descriptorIncarnation)
+      var waited = 0
+      while (!d.io.m2_member_request.valid.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+      require(waited < 64, "timed out waiting for descriptor-gated M2 member request")
+      d.io.m2_member_request.bits.layer.expect(0.U)
+      d.io.m2_member_request.bits.stage_generation.expect(1.U)
+      d.io.m2_member_request.bits.transaction_group_tag.expect(1.U)
     }
   }
 }

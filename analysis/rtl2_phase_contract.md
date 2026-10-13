@@ -995,6 +995,16 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     historical direct `p3_packed_write_issue`/`terminal` test carriers remain
     inactive. B1 explicitly does not make payload durability publication,
     visibility, or authority.
+30. **RTL3.9-B2 — R5 descriptor-durability functional activation (complete).
+    **
+    [`rtl3_9_b2_descriptor_durability_activation_contract.md`](rtl3_9_b2_descriptor_durability_activation_contract.md)
+    starts with the A0-bound R3 materializer feedback rather than injected
+    work/sidecar, reaches R3 payload durability, then the existing R5 append
+    candidate and its typed R2/R1 terminal.  Only that matching descriptor
+    terminal enables R5's prerequisite and the first R3 M2-member request;
+    stale/mismatched append delivery remains fail-closed at the existing typed
+    R2/R5 boundary.  Publication, visibility,
+    and authority remain deferred to RTL3.9-B3.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,
