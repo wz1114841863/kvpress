@@ -1,0 +1,49 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-b3-atomic-publication-authority-activation-1.0",
+  "status": "complete_functional_atomic_publication_authority_closure",
+  "scope": "functional atomic-publication and authority association only",
+  "owners": {
+    "r3": "sole_publication_and_authority_transition_owner",
+    "r5": "sole_visibility_ack_owner",
+    "r6": "publication_observer_and_authority_acceptor_only",
+    "m2_provider": "functional_replaceable_protocol_provider",
+    "top": "composition_only"
+  },
+  "activation": {
+    "r3_m2_provider_round_trip": true,
+    "r5_visibility_ack": true,
+    "r3_single_metadata_publish_commit": true,
+    "r6_pending_to_packed_acceptance": true,
+    "legacy_duplicate_publication_ack_connection": false
+  },
+  "verification": {
+    "selected_chisel_test": "RouteARTL265a2PackReadPublicationSpec :: closes automatic M2 publication, R5 visibility acknowledgement, and the R6 pending-to-packed handoff in one instance",
+    "selected_chisel_result": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "date": "2026-10-13"
+    },
+    "witness_properties": [
+      "two required M2 member round trips complete",
+      "R5 accepts matching visibility apply before R3 publication acknowledgement",
+      "R3's post-commit observation is holdable under ready-low without a second commit",
+      "R6 accepts the exact entry-0 pending-to-packed authority transition"
+    ]
+  },
+  "disposition": {
+    "physical_memory_or_ppa_claim": false,
+    "numeric_or_model_gpu_claim": false,
+    "new_a4_dse": false,
+    "next_authorized_slice": "RTL3.9 follow-on review; no physical realization is authorized by B3"
+  },
+  "source_sha256": {
+    "analysis/rtl2_phase_contract.md": "bb65dcaa9a68606e2b9da24da5102bd9f77c5d164fa383a11cbfc980ee106ed4",
+    "analysis/rtl3_9_b3_atomic_publication_authority_activation_contract.md": "0b67722246ddc9cb49b86ab6b2c3de26ef60f22dab0a79522dc7c48d037731ab",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "3203e2cb583cf18701af901675f1b7fab3cab0a67fcc4abc66d3eed7270652a6",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "f1f49381febfec4c0eb9fcb98f6734758c6808f612830a956c0f8ced950dd901",
+    "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala": "65b2d369059d56f8998078974851234d7e00a9d702da85c5a053249be0e97bc8",
+    "tests/test_rtl3_9_b3_atomic_publication_authority_activation.py": "8584932b91f3e49591a6731e6cf8355bf1b219cc8ea92e416a5aa6a8683831ab",
+    "tools/validate_rtl3_9_b3_atomic_publication_authority_activation.py": "9bd940a610d82e2b43c20a8e5d0659f7a47100ae64a519ad64a88aa2206050f6"
+  }
+}

@@ -1005,6 +1005,20 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     stale/mismatched append delivery remains fail-closed at the existing typed
     R2/R5 boundary.  Publication, visibility,
     and authority remain deferred to RTL3.9-B3.
+31. **RTL3.9-B3 — atomic publication / authority functional closure
+    (complete).**
+    [`rtl3_9_b3_atomic_publication_authority_activation_contract.md`](rtl3_9_b3_atomic_publication_authority_activation_contract.md)
+    activates no new memory or scheduler owner.  In one functional instance it
+    composes the existing R3 M2-member and publication-candidate/request
+    protocol with the existing R5 visibility acknowledgement and the existing
+    R6 observer/acceptor of R3's sole `pending -> packed` authority fact.
+    Publication stays R3's unique linearization point: only the matching
+    `Published` acknowledgement after R5 visibility may release the immutable
+    post-commit observation and authority transition.  The R6 connection is
+    observational/accepting only; it neither issues a second publication nor
+    retains publication membership.  This is functional no-model control/dataflow
+    evidence, not a physical M2/SRAM/HBM implementation, timing, throughput,
+    numeric, model/GPU, or PPA result.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,
