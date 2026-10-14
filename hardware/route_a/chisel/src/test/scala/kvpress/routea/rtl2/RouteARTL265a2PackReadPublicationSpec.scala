@@ -2,8 +2,8 @@ package kvpress.routea.rtl2
 
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
-import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAExclusiveP3PendingIngress, RouteAReadEndpointDemultiplexer, RouteAReadIssueCandidateAdapter, RouteAR2ReadIngressMerge, RouteAR2WriteIngressMerge, RouteAR3PackReadEndpoint, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
-import kvpress.routea.incremental.{RouteALifecycleAdapter, RouteAM2P3Wrapper, RouteAM2ReferenceProtocolProvider, RouteAPageManager}
+import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAExclusiveP3PendingIngress, RouteAReadEndpointDemultiplexer, RouteAReadIssueCandidateAdapter, RouteAR2ReadIngressMerge, RouteAR2WriteIngressMerge, RouteAR3PackReadEndpoint, RouteAS2GqaSourceWrapper, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
+import kvpress.routea.incremental.{RouteALifecycleAdapter, RouteAM2P3Wrapper, RouteAM2ReferenceProtocolProvider, RouteAPackedReadActivationBinder, RouteAPackedReadAssociationOwner, RouteAPageManager, RouteASourceCompletionPlanActivationFork}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteAM2GroupMember, RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
@@ -45,6 +45,15 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
     val authority_transition = RouteAChannels.r6_authority_transition(p)
     val publication_commit = RouteAChannels.publication_commit_observation(p)
     val publication_member = RouteAChannels.publication_member_observation(p)
+    // RTL3.9-C1 test-only activation mode.  It reuses only the production-top
+    // owner-to-owner connections from R6's accepted plan through C0/R5/S2 to
+    // the existing association owner; it introduces no source selection.
+    val c1_demand_activation_mode = Input(Bool())
+    val c1_source_completion_plan = Flipped(RouteAChannels.source_completion_plan(p))
+    val c1_page_ready_fire = Output(Bool())
+    val c1_demand_fire = Output(Bool())
+    val c1_association_active = Output(Bool())
+    val c1_registry_allocate = RouteAChannels.delivery_context_allocate(p)
     val publication_ack = RouteAChannels.metadata_publish_ack(p)
     val r5_visibility_ack_fire = Output(Bool())
     val m2_member_request_fire = Output(Bool())
@@ -74,10 +83,12 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
 
   val r3 = Module(new RouteAM2P3Wrapper(p))
   val r5 = Module(new RouteAPageManager(p))
+  val s2 = Module(new RouteAS2GqaSourceWrapper(p))
   val m2Reference = Module(new RouteAM2ReferenceProtocolProvider(p))
   val lifecycle = Module(new RouteALifecycleAdapter(p))
-  StructuralTieOff.source(r5.io.descriptor_location_request_in)
-  StructuralTieOff.sink(r5.io.descriptor_location_grant_out)
+  val c1PlanFork = Module(new RouteASourceCompletionPlanActivationFork(p))
+  val c1Binder = Module(new RouteAPackedReadActivationBinder(p))
+  val c1Association = Module(new RouteAPackedReadAssociationOwner(p))
   val r2 = Module(new RouteACoreSideArbiter(p))
   val r1 = Module(new RouteACoreMemIfV1(p))
   val issueAdapter = Module(new RouteAReadIssueCandidateAdapter(p))
@@ -134,6 +145,47 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   r5.io.reclaim_candidate_out <> bridge.io.r5_reclaim_in
   r5.io.reclaim_delivery_in <> router.io.r5_reclaim_out
   io.r5_status <> r5.io.component_status_out
+
+  // C1 retains the existing R5/S2 owner-local request/grant rules.  Every
+  // non-lease S2 service carrier stays inert: C2 alone may activate reads.
+  s2.io.mem_init_done := io.mem_init_done
+  s2.io.drain_collection_enable := false.B
+  s2.io.s2_observe_slot := 1.U
+  StructuralTieOff.source(s2.io.service_req_in)
+  StructuralTieOff.source(s2.io.s2_fill_open_in)
+  StructuralTieOff.source(s2.io.s2_payload_fragment_in)
+  StructuralTieOff.source(s2.io.s2_sidecar_fragment_in)
+  StructuralTieOff.source(s2.io.s2_fill_terminal_in)
+  StructuralTieOff.source(s2.io.s2_sidecar_complete_in)
+  StructuralTieOff.source(s2.io.s2_payload_read_req_in)
+  StructuralTieOff.sink(s2.io.s2_payload_read_rsp_out)
+  StructuralTieOff.source(s2.io.s2_sidecar_read_req_in)
+  StructuralTieOff.sink(s2.io.s2_sidecar_read_rsp_out)
+  StructuralTieOff.source(s2.io.gqa_consumer_commit_in)
+  StructuralTieOff.sink(s2.io.s2_release_out)
+  StructuralTieOff.sink(s2.io.component_status_out)
+
+  c1Binder.io.mem_init_done := io.mem_init_done
+  r5.io.descriptor_location_request_in <> c1Binder.io.descriptor_location_request_out
+  c1Binder.io.descriptor_grant_in <> r5.io.descriptor_location_grant_out
+  s2.io.s2_fill_lease_request_in <> c1Binder.io.s2_fill_lease_request_out
+  c1Binder.io.s2_fill_lease_in <> s2.io.s2_fill_lease_out
+  c1Association.io.mem_init_done := io.mem_init_done
+  c1Association.io.demand_in <> c1Binder.io.demand_out
+  c1Association.io.publication_authorization_in <> c1Binder.io.publication_authorization_out
+  c1Association.io.descriptor_grant_in <> c1Binder.io.descriptor_grant_out
+  c1Association.io.s2_fill_lease_in <> c1Binder.io.s2_fill_lease_out
+  c1Association.io.invalidation_in.valid := false.B
+  c1Association.io.invalidation_in.bits := 0.U.asTypeOf(new PackedReadInvalidation)
+  io.c1_registry_allocate <> c1Association.io.registry_allocate_out
+  c1Association.io.registry_allocation_ack_in.valid := false.B
+  c1Association.io.registry_allocation_ack_in.bits := 0.U.asTypeOf(new DeliveryContextAllocationAck(p))
+  StructuralTieOff.sink(c1Association.io.packed_s2_work_out)
+  StructuralTieOff.sink(c1Association.io.sidecar_read_work_out)
+  StructuralTieOff.source(c1Association.io.terminal_in)
+  StructuralTieOff.sink(c1Association.io.release_observation_out)
+  io.c1_demand_fire := c1Binder.io.demand_out.fire
+  io.c1_association_active := c1Association.io.association_active
 
   readIngress.io.r3_pack_read_in <> bridge.io.r3_pack_read_out
   StructuralTieOff.source(readIngress.io.r3_direct_pending_in)
@@ -227,8 +279,12 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   StructuralTieOff.sink(lifecycle.io.authority_transition_out)
   StructuralTieOff.sink(lifecycle.io.admission_context_out)
   StructuralTieOff.source(lifecycle.io.merge_ready_in)
-  StructuralTieOff.source(lifecycle.io.source_completion_plan_in)
-  lifecycle.io.source_completion_plan_copy_out.ready := true.B
+  lifecycle.io.source_completion_plan_in.valid := io.c1_demand_activation_mode && io.c1_source_completion_plan.valid
+  lifecycle.io.source_completion_plan_in.bits := io.c1_source_completion_plan.bits
+  io.c1_source_completion_plan.ready := io.c1_demand_activation_mode && lifecycle.io.source_completion_plan_in.ready
+  c1PlanFork.io.accepted_plan_in <> lifecycle.io.source_completion_plan_copy_out
+  StructuralTieOff.sink(c1PlanFork.io.packet_plan_out)
+  c1Binder.io.accepted_plan_in <> c1PlanFork.io.packed_activation_plan_out
   StructuralTieOff.source(lifecycle.io.hot_source_release_in)
   StructuralTieOff.source(lifecycle.io.pending_source_release_in)
   StructuralTieOff.source(lifecycle.io.packed_source_release_in)
@@ -260,8 +316,19 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   io.r6_authority_transition_fire := lifecycle.io.authority_transition_in.fire
   io.r6_authority_transition := r3.io.authority_transition_out.bits
   io.publication_commit <> r3.io.publication_commit_observation
-  io.publication_member <> r3.io.publication_member_observation
-  StructuralTieOff.sink(r3.io.post_r6_packed_page_ready_observation)
+  io.publication_member.valid := !io.c1_demand_activation_mode && r3.io.publication_member_observation.valid
+  io.publication_member.bits := r3.io.publication_member_observation.bits
+  c1Binder.io.publication_member_in.valid := io.c1_demand_activation_mode && r3.io.publication_member_observation.valid
+  c1Binder.io.publication_member_in.bits := r3.io.publication_member_observation.bits
+  r3.io.publication_member_observation.ready := Mux(
+    io.c1_demand_activation_mode, c1Binder.io.publication_member_in.ready, io.publication_member.ready,
+  )
+  c1Binder.io.post_r6_page_ready_in.valid := io.c1_demand_activation_mode && r3.io.post_r6_packed_page_ready_observation.valid
+  c1Binder.io.post_r6_page_ready_in.bits := r3.io.post_r6_packed_page_ready_observation.bits
+  r3.io.post_r6_packed_page_ready_observation.ready := Mux(
+    io.c1_demand_activation_mode, c1Binder.io.post_r6_page_ready_in.ready, true.B,
+  )
+  io.c1_page_ready_fire := r3.io.post_r6_packed_page_ready_observation.fire
   io.r3_status <> r3.io.component_status_out
   r3.io.p3_observe_layer := 0.U
   io.p3_state := r3.io.p3_observe_state
@@ -289,6 +356,15 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     d.io.p3_claim.valid.poke(false.B); d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B); d.io.pending_payload_binding.valid.poke(false.B)
     d.io.materialize_from_binding.poke(false.B)
     d.io.automatic_publication_owner_mode.poke(false.B)
+    d.io.c1_demand_activation_mode.poke(false.B)
+    d.io.c1_source_completion_plan.valid.poke(false.B)
+    val c1Plan = d.io.c1_source_completion_plan.bits
+    c1Plan.transaction_identity.request_id.poke(0.U); c1Plan.transaction_identity.incarnation.poke(0.U)
+    c1Plan.source_presence.poke(0.U)
+    Seq(c1Plan.hot_instance, c1Plan.pending_instance, c1Plan.packed_instance).foreach { instance =>
+      instance.source_kind.poke(0.U); instance.instance_coordinate.poke(0.U); instance.generation.poke(0.U)
+    }
+    d.io.c1_registry_allocate.ready.poke(false.B)
     d.io.pack_read_work.valid.poke(false.B); d.io.p3_sidecar.valid.poke(false.B)
     d.io.m2_member_request.ready.poke(false.B); d.io.m2_member_response.valid.poke(false.B)
     d.io.m2_publication_candidate.ready.poke(false.B); d.io.m2_publication_request.valid.poke(false.B)
@@ -323,6 +399,31 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     d.io.r6_frontend_lifecycle_req.valid.poke(true.B); d.io.r6_frontend_lifecycle_req.ready.expect(true.B)
     d.clock.step(); d.io.r6_frontend_lifecycle_req.valid.poke(false.B)
     d.io.r6_publish_ack_ready.expect(true.B)
+  }
+
+  private def registerC1PackedAttention(d: RouteARTL265a2PackReadPublicationHarness): Unit = {
+    val frontend = d.io.r6_frontend_lifecycle_req.bits
+    frontend.event_kind.poke(p.r6.attentionServiceEventCode.U); frontend.session_id.poke(false.B); frontend.context_tokens.poke(0.U)
+    frontend.entry_id.poke(0.U); frontend.layer.poke(0.U); frontend.kv_head.poke(0.U); frontend.logical_position.poke(0.U)
+    frontend.payload_ref.poke(0.U); frontend.disposition.poke(false.B)
+    frontend.transaction_identity.request_id.poke(3.U); frontend.transaction_identity.incarnation.poke(0.U)
+    frontend.admission_group_tag.poke(0.U); frontend.admission_member_ordinal.poke(0.U); frontend.admission_group_valid_records.poke(0.U)
+    d.io.r6_frontend_lifecycle_req.valid.poke(true.B); d.io.r6_frontend_lifecycle_req.ready.expect(true.B)
+    d.clock.step(); d.io.r6_frontend_lifecycle_req.valid.poke(false.B)
+  }
+
+  private def sendC1PackedPlan(d: RouteARTL265a2PackReadPublicationHarness): Unit = {
+    val plan = d.io.c1_source_completion_plan.bits
+    plan.transaction_identity.request_id.poke(3.U); plan.transaction_identity.incarnation.poke(0.U)
+    plan.source_presence.poke(4.U)
+    plan.hot_instance.source_kind.poke(RouteASourceKind.Hot.U); plan.hot_instance.instance_coordinate.poke(0.U); plan.hot_instance.generation.poke(0.U)
+    plan.pending_instance.source_kind.poke(RouteASourceKind.Pending.U); plan.pending_instance.instance_coordinate.poke(0.U); plan.pending_instance.generation.poke(0.U)
+    plan.packed_instance.source_kind.poke(RouteASourceKind.Packed.U); plan.packed_instance.instance_coordinate.poke(1.U); plan.packed_instance.generation.poke(1.U)
+    d.io.c1_source_completion_plan.valid.poke(true.B)
+    var waited = 0
+    while (!d.io.c1_source_completion_plan.ready.peek().litToBoolean && waited < 32) { d.clock.step(); waited += 1 }
+    require(waited < 32, "timed out waiting for the accepted R6 packed plan")
+    d.clock.step(); d.io.c1_source_completion_plan.valid.poke(false.B)
   }
 
   private def waitRequest(d: RouteARTL265a2PackReadPublicationHarness, kind: Int, index: Int): (Int, Int) = {
@@ -553,6 +654,54 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       d.io.r6_authority_transition.transaction_group_tag.expect(1.U)
       d.clock.step()
       d.io.p3_state.expect(0.U)
+    }
+  }
+
+  it("activates exactly one post-R6 packed demand through R5 and S2 owners without entering C2 read transport") {
+    simulate(new RouteARTL265a2PackReadPublicationHarness(p)) { d =>
+      init(d)
+      d.io.materialize_from_binding.poke(true.B)
+      d.io.automatic_publication_owner_mode.poke(true.B)
+      d.io.c1_demand_activation_mode.poke(true.B)
+      d.io.publication_commit.ready.poke(true.B)
+      initializeR6ForPublication(d)
+      registerC1PackedAttention(d)
+      sendC1PackedPlan(d)
+      admit(d, manualSidecar = false)
+
+      waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      (0 until 8).foreach { index => response(d, 3, index, index == 7) }
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      (0 until 8).foreach { index => waitRequest(d, p.coreMemoryWriteDataCode, index) }
+      response(d, 0, 0, last = true)
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      val (descriptorRequestId, descriptorIncarnation) = waitRequest(d, p.coreMemoryWriteDataCode, 0)
+      response(d, descriptorRequestId, 0, last = true, incarnation = descriptorIncarnation)
+
+      var waited = 0
+      var pageReadyFires = 0
+      var demandFires = 0
+      while (!d.io.c1_registry_allocate.valid.peek().litToBoolean && waited < 128) {
+        if (d.io.c1_page_ready_fire.peek().litToBoolean) { pageReadyFires += 1 }
+        if (d.io.c1_demand_fire.peek().litToBoolean) { demandFires += 1 }
+        d.clock.step(); waited += 1
+      }
+      require(waited < 128, "timed out waiting for C1 association allocation after post-R6 readiness")
+      if (d.io.c1_page_ready_fire.peek().litToBoolean) { pageReadyFires += 1 }
+      if (d.io.c1_demand_fire.peek().litToBoolean) { demandFires += 1 }
+      assert(pageReadyFires == 1, s"expected one C0 page-ready fire, got $pageReadyFires")
+      assert(demandFires == 1, s"expected one C1 demand fire, got $demandFires")
+      d.io.c1_association_active.expect(true.B)
+      d.io.c1_registry_allocate.bits.candidate_class.expect(p.r2S2PackedClassCode.U)
+      d.io.c1_registry_allocate.bits.transaction_identity.request_id.expect(3.U)
+      d.io.c1_registry_allocate.bits.target_kind.expect(RouteADeliveryTargetKind.S2PackedFill.U)
+      d.io.c1_registry_allocate.bits.target_descriptor.descriptor_page_ref.page_id.expect(0.U)
+      d.io.c1_registry_allocate.bits.target_descriptor.s2_slot.expect(1.U)
+      d.io.c1_registry_allocate.bits.target_descriptor.requires_sidecar.expect(true.B)
+      // C1 stops before registry acknowledgement/R2/R1 read issue: holding
+      // this boundary low proves no C2 transport work is manufactured here.
+      d.io.c1_registry_allocate.ready.poke(false.B); d.clock.step()
+      d.io.c1_registry_allocate.valid.expect(true.B)
     }
   }
 }

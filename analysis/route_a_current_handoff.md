@@ -1,6 +1,6 @@
 # Route-A current handoff — RTL3 functional closure
 
-**Status date:** 2026-10-13
+**Status date:** 2026-10-14
 **Repository state:** `research/kvzap-latest`, implementation handoff after
 `c5ccda6 rtl3: close atomic publication authority`.
 
@@ -107,6 +107,22 @@ post-R6 summary.  This is conservative functional flow control because the
 member carrier has no `PageRef`; it is not a second authority, admission,
 selection, or scheduling mechanism.
 
+## RTL3.9-C1 — post-publication demand activation (complete functional witness)
+
+C1 composes one actual R6-accepted packed-present source-completion plan with
+the C0 post-R6 page-ready observation, R5's visible descriptor grant, and
+S2's lease through the existing binder and packed-read association owner.  It
+observes one exact held registry-allocation request, without modifying the
+production top or creating a top/testbench authority, descriptor, plan, or
+scheduler producer.  The exact contract is
+[`rtl3_9_c1_post_publication_demand_activation_contract.md`](rtl3_9_c1_post_publication_demand_activation_contract.md).
+
+The C1 same-instance Chisel witness passed on 2026-10-14 (one test, zero
+failures/errors).  It stops before registry acknowledgement, so it activates
+neither C2 typed R2/R1 transport nor functional-memory read data, payload or
+sidecar deposit, S2 READY, source service, partial/R4 boundary, terminal,
+retirement, or reclaim.
+
 The C0 no-model preflight, binder directed suite, and R3 all-member/ready-low
 directed test passed on 2026-10-14.  B3 provenance is replayed from its frozen
 commit rather than mutable live source hashes; see
@@ -117,20 +133,16 @@ commit rather than mutable live source hashes; see
 The detailed planned wording is in `rtl2_phase_contract.md`. Work should be
 split so that each step has one owner and a reviewable failure boundary:
 
-1. **C1 — post-publication demand activation.** Activate only the owner-correct
-   packed demand/lease path in the composed top. The top may compose facts but
-   may not manufacture a source plan, descriptor, authority, or scheduler
-   decision.
-3. **C2 — functional read-to-S2 closure.** Use the existing typed R2/R1 read
+1. **C2 — functional read-to-S2 closure.** Use the existing typed R2/R1 read
    and functional-memory environment to deliver the published payload and its
    sidecar to S2. Cover ready-low, stale/mismatched identity/generation,
    terminal fault, and reset; no failed read may make S2 READY.
-4. **C3 — lifecycle continuation.** Connect S2's exact source service and
+2. **C3 — lifecycle continuation.** Connect S2's exact source service and
    four consumer completions to the already frozen outer partial-provider/R4
    functional boundary, then to R6 terminal, release, retire, and matching
    reclaim. Do not assign `(m,l,o)` computation to an S2/direct/hot storage
    owner.
-4. **C4 — event/scoreboard and cross-owner review.** Require a same-instance
+3. **C4 — event/scoreboard and cross-owner review.** Require a same-instance
    success path plus bounded legal stall, stale/mismatch, fault, and reset
    cases. Replay only accepted architectural events through the existing
    scoreboard contract. Request an RTL3 completion review only after C0--C3

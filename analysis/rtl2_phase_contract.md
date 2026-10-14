@@ -1032,21 +1032,30 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     composition-only.  C0 delays only first use and changes neither pruning,
     admission, 64-token pages, M2/P3, R2 scheduling, GQA legality, nor the
     single publication boundary.
-33. **RTL3.9-C1--C4 — remaining post-publication packed first-use closure
+33. **RTL3.9-C1 — post-publication packed-demand activation (complete,
+    functional witness).**
+    [`rtl3_9_c1_post_publication_demand_activation_contract.md`](rtl3_9_c1_post_publication_demand_activation_contract.md)
+    composes one actual R6-accepted packed-present plan with C0's all-member
+    post-R6 page-ready observation, existing R5 descriptor visibility, and
+    existing S2 lease.  The unchanged binder/association owners form and hold
+    one exact registry-allocation request.  The test-only same-instance
+    witness neither changes the production top nor acknowledges that registry
+    request: R2/R1 reads, functional-memory response, S2 deposit/READY,
+    source service, R4, terminal, and reclaim remain inactive.
+34. **RTL3.9-C2--C4 — remaining post-publication packed first-use closure
     (planned; implementation requires separate approval).** This is not a new
     scheduler or memory realization. It must prove in one owner-correct
-    functional path that the post-C0 R5-visible descriptor and packed authority
-    create the already-authorized packed-read association/demand; that the existing
-    typed R2/R1 read and permitted functional memory environment supply the
-    exact payload/sidecar to S2; and that matching S2 source service reaches
-    the already-frozen outer partial-provider/R4 boundary, R6 terminal, and
-    R5/R6 retirement/reclaim sequence. The plan must separately cover legal
-    stall, stale/mismatch/fault, reset, event-scoreboard replay, and the
-    no-repeat/no-early-read invariants. It may retain the already-authorized
-    functional memory, partial-provider, and R4 reference **environment**
-    boundaries, but may not turn any of them into an HBM controller, SRAM
-    macro, numeric pipeline, schedule, timing, or PPA claim. A dedicated
-    RTL3 completion review follows only after this path is closed.
+    functional path that the existing typed R2/R1 read and permitted functional
+    memory environment supply the exact payload/sidecar to S2; and that
+    matching S2 source service reaches the already-frozen outer
+    partial-provider/R4 boundary, R6 terminal, and R5/R6 retirement/reclaim
+    sequence. The plan must separately cover legal stall, stale/mismatch/fault,
+    reset, event-scoreboard replay, and the no-repeat/no-early-read invariants.
+    It may retain the already-authorized functional memory, partial-provider,
+    and R4 reference **environment** boundaries, but may not turn any of them
+    into an HBM controller, SRAM macro, numeric pipeline, schedule, timing, or
+    PPA claim. A dedicated RTL3 completion review follows only after this path
+    is closed.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,
