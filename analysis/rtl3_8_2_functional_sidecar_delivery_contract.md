@@ -87,6 +87,18 @@ or the Route-A choice.
 
 ## Directed checks
 
+### Historical source provenance
+
+The immutable RTL3.8.2 manifest remains byte-for-byte unchanged.  Its
+`source_sha256` values name the completed I4 source snapshot at
+`54f98ca0e64802315e3c6c3f3371c3e604d8e132`, recorded in
+[`rtl3_8_2_functional_sidecar_delivery_historical_provenance.json`](rtl3_8_2_functional_sidecar_delivery_historical_provenance.json).
+The validator replays each hash through `git show` at that commit and requires
+the commit to remain an ancestor of `HEAD`.  It deliberately does not hash
+mutable descendants: subsequent valid closures update shared interfaces, the
+living phase ledger, and test-only witnesses.  This replay certifies only the
+historical I4 closure, not C0/C1/C2 behavior or physical implementation.
+
 ```bash
 cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAFunctionalSidecarDeliverySpec'
 cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.rtl3.RouteAPackedReadAssociationOwnerSpec -- -z "joins arbitrary-order"'
