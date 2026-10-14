@@ -2,8 +2,8 @@ package kvpress.routea.rtl2
 
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
-import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAExclusiveP3PendingIngress, RouteAReadEndpointDemultiplexer, RouteAReadIssueCandidateAdapter, RouteAPackedS2ReadEndpoint, RouteAPackedS2ReadProducer, RouteAR2ReadIngressMerge, RouteAR2WriteIngressMerge, RouteAR3PackReadEndpoint, RouteAS2GqaSourceWrapper, RouteAS2PackedSidecarReadEndpoint, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
-import kvpress.routea.incremental.{RouteAExclusivePackedS2ReadIngress, RouteAExclusiveS2FillTerminalIngress, RouteAFunctionalSidecarDeliveryAdapter, RouteALifecycleAdapter, RouteAM2P3Wrapper, RouteAM2ReferenceProtocolProvider, RouteAPackedAllocationOwnerMux, RouteAPackedReadActivationBinder, RouteAPackedReadAssociationOwner, RouteAPackedReadTerminalBridge, RouteAPageManager, RouteASourceCompletionPlanActivationFork}
+import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAExclusiveP3PendingIngress, RouteAFunctionalPartialProviderBoundary, RouteAFunctionalR4ReferenceBoundary, RouteAReadEndpointDemultiplexer, RouteAReadIssueCandidateAdapter, RouteAPackedS2ReadEndpoint, RouteAPackedS2ReadProducer, RouteAR2ReadIngressMerge, RouteAR2WriteIngressMerge, RouteAR3PackReadEndpoint, RouteAS2GqaSourceWrapper, RouteAS2PackedSidecarReadEndpoint, RouteASourceCommitDemultiplexer, RouteASourceServicePacketAdapter, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
+import kvpress.routea.incremental.{RouteAExclusivePackedS2ReadIngress, RouteAExclusiveS2FillTerminalIngress, RouteAFunctionalSidecarDeliveryAdapter, RouteALifecycleAdapter, RouteAM2P3Wrapper, RouteAM2ReferenceProtocolProvider, RouteAMergeBoundary, RouteAPackedAllocationOwnerMux, RouteAPackedReadActivationBinder, RouteAPackedReadAssociationOwner, RouteAPackedReadTerminalBridge, RouteAPageManager, RouteASourceCompletionPlanActivationFork}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteAM2GroupMember, RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
@@ -52,6 +52,16 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
     // C2 extends that accepted association only after the existing registry
     // acknowledges it.  Low preserves C1's held-allocation predecessor test.
     val c2_read_activation_mode = Input(Bool())
+    // C3a consumes only the existing accepted plan and S2 READY observation.
+    // Its partial/R4 carriers remain named outer functional environments.
+    val c3_terminal_activation_mode = Input(Bool())
+    val c3_packed_offer = Flipped(RouteAChannels.source_service_partial_offer(p))
+    val c3_packed_fragment = Flipped(RouteAChannels.source_service_value_fragment(p))
+    val c3_r4_result = Flipped(RouteAChannels.r4_result_stub)
+    val c3_r4_numeric_fault = Flipped(RouteAChannels.r4_numeric_fault)
+    val c3_accepted_packet = RouteAChannels.r4_accepted_partial_packet(p)
+    val c3_merge_work = RouteAChannels.merge_req
+    val c3_attention_terminal = RouteAChannels.attention_terminal_rsp
     val c1_source_completion_plan = Flipped(RouteAChannels.source_completion_plan(p))
     val c1_page_ready_fire = Output(Bool())
     val c1_demand_fire = Output(Bool())
@@ -103,6 +113,11 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   val c2PayloadEndpoint = Module(new RouteAPackedS2ReadEndpoint(p))
   val c2SidecarEndpoint = Module(new RouteAS2PackedSidecarReadEndpoint(p))
   val c2TerminalIngress = Module(new RouteAExclusiveS2FillTerminalIngress(p))
+  val c3PacketAdapter = Module(new RouteASourceServicePacketAdapter(p))
+  val c3PartialProvider = Module(new RouteAFunctionalPartialProviderBoundary(p))
+  val c3Merge = Module(new RouteAMergeBoundary(p))
+  val c3R4Reference = Module(new RouteAFunctionalR4ReferenceBoundary(p))
+  val c3CommitDemux = Module(new RouteASourceCommitDemultiplexer(p))
   val r2 = Module(new RouteACoreSideArbiter(p))
   val r1 = Module(new RouteACoreMemIfV1(p))
   val issueAdapter = Module(new RouteAReadIssueCandidateAdapter(p))
@@ -165,7 +180,9 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   s2.io.mem_init_done := io.mem_init_done
   s2.io.drain_collection_enable := false.B
   s2.io.s2_observe_slot := 1.U
-  StructuralTieOff.source(s2.io.service_req_in)
+  s2.io.service_req_in.valid := io.c3_terminal_activation_mode && lifecycle.io.s2_service_req.valid
+  s2.io.service_req_in.bits := lifecycle.io.s2_service_req.bits
+  lifecycle.io.s2_service_req.ready := io.c3_terminal_activation_mode && s2.io.service_req_in.ready
   s2.io.s2_fill_open_in.valid := io.c2_read_activation_mode && c2PayloadProducer.io.s2_fill_open_out.valid
   s2.io.s2_fill_open_in.bits := c2PayloadProducer.io.s2_fill_open_out.bits
   c2PayloadProducer.io.s2_fill_open_out.ready := io.c2_read_activation_mode && s2.io.s2_fill_open_in.ready
@@ -345,7 +362,9 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   lifecycle.io.frontend_lifecycle_req <> io.r6_frontend_lifecycle_req
   lifecycle.io.component_status_in <> io.r6_component_status_in
   StructuralTieOff.source(lifecycle.io.runtime_retire_req)
-  StructuralTieOff.sink(lifecycle.io.attention_terminal_rsp)
+  io.c3_attention_terminal.valid := io.c3_terminal_activation_mode && lifecycle.io.attention_terminal_rsp.valid
+  io.c3_attention_terminal.bits := lifecycle.io.attention_terminal_rsp.bits
+  lifecycle.io.attention_terminal_rsp.ready := Mux(io.c3_terminal_activation_mode, io.c3_attention_terminal.ready, true.B)
   StructuralTieOff.sink(lifecycle.io.session_retire_ack)
   lifecycle.io.r5_reclaim_complete_in := false.B
   StructuralTieOff.sink(lifecycle.io.hot_control_out)
@@ -356,17 +375,67 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   lifecycle.io.source_completion_plan_in.bits := io.c1_source_completion_plan.bits
   io.c1_source_completion_plan.ready := io.c1_demand_activation_mode && lifecycle.io.source_completion_plan_in.ready
   c1PlanFork.io.accepted_plan_in <> lifecycle.io.source_completion_plan_copy_out
-  StructuralTieOff.sink(c1PlanFork.io.packet_plan_out)
   c1Binder.io.accepted_plan_in <> c1PlanFork.io.packed_activation_plan_out
   StructuralTieOff.source(lifecycle.io.hot_source_release_in)
   StructuralTieOff.source(lifecycle.io.pending_source_release_in)
-  StructuralTieOff.source(lifecycle.io.packed_source_release_in)
-  StructuralTieOff.sink(lifecycle.io.s2_service_req)
+  lifecycle.io.packed_source_release_in.valid := io.c3_terminal_activation_mode && s2.io.s2_release_out.valid
+  lifecycle.io.packed_source_release_in.bits := s2.io.s2_release_out.bits
+  s2.io.s2_release_out.ready := io.c3_terminal_activation_mode && lifecycle.io.packed_source_release_in.ready
+  c3PacketAdapter.io.accepted_plan_in.valid := io.c3_terminal_activation_mode && c1PlanFork.io.packet_plan_out.valid
+  c3PacketAdapter.io.accepted_plan_in.bits := c1PlanFork.io.packet_plan_out.bits
+  c1PlanFork.io.packet_plan_out.ready := Mux(io.c3_terminal_activation_mode, c3PacketAdapter.io.accepted_plan_in.ready, true.B)
   StructuralTieOff.sink(lifecycle.io.direct_pending_open)
-  StructuralTieOff.sink(lifecycle.io.merge_req)
-  StructuralTieOff.source(lifecycle.io.merge_terminal_in)
+  c3Merge.io.merge_req_in.valid := io.c3_terminal_activation_mode && lifecycle.io.merge_req.valid
+  c3Merge.io.merge_req_in.bits := lifecycle.io.merge_req.bits
+  lifecycle.io.merge_req.ready := io.c3_terminal_activation_mode && c3Merge.io.merge_req_in.ready
+  lifecycle.io.merge_terminal_in.valid := io.c3_terminal_activation_mode && c3Merge.io.merge_rsp_or_numeric_fault.valid
+  lifecycle.io.merge_terminal_in.bits := c3Merge.io.merge_rsp_or_numeric_fault.bits
+  c3Merge.io.merge_rsp_or_numeric_fault.ready := io.c3_terminal_activation_mode && lifecycle.io.merge_terminal_in.ready
   StructuralTieOff.sink(lifecycle.io.metadata_publish_req)
   lifecycle.io.reclaim_permit_out.ready := true.B
+
+  // C3a mirrors the existing production source-service/R4 composition for its
+  // packed-only plan.  It does not generate a partial, result, source release,
+  // or terminal: those remain with the named outer environment and child owners.
+  c3PacketAdapter.io.hot_available_in.valid := false.B
+  c3PacketAdapter.io.hot_available_in.transaction_identity := 0.U.asTypeOf(new TransactionIdentity)
+  c3PacketAdapter.io.hot_available_in.source_instance := 0.U.asTypeOf(new SourceInstance(p))
+  c3PacketAdapter.io.pending_available_in.valid := false.B
+  c3PacketAdapter.io.pending_available_in.transaction_identity := 0.U.asTypeOf(new TransactionIdentity)
+  c3PacketAdapter.io.pending_available_in.source_instance := 0.U.asTypeOf(new SourceInstance(p))
+  c3PacketAdapter.io.packed_available_in.valid := s2.io.s2_observe_available
+  c3PacketAdapter.io.packed_available_in.transaction_identity := s2.io.s2_observe_identity
+  c3PacketAdapter.io.packed_available_in.source_instance := s2.io.s2_observe_instance
+  StructuralTieOff.source(c3PartialProvider.io.hot_offer_in)
+  StructuralTieOff.source(c3PartialProvider.io.pending_offer_in)
+  c3PartialProvider.io.packed_offer_in <> io.c3_packed_offer
+  StructuralTieOff.source(c3PartialProvider.io.hot_fragment_in)
+  StructuralTieOff.source(c3PartialProvider.io.pending_fragment_in)
+  c3PartialProvider.io.packed_fragment_in <> io.c3_packed_fragment
+  c3PacketAdapter.io.hot_offer_in <> c3PartialProvider.io.hot_offer_out
+  c3PacketAdapter.io.pending_offer_in <> c3PartialProvider.io.pending_offer_out
+  c3PacketAdapter.io.packed_offer_in <> c3PartialProvider.io.packed_offer_out
+  c3PacketAdapter.io.hot_fragment_in <> c3PartialProvider.io.hot_fragment_out
+  c3PacketAdapter.io.pending_fragment_in <> c3PartialProvider.io.pending_fragment_out
+  c3PacketAdapter.io.packed_fragment_in <> c3PartialProvider.io.packed_fragment_out
+  c3Merge.io.drain_collection_enable := false.B
+  StructuralTieOff.source(c3Merge.io.source_partial_in)
+  c3Merge.io.r4_partial_header_in <> c3PacketAdapter.io.r4_partial_header_out
+  c3Merge.io.r4_source_instance_in <> c3PacketAdapter.io.r4_source_instance_out
+  c3Merge.io.r4_value_fragment_in <> c3PacketAdapter.io.r4_value_fragment_out
+  c3R4Reference.io.accepted_packet_in <> c3Merge.io.r4_accepted_partial_packet_out
+  c3R4Reference.io.active_merge_observation_in := c3Merge.io.r4_active_merge_observation
+  io.c3_accepted_packet <> c3R4Reference.io.accepted_packet_out
+  io.c3_merge_work <> c3R4Reference.io.merge_work_out
+  c3R4Reference.io.functional_result_in <> io.c3_r4_result
+  c3R4Reference.io.functional_numeric_fault_in <> io.c3_r4_numeric_fault
+  c3Merge.io.r4_result_stub_in <> c3R4Reference.io.r4_result_stub_out
+  c3Merge.io.r4_numeric_fault_in <> c3R4Reference.io.r4_numeric_fault_out
+  StructuralTieOff.sink(c3Merge.io.component_status_out)
+  c3CommitDemux.io.commit_in <> c3Merge.io.consumer_partial_commit
+  StructuralTieOff.sink(c3CommitDemux.io.hot_commit_out)
+  StructuralTieOff.sink(c3CommitDemux.io.pending_commit_out)
+  s2.io.gqa_consumer_commit_in <> c3CommitDemux.io.packed_commit_out
 
   lifecycle.io.metadata_publish_ack_in.valid := io.automatic_publication_owner_mode && r3.io.m2_publish_ack.valid
   lifecycle.io.metadata_publish_ack_in.bits := r3.io.m2_publish_ack.bits
@@ -431,6 +500,14 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     d.io.automatic_publication_owner_mode.poke(false.B)
     d.io.c1_demand_activation_mode.poke(false.B)
     d.io.c2_read_activation_mode.poke(false.B)
+    d.io.c3_terminal_activation_mode.poke(false.B)
+    d.io.c3_packed_offer.valid.poke(false.B)
+    d.io.c3_packed_fragment.valid.poke(false.B)
+    d.io.c3_r4_result.valid.poke(false.B)
+    d.io.c3_r4_numeric_fault.valid.poke(false.B)
+    d.io.c3_accepted_packet.ready.poke(true.B)
+    d.io.c3_merge_work.ready.poke(true.B)
+    d.io.c3_attention_terminal.ready.poke(true.B)
     d.io.c1_source_completion_plan.valid.poke(false.B)
     val c1Plan = d.io.c1_source_completion_plan.bits
     c1Plan.transaction_identity.request_id.poke(0.U); c1Plan.transaction_identity.incarnation.poke(0.U)
@@ -521,6 +598,56 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     while (!d.io.external.response.ready.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
     require(waited < 64, "timed out waiting for response acceptance")
     d.clock.step(); d.io.external.response.valid.poke(false.B); d.clock.step(2)
+  }
+
+  private def c3PackedPacket(d: RouteARTL265a2PackReadPublicationHarness, consumer: Int): Unit = {
+    val offer = d.io.c3_packed_offer.bits
+    offer.transaction_identity.request_id.poke(3.U); offer.transaction_identity.incarnation.poke(0.U)
+    offer.source_instance.source_kind.poke(RouteASourceKind.Packed.U)
+    offer.source_instance.instance_coordinate.poke(1.U); offer.source_instance.generation.poke(1.U)
+    offer.consumer_id.poke(consumer.U)
+    offer.r4_header.poke(((BigInt(RouteASourceKind.Packed) << 64) | (BigInt(consumer) << 66) | (BigInt(1) << 69) | (BigInt(8) << 70)).U)
+    offer.partial_present.poke(true.B)
+    d.io.c3_packed_offer.valid.poke(true.B)
+    var waited = 0
+    while (!d.io.c3_packed_offer.ready.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+    require(waited < 64, "timed out waiting for C3 packed partial offer")
+    d.clock.step(); d.io.c3_packed_offer.valid.poke(false.B)
+    // The offer advances the packet adapter to its header state.  Preserve a
+    // distinct header/sideband acceptance cycle before the first fragment.
+    d.clock.step()
+    (0 until 8).foreach { index =>
+      val fragment = d.io.c3_packed_fragment.bits
+      fragment.transaction_identity.request_id.poke(3.U); fragment.transaction_identity.incarnation.poke(0.U)
+      fragment.source_instance.source_kind.poke(RouteASourceKind.Packed.U)
+      fragment.source_instance.instance_coordinate.poke(1.U); fragment.source_instance.generation.poke(1.U)
+      fragment.consumer_id.poke(consumer.U); fragment.fragment_index.poke(index.U)
+      fragment.last.poke((index == 7).B); fragment.data.poke((0x300 + consumer * 8 + index).U)
+      d.io.c3_packed_fragment.valid.poke(true.B)
+      waited = 0
+      while (!d.io.c3_packed_fragment.ready.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+      require(waited < 64, "timed out waiting for C3 packed partial fragment")
+      d.clock.step(); d.io.c3_packed_fragment.valid.poke(false.B)
+    }
+  }
+
+  private def c3CompleteMerge(d: RouteARTL265a2PackReadPublicationHarness): Unit = {
+    (0 until 4).foreach { expectedConsumer =>
+      var waited = 0
+      while (!d.io.c3_merge_work.valid.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+      require(waited < 64, "timed out waiting for C3 R4 merge work")
+      d.io.c3_merge_work.bits.transaction_identity.request_id.expect(3.U)
+      d.io.c3_merge_work.bits.consumer_id.expect(expectedConsumer.U)
+      d.io.c3_merge_work.ready.poke(true.B); d.clock.step(); d.io.c3_merge_work.ready.poke(false.B)
+      val result = d.io.c3_r4_result.bits
+      result.transaction_identity.request_id.poke(3.U); result.transaction_identity.incarnation.poke(0.U)
+      result.consumer_id.poke(expectedConsumer.U); result.normalized_value.poke((0x400 + expectedConsumer).U)
+      d.io.c3_r4_result.valid.poke(true.B)
+      waited = 0
+      while (!d.io.c3_r4_result.ready.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+      require(waited < 64, "timed out waiting for C3 R4 result acceptance")
+      d.clock.step(); d.io.c3_r4_result.valid.poke(false.B)
+    }
   }
 
   private def admit(d: RouteARTL265a2PackReadPublicationHarness, manualSidecar: Boolean = true): Unit = {
@@ -847,6 +974,49 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       d.clock.step(4)
       d.io.c2_s2_state.expect(3.U)
       d.io.external.request.valid.expect(false.B)
+    }
+  }
+
+  it("continues the first post-R6 packed read through source service and four R4 completions to one terminal") {
+    simulate(new RouteARTL265a2PackReadPublicationHarness(p)) { d =>
+      init(d)
+      d.io.materialize_from_binding.poke(true.B)
+      d.io.automatic_publication_owner_mode.poke(true.B)
+      d.io.c1_demand_activation_mode.poke(true.B)
+      d.io.c2_read_activation_mode.poke(true.B)
+      d.io.c3_terminal_activation_mode.poke(true.B)
+      d.io.c3_merge_work.ready.poke(false.B)
+      d.io.publication_commit.ready.poke(true.B)
+      initializeR6ForPublication(d)
+      registerC1PackedAttention(d)
+      sendC1PackedPlan(d)
+      admit(d, manualSidecar = false)
+
+      waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      (0 until 8).foreach(index => response(d, 3, index, index == 7))
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      (0 until 8).foreach(index => waitRequest(d, p.coreMemoryWriteDataCode, index))
+      response(d, 0, 0, last = true)
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      val (descriptorRequestId, descriptorIncarnation) = waitRequest(d, p.coreMemoryWriteDataCode, 0)
+      response(d, descriptorRequestId, 0, last = true, incarnation = descriptorIncarnation)
+      val (payloadRequestId, payloadIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      (0 until 8).foreach(index => response(d, payloadRequestId, index, index == 7, incarnation = payloadIncarnation))
+      val (sidecarRequestId, sidecarIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      response(d, sidecarRequestId, 0, last = true, incarnation = sidecarIncarnation)
+      d.clock.step(4); d.io.c2_s2_state.expect(2.U)
+
+      // Only the existing packed S2 owner can now make the plan's packed
+      // source available.  The named outer provider supplies four packets;
+      // the named R4 environment returns one exact result per consumer.
+      (0 until 4).foreach(c3PackedPacket(d, _))
+      c3CompleteMerge(d)
+      var waited = 0
+      while (!d.io.c3_attention_terminal.valid.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+      require(waited < 64, "timed out waiting for C3 terminal")
+      d.io.c3_attention_terminal.bits.transaction_identity.request_id.expect(3.U)
+      d.io.c3_attention_terminal.bits.terminal_status.expect(p.coreMemoryOkStatusCode.U)
+      d.io.c3_attention_terminal.ready.poke(true.B); d.clock.step()
     }
   }
 }

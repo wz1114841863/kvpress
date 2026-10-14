@@ -1053,7 +1053,15 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     matching payload terminal fault to `FAULTED` without a sidecar read.  The
     functional-memory response remains an explicit outer environment; C2
     changes no production-top owner or memory/scheduler realization.
-35. **RTL3.9-C3--C4 — remaining lifecycle, event, and review closure
+35. **RTL3.9-C3a — packed source service to terminal (complete, functional
+    witness).**
+    [`rtl3_9_c3a_packed_source_service_terminal_contract.md`](rtl3_9_c3a_packed_source_service_terminal_contract.md)
+    continues the C2 packed S2 `READY` state through existing S2 service,
+    packet/R4 acceptance, the named outer partial-provider/R4 environments,
+    four packed consumer commits, S2 release, four exact R6 merge works, and
+    one R6 terminal. It changes no source owner, numeric implementation,
+    scheduler, production top, or physical-memory claim.
+36. **RTL3.9-C3b--C4 — remaining retirement, event, and review closure
     (planned; implementation requires separate approval).** This is not a new
     scheduler or memory realization. It must prove matching S2 source service
     through the already-frozen outer partial-provider/R4 boundary, R6 terminal,

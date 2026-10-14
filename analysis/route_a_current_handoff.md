@@ -152,12 +152,14 @@ retirement, or reclaim.
 The detailed planned wording is in `rtl2_phase_contract.md`. Work should be
 split so that each step has one owner and a reviewable failure boundary:
 
-1. **C3 — lifecycle continuation.** Connect S2's exact source service and
-   four consumer completions to the already frozen outer partial-provider/R4
-   functional boundary, then to R6 terminal, release, retire, and matching
-   reclaim. Do not assign `(m,l,o)` computation to an S2/direct/hot storage
-   owner.
-2. **C4 — event/scoreboard and cross-owner review.** Require a same-instance
+1. **C3a — packed source service to terminal (complete).** The C2 same-instance
+   witness now reaches S2 service, the named partial/R4 environments, four
+   packed consumer commits, S2 release, and the sole R6 terminal. See
+   [`rtl3_9_c3a_packed_source_service_terminal_contract.md`](rtl3_9_c3a_packed_source_service_terminal_contract.md).
+2. **C3b — retirement and reclaim.** Connect the terminal to runtime retire,
+   joined component drain, R6 reclaim permit, R5 invalidation/page free, and
+   matching R6 retire acknowledgement.
+3. **C4 — event/scoreboard and cross-owner review.** Require a same-instance
    success path plus bounded legal stall, stale/mismatch, fault, and reset
    cases. Replay only accepted architectural events through the existing
    scoreboard contract. Request an RTL3 completion review only after C0--C3
