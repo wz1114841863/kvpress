@@ -1084,7 +1084,13 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     classifies all immutable scoreboard records as exact outward, internal but
     unobserved, incomplete, or non-handshake. Every row remains unauthorized
     for capture; no event tap, source, or C4 functional closure is claimed.
-39. **RTL3.9-C4-P2+ — event/scoreboard and review closure (planned).** It
+39. **RTL3.9-C4-P2 — selected accepted-event binding (complete; testbench
+    only).**
+    [`rtl3_9_c4_p2_accepted_event_binding_contract.md`](rtl3_9_c4_p2_accepted_event_binding_contract.md)
+    binds only the C0 actual authority acceptance, existing terminal binding,
+    and existing retire acknowledgement binding. Its zero-buffer event forks
+    preserve same-fire atomicity and leave every non-selected event excluded.
+40. **RTL3.9-C4-P3+ — event/scoreboard and review closure (planned).** It
     must separately cover legal stall, stale/mismatch/fault, reset,
     event-scoreboard replay, and the no-repeat/no-early-read invariants across
     the completed C0--C3b path. It may retain the already-authorized

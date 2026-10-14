@@ -1,0 +1,53 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-c4-p2-accepted-event-binding-1.0",
+  "status": "complete_testbench_selected_accepted_event_binding",
+  "scope": "Testbench-only zero-buffer binding for three P1-selected C3b accepted carriers. No event queue, event producer, authority owner, page table, source selector, or production-top integration is added.",
+  "predecessors": {
+    "c3b": "analysis/rtl3_9_c3b_retirement_reclaim_contract.md",
+    "c4_p0": "analysis/rtl3_9_c4_p0_event_scoreboard_historical_provenance_contract.md",
+    "c4_p1": "analysis/rtl3_9_c4_p1_c3b_event_provenance_matrix.json"
+  },
+  "selected_events": [
+    {
+      "event": "authority_transition",
+      "schema_owner": "route_a_m2_p3_wrapper",
+      "schema_carrier_alias": "r3_publication_ack_to_r6",
+      "actual_c3b_carrier": "r3.authority_transition_out -> lifecycle.authority_transition_in",
+      "actual_acceptance": "lifecycle.authority_transition_in.fire / io.r6_authority_transition_fire",
+      "selection_predicate": "from_authority=Pending and to_authority=Packed",
+      "field_map": ["entry_id", "transaction_group_tag", "from_authority", "to_authority"]
+    },
+    {
+      "event": "attention_terminal",
+      "schema_owner": "route_a_merge_boundary",
+      "schema_carrier": "r4_to_r6_terminal",
+      "actual_c3b_carrier": "lifecycle.attention_terminal_rsp -> io.c3_attention_terminal",
+      "actual_acceptance": "io.c3_attention_terminal.fire",
+      "existing_binding": "analysis/rtl2_4_3_attention_terminal_scoreboard_binding.json",
+      "field_map": ["request_id", "incarnation", "terminal_status"]
+    },
+    {
+      "event": "retire_ack",
+      "schema_owner": "route_a_lifecycle_adapter",
+      "schema_carrier": "r6_to_runtime_retire_ack",
+      "actual_c3b_carrier": "lifecycle.session_retire_ack -> io.c3b_retire_ack",
+      "actual_acceptance": "io.c3b_retire_ack.fire",
+      "existing_binding": "analysis/rtl2_5_5_active_state_scoreboard_binding.json",
+      "field_map": ["session_id", "request_id", "incarnation"]
+    }
+  ],
+  "atomicity_rule": "For every selected event, the observed carrier fire equals its event fire. Event-ready low backpressures the selected carrier; valid alone emits no event. The observer is combinational and stores no event.",
+  "excluded_events": [
+    "request_accept", "fragment_deliver", "write_commit", "descriptor_durable", "metadata_publish_commit", "source_deliverable", "consumer_partial_commit", "source_release", "merge_request", "descriptor_invalidate", "page_free"
+  ],
+  "forbidden": [
+    "event from publication_commit", "event from S2 READY or availability", "event from external functional-memory traffic", "event from reclaim_complete", "implicit event field default", "second R6 authority owner or ordinal table", "event FIFO or event scheduler", "production-top integration", "page_free or descriptor_invalidate capture"
+  ],
+  "disposition": {
+    "c4_p2_complete": true,
+    "c4_event_trace_or_oracle_replay_complete": false,
+    "c4_stall_stale_fault_reset_coverage_complete": false,
+    "rtl3_completion_review_authorized": false,
+    "physical_or_numeric_claim": false
+  }
+}

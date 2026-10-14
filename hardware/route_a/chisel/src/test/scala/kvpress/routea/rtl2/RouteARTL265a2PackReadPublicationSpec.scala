@@ -2,6 +2,7 @@ package kvpress.routea.rtl2
 
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
+import chisel3.util.Decoupled
 import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAExclusiveP3PendingIngress, RouteAFunctionalPartialProviderBoundary, RouteAFunctionalR4ReferenceBoundary, RouteAReadEndpointDemultiplexer, RouteAReadIssueCandidateAdapter, RouteAPackedS2ReadEndpoint, RouteAPackedS2ReadProducer, RouteAR2ReadIngressMerge, RouteAR2WriteIngressMerge, RouteAR3PackReadEndpoint, RouteAS2GqaSourceWrapper, RouteAS2PackedSidecarReadEndpoint, RouteASourceCommitDemultiplexer, RouteASourceServicePacketAdapter, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
 import kvpress.routea.incremental.{RouteAExclusivePackedS2ReadIngress, RouteAExclusiveS2FillTerminalIngress, RouteAFunctionalSidecarDeliveryAdapter, RouteALifecycleAdapter, RouteAM2P3Wrapper, RouteAM2ReferenceProtocolProvider, RouteAMergeBoundary, RouteAPackedAllocationOwnerMux, RouteAPackedReadActivationBinder, RouteAPackedReadAssociationOwner, RouteAPackedReadTerminalBridge, RouteAPageManager, RouteASourceCompletionPlanActivationFork}
 import kvpress.routea.interfaces._
@@ -57,6 +58,11 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
     // Its partial/R4 carriers remain named outer functional environments.
     val c3_terminal_activation_mode = Input(Bool())
     val c3b_retire_reclaim_mode = Input(Bool())
+    // C4-P2 test-only binding for the P1-selected accepted carriers.
+    val c4_event_binding_mode = Input(Bool())
+    val c4_authority_transition_event = Decoupled(new AuthorityTransitionScoreboardEvent(p))
+    val c4_attention_terminal_event = Decoupled(new AttentionTerminalScoreboardEvent)
+    val c4_retire_ack_event = Decoupled(new RetireAckScoreboardEvent)
     val c3b_runtime_retire = Flipped(RouteAChannels.runtime_retire_req)
     val c3b_retire_ack = RouteAChannels.session_retire_ack
     val c3b_direct_status = Flipped(RouteAChannels.component_status(p))
@@ -124,6 +130,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   val c3R4Reference = Module(new RouteAFunctionalR4ReferenceBoundary(p))
   val c3CommitDemux = Module(new RouteASourceCommitDemultiplexer(p))
   val c3bStatusCollector = Module(new RouteAComponentStatusCollector(p))
+  val c4EventObserver = Module(new RouteAC3bEventProvenanceObserver(p))
   val r2 = Module(new RouteACoreSideArbiter(p))
   val r1 = Module(new RouteACoreMemIfV1(p))
   val issueAdapter = Module(new RouteAReadIssueCandidateAdapter(p))
@@ -385,12 +392,30 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   lifecycle.io.runtime_retire_req.valid := io.c3b_retire_reclaim_mode && io.c3b_runtime_retire.valid
   lifecycle.io.runtime_retire_req.bits := io.c3b_runtime_retire.bits
   io.c3b_runtime_retire.ready := io.c3b_retire_reclaim_mode && lifecycle.io.runtime_retire_req.ready
-  io.c3_attention_terminal.valid := io.c3_terminal_activation_mode && lifecycle.io.attention_terminal_rsp.valid
-  io.c3_attention_terminal.bits := lifecycle.io.attention_terminal_rsp.bits
-  lifecycle.io.attention_terminal_rsp.ready := Mux(io.c3_terminal_activation_mode, io.c3_attention_terminal.ready, true.B)
-  io.c3b_retire_ack.valid := io.c3b_retire_reclaim_mode && lifecycle.io.session_retire_ack.valid
-  io.c3b_retire_ack.bits := lifecycle.io.session_retire_ack.bits
-  lifecycle.io.session_retire_ack.ready := Mux(io.c3b_retire_reclaim_mode, io.c3b_retire_ack.ready, true.B)
+  c4EventObserver.io.attention_terminal_in.valid := io.c4_event_binding_mode && io.c3_terminal_activation_mode && lifecycle.io.attention_terminal_rsp.valid
+  c4EventObserver.io.attention_terminal_in.bits := lifecycle.io.attention_terminal_rsp.bits
+  c4EventObserver.io.attention_terminal_out.ready := io.c3_attention_terminal.ready
+  io.c3_attention_terminal.valid := io.c3_terminal_activation_mode && Mux(
+    io.c4_event_binding_mode, c4EventObserver.io.attention_terminal_out.valid, lifecycle.io.attention_terminal_rsp.valid,
+  )
+  io.c3_attention_terminal.bits := Mux(
+    io.c4_event_binding_mode, c4EventObserver.io.attention_terminal_out.bits, lifecycle.io.attention_terminal_rsp.bits,
+  )
+  lifecycle.io.attention_terminal_rsp.ready := Mux(io.c3_terminal_activation_mode,
+    Mux(io.c4_event_binding_mode, c4EventObserver.io.attention_terminal_in.ready, io.c3_attention_terminal.ready), true.B)
+  c4EventObserver.io.retire_ack_in.valid := io.c4_event_binding_mode && io.c3b_retire_reclaim_mode && lifecycle.io.session_retire_ack.valid
+  c4EventObserver.io.retire_ack_in.bits := lifecycle.io.session_retire_ack.bits
+  c4EventObserver.io.retire_ack_out.ready := io.c3b_retire_ack.ready
+  io.c3b_retire_ack.valid := io.c3b_retire_reclaim_mode && Mux(
+    io.c4_event_binding_mode, c4EventObserver.io.retire_ack_out.valid, lifecycle.io.session_retire_ack.valid,
+  )
+  io.c3b_retire_ack.bits := Mux(
+    io.c4_event_binding_mode, c4EventObserver.io.retire_ack_out.bits, lifecycle.io.session_retire_ack.bits,
+  )
+  lifecycle.io.session_retire_ack.ready := Mux(io.c3b_retire_reclaim_mode,
+    Mux(io.c4_event_binding_mode, c4EventObserver.io.retire_ack_in.ready, io.c3b_retire_ack.ready), true.B)
+  io.c4_attention_terminal_event <> c4EventObserver.io.attention_terminal_event_out
+  io.c4_retire_ack_event <> c4EventObserver.io.retire_ack_event_out
   lifecycle.io.r5_reclaim_complete_in := io.c3b_retire_reclaim_mode && r5.io.reclaim_complete
   StructuralTieOff.sink(lifecycle.io.hot_control_out)
   StructuralTieOff.sink(lifecycle.io.authority_transition_out)
@@ -472,15 +497,25 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   io.r6_publish_ack_ready := lifecycle.io.metadata_publish_ack_in.ready
   io.m2_publish_ack_fire := r3.io.m2_publish_ack.fire
 
-  lifecycle.io.authority_transition_in.valid := io.automatic_publication_owner_mode && r3.io.authority_transition_out.valid
-  lifecycle.io.authority_transition_in.bits := r3.io.authority_transition_out.bits
+  c4EventObserver.io.authority_transition_in.valid := io.c4_event_binding_mode && io.automatic_publication_owner_mode && r3.io.authority_transition_out.valid
+  c4EventObserver.io.authority_transition_in.bits := r3.io.authority_transition_out.bits
+  c4EventObserver.io.authority_transition_out.ready := lifecycle.io.authority_transition_in.ready
+  lifecycle.io.authority_transition_in.valid := io.automatic_publication_owner_mode && Mux(
+    io.c4_event_binding_mode, c4EventObserver.io.authority_transition_out.valid, r3.io.authority_transition_out.valid,
+  )
+  lifecycle.io.authority_transition_in.bits := Mux(
+    io.c4_event_binding_mode, c4EventObserver.io.authority_transition_out.bits, r3.io.authority_transition_out.bits,
+  )
   io.authority_transition.valid := !io.automatic_publication_owner_mode && r3.io.authority_transition_out.valid
   io.authority_transition.bits := r3.io.authority_transition_out.bits
   r3.io.authority_transition_out.ready := Mux(
-    io.automatic_publication_owner_mode, lifecycle.io.authority_transition_in.ready, io.authority_transition.ready,
+    io.automatic_publication_owner_mode,
+    Mux(io.c4_event_binding_mode, c4EventObserver.io.authority_transition_in.ready, lifecycle.io.authority_transition_in.ready),
+    io.authority_transition.ready,
   )
   io.r6_authority_transition_fire := lifecycle.io.authority_transition_in.fire
   io.r6_authority_transition := r3.io.authority_transition_out.bits
+  io.c4_authority_transition_event <> c4EventObserver.io.authority_transition_event_out
   io.publication_commit <> r3.io.publication_commit_observation
   io.publication_member.valid := !io.c1_demand_activation_mode && r3.io.publication_member_observation.valid
   io.publication_member.bits := r3.io.publication_member_observation.bits
@@ -569,6 +604,10 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     d.io.c2_read_activation_mode.poke(false.B)
     d.io.c3_terminal_activation_mode.poke(false.B)
     d.io.c3b_retire_reclaim_mode.poke(false.B)
+    d.io.c4_event_binding_mode.poke(false.B)
+    d.io.c4_authority_transition_event.ready.poke(true.B)
+    d.io.c4_attention_terminal_event.ready.poke(true.B)
+    d.io.c4_retire_ack_event.ready.poke(true.B)
     d.io.c3b_runtime_retire.valid.poke(false.B)
     d.io.c3b_retire_ack.ready.poke(true.B)
     d.io.c3b_direct_status.valid.poke(false.B)
@@ -1119,6 +1158,8 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       d.io.c1_demand_activation_mode.poke(true.B)
       d.io.c2_read_activation_mode.poke(true.B)
       d.io.c3_terminal_activation_mode.poke(true.B)
+      d.io.c4_event_binding_mode.poke(true.B)
+      d.io.c4_authority_transition_event.ready.poke(false.B)
       d.io.c3_merge_work.ready.poke(false.B)
       d.io.publication_commit.ready.poke(true.B)
       initializeR6ForPublication(d)
@@ -1134,16 +1175,30 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       waitRequest(d, p.coreMemoryWriteRequestCode, 0)
       val (descriptorRequestId, descriptorIncarnation) = waitRequest(d, p.coreMemoryWriteDataCode, 0)
       response(d, descriptorRequestId, 0, last = true, incarnation = descriptorIncarnation)
+      var waited = 0
+      while (!d.io.c4_authority_transition_event.valid.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+      require(waited < 64, "timed out waiting for the selected R3-to-R6 authority event")
+      d.io.c4_authority_transition_event.bits.entry_id.expect(0.U)
+      d.io.c4_authority_transition_event.bits.from_authority.expect(RouteAAuthorityStateCode.Pending.U)
+      d.io.c4_authority_transition_event.bits.to_authority.expect(RouteAAuthorityStateCode.Packed.U)
+      d.io.c4_authority_transition_event.bits.transaction_group_tag.expect(1.U)
+      d.io.c4_authority_transition_event.ready.poke(true.B); d.clock.step()
+      d.io.c4_authority_transition_event.ready.poke(false.B)
       val (payloadRequestId, payloadIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
       (0 until 8).foreach(index => response(d, payloadRequestId, index, index == 7, incarnation = payloadIncarnation))
       val (sidecarRequestId, sidecarIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
       response(d, sidecarRequestId, 0, last = true, incarnation = sidecarIncarnation)
       d.clock.step(4); d.io.c2_s2_state.expect(2.U)
       (0 until 4).foreach(c3PackedPacket(d, _))
+      d.io.c4_attention_terminal_event.ready.poke(false.B)
       c3CompleteMerge(d)
-      var waited = 0
-      while (!d.io.c3_attention_terminal.valid.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
-      require(waited < 64, "timed out waiting for the pre-retirement C3 terminal")
+      waited = 0
+      while (!d.io.c4_attention_terminal_event.valid.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+      require(waited < 64, "timed out waiting for the selected C3 terminal event")
+      d.io.c4_attention_terminal_event.bits.transaction_identity.request_id.expect(3.U)
+      d.io.c4_attention_terminal_event.bits.terminal_status.expect(p.coreMemoryOkStatusCode.U)
+      d.io.c4_attention_terminal_event.ready.poke(true.B)
+      d.io.c3_attention_terminal.valid.expect(true.B)
       d.io.c3_attention_terminal.bits.transaction_identity.request_id.expect(3.U)
       d.io.c3_attention_terminal.ready.poke(true.B); d.clock.step()
 
@@ -1162,11 +1217,16 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       d.io.c3b_direct_status.valid.poke(false.B)
       val (reclaimRequestId, reclaimIncarnation) = waitRequest(d, p.coreMemoryWriteDataCode, 0)
       require(reclaimRequestId == 0, s"expected R5 reclaim sequence request id 0, got $reclaimRequestId")
+      d.io.c4_retire_ack_event.ready.poke(false.B)
       response(d, reclaimRequestId, 0, last = true, incarnation = reclaimIncarnation)
 
       waited = 0
-      while (!d.io.c3b_retire_ack.valid.peek().litToBoolean && waited < 160) { d.clock.step(); waited += 1 }
-      require(waited < 160, "timed out waiting for the final R6 retire acknowledgement")
+      while (!d.io.c4_retire_ack_event.valid.peek().litToBoolean && waited < 160) { d.clock.step(); waited += 1 }
+      require(waited < 160, "timed out waiting for the selected final R6 retire-ack event")
+      d.io.c4_retire_ack_event.bits.acknowledgement.session_id.expect(false.B)
+      d.io.c4_retire_ack_event.bits.acknowledgement.transaction_identity.request_id.expect(3.U)
+      d.io.c4_retire_ack_event.ready.poke(true.B)
+      d.io.c3b_retire_ack.valid.expect(true.B)
       d.io.c3b_retire_ack.bits.session_id.expect(false.B)
       d.io.c3b_retire_ack.bits.transaction_identity.request_id.expect(3.U)
       d.io.c3b_retire_ack.ready.poke(true.B); d.clock.step()
