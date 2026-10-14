@@ -1042,20 +1042,28 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     witness neither changes the production top nor acknowledges that registry
     request: R2/R1 reads, functional-memory response, S2 deposit/READY,
     source service, R4, terminal, and reclaim remain inactive.
-34. **RTL3.9-C2--C4 — remaining post-publication packed first-use closure
+34. **RTL3.9-C2 — functional read-to-S2 closure (complete, functional
+    witness).**
+    [`rtl3_9_c2_functional_read_to_s2_contract.md`](rtl3_9_c2_functional_read_to_s2_contract.md)
+    extends the C1 held association through the existing allocation mux,
+    unified bridge, sole registry, typed R2/R1 read path, router, packed
+    payload/sidecar endpoints, and existing S2 owner.  The same-instance
+    witness reaches `READY` only after matching payload and sidecar, rejects a
+    stale request identity while filling, resets to `EMPTY`, and fail-closes a
+    matching payload terminal fault to `FAULTED` without a sidecar read.  The
+    functional-memory response remains an explicit outer environment; C2
+    changes no production-top owner or memory/scheduler realization.
+35. **RTL3.9-C3--C4 — remaining lifecycle, event, and review closure
     (planned; implementation requires separate approval).** This is not a new
-    scheduler or memory realization. It must prove in one owner-correct
-    functional path that the existing typed R2/R1 read and permitted functional
-    memory environment supply the exact payload/sidecar to S2; and that
-    matching S2 source service reaches the already-frozen outer
-    partial-provider/R4 boundary, R6 terminal, and R5/R6 retirement/reclaim
-    sequence. The plan must separately cover legal stall, stale/mismatch/fault,
-    reset, event-scoreboard replay, and the no-repeat/no-early-read invariants.
-    It may retain the already-authorized functional memory, partial-provider,
-    and R4 reference **environment** boundaries, but may not turn any of them
-    into an HBM controller, SRAM macro, numeric pipeline, schedule, timing, or
-    PPA claim. A dedicated RTL3 completion review follows only after this path
-    is closed.
+    scheduler or memory realization. It must prove matching S2 source service
+    through the already-frozen outer partial-provider/R4 boundary, R6 terminal,
+    and R5/R6 retirement/reclaim. It must separately cover legal stall,
+    stale/mismatch/fault, reset, event-scoreboard replay, and the
+    no-repeat/no-early-read invariants. It may retain the already-authorized
+    functional memory, partial-provider, and R4 reference **environment**
+    boundaries, but may not turn any of them into an HBM controller, SRAM
+    macro, numeric pipeline, schedule, timing, or PPA claim. A dedicated RTL3
+    completion review follows only after this path is closed.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

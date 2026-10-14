@@ -128,21 +128,32 @@ directed test passed on 2026-10-14.  B3 provenance is replayed from its frozen
 commit rather than mutable live source hashes; see
 [`rtl3_9_b3_atomic_publication_authority_activation_contract.md`](rtl3_9_b3_atomic_publication_authority_activation_contract.md).
 
+## RTL3.9-C2 — functional read-to-S2 closure (complete functional witness)
+
+C2 extends the same B3/C0/C1 instance through the existing allocation bridge,
+sole registry, typed R2/R1 path, delivery router, packed payload/sidecar
+endpoints, and S2 owner.  One exact payload and sidecar make S2 `READY`; a
+stale request identity cannot do so, reset returns the slot to `EMPTY`, and a
+matching payload terminal fault makes it `FAULTED` without issuing the sidecar
+read.  The test-only composition neither modifies the production top nor
+selects a memory/controller/numeric implementation.  The exact boundary is
+[`rtl3_9_c2_functional_read_to_s2_contract.md`](rtl3_9_c2_functional_read_to_s2_contract.md).
+
+The endpoint owners retain their established page/generation/slot/ordinal
+checks.  C2 does not start source service, partial/R4 work, R6 terminal,
+retirement, or reclaim.
+
 ## Remaining RTL3.9-C plan
 
 The detailed planned wording is in `rtl2_phase_contract.md`. Work should be
 split so that each step has one owner and a reviewable failure boundary:
 
-1. **C2 — functional read-to-S2 closure.** Use the existing typed R2/R1 read
-   and functional-memory environment to deliver the published payload and its
-   sidecar to S2. Cover ready-low, stale/mismatched identity/generation,
-   terminal fault, and reset; no failed read may make S2 READY.
-2. **C3 — lifecycle continuation.** Connect S2's exact source service and
+1. **C3 — lifecycle continuation.** Connect S2's exact source service and
    four consumer completions to the already frozen outer partial-provider/R4
    functional boundary, then to R6 terminal, release, retire, and matching
    reclaim. Do not assign `(m,l,o)` computation to an S2/direct/hot storage
    owner.
-3. **C4 — event/scoreboard and cross-owner review.** Require a same-instance
+2. **C4 — event/scoreboard and cross-owner review.** Require a same-instance
    success path plus bounded legal stall, stale/mismatch, fault, and reset
    cases. Replay only accepted architectural events through the existing
    scoreboard contract. Request an RTL3 completion review only after C0--C3

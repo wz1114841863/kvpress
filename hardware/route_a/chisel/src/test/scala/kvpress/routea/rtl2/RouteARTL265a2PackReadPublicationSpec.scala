@@ -2,8 +2,8 @@ package kvpress.routea.rtl2
 
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
-import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAExclusiveP3PendingIngress, RouteAReadEndpointDemultiplexer, RouteAReadIssueCandidateAdapter, RouteAR2ReadIngressMerge, RouteAR2WriteIngressMerge, RouteAR3PackReadEndpoint, RouteAS2GqaSourceWrapper, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
-import kvpress.routea.incremental.{RouteALifecycleAdapter, RouteAM2P3Wrapper, RouteAM2ReferenceProtocolProvider, RouteAPackedReadActivationBinder, RouteAPackedReadAssociationOwner, RouteAPageManager, RouteASourceCompletionPlanActivationFork}
+import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAExclusiveP3PendingIngress, RouteAReadEndpointDemultiplexer, RouteAReadIssueCandidateAdapter, RouteAPackedS2ReadEndpoint, RouteAPackedS2ReadProducer, RouteAR2ReadIngressMerge, RouteAR2WriteIngressMerge, RouteAR3PackReadEndpoint, RouteAS2GqaSourceWrapper, RouteAS2PackedSidecarReadEndpoint, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
+import kvpress.routea.incremental.{RouteAExclusivePackedS2ReadIngress, RouteAExclusiveS2FillTerminalIngress, RouteAFunctionalSidecarDeliveryAdapter, RouteALifecycleAdapter, RouteAM2P3Wrapper, RouteAM2ReferenceProtocolProvider, RouteAPackedAllocationOwnerMux, RouteAPackedReadActivationBinder, RouteAPackedReadAssociationOwner, RouteAPackedReadTerminalBridge, RouteAPageManager, RouteASourceCompletionPlanActivationFork}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteAM2GroupMember, RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
@@ -49,11 +49,15 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
     // owner-to-owner connections from R6's accepted plan through C0/R5/S2 to
     // the existing association owner; it introduces no source selection.
     val c1_demand_activation_mode = Input(Bool())
+    // C2 extends that accepted association only after the existing registry
+    // acknowledges it.  Low preserves C1's held-allocation predecessor test.
+    val c2_read_activation_mode = Input(Bool())
     val c1_source_completion_plan = Flipped(RouteAChannels.source_completion_plan(p))
     val c1_page_ready_fire = Output(Bool())
     val c1_demand_fire = Output(Bool())
     val c1_association_active = Output(Bool())
     val c1_registry_allocate = RouteAChannels.delivery_context_allocate(p)
+    val c2_s2_state = Output(UInt(3.W))
     val publication_ack = RouteAChannels.metadata_publish_ack(p)
     val r5_visibility_ack_fire = Output(Bool())
     val m2_member_request_fire = Output(Bool())
@@ -89,14 +93,24 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   val c1PlanFork = Module(new RouteASourceCompletionPlanActivationFork(p))
   val c1Binder = Module(new RouteAPackedReadActivationBinder(p))
   val c1Association = Module(new RouteAPackedReadAssociationOwner(p))
+  val c2AllocationMux = Module(new RouteAPackedAllocationOwnerMux(p))
+  val c2TerminalBridge = Module(new RouteAPackedReadTerminalBridge(p))
+  val c2SidecarDelivery = Module(new RouteAFunctionalSidecarDeliveryAdapter(p))
+  val c2ReadIngress = Module(new RouteAExclusivePackedS2ReadIngress(p))
+  val c2PayloadProducer = Module(new RouteAPackedS2ReadProducer(p))
+  val c2PayloadIssueAdapter = Module(new RouteAReadIssueCandidateAdapter(p))
+  val c2SidecarIssueAdapter = Module(new RouteAReadIssueCandidateAdapter(p))
+  val c2PayloadEndpoint = Module(new RouteAPackedS2ReadEndpoint(p))
+  val c2SidecarEndpoint = Module(new RouteAS2PackedSidecarReadEndpoint(p))
+  val c2TerminalIngress = Module(new RouteAExclusiveS2FillTerminalIngress(p))
   val r2 = Module(new RouteACoreSideArbiter(p))
   val r1 = Module(new RouteACoreMemIfV1(p))
   val issueAdapter = Module(new RouteAReadIssueCandidateAdapter(p))
   val bridge = Module(new RouteAUnifiedDeliveryContextAllocationBridge(p))
-  StructuralTieOff.source(bridge.io.packed_association_allocate_in)
-  bridge.io.packed_association_arrival_ordinal_in := 0.U
-  bridge.io.packed_association_candidate_id_in := 0.U
-  StructuralTieOff.sink(bridge.io.packed_association_allocation_ack_out)
+  bridge.io.packed_association_allocate_in <> c2AllocationMux.io.allocate_out
+  bridge.io.packed_association_arrival_ordinal_in := c2AllocationMux.io.ordinal_out
+  bridge.io.packed_association_candidate_id_in := c2AllocationMux.io.candidate_id_out
+  c2AllocationMux.io.ack_in <> bridge.io.packed_association_allocation_ack_out
   val readIngress = Module(new RouteAR2ReadIngressMerge(p))
   val writeIngress = Module(new RouteAR2WriteIngressMerge(p))
   val registry = Module(new RouteADeliveryContextRegistry(p))
@@ -146,17 +160,27 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   r5.io.reclaim_delivery_in <> router.io.r5_reclaim_out
   io.r5_status <> r5.io.component_status_out
 
-  // C1 retains the existing R5/S2 owner-local request/grant rules.  Every
-  // non-lease S2 service carrier stays inert: C2 alone may activate reads.
+  // C1 retains the existing R5/S2 owner-local request/grant rules.  C2 may
+  // activate only the already-existing typed fill/sidecar carriers below.
   s2.io.mem_init_done := io.mem_init_done
   s2.io.drain_collection_enable := false.B
   s2.io.s2_observe_slot := 1.U
   StructuralTieOff.source(s2.io.service_req_in)
-  StructuralTieOff.source(s2.io.s2_fill_open_in)
-  StructuralTieOff.source(s2.io.s2_payload_fragment_in)
-  StructuralTieOff.source(s2.io.s2_sidecar_fragment_in)
-  StructuralTieOff.source(s2.io.s2_fill_terminal_in)
-  StructuralTieOff.source(s2.io.s2_sidecar_complete_in)
+  s2.io.s2_fill_open_in.valid := io.c2_read_activation_mode && c2PayloadProducer.io.s2_fill_open_out.valid
+  s2.io.s2_fill_open_in.bits := c2PayloadProducer.io.s2_fill_open_out.bits
+  c2PayloadProducer.io.s2_fill_open_out.ready := io.c2_read_activation_mode && s2.io.s2_fill_open_in.ready
+  s2.io.s2_payload_fragment_in.valid := io.c2_read_activation_mode && c2PayloadEndpoint.io.s2_payload_fragment_out.valid
+  s2.io.s2_payload_fragment_in.bits := c2PayloadEndpoint.io.s2_payload_fragment_out.bits
+  c2PayloadEndpoint.io.s2_payload_fragment_out.ready := io.c2_read_activation_mode && s2.io.s2_payload_fragment_in.ready
+  s2.io.s2_sidecar_fragment_in.valid := io.c2_read_activation_mode && c2SidecarEndpoint.io.sidecar_fragment_out.valid
+  s2.io.s2_sidecar_fragment_in.bits := c2SidecarEndpoint.io.sidecar_fragment_out.bits
+  c2SidecarEndpoint.io.sidecar_fragment_out.ready := io.c2_read_activation_mode && s2.io.s2_sidecar_fragment_in.ready
+  s2.io.s2_fill_terminal_in.valid := io.c2_read_activation_mode && c2TerminalIngress.io.out.valid
+  s2.io.s2_fill_terminal_in.bits := c2TerminalIngress.io.out.bits
+  c2TerminalIngress.io.out.ready := io.c2_read_activation_mode && s2.io.s2_fill_terminal_in.ready
+  s2.io.s2_sidecar_complete_in.valid := io.c2_read_activation_mode && c2SidecarEndpoint.io.sidecar_complete_out.valid
+  s2.io.s2_sidecar_complete_in.bits := c2SidecarEndpoint.io.sidecar_complete_out.bits
+  c2SidecarEndpoint.io.sidecar_complete_out.ready := io.c2_read_activation_mode && s2.io.s2_sidecar_complete_in.ready
   StructuralTieOff.source(s2.io.s2_payload_read_req_in)
   StructuralTieOff.sink(s2.io.s2_payload_read_rsp_out)
   StructuralTieOff.source(s2.io.s2_sidecar_read_req_in)
@@ -177,19 +201,58 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   c1Association.io.s2_fill_lease_in <> c1Binder.io.s2_fill_lease_out
   c1Association.io.invalidation_in.valid := false.B
   c1Association.io.invalidation_in.bits := 0.U.asTypeOf(new PackedReadInvalidation)
-  io.c1_registry_allocate <> c1Association.io.registry_allocate_out
-  c1Association.io.registry_allocation_ack_in.valid := false.B
-  c1Association.io.registry_allocation_ack_in.bits := 0.U.asTypeOf(new DeliveryContextAllocationAck(p))
-  StructuralTieOff.sink(c1Association.io.packed_s2_work_out)
-  StructuralTieOff.sink(c1Association.io.sidecar_read_work_out)
-  StructuralTieOff.source(c1Association.io.terminal_in)
-  StructuralTieOff.sink(c1Association.io.release_observation_out)
+  // C1's observable held request and C2's existing allocation bridge are
+  // mutually exclusive modes.  The mux owns only the payload/sidecar return
+  // association; it introduces no new registry lane or arbitration policy.
+  io.c1_registry_allocate.valid := !io.c2_read_activation_mode && c1Association.io.registry_allocate_out.valid
+  io.c1_registry_allocate.bits := c1Association.io.registry_allocate_out.bits
+  c2AllocationMux.io.payload_allocate_in.valid := io.c2_read_activation_mode && c1Association.io.registry_allocate_out.valid
+  c2AllocationMux.io.payload_allocate_in.bits := c1Association.io.registry_allocate_out.bits
+  c1Association.io.registry_allocate_out.ready := Mux(
+    io.c2_read_activation_mode, c2AllocationMux.io.payload_allocate_in.ready, io.c1_registry_allocate.ready,
+  )
+  c2AllocationMux.io.payload_ordinal_in := c1Association.io.registry_allocation_arrival_ordinal_out
+  c2AllocationMux.io.payload_candidate_id_in := c1Association.io.registry_allocation_candidate_id_out
+  c1Association.io.registry_allocation_ack_in.valid := io.c2_read_activation_mode && c2AllocationMux.io.payload_ack_out.valid
+  c1Association.io.registry_allocation_ack_in.bits := c2AllocationMux.io.payload_ack_out.bits
+  c2AllocationMux.io.payload_ack_out.ready := io.c2_read_activation_mode && c1Association.io.registry_allocation_ack_in.ready
+  c2TerminalBridge.io.work_in.valid := io.c2_read_activation_mode && c1Association.io.packed_s2_work_out.valid
+  c2TerminalBridge.io.work_in.bits := c1Association.io.packed_s2_work_out.bits
+  c1Association.io.packed_s2_work_out.ready := Mux(
+    io.c2_read_activation_mode, c2TerminalBridge.io.work_in.ready, true.B,
+  )
+  c2SidecarDelivery.io.work_in.valid := io.c2_read_activation_mode && c1Association.io.sidecar_read_work_out.valid
+  c2SidecarDelivery.io.work_in.bits := c1Association.io.sidecar_read_work_out.bits
+  c1Association.io.sidecar_read_work_out.ready := Mux(
+    io.c2_read_activation_mode, c2SidecarDelivery.io.work_in.ready, true.B,
+  )
+  c1Association.io.terminal_in.valid := io.c2_read_activation_mode && c2TerminalBridge.io.association_terminal_out.valid
+  c1Association.io.terminal_in.bits := c2TerminalBridge.io.association_terminal_out.bits
+  c2TerminalBridge.io.association_terminal_out.ready := io.c2_read_activation_mode && c1Association.io.terminal_in.ready
+  c2SidecarDelivery.io.payload_release_in.valid := io.c2_read_activation_mode && c1Association.io.release_observation_out.valid
+  c2SidecarDelivery.io.payload_release_in.bits := c1Association.io.release_observation_out.bits
+  c1Association.io.release_observation_out.ready := Mux(
+    io.c2_read_activation_mode, c2SidecarDelivery.io.payload_release_in.ready, true.B,
+  )
+  c2AllocationMux.io.sidecar_allocate_in <> c2SidecarDelivery.io.registry_allocate_out
+  c2AllocationMux.io.sidecar_ordinal_in := c2SidecarDelivery.io.registry_allocation_arrival_ordinal_out
+  c2AllocationMux.io.sidecar_candidate_id_in := c2SidecarDelivery.io.registry_allocation_candidate_id_out
+  c2SidecarDelivery.io.registry_allocation_ack_in <> c2AllocationMux.io.sidecar_ack_out
   io.c1_demand_fire := c1Binder.io.demand_out.fire
   io.c1_association_active := c1Association.io.association_active
+  io.c2_s2_state := s2.io.s2_observe_state
 
   readIngress.io.r3_pack_read_in <> bridge.io.r3_pack_read_out
   StructuralTieOff.source(readIngress.io.r3_direct_pending_in)
-  StructuralTieOff.source(readIngress.io.r5_s2_packed_in)
+  c2PayloadIssueAdapter.io.read_issue_in <> c2PayloadProducer.io.read_issue_out
+  c2SidecarIssueAdapter.io.read_issue_in <> c2SidecarDelivery.io.read_issue_out
+  c2ReadIngress.io.payload_in <> c2PayloadIssueAdapter.io.candidate_out
+  c2ReadIngress.io.sidecar_in <> c2SidecarIssueAdapter.io.candidate_out
+  readIngress.io.r5_s2_packed_in <> c2ReadIngress.io.out
+  c2TerminalBridge.io.work_out <> c2PayloadProducer.io.work_in
+  c2TerminalBridge.io.endpoint_terminal_in <> c2PayloadEndpoint.io.s2_fill_terminal_out
+  c2TerminalIngress.io.payload_in <> c2TerminalBridge.io.s2_terminal_out
+  c2TerminalIngress.io.sidecar_in <> c2SidecarEndpoint.io.s2_fault_terminal_out
   r2.io.read_candidate_in <> readIngress.io.candidate_out
   writeIngress.io.r3_packed_write_in <> bridge.io.r3_packed_write_out
   writeIngress.io.r5_append_in <> bridge.io.r5_append_out
@@ -217,8 +280,18 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   endpointDemux.io.resolved_in <> router.io.read_fragment_out
   endpoint.io.resolved_fragment_in <> endpointDemux.io.p3_pack_read_out
   StructuralTieOff.sink(endpointDemux.io.direct_pending_out)
-  StructuralTieOff.sink(endpointDemux.io.packed_s2_out)
-  StructuralTieOff.sink(endpointDemux.io.packed_s2_sidecar_out)
+  c2PayloadEndpoint.io.resolved_fragment_in <> endpointDemux.io.packed_s2_out
+  c2SidecarEndpoint.io.resolved_fragment_in <> endpointDemux.io.packed_s2_sidecar_out
+  c2PayloadEndpoint.io.endpoint_filling_in := s2.io.s2_observe_filling
+  c2PayloadEndpoint.io.endpoint_fill_open_in := s2.io.s2_observe_fill_open
+  c2PayloadEndpoint.io.endpoint_slot_in := c2PayloadProducer.io.s2_fill_open_out.bits.s2_slot
+  c2PayloadEndpoint.io.endpoint_identity_in := s2.io.s2_observe_identity
+  c2PayloadEndpoint.io.endpoint_page_ref_in := s2.io.s2_observe_page_ref
+  c2PayloadEndpoint.io.endpoint_generation_in := s2.io.s2_observe_generation
+  c2SidecarEndpoint.io.endpoint_filling_in := s2.io.s2_observe_filling
+  c2SidecarEndpoint.io.endpoint_identity_in := s2.io.s2_observe_identity
+  c2SidecarEndpoint.io.endpoint_page_ref_in := s2.io.s2_observe_page_ref
+  c2SidecarEndpoint.io.endpoint_generation_in := s2.io.s2_observe_generation
 
   StructuralTieOff.source(p3Ingress.io.hot_in)
   p3Ingress.io.pack_read_in <> endpoint.io.p3_pending_fragment_out
@@ -357,6 +430,7 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     d.io.materialize_from_binding.poke(false.B)
     d.io.automatic_publication_owner_mode.poke(false.B)
     d.io.c1_demand_activation_mode.poke(false.B)
+    d.io.c2_read_activation_mode.poke(false.B)
     d.io.c1_source_completion_plan.valid.poke(false.B)
     val c1Plan = d.io.c1_source_completion_plan.bits
     c1Plan.transaction_identity.request_id.poke(0.U); c1Plan.transaction_identity.incarnation.poke(0.U)
@@ -702,6 +776,77 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       // this boundary low proves no C2 transport work is manufactured here.
       d.io.c1_registry_allocate.ready.poke(false.B); d.clock.step()
       d.io.c1_registry_allocate.valid.expect(true.B)
+    }
+  }
+
+  it("delivers the first post-R6 packed payload and sidecar through R2/R1 to S2 READY") {
+    simulate(new RouteARTL265a2PackReadPublicationHarness(p)) { d =>
+      init(d)
+      d.io.materialize_from_binding.poke(true.B)
+      d.io.automatic_publication_owner_mode.poke(true.B)
+      d.io.c1_demand_activation_mode.poke(true.B)
+      d.io.c2_read_activation_mode.poke(true.B)
+      d.io.publication_commit.ready.poke(true.B)
+      initializeR6ForPublication(d)
+      registerC1PackedAttention(d)
+      sendC1PackedPlan(d)
+      admit(d, manualSidecar = false)
+
+      waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      (0 until 8).foreach(index => response(d, 3, index, index == 7))
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      (0 until 8).foreach(index => waitRequest(d, p.coreMemoryWriteDataCode, index))
+      response(d, 0, 0, last = true)
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      val (descriptorRequestId, descriptorIncarnation) = waitRequest(d, p.coreMemoryWriteDataCode, 0)
+      response(d, descriptorRequestId, 0, last = true, incarnation = descriptorIncarnation)
+
+      // The newly published page must traverse the existing packed typed-read
+      // path.  A stale response is consumed by R1 but cannot mutate S2.
+      val (payloadRequestId, payloadIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      response(d, payloadRequestId + 1, 0, last = false, incarnation = payloadIncarnation)
+      d.io.c2_s2_state.expect(1.U)
+      (0 until 8).foreach(index => response(d, payloadRequestId, index, index == 7, incarnation = payloadIncarnation))
+
+      // The existing sidecar adapter may issue only after the payload terminal
+      // reaches the association owner.  Its distinct allocation then returns
+      // one typed sidecar record and S2 alone transitions to READY.
+      val (sidecarRequestId, sidecarIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      response(d, sidecarRequestId, 0, last = true, incarnation = sidecarIncarnation)
+      d.clock.step(4)
+      d.io.c2_s2_state.expect(2.U)
+
+      // Destructive reset removes the owner-local READY state; it cannot
+      // leave an old page usable when a later C2 association is attempted.
+      d.reset.poke(true.B); d.clock.step(); d.reset.poke(false.B); d.clock.step()
+      d.io.c2_s2_state.expect(0.U)
+
+      // Rebuild the same first-use chain and fault the first matching payload
+      // response.  The sidecar adapter must not issue and S2 must never reach
+      // READY after a terminal fault.
+      init(d)
+      d.io.materialize_from_binding.poke(true.B)
+      d.io.automatic_publication_owner_mode.poke(true.B)
+      d.io.c1_demand_activation_mode.poke(true.B)
+      d.io.c2_read_activation_mode.poke(true.B)
+      d.io.publication_commit.ready.poke(true.B)
+      initializeR6ForPublication(d)
+      registerC1PackedAttention(d)
+      sendC1PackedPlan(d)
+      admit(d, manualSidecar = false)
+      waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      (0 until 8).foreach(index => response(d, 3, index, index == 7))
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      (0 until 8).foreach(index => waitRequest(d, p.coreMemoryWriteDataCode, index))
+      response(d, 0, 0, last = true)
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      val (faultDescriptorRequestId, faultDescriptorIncarnation) = waitRequest(d, p.coreMemoryWriteDataCode, 0)
+      response(d, faultDescriptorRequestId, 0, last = true, incarnation = faultDescriptorIncarnation)
+      val (faultPayloadRequestId, faultPayloadIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      response(d, faultPayloadRequestId, 0, last = true, fault = true, incarnation = faultPayloadIncarnation)
+      d.clock.step(4)
+      d.io.c2_s2_state.expect(3.U)
+      d.io.external.request.valid.expect(false.B)
     }
   }
 }
