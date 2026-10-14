@@ -1,6 +1,6 @@
 # RTL3.9-C0 — post-R6 packed-page first-use association
 
-**Status:** `implemented_functional_c0_association_baseline_validation_pending`.
+**Status:** `complete_functional_c0_association_baseline`.
 
 ## Purpose
 
@@ -83,8 +83,8 @@ as an observation but is no longer a first-use authorization.
 - `RouteAR3R5PublicationSpec` checks that the R3 page-ready observation is
   withheld until all members fire into the R6-facing authority channel and is
   stable under ready-low.
-- The normal no-model compile and live-document preflight are required before
-  this slice can be marked complete.  C0 is not C1 demand activation, C2
+- The no-model preflight, binder directed tests, and R3 all-member/ready-low
+  directed test passed on 2026-10-14.  C0 is not C1 demand activation, C2
   read-to-S2 closure, C3 source/R4 continuation, or RTL3 completion review.
 
 ## Evidence boundary

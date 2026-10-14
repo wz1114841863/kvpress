@@ -85,7 +85,7 @@ remain explicitly replaceable **outer functional environments** during RTL3.
 They must not silently become an HBM controller, SRAM macro, attention MAC,
 RoPE/exp/FP pipeline, or performance model.
 
-## RTL3.9-C0 — association/first-use audit and baseline (implemented; final validation pending)
+## RTL3.9-C0 — association/first-use audit and baseline (complete functional baseline)
 
 C0 keeps R3 as the immutable page/member-ledger owner and treats the existing
 `authority_transition_out.fire` as the actual R6 acceptance handshake.  It
@@ -106,6 +106,11 @@ member-observation stream is backpressured while the held page awaits/uses its
 post-R6 summary.  This is conservative functional flow control because the
 member carrier has no `PageRef`; it is not a second authority, admission,
 selection, or scheduling mechanism.
+
+The C0 no-model preflight, binder directed suite, and R3 all-member/ready-low
+directed test passed on 2026-10-14.  B3 provenance is replayed from its frozen
+commit rather than mutable live source hashes; see
+[`rtl3_9_b3_atomic_publication_authority_activation_contract.md`](rtl3_9_b3_atomic_publication_authority_activation_contract.md).
 
 ## Remaining RTL3.9-C plan
 

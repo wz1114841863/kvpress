@@ -64,6 +64,19 @@ semantics, or the single atomic-commit boundary.
 
 ## No-model validation
 
+### Historical source provenance
+
+The immutable B3 manifest remains byte-for-byte unchanged.  Its
+`source_sha256` values name the B3 source snapshot at
+`c5ccda66651ac71abe790861f6a3cc0f611c7333`, recorded in
+[`rtl3_9_b3_atomic_publication_authority_historical_provenance.json`](rtl3_9_b3_atomic_publication_authority_historical_provenance.json).
+The validator replays those hashes through `git show` at that commit and also
+requires that commit to remain an ancestor of `HEAD`.  It deliberately does
+not hash mutable descendant live files: C0 legitimately extends the R3/top
+interfaces and the living phase ledger, and must be validated by its own
+contract.  Historical B3 replay therefore proves neither C0/C1 behavior nor
+current physical implementation.
+
 ```bash
 .venv/bin/python tools/validate_rtl3_9_b3_atomic_publication_authority_activation.py --help
 .venv/bin/python tools/validate_rtl3_9_b3_atomic_publication_authority_activation.py

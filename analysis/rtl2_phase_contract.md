@@ -1019,7 +1019,7 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     retains publication membership.  This is functional no-model control/dataflow
     evidence, not a physical M2/SRAM/HBM implementation, timing, throughput,
     numeric, model/GPU, or PPA result.
-32. **RTL3.9-C0 — post-R6 first-use association baseline (implemented;
+32. **RTL3.9-C0 — post-R6 first-use association baseline (complete;
     C1--C4 remain separate).**
     [`rtl3_9_c0_post_r6_first_use_association_contract.md`](rtl3_9_c0_post_r6_first_use_association_contract.md)
     keeps R3 as the sole immutable member/ordinal owner and observes each

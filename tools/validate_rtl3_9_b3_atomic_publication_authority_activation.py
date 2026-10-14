@@ -1,13 +1,25 @@
 #!/usr/bin/env python3
-"""Validate the RTL3.9-B3 atomic-publication authority-activation manifest."""
+"""Replay the frozen RTL3.9-B3 atomic-publication authority evidence."""
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def git_text(root: Path, *args: str) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(root), *args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr.strip()
+    return result.stdout
 
 
 def main() -> int:
@@ -17,7 +29,14 @@ def main() -> int:
         default=ROOT / "analysis/rtl3_9_b3_atomic_publication_authority_activation_manifest.json",
         help="RTL3.9-B3 manifest to validate",
     )
-    manifest = json.loads(parser.parse_args().manifest.read_text(encoding="utf-8"))
+    parser.add_argument(
+        "--provenance", type=Path,
+        default=ROOT / "analysis/rtl3_9_b3_atomic_publication_authority_historical_provenance.json",
+        help="immutable B3 source-revision provenance record",
+    )
+    args = parser.parse_args()
+    manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+    provenance = json.loads(args.provenance.read_text(encoding="utf-8"))
     assert manifest["schema_version"] == "kvzap-route-a-rtl3-9-b3-atomic-publication-authority-activation-1.0"
     assert manifest["status"] == "complete_functional_atomic_publication_authority_closure"
     assert manifest["owners"]["r3"] == "sole_publication_and_authority_transition_owner"
@@ -29,10 +48,31 @@ def main() -> int:
     assert manifest["activation"]["legacy_duplicate_publication_ack_connection"] is False
     assert manifest["disposition"]["physical_memory_or_ppa_claim"] is False
     assert manifest["disposition"]["numeric_or_model_gpu_claim"] is False
+    assert provenance["schema_version"] == "kvzap-route-a-rtl3-9-b3-historical-provenance-1.0"
+    assert provenance["manifest_sha256"] == hashlib.sha256(args.manifest.read_bytes()).hexdigest()
+    revision = provenance["frozen_source_commit"]
+    resolved_revision = git_text(ROOT, "rev-parse", "--verify", f"{revision}^{{commit}}").strip()
+    assert resolved_revision == revision, "frozen_source_commit must be a full immutable commit ID"
+    ancestor = subprocess.run(
+        ["git", "-C", str(ROOT), "merge-base", "--is-ancestor", revision, "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert ancestor.returncode == 0, "current HEAD does not retain the frozen B3 source commit"
     for relative, expected in manifest["source_sha256"].items():
-        actual = hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
-        assert actual == expected, f"hash mismatch: {relative}: {actual} != {expected}"
-    print(f"PASS: RTL3.9-B3 atomic-publication authority manifest verified ({len(manifest['source_sha256'])} hashes)")
+        frozen_bytes = subprocess.run(
+            ["git", "-C", str(ROOT), "show", f"{revision}:{relative}"],
+            check=False,
+            capture_output=True,
+        )
+        assert frozen_bytes.returncode == 0, f"frozen source unavailable: {revision}:{relative}"
+        actual = hashlib.sha256(frozen_bytes.stdout).hexdigest()
+        assert actual == expected, f"frozen hash mismatch: {relative}: {actual} != {expected}"
+    print(
+        "PASS: RTL3.9-B3 atomic-publication authority frozen manifest replayed "
+        f"at {revision} ({len(manifest['source_sha256'])} hashes)"
+    )
     return 0
 
 
