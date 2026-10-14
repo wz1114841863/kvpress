@@ -6,6 +6,7 @@ import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADe
 import kvpress.routea.incremental.{RouteAExclusivePackedS2ReadIngress, RouteAExclusiveS2FillTerminalIngress, RouteAFunctionalSidecarDeliveryAdapter, RouteALifecycleAdapter, RouteAM2P3Wrapper, RouteAM2ReferenceProtocolProvider, RouteAMergeBoundary, RouteAPackedAllocationOwnerMux, RouteAPackedReadActivationBinder, RouteAPackedReadAssociationOwner, RouteAPackedReadTerminalBridge, RouteAPageManager, RouteASourceCompletionPlanActivationFork}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteAM2GroupMember, RouteAR6Encoding, RouteASkeletonParameters}
+import kvpress.routea.top.RouteAComponentStatusCollector
 import org.scalatest.funspec.AnyFunSpec
 
 /**
@@ -55,6 +56,10 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
     // C3a consumes only the existing accepted plan and S2 READY observation.
     // Its partial/R4 carriers remain named outer functional environments.
     val c3_terminal_activation_mode = Input(Bool())
+    val c3b_retire_reclaim_mode = Input(Bool())
+    val c3b_runtime_retire = Flipped(RouteAChannels.runtime_retire_req)
+    val c3b_retire_ack = RouteAChannels.session_retire_ack
+    val c3b_direct_status = Flipped(RouteAChannels.component_status(p))
     val c3_packed_offer = Flipped(RouteAChannels.source_service_partial_offer(p))
     val c3_packed_fragment = Flipped(RouteAChannels.source_service_value_fragment(p))
     val c3_r4_result = Flipped(RouteAChannels.r4_result_stub)
@@ -118,6 +123,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   val c3Merge = Module(new RouteAMergeBoundary(p))
   val c3R4Reference = Module(new RouteAFunctionalR4ReferenceBoundary(p))
   val c3CommitDemux = Module(new RouteASourceCommitDemultiplexer(p))
+  val c3bStatusCollector = Module(new RouteAComponentStatusCollector(p))
   val r2 = Module(new RouteACoreSideArbiter(p))
   val r1 = Module(new RouteACoreMemIfV1(p))
   val issueAdapter = Module(new RouteAReadIssueCandidateAdapter(p))
@@ -135,7 +141,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   val p3Ingress = Module(new RouteAExclusiveP3PendingIngress(p))
 
   r3.io.mem_init_done := io.mem_init_done
-  r3.io.drain_collection_enable := io.drain_collection_enable
+  r3.io.drain_collection_enable := Mux(io.c3b_retire_reclaim_mode, lifecycle.io.drain_collection_enable, io.drain_collection_enable)
   r3.io.p3_claim_in <> io.p3_claim
   r3.io.p3_claim_ack.ready := true.B
   r3.io.admission_context_in <> io.admission_context
@@ -158,11 +164,14 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   r3.io.p3_packed_write_candidate_out <> bridge.io.r3_packed_write_in
 
   r5.io.mem_init_done := io.mem_init_done
-  r5.io.drain_collection_enable := io.drain_collection_enable
+  r5.io.drain_collection_enable := Mux(io.c3b_retire_reclaim_mode, lifecycle.io.drain_collection_enable, io.drain_collection_enable)
   r5.io.allocator_release_out.ready := true.B
   r5.io.page_allocation_req_in <> io.r5_allocate
   io.r5_allocation_rsp <> r5.io.page_allocation_rsp
-  r5.io.reclaim_permit_in <> io.reclaim_permit
+  r5.io.reclaim_permit_in.valid := Mux(io.c3b_retire_reclaim_mode, lifecycle.io.reclaim_permit_out.valid, io.reclaim_permit.valid)
+  r5.io.reclaim_permit_in.bits := Mux(io.c3b_retire_reclaim_mode, lifecycle.io.reclaim_permit_out.bits, io.reclaim_permit.bits)
+  lifecycle.io.reclaim_permit_out.ready := io.c3b_retire_reclaim_mode && r5.io.reclaim_permit_in.ready
+  io.reclaim_permit.ready := !io.c3b_retire_reclaim_mode && r5.io.reclaim_permit_in.ready
   io.reclaim_complete := r5.io.reclaim_complete
   StructuralTieOff.source(r5.io.descriptor_maintenance_terminal_in)
   r5.io.append_candidate_out <> bridge.io.r5_append_in
@@ -173,12 +182,11 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   io.r5_visibility_ack_fire := r5.io.metadata_publish_visibility_ack.fire
   r5.io.reclaim_candidate_out <> bridge.io.r5_reclaim_in
   r5.io.reclaim_delivery_in <> router.io.r5_reclaim_out
-  io.r5_status <> r5.io.component_status_out
 
   // C1 retains the existing R5/S2 owner-local request/grant rules.  C2 may
   // activate only the already-existing typed fill/sidecar carriers below.
   s2.io.mem_init_done := io.mem_init_done
-  s2.io.drain_collection_enable := false.B
+  s2.io.drain_collection_enable := io.c3b_retire_reclaim_mode && lifecycle.io.drain_collection_enable
   s2.io.s2_observe_slot := 1.U
   s2.io.service_req_in.valid := io.c3_terminal_activation_mode && lifecycle.io.s2_service_req.valid
   s2.io.service_req_in.bits := lifecycle.io.s2_service_req.bits
@@ -204,7 +212,6 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   StructuralTieOff.sink(s2.io.s2_sidecar_read_rsp_out)
   StructuralTieOff.source(s2.io.gqa_consumer_commit_in)
   StructuralTieOff.sink(s2.io.s2_release_out)
-  StructuralTieOff.sink(s2.io.component_status_out)
 
   c1Binder.io.mem_init_done := io.mem_init_done
   r5.io.descriptor_location_request_in <> c1Binder.io.descriptor_location_request_out
@@ -275,15 +282,12 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   writeIngress.io.r5_append_in <> bridge.io.r5_append_out
   writeIngress.io.r5_reclaim_in <> bridge.io.r5_reclaim_out
   r2.io.candidate_in <> writeIngress.io.candidate_out
-  r2.io.drain_collection_enable := io.drain_collection_enable
-  r2.io.reclaim_maintenance_enable := io.reclaim_maintenance_enable
+  r2.io.drain_collection_enable := Mux(io.c3b_retire_reclaim_mode, lifecycle.io.drain_collection_enable, io.drain_collection_enable)
+  r2.io.reclaim_maintenance_enable := Mux(io.c3b_retire_reclaim_mode, lifecycle.io.reclaim_maintenance_enable, io.reclaim_maintenance_enable)
   r1.io.core_mem_req_in <> r2.io.core_mem_req
   r2.io.core_mem_rsp_in <> r1.io.core_mem_rsp
   r1.io.external_core_mem_if_v1 <> io.external
-  r1.io.r1_drain_permitted := io.r1_drain_permitted
-  io.r1_status <> r1.io.component_status_out
-  io.r2_payload_status <> r2.io.payload_drain_status_out
-  io.r2_descriptor_status <> r2.io.descriptor_drain_status_out
+  r1.io.r1_drain_permitted := Mux(io.c3b_retire_reclaim_mode, c3bStatusCollector.io.r1_drain_permitted, io.r1_drain_permitted)
 
   registry.io.mem_init_done := r1.io.r1_init_complete
   registry.io.allocation_in <> bridge.io.registry_allocate_out
@@ -360,13 +364,34 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   io.m2_publication_request_fire := r3.io.m2_publish_req_in.fire
 
   lifecycle.io.frontend_lifecycle_req <> io.r6_frontend_lifecycle_req
-  lifecycle.io.component_status_in <> io.r6_component_status_in
-  StructuralTieOff.source(lifecycle.io.runtime_retire_req)
+  // C3b uses the production collector ordering, rather than inventing an
+  // alternate retirement authority.  Outside C3b the historical direct R6
+  // status fixture remains intact.
+  c3bStatusCollector.io.drain_collection_enable := io.c3b_retire_reclaim_mode && lifecycle.io.drain_collection_enable
+  c3bStatusCollector.io.reclaim_drain_restart := io.c3b_retire_reclaim_mode && lifecycle.io.reclaim_drain_restart
+  c3bStatusCollector.io.reclaim_final_drain_enable := io.c3b_retire_reclaim_mode && lifecycle.io.reclaim_final_drain_enable
+  lifecycle.io.component_status_in.valid := Mux(
+    io.c3b_retire_reclaim_mode,
+    c3bStatusCollector.io.component_status_out.valid,
+    io.r6_component_status_in.valid,
+  )
+  lifecycle.io.component_status_in.bits := Mux(
+    io.c3b_retire_reclaim_mode,
+    c3bStatusCollector.io.component_status_out.bits,
+    io.r6_component_status_in.bits,
+  )
+  c3bStatusCollector.io.component_status_out.ready := io.c3b_retire_reclaim_mode && lifecycle.io.component_status_in.ready
+  io.r6_component_status_in.ready := !io.c3b_retire_reclaim_mode && lifecycle.io.component_status_in.ready
+  lifecycle.io.runtime_retire_req.valid := io.c3b_retire_reclaim_mode && io.c3b_runtime_retire.valid
+  lifecycle.io.runtime_retire_req.bits := io.c3b_runtime_retire.bits
+  io.c3b_runtime_retire.ready := io.c3b_retire_reclaim_mode && lifecycle.io.runtime_retire_req.ready
   io.c3_attention_terminal.valid := io.c3_terminal_activation_mode && lifecycle.io.attention_terminal_rsp.valid
   io.c3_attention_terminal.bits := lifecycle.io.attention_terminal_rsp.bits
   lifecycle.io.attention_terminal_rsp.ready := Mux(io.c3_terminal_activation_mode, io.c3_attention_terminal.ready, true.B)
-  StructuralTieOff.sink(lifecycle.io.session_retire_ack)
-  lifecycle.io.r5_reclaim_complete_in := false.B
+  io.c3b_retire_ack.valid := io.c3b_retire_reclaim_mode && lifecycle.io.session_retire_ack.valid
+  io.c3b_retire_ack.bits := lifecycle.io.session_retire_ack.bits
+  lifecycle.io.session_retire_ack.ready := Mux(io.c3b_retire_reclaim_mode, io.c3b_retire_ack.ready, true.B)
+  lifecycle.io.r5_reclaim_complete_in := io.c3b_retire_reclaim_mode && r5.io.reclaim_complete
   StructuralTieOff.sink(lifecycle.io.hot_control_out)
   StructuralTieOff.sink(lifecycle.io.authority_transition_out)
   StructuralTieOff.sink(lifecycle.io.admission_context_out)
@@ -392,7 +417,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   lifecycle.io.merge_terminal_in.bits := c3Merge.io.merge_rsp_or_numeric_fault.bits
   c3Merge.io.merge_rsp_or_numeric_fault.ready := io.c3_terminal_activation_mode && lifecycle.io.merge_terminal_in.ready
   StructuralTieOff.sink(lifecycle.io.metadata_publish_req)
-  lifecycle.io.reclaim_permit_out.ready := true.B
+  // C3b selects this owner-local acknowledgement; predecessor modes keep it inactive.
 
   // C3a mirrors the existing production source-service/R4 composition for its
   // packed-only plan.  It does not generate a partial, result, source release,
@@ -418,7 +443,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   c3PacketAdapter.io.hot_fragment_in <> c3PartialProvider.io.hot_fragment_out
   c3PacketAdapter.io.pending_fragment_in <> c3PartialProvider.io.pending_fragment_out
   c3PacketAdapter.io.packed_fragment_in <> c3PartialProvider.io.packed_fragment_out
-  c3Merge.io.drain_collection_enable := false.B
+  c3Merge.io.drain_collection_enable := io.c3b_retire_reclaim_mode && lifecycle.io.drain_collection_enable
   StructuralTieOff.source(c3Merge.io.source_partial_in)
   c3Merge.io.r4_partial_header_in <> c3PacketAdapter.io.r4_partial_header_out
   c3Merge.io.r4_source_instance_in <> c3PacketAdapter.io.r4_source_instance_out
@@ -431,7 +456,6 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   c3R4Reference.io.functional_numeric_fault_in <> io.c3_r4_numeric_fault
   c3Merge.io.r4_result_stub_in <> c3R4Reference.io.r4_result_stub_out
   c3Merge.io.r4_numeric_fault_in <> c3R4Reference.io.r4_numeric_fault_out
-  StructuralTieOff.sink(c3Merge.io.component_status_out)
   c3CommitDemux.io.commit_in <> c3Merge.io.consumer_partial_commit
   StructuralTieOff.sink(c3CommitDemux.io.hot_commit_out)
   StructuralTieOff.sink(c3CommitDemux.io.pending_commit_out)
@@ -471,7 +495,50 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
     io.c1_demand_activation_mode, c1Binder.io.post_r6_page_ready_in.ready, true.B,
   )
   io.c1_page_ready_fire := r3.io.post_r6_packed_page_ready_observation.fire
-  io.r3_status <> r3.io.component_status_out
+  // Sources 0--7 deliberately mirror RouteAKVSubsystemTop.  Direct-pending
+  // remains an explicit outer functional environment in this composed
+  // packed-only witness; it neither reads this page nor owns authority.
+  c3bStatusCollector.io.status_sources(0).valid := io.c3b_retire_reclaim_mode && r1.io.component_status_out.valid
+  c3bStatusCollector.io.status_sources(0).bits := r1.io.component_status_out.bits
+  r1.io.component_status_out.ready := Mux(io.c3b_retire_reclaim_mode, c3bStatusCollector.io.status_sources(0).ready, io.r1_status.ready)
+  io.r1_status.valid := !io.c3b_retire_reclaim_mode && r1.io.component_status_out.valid
+  io.r1_status.bits := r1.io.component_status_out.bits
+
+  c3bStatusCollector.io.status_sources(1).valid := io.c3b_retire_reclaim_mode && r2.io.payload_drain_status_out.valid
+  c3bStatusCollector.io.status_sources(1).bits := r2.io.payload_drain_status_out.bits
+  r2.io.payload_drain_status_out.ready := Mux(io.c3b_retire_reclaim_mode, c3bStatusCollector.io.status_sources(1).ready, io.r2_payload_status.ready)
+  io.r2_payload_status.valid := !io.c3b_retire_reclaim_mode && r2.io.payload_drain_status_out.valid
+  io.r2_payload_status.bits := r2.io.payload_drain_status_out.bits
+
+  c3bStatusCollector.io.status_sources(2).valid := io.c3b_retire_reclaim_mode && r2.io.descriptor_drain_status_out.valid
+  c3bStatusCollector.io.status_sources(2).bits := r2.io.descriptor_drain_status_out.bits
+  r2.io.descriptor_drain_status_out.ready := Mux(io.c3b_retire_reclaim_mode, c3bStatusCollector.io.status_sources(2).ready, io.r2_descriptor_status.ready)
+  io.r2_descriptor_status.valid := !io.c3b_retire_reclaim_mode && r2.io.descriptor_drain_status_out.valid
+  io.r2_descriptor_status.bits := r2.io.descriptor_drain_status_out.bits
+
+  c3bStatusCollector.io.status_sources(3).valid := io.c3b_retire_reclaim_mode && r3.io.component_status_out.valid
+  c3bStatusCollector.io.status_sources(3).bits := r3.io.component_status_out.bits
+  r3.io.component_status_out.ready := Mux(io.c3b_retire_reclaim_mode, c3bStatusCollector.io.status_sources(3).ready, io.r3_status.ready)
+  io.r3_status.valid := !io.c3b_retire_reclaim_mode && r3.io.component_status_out.valid
+  io.r3_status.bits := r3.io.component_status_out.bits
+
+  c3bStatusCollector.io.status_sources(4).valid := io.c3b_retire_reclaim_mode && r5.io.component_status_out.valid
+  c3bStatusCollector.io.status_sources(4).bits := r5.io.component_status_out.bits
+  r5.io.component_status_out.ready := Mux(io.c3b_retire_reclaim_mode, c3bStatusCollector.io.status_sources(4).ready, io.r5_status.ready)
+  io.r5_status.valid := !io.c3b_retire_reclaim_mode && r5.io.component_status_out.valid
+  io.r5_status.bits := r5.io.component_status_out.bits
+
+  c3bStatusCollector.io.status_sources(5).valid := io.c3b_retire_reclaim_mode && s2.io.component_status_out.valid
+  c3bStatusCollector.io.status_sources(5).bits := s2.io.component_status_out.bits
+  s2.io.component_status_out.ready := Mux(io.c3b_retire_reclaim_mode, c3bStatusCollector.io.status_sources(5).ready, true.B)
+
+  c3bStatusCollector.io.status_sources(6).valid := io.c3b_retire_reclaim_mode && io.c3b_direct_status.valid
+  c3bStatusCollector.io.status_sources(6).bits := io.c3b_direct_status.bits
+  io.c3b_direct_status.ready := io.c3b_retire_reclaim_mode && c3bStatusCollector.io.status_sources(6).ready
+
+  c3bStatusCollector.io.status_sources(7).valid := io.c3b_retire_reclaim_mode && c3Merge.io.component_status_out.valid
+  c3bStatusCollector.io.status_sources(7).bits := c3Merge.io.component_status_out.bits
+  c3Merge.io.component_status_out.ready := Mux(io.c3b_retire_reclaim_mode, c3bStatusCollector.io.status_sources(7).ready, true.B)
   r3.io.p3_observe_layer := 0.U
   io.p3_state := r3.io.p3_observe_state
 }
@@ -501,6 +568,12 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     d.io.c1_demand_activation_mode.poke(false.B)
     d.io.c2_read_activation_mode.poke(false.B)
     d.io.c3_terminal_activation_mode.poke(false.B)
+    d.io.c3b_retire_reclaim_mode.poke(false.B)
+    d.io.c3b_runtime_retire.valid.poke(false.B)
+    d.io.c3b_retire_ack.ready.poke(true.B)
+    d.io.c3b_direct_status.valid.poke(false.B)
+    d.io.c3b_direct_status.bits.acknowledgement_name.poke(0.U)
+    d.io.c3b_direct_status.bits.asserted.poke(false.B)
     d.io.c3_packed_offer.valid.poke(false.B)
     d.io.c3_packed_fragment.valid.poke(false.B)
     d.io.c3_r4_result.valid.poke(false.B)
@@ -648,6 +721,24 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       require(waited < 64, "timed out waiting for C3 R4 result acceptance")
       d.clock.step(); d.io.c3_r4_result.valid.poke(false.B)
     }
+  }
+
+  private def retireC3PackedSession(d: RouteARTL265a2PackReadPublicationHarness): Unit = {
+    val retire = d.io.c3b_runtime_retire.bits
+    retire.session_id.poke(false.B)
+    retire.transaction_identity.request_id.poke(3.U)
+    retire.transaction_identity.incarnation.poke(0.U)
+    d.io.c3b_runtime_retire.valid.poke(true.B)
+    var waited = 0
+    while (!d.io.c3b_runtime_retire.ready.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+    require(waited < 64, "timed out waiting for R6 runtime retirement acceptance")
+    d.clock.step(); d.io.c3b_runtime_retire.valid.poke(false.B)
+  }
+
+  private def armC3bDirectDrain(d: RouteARTL265a2PackReadPublicationHarness): Unit = {
+    d.io.c3b_direct_status.bits.acknowledgement_name.poke(p.r6.directPendingDrainedStatusCode.U)
+    d.io.c3b_direct_status.bits.asserted.poke(true.B)
+    d.io.c3b_direct_status.valid.poke(true.B)
   }
 
   private def admit(d: RouteARTL265a2PackReadPublicationHarness, manualSidecar: Boolean = true): Unit = {
@@ -1017,6 +1108,69 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       d.io.c3_attention_terminal.bits.transaction_identity.request_id.expect(3.U)
       d.io.c3_attention_terminal.bits.terminal_status.expect(p.coreMemoryOkStatusCode.U)
       d.io.c3_attention_terminal.ready.poke(true.B); d.clock.step()
+    }
+  }
+
+  it("retires the first post-R6 packed read only after final drain, durable R5 invalidation, and page reclaim") {
+    simulate(new RouteARTL265a2PackReadPublicationHarness(p)) { d =>
+      init(d)
+      d.io.materialize_from_binding.poke(true.B)
+      d.io.automatic_publication_owner_mode.poke(true.B)
+      d.io.c1_demand_activation_mode.poke(true.B)
+      d.io.c2_read_activation_mode.poke(true.B)
+      d.io.c3_terminal_activation_mode.poke(true.B)
+      d.io.c3_merge_work.ready.poke(false.B)
+      d.io.publication_commit.ready.poke(true.B)
+      initializeR6ForPublication(d)
+      registerC1PackedAttention(d)
+      sendC1PackedPlan(d)
+      admit(d, manualSidecar = false)
+
+      waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      (0 until 8).foreach(index => response(d, 3, index, index == 7))
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      (0 until 8).foreach(index => waitRequest(d, p.coreMemoryWriteDataCode, index))
+      response(d, 0, 0, last = true)
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      val (descriptorRequestId, descriptorIncarnation) = waitRequest(d, p.coreMemoryWriteDataCode, 0)
+      response(d, descriptorRequestId, 0, last = true, incarnation = descriptorIncarnation)
+      val (payloadRequestId, payloadIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      (0 until 8).foreach(index => response(d, payloadRequestId, index, index == 7, incarnation = payloadIncarnation))
+      val (sidecarRequestId, sidecarIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      response(d, sidecarRequestId, 0, last = true, incarnation = sidecarIncarnation)
+      d.clock.step(4); d.io.c2_s2_state.expect(2.U)
+      (0 until 4).foreach(c3PackedPacket(d, _))
+      c3CompleteMerge(d)
+      var waited = 0
+      while (!d.io.c3_attention_terminal.valid.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+      require(waited < 64, "timed out waiting for the pre-retirement C3 terminal")
+      d.io.c3_attention_terminal.bits.transaction_identity.request_id.expect(3.U)
+      d.io.c3_attention_terminal.ready.poke(true.B); d.clock.step()
+
+      // From here the composition uses the production collector, including
+      // the final-pass suppression/replay of R1 and R2 descriptor drains.
+      d.io.c3b_retire_reclaim_mode.poke(true.B)
+      retireC3PackedSession(d)
+      armC3bDirectDrain(d)
+
+      // R6 cannot acknowledge retirement until it has first granted the
+      // owner-local permit and R5's one descriptor invalidation reaches its
+      // matching R1 terminal.  This is an outer functional-memory boundary.
+      waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+      // The request above is reachable only after R6 accepted all eight
+      // pre-reclaim drain facts, including this held outer observation.
+      d.io.c3b_direct_status.valid.poke(false.B)
+      val (reclaimRequestId, reclaimIncarnation) = waitRequest(d, p.coreMemoryWriteDataCode, 0)
+      require(reclaimRequestId == 0, s"expected R5 reclaim sequence request id 0, got $reclaimRequestId")
+      response(d, reclaimRequestId, 0, last = true, incarnation = reclaimIncarnation)
+
+      waited = 0
+      while (!d.io.c3b_retire_ack.valid.peek().litToBoolean && waited < 160) { d.clock.step(); waited += 1 }
+      require(waited < 160, "timed out waiting for the final R6 retire acknowledgement")
+      d.io.c3b_retire_ack.bits.session_id.expect(false.B)
+      d.io.c3b_retire_ack.bits.transaction_identity.request_id.expect(3.U)
+      d.io.c3b_retire_ack.ready.poke(true.B); d.clock.step()
+      d.io.reclaim_complete.expect(true.B)
     }
   }
 }

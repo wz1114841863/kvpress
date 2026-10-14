@@ -1061,13 +1061,21 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     four packed consumer commits, S2 release, four exact R6 merge works, and
     one R6 terminal. It changes no source owner, numeric implementation,
     scheduler, production top, or physical-memory claim.
-36. **RTL3.9-C3b--C4 — remaining retirement, event, and review closure
-    (planned; implementation requires separate approval).** This is not a new
-    scheduler or memory realization. It must prove matching S2 source service
-    through the already-frozen outer partial-provider/R4 boundary, R6 terminal,
-    and R5/R6 retirement/reclaim. It must separately cover legal stall,
-    stale/mismatch/fault, reset, event-scoreboard replay, and the
-    no-repeat/no-early-read invariants. It may retain the already-authorized
+36. **RTL3.9-C3b — retirement and reclaim (complete, functional witness).**
+    [`rtl3_9_c3b_retirement_reclaim_contract.md`](rtl3_9_c3b_retirement_reclaim_contract.md)
+    continues the same C3a terminal through an exact runtime-retire request,
+    production-shaped component-drain collection, R6's sole reclaim permit,
+    R5's matching descriptor invalidation/page-free terminal, final R1/R2
+    drain replay, and one matching R6 retire acknowledgement. The
+    direct-pending drain remains an explicit outer *status* environment in
+    this packed-only witness; it owns no data, authority, source, or lifecycle
+    transition. Functional external memory remains an environment. No HBM or
+    SRAM controller/macro, numeric pipeline, scheduling, timing, throughput,
+    PPA, or complete-inference claim is made.
+37. **RTL3.9-C4 — event/scoreboard and review closure (planned).** It must
+    separately cover legal stall, stale/mismatch/fault, reset,
+    event-scoreboard replay, and the no-repeat/no-early-read invariants across
+    the completed C0--C3b path. It may retain the already-authorized
     functional memory, partial-provider, and R4 reference **environment**
     boundaries, but may not turn any of them into an HBM controller, SRAM
     macro, numeric pipeline, schedule, timing, or PPA claim. A dedicated RTL3

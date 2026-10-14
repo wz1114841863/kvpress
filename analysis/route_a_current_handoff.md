@@ -62,11 +62,11 @@ claim physical M2/SRAM/HBM, controller or CDC behavior, numeric datapath,
 frequency, bandwidth, throughput, area, energy, PPA, model/GPU evidence, or a
 complete LLM inference engine.
 
-## Current unclosed RTL3 question
+## Current functional closure state
 
-The new page is correctly published and becomes packed-authoritative, but the
-same production-shaped functional graph has not yet shown its **first packed
-read after publication**:
+The same production-shaped functional graph has now shown its **first packed
+read after publication**, through S2 source service, R6 terminal, and
+retirement/reclaim:
 
 ```text
 R3 publication committed
@@ -84,6 +84,10 @@ The functional memory, attention-partial producer, and R4 merge provider may
 remain explicitly replaceable **outer functional environments** during RTL3.
 They must not silently become an HBM controller, SRAM macro, attention MAC,
 RoPE/exp/FP pipeline, or performance model.
+
+C4 remains open for cross-owner event/scoreboard coverage and bounded legal
+stall, stale/mismatch, fault, and reset review. RTL3 itself remains open
+pending that separate review scope.
 
 ## RTL3.9-C0 — association/first-use audit and baseline (complete functional baseline)
 
@@ -156,9 +160,11 @@ split so that each step has one owner and a reviewable failure boundary:
    witness now reaches S2 service, the named partial/R4 environments, four
    packed consumer commits, S2 release, and the sole R6 terminal. See
    [`rtl3_9_c3a_packed_source_service_terminal_contract.md`](rtl3_9_c3a_packed_source_service_terminal_contract.md).
-2. **C3b — retirement and reclaim.** Connect the terminal to runtime retire,
-   joined component drain, R6 reclaim permit, R5 invalidation/page free, and
-   matching R6 retire acknowledgement.
+2. **C3b — retirement and reclaim (complete).** The same C3a terminal now
+   reaches runtime retirement, the production-shaped drain collector, R6's
+   reclaim permit, R5's matching descriptor invalidation/page free, and one
+   matching R6 retire acknowledgement. See
+   [`rtl3_9_c3b_retirement_reclaim_contract.md`](rtl3_9_c3b_retirement_reclaim_contract.md).
 3. **C4 — event/scoreboard and cross-owner review.** Require a same-instance
    success path plus bounded legal stall, stale/mismatch, fault, and reset
    cases. Replay only accepted architectural events through the existing
