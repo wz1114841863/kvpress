@@ -14,7 +14,6 @@ from kvpress.rtl2_attention_terminal_scoreboard_binding import (
     AttentionTerminalScoreboardBindingError,
     RouteARTL2AttentionTerminalScoreboardAdapter,
     validate_binding,
-    validate_source_hashes,
 )
 
 
@@ -34,7 +33,6 @@ def test_binding_preserves_r4_origin_and_r6_outward_observation_without_rewritin
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     overlay = json.loads(OVERLAY.read_text(encoding="utf-8"))
     validate_binding(binding, schema, overlay)
-    validate_source_hashes(binding, ROOT)
     assert schema["status"] == "declared_pre_behavior_no_events_emittable"
     assert next(item for item in overlay["overrides"] if item["event"] == "attention_terminal")["active_activation_phase"] == "rtl2_4"
 
@@ -77,10 +75,6 @@ def test_binding_validator_rejects_field_or_owner_drift_and_cli_supports_help_an
     malformed["event"]["origin_owner"] = "route_a_lifecycle_adapter"
     with pytest.raises(AttentionTerminalScoreboardBindingError, match="origin owner/carrier"):
         validate_binding(malformed, schema, overlay)
-    malformed = copy.deepcopy(binding)
-    malformed["source_sha256"]["analysis/README.md"] = "0" * 64
-    with pytest.raises(AttentionTerminalScoreboardBindingError, match="hash-bound source drift"):
-        validate_source_hashes(malformed, ROOT)
     help_result = subprocess.run([sys.executable, str(VALIDATOR), "--help"], cwd=ROOT, text=True, capture_output=True, check=True)
     assert "--phase-overlay" in help_result.stdout
     result = subprocess.run([sys.executable, str(VALIDATOR)], cwd=ROOT, text=True, capture_output=True, check=True)

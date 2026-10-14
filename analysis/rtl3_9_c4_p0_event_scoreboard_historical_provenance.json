@@ -1,0 +1,28 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-c4-p0-event-scoreboard-historical-provenance-1.0",
+  "scope": "Historical source-hash replay for the pre-existing RTL2 event bindings and RTL3.7-C event scoreboard prerequisite. This is provenance-only, not a C4 functional event capture, RTL completion, or current-descendant source certification.",
+  "current_head_requirement": "each frozen_source_commit_is_an_ancestor_of_HEAD",
+  "records": {
+    "rtl2_4_3_attention_terminal": {
+      "manifest": "analysis/rtl2_4_3_attention_terminal_scoreboard_binding.json",
+      "manifest_sha256": "97a56410df6e0012c8ceacb142ed54464cce227fb993dca44e906f26ef074c87",
+      "frozen_source_commit": "e70c3084400f5f65a3151c9df367547e9b595816"
+    },
+    "rtl2_5_5_active_state": {
+      "manifest": "analysis/rtl2_5_5_active_state_scoreboard_binding.json",
+      "manifest_sha256": "4c78ac44f725ae350f14f314176d32f9b97c9d1001d1b926a990274c5360bdc4",
+      "frozen_source_commit": "e70c3084400f5f65a3151c9df367547e9b595816"
+    },
+    "rtl2_6_5c_event_capture_replay": {
+      "manifest": "analysis/rtl2_6_5c_event_capture_replay_manifest.json",
+      "manifest_sha256": "23d0f5621e065f8b4269bdc3b12d1039fa164c465295b51dbcbe65cf94d0bce7",
+      "frozen_source_commit": "e70c3084400f5f65a3151c9df367547e9b595816"
+    },
+    "rtl3_7c_drain_fault_stall_reset": {
+      "manifest": "analysis/rtl3_7c_drain_fault_stall_reset_scoreboard_manifest.json",
+      "manifest_sha256": "7be0a8b5fde239719f19bd4567d85a7cf645d00730dc400768190581d7c5a5bd",
+      "frozen_source_commit": "6ac0d6ee6ea54e5a42154a993ecab10ef4fd0ddc"
+    }
+  },
+  "successor_boundary": "C4-P1 and later must capture and replay only accepted events from the C0-C3b same-instance witness. These historical records do not certify that new event path."
+}

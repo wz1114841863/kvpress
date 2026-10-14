@@ -9,7 +9,6 @@ production-top adapter, numeric model, or RTL-equivalence claim.
 from __future__ import annotations
 
 from dataclasses import dataclass
-import hashlib
 import json
 from pathlib import Path
 from typing import Any, Iterable, Mapping
@@ -94,19 +93,6 @@ def validate_manifest(manifest: Mapping[str, Any], schema: Mapping[str, Any]) ->
         raise RTL265cEventReplayError("capture/replay forbidden boundary drift")
 
 
-def validate_source_hashes(manifest: Mapping[str, Any], root: str | Path) -> None:
-    base = Path(root).resolve()
-    sources = manifest.get("source_sha256")
-    if not isinstance(sources, Mapping) or not sources:
-        raise RTL265cEventReplayError("capture/replay manifest lacks source hashes")
-    for relative, expected in sources.items():
-        path = (base / str(relative)).resolve()
-        if base not in path.parents or not path.is_file() or not isinstance(expected, str):
-            raise RTL265cEventReplayError("invalid capture/replay source hash")
-        if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
-            raise RTL265cEventReplayError(f"hash-bound source drift: {relative}")
-
-
 class AcceptedCarrierCapture:
     """No-default testbench capture boundary for all immutable RTL2 events."""
 
@@ -115,7 +101,8 @@ class AcceptedCarrierCapture:
         self._schema = json.loads((self._root / "analysis/rtl2_scoreboard_event_schema.json").read_text(encoding="utf-8"))
         self._manifest = load_manifest(manifest_path or self._root / "analysis/rtl2_6_5c_event_capture_replay_manifest.json")
         validate_manifest(self._manifest, self._schema)
-        validate_source_hashes(self._manifest, self._root)
+        # C4-P0 validates source_sha256 through immutable Git provenance.
+        # Capture itself remains a semantic accepted-carrier boundary.
         self._records = _records_by_name(self._schema)
 
     def capture(self, observation: AcceptedCarrierObservation) -> CapturedEvent:

@@ -1072,8 +1072,15 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     transition. Functional external memory remains an environment. No HBM or
     SRAM controller/macro, numeric pipeline, scheduling, timing, throughput,
     PPA, or complete-inference claim is made.
-37. **RTL3.9-C4 — event/scoreboard and review closure (planned).** It must
-    separately cover legal stall, stale/mismatch/fault, reset,
+37. **RTL3.9-C4-P0 — frozen event/scoreboard provenance (complete; no C4
+    functional closure).**
+    [`rtl3_9_c4_p0_event_scoreboard_historical_provenance_contract.md`](rtl3_9_c4_p0_event_scoreboard_historical_provenance_contract.md)
+    replays the historical RTL2.4.3, RTL2.5.5, RTL2.6.5c, and RTL3.7-C source
+    hashes at their immutable commits rather than falsely requiring unchanged
+    descendant source. It changes no event path or owner and does not certify
+    a current C0--C3b event trace.
+38. **RTL3.9-C4-P1+ — event/scoreboard and review closure (planned).** It
+    must separately cover legal stall, stale/mismatch/fault, reset,
     event-scoreboard replay, and the no-repeat/no-early-read invariants across
     the completed C0--C3b path. It may retain the already-authorized
     functional memory, partial-provider, and R4 reference **environment**

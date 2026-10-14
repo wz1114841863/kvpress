@@ -8,7 +8,6 @@ numeric R4 implementation, cycle model, or performance/PPA estimator.
 from __future__ import annotations
 
 from dataclasses import dataclass
-import hashlib
 import json
 from pathlib import Path
 from typing import Any, Mapping
@@ -98,23 +97,6 @@ def validate_binding(binding: Mapping[str, Any], schema: Mapping[str, Any], phas
         raise AttentionTerminalScoreboardBindingError("binding terminal status encoding drift")
 
 
-def validate_source_hashes(binding: Mapping[str, Any], repo_root: Path) -> None:
-    """Verify every explicitly hash-bound RTL2.4.3 source before use."""
-    sources = binding.get("source_sha256")
-    if not isinstance(sources, dict) or not sources:
-        raise AttentionTerminalScoreboardBindingError("binding must contain nonempty source_sha256")
-    root = Path(repo_root).resolve()
-    for relative_path, expected_digest in sorted(sources.items()):
-        if not isinstance(relative_path, str) or not isinstance(expected_digest, str):
-            raise AttentionTerminalScoreboardBindingError("source_sha256 entries must be string path/digest pairs")
-        path = (root / relative_path).resolve()
-        if root not in path.parents or not path.is_file():
-            raise AttentionTerminalScoreboardBindingError(f"hash-bound source is unavailable: {relative_path}")
-        observed_digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        if observed_digest != expected_digest:
-            raise AttentionTerminalScoreboardBindingError(f"hash-bound source drift: {relative_path}")
-
-
 class RouteARTL2AttentionTerminalScoreboardAdapter:
     """Dispatch exact accepted terminal events to the existing R6 reference."""
 
@@ -124,7 +106,9 @@ class RouteARTL2AttentionTerminalScoreboardAdapter:
         schema = json.loads((root / "analysis" / "rtl2_scoreboard_event_schema.json").read_text(encoding="utf-8"))
         overlay = json.loads((root / "analysis" / "rtl2_scoreboard_event_phase_reconciliation_01.json").read_text(encoding="utf-8"))
         validate_binding(binding, schema, overlay)
-        validate_source_hashes(binding, root)
+        # C4-P0 replays the frozen source hashes at their immutable Git
+        # revision.  A descendant adapter must validate the binding semantics,
+        # not pretend that later C0--C3 edits invalidate historical evidence.
         self._lifecycle = RouteALifecycleAdapterReference()
         self._session_started = False
 

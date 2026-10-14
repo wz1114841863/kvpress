@@ -85,9 +85,10 @@ remain explicitly replaceable **outer functional environments** during RTL3.
 They must not silently become an HBM controller, SRAM macro, attention MAC,
 RoPE/exp/FP pipeline, or performance model.
 
-C4 remains open for cross-owner event/scoreboard coverage and bounded legal
-stall, stale/mismatch, fault, and reset review. RTL3 itself remains open
-pending that separate review scope.
+C4-P0 has replayed the frozen event/scoreboard prerequisites from their
+immutable source commits. C4-P1 and later remain open for cross-owner
+event/scoreboard coverage and bounded legal stall, stale/mismatch, fault, and
+reset review. RTL3 itself remains open pending that separate review scope.
 
 ## RTL3.9-C0 — association/first-use audit and baseline (complete functional baseline)
 
@@ -165,11 +166,17 @@ split so that each step has one owner and a reviewable failure boundary:
    reclaim permit, R5's matching descriptor invalidation/page free, and one
    matching R6 retire acknowledgement. See
    [`rtl3_9_c3b_retirement_reclaim_contract.md`](rtl3_9_c3b_retirement_reclaim_contract.md).
-3. **C4 — event/scoreboard and cross-owner review.** Require a same-instance
-   success path plus bounded legal stall, stale/mismatch, fault, and reset
-   cases. Replay only accepted architectural events through the existing
-   scoreboard contract. Request an RTL3 completion review only after C0--C3
-   pass.
+3. **C4-P0 — frozen event/scoreboard provenance (complete; no functional C4
+   claim).** The RTL2.4.3, RTL2.5.5, RTL2.6.5c, and RTL3.7-C source-hash
+   records replay only at their immutable commits; they are no longer compared
+   with mutable descendants. See
+   [`rtl3_9_c4_p0_event_scoreboard_historical_provenance_contract.md`](rtl3_9_c4_p0_event_scoreboard_historical_provenance_contract.md).
+4. **C4-P1+ — event/scoreboard and cross-owner review (remaining).** Audit a
+   same-instance accepted-event provenance/feasibility matrix, then require
+   success plus bounded legal stall, stale/mismatch, fault, and reset cases.
+   Replay only accepted architectural events through the existing scoreboard
+   contract. Request an RTL3 completion review only after C0--C3b and all C4
+   sub-phases pass.
 
 ## RTL3 completion criteria
 

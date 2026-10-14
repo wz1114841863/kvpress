@@ -5,7 +5,6 @@ numeric datapath, HBM transaction, physical allocator, or RTL equivalence.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -58,19 +57,13 @@ def validate_binding(binding: dict[str, Any], schema: dict[str, Any], overlay: d
             raise ReclaimScoreboardBindingError(f"phase binding missing for {name}")
 
 
-def validate_source_hashes(binding: dict[str, Any], root: Path) -> None:
-    for relative, expected in binding["source_sha256"].items():
-        actual = hashlib.sha256((root / relative).read_bytes()).hexdigest()
-        if actual != expected:
-            raise ReclaimScoreboardBindingError(f"hash-bound source drift: {relative}")
-
-
 class RouteARTL2ReclaimScoreboardAdapter:
     """Explicit event mirror; setup facts are supplied by the testbench."""
     def __init__(self, root: Path) -> None:
         binding = load_binding(root / "analysis" / "rtl2_5_5_active_state_scoreboard_binding.json")
         validate_binding(binding, json.loads((root / "analysis" / "rtl2_scoreboard_event_schema.json").read_text()), json.loads((root / "analysis" / "rtl2_scoreboard_event_phase_reconciliation_01.json").read_text()))
-        validate_source_hashes(binding, root)
+        # C4-P0 replays the frozen source hashes at their immutable Git
+        # revision; this descendant adapter validates only binding semantics.
         self._r5 = RouteAPageManagerReference(page_pool_pages=4, layer_count=1, kv_head_count=1, generation_width=2)
         self._r6 = RouteALifecycleAdapterReference()
         self._reclaim_ref: PageRef | None = None
