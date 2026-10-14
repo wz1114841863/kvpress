@@ -1,0 +1,75 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-c4-a-precondition-audit-1.0",
+  "status": "complete_audit_no_rtl_capture_change",
+  "scope": "C4-A precondition audit after C4-P0/P1 and the narrow C4-P2 precursor; it does not implement C4-A capture or replay.",
+  "rules": [
+    "A C4-A event requires one named same-instance owner carrier and its actual ready-valid fire.",
+    "Every required schema field must be present on that carrier; a testbench constant, private owner state, descriptor image, later reclaim_complete, or outer functional-memory observation is not a substitute.",
+    "A zero-buffer observer may backpressure only the selected carrier and must preserve atomic event/carrier fire.",
+    "C4-P2 remains a narrow precursor, not C4-A closure."
+  ],
+  "candidates": [
+    {
+      "name": "attention_terminal",
+      "owner": "route_a_merge_boundary",
+      "accepted_carrier": "lifecycle.attention_terminal_rsp -> io.c3_attention_terminal",
+      "acceptance": "io.c3_attention_terminal.fire",
+      "required_fields": ["request_id", "incarnation", "terminal_status"],
+      "field_provenance": "all fields are present on the terminal bundle",
+      "existing_binding": "analysis/rtl2_4_3_attention_terminal_scoreboard_binding.json",
+      "c4_p2_state": "bound",
+      "c4_a_capture_eligible": true
+    },
+    {
+      "name": "descriptor_invalidate",
+      "owner": "route_a_page_manager",
+      "candidate_carrier": "r5.allocator_release_out",
+      "candidate_acceptance": "r5.allocator_release_out.fire",
+      "required_fields": ["page_ref", "generation", "descriptor_operation", "delivery_context_ref"],
+      "field_provenance": "allocator_release_out carries only old page_ref/generation; the existing RTL2.5.5 adapter supplies descriptor_operation=Invalidate and delivery_context_ref=R5Reclaim as constants.",
+      "existing_binding": "analysis/rtl2_5_5_active_state_scoreboard_binding.json",
+      "c4_p2_state": "excluded",
+      "c4_a_capture_eligible": false,
+      "fail_closed_reason": "The required operation and delivery-context fields are not fields of one accepted C3b owner carrier. C4-A must not convert the historical adapter constants into inferred owner-produced event fields."
+    },
+    {
+      "name": "page_free",
+      "owner": "route_a_page_manager",
+      "accepted_carrier": "r5.allocator_release_out",
+      "acceptance": "r5.allocator_release_out.fire",
+      "required_fields": ["page_ref", "generation"],
+      "field_provenance": "both fields are the exact old PageRef on allocator_release_out after the matching durable invalidation terminal",
+      "existing_binding": "analysis/rtl2_5_5_active_state_scoreboard_binding.json",
+      "c4_p2_state": "excluded; harness currently ties ready=true",
+      "c4_a_capture_eligible": true,
+      "required_c4_a_change": "Insert the existing test-only reclaim adapter at the R5 allocator_release_out boundary, exposing only page_free and preserving same-fire backpressure."
+    },
+    {
+      "name": "retire_ack",
+      "owner": "route_a_lifecycle_adapter",
+      "accepted_carrier": "lifecycle.session_retire_ack -> io.c3b_retire_ack",
+      "acceptance": "io.c3b_retire_ack.fire",
+      "required_fields": ["session_id", "request_id", "incarnation"],
+      "field_provenance": "all fields are present on the outward R6 acknowledgement bundle",
+      "existing_binding": "analysis/rtl2_5_5_active_state_scoreboard_binding.json",
+      "c4_p2_state": "bound",
+      "c4_a_capture_eligible": true
+    }
+  ],
+  "r5_old_page_ref_release": {
+    "carrier": "r5.allocator_release_out",
+    "acceptance": "r5.allocator_release_out.fire",
+    "fields": ["page_ref.page_id", "page_ref.generation"],
+    "classification": "exact owner-produced post-durable observation; it can authorize page_free only, not descriptor_invalidate's missing fields."
+  },
+  "disposition": {
+    "c4_a_precondition_audit_complete": true,
+    "c4_a_capture_complete": false,
+    "eligible_event_names": ["attention_terminal", "page_free", "retire_ack"],
+    "ineligible_event_names": ["descriptor_invalidate"],
+    "c4_b_replay_authorized": false,
+    "c4_c_negative_coverage_authorized": false,
+    "c4_d_completion_review_authorized": false,
+    "physical_or_numeric_claim": false
+  }
+}

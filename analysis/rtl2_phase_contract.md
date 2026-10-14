@@ -1084,16 +1084,29 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     classifies all immutable scoreboard records as exact outward, internal but
     unobserved, incomplete, or non-handshake. Every row remains unauthorized
     for capture; no event tap, source, or C4 functional closure is claimed.
-39. **RTL3.9-C4-P2 — selected accepted-event binding (complete; testbench
-    only).**
+39. **RTL3.9-C4-P2 — narrow C4-A accepted-event precursor (complete;
+    testbench only).**
     [`rtl3_9_c4_p2_accepted_event_binding_contract.md`](rtl3_9_c4_p2_accepted_event_binding_contract.md)
     binds only the C0 actual authority acceptance, existing terminal binding,
     and existing retire acknowledgement binding. Its zero-buffer event forks
     preserve same-fire atomicity and leave every non-selected event excluded.
-40. **RTL3.9-C4-P3+ — event/scoreboard and review closure (planned).** It
-    must separately cover legal stall, stale/mismatch/fault, reset,
-    event-scoreboard replay, and the no-repeat/no-early-read invariants across
-    the completed C0--C3b path. It may retain the already-authorized
+40. **RTL3.9-C4-A — event-capture precondition audit (complete; no new
+    capture).**
+    [`rtl3_9_c4_a_precondition_audit_contract.md`](rtl3_9_c4_a_precondition_audit_contract.md)
+    finds complete terminal, page-free, and retire-ack carriers, while keeping
+    descriptor-invalidate fail-closed because its required fields are not on
+    one accepted C3b owner carrier.
+41. **RTL3.9-C4-A — eligible event capture (planned).** It may bind only the
+    exact R5 page-free release in the C3b harness and must preserve the
+    existing terminal/retire observations without inferring
+    descriptor-invalidate.
+42. **RTL3.9-C4-B — event replay and bounded legal backpressure (planned).**
+    It must prove no partial acceptance or replay of the eligible C4-A events.
+43. **RTL3.9-C4-C — stale/mismatch, numeric fault, and reset (planned).** It
+    must produce no false event or boundary violation.
+44. **RTL3.9-C4-D — validation and bounded completion review (planned).** It
+    may request RTL3 functional-subsystem review only after C4-A through C4-C
+    pass. These stages may retain the already-authorized
     functional memory, partial-provider, and R4 reference **environment**
     boundaries, but may not turn any of them into an HBM controller, SRAM
     macro, numeric pipeline, schedule, timing, or PPA claim. A dedicated RTL3

@@ -86,11 +86,13 @@ They must not silently become an HBM controller, SRAM macro, attention MAC,
 RoPE/exp/FP pipeline, or performance model.
 
 C4-P0 has replayed the frozen event/scoreboard prerequisites from their
-immutable source commits. C4-P1 has completed the fail-closed C3b event-field
-provenance matrix, and C4-P2 has bound its three selected accepted carriers in
-the same C3b testbench instance. C4-P3 and later remain open for event trace
-replay, bounded legal stall, stale/mismatch, fault, and reset review. RTL3
-itself remains open pending that separate review scope.
+immutable source commits. C4-P1 completed the fail-closed C3b event-field
+provenance matrix, and C4-P2 is its narrow accepted-carrier precursor. The
+C4-A precondition audit finds terminal, page-free, and retire-ack eligible,
+but keeps descriptor-invalidate fail-closed because two required fields are
+not on its accepted R5 carrier. C4-A capture, C4-B replay/backpressure, C4-C
+negative cases, and C4-D completion review remain open. RTL3 itself remains
+open pending those bounded scopes.
 
 ## RTL3.9-C0 — association/first-use audit and baseline (complete functional baseline)
 
@@ -177,14 +179,26 @@ split so that each step has one owner and a reviewable failure boundary:
    immutable schema records have a fail-closed classification; no event is
    authorized for capture yet. See
    [`rtl3_9_c4_p1_c3b_event_provenance_matrix_contract.md`](rtl3_9_c4_p1_c3b_event_provenance_matrix_contract.md).
-5. **C4-P2 — selected accepted-event binding (complete; testbench only).** A
+5. **C4-P2 — narrow C4-A accepted-event precursor (complete; testbench
+   only).** A
    zero-buffer observer binds only authority transition, terminal, and retire
    acknowledgement to their same-fire event records. See
    [`rtl3_9_c4_p2_accepted_event_binding_contract.md`](rtl3_9_c4_p2_accepted_event_binding_contract.md).
-6. **C4-P3+ — event/scoreboard and cross-owner review (remaining).** Replay
-   the selected same-instance events, then require bounded legal stall,
-   stale/mismatch, fault, and reset cases. Request an RTL3 completion review
-   only after C0--C3b and all C4 sub-phases pass.
+6. **C4-A — event-capture precondition audit (complete; no new capture).**
+   Terminal, page-free, and retire-ack have complete accepted carriers;
+   descriptor-invalidate remains excluded because its required fields are not
+   co-carried. See
+   [`rtl3_9_c4_a_precondition_audit_contract.md`](rtl3_9_c4_a_precondition_audit_contract.md).
+7. **C4-A — eligible event capture (remaining).** Bind only the eligible R5
+   page-free release in the same C3b harness and preserve the existing
+   terminal/retire observations; do not infer descriptor-invalidate.
+8. **C4-B — event replay and bounded legal backpressure (remaining).** Replay
+   the captured accepted events and prove no partial acceptance or replay.
+9. **C4-C — stale/mismatch, numeric-fault, and reset cases (remaining).**
+   Prove they create no false event and preserve all C0--C3b boundaries.
+10. **C4-D — validation and bounded completion review (remaining).** Update
+    contracts/preflights and request functional-subsystem review only after
+    C4-A through C4-C pass.
 
 ## RTL3 completion criteria
 
