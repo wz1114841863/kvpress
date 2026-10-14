@@ -1079,7 +1079,12 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     hashes at their immutable commits rather than falsely requiring unchanged
     descendant source. It changes no event path or owner and does not certify
     a current C0--C3b event trace.
-38. **RTL3.9-C4-P1+ — event/scoreboard and review closure (planned).** It
+38. **RTL3.9-C4-P1 — C3b event-provenance matrix (complete; audit only).**
+    [`rtl3_9_c4_p1_c3b_event_provenance_matrix_contract.md`](rtl3_9_c4_p1_c3b_event_provenance_matrix_contract.md)
+    classifies all immutable scoreboard records as exact outward, internal but
+    unobserved, incomplete, or non-handshake. Every row remains unauthorized
+    for capture; no event tap, source, or C4 functional closure is claimed.
+39. **RTL3.9-C4-P2+ — event/scoreboard and review closure (planned).** It
     must separately cover legal stall, stale/mismatch/fault, reset,
     event-scoreboard replay, and the no-repeat/no-early-read invariants across
     the completed C0--C3b path. It may retain the already-authorized

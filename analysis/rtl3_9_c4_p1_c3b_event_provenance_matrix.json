@@ -1,0 +1,134 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-c4-p1-c3b-event-provenance-matrix-1.0",
+  "status": "complete_audit_only_no_event_capture_authorized",
+  "scope": "C3b same-instance event-field provenance audit against the immutable RTL2 event vocabulary. This matrix is an audit artifact, not a scoreboard tap, trace, event source, or functional C4 closure.",
+  "base_schema": "analysis/rtl2_scoreboard_event_schema.json",
+  "harness": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala",
+  "global_rules": [
+    "Only a named owner/carrier ready-valid fire with all immutable schema fields may become a later captured event.",
+    "An outer functional-memory response, a READY/state observation, or a test action is not an accepted architectural event.",
+    "No missing field may be inferred from private state, a constant, an unrelated publication member, or a later terminal.",
+    "Every row remains capture_authorized=false in P1; C4-P2 must bind each selected observation explicitly and separately."
+  ],
+  "rows": [
+    {
+      "event": "request_accept",
+      "evidence_class": "internal_owner_fire_not_exported",
+      "c3b_observation": "The R2-to-R1 accepted request exists inside the composed typed path, but C3b exports only the functional external-memory port, not that owner-carrier fire.",
+      "field_provenance": "request_id/incarnation/reset_epoch/delivery_context_ref/candidate_class are not exposed together at a C3b harness output.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "Do not use external.request fire; add no observation unless the exact R2-to-R1 accepted carrier and all fields are explicitly bound."
+    },
+    {
+      "event": "fragment_deliver",
+      "evidence_class": "internal_owner_fire_not_exported",
+      "c3b_observation": "The typed delivery router is internal. The external-memory response is an environment input and is not the router acceptance.",
+      "field_provenance": "The required identity, context, fragment index, last, and status are not exported as one typed-router accepted carrier.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "Reject environment response fire as a substitute; require an exact router-carrier observation."
+    },
+    {
+      "event": "write_commit",
+      "evidence_class": "internal_owner_fire_not_exported",
+      "c3b_observation": "R1 terminals reach R3/R5 through the internal typed path for payload, descriptor, and later reclaim maintenance.",
+      "field_provenance": "The schema fields are carried by the typed terminal association but no C3b output exposes that accepted owner-carrier.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "A future tap must distinguish the named R1 terminal operation and preserve all schema fields; external.response is insufficient."
+    },
+    {
+      "event": "descriptor_durable",
+      "evidence_class": "internal_owner_fire_not_exported",
+      "c3b_observation": "R5's descriptor-durability prerequisite is the internal R5-to-R3 aggregate gate before publication.",
+      "field_provenance": "Its page, layer/head, group tag, required/durable masks are not exported at C3b; r5_visibility_ack_fire is later and lacks this record.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "Do not recast visibility acknowledgement as descriptor durability; bind the prerequisite fire only if all fields are retained."
+    },
+    {
+      "event": "metadata_publish_commit",
+      "evidence_class": "partial_outward_observation",
+      "c3b_observation": "publication_commit is exported after publication acknowledgement, but it carries page/group/valid-record summary rather than a member entry_id, record_ordinal, and publication_status.",
+      "field_provenance": "The immutable event requires transaction_group_tag, entry_id, record_ordinal, page_ref, generation, publication_status; the latter three member/status fields are unavailable on this observation.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "Fail closed: publication_commit may not emit metadata_publish_commit without a separately bound exact per-record accepted carrier."
+    },
+    {
+      "event": "authority_transition",
+      "evidence_class": "exact_accepted_outward_observation",
+      "c3b_observation": "automatic_publication_owner_mode routes R3 authority_transition_out into R6; io.r6_authority_transition_fire is that actual acceptance and io.r6_authority_transition preserves entry_id/from/to/tag.",
+      "field_provenance": "entry_id=R6AuthorityTransition.entry_id; transaction_group_tag=transaction_group_tag; from_authority=from_authority; to_authority=to_authority.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "May be selected only by an explicit C0-consistent alias binding to the immutable R3-to-R6 schema carrier; no second authority owner or ordinal table."
+    },
+    {
+      "event": "source_deliverable",
+      "evidence_class": "nonhandshake_owner_state",
+      "c3b_observation": "C3 packet activation consumes S2's read-only s2_observe_available/identity/instance facts; they are not an accepted source-owner delivery handshake.",
+      "field_provenance": "source_valid is an owner state fact and no accepted carrier exposes the complete schema field set at the harness boundary.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "Do not emit from READY/availability; identify a named accepted S2 source-owner carrier first."
+    },
+    {
+      "event": "consumer_partial_commit",
+      "evidence_class": "internal_owner_fire_not_exported",
+      "c3b_observation": "c3Merge.consumer_partial_commit fires before the commit demultiplexer delivers the packed commit to S2.",
+      "field_provenance": "The internal commit carries transaction identity, source kind, source instance coordinate/generation, and consumer_id, but no outward C3b observation exposes its fire.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "A future observer must bind this exact merge-boundary fire, not the outer partial-provider packet or an S2 state transition."
+    },
+    {
+      "event": "source_release",
+      "evidence_class": "internal_owner_fire_not_exported",
+      "c3b_observation": "s2_release_out is accepted by lifecycle.packed_source_release_in after S2's four consumer commits, but the fire is internal to the harness.",
+      "field_provenance": "Identity and source instance are present; all_four_consumers_committed may be asserted only by an explicit rule tied to this accepted release, never supplied as a default.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "Expose/bind the accepted S2 release first and state the four-commit proof rule explicitly."
+    },
+    {
+      "event": "merge_request",
+      "evidence_class": "internal_owner_fire_not_exported",
+      "c3b_observation": "lifecycle.merge_req is accepted by c3Merge.merge_req_in; io.c3_merge_work is a later outer R4-reference work observation, not this R6 owner-carrier fire.",
+      "field_provenance": "The internal request carries transaction identity and source_presence, while the outer work boundary is not an interchangeable schema carrier.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "Do not capture io.c3_merge_work; bind lifecycle-to-merge acceptance if this event is selected."
+    },
+    {
+      "event": "attention_terminal",
+      "evidence_class": "exact_accepted_outward_observation_existing_binding",
+      "c3b_observation": "c3Merge's R4-origin terminal is accepted by lifecycle and exposed as io.c3_attention_terminal; the existing RTL2.4.3 binding already defines that same-handshake outward observation.",
+      "field_provenance": "request_id=transaction_identity.request_id; incarnation=transaction_identity.incarnation; terminal_status=terminal_status.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "Reuse the existing binding only at io.c3_attention_terminal.fire; ready-low must emit nothing and preserve the held terminal."
+    },
+    {
+      "event": "descriptor_invalidate",
+      "evidence_class": "internal_owner_fire_incomplete_schema_fields",
+      "c3b_observation": "R5 reclaim_candidate_out enters the existing R2/R1 maintenance path after R6 permit, but it is internal and identifies descriptor line/operation rather than an outward old page-ref release.",
+      "field_provenance": "The schema's old page_ref/generation and delivery_context_ref are not exposed together on an accepted C3b observation of the candidate.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "Do not infer invalidation from a descriptor line or later reclaim_complete; use the existing R5 post-durable binding only if its precise carrier is observed."
+    },
+    {
+      "event": "page_free",
+      "evidence_class": "exact_internal_owner_fire_missing_harness_observer",
+      "c3b_observation": "R5 allocator_release_out is the post-durable old PageRef carrier and is consumed with ready=true inside the C3b harness.",
+      "field_provenance": "page_ref=allocator_release_out.bits.page_ref.page_id; generation=allocator_release_out.bits.page_ref.generation.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "A test-only observer may bind allocator_release_out.fire without changing R5 ownership; reclaim_complete alone must not emit page_free."
+    },
+    {
+      "event": "retire_ack",
+      "evidence_class": "exact_accepted_outward_observation_existing_binding",
+      "c3b_observation": "After R5 reclaim_complete and final drain collection, lifecycle.session_retire_ack is exposed as io.c3b_retire_ack.",
+      "field_provenance": "session_id=session_id; request_id=transaction_identity.request_id; incarnation=transaction_identity.incarnation.",
+      "capture_authorized": false,
+      "c4_p2_requirement": "Reuse the existing RTL2.5.5 binding only at io.c3b_retire_ack.fire; valid without ready emits nothing."
+    }
+  ],
+  "disposition": {
+    "c4_p1_complete": true,
+    "c4_p2_required": "explicit accepted-carrier binding selection before any trace/witness change",
+    "c4_functional_event_capture_complete": false,
+    "rtl3_completion_review_authorized": false,
+    "physical_or_numeric_claim": false
+  }
+}

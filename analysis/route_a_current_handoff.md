@@ -86,9 +86,10 @@ They must not silently become an HBM controller, SRAM macro, attention MAC,
 RoPE/exp/FP pipeline, or performance model.
 
 C4-P0 has replayed the frozen event/scoreboard prerequisites from their
-immutable source commits. C4-P1 and later remain open for cross-owner
-event/scoreboard coverage and bounded legal stall, stale/mismatch, fault, and
-reset review. RTL3 itself remains open pending that separate review scope.
+immutable source commits. C4-P1 has completed the fail-closed C3b event-field
+provenance matrix; C4-P2 and later remain open for explicit accepted-carrier
+binding, cross-owner coverage, and bounded legal stall, stale/mismatch, fault,
+and reset review. RTL3 itself remains open pending that separate review scope.
 
 ## RTL3.9-C0 — association/first-use audit and baseline (complete functional baseline)
 
@@ -171,12 +172,16 @@ split so that each step has one owner and a reviewable failure boundary:
    records replay only at their immutable commits; they are no longer compared
    with mutable descendants. See
    [`rtl3_9_c4_p0_event_scoreboard_historical_provenance_contract.md`](rtl3_9_c4_p0_event_scoreboard_historical_provenance_contract.md).
-4. **C4-P1+ — event/scoreboard and cross-owner review (remaining).** Audit a
-   same-instance accepted-event provenance/feasibility matrix, then require
-   success plus bounded legal stall, stale/mismatch, fault, and reset cases.
-   Replay only accepted architectural events through the existing scoreboard
-   contract. Request an RTL3 completion review only after C0--C3b and all C4
-   sub-phases pass.
+4. **C4-P1 — C3b event provenance matrix (complete; audit only).** All
+   immutable schema records have a fail-closed classification; no event is
+   authorized for capture yet. See
+   [`rtl3_9_c4_p1_c3b_event_provenance_matrix_contract.md`](rtl3_9_c4_p1_c3b_event_provenance_matrix_contract.md).
+5. **C4-P2+ — event/scoreboard and cross-owner review (remaining).** Select
+   and bind only accepted same-instance carriers, then require success plus
+   bounded legal stall, stale/mismatch, fault, and reset cases. Replay only
+   accepted architectural events through the existing scoreboard contract.
+   Request an RTL3 completion review only after C0--C3b and all C4 sub-phases
+   pass.
 
 ## RTL3 completion criteria
 
