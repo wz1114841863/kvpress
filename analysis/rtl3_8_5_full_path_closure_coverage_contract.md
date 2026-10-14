@@ -26,6 +26,16 @@ existing `SourceRelease`; it neither chooses sources, emits partials, selects
 admission/mask/authority, changes source order, or becomes a production owner.
 Hot/direct/S2 ownership therefore remains unchanged.
 
+## Historical provenance
+
+The original aggregate `source_sha256` snapshot belongs to immutable coverage
+closure commit `ade9d37fc10c261377ba4ab49ac87d0b683dd0ff`.  The validator now
+replays it through `git show`, using
+[`rtl3_8_5_full_path_closure_coverage_historical_provenance.json`](rtl3_8_5_full_path_closure_coverage_historical_provenance.json).
+It therefore preserves historical coverage evidence without treating later
+valid changes to shared source or the live phase ledger as a failure; it does
+not certify C0--C3 or physical implementation.
+
 ## Directed coverage
 
 Using one elaborated harness and reset epochs between independent transactions,

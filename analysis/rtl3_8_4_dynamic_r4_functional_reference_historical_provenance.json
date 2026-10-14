@@ -1,0 +1,9 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-8-4-historical-provenance-1.0",
+  "manifest": "analysis/rtl3_8_4_dynamic_r4_functional_reference_manifest.json",
+  "manifest_sha256": "455bca1702c7deb0443facf5c110b0c461e7bedfbe16cd16f829e32fc331b4ef",
+  "frozen_source_commit": "a65f2d46ad973e85fbaeab911a65721f17abf5db",
+  "current_head_requirement": "frozen_source_commit_is_an_ancestor_of_HEAD",
+  "interpretation": "RTL3.8.4 source_sha256 is replayed from its immutable I7/I8 closure commit, not mutable descendant files.",
+  "successor_boundary": "Later C0--C2 and C3 changes require their own contracts and validation."
+}

@@ -69,6 +69,16 @@ There is deliberately no Python-to-Chisel production bridge in this change.
 The Python provider remains separately executable pure-software evidence; the
 Chisel boundary establishes its dynamic event and terminal protocol only.
 
+## Historical provenance
+
+The original `source_sha256` snapshot belongs to immutable closure commit
+`a65f2d46ad973e85fbaeab911a65721f17abf5db`.  Its validator replays that
+snapshot through `git show`, as recorded in
+[`rtl3_8_4_dynamic_r4_functional_reference_historical_provenance.json`](rtl3_8_4_dynamic_r4_functional_reference_historical_provenance.json),
+rather than rejecting valid descendant changes to shared source and the live
+phase ledger.  The replay is historical evidence only, not C0--C3 or physical
+realization evidence.
+
 ## What this closes, and what remains open
 
 Closed here:

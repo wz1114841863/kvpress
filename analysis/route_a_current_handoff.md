@@ -128,6 +128,10 @@ directed test passed on 2026-10-14.  B3 provenance is replayed from its frozen
 commit rather than mutable live source hashes; see
 [`rtl3_9_b3_atomic_publication_authority_activation_contract.md`](rtl3_9_b3_atomic_publication_authority_activation_contract.md).
 
+The older C3 prerequisites RTL3.7-B and RTL3.8.3--RTL3.8.5 likewise replay
+their hash manifests from their immutable closure commits.  Their historical
+validators do not hash mutable descendant source or this living handoff.
+
 ## RTL3.9-C2 — functional read-to-S2 closure (complete functional witness)
 
 C2 extends the same B3/C0/C1 instance through the existing allocation bridge,

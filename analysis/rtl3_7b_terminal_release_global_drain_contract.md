@@ -61,6 +61,16 @@ before the corresponding already-existing R6 retirement transaction begins. It
 does not prove production deadlock freedom or a complete C2 production
 lifecycle.
 
+## Historical provenance
+
+The original `source_sha256` snapshot belongs to immutable closure commit
+`295e254db24558607e139b68724fdea82579bcff`.  The validator replays it through
+`git show` with
+[`rtl3_7b_terminal_release_global_drain_historical_provenance.json`](rtl3_7b_terminal_release_global_drain_historical_provenance.json),
+so later valid changes to the historical witness and living documentation do
+not falsely invalidate this bounded evidence.  It does not certify C0--C3 or
+physical realization.
+
 ## Directed evidence
 
 `RouteARTL265eSameInstanceWitnessSpec` covers, in one Chisel instance:

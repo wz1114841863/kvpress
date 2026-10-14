@@ -81,6 +81,16 @@ Still open:
 This is therefore **ingress isolation plus interface activation**, not full
 functional-source payload realization or an RTL3 completion pass.
 
+## Historical provenance
+
+The original `source_sha256` snapshot belongs to immutable closure commit
+`d2212b6101a9e783716fb3ff2bc205c7f75da774`.  Its validator replays the
+manifest through `git show` at that commit, as recorded in
+[`rtl3_8_3_source_partial_boundary_isolation_historical_provenance.json`](rtl3_8_3_source_partial_boundary_isolation_historical_provenance.json).
+This deliberately excludes mutable descendant interfaces, tests, and the live
+phase ledger from historical evidence; it certifies neither C0--C3 nor any
+physical realization.
+
 ## Directed no-model checks
 
 ```bash

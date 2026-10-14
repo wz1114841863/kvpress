@@ -1,0 +1,9 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-7-b-historical-provenance-1.0",
+  "manifest": "analysis/rtl3_7b_terminal_release_global_drain_manifest.json",
+  "manifest_sha256": "7d8dda52e95a4e620af4729db15ba6740f0662d9f63a4c69b32c819c55f1af10",
+  "frozen_source_commit": "295e254db24558607e139b68724fdea82579bcff",
+  "current_head_requirement": "frozen_source_commit_is_an_ancestor_of_HEAD",
+  "interpretation": "RTL3.7-B source_sha256 is replayed from its immutable terminal/reclaim closure commit, not mutable descendant files.",
+  "successor_boundary": "Later C0--C2 and C3 changes require their own contracts and validation."
+}
