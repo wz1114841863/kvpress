@@ -1,274 +1,78 @@
 {
-  "schema_version": "kvzap-route-a-srp-0-1-inventory-partition-1.0",
-  "status": "srp_0_1_complete_pending_human_partition_review",
-  "scope": "Read-only provenance/source inventory and a proposed minimum paper-relevant realization partition. This is not an SRP.2 eligibility verdict, synthesis run, physical realization, PPA result, or performance claim.",
+  "schema_version": "kvzap-route-a-srp-0-1-r-inventory-partition-1.1",
+  "status": "srp_0_1_revised_proposal_pending_human_partition_review",
+  "scope": "Read-only provenance/source inventory and revised partition proposal; not SRP.2 eligibility, synthesis, physical realization, PPA, or performance evidence.",
+  "review_revision": {"revision":"SRP.1-R","functional_rtl_change":false,"reason":"Completes structural-child coverage; separates cost ownership/evidence; splits mixed realization boundaries; separates local implementation from paper cost evidence."},
   "anchors": {
-    "functional_closure_decision": {
-      "commit": "cf9f055e7fa0adca0841b6c4149ece4850327ce5",
-      "record": "analysis/rtl3_9_c4_d_functional_completion_review.md",
-      "meaning": "RTL3.9-C4-D bounded functional-subsystem closure only"
-    },
-    "prior_navigation_snapshot": {
-      "commit": "ffe18b4f0a0d84078508504e1a460ca95a008f0b",
-      "meaning": "the pre-SRP document-map snapshot; it is not substituted for the SRP source snapshot"
-    },
-    "srp_source_inventory": {
-      "commit": "e2da7d1a5adc7c6e3ffb633aad5bd07df13f607e",
-      "tree_state_at_start": "clean",
-      "meaning": "exact source/document snapshot used by this SRP.0 inventory"
-    }
+    "functional_closure_decision":{"commit":"cf9f055e7fa0adca0841b6c4149ece4850327ce5","record":"analysis/rtl3_9_c4_d_functional_completion_review.md","meaning":"bounded functional-subsystem closure only"},
+    "prior_navigation_snapshot":{"commit":"ffe18b4f0a0d84078508504e1a460ca95a008f0b","meaning":"pre-SRP map snapshot; not the SRP source snapshot"},
+    "srp_source_inventory":{"commit":"e2da7d1a5adc7c6e3ffb633aad5bd07df13f607e","tree_state_at_start":"clean","meaning":"exact SRP.0 source/document snapshot"}
   },
   "source_inventory": {
-    "chisel_build": {
-      "build_file": "hardware/route_a/chisel/build.sbt",
-      "scala_version": "2.13.18",
-      "chisel_version": "7.15.0",
-      "test_framework": "ScalaTest 3.2.19",
-      "declared_synthesis_or_pdk_flow": false,
-      "observation": "The checked build declares Chisel and ScalaTest only. No selected synthesis executable, target library, macro/black-box implementation, clock constraint, or PDK is recorded."
+    "chisel_build":{"build_file":"hardware/route_a/chisel/build.sbt","scala_version":"2.13.18","chisel_version":"7.15.0","test_framework":"ScalaTest 3.2.19","declared_synthesis_or_pdk_flow":false,"observation":"No selected synthesis executable, library, macro/black-box implementation, clock constraint, or PDK is recorded."},
+    "main_scala_file_count":7,
+    "main_scala_sha256":{
+      "common/RouteACommonSkeletons.scala":"461f32bf20e60257bc6012d60f05b29fbeeb53f2179b3d699b3a920b4b19c92b",
+      "incremental/RouteAIncrementalSkeletons.scala":"b5650287f1a52bc03a611f7739a97d7cc5ab6d7167d562d60d6ad673dfdb813e",
+      "incremental/RouteAPackedReadActivationBinder.scala":"f2a3b0d97076d9ad5e30d130eb0f2a11b09041b2c19626a3f9a7c40b9658dedf",
+      "interfaces/RouteAInterfaces.scala":"c6f2590b04e33e029751fdc120ff1a0135230014eb51b08223c4ff2b55c461f2",
+      "params/RouteASkeletonParameters.scala":"35b0c1889e6a2231fac896967c0ba886b65948a9ab4db12e6d6f500e899c63ef",
+      "top/RouteAComponentStatusCollector.scala":"6b83963f747ad3f32c379df0bed30a84468fe891d9493cd9f0b3aea3f47ee329",
+      "top/RouteAKVSubsystemTop.scala":"d0884804f331603f335d00ec4f90fb9223974bd374554f2b6ccfb7d14661b9e8"
     },
-    "main_scala_file_count": 7,
-    "main_scala_sha256": {
-      "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "461f32bf20e60257bc6012d60f05b29fbeeb53f2179b3d699b3a920b4b19c92b",
-      "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "b5650287f1a52bc03a611f7739a97d7cc5ab6d7167d562d60d6ad673dfdb813e",
-      "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala": "f2a3b0d97076d9ad5e30d130eb0f2a11b09041b2c19626a3f9a7c40b9658dedf",
-      "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "c6f2590b04e33e029751fdc120ff1a0135230014eb51b08223c4ff2b55c461f2",
-      "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala": "35b0c1889e6a2231fac896967c0ba886b65948a9ab4db12e6d6f500e899c63ef",
-      "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAComponentStatusCollector.scala": "6b83963f747ad3f32c379df0bed30a84468fe891d9493cd9f0b3aea3f47ee329",
-      "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "d0884804f331603f335d00ec4f90fb9223974bd374554f2b6ccfb7d14661b9e8"
-    },
-    "test_scala_file_count": 64,
-    "primary_rtl3_9_c4_witness": {
-      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala",
-      "sha256": "db295c160b0205f8571bbd99b0c09facbdfd434ef259400dc1ca9bbf34a46c08",
-      "role": "test-only composed C3b/C4 success, negative-event, and replay witness; never a production or synthesis-top source"
-    },
-    "functional_or_test_only_artifacts": [
-      {
-        "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironment.scala",
-        "role": "outer functional R1 memory environment"
-      },
-      {
-        "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL36bFunctionalFixtureBridge.scala",
-        "role": "test fixture bridge"
-      },
-      {
-        "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL36cSidecarFixtureTransport.scala",
-        "role": "test sidecar fixture transport"
-      },
-      {
-        "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37bTerminalReleaseBridge.scala",
-        "role": "test-only terminal/release bridge"
-      },
-      {
-        "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cDrainMembershipJoin.scala",
-        "role": "test-only drain-membership join"
-      },
-      {
-        "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cEventScoreboard.scala",
-        "role": "test-only event scoreboard"
-      },
-      {
-        "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC3bEventProvenanceObserver.scala",
-        "role": "test-only accepted-event observer"
-      },
-      {
-        "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC4BEventReplayOracle.scala",
-        "role": "host-only accepted-event replay oracle"
-      },
-      {
-        "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC4CNegativeReplayOracle.scala",
-        "role": "host-only negative-event replay oracle"
-      }
-    ],
-    "discovery_limits": [
-      "The main source declares structural Chisel modules; SRP.0 does not infer that every structurally instantiated module is a complete functional or synthesis-ready implementation.",
-      "No main-source BlackBox, emitted-Verilog, selected synthesis, PDK, macro, or timing-constraint flow was found by the recorded source search. A test imports ChiselStage for structural elaboration only; that is not synthesis evidence."
-    ]
+    "test_scala_file_count":64,
+    "primary_rtl3_9_c4_witness":{"path":"hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala","sha256":"db295c160b0205f8571bbd99b0c09facbdfd434ef259400dc1ca9bbf34a46c08","role":"test-only C3b/C4 composed witness; never a synthesis-top source"},
+    "functional_or_test_only_artifacts":["RouteAFunctionalMemoryEnvironment","RouteARTL36bFunctionalFixtureBridge","RouteARTL36cSidecarFixtureTransport","RouteARTL37bTerminalReleaseBridge","RouteARTL37cDrainMembershipJoin","RouteARTL37cEventScoreboard","RouteAC3bEventProvenanceObserver","RouteAC4BEventReplayOracle","RouteAC4CNegativeReplayOracle"],
+    "discovery_limits":["Structural Chisel instantiation is not a functional-complete or synthesis-ready verdict.","No main-source BlackBox, emitted Verilog, selected synthesis, PDK, macro, or timing flow was found; ChiselStage in a structural test is not synthesis evidence."]
+  },
+  "classification_schema": {
+    "implementation_partition_values":["candidate_control","requires_wrapper","external_contract","verification_only","blocked_by_realization","not_assessed"],
+    "cost_ownership_values":["common_full_kv","route_a_incremental","differential_activity","external_system_cost","not_applicable"],
+    "cost_evidence_status_values":["not_assessed_srp1","requires_srp4_reconciliation","unestimated_pending_evidence","not_applicable"],
+    "required_fields":["required_for_local_implementation","required_for_paper_cost_evidence","semantic_mapping_due","semantic_contract_refs"]
   },
   "structural_top_inventory": {
-    "source": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",
-    "top_role": "composition-only skeleton with inactive carriers; inventory root only, not the proposed future synthesis top",
-    "instantiated_children": [
-      "RouteALifecycleAdapter", "RouteAHotSourcePath", "RouteAS2GqaSourceWrapper", "RouteADirectPendingEndpointV1", "RouteACoreSideArbiter", "RouteACoreMemIfV1", "RouteAM2P3Wrapper", "RouteAM2ReferenceProtocolProvider", "RouteAPageManager", "RouteAPackedReadActivationBinder", "RouteAPackedReadAssociationOwner", "RouteASourceCompletionPlanActivationFork", "RouteAPackedReadTerminalBridge", "RouteAPackedAllocationOwnerMux", "RouteAFunctionalSidecarDeliveryAdapter", "RouteAExclusivePackedS2ReadIngress", "RouteAExclusiveS2FillTerminalIngress", "RouteAAdmissionPublicationIngressAdapter", "RouteAR2WriteIngressMerge", "RouteAR2ReadIngressMerge", "RouteADeliveryContextRegistry", "RouteAUnifiedDeliveryContextAllocationBridge", "RouteATypedDeliveryRouter", "RouteAReadEndpointDemultiplexer", "RouteAExclusiveP3PendingIngress", "RouteAExclusiveP3SidecarIngress", "RouteAReadIssueCandidateAdapter", "RouteAR3DirectPendingReadProducer", "RouteAPackedS2ReadProducer", "RouteAR3PackReadEndpoint", "RouteADirectPendingReadEndpoint", "RouteAPackedS2ReadEndpoint", "RouteAS2PackedSidecarReadEndpoint", "RouteASourcePlanBinder", "RouteASourceServicePacketAdapter", "RouteAFunctionalPartialProviderBoundary", "RouteAFunctionalR4ReferenceBoundary", "RouteASourceCommitDemultiplexer", "RouteAMergeBoundary", "RouteAComponentStatusCollector"
-    ],
-    "interpretation": "This list is a structural source inventory. The C4-D functional result is established by named same-instance test witnesses and outer functional environments, not by treating this list as a synthesis-complete top."
+    "source":"hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",
+    "top_role":"composition-only skeleton with inactive carriers; inventory root only, not a proposed synthesis top",
+    "instantiated_children":["RouteALifecycleAdapter","RouteAHotSourcePath","RouteAS2GqaSourceWrapper","RouteADirectPendingEndpointV1","RouteACoreSideArbiter","RouteACoreMemIfV1","RouteAM2P3Wrapper","RouteAM2ReferenceProtocolProvider","RouteAPageManager","RouteAPackedReadActivationBinder","RouteAPackedReadAssociationOwner","RouteASourceCompletionPlanActivationFork","RouteAPackedReadTerminalBridge","RouteAPackedAllocationOwnerMux","RouteAFunctionalSidecarDeliveryAdapter","RouteAExclusivePackedS2ReadIngress","RouteAExclusiveS2FillTerminalIngress","RouteAAdmissionPublicationIngressAdapter","RouteAR2WriteIngressMerge","RouteAR2ReadIngressMerge","RouteADeliveryContextRegistry","RouteAUnifiedDeliveryContextAllocationBridge","RouteATypedDeliveryRouter","RouteAReadEndpointDemultiplexer","RouteAExclusiveP3PendingIngress","RouteAExclusiveP3SidecarIngress","RouteAReadIssueCandidateAdapter","RouteAR3DirectPendingReadProducer","RouteAPackedS2ReadProducer","RouteAR3PackReadEndpoint","RouteADirectPendingReadEndpoint","RouteAPackedS2ReadEndpoint","RouteAS2PackedSidecarReadEndpoint","RouteASourcePlanBinder","RouteASourceServicePacketAdapter","RouteAFunctionalPartialProviderBoundary","RouteAFunctionalR4ReferenceBoundary","RouteASourceCommitDemultiplexer","RouteAMergeBoundary","RouteAComponentStatusCollector"]
+  },
+  "structural_child_coverage": {
+    "RouteALifecycleAdapter":["r6_common_lifecycle_control","r6_route_a_packed_activity"],"RouteAHotSourcePath":["common_hot_residency_control"],"RouteAS2GqaSourceWrapper":["s2_common_payload_gqa_control"],"RouteADirectPendingEndpointV1":["direct_pending_transport_control"],"RouteACoreSideArbiter":["r2_shared_arbitration_control"],"RouteACoreMemIfV1":["r1_core_transaction_control","external_memory_service"],"RouteAM2P3Wrapper":["r3_materialization_publication_control","m2_control_protocol","m2_storage_realization","p3_wrapper_control","p3_payload_stage_page"],"RouteAM2ReferenceProtocolProvider":["m2_reference_provider"],"RouteAPageManager":["r5_allocator_reclaim_control","r5_availability_state","r5_descriptor_hbm_region"],"RouteAPackedReadActivationBinder":["packed_read_activation_and_demand_control"],"RouteAPackedReadAssociationOwner":["r3_materialization_publication_control"],"RouteASourceCompletionPlanActivationFork":["r6_common_lifecycle_control","r6_route_a_packed_activity"],"RouteAPackedReadTerminalBridge":["r6_common_lifecycle_control","r6_route_a_packed_activity"],"RouteAPackedAllocationOwnerMux":["r5_allocator_reclaim_control"],"RouteAFunctionalSidecarDeliveryAdapter":["functional_sidecar_delivery_reference"],"RouteAExclusivePackedS2ReadIngress":["packed_s2_read_ingress_control"],"RouteAExclusiveS2FillTerminalIngress":["packed_s2_read_ingress_control"],"RouteAAdmissionPublicationIngressAdapter":["r3_materialization_publication_control"],"RouteAR2WriteIngressMerge":["r2_shared_arbitration_control"],"RouteAR2ReadIngressMerge":["r2_shared_arbitration_control"],"RouteADeliveryContextRegistry":["shared_delivery_context_state"],"RouteAUnifiedDeliveryContextAllocationBridge":["shared_delivery_context_state"],"RouteATypedDeliveryRouter":["typed_read_delivery_control"],"RouteAReadEndpointDemultiplexer":["typed_read_delivery_control"],"RouteAExclusiveP3PendingIngress":["p3_wrapper_control"],"RouteAExclusiveP3SidecarIngress":["p3_wrapper_control"],"RouteAReadIssueCandidateAdapter":["typed_read_delivery_control"],"RouteAR3DirectPendingReadProducer":["direct_pending_transport_control"],"RouteAPackedS2ReadProducer":["packed_s2_read_ingress_control"],"RouteAR3PackReadEndpoint":["p3_wrapper_control"],"RouteADirectPendingReadEndpoint":["direct_pending_transport_control"],"RouteAPackedS2ReadEndpoint":["packed_s2_read_ingress_control"],"RouteAS2PackedSidecarReadEndpoint":["s2_incremental_sidecar_storage"],"RouteASourcePlanBinder":["r6_common_lifecycle_control"],"RouteASourceServicePacketAdapter":["r4_structural_merge_control"],"RouteAFunctionalPartialProviderBoundary":["outer_attention_partial_provider"],"RouteAFunctionalR4ReferenceBoundary":["r4_numeric_partial_state"],"RouteASourceCommitDemultiplexer":["r4_structural_merge_control"],"RouteAMergeBoundary":["r4_structural_merge_control"],"RouteAComponentStatusCollector":["r6_component_status_collection"]
   },
   "partition_records": [
-    {
-      "id": "top_future_synthesis_boundary",
-      "source": ["RouteAKVSubsystemTop"],
-      "architecture_owner": "integration shell",
-      "implementation_partition": "blocked_by_realization",
-      "cost_ownership": ["not_applicable"],
-      "required_for_paper_claim": true,
-      "proposal": "Define a future synthesis top from selected control/wrapper boundaries; do not reuse the current composition skeleton as evidence.",
-      "replacement_or_evidence": "Port-level selection and regression plan are required after the SRP.1 human review.",
-      "stop_for_review": true
-    },
-    {
-      "id": "r6_lifecycle_authority_retirement_control",
-      "source": ["RouteALifecycleAdapter", "RouteASourcePlanBinder", "RouteASourceCompletionPlanActivationFork", "RouteAPackedReadTerminalBridge"],
-      "architecture_owner": "R6 lifecycle adapter",
-      "implementation_partition": "candidate_control",
-      "cost_ownership": ["common_full_kv", "differential_activity"],
-      "required_for_paper_claim": true,
-      "proposal": "Retain the owner-correct lifecycle/authority/terminal/drain control as a future DUT candidate, with common versus Route-A path activity separated per operation.",
-      "replacement_or_evidence": "Preserve authority conservation, exactly-one terminal, global retirement membership, reset, and retire acknowledgement assertions.",
-      "stop_for_review": false
-    },
-    {
-      "id": "r2_r1_shared_transport_control",
-      "source": ["RouteACoreSideArbiter", "RouteAR2WriteIngressMerge", "RouteAR2ReadIngressMerge", "RouteAReadIssueCandidateAdapter", "RouteATypedDeliveryRouter", "RouteACoreMemIfV1"],
-      "architecture_owner": "R2 arbitration and R1 core-memory boundary",
-      "implementation_partition": "requires_wrapper",
-      "cost_ownership": ["common_full_kv", "differential_activity", "external_system_cost"],
-      "required_for_paper_claim": true,
-      "proposal": "Candidate core control remains separate from the external memory/controller/CDC contract. Charge only Route-A differential operations, not the entire shared R1/R2 provision.",
-      "replacement_or_evidence": "Preserve one R2-to-R1 path, identity/fragment/reset/stale handling, credit nonmutation, and descriptor/payload/sidecar routing semantics.",
-      "stop_for_review": false
-    },
-    {
-      "id": "r3_materialization_packing_publication_control",
-      "source": ["RouteAAdmissionPublicationIngressAdapter", "RouteAM2P3Wrapper", "RouteAPackedReadAssociationOwner", "RouteAPackedReadActivationBinder"],
-      "architecture_owner": "R3 retained-record materialization and publication control",
-      "implementation_partition": "candidate_control",
-      "cost_ownership": ["route_a_incremental", "unestimated_pending_evidence"],
-      "required_for_paper_claim": true,
-      "proposal": "Keep materialization, immutable member association, packing prerequisites, and publication control in the minimum Route-A candidate boundary. The already-selected admission/predictor decision stays external.",
-      "replacement_or_evidence": "Preserve payload/descriptor durability prerequisites, one metadata publication, all-member R6 acceptance before packed use, and no second authority owner.",
-      "stop_for_review": false
-    },
-    {
-      "id": "m2_control_and_reference_provider",
-      "source": ["RouteAM2P3Wrapper", "RouteAM2ReferenceProtocolProvider"],
-      "architecture_owner": "R3 M2 private group/member state",
-      "implementation_partition": "requires_wrapper",
-      "cost_ownership": ["route_a_incremental", "unestimated_pending_evidence"],
-      "required_for_paper_claim": true,
-      "proposal": "M2 control/interface is paper-relevant; the named reference protocol provider is not a selected physical M2 implementation and must remain an external/reference artifact.",
-      "replacement_or_evidence": "Future storage realization must preserve exact group/member round trips and publication provenance without replacing the immutable ledger with a second authority table.",
-      "stop_for_review": true
-    },
-    {
-      "id": "p3_pending_backing_stage_and_wrapper",
-      "source": ["RouteAM2P3Wrapper", "RouteAExclusiveP3PendingIngress", "RouteAExclusiveP3SidecarIngress", "RouteAR3PackReadEndpoint"],
-      "architecture_owner": "R3 P3 stage/generation/sidecar state",
-      "implementation_partition": "requires_wrapper",
-      "cost_ownership": ["route_a_incremental", "external_system_cost", "unestimated_pending_evidence"],
-      "required_for_paper_claim": true,
-      "proposal": "Keep logical P3 control distinct from pending-HBM authoritative backing and the unphysicalized p3_payload_stage_page. Neither backing nor stage payload storage may be silently synthesized as a large register array.",
-      "replacement_or_evidence": "A later realization choice must preserve R1 durability, generation/sidecar association, and the declared core-side memory contract.",
-      "stop_for_review": true
-    },
-    {
-      "id": "r5_page_descriptor_reclaim",
-      "source": ["RouteAPageManager", "RouteAPackedAllocationOwnerMux", "RouteAExclusiveS2FillTerminalIngress"],
-      "architecture_owner": "R5 allocator, descriptor visibility, and per-page reclaim",
-      "implementation_partition": "requires_wrapper",
-      "cost_ownership": ["route_a_incremental", "external_system_cost", "unestimated_pending_evidence"],
-      "required_for_paper_claim": true,
-      "proposal": "Treat allocator/reclaim control, on-chip availability state, and separate descriptor-HBM region as distinct realization items.",
-      "replacement_or_evidence": "Preserve descriptor visibility only in publication, durable invalidation before free, generation/quiescence, and R6-before-R5 retirement order.",
-      "stop_for_review": true
-    },
-    {
-      "id": "s2_common_payload_and_incremental_sidecar",
-      "source": ["RouteAS2GqaSourceWrapper", "RouteAPackedS2ReadProducer", "RouteAPackedS2ReadEndpoint", "RouteAS2PackedSidecarReadEndpoint", "RouteAFunctionalSidecarDeliveryAdapter"],
-      "architecture_owner": "S2 payload/READY/generation/four-consumer release",
-      "implementation_partition": "requires_wrapper",
-      "cost_ownership": ["common_full_kv", "route_a_incremental", "differential_activity", "unestimated_pending_evidence"],
-      "required_for_paper_claim": true,
-      "proposal": "S2 payload/GQA provision is shared and must be reported once; Route-A position sidecar and its management are incremental. The functional sidecar-delivery adapter is not a physical sidecar implementation.",
-      "replacement_or_evidence": "Preserve slot identity/generation, READY only after payload and sidecar completion, four consumer commits before release, and stale exclusion.",
-      "stop_for_review": true
-    },
-    {
-      "id": "r4_structural_merge_control",
-      "source": ["RouteASourceServicePacketAdapter", "RouteASourceCommitDemultiplexer", "RouteAMergeBoundary"],
-      "architecture_owner": "R4 structural packet/merge boundary",
-      "implementation_partition": "candidate_control",
-      "cost_ownership": ["route_a_incremental", "unestimated_pending_evidence"],
-      "required_for_paper_claim": true,
-      "proposal": "The source-association and multi-source merge-support control is a Route-A implementation candidate, separate from numeric arithmetic.",
-      "replacement_or_evidence": "Preserve canonical source association, accepted packet identity/consumer association, four commits, and terminal/fault handoff to R6.",
-      "stop_for_review": false
-    },
-    {
-      "id": "r4_numeric_and_partial_state",
-      "source": ["RouteAFunctionalR4ReferenceBoundary"],
-      "architecture_owner": "R4 observable result/fault boundary",
-      "implementation_partition": "blocked_by_realization",
-      "cost_ownership": ["route_a_incremental", "unestimated_pending_evidence"],
-      "required_for_paper_claim": true,
-      "proposal": "Binary32 observable behavior is frozen, but exp/internal precision, partial-state storage/spill, and pipeline realization are not selected. The current functional R4 reference is external/verification-only.",
-      "replacement_or_evidence": "A separate numeric-realization decision must preserve result/fault contract and one R6 terminal; it may not use the reference provider as a DUT surrogate.",
-      "stop_for_review": true
-    },
-    {
-      "id": "outer_attention_partial_provider",
-      "source": ["RouteAFunctionalPartialProviderBoundary"],
-      "architecture_owner": "outer attention partial producer",
-      "implementation_partition": "external_contract",
-      "cost_ownership": ["common_full_kv", "differential_activity", "external_system_cost"],
-      "required_for_paper_claim": false,
-      "proposal": "Complete attention MAC/PE/RoPE implementation is excluded from the Route-A DUT. Its explicit interface and any route-specific activity effect require a declared evaluation-system contract.",
-      "replacement_or_evidence": "Functional partial packets remain an outer environment and may not become a storage-owner computation path.",
-      "stop_for_review": false
-    },
-    {
-      "id": "external_memory_controller_phy",
-      "source": ["RouteACoreMemIfV1", "outer functional R1 memory responder"],
-      "architecture_owner": "external memory/controller/PHY/CDC environment",
-      "implementation_partition": "external_contract",
-      "cost_ownership": ["external_system_cost", "differential_activity", "unestimated_pending_evidence"],
-      "required_for_paper_claim": true,
-      "proposal": "HBM controller/PHY/CDC is excluded from local implementation, but its Route-A differential service/cost evidence cannot be omitted. core_mem_if_v1 is not an HBM protocol or burst selection.",
-      "replacement_or_evidence": "A later calibrated service/memory-wrapper evidence plan must retain the frozen core-side request/response contract and stale/fault behavior.",
-      "stop_for_review": true
-    },
-    {
-      "id": "testbench_observers_fixtures_and_oracles",
-      "source": ["all src/test Scala sources", "C3b/C4 accepted-event observers and replay oracles"],
-      "architecture_owner": "verification infrastructure only",
-      "implementation_partition": "verification_only",
-      "cost_ownership": ["not_applicable"],
-      "required_for_paper_claim": false,
-      "proposal": "No test-scope fixture, observer, event adapter, replay oracle, or C4 harness may enter the future synthesis DUT or create an owner/cost claim.",
-      "replacement_or_evidence": "Retain them only as regressions that check owner-produced handshakes and frozen semantic properties.",
-      "stop_for_review": false
-    }
+    {"id":"top_future_synthesis_boundary","source":["RouteAKVSubsystemTop"],"architecture_owner":"integration shell","implementation_partition":"blocked_by_realization","cost_ownership":"not_applicable","cost_evidence_status":"not_applicable","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl_entry_hierarchy_owner_contract.md","rtl_entry_assertion_verification_contract.md"],"stop_for_review":true},
+    {"id":"r6_common_lifecycle_control","source":["RouteALifecycleAdapter","RouteASourcePlanBinder","RouteASourceCompletionPlanActivationFork","RouteAPackedReadTerminalBridge"],"architecture_owner":"R6 lifecycle","implementation_partition":"candidate_control","cost_ownership":"common_full_kv","cost_evidence_status":"requires_srp4_reconciliation","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl_entry_assertion_verification_contract.md"],"stop_for_review":false},
+    {"id":"r6_route_a_packed_activity","source":["RouteALifecycleAdapter","RouteASourceCompletionPlanActivationFork","RouteAPackedReadTerminalBridge"],"architecture_owner":"R6 lifecycle","implementation_partition":"candidate_control","cost_ownership":"differential_activity","cost_evidence_status":"requires_srp4_reconciliation","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.4","semantic_contract_refs":["rtl3_9_c4_d_functional_completion_review.md"],"stop_for_review":false},
+    {"id":"common_hot_residency_control","source":["RouteAHotSourcePath"],"architecture_owner":"hot source","implementation_partition":"candidate_control","cost_ownership":"common_full_kv","cost_evidence_status":"requires_srp4_reconciliation","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl_entry_hierarchy_owner_contract.md"],"stop_for_review":false},
+    {"id":"direct_pending_transport_control","source":["RouteADirectPendingEndpointV1","RouteAR3DirectPendingReadProducer","RouteADirectPendingReadEndpoint"],"architecture_owner":"direct-pending endpoint and R3 producer","implementation_partition":"candidate_control","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl_entry_assertion_verification_contract.md","rtl3_9_c4_d_functional_completion_review.md"],"stop_for_review":false},
+    {"id":"r2_shared_arbitration_control","source":["RouteACoreSideArbiter","RouteAR2WriteIngressMerge","RouteAR2ReadIngressMerge"],"architecture_owner":"R2","implementation_partition":"candidate_control","cost_ownership":"common_full_kv","cost_evidence_status":"requires_srp4_reconciliation","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl_entry_assertion_verification_contract.md"],"stop_for_review":false},
+    {"id":"r1_core_transaction_control","source":["RouteACoreMemIfV1"],"architecture_owner":"R1","implementation_partition":"requires_wrapper","cost_ownership":"common_full_kv","cost_evidence_status":"requires_srp4_reconciliation","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["architecture_spec.md","rtl_entry_assertion_verification_contract.md"],"stop_for_review":false},
+    {"id":"shared_delivery_context_state","source":["RouteADeliveryContextRegistry","RouteAUnifiedDeliveryContextAllocationBridge"],"architecture_owner":"R1/R2 delivery context","implementation_partition":"candidate_control","cost_ownership":"differential_activity","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl_entry_hierarchy_owner_contract.md"],"stop_for_review":false},
+    {"id":"typed_read_delivery_control","source":["RouteATypedDeliveryRouter","RouteAReadEndpointDemultiplexer","RouteAReadIssueCandidateAdapter"],"architecture_owner":"R1/R2 typed delivery","implementation_partition":"candidate_control","cost_ownership":"differential_activity","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl_entry_hierarchy_owner_contract.md","rtl_entry_assertion_verification_contract.md"],"stop_for_review":false},
+    {"id":"r3_materialization_publication_control","source":["RouteAAdmissionPublicationIngressAdapter","RouteAPackedReadAssociationOwner"],"architecture_owner":"R3","implementation_partition":"candidate_control","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl3_9_b3_atomic_publication_authority_activation_contract.md","rtl3_9_c0_post_r6_first_use_association_contract.md"],"stop_for_review":false},
+    {"id":"packed_read_activation_and_demand_control","source":["RouteAPackedReadActivationBinder"],"architecture_owner":"R3/R5/S2 fact join","implementation_partition":"candidate_control","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl3_9_c0_post_r6_first_use_association_contract.md","rtl3_9_c1_post_publication_demand_activation_contract.md"],"stop_for_review":false},
+    {"id":"m2_control_protocol","source":["RouteAM2P3Wrapper"],"architecture_owner":"R3 M2 protocol","implementation_partition":"candidate_control","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl3_9_b3_atomic_publication_authority_activation_contract.md"],"stop_for_review":false},
+    {"id":"m2_reference_provider","source":["RouteAM2ReferenceProtocolProvider"],"architecture_owner":"functional reference environment","implementation_partition":"external_contract","cost_ownership":"not_applicable","cost_evidence_status":"not_applicable","required_for_local_implementation":false,"required_for_paper_cost_evidence":false,"semantic_mapping_due":"existing_regression","semantic_contract_refs":["rtl3_9_b3_atomic_publication_authority_activation_contract.md"],"stop_for_review":false},
+    {"id":"m2_storage_realization","source":["RouteAM2P3Wrapper logical M2 state"],"architecture_owner":"R3 M2 state","implementation_partition":"requires_wrapper","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.3","semantic_contract_refs":["architecture_spec.md"],"stop_for_review":true},
+    {"id":"p3_wrapper_control","source":["RouteAM2P3Wrapper","RouteAExclusiveP3PendingIngress","RouteAExclusiveP3SidecarIngress","RouteAR3PackReadEndpoint"],"architecture_owner":"R3 P3 control","implementation_partition":"candidate_control","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl3_9_c2_functional_read_to_s2_contract.md"],"stop_for_review":false},
+    {"id":"p3_pending_hbm_backing","source":["P3 pending-HBM logical backing"],"architecture_owner":"external P3 backing","implementation_partition":"external_contract","cost_ownership":"external_system_cost","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.3","semantic_contract_refs":["architecture_spec.md"],"stop_for_review":true},
+    {"id":"p3_payload_stage_page","source":["RouteAM2P3Wrapper logical p3_payload_stage_page"],"architecture_owner":"R3 P3 stage","implementation_partition":"requires_wrapper","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.3","semantic_contract_refs":["architecture_spec.md"],"stop_for_review":true},
+    {"id":"r5_allocator_reclaim_control","source":["RouteAPageManager","RouteAPackedAllocationOwnerMux"],"architecture_owner":"R5","implementation_partition":"candidate_control","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl3_9_c3b_retirement_reclaim_contract.md"],"stop_for_review":false},
+    {"id":"r5_availability_state","source":["RouteAPageManager logical availability/generation state"],"architecture_owner":"R5","implementation_partition":"requires_wrapper","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.3","semantic_contract_refs":["architecture_spec.md","rtl3_9_c3b_retirement_reclaim_contract.md"],"stop_for_review":true},
+    {"id":"r5_descriptor_hbm_region","source":["RouteAPageManager descriptor-HBM contract"],"architecture_owner":"R5","implementation_partition":"external_contract","cost_ownership":"external_system_cost","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.3","semantic_contract_refs":["architecture_spec.md"],"stop_for_review":true},
+    {"id":"s2_common_payload_gqa_control","source":["RouteAS2GqaSourceWrapper"],"architecture_owner":"S2","implementation_partition":"requires_wrapper","cost_ownership":"common_full_kv","cost_evidence_status":"requires_srp4_reconciliation","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.3","semantic_contract_refs":["architecture_spec.md","rtl_entry_assertion_verification_contract.md"],"stop_for_review":false},
+    {"id":"packed_s2_read_ingress_control","source":["RouteAExclusivePackedS2ReadIngress","RouteAExclusiveS2FillTerminalIngress","RouteAPackedS2ReadProducer","RouteAPackedS2ReadEndpoint"],"architecture_owner":"packed S2 fill","implementation_partition":"candidate_control","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl3_9_c1_post_publication_demand_activation_contract.md","rtl3_9_c2_functional_read_to_s2_contract.md"],"stop_for_review":false},
+    {"id":"s2_incremental_sidecar_storage","source":["RouteAS2PackedSidecarReadEndpoint","S2 position-sidecar logical storage"],"architecture_owner":"S2 sidecar","implementation_partition":"requires_wrapper","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.3","semantic_contract_refs":["architecture_spec.md","rtl3_9_c2_functional_read_to_s2_contract.md"],"stop_for_review":true},
+    {"id":"functional_sidecar_delivery_reference","source":["RouteAFunctionalSidecarDeliveryAdapter"],"architecture_owner":"functional sidecar environment","implementation_partition":"external_contract","cost_ownership":"not_applicable","cost_evidence_status":"not_applicable","required_for_local_implementation":false,"required_for_paper_cost_evidence":false,"semantic_mapping_due":"existing_regression","semantic_contract_refs":["rtl3_9_c2_functional_read_to_s2_contract.md"],"stop_for_review":false},
+    {"id":"r4_structural_merge_control","source":["RouteASourceServicePacketAdapter","RouteASourceCommitDemultiplexer","RouteAMergeBoundary"],"architecture_owner":"R4 structural boundary","implementation_partition":"candidate_control","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl3_9_c3a_packed_source_service_terminal_contract.md"],"stop_for_review":false},
+    {"id":"r4_numeric_partial_state","source":["RouteAFunctionalR4ReferenceBoundary","R4 partial-state logical storage"],"architecture_owner":"R4 numeric contract","implementation_partition":"blocked_by_realization","cost_ownership":"route_a_incremental","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.3","semantic_contract_refs":["architecture_gate_a_r4_numeric_merge_contract.md","rtl3_9_c4_d_functional_completion_review.md"],"stop_for_review":true},
+    {"id":"outer_attention_partial_provider","source":["RouteAFunctionalPartialProviderBoundary"],"architecture_owner":"outer attention partial producer","implementation_partition":"external_contract","cost_ownership":"differential_activity","cost_evidence_status":"requires_srp4_reconciliation","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.4","semantic_contract_refs":["rtl3_8_5_full_path_closure_coverage_contract.md","architecture_spec.md"],"stop_for_review":false},
+    {"id":"external_memory_service","source":["outer functional R1 memory responder","RouteACoreMemIfV1 external port"],"architecture_owner":"external memory/controller/PHY/CDC","implementation_partition":"external_contract","cost_ownership":"external_system_cost","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":false,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.3","semantic_contract_refs":["architecture_spec.md","rtl_entry_assertion_verification_contract.md"],"stop_for_review":true},
+    {"id":"r6_component_status_collection","source":["RouteAComponentStatusCollector"],"architecture_owner":"R6 status collection input","implementation_partition":"candidate_control","cost_ownership":"differential_activity","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl_entry_hierarchy_owner_contract.md","rtl3_9_c3b_retirement_reclaim_contract.md"],"stop_for_review":false},
+    {"id":"testbench_observers_fixtures_and_oracles","source":["all src/test Scala sources","C3b/C4 observers and replay oracles"],"architecture_owner":"verification infrastructure","implementation_partition":"verification_only","cost_ownership":"not_applicable","cost_evidence_status":"not_applicable","required_for_local_implementation":false,"required_for_paper_cost_evidence":false,"semantic_mapping_due":"existing_regression","semantic_contract_refs":["rtl3_9_c4_d_functional_completion_review.md"],"stop_for_review":false}
   ],
-  "minimum_paper_boundary_proposal": {
-    "must_have_implementation_or_credible_cost_evidence": [
-      "Route-A R3/R5 packing, publication, descriptor, allocator, and reclaim control",
-      "Route-A M2/P3 control plus a non-zero realization route for their storage/backing",
-      "Route-A S2 sidecar and page-management increment, while retaining common S2 cost separation",
-      "Route-A structural R4 merge-support control and a credible numeric/partial-state evidence route",
-      "Route-A differential use of shared R1/R2/R6 and external memory service"
-    ],
-    "explicit_local_implementation_exclusions": [
-      "complete attention MAC/PE/RoPE array",
-      "HBM controller, PHY, and CDC implementation",
-      "Transformer and KVzap predictor",
-      "testbench-only functional memories, fixtures, observers, and replay oracles"
-    ],
-    "not_yet_approved": "The exact future synthesis-top member list and each implementation/wrapper choice remain pending human review."
-  },
-  "semantic_regression_obligations": [
-    "valid/ready acceptance and ready-low nonmutation",
-    "identity, incarnation/generation, reset, stale-response, and fault exclusion",
-    "unique metadata_publish_commit and authority conservation",
-    "all-member R6 acceptance before first packed read and S2 READY after exact payload/sidecar completion",
-    "four GQA consumer commits before source release and exactly one R6 terminal",
-    "durable invalidation/reclaim before page free and final R6 retire acknowledgement"
-  ],
-  "stop_for_review": [
-    "A current composition-only skeleton cannot be called the synthesis top without an approved selected boundary.",
-    "M2, P3 stage/pending backing, R5 descriptor/availability, and S2 sidecar each require distinct storage/interface realization requirements.",
-    "R4 numeric/partial-state realization lacks a selected implementation or cost model.",
-    "No selected synthesis toolchain/library/black-box/macro/clock-constraint flow exists in the checked source tree.",
-    "Full-KV common provision and Route-A differential activity must be reconciled before any whole-module cost attribution."
-  ],
-  "next_gate": "Human review of this SRP.0--SRP.1 partition proposal. SRP.2 source/toolchain eligibility does not begin automatically."
+  "semantic_regression_obligations":["valid/ready and ready-low nonmutation","identity/incarnation/generation/reset/stale/fault exclusion","unique metadata_publish_commit and authority conservation","all-member R6 acceptance before packed read and S2 READY after payload/sidecar completion","four GQA commits before release and one R6 terminal","durable invalidation/reclaim before free and final retire acknowledgement"],
+  "minimum_paper_boundary_proposal":{"must_have_local_control_or_wrapper_candidate":["R3 materialization/publication","M2/P3 protocol and wrappers","R5 allocator/reclaim","packed S2 ingress","direct-pending and typed-delivery control","R4 structural merge support","selected status collection"],"must_have_credible_cost_evidence_without_local_full_implementation":["M2/P3/R5/S2 storage","R4 numeric/partial state","external memory service","Route-A differential activity in shared R1/R2/R6/S2 and attention provider"],"explicit_local_implementation_exclusions":["complete attention MAC/PE/RoPE","HBM controller/PHY/CDC","Transformer and KVzap predictor","test-only memories, fixtures, observers, and replay oracles"],"not_yet_approved":"Exact future synthesis-top membership and wrapper choices remain pending human review."},
+  "stop_for_review":["Composition-only skeleton is not a synthesis top.","M2/P3/R5/S2 storage, R4 numeric state, and external memory require SRP.3 requirements.","No selected synthesis toolchain/library/black-box/macro/clock flow exists.","SRP.4 must reconcile shared provision and Route-A differential activity without double counting."],
+  "next_gate":"Re-review SRP.1-R. SRP.2 does not begin automatically."
 }

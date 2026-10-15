@@ -243,8 +243,8 @@ An RTL3 PASS means **functional subsystem closure**, not whole-model inference,
 physical implementation, performance, or a Gate-B PASS.
 
 C4-D completed this bounded review on 2026-10-15. The reviewed result is
-functional-subsystem closure only.  SRP.0 provenance/source inventory and
-SRP.1 partition proposal are complete and await their required human review;
+functional-subsystem closure only.  SRP.0 provenance/source inventory and the
+SRP.1-R revised partition proposal are complete and await their required human review;
 see [`synthesis_realization_partition.md`](synthesis_realization_partition.md)
 and its manifest.  No
 physical/numeric realization choice, wrapper implementation, synthesis, or

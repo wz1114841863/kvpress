@@ -1,7 +1,7 @@
 # SRP — Synthesis-Realization Partition & Eligibility Review
 
-**Status:** SRP.0--SRP.1 completed as a proposal and awaiting the required
-human partition review.  This document is a living successor-stage plan, not a
+**Status:** SRP.0--SRP.1-R revised proposal is awaiting the required human
+partition review.  This document is a living successor-stage plan, not a
 physical implementation, synthesis, PPA, performance, or new DSE record.
 
 ## Purpose
@@ -64,15 +64,28 @@ implementation/environment boundary.
   Route-A.
 - `external_system_cost`: outside-DUT cost requiring a declared model or
   calibrated evidence.
-- `unestimated_pending_evidence`: known cost without present physical evidence;
-  it must reconcile with the A4.14.1 omitted-cost budget.
 - `not_applicable`: no paper-hardware cost row, used only for verification
   infrastructure or a still-unselected integration shell.
 
-`required_for_paper_claim` is a third, independent field.  It distinguishes
-“must obtain implementation or credible cost evidence” from “must implement
-all RTL locally.”  A value of `true` requires a named evidence route and a
-semantic replacement plan; `false` requires an explicit exclusion rationale.
+Cost ownership answers only **who bears a cost**.  It must never encode whether
+the cost is already evidenced.  Each record therefore also carries a separate
+`cost_evidence_status` (`not_assessed_srp1`,
+`requires_srp4_reconciliation`, `unestimated_pending_evidence`, or
+`not_applicable`) and, where relevant, its A4/budget reconciliation route.
+
+Two independent booleans replace the earlier ambiguous
+`required_for_paper_claim` field:
+
+- `required_for_local_implementation`: the paper needs a local DUT/wrapper
+  implementation for this item.
+- `required_for_paper_cost_evidence`: the paper needs credible differential
+  cost evidence for this item, even when local implementation is explicitly
+  excluded.
+
+Every non-test record must also declare when its concrete semantic port mapping
+and regression mapping are due (`SRP.2`, `SRP.3`, or an existing regression).
+SRP.1 records the obligation; it does not pretend that the replacement design
+has already been completed.
 
 ## Boundary principles
 
@@ -122,10 +135,13 @@ Route-A.
 [`synthesis_eligibility_manifest.json`](synthesis_eligibility_manifest.json)
 records the clean source anchor, all structural children instantiated by the
 current composition top, the test-scope functional witnesses/adapters, and the
-proposed partition at state/interface/function granularity.  It deliberately
-finds that the current top is not a future synthesis top and that M2/P3/R5/S2
-storage, R4 numeric/partial state, external memory service, and the missing
-toolchain/macro choices are `stop_for_review` items.
+revised proposed partition at state/interface/function granularity.  SRP.1-R
+adds a complete child-to-record coverage map, separates cost ownership from
+cost-evidence status, and separates local-implementation need from paper-cost
+evidence need.  It deliberately finds that the current top is not a future
+synthesis top and that M2/P3/R5/S2 storage, R4 numeric/partial state, external
+memory service, and the missing toolchain/macro choices are
+`stop_for_review` items.
 
 The proposal does **not** label any source as synthesis-ready.  It provides a
 minimum paper-relevant evidence boundary and explicit exclusions only.  SRP.2
@@ -146,9 +162,9 @@ area, zero energy, zero traffic, or zero latency.
 
 ## PASS and stop criteria
 
-SRP PASS requires every paper-relevant function to have a partition,
-`required_for_paper_claim` decision, semantic replacement plan, cost owner,
-and credible evidence route.  It authorizes only a separately reviewed
+SRP PASS requires every paper-relevant function to have a partition, both
+implementation/cost-evidence decisions, a deferred-or-complete semantic
+mapping, cost owner, and credible evidence route.  It authorizes only a separately reviewed
 memory-interface/numeric-realization choice stage.
 
 SRP must stop for review if a test-only provider is proposed as DUT; a

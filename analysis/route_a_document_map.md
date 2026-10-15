@@ -52,7 +52,7 @@ Read only when the question needs the corresponding history or object:
 | RTL3.0--RTL3.8.5 | Replacement-owner, functional environments, source/R4 paths, and all-source coverage | Start at the relevant `rtl3_*_contract.md` named by the phase ledger; use `rtl3_8_5_full_path_closure_coverage_contract.md` for all-source coverage limits. |
 | RTL3.9-A / B | R3 materialization, payload/descriptor durability, atomic publication, R6 authority | `rtl3_9_a*_contract.md`, `rtl3_9_b*_contract.md`, and their manifests; B3 is the publication/authority reference. |
 | RTL3.9-C | First packed read through S2, terminal/reclaim, event provenance, and completion review | `rtl3_9_c0_*` through `rtl3_9_c4_d_*`; begin with the C4-D review, then open the smallest named C0--C4 slice needed for a disputed condition. |
-| SRP | Minimum paper-relevant realization boundary, eligibility planning, and future cost-evidence routing | `synthesis_realization_partition.md` plus `synthesis_eligibility_manifest.json`; SRP.0--SRP.1 proposal is pending its human review gate. |
+| SRP | Minimum paper-relevant realization boundary, eligibility planning, and future cost-evidence routing | `synthesis_realization_partition.md` plus `synthesis_eligibility_manifest.json`; SRP.0--SRP.1-R proposal is pending its human review gate. |
 
 ## Artifact role rules
 
