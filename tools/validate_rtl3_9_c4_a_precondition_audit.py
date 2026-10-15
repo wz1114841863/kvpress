@@ -37,9 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     assert disposition["eligible_event_names"] == ["attention_terminal", "page_free", "retire_ack"]
     assert disposition["ineligible_event_names"] == ["descriptor_invalidate"]
     assert not disposition["c4_b_replay_authorized"]
-    harness = (ROOT / "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala").read_text(encoding="utf-8")
     adapter = (ROOT / "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReclaimScoreboardAdapterSpec.scala").read_text(encoding="utf-8")
-    assert "r5.io.allocator_release_out.ready := true.B" in harness
     for token in [
         "val allocator_release_in = Flipped(RouteAChannels.allocator_release)",
         "val descriptor_invalidate_event_out", "val page_free_event_out",

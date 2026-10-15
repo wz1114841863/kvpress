@@ -62,6 +62,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
     val c4_event_binding_mode = Input(Bool())
     val c4_authority_transition_event = Decoupled(new AuthorityTransitionScoreboardEvent(p))
     val c4_attention_terminal_event = Decoupled(new AttentionTerminalScoreboardEvent)
+    val c4_page_free_event = Decoupled(new PageFreeScoreboardEvent)
     val c4_retire_ack_event = Decoupled(new RetireAckScoreboardEvent)
     val c3b_runtime_retire = Flipped(RouteAChannels.runtime_retire_req)
     val c3b_retire_ack = RouteAChannels.session_retire_ack
@@ -131,6 +132,7 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
   val c3CommitDemux = Module(new RouteASourceCommitDemultiplexer(p))
   val c3bStatusCollector = Module(new RouteAComponentStatusCollector(p))
   val c4EventObserver = Module(new RouteAC3bEventProvenanceObserver(p))
+  val c4PageFreeObserver = Module(new RouteAPageFreeScoreboardObserver)
   val r2 = Module(new RouteACoreSideArbiter(p))
   val r1 = Module(new RouteACoreMemIfV1(p))
   val issueAdapter = Module(new RouteAReadIssueCandidateAdapter(p))
@@ -172,7 +174,12 @@ final class RouteARTL265a2PackReadPublicationHarness(p: RouteASkeletonParameters
 
   r5.io.mem_init_done := io.mem_init_done
   r5.io.drain_collection_enable := Mux(io.c3b_retire_reclaim_mode, lifecycle.io.drain_collection_enable, io.drain_collection_enable)
-  r5.io.allocator_release_out.ready := true.B
+  val c4PageFreeBindingActive = io.c4_event_binding_mode && io.c3b_retire_reclaim_mode
+  c4PageFreeObserver.io.allocator_release_in.valid := c4PageFreeBindingActive && r5.io.allocator_release_out.valid
+  c4PageFreeObserver.io.allocator_release_in.bits := r5.io.allocator_release_out.bits
+  c4PageFreeObserver.io.allocator_release_out.ready := true.B
+  r5.io.allocator_release_out.ready := Mux(c4PageFreeBindingActive, c4PageFreeObserver.io.allocator_release_in.ready, true.B)
+  io.c4_page_free_event <> c4PageFreeObserver.io.page_free_event_out
   r5.io.page_allocation_req_in <> io.r5_allocate
   io.r5_allocation_rsp <> r5.io.page_allocation_rsp
   r5.io.reclaim_permit_in.valid := Mux(io.c3b_retire_reclaim_mode, lifecycle.io.reclaim_permit_out.valid, io.reclaim_permit.valid)
@@ -607,6 +614,7 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     d.io.c4_event_binding_mode.poke(false.B)
     d.io.c4_authority_transition_event.ready.poke(true.B)
     d.io.c4_attention_terminal_event.ready.poke(true.B)
+    d.io.c4_page_free_event.ready.poke(true.B)
     d.io.c4_retire_ack_event.ready.poke(true.B)
     d.io.c3b_runtime_retire.valid.poke(false.B)
     d.io.c3b_retire_ack.ready.poke(true.B)
@@ -1217,8 +1225,21 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       d.io.c3b_direct_status.valid.poke(false.B)
       val (reclaimRequestId, reclaimIncarnation) = waitRequest(d, p.coreMemoryWriteDataCode, 0)
       require(reclaimRequestId == 0, s"expected R5 reclaim sequence request id 0, got $reclaimRequestId")
+      d.io.c4_page_free_event.ready.poke(false.B)
       d.io.c4_retire_ack_event.ready.poke(false.B)
       response(d, reclaimRequestId, 0, last = true, incarnation = reclaimIncarnation)
+
+      waited = 0
+      while (!d.io.c4_page_free_event.valid.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+      require(waited < 64, "timed out waiting for the selected R5 page-free event")
+      d.io.c4_page_free_event.bits.page_ref.page_id.expect(0.U)
+      d.io.c4_page_free_event.bits.page_ref.generation.expect(0.U)
+      // allocator_release_out is an R5 post-durability observation, not the
+      // owner-local free operation. Its scoreboard backpressure must not
+      // redefine reclaim_complete, which is already true after the matching
+      // durable terminal.
+      d.io.reclaim_complete.expect(true.B)
+      d.io.c4_page_free_event.ready.poke(true.B); d.clock.step()
 
       waited = 0
       while (!d.io.c4_retire_ack_event.valid.peek().litToBoolean && waited < 160) { d.clock.step(); waited += 1 }

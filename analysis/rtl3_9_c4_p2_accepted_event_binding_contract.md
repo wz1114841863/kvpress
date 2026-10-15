@@ -59,8 +59,8 @@ oracle, or close legal-stall, stale/mismatch, fault, or reset coverage.  It
 makes no production-top, controller/macro, HBM/SRAM, numeric/MAC/FP/exp,
 timing, throughput, area, energy, PPA, model/GPU, or complete-inference claim.
 
-C4-A must first bind the eligible R5 page-free release without inferring
-descriptor-invalidate. C4-B then consumes the selected same-instance event
+C4-A has now bound the eligible R5 page-free release without inferring
+descriptor-invalidate. C4-B next consumes the selected same-instance event
 trace and establishes success plus bounded legal-stall replay. C4-C covers
 stale/mismatch, fault, and reset; C4-D performs the bounded validation and
 functional-subsystem completion review.

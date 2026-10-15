@@ -33,6 +33,30 @@ final class RouteARetireAckScoreboardObserver extends Module {
 }
 
 /**
+  * C4-A's page-free-only R5 observer. The old PageRef is copied from the one
+  * post-durable allocator-release carrier; descriptor-invalidate is
+  * deliberately not emitted because its full immutable schema is not carried
+  * on this handshake.
+  */
+final class RouteAPageFreeScoreboardObserver extends Module {
+  override def desiredName: String = "testbench_route_a_page_free_scoreboard_observer"
+  val io = IO(new Bundle {
+    val allocator_release_in = Flipped(RouteAChannels.allocator_release)
+    val allocator_release_out = RouteAChannels.allocator_release
+    val page_free_event_out = Decoupled(new PageFreeScoreboardEvent)
+  })
+
+  val offer = io.allocator_release_in.valid
+  io.allocator_release_out.valid := offer && (!io.allocator_release_out.ready || io.page_free_event_out.ready)
+  io.allocator_release_out.bits := io.allocator_release_in.bits
+  io.page_free_event_out.valid := offer && (!io.page_free_event_out.ready || io.allocator_release_out.ready)
+  io.page_free_event_out.bits.page_ref := io.allocator_release_in.bits.page_ref
+  io.allocator_release_in.ready := io.allocator_release_out.ready && io.page_free_event_out.ready
+  assert(io.allocator_release_in.fire === io.allocator_release_out.fire)
+  assert(io.allocator_release_out.fire === io.page_free_event_out.fire)
+}
+
+/**
   * C4-P2's zero-buffer test-only selected-event fork.  It observes only the
   * C0 actual R3->R6 pending-to-packed acceptance and the previously bound C3
   * terminal/C3b retire-ack carriers. It owns no authority, page, lifecycle,

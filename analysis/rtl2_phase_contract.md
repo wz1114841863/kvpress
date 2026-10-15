@@ -1096,9 +1096,10 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     finds complete terminal, page-free, and retire-ack carriers, while keeping
     descriptor-invalidate fail-closed because its required fields are not on
     one accepted C3b owner carrier.
-41. **RTL3.9-C4-A — eligible event capture (planned).** It may bind only the
-    exact R5 page-free release in the C3b harness and must preserve the
-    existing terminal/retire observations without inferring
+41. **RTL3.9-C4-A — eligible event capture (complete; testbench only).**
+    [`rtl3_9_c4_a_eligible_event_capture_contract.md`](rtl3_9_c4_a_eligible_event_capture_contract.md)
+    binds only the exact R5 page-free release in the C3b harness and preserves
+    the existing terminal/retire observations without inferring
     descriptor-invalidate.
 42. **RTL3.9-C4-B — event replay and bounded legal backpressure (planned).**
     It must prove no partial acceptance or replay of the eligible C4-A events.

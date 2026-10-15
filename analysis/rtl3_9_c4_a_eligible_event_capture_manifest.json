@@ -1,0 +1,28 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-c4-a-eligible-event-capture-1.0",
+  "status": "complete_testbench_page_free_capture",
+  "precondition_audit": "analysis/rtl3_9_c4_a_precondition_audit.json",
+  "selected_event": {
+    "event": "page_free",
+    "owner": "route_a_page_manager",
+    "actual_c3b_carrier": "r5.allocator_release_out -> c4PageFreeObserver.allocator_release_in",
+    "actual_acceptance": "r5.allocator_release_out.fire",
+    "field_map": ["page_ref.page_id", "page_ref.generation"],
+    "post_durable_rule": "R5 creates allocator_release_out only after its matching descriptor-invalidation terminal has been accepted."
+  },
+  "observer": {
+    "module": "testbench_route_a_page_free_scoreboard_observer",
+    "source": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC3bEventProvenanceObserver.scala",
+    "storage": "none",
+    "atomicity_rule": "allocator_release_in.fire equals allocator_release_out.fire equals page_free_event_out.fire; event-ready low backpressures R5's actual release carrier."
+  },
+  "excluded_events": ["descriptor_invalidate", "publication_commit", "reclaim_complete", "outer_functional_memory_traffic"],
+  "forbidden": ["descriptor-invalidate field inference", "event from reclaim_complete", "event from descriptor line", "event FIFO", "R5 or R6 owner change", "production-top integration"],
+  "disposition": {
+    "c4_a_eligible_event_capture_complete": true,
+    "c4_b_replay_authorized": true,
+    "c4_c_negative_coverage_complete": false,
+    "c4_d_completion_review_authorized": false,
+    "physical_or_numeric_claim": false
+  }
+}

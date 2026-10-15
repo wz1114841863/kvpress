@@ -87,12 +87,12 @@ RoPE/exp/FP pipeline, or performance model.
 
 C4-P0 has replayed the frozen event/scoreboard prerequisites from their
 immutable source commits. C4-P1 completed the fail-closed C3b event-field
-provenance matrix, and C4-P2 is its narrow accepted-carrier precursor. The
-C4-A precondition audit finds terminal, page-free, and retire-ack eligible,
-but keeps descriptor-invalidate fail-closed because two required fields are
-not on its accepted R5 carrier. C4-A capture, C4-B replay/backpressure, C4-C
-negative cases, and C4-D completion review remain open. RTL3 itself remains
-open pending those bounded scopes.
+provenance matrix, and C4-P2 is its narrow accepted-carrier precursor. C4-A
+now binds the eligible R5 old-PageRef/page-free release while keeping
+descriptor-invalidate fail-closed because two required fields are not on its
+accepted R5 carrier. C4-B replay/backpressure, C4-C negative cases, and C4-D
+completion review remain open. RTL3 itself remains open pending those bounded
+scopes.
 
 ## RTL3.9-C0 — association/first-use audit and baseline (complete functional baseline)
 
@@ -189,9 +189,11 @@ split so that each step has one owner and a reviewable failure boundary:
    descriptor-invalidate remains excluded because its required fields are not
    co-carried. See
    [`rtl3_9_c4_a_precondition_audit_contract.md`](rtl3_9_c4_a_precondition_audit_contract.md).
-7. **C4-A — eligible event capture (remaining).** Bind only the eligible R5
-   page-free release in the same C3b harness and preserve the existing
-   terminal/retire observations; do not infer descriptor-invalidate.
+7. **C4-A — eligible event capture (complete; testbench only).** The R5
+   page-free release is now a zero-buffer, same-fire observation; terminal and
+   retire remain on their P2 bindings. Descriptor-invalidate remains excluded.
+   See
+   [`rtl3_9_c4_a_eligible_event_capture_contract.md`](rtl3_9_c4_a_eligible_event_capture_contract.md).
 8. **C4-B — event replay and bounded legal backpressure (remaining).** Replay
    the captured accepted events and prove no partial acceptance or replay.
 9. **C4-C — stale/mismatch, numeric-fault, and reset cases (remaining).**
