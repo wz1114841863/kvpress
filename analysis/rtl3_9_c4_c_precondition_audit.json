@@ -1,0 +1,61 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-c4-c-precondition-audit-1.0",
+  "status": "complete_audit_c4_c_implementation_authorized",
+  "scope": "C4-C precondition audit for stale/mismatch, R4 numeric-fault, and reset cases in the existing C3b same-instance harness; no RTL or capture change is made.",
+  "selected_event_outputs": [
+    "io.c4_authority_transition_event",
+    "io.c4_attention_terminal_event",
+    "io.c4_page_free_event",
+    "io.c4_retire_ack_event"
+  ],
+  "cases": [
+    {
+      "name": "stale_r1_read_response",
+      "ingress": "io.external.response with non-matching transaction identity",
+      "same_instance_evidence": "RouteARTL265a2PackReadPublicationSpec delivers payloadRequestId + 1 while S2 remains FILLING.",
+      "allowed_event_prefix": ["authority_transition"],
+      "forbidden_event_suffix": ["attention_terminal", "page_free", "retire_ack"],
+      "boundary": "No stale response may mutate S2, produce a terminal, or advance reclamation."
+    },
+    {
+      "name": "stale_or_mismatched_r4_completion",
+      "ingress": "io.c3_r4_result or io.c3_r4_numeric_fault with wrong request/incarnation/consumer, or simultaneous result and fault",
+      "same_instance_evidence": "The C3b harness routes both inputs through RouteAFunctionalR4ReferenceBoundary and RouteAMergeBoundary; their focused tests reject stale identity and simultaneous terminal kinds.",
+      "allowed_event_prefix": ["authority_transition"],
+      "forbidden_event_suffix": ["attention_terminal", "page_free", "retire_ack"],
+      "boundary": "No mismatched R4 input may consume the outstanding merge or manufacture a terminal."
+    },
+    {
+      "name": "matching_r4_numeric_fault",
+      "ingress": "io.c3_r4_numeric_fault with exact issued request/incarnation/consumer",
+      "same_instance_evidence": "C3b exposes the exact outer functional R4 fault input through c3R4Reference and c3Merge to lifecycle.merge_terminal_in.",
+      "allowed_event_prefix": ["authority_transition", "attention_terminal(status=FAULT)"],
+      "forbidden_event_suffix": ["page_free", "retire_ack"],
+      "boundary": "One matching fault terminal is permitted; no success terminal replay, runtime retirement, R5 free observation, or R6 retire acknowledgement may follow."
+    },
+    {
+      "name": "reset_while_selected_event_is_held",
+      "ingress": "harness reset asserted while a C4 event output is valid and ready-low",
+      "same_instance_evidence": "The C3b harness has the same reset domain as R3/R5/R6/S2 and every C4 observer is zero-buffer/combinational; the existing C2 witness resets a READY S2 slot to EMPTY.",
+      "allowed_event_prefix": [],
+      "forbidden_event_suffix": ["authority_transition", "attention_terminal", "page_free", "retire_ack"],
+      "boundary": "Reset clears a held, unaccepted observation and cannot replay it or create a new event without reinitialization and a new owner-accepted path."
+    }
+  ],
+  "required_c4_c_checks": [
+    "Snapshot every selected event fire, not merely valid, and compare against the case's allowed prefix/suffix.",
+    "For each rejected stale/mismatch ingress, prove its ready is low or that it has no downstream state effect before inspecting C4 outputs.",
+    "For matching numeric fault, prove exactly one FAULT terminal and no later success terminal, page_free, or retire_ack.",
+    "For reset, hold a selected event ready-low, assert reset, and prove all four event outputs remain invalid until a fresh initialized path is driven."
+  ],
+  "forbidden": [
+    "infer event from reclaim_complete", "infer descriptor_invalidate fields", "treat a valid-only signal as an accepted event", "add a retry or Full-KV fallback", "add R5/R6 owner state", "production-top integration", "physical or numeric implementation claim"
+  ],
+  "disposition": {
+    "c4_c_precondition_audit_complete": true,
+    "c4_c_implementation_authorized": true,
+    "c4_c_negative_witness_complete": false,
+    "c4_d_completion_review_authorized": false,
+    "physical_or_numeric_claim": false
+  }
+}

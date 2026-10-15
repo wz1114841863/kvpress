@@ -1106,9 +1106,14 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     [`rtl3_9_c4_b_event_replay_contract.md`](rtl3_9_c4_b_event_replay_contract.md)
     records each selected event after its actual handshake and replays the
     exact-once order under two-cycle legal stalls.
-43. **RTL3.9-C4-C — stale/mismatch, numeric fault, and reset (planned).** It
-    must produce no false event or boundary violation.
-44. **RTL3.9-C4-D — validation and bounded completion review (planned).** It
+43. **RTL3.9-C4-C — negative-event precondition audit (complete; no new
+    witness).**
+    [`rtl3_9_c4_c_precondition_audit_contract.md`](rtl3_9_c4_c_precondition_audit_contract.md)
+    identifies exact stale/mismatch, numeric-fault, reset, and selected-event
+    ingress/observations, and fixes their legal-prefix/forbidden-suffix rules.
+44. **RTL3.9-C4-C — stale/mismatch, numeric fault, and reset witness
+    (planned).** It must produce no false event or boundary violation.
+45. **RTL3.9-C4-D — validation and bounded completion review (planned).** It
     may request RTL3 functional-subsystem review only after C4-A through C4-C
     pass. These stages may retain the already-authorized
     functional memory, partial-provider, and R4 reference **environment**

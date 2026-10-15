@@ -199,9 +199,14 @@ split so that each step has one owner and a reviewable failure boundary:
    its actual handshake and verifies exactly-once order under two-cycle legal
    stalls. See
    [`rtl3_9_c4_b_event_replay_contract.md`](rtl3_9_c4_b_event_replay_contract.md).
-9. **C4-C — stale/mismatch, numeric-fault, and reset cases (remaining).**
-   Prove they create no false event and preserve all C0--C3b boundaries.
-10. **C4-D — validation and bounded completion review (remaining).** Update
+9. **C4-C — negative-event precondition audit (complete; no new witness).**
+   The existing C3b harness has exact stale/mismatch, R4 numeric-fault, reset,
+   and C4-event ingress/observations. Its case matrix records legal prefixes
+   and forbidden suffixes. See
+   [`rtl3_9_c4_c_precondition_audit_contract.md`](rtl3_9_c4_c_precondition_audit_contract.md).
+10. **C4-C — stale/mismatch, numeric-fault, and reset witness (remaining).**
+    Prove the audit's no-false-event and C0--C3b boundaries.
+11. **C4-D — validation and bounded completion review (remaining).** Update
     contracts/preflights and request functional-subsystem review only after
     C4-A through C4-C pass.
 
