@@ -244,7 +244,8 @@ physical implementation, performance, or a Gate-B PASS.
 
 C4-D completed this bounded review on 2026-10-15. The reviewed result is
 functional-subsystem closure only.  SRP.0 provenance/source inventory and the
-SRP.1-R revised partition proposal are complete and await their required human review;
+SRP.1-R revised partition proposal passed human review with minor documentary
+corrections; SRP.2 source/toolchain eligibility is now authorized;
 see [`synthesis_realization_partition.md`](synthesis_realization_partition.md)
 and its manifest.  No
 physical/numeric realization choice, wrapper implementation, synthesis, or
@@ -285,11 +286,12 @@ frozen.
 > `analysis/rtl2_phase_contract.md`, and
 > `analysis/rtl3_9_c4_d_functional_completion_review.md` before editing; use
 > `analysis/route_a_document_map.md` to select any stage-local evidence.
-> Current state is RTL3 functional-subsystem closure complete. SRP.0--SRP.1
-> inventory/partition proposal is complete and pending human review; read
+> Current state is RTL3 functional-subsystem closure complete. SRP.0--SRP.1-R
+> passed human partition review; SRP.2 source/toolchain eligibility only is
+> authorized. Read
 > `analysis/synthesis_realization_partition.md` and
-> `analysis/synthesis_eligibility_manifest.json`. Do not advance beyond the
-> SRP human review gate without approval;
+> `analysis/synthesis_eligibility_manifest.json`. Do not advance to synthesis,
+> physical realization, PPA, or cost evaluation without a later approval;
 > do not reopen pruning/admission/page/scheduler/atomicity or introduce
 > physical HBM/SRAM, numeric pipeline, timing, PPA, model/GPU, or new A4 DSE
 > claims. Preserve frozen artifacts, run no-model preflight/tests first, update

@@ -73,8 +73,8 @@ the cost is already evidenced.  Each record therefore also carries a separate
 `requires_srp4_reconciliation`, `unestimated_pending_evidence`, or
 `not_applicable`) and, where relevant, its A4/budget reconciliation route.
 
-Two independent booleans replace the earlier ambiguous
-`required_for_paper_claim` field:
+Two independent booleans replace the earlier ambiguous single paper-claim
+field:
 
 - `required_for_local_implementation`: the paper needs a local DUT/wrapper
   implementation for this item.
@@ -123,7 +123,7 @@ Route-A.
 | Phase | Deliverable and permitted result | Explicitly out of scope |
 |---|---|---|
 | SRP.0 — Provenance & Source Inventory | Record both anchors, clean-tree state, real main/test source inventory, functional providers, state/interface candidates, and existing evidence references. | RTL edits, synthesis, physical parameters, eligibility verdicts. |
-| SRP.1 — Partition Proposal | Propose the two classifications, `required_for_paper_claim`, future synthesis-top candidates, external/verification-only exclusions, and `stop_for_review` items. | Treating a proposal as an approved DUT or physical implementation. |
+| SRP.1 — Partition Proposal | Propose the two classifications, `required_for_local_implementation` and `required_for_paper_cost_evidence`, future synthesis-top candidates, external/verification-only exclusions, and `stop_for_review` items. | Treating a proposal as an approved DUT or physical implementation. |
 | **Human review gate** | Approve or revise the proposed minimum paper boundary before SRP.2. | Automatic continuation. |
 | SRP.2 — Source/Toolchain Eligibility | Review Chisel constructs, elaboration dependencies, storage shape, reset/IO ownership, wrapper needs, and available toolchain assumptions. Results use the implementation statuses above. | DC/synthesis execution, timing/PPA claims, or `synthesis_ready` declaration. |
 | SRP.3 — Realization Requirements & Decision Planning | State required memory access/numeric observable behavior, unresolved parameters, candidate evidence methods, decision owners, and stop conditions. | Choosing macro banks/ports, HBM bursts, exp design, pipeline depth, or target frequency. |
@@ -144,8 +144,12 @@ memory service, and the missing toolchain/macro choices are
 `stop_for_review` items.
 
 The proposal does **not** label any source as synthesis-ready.  It provides a
-minimum paper-relevant evidence boundary and explicit exclusions only.  SRP.2
-may begin solely after the human review accepts or revises that boundary.
+minimum paper-relevant evidence boundary and explicit exclusions only.  The
+SRP.0--SRP.1-R human partition review passed with minor documentary corrections
+on 2026-10-15: all 40 structural children are covered and all 30 partition
+records are internally valid.  SRP.2 source/toolchain eligibility is now
+authorized, while synthesis, physical realization, and cost evaluation remain
+outside that authorization.
 
 ## Required semantic and accounting safeguards
 
