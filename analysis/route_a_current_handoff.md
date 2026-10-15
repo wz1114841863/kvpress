@@ -90,10 +90,11 @@ immutable source commits. C4-P1 completed the fail-closed C3b event-field
 provenance matrix, and C4-P2 is its narrow accepted-carrier precursor. C4-A
 binds the eligible R5 old-PageRef/page-free release while keeping
 descriptor-invalidate fail-closed because two required fields are not on its
-accepted R5 carrier. C4-B success/replay under bounded legal backpressure and
-C4-C stale/mismatch, numeric-fault, and reset witnesses are complete. C4-D
-completion review is the remaining bounded scope; RTL3 itself remains open
-pending that review.
+accepted R5 carrier. C4-B success/replay under bounded legal backpressure,
+C4-C stale/mismatch, numeric-fault, and reset witnesses, and C4-D's bounded
+functional-subsystem completion review are complete. RTL3 functional-subsystem
+closure is complete; the next work requires separate authorization and remains
+outside physical, numeric, and PPA scope.
 
 ## RTL3.9-C0 — association/first-use audit and baseline (complete functional baseline)
 
@@ -210,9 +211,10 @@ split so that each step has one owner and a reviewable failure boundary:
     Chisel tests. Its C4 event records are appended only after actual
     handshakes. See
     [`rtl3_9_c4_c_negative_event_witness_contract.md`](rtl3_9_c4_c_negative_event_witness_contract.md).
-11. **C4-D — validation and bounded completion review (remaining).** Update
-    contracts/preflights and request functional-subsystem review only after
-    C4-A through C4-C pass.
+11. **C4-D — validation and bounded completion review (complete).** Its
+    review reconciled C0--C3b and C4-A/B/C without changing an owner or
+    datapath; C3b success/replay and all C4-C negative witnesses passed. See
+    [`rtl3_9_c4_d_functional_completion_review.md`](rtl3_9_c4_d_functional_completion_review.md).
 
 ## RTL3 completion criteria
 
@@ -235,6 +237,10 @@ declared functional subsystem scope:
 
 An RTL3 PASS means **functional subsystem closure**, not whole-model inference,
 physical implementation, performance, or a Gate-B PASS.
+
+C4-D completed this bounded review on 2026-10-15. The reviewed result is
+functional-subsystem closure only; the successor physical/numeric work remains
+separately unauthorized.
 
 ## Overall path after RTL3
 

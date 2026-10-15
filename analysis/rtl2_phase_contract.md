@@ -1114,13 +1114,15 @@ MAC owner, or make a testbench default appear as an accepted production fact.
 44. **RTL3.9-C4-C — stale/mismatch, numeric fault, and reset witness
     (complete).** The host-only same-instance witness passed its three
     directed Chisel tests without false events or boundary violations.
-45. **RTL3.9-C4-D — validation and bounded completion review (planned).** It
-    may request RTL3 functional-subsystem review only after C4-A through C4-C
-    pass. These stages may retain the already-authorized
+45. **RTL3.9-C4-D — validation and bounded completion review (complete,
+    functional-subsystem scope).** It reconciled the prior C0--C3b and
+    C4-A/B/C evidence after the declared C3b success/replay and C4-C negative
+    witnesses passed. It retains the already-authorized
     functional memory, partial-provider, and R4 reference **environment**
     boundaries, but may not turn any of them into an HBM controller, SRAM
-    macro, numeric pipeline, schedule, timing, or PPA claim. A dedicated RTL3
-    completion review follows only after this path is closed.
+    macro, numeric pipeline, schedule, timing, or PPA claim. This is the
+    dedicated RTL3 functional-subsystem completion review; any physical or
+    numeric realization remains a separately authorized successor stage.
 
 RTL3 completion may establish functional owner/model closure only. It remains
 insufficient evidence for physical SRAM/HBM macros, controller realization,

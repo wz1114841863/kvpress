@@ -1,0 +1,43 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-c4-d-functional-completion-review-1.0",
+  "status": "complete_functional_subsystem_review",
+  "scope": "Bounded C0--C3b/C4-A-B-C functional-subsystem review; no RTL, owner, or physical-model change.",
+  "required_prior_contracts": [
+    "analysis/rtl3_9_b3_atomic_publication_authority_activation_contract.md",
+    "analysis/rtl3_9_c0_post_r6_first_use_association_contract.md",
+    "analysis/rtl3_9_c1_post_publication_demand_activation_contract.md",
+    "analysis/rtl3_9_c2_functional_read_to_s2_contract.md",
+    "analysis/rtl3_9_c3a_packed_source_service_terminal_contract.md",
+    "analysis/rtl3_9_c3b_retirement_reclaim_contract.md",
+    "analysis/rtl3_9_c4_a_eligible_event_capture_contract.md",
+    "analysis/rtl3_9_c4_b_event_replay_contract.md",
+    "analysis/rtl3_9_c4_c_negative_event_witness_contract.md"
+  ],
+  "completion_criteria": [
+    "one unique publication followed by actual R6 pending-to-packed acceptance",
+    "no packed first use before visible descriptor and all-member R6 acceptance",
+    "typed payload plus sidecar reach S2 READY before packed source service",
+    "four packed consumer commits precede source release and one R6 terminal",
+    "runtime retirement reaches durable R5 page free before one R6 retire acknowledgement",
+    "accepted event replay is exact-once under bounded legal stalls",
+    "stale/mismatch, matching numeric fault, and reset emit no forbidden event"
+  ],
+  "directed_chisel_validation": {
+    "test_class": "kvpress.routea.rtl2.RouteARTL265a2PackReadPublicationSpec",
+    "required_test_filters": [
+      "retires the first post-R6 packed read",
+      "C4-C"
+    ],
+    "result": "passed: C3b success/replay 1/1 plus C4-C negative witnesses 3/3; SBT exit code 0 on 2026-10-15"
+  },
+  "forbidden": [
+    "RTL or owner change", "new event carrier or event FIFO", "event inferred from valid or reclaim_complete", "production-top integration", "physical or numeric implementation claim", "complete inference claim"
+  ],
+  "disposition": {
+    "c4_d_implementation_complete": true,
+    "c4_d_no_model_preflight_complete": true,
+    "c4_d_directed_chisel_validation_complete": true,
+    "rtl3_functional_subsystem_review_complete": true,
+    "physical_or_numeric_claim": false
+  }
+}
