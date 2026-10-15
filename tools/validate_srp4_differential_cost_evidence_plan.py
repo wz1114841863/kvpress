@@ -37,6 +37,14 @@ def main() -> int:
     assert {"P1", "P2", "P3", "P4", "gate", "excluded"} <= {
         row["priority"] for row in rows
     }
+    integration = next(row for row in rows if row["id"] == "integration_shell")
+    assert integration["coverage"] == "deferred_until_future_top_selection"
+    assert integration["deferred_cost_required"] is True
+    m2 = next(row for row in rows if row["id"] == "m2_fixed_and_control_entry")
+    assert len(m2["accounted_subterms"]) == 2
+    assert len(m2["omitted_subterms"]) == 4
+    assert "queue/staging" in m2["omitted_subterms"][0]
+    assert "unresolved evidence" in srp4["unobservable_action_policy"]
     assert srp4["next_gate"] == "SRP.5 Completion Review; not started by this record."
     assert data["next_gate"].startswith("SRP.5 Completion Review")
 
@@ -50,6 +58,10 @@ def main() -> int:
         "P3 stage",
         "R5 descriptor maintenance",
         "R4 numeric/partial state",
+        "Deferred until future-top selection",
+        "**Accounted subterms:**",
+        "**Omitted subterms:**",
+        "**unresolved evidence**",
         "Payload and metadata service coordinates remain non-additive.",
         "does **not** claim to have re-hashed",
         "does not rerun A4",

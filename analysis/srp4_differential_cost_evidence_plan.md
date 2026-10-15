@@ -37,6 +37,10 @@ allowances.  Payload and metadata service coordinates remain non-additive.
 - **Common/not incremental:** provision belongs to fair Full-KV and Route-A
   jointly and must not be charged wholesale to Route-A.  This does not make
   its path-specific activity free.
+- **Deferred until future-top selection:** integration logic may be paper
+  hardware, but its membership and cost basis cannot be classified until the
+  future synthesis top is explicitly selected.  It is neither verification
+  infrastructure nor zero cost.
 - **Verification-only/not applicable:** no paper hardware cost can be assigned.
 
 ## Differential cost mapping
@@ -46,11 +50,11 @@ comparison rule, not a claim that an omitted Full-KV term is zero.
 
 | Cost-bearing scope and partition IDs | A4.14.1 coverage status | Full-KV basis and double-counting rule | Remaining evidence gap | Least-cost future verification method | Priority |
 |---|---|---|---|---|---|
-| Future integration shell: `top_future_synthesis_boundary` | Verification-only/not applicable. | No area/control is assigned until a future DUT boundary is approved. | Future-top membership and integration overhead. | Keep excluded from ledger; require an explicit future-top bill of materials before any synthesis comparison. | Gate |
+| Future integration shell: `top_future_synthesis_boundary` | Deferred until future-top selection; not verification-only. | No area/control is assigned until a future DUT boundary is approved, but later mux/state/interconnect must enter the selected-top bill of materials. | Future-top membership and integration overhead. | Require an explicit future-top bill of materials and differential/common classification before any synthesis comparison. | Gate |
 | Common lifecycle/hot/R1/R2 control: `r6_common_lifecycle_control`, `common_hot_residency_control`, `r2_shared_arbitration_control`, `r1_core_transaction_control` | Common/not incremental; no standalone A4 physical-control term. | Baseline control is shared; do not charge it as Route-A increment. Future absolute-system evidence must use one identical baseline. | Differential transactions/control toggles caused by Route-A. | Accepted-carrier action inventory, compared against the same Full-KV interface events; do not infer gates/energy from a Chisel module. | P4 |
 | Common S2 payload/GQA: `s2_common_payload_gqa_control` | A4-accounted proxy for the two-page S2 source-buffer provision and path activity. | Fixed S2 proxy area appears once as common infrastructure; Route-A receives only its path activity. | Chosen macro/ports/clock and any physical activity calibration. | Retain A4.13.5/A4.14.1 common-versus-path split; after a separate choice, compare identical Full-KV/Route-A wrapper access counts. | P3 |
 | Route-A control and differential activity: `r6_route_a_packed_activity`, `direct_pending_transport_control`, `shared_delivery_context_state`, `typed_read_delivery_control`, `r3_materialization_publication_control`, `packed_read_activation_and_demand_control`, `p3_wrapper_control`, `r5_allocator_reclaim_control`, `packed_s2_read_ingress_control`, `r4_structural_merge_control`, `r6_component_status_collection` | Explicitly unestimated control activity.  Some payload movement is covered elsewhere; no control implementation energy/area is implied. | Compare accepted Route-A-only events with an explicitly named Full-KV counterpart or record that no counterpart exists; never charge shared R1/R2/R6 provision twice. | FSM/state, association, arbitration-adapter, and status-collection dynamic/area. | One owner-carried event taxonomy and counter map, then a future wrapper-level toggle/access map after the DUT boundary is approved. | P4 |
-| M2 fixed provision and head/span control entry: `m2_control_protocol`, `m2_storage_realization` | A4-accounted proxy: M2 fixed public-CACTI provision once and A4.14.0 head/span control-entry accesses. | Route-A incremental M2 fixed provision is not multiplied by workload.  Do not label control-entry proxy as total M2 dynamic energy. | Queue/staging dynamic accesses, exact storage realization, and control-wrapper cost. | Reconstruct only accepted M2 operation/publish and queue/staging event classes from frozen traces; retain existing proxy as prior evidence, then require a selected-wrapper access map. | P1 |
+| M2 fixed provision and head/span control entry: `m2_control_protocol`, `m2_storage_realization` | **Accounted subterms:** M2 fixed public-CACTI provision once and A4.14.0 head/span control-entry access proxy. **Omitted subterms:** queue/staging dynamic accesses, other control activity, exact storage realization, and wrapper cost. | Route-A incremental M2 fixed provision is not multiplied by workload.  Do not label control-entry proxy as total M2 dynamic energy. | The omitted subterms remain subject to the A4.14.1 constraint. | Reconstruct only accepted M2 operation/publish and queue/staging event classes from frozen traces; retain existing proxy as prior evidence, then require a selected-wrapper access map. | P1 |
 | M2 functional reference: `m2_reference_provider` | Verification-only/not applicable. | Never treated as M2 hardware or an incremental baseline. | Replacement provenance only. | Preserve existing regression boundary; no cost row. | Excluded |
 | P3 pending backing: `p3_pending_hbm_backing` | Partially covered: A4 payload service models P3 admission movement/traffic under declared profiles. | Compare fair Full-KV/Route-A payload service under the same declared profile; pending backing/controller are not free. | Controller/PHY/CDC, mapping, physical HBM cost, and transport-control cost. | Re-hash accepted A4 inputs; make a request/byte/terminal-class map at `core_mem_if_v1`; later bind one declared external-service model without changing request semantics. | P2 |
 | P3 staging: `p3_payload_stage_page` | Explicitly unestimated: fixed 1,179,648-B envelope is deterministic capacity only. | Route-A incremental; do not add it to S2, pending backing, or payload page capacity. | Stage macro area, fill/read/write/release dynamic accesses, and physical placement. | Derive exact stage fill/read/write/release counts from existing accepted R3 owner events, then evaluate one separately approved storage proxy/wrapper against those counts. | P1 |
@@ -71,7 +75,9 @@ accesses, R5 descriptor maintenance, and R4 numeric/partial state.
 Their first step is **not** synthesis: reuse only existing immutable owner
 events or frozen trace inputs to build an action taxonomy with identity,
 accepted-event, and Full-KV-basis labels.  If an event lacks an owner-carried
-field, it remains uncounted rather than inferred from private state.
+field, it remains **unresolved evidence**, not an inferred count and not a
+zero-cost omission.  Its row must retain a concrete supplementary evidence
+method or trigger stop-for-review before a later cost conclusion.
 
 P2 then establishes the same action/byte taxonomy for pending/external memory,
 R5 availability, and sidecar/page management.  It identifies what a future
