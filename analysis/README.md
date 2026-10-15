@@ -18,8 +18,11 @@ accepted-event replay, and bounded stale/mismatch/fault/reset coverage.
 The current conclusion is **functional-subsystem closure only**. It does not
 establish a synthesizable partition, controller/macro, HBM/SRAM behavior,
 numeric datapath, timing, throughput, PPA, model/GPU result, or complete
-inference. The next activity is separately authorized successor planning; see
-[`route_a_current_handoff.md`](route_a_current_handoff.md) and
+inference.  The active successor is SRP (Synthesis-Realization Partition &
+Eligibility Review); only its provenance/source inventory and partition
+proposal are authorized before a human review gate.  See
+[`synthesis_realization_partition.md`](synthesis_realization_partition.md),
+[`route_a_current_handoff.md`](route_a_current_handoff.md), and
 [`rtl3_9_c4_d_functional_completion_review.md`](rtl3_9_c4_d_functional_completion_review.md).
 
 ### Historical detailed status (through RTL3.7)

@@ -21,6 +21,8 @@ historical review records, or the normative architecture contract.
    phase ledger.
 6. [`rtl3_9_c4_d_functional_completion_review.md`](rtl3_9_c4_d_functional_completion_review.md):
    current bounded functional-closure decision and its exclusions.
+7. [`synthesis_realization_partition.md`](synthesis_realization_partition.md):
+   approved SRP scope, classification axes, gates, and stop criteria.
 
 Use these only when the question needs the extra detail:
 
@@ -241,8 +243,11 @@ An RTL3 PASS means **functional subsystem closure**, not whole-model inference,
 physical implementation, performance, or a Gate-B PASS.
 
 C4-D completed this bounded review on 2026-10-15. The reviewed result is
-functional-subsystem closure only; the successor physical/numeric work remains
-separately unauthorized.
+functional-subsystem closure only.  SRP is now the separately authorized
+successor **planning** stage: only SRP.0 provenance/source inventory and
+SRP.1 partition proposal may begin before their human review gate.  No
+physical/numeric realization choice, wrapper implementation, synthesis, or
+PPA work is authorized by that planning approval.
 
 ## Overall path after RTL3
 
@@ -251,8 +256,12 @@ the following is the intended decision sequence, not current authorization:
 
 ```text
 RTL3 completion review
-  -> synthesis-realization partition/eligibility plan
-  -> separate memory-interface and numeric-realization choices
+  -> SRP.0 provenance/source inventory + SRP.1 partition proposal
+  -> human review of minimum paper-relevant boundary
+  -> SRP.2 source/toolchain eligibility
+  -> SRP.3 realization requirements and decision planning
+  -> SRP.4 differential-cost evidence plan + SRP.5 completion review
+  -> separately authorized memory-interface and numeric-realization choices
   -> synthesizable control/numeric wrapper implementation and verification
   -> targeted synthesis/formal/lint and physical proxy calibration
   -> profiling of the selected realized design
@@ -275,8 +284,10 @@ frozen.
 > `analysis/rtl2_phase_contract.md`, and
 > `analysis/rtl3_9_c4_d_functional_completion_review.md` before editing; use
 > `analysis/route_a_document_map.md` to select any stage-local evidence.
-> Current state is RTL3 functional-subsystem closure complete. The next work is
-> separately authorized synthesis-realization partition/eligibility planning;
+> Current state is RTL3 functional-subsystem closure complete. SRP.0--SRP.1
+> are separately authorized planning only; read
+> `analysis/synthesis_realization_partition.md` before inventorying. Do not
+> advance beyond the SRP human review gate without approval;
 > do not reopen pruning/admission/page/scheduler/atomicity or introduce
 > physical HBM/SRAM, numeric pipeline, timing, PPA, model/GPU, or new A4 DSE
 > claims. Preserve frozen artifacts, run no-model preflight/tests first, update
