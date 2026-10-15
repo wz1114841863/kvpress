@@ -1,6 +1,6 @@
 # Route-A current handoff — RTL3 functional closure
 
-**Status date:** 2026-10-14
+**Status date:** 2026-10-15
 **Repository state:** `research/kvzap-latest`, implementation handoff after
 `c5ccda6 rtl3: close atomic publication authority`.
 
@@ -88,11 +88,12 @@ RoPE/exp/FP pipeline, or performance model.
 C4-P0 has replayed the frozen event/scoreboard prerequisites from their
 immutable source commits. C4-P1 completed the fail-closed C3b event-field
 provenance matrix, and C4-P2 is its narrow accepted-carrier precursor. C4-A
-now binds the eligible R5 old-PageRef/page-free release while keeping
+binds the eligible R5 old-PageRef/page-free release while keeping
 descriptor-invalidate fail-closed because two required fields are not on its
-accepted R5 carrier. C4-B replay/backpressure, C4-C negative cases, and C4-D
-completion review remain open. RTL3 itself remains open pending those bounded
-scopes.
+accepted R5 carrier. C4-B success/replay under bounded legal backpressure and
+C4-C stale/mismatch, numeric-fault, and reset witnesses are complete. C4-D
+completion review is the remaining bounded scope; RTL3 itself remains open
+pending that review.
 
 ## RTL3.9-C0 — association/first-use audit and baseline (complete functional baseline)
 

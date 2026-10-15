@@ -36,9 +36,9 @@ retirement condition.
 
 ## Boundaries and next phase
 
-This is a success-path and finite legal-stall replay only. It does not cover
-stale/mismatch, numeric fault, reset, a persistent cross-run trace format,
-production scoreboard integration, HBM/SRAM, numeric/MAC/FP/exp, timing,
-throughput, area, energy, PPA, model/GPU, or complete inference. Those
-negative scenarios remain C4-C; C4-D remains validation and bounded
-functional-subsystem completion review.
+This is a success-path and finite legal-stall replay only. C4-C subsequently
+covered stale/mismatch, numeric fault, and reset; neither phase creates a
+persistent cross-run trace format or production scoreboard integration. C4-D
+now performs validation and the bounded functional-subsystem completion
+review. No phase here establishes HBM/SRAM, numeric/MAC/FP/exp, timing,
+throughput, area, energy, PPA, model/GPU, or complete inference.

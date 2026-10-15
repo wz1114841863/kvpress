@@ -32,8 +32,10 @@ them in.
 
 ## Next phase
 
-C4-B may now replay the accepted C4-A event trace through success and bounded
-legal backpressure. C4-C retains stale/mismatch, numeric-fault, and reset
-coverage. C4-D remains the validation and bounded functional-subsystem review
-phase. No physical, PPA, timing, throughput, numeric, model/GPU, or complete
+C4-B subsequently replayed the accepted C4-A event trace through success and
+bounded legal backpressure, and C4-C subsequently covered stale/mismatch,
+numeric-fault, and reset. C4-D is now the validation and bounded
+functional-subsystem review phase. The disposition fields in this manifest are
+the C4-A-stage snapshot and are intentionally not rewritten by later phases.
+No physical, PPA, timing, throughput, numeric, model/GPU, or complete
 inference claim is made.
