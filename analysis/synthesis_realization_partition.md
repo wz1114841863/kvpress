@@ -1,6 +1,6 @@
 # SRP — Synthesis-Realization Partition & Eligibility Review
 
-**Status:** SRP.0--SRP.3 realization-requirements planning is complete at its
+**Status:** SRP.0--SRP.4 differential-cost evidence planning is complete at its
 declared non-physical scope.  This document is a living successor-stage plan, not a
 physical implementation, synthesis, PPA, performance, or new DSE record.
 
@@ -182,8 +182,27 @@ from still-pending physical-wrapper port mapping in
 
 This result makes no memory/numeric choice and does not implement a wrapper,
 controller, macro, pipeline, or future synthesis top.  It does not calculate
-costs or reopen A4.14.1.  SRP.4 differential-cost evidence planning is the
-next permitted planning phase and has not begun.
+costs or reopen A4.14.1.  At SRP.3 completion, SRP.4 differential-cost evidence
+planning was the next permitted planning phase; its later result is recorded
+immediately below.
+
+## SRP.4 disposition
+
+[`srp4_differential_cost_evidence_plan.md`](srp4_differential_cost_evidence_plan.md)
+maps every partition record to A4-accounted proxy coverage, partial coverage,
+an explicitly unestimated term, common/non-incremental treatment, or a
+verification-only exclusion.  It identifies M2 queue/staging, P3 stage, R5
+descriptor maintenance, and R4 numeric/partial state as the first omitted-cost
+risk screen; later work is limited to owner-carried action taxonomies until a
+separately approved realization choice exists.
+
+The materialized A4.14.1 report is absent from the live tree.  SRP.4 therefore
+uses the accepted hash and the prior remote byte-verification record for
+provenance only; it does not re-hash the report, recompute a ledger value, or
+assert budget pass/fail.  The machine-readable mapping is in
+[`synthesis_eligibility_manifest.json`](synthesis_eligibility_manifest.json).
+SRP.5 Completion Review is the next permitted planning phase and has not
+begun.
 
 ## Required semantic and accounting safeguards
 

@@ -245,9 +245,9 @@ physical implementation, performance, or a Gate-B PASS.
 C4-D completed this bounded review on 2026-10-15. The reviewed result is
 functional-subsystem closure only.  SRP.0 provenance/source inventory and the
 SRP.1-R revised partition proposal passed human review with minor documentary
-corrections; SRP.2 source/toolchain eligibility and SRP.3 realization-
-requirements decision planning are complete at their declared non-physical
-scopes; SRP.4 has not begun;
+corrections; SRP.2 source/toolchain eligibility, SRP.3 realization-
+requirements decision planning, and SRP.4 differential-cost evidence planning
+are complete at their declared non-physical scopes; SRP.5 has not begun;
 see [`synthesis_realization_partition.md`](synthesis_realization_partition.md)
 and its manifest.  No
 physical/numeric realization choice, wrapper implementation, synthesis, or
@@ -289,11 +289,12 @@ frozen.
 > `analysis/rtl3_9_c4_d_functional_completion_review.md` before editing; use
 > `analysis/route_a_document_map.md` to select any stage-local evidence.
 > Current state is RTL3 functional-subsystem closure complete. SRP.0--SRP.1-R
-> passed human partition review; SRP.2 source/toolchain eligibility and SRP.3
-> realization-requirements decision planning are complete; SRP.4 has not
-> begun. Read
+> passed human partition review; SRP.2 source/toolchain eligibility, SRP.3
+> realization-requirements decision planning, and SRP.4 differential-cost
+> evidence planning are complete; SRP.5 has not begun. Read
 > `analysis/synthesis_realization_partition.md` and
 > `analysis/srp3_realization_requirements_decision_plan.md`, and
+> `analysis/srp4_differential_cost_evidence_plan.md`, and
 > `analysis/synthesis_eligibility_manifest.json`. Do not advance to realization
 > choice, synthesis,
 > physical realization, PPA, or cost evaluation without a later approval;

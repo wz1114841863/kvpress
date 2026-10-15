@@ -21,11 +21,13 @@ numeric datapath, timing, throughput, PPA, model/GPU result, or complete
 inference.  The active successor is SRP (Synthesis-Realization Partition &
 Eligibility Review); its SRP.0--SRP.1-R provenance/source inventory and
 revised partition proposal passed human review; SRP.2 source/toolchain
-eligibility and SRP.3 realization-requirements planning are complete at their
-non-physical scopes. SRP.4 is not started.
+eligibility, SRP.3 realization-requirements planning, and SRP.4
+differential-cost evidence planning are complete at their non-physical scopes.
+SRP.5 is not started.
 See
 [`synthesis_realization_partition.md`](synthesis_realization_partition.md),
 [`srp3_realization_requirements_decision_plan.md`](srp3_realization_requirements_decision_plan.md),
+[`srp4_differential_cost_evidence_plan.md`](srp4_differential_cost_evidence_plan.md),
 [`route_a_current_handoff.md`](route_a_current_handoff.md), and
 [`rtl3_9_c4_d_functional_completion_review.md`](rtl3_9_c4_d_functional_completion_review.md).
 
