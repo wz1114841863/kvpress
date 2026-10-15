@@ -35,7 +35,19 @@ def main() -> int:
     assert set(srp3["required_record_ids"]) == EXPECTED_IDS
     assert len(srp3["record_plans"]) == len(EXPECTED_IDS)
     assert {item["id"] for item in srp3["record_plans"]} == EXPECTED_IDS
+    assert set(srp3["mapping_status_meaning"]) == {
+        "logical_contract_mapped",
+        "physical_wrapper_mapping_pending",
+    }
     for item in srp3["record_plans"]:
+        assert item["responsible_semantic_module"]
+        assert item["decision_stage"].startswith("separate ")
+        assert item["review_authority"] == (
+            "Route-A realization-choice review with explicit human approval"
+        )
+        assert item["logical_contract_mapped"] is True
+        assert item["logical_contract_refs"]
+        assert item["physical_wrapper_mapping_pending"] is True
         assert item["evidence_route"]
         assert item["decision_gate"].startswith("separate ")
         assert item["stop"]
@@ -51,6 +63,8 @@ def main() -> int:
     plan = PLAN.read_text(encoding="utf-8")
     for token in [
         "## Requirement and decision register",
+        "## Decision ownership and review authority",
+        "## Logical contract versus physical wrapper mapping",
         "## Evidence discipline and decision gates",
         "## Completion and next authorization",
         "`metadata_publish_commit`",
@@ -66,6 +80,8 @@ def main() -> int:
         "It selects no memory macro, port/bank",
         "PPA result, or realized DUT.",
         "It authorizes no RTL/wrapper implementation",
+        "explicit human approval",
+        "physical_wrapper_mapping_pending = true",
     ]:
         assert phrase in plan, phrase
     print("PASS: SRP.3 records nine realization requirements without selecting an implementation")

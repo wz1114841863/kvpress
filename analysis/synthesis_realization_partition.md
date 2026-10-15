@@ -174,8 +174,10 @@ semantic mapping was due in SRP.3: M2 storage; P3 pending backing and stage;
 R5 availability state and descriptor region; common S2 payload and
 incremental sidecar; R4 numeric/partial state; and external memory service.
 For each it records required observable behavior, unresolved realization
-parameters, evidence route, and a stop condition.  The corresponding concise
-machine-readable record is in
+parameters, evidence route, responsible semantic module, decision stage,
+review authority, and a stop condition.  The corresponding concise
+machine-readable record separately marks existing logical-contract mapping
+from still-pending physical-wrapper port mapping in
 [`synthesis_eligibility_manifest.json`](synthesis_eligibility_manifest.json).
 
 This result makes no memory/numeric choice and does not implement a wrapper,

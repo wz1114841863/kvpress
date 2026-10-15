@@ -49,6 +49,43 @@ interfaces; neither selects an HBM command or burst.
 | `r4_numeric_partial_state` | Preserve canonical `hot -> pending -> packed` order; four consumer partial interfaces of binary32 `(m,l,o[127:0])`; observable binary32/RNE results and stated tolerance; `l > 0` normalization; exactly-one R6 `numeric_fault` with no output/fallback on nonfinite, overflow, or invalid `l`; account for the 2,080-B logical group partial state if materialized or spilled. | Exp/arithmetics design, internal precision, pipeline/register placement, partial-state RF/SRAM/spill, latency, throughput, and numeric dynamic cost. | Finite conformance suite from `architecture_gate_a_r4_numeric_merge_contract.md`, including subset/malformed/overflow tests, plus a state-placement cost/evidence plan. | Any candidate changes source order, broadens numeric tolerance without a specification revision, treats partial state as free, or cannot retain fault/terminal semantics. |
 | `external_memory_service` | Preserve synchronous `core_mem_if_v1` core-side contract, four-live-read/one-live-write anchor limits, ordered fragments per identity, exactly-one terminal result, stale-response suppression, and reset `adapter_epoch_ready -> mem_init_done`. | External controller/protocol/CDC, physical clock relation, sustained service, address translation, and physical HBM cost. | Contract adapter verification with explicit environment assumptions; later calibrated/declarative service evidence and cost reconciliation. | A future environment assumes away stale/fault/reset behavior, relies on test-only reference as a controller, or reports an external service as zero cost. |
 
+## Decision ownership and review authority
+
+The entries below name **semantic responsibility**, not a pre-selected RTL
+module or physical wrapper.  A decision may proceed only in its named separate
+review and requires explicit human approval by the listed review authority;
+SRP.3 itself grants neither approval nor an implementation mandate.
+
+| ID | Responsible semantic module/boundary | Decision stage | Review authority |
+|---|---|---|---|
+| `m2_storage_realization` | R3/M2 logical wrapper | Separate memory-realization choice review | Route-A realization-choice review with explicit human approval |
+| `p3_pending_hbm_backing` | R3/P3 wrapper plus R1 external-memory boundary | Separate memory-interface choice review | Route-A realization-choice review with explicit human approval |
+| `p3_payload_stage_page` | R3/P3 logical-stage wrapper | Separate storage-realization choice review | Route-A realization-choice review with explicit human approval |
+| `r5_availability_state` | R5 page-manager active-state boundary | Separate storage-realization choice review | Route-A realization-choice review with explicit human approval |
+| `r5_descriptor_hbm_region` | R5 page manager plus R1 descriptor-maintenance boundary | Separate memory-interface choice review | Route-A realization-choice review with explicit human approval |
+| `s2_common_payload_gqa_control` | Common S2 source-buffer/GQA boundary | Separate common-storage realization choice review | Route-A realization-choice review with explicit human approval |
+| `s2_incremental_sidecar_storage` | Packed S2 sidecar boundary | Separate sidecar-storage realization choice review | Route-A realization-choice review with explicit human approval |
+| `r4_numeric_partial_state` | R4 merge/numeric boundary | Separate numeric-realization choice review | Route-A realization-choice review with explicit human approval |
+| `external_memory_service` | R1 core-memory wrapper boundary | Separate memory-interface choice review | Route-A realization-choice review with explicit human approval |
+
+## Logical contract versus physical wrapper mapping
+
+For each SRP.3 record, `logical_contract_mapped = true` means its existing
+semantic interface, invariants, and regression obligation are already named.
+For example, M2 uses `m2_op_req/op_rsp` plus `m2_publish_req/ack`; external
+memory uses `core_mem_if_v1`; and R4 uses the frozen partial/result and
+`numeric_fault` packet contracts.  This is a mapping to logical owner-facing
+contracts, not to wires on an SRAM, HBM, numeric, or controller wrapper.
+
+For the same records, `physical_wrapper_mapping_pending = true` means the
+physical-wrapper port mapping remains deliberately unresolved until the named
+separate realization-choice review.  It must then record the candidate's
+actual wrapper ports, clock/reset ownership, adaptation/CDC boundary where
+applicable, and the regression that proves the candidate preserves the already
+mapped logical contract.  A pending physical mapping is therefore not an
+SRP.3 omission and must not be inferred from a functional provider, Chisel
+`Mem`, A4 proxy, or test-only carrier.
+
 ## Evidence discipline and decision gates
 
 The next, separately authorized realization-choice review must consider one
