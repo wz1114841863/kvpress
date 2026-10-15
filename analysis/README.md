@@ -2,39 +2,25 @@
 
 ## Current Route-A entry
 
-This is the navigation page for the active KVzap Route-A research track. It
-reduces the number of documents that must be read for current work without
-deleting or rewriting frozen evidence.
+This is the full navigation page for the active KVzap Route-A research track.
+The compact classification and new-conversation read set are in
+[`route_a_document_map.md`](route_a_document_map.md). It reduces routine
+context without deleting, moving, or rewriting frozen evidence.
 
-| Read order | Living document | Role |
-|---:|---|---|
-| 1 | [`../AGENTS.md`](../AGENTS.md) | Repository rules, frozen boundaries, and claim restrictions. |
-| 2 | [`../RESEARCH_CONTEXT.md`](../RESEARCH_CONTEXT.md) | Current project status and research positioning. |
-| 3 | [`../KVZAP_ARCHITECTURE_PATH.md`](../KVZAP_ARCHITECTURE_PATH.md) | Longitudinal architecture route and stage transitions. |
-| 4 | [`../TRACE_SCHEMA.md`](../TRACE_SCHEMA.md) | Continuous trace/event-schema record and trace-to-model mapping. |
-| 5 | [`route_a_research_plan.md`](route_a_research_plan.md) | Continuous Route-A plan/progress record through A4.14 and Gate A. |
-| 6 | [`architecture_spec.md`](architecture_spec.md) | **Technical authority**: frozen architecture interface/semantic contract and its evidence limits. |
-| 7 | [`route_a_current_handoff.md`](route_a_current_handoff.md) | **Current implementation handoff**: compact RTL3 status, next closure, and post-RTL3 decision path. |
-| 8 | [`rtl2_phase_contract.md`](rtl2_phase_contract.md) | **Live phase ledger**: detailed RTL2/RTL3 activation history and current planned work. |
+## Current disposition (2026-10-15)
 
-## Current disposition (2026-10-13)
+A4.11--A4.14.1 research DSE, architecture Reviewer-02, Gate-RTL0, RTL1,
+RTL2, and RTL3 functional-subsystem closure have each completed at their
+declared evidence levels. RTL3.9-C0--C4-D now close the published packed
+first-use path through S2, source service, one terminal, retirement/reclaim,
+accepted-event replay, and bounded stale/mismatch/fault/reset coverage.
 
-The A4.11--A4.14 research DSE, architecture Reviewer-02, Gate-RTL0, RTL1,
-and constrained RTL2 closure are complete at their declared evidence levels.
-RTL3 remains active as a **functional subsystem closure**, not a physical or
-numeric realization.
-
-The latest completed slice is **RTL3.9-B3**: in one functional Chisel instance
-it closes the R3-owned atomic-publication sequence after matching payload and
-descriptor durability—two M2 member round trips, R5 visibility acknowledgement,
-one R3 publication acknowledgement/linearization, and matching R6
-`pending -> packed` authority acceptance. It is not a physical M2/SRAM/HBM,
-numeric, timing, throughput, or PPA result.
-
-The immediate planned work is RTL3.9-C: the first owner-correct packed read of
-that newly published page into S2, source service, the permitted functional
-partial/R4 boundaries, terminal, and reclaim. The compact state, open items,
-and ordered plan are maintained in [`route_a_current_handoff.md`](route_a_current_handoff.md).
+The current conclusion is **functional-subsystem closure only**. It does not
+establish a synthesizable partition, controller/macro, HBM/SRAM behavior,
+numeric datapath, timing, throughput, PPA, model/GPU result, or complete
+inference. The next activity is separately authorized successor planning; see
+[`route_a_current_handoff.md`](route_a_current_handoff.md) and
+[`rtl3_9_c4_d_functional_completion_review.md`](rtl3_9_c4_d_functional_completion_review.md).
 
 ### Historical detailed status (through RTL3.7)
 
@@ -259,15 +245,17 @@ plan/specification or when auditing a frozen claim.
 
 Update the appropriate living document when a gate or experiment changes
 current status: refresh `route_a_current_handoff.md` for the compact current
-disposition, append detailed RTL phase progress to `rtl2_phase_contract.md`,
-append compatible trace schema records to `TRACE_SCHEMA.md`, and append Route-A
-research progress to `route_a_research_plan.md`. Update `architecture_spec.md`
-only for accepted interface-contract changes or a clearly labelled status
-alignment. Create a new numbered volume only when a continuous living record
-becomes impractical to navigate. The specifically named current handoff is a
-living document; dated/archived handoffs, freezes, provenance, and experiment
-records remain append-free historical evidence unless a separately authorized
-correction is required.
+disposition, refresh `route_a_document_map.md` when the core/stage retrieval
+classification changes, append detailed RTL phase progress to
+`rtl2_phase_contract.md`, append compatible trace schema records to
+`TRACE_SCHEMA.md`, and append Route-A research progress to
+`route_a_research_plan.md`. Update `architecture_spec.md` only for accepted
+interface-contract changes or a clearly labelled status alignment. Create a
+new numbered volume only when a continuous living record becomes impractical
+to navigate. The specifically named current handoff is a living document;
+dated/archived handoffs, freezes, provenance, and experiment records remain
+append-free historical evidence unless a separately authorized correction is
+required.
 
 ## Documentation-consolidation revision (2026-09-29)
 

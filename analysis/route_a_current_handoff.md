@@ -1,8 +1,8 @@
 # Route-A current handoff — RTL3 functional closure
 
 **Status date:** 2026-10-15
-**Repository state:** `research/kvzap-latest`, implementation handoff after
-`c5ccda6 rtl3: close atomic publication authority`.
+**Repository state:** `research/kvzap-latest`, RTL3 functional-subsystem
+closure reviewed at `cf9f055 docs: complete C4-D functional subsystem review`.
 
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
@@ -10,16 +10,17 @@ historical review records, or the normative architecture contract.
 
 ## Read first
 
-1. [`../AGENTS.md`](../AGENTS.md): repository rules and non-negotiable evidence
+1. [`route_a_document_map.md`](route_a_document_map.md): core versus stage
+   evidence classification and retrieval discipline.
+2. [`../AGENTS.md`](../AGENTS.md): repository rules and non-negotiable evidence
    boundaries.
-2. [`architecture_spec.md`](architecture_spec.md): frozen Route-A semantics,
+3. [`architecture_spec.md`](architecture_spec.md): frozen Route-A semantics,
    owners, atomicity, parameterization, and physical-evidence exclusions.
-3. [`rtl2_phase_contract.md`](rtl2_phase_contract.md): detailed RTL2/RTL3 live
-   phase ledger.
 4. This handoff: current disposition and the next authorized planning target.
-5. The most recent slice,
-   [`rtl3_9_b3_atomic_publication_authority_activation_contract.md`](rtl3_9_b3_atomic_publication_authority_activation_contract.md),
-   before discussing publication, descriptor visibility, or authority changes.
+5. [`rtl2_phase_contract.md`](rtl2_phase_contract.md): detailed RTL2/RTL3 live
+   phase ledger.
+6. [`rtl3_9_c4_d_functional_completion_review.md`](rtl3_9_c4_d_functional_completion_review.md):
+   current bounded functional-closure decision and its exclusions.
 
 Use these only when the question needs the extra detail:
 
@@ -44,7 +45,7 @@ Use these only when the question needs the extra detail:
   no Full-KV substitution/fallback.
 - Do not reopen pruning, admission, 64-token page size, M2 organization,
   P3 mapping, S2 count, GQA legality, queue/scheduler semantics, or atomic
-  commit semantics while closing RTL3.
+  commit semantics while planning a separately authorized successor stage.
 
 ## Completed implementation phases
 
@@ -56,6 +57,7 @@ Use these only when the question needs the extra detail:
 | RTL3.0--RTL3.8.5 | Replacement-owner map, functional reference environments, packed/S2 association work, partial/R4 boundaries, and directed all-source-subset coverage complete within their explicit functional/testbench boundaries. Review-03 correctly recorded no RTL3 PASS. |
 | RTL3.9-A0/A1/A | R3 is the unique pending-member binding/materialization owner. It drives one exact eight-fragment `pack_read` plus position sidecar through the existing checked R2/R1 path; ingress mismatches fail closed. |
 | RTL3.9-B0/B1/B2/B3 | The same immutable member reaches payload durability, R5 descriptor durability, two required M2 member round trips, R5 visibility acknowledgement, exactly one R3 publication acknowledgement, and R6 acceptance of the exact `pending -> packed` authority transition. |
+| RTL3.9-C0--C4-D | First owner-correct packed read, S2 READY/source service, terminal/reclaim, accepted-event replay, negative-event coverage, and bounded functional-subsystem review complete. |
 
 The B3 witness is functional control/dataflow evidence only. It does **not**
 claim physical M2/SRAM/HBM, controller or CDC behavior, numeric datapath,
@@ -269,12 +271,14 @@ frozen.
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read
 > `AGENTS.md`, `analysis/architecture_spec.md`,
-> `analysis/route_a_current_handoff.md`, and
-> `analysis/rtl2_phase_contract.md` before editing. Current state is RTL3.9-B3
-> complete: R3 atomic publication, R5 visibility, and R6 pending-to-packed
-> authority are closed in a functional Chisel witness. Plan RTL3.9-C only as
-> the post-publication packed first-use functional closure; do not reopen
-> pruning/admission/page/scheduler/atomicity or introduce physical HBM/SRAM,
-> numeric pipeline, timing, PPA, model/GPU, or new A4 DSE claims. Preserve
-> frozen artifacts, run no-model preflight/tests first, update live navigation,
-> and commit each completed modification batch with its source/scope.
+> `analysis/route_a_current_handoff.md`,
+> `analysis/rtl2_phase_contract.md`, and
+> `analysis/rtl3_9_c4_d_functional_completion_review.md` before editing; use
+> `analysis/route_a_document_map.md` to select any stage-local evidence.
+> Current state is RTL3 functional-subsystem closure complete. The next work is
+> separately authorized synthesis-realization partition/eligibility planning;
+> do not reopen pruning/admission/page/scheduler/atomicity or introduce
+> physical HBM/SRAM, numeric pipeline, timing, PPA, model/GPU, or new A4 DSE
+> claims. Preserve frozen artifacts, run no-model preflight/tests first, update
+> live navigation, and commit each completed modification batch with its
+> source/scope.
