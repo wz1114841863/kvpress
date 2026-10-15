@@ -15,9 +15,9 @@ PLAN = ROOT / "analysis/srp4_differential_cost_evidence_plan.md"
 def main() -> int:
     data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     assert data["schema_version"] == (
-        "kvzap-route-a-srp-0-4-inventory-partition-eligibility-requirements-cost-plan-1.4"
+        "kvzap-route-a-srp-0-5-inventory-partition-eligibility-requirements-cost-review-1.5"
     )
-    assert data["status"] == "srp_0_4_differential_cost_evidence_planning_complete"
+    assert data["status"] == "srp_0_5_completion_review_conditional_pass"
     srp4 = data["srp4_differential_cost_evidence_plan"]
     assert srp4["status"] == "complete_evidence_planning_only"
     provenance = srp4["a4141_provenance"]
@@ -46,7 +46,8 @@ def main() -> int:
     assert "queue/staging" in m2["omitted_subterms"][0]
     assert "unresolved evidence" in srp4["unobservable_action_policy"]
     assert srp4["next_gate"] == "SRP.5 Completion Review; not started by this record."
-    assert data["next_gate"].startswith("SRP.5 Completion Review")
+    assert "srp5_completion_review" in data
+    assert data["next_gate"].startswith("SRP planning has conditional-pass closure")
 
     plan = PLAN.read_text(encoding="utf-8")
     for token in [

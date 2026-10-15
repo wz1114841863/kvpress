@@ -1,7 +1,7 @@
 # SRP — Synthesis-Realization Partition & Eligibility Review
 
-**Status:** SRP.0--SRP.4 differential-cost evidence planning is complete at its
-declared non-physical scope.  This document is a living successor-stage plan, not a
+**Status:** SRP.0--SRP.5 completion review has conditional-pass closure at its
+declared planning scope.  This document is a living successor-stage record, not a
 physical implementation, synthesis, PPA, performance, or new DSE record.
 
 ## Purpose
@@ -190,8 +190,8 @@ immediately below.
 
 [`srp4_differential_cost_evidence_plan.md`](srp4_differential_cost_evidence_plan.md)
 maps every partition record to A4-accounted proxy coverage, partial coverage,
-an explicitly unestimated term, common/non-incremental treatment, or a
-verification-only exclusion.  It identifies M2 queue/staging, P3 stage, R5
+an explicitly unestimated term, common/non-incremental treatment, deferred
+future-top cost, or a verification-only exclusion.  It identifies M2 queue/staging, P3 stage, R5
 descriptor maintenance, and R4 numeric/partial state as the first omitted-cost
 risk screen; later work is limited to owner-carried action taxonomies until a
 separately approved realization choice exists.
@@ -202,7 +202,24 @@ provenance only; it does not re-hash the report, recompute a ledger value, or
 assert budget pass/fail.  The machine-readable mapping is in
 [`synthesis_eligibility_manifest.json`](synthesis_eligibility_manifest.json).
 SRP.5 Completion Review is the next permitted planning phase and has not
-begun.
+begun at the time of SRP.4 completion; its later result is recorded below.
+
+## SRP.5 disposition
+
+[`srp5_completion_review.md`](srp5_completion_review.md) finds SRP.0--SRP.4
+planning complete enough to conditionally pass into a **separately authorized,
+one-record-at-a-time realization-choice planning review**.  It distinguishes
+the normal next-stage tasks (physical wrapper mapping and candidate planning)
+from hard blockers: the missing A4.14.1 materialized report blocks numerical
+ledger/budget and final-net-benefit conclusions; the unselected future top
+blocks integration/synthesis; and any action without required owner-carried
+fields blocks a cost count for its row rather than becoming zero cost.
+
+The conditional pass authorizes neither RTL/wrapper implementation nor any
+macro/controller/numeric selection, synthesis, PPA, controller/PHY, attention
+accelerator, or complete-inference work.  The exact authorization and stop
+conditions are machine-readable in
+[`synthesis_eligibility_manifest.json`](synthesis_eligibility_manifest.json).
 
 ## Required semantic and accounting safeguards
 

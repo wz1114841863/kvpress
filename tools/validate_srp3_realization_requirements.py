@@ -27,9 +27,9 @@ EXPECTED_IDS = {
 def main() -> int:
     data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     assert data["schema_version"] == (
-        "kvzap-route-a-srp-0-4-inventory-partition-eligibility-requirements-cost-plan-1.4"
+        "kvzap-route-a-srp-0-5-inventory-partition-eligibility-requirements-cost-review-1.5"
     )
-    assert data["status"] == "srp_0_4_differential_cost_evidence_planning_complete"
+    assert data["status"] == "srp_0_5_completion_review_conditional_pass"
     srp3 = data["srp3_realization_requirements_decision_planning"]
     assert srp3["status"] == "complete_requirements_planning_only"
     assert set(srp3["required_record_ids"]) == EXPECTED_IDS
@@ -59,7 +59,8 @@ def main() -> int:
     assert due_srp3 == EXPECTED_IDS
     assert srp3["next_gate"] == "SRP.4 Differential Cost Evidence Plan; not started by this record."
     assert "srp4_differential_cost_evidence_plan" in data
-    assert data["next_gate"].startswith("SRP.5 Completion Review")
+    assert "srp5_completion_review" in data
+    assert data["next_gate"].startswith("SRP planning has conditional-pass closure")
 
     plan = PLAN.read_text(encoding="utf-8")
     for token in [
