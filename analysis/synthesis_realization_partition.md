@@ -1,7 +1,7 @@
 # SRP — Synthesis-Realization Partition & Eligibility Review
 
-**Status:** SRP.0--SRP.1-R revised proposal is awaiting the required human
-partition review.  This document is a living successor-stage plan, not a
+**Status:** SRP.0--SRP.2 source/toolchain eligibility is complete at its
+declared non-physical scope.  This document is a living successor-stage plan, not a
 physical implementation, synthesis, PPA, performance, or new DSE record.
 
 ## Purpose
@@ -150,6 +150,21 @@ on 2026-10-15: all 40 structural children are covered and all 30 partition
 records are internally valid.  SRP.2 source/toolchain eligibility is now
 authorized, while synthesis, physical realization, and cost evaluation remain
 outside that authorization.
+
+## SRP.2 disposition
+
+SRP.2 reviewed main Chisel source and exercised the existing structural
+CHIRRTL/SystemVerilog emission test under Java 21.  All seven main and 64 test
+Scala sources compiled; the three structural tests passed.  This is only a
+source-level eligibility result: no main-source host/test dependency or
+BlackBox/PDK dependency was found, but the current top remains a composition
+skeleton and the `Mem` declarations in S2 and P3 remain logical storage that
+requires later realization.
+
+The per-record dispositions, toolchain limits, and exact command are in
+[`synthesis_eligibility_manifest.json`](synthesis_eligibility_manifest.json).
+No item is synthesis-ready, no macro/controller/clock is selected, and SRP.3
+has not begun.
 
 ## Required semantic and accounting safeguards
 

@@ -1,7 +1,7 @@
 {
-  "schema_version": "kvzap-route-a-srp-0-1-r-inventory-partition-1.1",
-  "status": "srp_0_1_human_partition_review_passed_minor_corrections_applied",
-  "scope": "Read-only provenance/source inventory and revised partition proposal; not SRP.2 eligibility, synthesis, physical realization, PPA, or performance evidence.",
+  "schema_version": "kvzap-route-a-srp-0-2-inventory-partition-eligibility-1.2",
+  "status": "srp_0_2_source_toolchain_eligibility_complete",
+  "scope": "Read-only provenance/source inventory, revised partition proposal, and SRP.2 source/toolchain eligibility; not synthesis, physical realization, PPA, or performance evidence.",
   "review_revision": {"revision":"SRP.1-R","functional_rtl_change":false,"reason":"Completes structural-child coverage; separates cost ownership/evidence; splits mixed realization boundaries; separates local implementation from paper cost evidence."},
   "human_partition_review": {"disposition":"pass_with_minor_corrections","date":"2026-10-15","verified":"40 structural children have valid coverage; 30 partition records have unique IDs and valid coverage references","corrections_applied":["SRP.1 table names required_for_local_implementation and required_for_paper_cost_evidence","r6 packed activity and outer attention provider semantic mapping use existing regression rather than SRP.4","JSON/schema, structural coverage, and live-document consistency are revalidated"],"authorization":"SRP.2 source/toolchain eligibility only; no synthesis, physical realization, PPA, or cost evaluation"},
   "anchors": {
@@ -72,8 +72,49 @@
     {"id":"r6_component_status_collection","source":["RouteAComponentStatusCollector"],"architecture_owner":"R6 status collection input","implementation_partition":"candidate_control","cost_ownership":"differential_activity","cost_evidence_status":"unestimated_pending_evidence","required_for_local_implementation":true,"required_for_paper_cost_evidence":true,"semantic_mapping_due":"SRP.2","semantic_contract_refs":["rtl_entry_hierarchy_owner_contract.md","rtl3_9_c3b_retirement_reclaim_contract.md"],"stop_for_review":false},
     {"id":"testbench_observers_fixtures_and_oracles","source":["all src/test Scala sources","C3b/C4 observers and replay oracles"],"architecture_owner":"verification infrastructure","implementation_partition":"verification_only","cost_ownership":"not_applicable","cost_evidence_status":"not_applicable","required_for_local_implementation":false,"required_for_paper_cost_evidence":false,"semantic_mapping_due":"existing_regression","semantic_contract_refs":["rtl3_9_c4_d_functional_completion_review.md"],"stop_for_review":false}
   ],
+  "srp2_source_toolchain_eligibility": {
+    "status":"complete_source_and_toolchain_scope_only",
+    "scope":"Static main-source review plus existing structural CHIRRTL/SystemVerilog elaboration. No selected synthesis tool/library/constraint/macro, no synthesis run, and no physical/PPA conclusion.",
+    "source_scan":{"main_imports":"chisel3, chisel3.util, and kvpress route-a packages only","host_or_test_dependency_found":false,"main_source_blackbox_found":false,"logical_memory_observations":["RouteAS2GqaSourceWrapper uses payloadStore and sidecarStore Mem","RouteAM2P3Wrapper uses stagePayload and stageSidecar Mem"],"interpretation":"Chisel Mem is source-elaboratable logical storage, not a selected macro/port/latency implementation."},
+    "elaboration_evidence":{"command":"cd hardware/route_a/chisel && sbt -batch 'testOnly kvpress.routea.structural.RouteAKVSubsystemTopSpec'","java":"OpenJDK 21.0.12","result":"passed 3/3 tests; 7 main and 64 test Scala sources compiled; CHIRRTL and SystemVerilog emitted by ChiselStage","limits":"The test uses test-only anchor parameters and a composition-only top; emission is not synthesis, target-library compatibility, or a selected future DUT proof."},
+    "toolchain_disposition":{"chisel_scala_compile":"available and exercised","circt_structural_emission":"available and exercised","selected_synthesis_tool_or_library":"absent","selected_macro_blackbox_or_clock_constraints":"absent","srp2_result":"source-level eligibility is known; physical synthesis eligibility remains blocked until later realization/implementation work."},
+    "record_result_rule":"source_constructs_elaborated means only that the main Chisel source compiled and the structural top emission passed. It never means synthesis-ready.",
+    "record_results":[
+      {"id":"top_future_synthesis_boundary","source_status":"not_eligible_as_current_synthesis_top","blocker":"composition skeleton has inactive paths; future top membership/ports unselected"},
+      {"id":"r6_common_lifecycle_control","source_status":"source_constructs_elaborated","blocker":"common versus differential implementation boundary remains later selection"},
+      {"id":"r6_route_a_packed_activity","source_status":"source_constructs_elaborated","blocker":"cost reconciliation only"},
+      {"id":"common_hot_residency_control","source_status":"source_constructs_elaborated_control_only","blocker":"hot data path remains unimplemented"},
+      {"id":"direct_pending_transport_control","source_status":"source_constructs_elaborated","blocker":"external payload service remains separate"},
+      {"id":"r2_shared_arbitration_control","source_status":"source_constructs_elaborated","blocker":"shared provision cannot be charged wholesale to Route-A"},
+      {"id":"r1_core_transaction_control","source_status":"requires_memory_wrapper","blocker":"no controller/CDC/protocol/constraint selection"},
+      {"id":"shared_delivery_context_state","source_status":"source_constructs_elaborated","blocker":"future top and sizing evidence"},
+      {"id":"typed_read_delivery_control","source_status":"source_constructs_elaborated","blocker":"endpoint/service wrappers remain separate"},
+      {"id":"r3_materialization_publication_control","source_status":"source_constructs_elaborated","blocker":"storage realization and future top selection"},
+      {"id":"packed_read_activation_and_demand_control","source_status":"source_constructs_elaborated","blocker":"owner-local descriptor/S2/memory wrappers remain separate"},
+      {"id":"m2_control_protocol","source_status":"source_constructs_elaborated","blocker":"M2 storage realization"},
+      {"id":"m2_reference_provider","source_status":"external_reference_not_dut","blocker":"cannot substitute for M2 physical realization"},
+      {"id":"m2_storage_realization","source_status":"requires_storage_realization","blocker":"SRP.3 requirements"},
+      {"id":"p3_wrapper_control","source_status":"source_constructs_elaborated","blocker":"pending backing and stage storage separate"},
+      {"id":"p3_pending_hbm_backing","source_status":"external_contract_only","blocker":"SRP.3 memory-service requirements"},
+      {"id":"p3_payload_stage_page","source_status":"logical_Mem_requires_realization","blocker":"macro/ports/latency/dynamic evidence unselected"},
+      {"id":"r5_allocator_reclaim_control","source_status":"source_constructs_elaborated","blocker":"availability and descriptor storage separate"},
+      {"id":"r5_availability_state","source_status":"requires_storage_realization","blocker":"SRP.3 requirements"},
+      {"id":"r5_descriptor_hbm_region","source_status":"external_contract_only","blocker":"SRP.3 memory-service requirements"},
+      {"id":"s2_common_payload_gqa_control","source_status":"logical_Mem_requires_realization","blocker":"common macro/port/latency unselected"},
+      {"id":"packed_s2_read_ingress_control","source_status":"source_constructs_elaborated","blocker":"does not establish S2 memory realization"},
+      {"id":"s2_incremental_sidecar_storage","source_status":"requires_storage_realization","blocker":"SRP.3 requirements"},
+      {"id":"functional_sidecar_delivery_reference","source_status":"external_reference_not_dut","blocker":"cannot become physical sidecar implementation"},
+      {"id":"r4_structural_merge_control","source_status":"source_constructs_elaborated","blocker":"numeric and partial state distinct"},
+      {"id":"r4_numeric_partial_state","source_status":"blocked_by_numeric_realization","blocker":"SRP.3 numeric requirements"},
+      {"id":"outer_attention_partial_provider","source_status":"external_contract_only","blocker":"no local PE/MAC in scope; differential evidence later"},
+      {"id":"external_memory_service","source_status":"external_contract_only","blocker":"SRP.3 memory-service requirements"},
+      {"id":"r6_component_status_collection","source_status":"source_constructs_elaborated","blocker":"not a selected FIFO/microarchitecture choice"},
+      {"id":"testbench_observers_fixtures_and_oracles","source_status":"verification_only","blocker":"must remain outside DUT"}
+    ],
+    "next_gate":"SRP.3 Realization Requirements & Decision Planning; not started by this record."
+  },
   "semantic_regression_obligations":["valid/ready and ready-low nonmutation","identity/incarnation/generation/reset/stale/fault exclusion","unique metadata_publish_commit and authority conservation","all-member R6 acceptance before packed read and S2 READY after payload/sidecar completion","four GQA commits before release and one R6 terminal","durable invalidation/reclaim before free and final retire acknowledgement"],
   "minimum_paper_boundary_proposal":{"must_have_local_control_or_wrapper_candidate":["R3 materialization/publication","M2/P3 protocol and wrappers","R5 allocator/reclaim","packed S2 ingress","direct-pending and typed-delivery control","R4 structural merge support","selected status collection"],"must_have_credible_cost_evidence_without_local_full_implementation":["M2/P3/R5/S2 storage","R4 numeric/partial state","external memory service","Route-A differential activity in shared R1/R2/R6/S2 and attention provider"],"explicit_local_implementation_exclusions":["complete attention MAC/PE/RoPE","HBM controller/PHY/CDC","Transformer and KVzap predictor","test-only memories, fixtures, observers, and replay oracles"],"not_yet_approved":"Exact future synthesis-top membership and wrapper choices remain pending human review."},
   "stop_for_review":["Composition-only skeleton is not a synthesis top.","M2/P3/R5/S2 storage, R4 numeric state, and external memory require SRP.3 requirements.","No selected synthesis toolchain/library/black-box/macro/clock flow exists.","SRP.4 must reconcile shared provision and Route-A differential activity without double counting."],
-  "next_gate":"SRP.2 source/toolchain eligibility; synthesis, physical realization, PPA, and cost evaluation remain forbidden."
+  "next_gate":"SRP.3 Realization Requirements & Decision Planning is the next planning gate and has not started. Synthesis, physical realization, PPA, and cost evaluation remain forbidden."
 }

@@ -20,8 +20,8 @@ establish a synthesizable partition, controller/macro, HBM/SRAM behavior,
 numeric datapath, timing, throughput, PPA, model/GPU result, or complete
 inference.  The active successor is SRP (Synthesis-Realization Partition &
 Eligibility Review); its SRP.0--SRP.1-R provenance/source inventory and
-revised partition proposal passed human review. Only SRP.2 source/toolchain
-eligibility is currently authorized.
+revised partition proposal passed human review, and SRP.2 source/toolchain
+eligibility is complete at its non-physical scope. SRP.3 is not started.
 See
 [`synthesis_realization_partition.md`](synthesis_realization_partition.md),
 [`route_a_current_handoff.md`](route_a_current_handoff.md), and
