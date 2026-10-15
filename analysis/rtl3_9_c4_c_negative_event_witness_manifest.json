@@ -1,0 +1,40 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-c4-c-negative-event-witness-1.0",
+  "status": "complete_directed_chisel_witness",
+  "preconditions": [
+    "analysis/rtl3_9_c4_c_precondition_audit.json",
+    "analysis/rtl3_9_c4_b_event_replay_manifest.json"
+  ],
+  "trace_rule": "append only after an actual selected C4 event/output handshake; a rejected ingress and a valid-only event do not create a trace record",
+  "cases": {
+    "stale_r1_read_response": {
+      "accepted_events": ["authority_transition"],
+      "forbidden_events": ["attention_terminal", "page_free", "retire_ack"],
+      "required_state": "S2 remains FILLING"
+    },
+    "stale_or_mismatched_r4_completion": {
+      "accepted_events": ["authority_transition"],
+      "forbidden_events": ["attention_terminal", "page_free", "retire_ack"],
+      "required_ingress": "wrong request result and wrong-incarnation numeric fault are not accepted"
+    },
+    "matching_r4_numeric_fault": {
+      "accepted_events": ["authority_transition", "attention_terminal(status=FAULT)"],
+      "forbidden_events": ["attention_terminal replay", "page_free", "retire_ack"],
+      "required_terminal": "exactly one matching FAULT terminal"
+    },
+    "reset_while_selected_event_is_held": {
+      "accepted_events": [],
+      "forbidden_events": ["authority_transition", "attention_terminal", "page_free", "retire_ack"],
+      "required_state": "all C4 outputs invalid until fresh initialization"
+    }
+  },
+  "forbidden": [
+    "RTL owner state", "authority table", "event FIFO", "event inference from valid", "event inference from reclaim_complete", "retry or Full-KV fallback", "production-top integration", "physical or numeric implementation claim"
+  ],
+  "disposition": {
+    "c4_c_implementation_complete": true,
+    "c4_c_directed_chisel_witness_complete": true,
+    "c4_d_completion_review_authorized": true,
+    "physical_or_numeric_claim": false
+  }
+}

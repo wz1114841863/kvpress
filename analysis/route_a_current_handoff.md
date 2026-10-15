@@ -204,8 +204,11 @@ split so that each step has one owner and a reviewable failure boundary:
    and C4-event ingress/observations. Its case matrix records legal prefixes
    and forbidden suffixes. See
    [`rtl3_9_c4_c_precondition_audit_contract.md`](rtl3_9_c4_c_precondition_audit_contract.md).
-10. **C4-C — stale/mismatch, numeric-fault, and reset witness (remaining).**
-    Prove the audit's no-false-event and C0--C3b boundaries.
+10. **C4-C — stale/mismatch, numeric-fault, and reset witness (complete).**
+    The narrow host-only same-instance witness passed all three directed
+    Chisel tests. Its C4 event records are appended only after actual
+    handshakes. See
+    [`rtl3_9_c4_c_negative_event_witness_contract.md`](rtl3_9_c4_c_negative_event_witness_contract.md).
 11. **C4-D — validation and bounded completion review (remaining).** Update
     contracts/preflights and request functional-subsystem review only after
     C4-A through C4-C pass.

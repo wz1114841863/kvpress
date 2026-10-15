@@ -1112,7 +1112,8 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     identifies exact stale/mismatch, numeric-fault, reset, and selected-event
     ingress/observations, and fixes their legal-prefix/forbidden-suffix rules.
 44. **RTL3.9-C4-C — stale/mismatch, numeric fault, and reset witness
-    (planned).** It must produce no false event or boundary violation.
+    (complete).** The host-only same-instance witness passed its three
+    directed Chisel tests without false events or boundary violations.
 45. **RTL3.9-C4-D — validation and bounded completion review (planned).** It
     may request RTL3 functional-subsystem review only after C4-A through C4-C
     pass. These stages may retain the already-authorized

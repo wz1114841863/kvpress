@@ -811,6 +811,56 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
     }
   }
 
+  /** Drives the existing B3/C0 path only until C4 exposes a held authority event. */
+  private def prepareC4CToHeldAuthority(d: RouteARTL265a2PackReadPublicationHarness): Unit = {
+    init(d)
+    d.io.materialize_from_binding.poke(true.B)
+    d.io.automatic_publication_owner_mode.poke(true.B)
+    d.io.c1_demand_activation_mode.poke(true.B)
+    d.io.c2_read_activation_mode.poke(true.B)
+    d.io.c3_terminal_activation_mode.poke(true.B)
+    d.io.c4_event_binding_mode.poke(true.B)
+    d.io.c4_authority_transition_event.ready.poke(false.B)
+    d.io.c3_merge_work.ready.poke(false.B)
+    d.io.publication_commit.ready.poke(true.B)
+    initializeR6ForPublication(d)
+    registerC1PackedAttention(d)
+    sendC1PackedPlan(d)
+    admit(d, manualSidecar = false)
+
+    waitRequest(d, p.coreMemoryReadRequestCode, 0)
+    (0 until 8).foreach(index => response(d, 3, index, index == 7))
+    waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+    (0 until 8).foreach(index => waitRequest(d, p.coreMemoryWriteDataCode, index))
+    response(d, 0, 0, last = true)
+    waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+    val (descriptorRequestId, descriptorIncarnation) = waitRequest(d, p.coreMemoryWriteDataCode, 0)
+    response(d, descriptorRequestId, 0, last = true, incarnation = descriptorIncarnation)
+    var waited = 0
+    while (!d.io.c4_authority_transition_event.valid.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+    require(waited < 64, "timed out waiting for held C4-C authority event")
+    d.io.c4_authority_transition_event.bits.entry_id.expect(0.U)
+    d.io.c4_authority_transition_event.bits.from_authority.expect(RouteAAuthorityStateCode.Pending.U)
+    d.io.c4_authority_transition_event.bits.to_authority.expect(RouteAAuthorityStateCode.Packed.U)
+    d.io.c4_authority_transition_event.bits.transaction_group_tag.expect(1.U)
+  }
+
+  private def acceptC4CAuthority(
+    d: RouteARTL265a2PackReadPublicationHarness,
+    trace: ArrayBuffer[RouteAC4BAcceptedEvent],
+  ): Unit = {
+    d.io.c4_authority_transition_event.valid.expect(true.B)
+    val record = RouteAC4BAuthorityAccepted(
+      d.io.c4_authority_transition_event.bits.entry_id.peek().litValue,
+      d.io.c4_authority_transition_event.bits.transaction_group_tag.peek().litValue,
+      d.io.c4_authority_transition_event.bits.from_authority.peek().litValue,
+      d.io.c4_authority_transition_event.bits.to_authority.peek().litValue,
+    )
+    d.io.c4_authority_transition_event.ready.poke(true.B); d.clock.step()
+    trace += record
+    d.io.c4_authority_transition_event.ready.poke(false.B)
+  }
+
   private def offerPackRead(d: RouteARTL265a2PackReadPublicationHarness): Unit = {
     val work = d.io.pack_read_work.bits
     work.layer.poke(0.U); work.stage_generation.poke(1.U); work.member_ordinal.poke(0.U); work.payload_ref.poke(55.U)
@@ -1305,6 +1355,134 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
         BigInt(RouteAAuthorityStateCode.Packed),
         p.coreMemoryOkStatusCode,
       )
+    }
+  }
+
+  it("C4-C retains only authority after a stale R1 packed-read response") {
+    simulate(new RouteARTL265a2PackReadPublicationHarness(p)) { d =>
+      val c4AcceptedTrace = ArrayBuffer.empty[RouteAC4BAcceptedEvent]
+      prepareC4CToHeldAuthority(d)
+      acceptC4CAuthority(d, c4AcceptedTrace)
+
+      // R1 consumes this stale outer response, but C2 cannot associate it to
+      // the selected packed read.  No selected terminal/reclaim event may be
+      // manufactured from that rejected response.
+      val (payloadRequestId, payloadIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      response(d, payloadRequestId + 1, 0, last = false, incarnation = payloadIncarnation)
+      d.io.c2_s2_state.expect(1.U)
+      (0 until 2).foreach { _ =>
+        d.io.c4_attention_terminal_event.valid.expect(false.B)
+        d.io.c4_page_free_event.valid.expect(false.B)
+        d.io.c4_retire_ack_event.valid.expect(false.B)
+        d.io.c3_attention_terminal.valid.expect(false.B)
+        d.clock.step()
+      }
+      RouteAC4CNegativeReplayOracle.staleOrMismatch(c4AcceptedTrace.toSeq)
+    }
+  }
+
+  it("C4-C rejects stale R4 completions and confines matching numeric fault to one terminal") {
+    simulate(new RouteARTL265a2PackReadPublicationHarness(p)) { d =>
+      val c4AcceptedTrace = ArrayBuffer.empty[RouteAC4BAcceptedEvent]
+      prepareC4CToHeldAuthority(d)
+      acceptC4CAuthority(d, c4AcceptedTrace)
+      val (payloadRequestId, payloadIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      (0 until 8).foreach(index => response(d, payloadRequestId, index, index == 7, incarnation = payloadIncarnation))
+      val (sidecarRequestId, sidecarIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
+      response(d, sidecarRequestId, 0, last = true, incarnation = sidecarIncarnation)
+      d.clock.step(4); d.io.c2_s2_state.expect(2.U)
+      (0 until 4).foreach(c3PackedPacket(d, _))
+
+      var waited = 0
+      while (!d.io.c3_merge_work.valid.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+      require(waited < 64, "timed out waiting for C4-C R4 merge work")
+      d.io.c3_merge_work.bits.transaction_identity.request_id.expect(3.U)
+      d.io.c3_merge_work.bits.consumer_id.expect(0.U)
+      d.io.c3_merge_work.ready.poke(true.B); d.clock.step(); d.io.c3_merge_work.ready.poke(false.B)
+
+      // Neither a wrong transaction identity nor a wrong incarnation is an
+      // accepted R4 completion, so neither can cause a terminal event.
+      val staleResult = d.io.c3_r4_result.bits
+      staleResult.transaction_identity.request_id.poke(2.U); staleResult.transaction_identity.incarnation.poke(0.U)
+      staleResult.consumer_id.poke(0.U); staleResult.normalized_value.poke(0x400.U)
+      d.io.c3_r4_result.valid.poke(true.B)
+      d.io.c3_r4_result.ready.expect(false.B)
+      d.clock.step(); d.io.c3_r4_result.valid.poke(false.B)
+      val staleFault = d.io.c3_r4_numeric_fault.bits
+      staleFault.transaction_identity.request_id.poke(3.U); staleFault.transaction_identity.incarnation.poke(1.U)
+      staleFault.consumer_id.poke(0.U)
+      d.io.c3_r4_numeric_fault.valid.poke(true.B)
+      d.io.c3_r4_numeric_fault.ready.expect(false.B)
+      d.clock.step(); d.io.c3_r4_numeric_fault.valid.poke(false.B)
+      d.io.c4_attention_terminal_event.valid.expect(false.B)
+      d.io.c4_page_free_event.valid.expect(false.B)
+      d.io.c4_retire_ack_event.valid.expect(false.B)
+
+      // The matching numeric fault is the one legal terminal-producing
+      // completion.  Hold the selected event first, then record it only at
+      // its actual C4 event handshake.
+      d.io.c4_attention_terminal_event.ready.poke(false.B)
+      staleFault.transaction_identity.request_id.poke(3.U); staleFault.transaction_identity.incarnation.poke(0.U)
+      staleFault.consumer_id.poke(0.U)
+      d.io.c3_r4_numeric_fault.valid.poke(true.B)
+      waited = 0
+      while (!d.io.c3_r4_numeric_fault.ready.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+      require(waited < 64, "timed out waiting for matching C4-C numeric fault")
+      d.clock.step(); d.io.c3_r4_numeric_fault.valid.poke(false.B)
+      waited = 0
+      while (!d.io.c4_attention_terminal_event.valid.peek().litToBoolean && waited < 64) { d.clock.step(); waited += 1 }
+      require(waited < 64, "timed out waiting for C4-C numeric-fault terminal")
+      d.io.c4_attention_terminal_event.bits.transaction_identity.request_id.expect(3.U)
+      d.io.c4_attention_terminal_event.bits.transaction_identity.incarnation.expect(0.U)
+      d.io.c4_attention_terminal_event.bits.terminal_status.expect(p.coreMemoryFaultStatusCode.U)
+      (0 until 2).foreach { _ =>
+        d.io.c4_attention_terminal_event.valid.expect(true.B)
+        d.io.c3_attention_terminal.valid.expect(false.B)
+        d.clock.step()
+      }
+      val terminalRecord = RouteAC4BTerminalAccepted(
+        d.io.c4_attention_terminal_event.bits.transaction_identity.request_id.peek().litValue,
+        d.io.c4_attention_terminal_event.bits.transaction_identity.incarnation.peek().litValue,
+        d.io.c4_attention_terminal_event.bits.terminal_status.peek().litValue,
+      )
+      d.io.c4_attention_terminal_event.ready.poke(true.B)
+      d.io.c3_attention_terminal.valid.expect(true.B)
+      d.io.c3_attention_terminal.bits.terminal_status.expect(p.coreMemoryFaultStatusCode.U)
+      d.io.c3_attention_terminal.ready.poke(true.B); d.clock.step()
+      c4AcceptedTrace += terminalRecord
+
+      // The already-consumed fault cannot replay, and a fault terminal never
+      // reaches reclaim/page-free/retire-ack without the missing retire path.
+      d.io.c4_attention_terminal_event.ready.poke(false.B)
+      d.io.c3_r4_numeric_fault.valid.poke(true.B)
+      d.io.c3_r4_numeric_fault.ready.expect(false.B)
+      d.clock.step(2); d.io.c3_r4_numeric_fault.valid.poke(false.B)
+      d.io.c4_attention_terminal_event.valid.expect(false.B)
+      d.io.c4_page_free_event.valid.expect(false.B)
+      d.io.c4_retire_ack_event.valid.expect(false.B)
+      d.io.c3b_retire_ack.valid.expect(false.B)
+      RouteAC4CNegativeReplayOracle.numericFault(c4AcceptedTrace.toSeq, p.coreMemoryFaultStatusCode)
+    }
+  }
+
+  it("C4-C reset clears a held authority event without replay") {
+    simulate(new RouteARTL265a2PackReadPublicationHarness(p)) { d =>
+      val c4AcceptedTrace = ArrayBuffer.empty[RouteAC4BAcceptedEvent]
+      prepareC4CToHeldAuthority(d)
+      (0 until 2).foreach { _ =>
+        d.io.c4_authority_transition_event.valid.expect(true.B)
+        d.io.r6_authority_transition_fire.expect(false.B)
+        d.clock.step()
+      }
+      d.reset.poke(true.B); d.clock.step(); d.reset.poke(false.B); d.clock.step(2)
+      d.io.c4_authority_transition_event.valid.expect(false.B)
+      d.io.c4_attention_terminal_event.valid.expect(false.B)
+      d.io.c4_page_free_event.valid.expect(false.B)
+      d.io.c4_retire_ack_event.valid.expect(false.B)
+      d.io.c1_demand_fire.expect(false.B)
+      d.io.c3_attention_terminal.valid.expect(false.B)
+      d.io.c3b_retire_ack.valid.expect(false.B)
+      RouteAC4CNegativeReplayOracle.reset(c4AcceptedTrace.toSeq)
     }
   }
 }

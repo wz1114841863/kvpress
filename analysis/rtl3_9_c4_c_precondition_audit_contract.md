@@ -2,9 +2,9 @@
 
 ## Status
 
-C4-C's precondition audit is complete and authorizes a narrow same-instance
-negative witness. It does not implement C4-C yet. The machine-readable case
-matrix is
+C4-C's precondition audit is complete and authorized the narrow same-instance
+negative witness that has now passed its directed Chisel run. The
+machine-readable case matrix is
 [`rtl3_9_c4_c_precondition_audit.json`](rtl3_9_c4_c_precondition_audit.json).
 
 ## Available negative ingress and event expectations
@@ -30,7 +30,7 @@ fires, not `valid` levels.
 
 ## C4-C implementation boundary
 
-C4-C may add only testbench/host replay checks to the existing C3b harness:
+C4-C added only testbench/host replay checks to the existing C3b harness:
 negative ingress acceptance, selected-event fires, and the stated C0--C3b
 boundaries. It may retain the outer functional memory, partial provider, and
 R4 reference environments. It may not claim a production controller/macro,
