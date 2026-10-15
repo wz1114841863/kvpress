@@ -1,6 +1,6 @@
 # SRP — Synthesis-Realization Partition & Eligibility Review
 
-**Status:** SRP.0--SRP.2 source/toolchain eligibility is complete at its
+**Status:** SRP.0--SRP.3 realization-requirements planning is complete at its
 declared non-physical scope.  This document is a living successor-stage plan, not a
 physical implementation, synthesis, PPA, performance, or new DSE record.
 
@@ -165,6 +165,23 @@ The per-record dispositions, toolchain limits, and exact command are in
 [`synthesis_eligibility_manifest.json`](synthesis_eligibility_manifest.json).
 No item is synthesis-ready, no macro/controller/clock is selected, and SRP.3
 has not begun.
+
+## SRP.3 disposition
+
+[`srp3_realization_requirements_decision_plan.md`](srp3_realization_requirements_decision_plan.md)
+closes requirements planning for precisely the nine SRP.2 records whose
+semantic mapping was due in SRP.3: M2 storage; P3 pending backing and stage;
+R5 availability state and descriptor region; common S2 payload and
+incremental sidecar; R4 numeric/partial state; and external memory service.
+For each it records required observable behavior, unresolved realization
+parameters, evidence route, and a stop condition.  The corresponding concise
+machine-readable record is in
+[`synthesis_eligibility_manifest.json`](synthesis_eligibility_manifest.json).
+
+This result makes no memory/numeric choice and does not implement a wrapper,
+controller, macro, pipeline, or future synthesis top.  It does not calculate
+costs or reopen A4.14.1.  SRP.4 differential-cost evidence planning is the
+next permitted planning phase and has not begun.
 
 ## Required semantic and accounting safeguards
 

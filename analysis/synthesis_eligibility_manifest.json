@@ -1,7 +1,7 @@
 {
-  "schema_version": "kvzap-route-a-srp-0-2-inventory-partition-eligibility-1.2",
-  "status": "srp_0_2_source_toolchain_eligibility_complete",
-  "scope": "Read-only provenance/source inventory, revised partition proposal, and SRP.2 source/toolchain eligibility; not synthesis, physical realization, PPA, or performance evidence.",
+  "schema_version": "kvzap-route-a-srp-0-3-inventory-partition-eligibility-requirements-1.3",
+  "status": "srp_0_3_realization_requirements_decision_planning_complete",
+  "scope": "Read-only provenance/source inventory, partition proposal, source/toolchain eligibility, and SRP.3 requirements planning; not realization choice, synthesis, physical implementation, PPA, or performance evidence.",
   "review_revision": {"revision":"SRP.1-R","functional_rtl_change":false,"reason":"Completes structural-child coverage; separates cost ownership/evidence; splits mixed realization boundaries; separates local implementation from paper cost evidence."},
   "human_partition_review": {"disposition":"pass_with_minor_corrections","date":"2026-10-15","verified":"40 structural children have valid coverage; 30 partition records have unique IDs and valid coverage references","corrections_applied":["SRP.1 table names required_for_local_implementation and required_for_paper_cost_evidence","r6 packed activity and outer attention provider semantic mapping use existing regression rather than SRP.4","JSON/schema, structural coverage, and live-document consistency are revalidated"],"authorization":"SRP.2 source/toolchain eligibility only; no synthesis, physical realization, PPA, or cost evaluation"},
   "anchors": {
@@ -113,8 +113,28 @@
     ],
     "next_gate":"SRP.3 Realization Requirements & Decision Planning; not started by this record."
   },
+  "srp3_realization_requirements_decision_planning": {
+    "status":"complete_requirements_planning_only",
+    "planning_anchor":{"commit":"acf6cf953a7e334a4e9b2bf23c85129e3ec23c5a","tree_state_at_start":"clean","functional_closure_decision":"cf9f055e7fa0adca0841b6c4149ece4850327ce5"},
+    "record":"analysis/srp3_realization_requirements_decision_plan.md",
+    "scope":"Required observable behavior, unresolved realization parameters, candidate evidence routes, and stop conditions. No macro/controller/numeric/pipeline/clock/frequency/synthesis/PPA selection.",
+    "required_record_ids":["m2_storage_realization","p3_pending_hbm_backing","p3_payload_stage_page","r5_availability_state","r5_descriptor_hbm_region","s2_common_payload_gqa_control","s2_incremental_sidecar_storage","r4_numeric_partial_state","external_memory_service"],
+    "record_plans":[
+      {"id":"m2_storage_realization","evidence_route":"contract wrapper regression + A4.12/A4.14.0 capacity/access reconciliation","decision_gate":"separate memory realization review","stop":"atomic member/publish semantics or unaccounted queue/staging cost"},
+      {"id":"p3_pending_hbm_backing","evidence_route":"core_mem_if_v1 adapter conformance + declared external-service model","decision_gate":"separate memory-interface review","stop":"authority changes before publication or missing replacement/cost route"},
+      {"id":"p3_payload_stage_page","evidence_route":"R3 fill/write/release regression + A4.13.1 action provenance","decision_gate":"separate storage realization review","stop":"second residency, incomplete stage, or premature release"},
+      {"id":"r5_availability_state","evidence_route":"allocation/reclaim/reuse regression + capacity/access accounting","decision_gate":"separate storage realization review","stop":"stale reuse, invalidation/free violation, or common-cost mischarge"},
+      {"id":"r5_descriptor_hbm_region","evidence_route":"descriptor-line/publication/retirement replay + external-service cost route","decision_gate":"separate memory-interface review","stop":"early visibility, payload-scheduler mutation, or weakened reclaim ordering"},
+      {"id":"s2_common_payload_gqa_control","evidence_route":"Full-KV and Route-A shared-path wrapper conformance","decision_gate":"separate common-storage realization review","stop":"early READY/release or whole-S2 Route-A charge"},
+      {"id":"s2_incremental_sidecar_storage","evidence_route":"packed fill/sidecar association and stale/fault regression","decision_gate":"separate sidecar-storage realization review","stop":"unaccounted sidecar, fabricated position, or READY before completion"},
+      {"id":"r4_numeric_partial_state","evidence_route":"finite binary32 conformance/fault suite + partial-state placement evidence","decision_gate":"separate numeric realization review","stop":"source-order/tolerance/fault change or free partial-state assumption"},
+      {"id":"external_memory_service","evidence_route":"contract adapter verification + declared/calibrated service evidence","decision_gate":"separate memory-interface review","stop":"test fixture as controller, assumed-away failure, or zero-cost external service"}
+    ],
+    "global_invariants":["no test-only provider becomes DUT","no frozen semantic change","no common provision charged wholesale to Route-A","payload and metadata service coordinates remain non-additive","unestimated differential cost remains subject to A4.14.1 omitted-cost constraint"],
+    "next_gate":"SRP.4 Differential Cost Evidence Plan; not started by this record."
+  },
   "semantic_regression_obligations":["valid/ready and ready-low nonmutation","identity/incarnation/generation/reset/stale/fault exclusion","unique metadata_publish_commit and authority conservation","all-member R6 acceptance before packed read and S2 READY after payload/sidecar completion","four GQA commits before release and one R6 terminal","durable invalidation/reclaim before free and final retire acknowledgement"],
   "minimum_paper_boundary_proposal":{"must_have_local_control_or_wrapper_candidate":["R3 materialization/publication","M2/P3 protocol and wrappers","R5 allocator/reclaim","packed S2 ingress","direct-pending and typed-delivery control","R4 structural merge support","selected status collection"],"must_have_credible_cost_evidence_without_local_full_implementation":["M2/P3/R5/S2 storage","R4 numeric/partial state","external memory service","Route-A differential activity in shared R1/R2/R6/S2 and attention provider"],"explicit_local_implementation_exclusions":["complete attention MAC/PE/RoPE","HBM controller/PHY/CDC","Transformer and KVzap predictor","test-only memories, fixtures, observers, and replay oracles"],"not_yet_approved":"Exact future synthesis-top membership and wrapper choices remain pending human review."},
-  "stop_for_review":["Composition-only skeleton is not a synthesis top.","M2/P3/R5/S2 storage, R4 numeric state, and external memory require SRP.3 requirements.","No selected synthesis toolchain/library/black-box/macro/clock flow exists.","SRP.4 must reconcile shared provision and Route-A differential activity without double counting."],
-  "next_gate":"SRP.3 Realization Requirements & Decision Planning is the next planning gate and has not started. Synthesis, physical realization, PPA, and cost evaluation remain forbidden."
+  "stop_for_review":["Composition-only skeleton is not a synthesis top.","M2/P3/R5/S2 storage, R4 numeric state, and external memory have SRP.3 requirements but require separately authorized realization choices.","No selected synthesis toolchain/library/black-box/macro/clock flow exists.","SRP.4 must reconcile shared provision and Route-A differential activity without double counting."],
+  "next_gate":"SRP.4 Differential Cost Evidence Plan is the next planning gate and has not started. Realization choice, synthesis, physical implementation, PPA, and cost conclusions remain forbidden."
 }
