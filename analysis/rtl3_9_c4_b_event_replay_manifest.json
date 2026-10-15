@@ -1,0 +1,25 @@
+{
+  "schema_version": "kvzap-route-a-rtl3-9-c4-b-event-replay-1.0",
+  "status": "complete_directed_chisel_witness",
+  "preconditions": [
+    "analysis/rtl3_9_c4_p2_accepted_event_binding_manifest.json",
+    "analysis/rtl3_9_c4_a_eligible_event_capture_manifest.json"
+  ],
+  "trace": {
+    "scope": "host-side test-only trace appended after each actual event/output handshake",
+    "events_in_exact_order": ["authority_transition", "attention_terminal", "page_free", "retire_ack"],
+    "forbidden": ["event FIFO", "owner state", "event from reclaim_complete", "descriptor-invalidate field inference", "production-top integration"]
+  },
+  "bounded_legal_backpressure": {
+    "cycles_per_event": 2,
+    "events": ["authority_transition", "attention_terminal", "page_free", "retire_ack"],
+    "rule": "ready-low leaves the event valid and prevents the selected observed carrier from firing; release then accepts exactly once."
+  },
+  "disposition": {
+    "c4_b_implementation_complete": true,
+    "c4_b_directed_chisel_witness_complete": true,
+    "c4_c_negative_coverage_complete": false,
+    "c4_d_completion_review_authorized": false,
+    "physical_or_numeric_claim": false
+  }
+}

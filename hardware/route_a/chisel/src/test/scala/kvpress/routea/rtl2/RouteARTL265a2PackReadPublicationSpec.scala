@@ -10,6 +10,8 @@ import kvpress.routea.params.{RouteAAnchorWidths, RouteAM2GroupMember, RouteAR6E
 import kvpress.routea.top.RouteAComponentStatusCollector
 import org.scalatest.funspec.AnyFunSpec
 
+import scala.collection.mutable.ArrayBuffer
+
 /**
   * RTL2.6.5a.2's test-only composed retained-record witness.  One real R3
   * instance creates the immutable eight-fragment pack read, accepts it only
@@ -1160,6 +1162,7 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
 
   it("retires the first post-R6 packed read only after final drain, durable R5 invalidation, and page reclaim") {
     simulate(new RouteARTL265a2PackReadPublicationHarness(p)) { d =>
+      val c4AcceptedTrace = ArrayBuffer.empty[RouteAC4BAcceptedEvent]
       init(d)
       d.io.materialize_from_binding.poke(true.B)
       d.io.automatic_publication_owner_mode.poke(true.B)
@@ -1190,7 +1193,19 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       d.io.c4_authority_transition_event.bits.from_authority.expect(RouteAAuthorityStateCode.Pending.U)
       d.io.c4_authority_transition_event.bits.to_authority.expect(RouteAAuthorityStateCode.Packed.U)
       d.io.c4_authority_transition_event.bits.transaction_group_tag.expect(1.U)
+      (0 until 2).foreach { _ =>
+        d.io.c4_authority_transition_event.valid.expect(true.B)
+        d.io.r6_authority_transition_fire.expect(false.B)
+        d.clock.step()
+      }
+      val authorityRecord = RouteAC4BAuthorityAccepted(
+        d.io.c4_authority_transition_event.bits.entry_id.peek().litValue,
+        d.io.c4_authority_transition_event.bits.transaction_group_tag.peek().litValue,
+        d.io.c4_authority_transition_event.bits.from_authority.peek().litValue,
+        d.io.c4_authority_transition_event.bits.to_authority.peek().litValue,
+      )
       d.io.c4_authority_transition_event.ready.poke(true.B); d.clock.step()
+      c4AcceptedTrace += authorityRecord
       d.io.c4_authority_transition_event.ready.poke(false.B)
       val (payloadRequestId, payloadIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
       (0 until 8).foreach(index => response(d, payloadRequestId, index, index == 7, incarnation = payloadIncarnation))
@@ -1205,10 +1220,21 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       require(waited < 64, "timed out waiting for the selected C3 terminal event")
       d.io.c4_attention_terminal_event.bits.transaction_identity.request_id.expect(3.U)
       d.io.c4_attention_terminal_event.bits.terminal_status.expect(p.coreMemoryOkStatusCode.U)
+      (0 until 2).foreach { _ =>
+        d.io.c4_attention_terminal_event.valid.expect(true.B)
+        d.io.c3_attention_terminal.valid.expect(false.B)
+        d.clock.step()
+      }
+      val terminalRecord = RouteAC4BTerminalAccepted(
+        d.io.c4_attention_terminal_event.bits.transaction_identity.request_id.peek().litValue,
+        d.io.c4_attention_terminal_event.bits.transaction_identity.incarnation.peek().litValue,
+        d.io.c4_attention_terminal_event.bits.terminal_status.peek().litValue,
+      )
       d.io.c4_attention_terminal_event.ready.poke(true.B)
       d.io.c3_attention_terminal.valid.expect(true.B)
       d.io.c3_attention_terminal.bits.transaction_identity.request_id.expect(3.U)
       d.io.c3_attention_terminal.ready.poke(true.B); d.clock.step()
+      c4AcceptedTrace += terminalRecord
 
       // From here the composition uses the production collector, including
       // the final-pass suppression/replay of R1 and R2 descriptor drains.
@@ -1239,19 +1265,46 @@ final class RouteARTL265a2PackReadPublicationSpec extends AnyFunSpec with Chisel
       // redefine reclaim_complete, which is already true after the matching
       // durable terminal.
       d.io.reclaim_complete.expect(true.B)
+      (0 until 2).foreach { _ =>
+        d.io.c4_page_free_event.valid.expect(true.B)
+        d.io.c3b_retire_ack.valid.expect(false.B)
+        d.clock.step()
+      }
+      val pageFreeRecord = RouteAC4BPageFreeAccepted(
+        d.io.c4_page_free_event.bits.page_ref.page_id.peek().litValue,
+        d.io.c4_page_free_event.bits.page_ref.generation.peek().litValue,
+      )
       d.io.c4_page_free_event.ready.poke(true.B); d.clock.step()
+      c4AcceptedTrace += pageFreeRecord
 
       waited = 0
       while (!d.io.c4_retire_ack_event.valid.peek().litToBoolean && waited < 160) { d.clock.step(); waited += 1 }
       require(waited < 160, "timed out waiting for the selected final R6 retire-ack event")
       d.io.c4_retire_ack_event.bits.acknowledgement.session_id.expect(false.B)
       d.io.c4_retire_ack_event.bits.acknowledgement.transaction_identity.request_id.expect(3.U)
+      (0 until 2).foreach { _ =>
+        d.io.c4_retire_ack_event.valid.expect(true.B)
+        d.io.c3b_retire_ack.valid.expect(false.B)
+        d.clock.step()
+      }
+      val retireAckRecord = RouteAC4BRetireAckAccepted(
+        d.io.c4_retire_ack_event.bits.acknowledgement.session_id.peek().litToBoolean,
+        d.io.c4_retire_ack_event.bits.acknowledgement.transaction_identity.request_id.peek().litValue,
+        d.io.c4_retire_ack_event.bits.acknowledgement.transaction_identity.incarnation.peek().litValue,
+      )
       d.io.c4_retire_ack_event.ready.poke(true.B)
       d.io.c3b_retire_ack.valid.expect(true.B)
       d.io.c3b_retire_ack.bits.session_id.expect(false.B)
       d.io.c3b_retire_ack.bits.transaction_identity.request_id.expect(3.U)
       d.io.c3b_retire_ack.ready.poke(true.B); d.clock.step()
+      c4AcceptedTrace += retireAckRecord
       d.io.reclaim_complete.expect(true.B)
+      RouteAC4BEventReplayOracle.replay(
+        c4AcceptedTrace.toSeq,
+        BigInt(RouteAAuthorityStateCode.Pending),
+        BigInt(RouteAAuthorityStateCode.Packed),
+        p.coreMemoryOkStatusCode,
+      )
     }
   }
 }

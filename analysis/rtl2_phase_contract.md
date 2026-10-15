@@ -1101,8 +1101,11 @@ MAC owner, or make a testbench default appear as an accepted production fact.
     binds only the exact R5 page-free release in the C3b harness and preserves
     the existing terminal/retire observations without inferring
     descriptor-invalidate.
-42. **RTL3.9-C4-B — event replay and bounded legal backpressure (planned).**
-    It must prove no partial acceptance or replay of the eligible C4-A events.
+42. **RTL3.9-C4-B — event replay and bounded legal backpressure (complete;
+    testbench only).**
+    [`rtl3_9_c4_b_event_replay_contract.md`](rtl3_9_c4_b_event_replay_contract.md)
+    records each selected event after its actual handshake and replays the
+    exact-once order under two-cycle legal stalls.
 43. **RTL3.9-C4-C — stale/mismatch, numeric fault, and reset (planned).** It
     must produce no false event or boundary violation.
 44. **RTL3.9-C4-D — validation and bounded completion review (planned).** It

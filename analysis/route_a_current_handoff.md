@@ -194,8 +194,11 @@ split so that each step has one owner and a reviewable failure boundary:
    retire remain on their P2 bindings. Descriptor-invalidate remains excluded.
    See
    [`rtl3_9_c4_a_eligible_event_capture_contract.md`](rtl3_9_c4_a_eligible_event_capture_contract.md).
-8. **C4-B — event replay and bounded legal backpressure (remaining).** Replay
-   the captured accepted events and prove no partial acceptance or replay.
+8. **C4-B — event replay and bounded legal backpressure (complete;
+   testbench only).** The host replay oracle records each selected event after
+   its actual handshake and verifies exactly-once order under two-cycle legal
+   stalls. See
+   [`rtl3_9_c4_b_event_replay_contract.md`](rtl3_9_c4_b_event_replay_contract.md).
 9. **C4-C — stale/mismatch, numeric-fault, and reset cases (remaining).**
    Prove they create no false event and preserve all C0--C3b boundaries.
 10. **C4-D — validation and bounded completion review (remaining).** Update
