@@ -1,7 +1,7 @@
 # SRP — Synthesis-Realization Partition & Eligibility Review
 
-**Status:** approved planning contract; SRP.0--SRP.1 are the only currently
-authorized work.  This document is a living successor-stage plan, not a
+**Status:** SRP.0--SRP.1 completed as a proposal and awaiting the required
+human partition review.  This document is a living successor-stage plan, not a
 physical implementation, synthesis, PPA, performance, or new DSE record.
 
 ## Purpose
@@ -66,6 +66,8 @@ implementation/environment boundary.
   calibrated evidence.
 - `unestimated_pending_evidence`: known cost without present physical evidence;
   it must reconcile with the A4.14.1 omitted-cost budget.
+- `not_applicable`: no paper-hardware cost row, used only for verification
+  infrastructure or a still-unselected integration shell.
 
 `required_for_paper_claim` is a third, independent field.  It distinguishes
 “must obtain implementation or credible cost evidence” from “must implement
@@ -114,6 +116,20 @@ Route-A.
 | SRP.3 — Realization Requirements & Decision Planning | State required memory access/numeric observable behavior, unresolved parameters, candidate evidence methods, decision owners, and stop conditions. | Choosing macro banks/ports, HBM bursts, exp design, pipeline depth, or target frequency. |
 | SRP.4 — Differential Cost Evidence Plan | Align Full-KV baseline, Route-A differential cost, A4-covered accounting, omitted-cost budget, and future evidence source. | Re-running A4 DSE or deriving net-benefit/PPA conclusions. |
 | SRP.5 — Completion Review | Decide whether partition, requirements, and evidence plans are sufficiently explicit to authorize a separate realization-choice stage. | Wrapper implementation, synthesis, or performance conclusions. |
+
+## SRP.0--SRP.1 disposition
+
+[`synthesis_eligibility_manifest.json`](synthesis_eligibility_manifest.json)
+records the clean source anchor, all structural children instantiated by the
+current composition top, the test-scope functional witnesses/adapters, and the
+proposed partition at state/interface/function granularity.  It deliberately
+finds that the current top is not a future synthesis top and that M2/P3/R5/S2
+storage, R4 numeric/partial state, external memory service, and the missing
+toolchain/macro choices are `stop_for_review` items.
+
+The proposal does **not** label any source as synthesis-ready.  It provides a
+minimum paper-relevant evidence boundary and explicit exclusions only.  SRP.2
+may begin solely after the human review accepts or revises that boundary.
 
 ## Required semantic and accounting safeguards
 

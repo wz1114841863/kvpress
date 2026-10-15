@@ -243,9 +243,10 @@ An RTL3 PASS means **functional subsystem closure**, not whole-model inference,
 physical implementation, performance, or a Gate-B PASS.
 
 C4-D completed this bounded review on 2026-10-15. The reviewed result is
-functional-subsystem closure only.  SRP is now the separately authorized
-successor **planning** stage: only SRP.0 provenance/source inventory and
-SRP.1 partition proposal may begin before their human review gate.  No
+functional-subsystem closure only.  SRP.0 provenance/source inventory and
+SRP.1 partition proposal are complete and await their required human review;
+see [`synthesis_realization_partition.md`](synthesis_realization_partition.md)
+and its manifest.  No
 physical/numeric realization choice, wrapper implementation, synthesis, or
 PPA work is authorized by that planning approval.
 
@@ -285,9 +286,10 @@ frozen.
 > `analysis/rtl3_9_c4_d_functional_completion_review.md` before editing; use
 > `analysis/route_a_document_map.md` to select any stage-local evidence.
 > Current state is RTL3 functional-subsystem closure complete. SRP.0--SRP.1
-> are separately authorized planning only; read
-> `analysis/synthesis_realization_partition.md` before inventorying. Do not
-> advance beyond the SRP human review gate without approval;
+> inventory/partition proposal is complete and pending human review; read
+> `analysis/synthesis_realization_partition.md` and
+> `analysis/synthesis_eligibility_manifest.json`. Do not advance beyond the
+> SRP human review gate without approval;
 > do not reopen pruning/admission/page/scheduler/atomicity or introduce
 > physical HBM/SRAM, numeric pipeline, timing, PPA, model/GPU, or new A4 DSE
 > claims. Preserve frozen artifacts, run no-model preflight/tests first, update

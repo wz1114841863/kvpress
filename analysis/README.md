@@ -19,8 +19,9 @@ The current conclusion is **functional-subsystem closure only**. It does not
 establish a synthesizable partition, controller/macro, HBM/SRAM behavior,
 numeric datapath, timing, throughput, PPA, model/GPU result, or complete
 inference.  The active successor is SRP (Synthesis-Realization Partition &
-Eligibility Review); only its provenance/source inventory and partition
-proposal are authorized before a human review gate.  See
+Eligibility Review); its SRP.0--SRP.1 provenance/source inventory and
+partition proposal are complete but pending the required human review gate.
+See
 [`synthesis_realization_partition.md`](synthesis_realization_partition.md),
 [`route_a_current_handoff.md`](route_a_current_handoff.md), and
 [`rtl3_9_c4_d_functional_completion_review.md`](rtl3_9_c4_d_functional_completion_review.md).
