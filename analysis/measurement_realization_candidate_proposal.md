@@ -49,6 +49,21 @@ instruction to reuse a Route-A class with packed signals tied off.  Common
 provision becomes comparable only if a later implementation proves the same
 interface, reset, identity/backpressure, S2 lifecycle, and GQA configuration.
 
+### Full-KV legal-path provenance prerequisite
+
+Before any small-scope Chisel integration proposal, it must name all three
+actual Full-KV ownership segments: (1) a non-test Full-KV read-request
+producer and its accepted R2/R1 consumer, including request identity; (2) the
+matching `core_mem_if_v1` response-to-S2 delivery owner and S2 fill/`READY`
+consumer; and (3) the outer source-partial boundary and real R6
+terminal/retire consumer.  The source class/instance may be newly proposed at
+that later review, but it must be explicit and contract-checked then.  A
+Route-A producer with packed inputs tied off, a fixture response, or a
+dead-code-eliminated terminal is not a Full-KV baseline path.
+
+Until that mapping exists, `full_kv_control_measurement_dut_candidate_v0`
+remains planning-only and blocks any Full-KV Chisel integration request.
+
 ### No-tie-off / no-optimization gate
 
 Before any control synthesis, each included group must have an owner-to-owner
@@ -92,9 +107,13 @@ complete.
 
 R4 receives a separate candidate evidence route, named
 `r4_merge_numeric_evidence_candidate_v0`.  Its permitted scope is only the
-canonical ordered partial merge boundary: four binary32 partial interfaces,
-the 2,080-B logical group partial-state placement choice, normalization/fault
-contract, and input/output action accounting.  Source partials remain supplied
+canonical ordered partial merge boundary: **four GQA query-head consumers**,
+where each consumer accepts at most three source partials in canonical
+`hot -> pending -> packed` order.  This is not a declaration of four physical
+numeric interfaces: source presence is per consumer and partials may be
+absent.  The 2,080-B logical group partial-state placement choice remains the
+four-consumer interface/state count, followed by the normalization/fault
+contract and input/output action accounting.  Source partials remain supplied
 at the named outer interface; Q/K/V generation, dot products, score creation,
 and a complete attention MAC array are excluded.
 
