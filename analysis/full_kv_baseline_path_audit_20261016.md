@@ -127,3 +127,13 @@ If approved, implementation begins with the baseline-local interfaces and
 Full-KV path test, then composes the two measurement DUTs.  DC/CACTI, wrapper
 port selection, macro selection, R4 arithmetic implementation, controller
 work, and numerical cost/PPA conclusions remain outside W0.
+
+## W0 implementation record (2026-10-16, in progress)
+
+The first implementation batch adds the baseline-local Full-KV carriers,
+Full-KV producer/context/endpoint/S2/four-consumer/terminal-retire controls,
+and `FullKVMeasurementDut`.  Its no-model elaboration smoke test passes.  This
+is deliberately **not** W0 completion: directed positive/fail-closed traffic
+coverage and the independent `RouteAMeasurementDut` contour remain open in the
+same authorized W0 package.  No DC, CACTI, macro, controller, numeric, timing,
+throughput, area, or energy work was run or implied by this batch.
