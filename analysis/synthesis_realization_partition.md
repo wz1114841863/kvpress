@@ -241,6 +241,10 @@ human review.  Both records retain required control/protocol and
 logical-wrapper boundaries, keep numeric/source-partial/HBM/test-only
 functions outside, and identify integration cost that a later top cannot
 silently omit.  They do not select a future top or clear the SRP.5 blocker.
+The later [`measurement_realization_candidate_proposal.md`](measurement_realization_candidate_proposal.md)
+is only an approval-gated MBR.1-A implementation-preparation supplement: it
+proposes no Chisel integration, wrapper, macro, numeric, DC/CACTI, or
+synthesis decision.
 
 ## Required semantic and accounting safeguards
 

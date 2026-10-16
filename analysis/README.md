@@ -26,8 +26,9 @@ evidence planning, and SRP.5 completion review are complete at their declared
 planning scopes.  MBR.0 (Measurement Boundary Review) has passed human review
 for its candidate control/protocol measurement cut and complete
 source/partition BOM.  MBR.1 has now recorded the paired Full-KV fairness plan
-and remains pending its own human review; neither stage has selected a future
-synthesis top or authorized implementation. The separate
+and remains pending its own human review.  Its MBR.1-A companion is an
+approval-gated candidate preparation proposal for a later measurement-top
+implementation, not a selected future synthesis top or implementation. The separate
 [`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md)
 has restored the ignored A4.14.1 report/input closure locally and passed its
 original preflight; this permits only read-only revalidation of the accepted
@@ -41,6 +42,8 @@ See
 [`measurement_boundary_bom.json`](measurement_boundary_bom.json),
 [`measurement_baseline_fairness_plan.md`](measurement_baseline_fairness_plan.md),
 [`measurement_baseline_matrix.json`](measurement_baseline_matrix.json),
+[`measurement_realization_candidate_proposal.md`](measurement_realization_candidate_proposal.md),
+[`measurement_realization_candidate_manifest.json`](measurement_realization_candidate_manifest.json),
 [`route_a_current_handoff.md`](route_a_current_handoff.md), and
 [`rtl3_9_c4_d_functional_completion_review.md`](rtl3_9_c4_d_functional_completion_review.md).
 

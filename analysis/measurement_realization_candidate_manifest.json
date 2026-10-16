@@ -1,0 +1,51 @@
+{
+  "schema_version": "kvzap-route-a-mbr-1a-measurement-realization-candidate-1.0",
+  "status": "candidate_proposal_pending_separate_human_approval",
+  "scope": "Bounded implementation-preparation proposal only; no Chisel edits, realization choice, DC/CACTI run, synthesis/PPA result, controller, or attention PE.",
+  "anchors": {
+    "mbr1_plan": "analysis/measurement_baseline_fairness_plan.md",
+    "mbr1_matrix": "analysis/measurement_baseline_matrix.json",
+    "mbr0_bom": "analysis/measurement_boundary_bom.json",
+    "srp3_requirements": "analysis/srp3_realization_requirements_decision_plan.md",
+    "srp4_cost_plan": "analysis/srp4_differential_cost_evidence_plan.md",
+    "functional_closure": "cf9f055"
+  },
+  "candidates": [
+    {
+      "id": "route_a_control_measurement_dut_candidate_v0",
+      "source_top_exists": false,
+      "included_control_groups": [
+        {"id":"common_lifecycle_hot","partition_ids":["r6_common_lifecycle_control","r6_route_a_packed_activity","common_hot_residency_control"],"source_classes":["RouteALifecycleAdapter","RouteASourcePlanBinder","RouteASourceCompletionPlanActivationFork","RouteAPackedReadTerminalBridge","RouteAHotSourcePath"]},
+        {"id":"r2_r1_delivery","partition_ids":["r2_shared_arbitration_control","r1_core_transaction_control","shared_delivery_context_state","typed_read_delivery_control","r6_component_status_collection"],"source_classes":["RouteACoreSideArbiter","RouteAR2WriteIngressMerge","RouteAR2ReadIngressMerge","RouteACoreMemIfV1","RouteADeliveryContextRegistry","RouteAUnifiedDeliveryContextAllocationBridge","RouteATypedDeliveryRouter","RouteAReadEndpointDemultiplexer","RouteAReadIssueCandidateAdapter","RouteAComponentStatusCollector"]},
+        {"id":"route_a_materialize_storage_control","partition_ids":["direct_pending_transport_control","r3_materialization_publication_control","packed_read_activation_and_demand_control","m2_control_protocol","p3_wrapper_control","r5_allocator_reclaim_control","packed_s2_read_ingress_control","s2_incremental_sidecar_storage"],"source_classes":["RouteADirectPendingEndpointV1","RouteAR3DirectPendingReadProducer","RouteADirectPendingReadEndpoint","RouteAAdmissionPublicationIngressAdapter","RouteAPackedReadAssociationOwner","RouteAPackedReadActivationBinder","RouteAM2P3Wrapper","RouteAExclusiveP3PendingIngress","RouteAExclusiveP3SidecarIngress","RouteAR3PackReadEndpoint","RouteAPageManager","RouteAPackedAllocationOwnerMux","RouteAExclusivePackedS2ReadIngress","RouteAExclusiveS2FillTerminalIngress","RouteAPackedS2ReadProducer","RouteAPackedS2ReadEndpoint","RouteAS2PackedSidecarReadEndpoint"]},
+        {"id":"common_s2_and_structural_r4","partition_ids":["s2_common_payload_gqa_control","r4_structural_merge_control"],"source_classes":["RouteAS2GqaSourceWrapper","RouteASourceServicePacketAdapter","RouteASourceCommitDemultiplexer","RouteAMergeBoundary"]}
+      ],
+      "external_contract_ports":["core_mem_if_v1","reset_init_fault_stale_contract","outer_source_partial_interface","r4_numeric_result_or_fault_interface"],
+      "excluded_partition_ids":["top_future_synthesis_boundary","m2_reference_provider","m2_storage_realization","p3_pending_hbm_backing","p3_payload_stage_page","r5_availability_state","r5_descriptor_hbm_region","functional_sidecar_delivery_reference","r4_numeric_partial_state","outer_attention_partial_provider","external_memory_service","testbench_observers_fixtures_and_oracles"]
+    },
+    {
+      "id": "full_kv_control_measurement_dut_candidate_v0",
+      "source_top_exists": false,
+      "included_contract_groups": [
+        {"id":"common_lifecycle_hot","partition_ids":["r6_common_lifecycle_control","common_hot_residency_control"],"requirement":"Port-level equivalent common lifecycle/hot control; no packed branch tied inactive."},
+        {"id":"common_r2_r1","partition_ids":["r2_shared_arbitration_control","r1_core_transaction_control"],"requirement":"Same identity/backpressure/reset semantics to core_mem_if_v1."},
+        {"id":"common_s2_payload_gqa","partition_ids":["s2_common_payload_gqa_control"],"requirement":"Same payload fill/READY/four-consumer/release and legal GQA configuration; no sidecar or cross-source merge."}
+      ],
+      "external_contract_ports":["core_mem_if_v1","reset_init_fault_stale_contract","outer_source_partial_interface"],
+      "excluded_features":["r3_m2_p3_r5","packed_ingress","position_sidecar","cross_source_r4_merge","hbm_controller_phy_cdc","array_interiors","source_attention_pe","test_only_infrastructure"]
+    }
+  ],
+  "common_interface_requirements":["same core_mem_if_v1","same reset_init_fault_stale contract","same S2 fill_READY_four_consumer_release lifecycle","same legal GQA cardinality","same future selected library_clock_constraint if separately selected","same declared external service profile for later activity comparison"],
+  "no_tieoff_gate":{"forbidden":["StructuralTieOff","forced_internal_carrier","testbench_producer","dangling_accepted_output"],"required_contours":["maturity_to_authority","post_r6_demand_to_s2_ready","source_service_to_terminal_reclaim","reset_stale_fault"],"failure_action":"block DC preparation; do not retain inactive logic for area reporting"},
+  "array_proxy_boundaries":[
+    {"id":"m2","array_only":"M2 state behind m2_op_req/op_rsp and publish acknowledgement","control_retained":"mirrored update/member publish/wrapper peripheral","evidence":"accepted M2/publish/queue/staging action map plus replacement regression"},
+    {"id":"p3_stage","array_only":"transient payload-stage and immutable sidecar storage interior","control_retained":"fill/exact fragments/sidecar association/durable write/pack read/release","evidence":"accepted fill/write/read/release map plus stale/fault regression"},
+    {"id":"r5_availability","array_only":"availability/generation state","control_retained":"allocation/generation/descriptor visibility/invalidate/reclaim/free","evidence":"accepted R5 event taxonomy plus reuse regression"},
+    {"id":"r5_descriptor","array_only":"external descriptor service proxy","control_retained":"descriptor maintenance and invalidation ordering","evidence":"descriptor transaction taxonomy plus declared external service profile"},
+    {"id":"s2_payload","array_only":"common two-slot payload array","control_retained":"fill association/READY/four-consumer/release/wrapper peripheral","evidence":"same Full-KV/Route-A wrapper contract and access map"},
+    {"id":"s2_sidecar","array_only":"Route-A sidecar storage","control_retained":"association/endpoint completion/READY gate/peripheral","evidence":"accepted sidecar events plus association regression"}
+  ],
+  "r4_numeric_candidate":{"id":"r4_merge_numeric_evidence_candidate_v0","included":["canonical ordered partial merge","four binary32 partial interfaces","2080B logical group partial state choice","normalization/fault contract","accepted packet action inventory"],"excluded":["qkv_generation","dot_products","score_creation","complete_attention_mac_array"],"preconditions":["finite binary32_RNE conformance and fault suite","owner-carried source_subset_partial-state action inventory"],"failure_action":"unresolved evidence; no inferred numeric activity or full-PE cost cancellation"},
+  "integration_shell":{"classification":"mixed_common_differential_deferred","categories":["interface_adaptation","reset_init_gating","protocol_fanout_muxing","delivery_context_connectivity","logical_storage_wrapper_adapters"],"ledger_rule":"keep area_static_power and dynamic_energy_activity separate; no cancellation before structural equivalence"},
+  "next_gate":"separate human approval of MBR.1-A candidate preparation scope before any Chisel, wrapper, DC, CACTI, or synthesis action"
+}

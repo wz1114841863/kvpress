@@ -262,7 +262,9 @@ SRP conditionally passes only to a separately authorized realization-choice
 planning review. MBR.0 has begun that bounded `top_future_synthesis_boundary`
 planning review, passed its human candidate-cut/BOM review, and authorized
 MBR.1.  MBR.1 has recorded a paired Full-KV fairness plan pending human
-review; neither record selects a future top or begins realization work. See
+review.  MBR.1-A has separately recorded an approval-gated candidate
+measurement-preparation scope; neither record selects a future top or begins
+realization work. See
 [`synthesis_realization_partition.md`](synthesis_realization_partition.md)
 and its manifest.  No
 physical/numeric realization choice, wrapper implementation, synthesis, or
@@ -282,7 +284,8 @@ RTL3 completion review
   -> SRP.4 differential-cost evidence plan + SRP.5 completion review
   -> MBR.0 candidate measurement-boundary review + human approval
   -> MBR.1 paired Full-KV fairness-plan review
-  -> separately authorized measurement or realization-choice proposal
+  -> MBR.1-A candidate measurement-preparation approval
+  -> separately authorized Chisel/measurement or realization-choice proposal
   -> synthesizable control/numeric wrapper implementation and verification
   -> targeted synthesis/formal/lint and physical proxy calibration
   -> profiling of the selected realized design
@@ -310,7 +313,8 @@ frozen.
 > realization-requirements decision planning, SRP.4 differential-cost evidence
 > planning, and SRP.5 completion review are complete. MBR.0's candidate
 > measurement-boundary BOM passed human review, and MBR.1 has recorded a
-> paired Full-KV fairness plan pending human review; neither selects a top or
+> paired Full-KV fairness plan pending human review. MBR.1-A is an
+> approval-gated candidate preparation proposal; neither selects a top or
 > begins realization work.
 > Read
 > `analysis/synthesis_realization_partition.md` and
@@ -321,6 +325,8 @@ frozen.
 > `analysis/measurement_boundary_bom.json`, and
 > `analysis/measurement_baseline_fairness_plan.md`, and
 > `analysis/measurement_baseline_matrix.json`, and
+> `analysis/measurement_realization_candidate_proposal.md`, and
+> `analysis/measurement_realization_candidate_manifest.json`, and
 > `analysis/synthesis_eligibility_manifest.json`. Do not advance to realization
 > choice, synthesis,
 > physical realization, PPA, or cost evaluation without a later approval;

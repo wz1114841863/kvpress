@@ -59,25 +59,39 @@ activity or external memory service.
 ## Differential accounting form
 
 The following are placeholders for later evidence, not equations that produce
-a number in MBR.1:
+a number in MBR.1.  Area, static-power, and dynamic-energy/activity ledgers
+must remain separate: no expression below permits adding unlike units.
 
 ```text
-Route-A candidate cost = paired-common provision
-                       + Route-A control increment
-                       + Route-A storage-array proxy / wrapper evidence
-                       + Route-A external-service evidence (not zero)
+Area / implementation envelope (one selected library/constraint only):
+  A_RouteA = A_common_paired
+           + A_RA_control + A_RA_storage_proxy_or_wrapper
+           + A_RA_R4_numeric_or_partial_state
+           + A_RA_integration_shell[mixed common/differential]
+           + A_RA_external_service_or_proxy                 (each unresolved term is nonzero)
+  A_FullKV = A_common_paired + A_FullKV_only_control
+           + A_FullKV_integration_shell[mixed common/differential]
+           + A_FullKV_external_service_or_proxy             (each unresolved term is nonzero)
+  Delta_A  = evidence-complete, like-for-like terms only.
 
-Full-KV candidate cost = paired-common provision
-                       + Full-KV external-service evidence (not zero)
-                       + named Full-KV-only control, if later identified
-
-differential claim = only the paired, evidence-complete terms above
+Dynamic-energy / activity envelope (one declared workload/service profile only):
+  E_RA = E_common_path + E_RA_control_events + E_RA_storage_accesses
+       + E_RA_R4_numeric_events + E_RA_source_partial_delta_events
+       + E_RA_integration_activity + E_RA_external_service   (each unresolved term is nonzero)
+  E_FK = E_common_path + E_FullKV_only_events
+       + E_FullKV_integration_activity + E_FullKV_external_service
+  Delta_E = evidence-complete, same-profile event/service terms only.
 ```
 
-No MBR.1 row permits a numeric difference.  A row whose action lacks a
-complete carrier remains `unresolved evidence`; it does not disappear from a
-future ledger.  Payload and metadata coordinates are retained separately, so
-this plan cannot derive system latency, throughput, energy, or net benefit.
+`A_RA_R4_numeric_or_partial_state` is a separate numeric-realization/proxy
+envelope, not the full attention PE.  Likewise,
+`E_RA_source_partial_delta_events` is only the named Route-A differential at
+the outer partial interface; it cannot charge or cancel the complete source
+PE without a separately declared common profile.  No MBR.1 row permits a
+numeric difference.  A row whose action lacks a complete carrier remains
+`unresolved evidence`; it does not disappear from a future ledger.  Payload
+and metadata coordinates are retained separately, so this plan cannot derive
+system latency, throughput, energy, or net benefit.
 
 ## Future-top integration allocation
 
@@ -94,8 +108,11 @@ equivalence; it makes no new hardware selection.
 | Logical-storage-wrapper adapters | Pair an identical common S2 payload wrapper only; M2/P3/R5/sidecar wrappers and their peripherals are Route-A differential. | Physical-wrapper mapping plus frozen semantic regression. |
 
 `deferred_unestimated` therefore remains the cost-evidence status for the
-future integration shell.  The matrix records the conditional allocation; it
-does not convert it into an estimate.
+future integration shell.  Its whole-record classification is **mixed
+common/differential, deferred**: the five allocations identify conditional
+subterms but do not permit treating either future top's shell as wholly
+Route-A incremental.  The matrix records this conditional allocation; it does
+not convert it into an estimate.
 
 ## Record-level comparison treatment
 
@@ -133,3 +150,8 @@ the work into a controller, attention accelerator, synthesis, or PPA flow.
 Passing MBR.1 may authorize only the next separately reviewed measurement or
 realization-choice proposal named by that review.  It cannot by itself create
 RTL, choose physical realization, or support a performance conclusion.
+
+The separately approval-gated candidate preparation supplement is
+[`measurement_realization_candidate_proposal.md`](measurement_realization_candidate_proposal.md).
+It records no implementation choice and does not alter this pending MBR.1
+review disposition.

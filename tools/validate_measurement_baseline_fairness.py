@@ -45,6 +45,8 @@ def main() -> int:
     assert by_id["external_memory_service"]["comparison_class"] == "external_same_service_pending_evidence"
     assert by_id["r4_numeric_partial_state"]["comparison_class"] == "external_route_a_increment_pending_evidence"
     assert by_id["outer_attention_partial_provider"]["comparison_class"] == "differential_activity_pending_event_evidence"
+    assert by_id["top_future_synthesis_boundary"]["comparison_class"] == "mixed_common_differential_deferred"
+    assert by_id["top_future_synthesis_boundary"]["cost_evidence_status"] == "deferred_unestimated"
     assert "zero" in by_id["external_memory_service"]["prohibited_assumption"]
 
     allocations = matrix["integration_cost_allocations"]
@@ -65,7 +67,11 @@ def main() -> int:
         "Future-top integration allocation",
         "deferred_unestimated",
         "declared matching service/profile basis",
-        "Payload and metadata coordinates are retained separately",
+        "Payload\nand metadata coordinates are retained separately",
+        "Area, static-power, and dynamic-energy/activity ledgers",
+        "A_RA_R4_numeric_or_partial_state",
+        "E_RA_source_partial_delta_events",
+        "mixed\ncommon/differential, deferred",
         "does not create Full-KV RTL",
     ]:
         assert phrase in plan, phrase
