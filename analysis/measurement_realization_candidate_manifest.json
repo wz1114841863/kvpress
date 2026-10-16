@@ -1,6 +1,6 @@
 {
   "schema_version": "kvzap-route-a-mbr-1a-measurement-realization-candidate-1.0",
-  "status": "candidate_proposal_pending_separate_human_approval",
+  "status": "candidate_preparation_scope_approved_for_bounded_chisel_work_package",
   "scope": "Bounded implementation-preparation proposal only; no Chisel edits, realization choice, DC/CACTI run, synthesis/PPA result, controller, or attention PE.",
   "anchors": {
     "mbr1_plan": "analysis/measurement_baseline_fairness_plan.md",
@@ -48,5 +48,6 @@
   "r4_numeric_candidate":{"id":"r4_merge_numeric_evidence_candidate_v0","included":["canonical ordered partial merge","four GQA query-head consumers; each consumer accepts at most three source partials in canonical hot_to_pending_to_packed order","2080B logical group partial state choice for four consumers","normalization/fault contract","accepted packet action inventory"],"partial_topology":{"consumer_count":4,"max_source_partials_per_consumer":3,"canonical_source_order":["hot","pending","packed"],"interpretation":"consumer count is not a physical numeric-interface count"},"excluded":["qkv_generation","dot_products","score_creation","complete_attention_mac_array"],"preconditions":["finite binary32_RNE conformance and fault suite","owner-carried source_subset_partial-state action inventory"],"failure_action":"unresolved evidence; no inferred numeric activity or full-PE cost cancellation"},
   "full_kv_path_provenance_precondition":{"status":"unresolved_required_before_chisel_integration","required_mappings":[{"segment":"full_kv_read_request_producer_to_r2_r1","requirement":"name the real non-test Full-KV request producer, accepted request identity, and R2/R1 consumer; a Route-A producer with packed inputs tied off is forbidden"},{"segment":"core_mem_response_to_s2_delivery","requirement":"name the response owner/delivery adapter and its matching S2 fill association/READY consumer for Full-KV"},{"segment":"source_partial_to_terminal_consumer","requirement":"name the outer source-partial producer boundary and the real R6 terminal/retire consumer for Full-KV"}],"failure_action":"block any Full-KV Chisel integration proposal and preserve the candidate as planning-only"},
   "integration_shell":{"classification":"mixed_common_differential_deferred","categories":["interface_adaptation","reset_init_gating","protocol_fanout_muxing","delivery_context_connectivity","logical_storage_wrapper_adapters"],"ledger_rule":"keep area_static_power and dynamic_energy_activity separate; no cancellation before structural equivalence"},
-  "next_gate":"separate human approval of MBR.1-A candidate preparation scope before any Chisel, wrapper, DC, CACTI, or synthesis action"
+  "approval_record":"2026-10-16 external technical review PASS with minor corrections and explicit user approval; do not repeat MBR review",
+  "next_gate":"separate user authorization for the bounded Chisel measurement-DUT work package; wrapper, DC, CACTI, and synthesis actions remain unauthorized"
 }

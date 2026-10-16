@@ -25,10 +25,12 @@ eligibility, SRP.3 realization-requirements planning, SRP.4 differential-cost
 evidence planning, and SRP.5 completion review are complete at their declared
 planning scopes.  MBR.0 (Measurement Boundary Review) has passed human review
 for its candidate control/protocol measurement cut and complete
-source/partition BOM.  MBR.1 has now recorded the paired Full-KV fairness plan
-and remains pending its own human review.  Its MBR.1-A companion is an
-approval-gated candidate preparation proposal for a later measurement-top
-implementation, not a selected future synthesis top or implementation. The separate
+source/partition BOM.  MBR.1 fairness planning and MBR.1-A
+implementation-preparation have passed external technical review and received
+explicit user approval.  The targeted Full-KV source audit has found the three
+legal baseline paths absent from the current modules and has recorded the
+bounded, implementation-pending W0 dual-DUT Chisel work package; it is not a
+selected future synthesis top or physical implementation. The separate
 [`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md)
 has restored the ignored A4.14.1 report/input closure locally and passed its
 original preflight; this permits only read-only revalidation of the accepted
@@ -44,6 +46,8 @@ See
 [`measurement_baseline_matrix.json`](measurement_baseline_matrix.json),
 [`measurement_realization_candidate_proposal.md`](measurement_realization_candidate_proposal.md),
 [`measurement_realization_candidate_manifest.json`](measurement_realization_candidate_manifest.json),
+[`full_kv_baseline_path_audit_20261016.md`](full_kv_baseline_path_audit_20261016.md),
+[`full_kv_baseline_path_audit_20261016.json`](full_kv_baseline_path_audit_20261016.json),
 [`route_a_current_handoff.md`](route_a_current_handoff.md), and
 [`rtl3_9_c4_d_functional_completion_review.md`](rtl3_9_c4_d_functional_completion_review.md).
 

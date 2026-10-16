@@ -1,12 +1,13 @@
 # MBR.1-A — Measurement-Realization Candidate Proposal
 
-**Status:** Candidate proposal only; **pending separate human approval** on
-2026-10-16.  This is an MBR.1 supplement, not a re-execution of MBR.1 and not
+**Status:** Candidate preparation scope **approved** on 2026-10-16 after
+external technical review (`PASS with minor corrections`) and explicit user
+approval.  This is an MBR.1 supplement, not a re-execution of MBR.1 and not
 an SRP.3 realization decision.  It proposes the smallest measurement-oriented
 control composition and evidence split that could later be implemented after
-approval.  It makes no Chisel change, macro/library/clock choice, DC/CACTI
-run, synthesis/PPA result, controller implementation, or attention-accelerator
-claim.
+separate user authorization. It makes no Chisel change, macro/library/clock
+choice, DC/CACTI run, synthesis/PPA result, controller implementation, or
+attention-accelerator claim.
 
 ## Scope, authority, and retained blockers
 
@@ -20,11 +21,11 @@ full_kv_control_measurement_dut_candidate_v0
 ```
 
 Neither is `RouteAKVSubsystemTop`, and neither exists as a source top.  MBR.1
-still needs human review; SRP.5's future-top implementation/synthesis blocker
-also remains open.  Accordingly, this proposal can be approved only as a
-bounded *implementation-preparation plan*.  A later approval must separately
-authorize any Chisel integration, physical wrapper mapping, DC invocation,
-CACTI invocation, or evidence result.
+and this MBR.1-A preparation scope are approved and must not be re-reviewed as
+new planning phases.  SRP.5's physical implementation/synthesis blocker still
+remains open.  A separate user authorization must still authorize the bounded
+Chisel integration work package; physical wrapper mapping, DC invocation,
+CACTI invocation, and evidence results remain separately unauthorized.
 
 The fixed Route-A semantics remain untouched: original mask, admission,
 64-token pages, M2 organization, P3/S2 mapping, legal four-member GQA,

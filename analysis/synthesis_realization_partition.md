@@ -236,15 +236,19 @@ array-versus-control corrections, authorizing only MBR.1 paired-baseline
 planning.  MBR.1 now records
 [`measurement_baseline_fairness_plan.md`](measurement_baseline_fairness_plan.md)
 and its exactly-once [`measurement_baseline_matrix.json`](measurement_baseline_matrix.json)
-for the planned `full_kv_measurement_control_cut`.  MBR.1 remains pending
-human review.  Both records retain required control/protocol and
+for the planned `full_kv_measurement_control_cut`.  External technical review
+passed with minor corrections and the user approved MBR.1 and MBR.1-A on
+2026-10-16.  Both records retain required control/protocol and
 logical-wrapper boundaries, keep numeric/source-partial/HBM/test-only
 functions outside, and identify integration cost that a later top cannot
 silently omit.  They do not select a future top or clear the SRP.5 blocker.
-The later [`measurement_realization_candidate_proposal.md`](measurement_realization_candidate_proposal.md)
-is only an approval-gated MBR.1-A implementation-preparation supplement: it
-proposes no Chisel integration, wrapper, macro, numeric, DC/CACTI, or
-synthesis decision.
+The approved [`measurement_realization_candidate_proposal.md`](measurement_realization_candidate_proposal.md)
+does not itself implement Chisel, wrappers, macros, numeric logic, DC/CACTI,
+or synthesis.  The targeted
+[`full_kv_baseline_path_audit_20261016.md`](full_kv_baseline_path_audit_20261016.md)
+records the missing Full-KV legal paths and a concrete W0 Chisel work package
+that awaits only explicit implementation authorization; it is not a new MBR
+or SRP phase.
 
 ## Required semantic and accounting safeguards
 

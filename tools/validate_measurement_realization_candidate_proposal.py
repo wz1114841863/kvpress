@@ -17,8 +17,8 @@ def main() -> int:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
     assert manifest["schema_version"] == "kvzap-route-a-mbr-1a-measurement-realization-candidate-1.0"
-    assert manifest["status"] == "candidate_proposal_pending_separate_human_approval"
-    assert matrix["status"] == "baseline_planning_complete_pending_human_review"
+    assert manifest["status"] == "candidate_preparation_scope_approved_for_bounded_chisel_work_package"
+    assert matrix["status"] == "baseline_planning_approved_for_limited_chisel_measurement_dut_preparation"
     candidates = {item["id"]: item for item in manifest["candidates"]}
     assert set(candidates) == {"route_a_control_measurement_dut_candidate_v0", "full_kv_control_measurement_dut_candidate_v0"}
     assert all(item["source_top_exists"] is False for item in candidates.values())
@@ -46,7 +46,8 @@ def main() -> int:
     assert len(full_kv_precondition["required_mappings"]) == 3
     assert full_kv_precondition["failure_action"].startswith("block any Full-KV Chisel integration")
     assert manifest["integration_shell"]["classification"] == "mixed_common_differential_deferred"
-    assert manifest["next_gate"].startswith("separate human approval")
+    assert "do not repeat MBR review" in manifest["approval_record"]
+    assert manifest["next_gate"].startswith("separate user authorization for the bounded Chisel")
 
     proposal = PROPOSAL.read_text(encoding="utf-8")
     for phrase in [

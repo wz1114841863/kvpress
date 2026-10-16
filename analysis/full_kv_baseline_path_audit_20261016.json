@@ -1,0 +1,19 @@
+{
+  "schema_version": "kvzap-route-a-full-kv-baseline-path-audit-1.0",
+  "status": "targeted_source_audit_complete_rtl_work_package_pending_user_authorization",
+  "scope": "Read-only Full-KV legal-path audit and concrete dual-measurement-DUT Chisel work package; no RTL edit, DC/CACTI, synthesis, PPA, or physical claim.",
+  "approval_record": "2026-10-16 MBR.0/MBR.1/MBR.1-A external technical review PASS with minor corrections and explicit user approval; no further MBR review is required.",
+  "path_audit": [
+    {"id":"read_request_producer_to_r2_r1","status":"open_missing_baseline_owner","reusable":["RouteACoreSideArbiter accepts r2S2FullClassCode","RouteADeliveryContextRegistry accepts S2FullFill","RouteAReadIssueCandidateAdapter transports generic non-hot reads"],"missing":["FullKVReadWork","FullKVReadProducer","baseline-local delivery-context bridge"],"forbidden_shortcut":"RouteAPackedS2ReadProducer or a packed association may not label Full-KV work"},
+    {"id":"memory_response_to_s2_ready","status":"open_missing_full_kv_endpoint_and_s2_identity","reusable":["RouteACoreMemIfV1","R2 outstanding response route","RouteADeliveryContextRegistry","RouteATypedDeliveryRouter recognizes S2FullFill"],"missing":["FullKVS2ReadEndpoint","FullKVS2GqaSourceWrapper"],"forbidden_shortcut":"packed S2 PageRef/sidecar/source identity may not be reused for Full-KV"},
+    {"id":"source_completion_to_consumers_terminal_retire","status":"open_missing_baseline_completion_terminal_owner","reusable":["four-consumer S2 semantic requirement","R6 terminal/retire concept"],"missing":["FullKV source-completion adapter","FullKV terminal-retire adapter","baseline-local consumer/source identity"],"forbidden_shortcut":"Route-A hot/pending/packed source plan, R4 merge, or source-presence bits may not represent Full-KV"}
+  ],
+  "work_package": {
+    "id": "dual_measurement_dut_w0_full_kv_legal_path",
+    "new_scala_files": ["baseline/FullKVMeasurementInterfaces.scala", "baseline/FullKVReadPath.scala", "baseline/FullKVS2Completion.scala", "top/FullKVMeasurementDut.scala", "top/RouteAMeasurementDut.scala"],
+    "new_test_files": ["FullKVMeasurementDutSpec.scala", "DualMeasurementDutStructuralSpec.scala"],
+    "must_preserve": ["Route-A mask/admission/page/M2/P3/S2/GQA/scheduler/atomic-publication semantics", "existing Route-A C3/C4 functional regressions", "external core_mem_if_v1 boundary", "no test-only producer or StructuralTieOff on included contour"],
+    "excluded": ["DC", "CACTI", "macro or wrapper selection", "HBM controller PHY CDC", "attention PE", "R4 arithmetic implementation", "PPA or performance conclusion"],
+    "next_gate": "explicit user authorization to implement W0 Chisel files"
+  }
+}

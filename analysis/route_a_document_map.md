@@ -27,8 +27,8 @@ Read these in order before proposing a new change or successor-stage plan:
    eligibility or realization work.
 7. [`measurement_boundary_selection.md`](measurement_boundary_selection.md)
    and [`measurement_baseline_fairness_plan.md`](measurement_baseline_fairness_plan.md)
-   — human-approved MBR.0 candidate cut plus MBR.1's pending-review paired
-   Full-KV fairness boundary.  Read the approval-gated
+   — human-approved MBR.0 candidate cut plus MBR.1's approved paired
+   Full-KV fairness boundary.  Read the approved
    [`measurement_realization_candidate_proposal.md`](measurement_realization_candidate_proposal.md)
    only for the subsequent candidate measurement implementation-preparation
    scope; use their JSON records only when an exact classification is at issue.
@@ -60,7 +60,7 @@ Read only when the question needs the corresponding history or object:
 | RTL3.9-A / B | R3 materialization, payload/descriptor durability, atomic publication, R6 authority | `rtl3_9_a*_contract.md`, `rtl3_9_b*_contract.md`, and their manifests; B3 is the publication/authority reference. |
 | RTL3.9-C | First packed read through S2, terminal/reclaim, event provenance, and completion review | `rtl3_9_c0_*` through `rtl3_9_c4_d_*`; begin with the C4-D review, then open the smallest named C0--C4 slice needed for a disputed condition. |
 | SRP | Minimum paper-relevant realization boundary, eligibility planning, and future cost-evidence routing | Start with `synthesis_realization_partition.md`, then `srp3_realization_requirements_decision_plan.md`, `srp4_differential_cost_evidence_plan.md`, `srp5_completion_review.md`, and `synthesis_eligibility_manifest.json`; consult `a4141_local_provenance_recovery_20261016.md` only for the resolved local-ledger availability item. SRP.0--SRP.5 conditionally passes only to a separately authorized realization-choice planning review. |
-| MBR.0--MBR.1-A | Candidate measurement cut, source/partition BOM, paired Full-KV fairness plan, and approval-gated realization-preparation proposal | Read `measurement_boundary_selection.md`, then `measurement_baseline_fairness_plan.md`; use `measurement_boundary_bom.json` or `measurement_baseline_matrix.json` for exact source/comparison entries. Read `measurement_realization_candidate_proposal.md` only for its proposed control/array/R4/top-shell scope. MBR.1 remains pending human review; MBR.1-A selects no realizable top, wrapper, synthesis, or PPA. |
+| MBR.0--MBR.1-A | Approved candidate measurement cut, source/partition BOM, paired Full-KV fairness plan, and realization-preparation scope | Read `measurement_boundary_selection.md`, then `measurement_baseline_fairness_plan.md`; use `measurement_boundary_bom.json` or `measurement_baseline_matrix.json` for exact source/comparison entries. Read `measurement_realization_candidate_proposal.md` for the approved control/array/R4/top-shell scope, then `full_kv_baseline_path_audit_20261016.md` for the concrete W0 Chisel package. MBR is closed; W0 awaits only explicit implementation authorization and selects no wrapper, synthesis, or PPA. |
 
 ## Artifact role rules
 

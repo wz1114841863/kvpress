@@ -1,6 +1,6 @@
 {
   "schema_version": "kvzap-route-a-mbr-1-baseline-fairness-matrix-1.0",
-  "status": "baseline_planning_complete_pending_human_review",
+  "status": "baseline_planning_approved_for_limited_chisel_measurement_dut_preparation",
   "scope": "MBR.1 paired Full-KV fairness planning only; not Full-KV RTL, top selection, wrapper/macro/numeric selection, synthesis, PPA, or performance evidence.",
   "anchors": {
     "mbr0_bom": "analysis/measurement_boundary_bom.json",
@@ -68,5 +68,6 @@
     {"category":"logical_storage_wrapper_adapters","allocation":"common_for_identical_s2_payload_wrapper_else_route_a_differential","evidence_status":"deferred_unestimated","required_evidence":"physical-wrapper mapping and frozen semantic regression"}
   ],
   "non_additivity_rule": "Payload and metadata service coordinates remain separate; this matrix cannot add them into latency, throughput, energy, or net-benefit results.",
-  "next_gate": "human MBR.1 fairness review; no realization, implementation, synthesis, or PPA work is authorized"
+  "approval_record": "2026-10-16 external technical review PASS with minor corrections and explicit user approval; MBR.1 is closed and must not be repeated",
+  "next_gate": "separate user authorization for the bounded Chisel measurement-DUT work package; no DC, CACTI, synthesis, or PPA work is authorized"
 }

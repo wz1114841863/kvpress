@@ -20,7 +20,7 @@ def main() -> int:
     matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
     assert bom["status"] == "human_review_passed_mbr1_planning_authorized"
     assert matrix["schema_version"] == "kvzap-route-a-mbr-1-baseline-fairness-matrix-1.0"
-    assert matrix["status"] == "baseline_planning_complete_pending_human_review"
+    assert matrix["status"] == "baseline_planning_approved_for_limited_chisel_measurement_dut_preparation"
     assert matrix["route_a_candidate"] == bom["candidate"]["id"]
     assert matrix["full_kv_candidate"]["id"] == "full_kv_measurement_control_cut"
     assert matrix["full_kv_candidate"]["source_top_exists"] is False
@@ -57,7 +57,8 @@ def main() -> int:
     }
     assert all(row["evidence_status"] == "deferred_unestimated" and row["required_evidence"] for row in allocations)
     assert "cannot add them into latency, throughput, energy, or net-benefit" in matrix["non_additivity_rule"]
-    assert matrix["next_gate"].startswith("human MBR.1 fairness review")
+    assert "MBR.1 is closed and must not be repeated" in matrix["approval_record"]
+    assert matrix["next_gate"].startswith("separate user authorization for the bounded Chisel")
 
     plan = PLAN.read_text(encoding="utf-8")
     for phrase in [

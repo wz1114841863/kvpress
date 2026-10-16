@@ -1,7 +1,9 @@
 # MBR.1 — Paired Full-KV Measurement-Baseline Fairness Plan
 
-**Status:** Baseline-planning record complete; **pending human MBR.1 review**
-on 2026-10-16.  MBR.0's human PASS authorizes this plan only.  This document
+**Status:** Baseline-planning record **approved** on 2026-10-16 after external
+technical review (`PASS with minor corrections`) and explicit user approval.
+MBR.0's human PASS and the recorded MBR.1 approval authorize the bounded
+implementation-preparation scope only. This document
 does not create Full-KV RTL, select a synthesis top, select a macro, library,
 clock, wrapper, controller, or numeric kernel, run synthesis, or make a PPA,
 latency, throughput, energy, or net-benefit claim.
@@ -138,20 +140,23 @@ Important boundary cases are explicit:
   is not required for this paper boundary, but a credible Route-A differential
   numerical/activity route is required before cost evidence.
 
-## MBR.1 review gate and non-claims
+## Approved disposition and non-claims
 
-A human MBR.1 review must confirm that the Full-KV planning contour retains
-the same common semantics, no common provision is prematurely cancelled, all
-five future-top categories have a conditional common/differential allocation,
-and every external or missing event has a route or a stop-for-review state.
-It must also confirm that this plan has not selected a future top or widened
-the work into a controller, attention accelerator, synthesis, or PPA flow.
+The completed external review and user approval confirm that the Full-KV
+planning contour retains the same common semantics, common provision is not
+prematurely cancelled, all five future-top categories have a conditional
+common/differential allocation, and every external or missing event has a
+route or a stop-for-review state.  This closes MBR.1; it must not be reopened
+as a recurring planning gate.
 
-Passing MBR.1 may authorize only the next separately reviewed measurement or
-realization-choice proposal named by that review.  It cannot by itself create
-RTL, choose physical realization, or support a performance conclusion.
+The approval does not select a future top, create RTL, choose physical
+realization, authorize DC/CACTI, or support a PPA/performance conclusion.  It
+does authorize the specifically bounded Chisel measurement-DUT implementation
+work package recorded by
+[`full_kv_baseline_path_audit_20261016.md`](full_kv_baseline_path_audit_20261016.md),
+subject to a separate user authorization to perform that RTL work.
 
-The separately approval-gated candidate preparation supplement is
+The separately approved candidate preparation supplement is
 [`measurement_realization_candidate_proposal.md`](measurement_realization_candidate_proposal.md).
-It records no implementation choice and does not alter this pending MBR.1
-review disposition.
+It records no implementation choice and does not alter the physical/PPA
+boundaries above.
