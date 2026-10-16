@@ -148,3 +148,81 @@ R6. Therefore W0 is not complete under its original “preserve C3/C4 owner
 path” criterion. This is still functional integration evidence only: no DC,
 CACTI, macro, controller, numeric, timing, throughput, area, or energy work
 was run or implied.
+
+## W0 Route-A integration-closure audit (2026-10-16)
+
+This is a targeted owner-boundary audit within W0, not a new planning phase.
+It distinguishes reusable production children from the test-only mode wiring
+that must not enter a measurement DUT.
+
+### Reusable downstream owner chains
+
+The production children support the following exact internal connections once
+their upstream owner facts exist:
+
+```text
+R6 source_completion_plan_copy_out
+  -> RouteASourceCompletionPlanActivationFork
+  -> RouteAPackedReadActivationBinder.accepted_plan_in
+R3 publication_member_observation + post_r6_packed_page_ready_observation
+  -> RouteAPackedReadActivationBinder
+  -> R5 descriptor_location_request/grant and S2 fill-lease request/grant
+  -> RouteAPackedReadAssociationOwner
+  -> RouteAPackedReadTerminalBridge / payload+sidecar read producers
+  -> R2/R1 -> registry -> typed router -> packed endpoints -> S2
+
+S2 packed release
+  -> RouteALifecycleAdapter.packed_source_release_in
+  -> R6 merge_req / terminal
+  -> attention_terminal_rsp
+  -> runtime_retire_req
+  -> R6 reclaim_permit_out -> RouteAPageManager.reclaim_permit_in
+  -> R2 descriptor maintenance -> R5 reclaim delivery/complete
+  -> RouteAComponentStatusCollector -> R6 session_retire_ack
+```
+
+`RouteAM2P3Wrapper`, `RouteAPageManager`,
+`RouteAPackedReadActivationBinder`, `RouteAPackedReadAssociationOwner`,
+`RouteALifecycleAdapter`, and `RouteAComponentStatusCollector` are all
+production-source children and are the minimal implementation owners. The
+named functional partial and R4 boundaries may remain outer environments under
+the frozen RTL3 scope; they cannot create authorization, terminal, reclaim, or
+retire facts.
+
+### Hard pre-existing production gaps
+
+The current production composition cannot drive either chain from a legal
+internal origin without adding work outside the previously completed closures:
+
+1. `RouteAKVSubsystemTop` structurally inactivates `hot_source_open`,
+   `r6_merge_ready`, `p3_packed_write_issue`, and
+   `p3_packed_write_terminal`. The first two prevent R6 from creating a real
+   accepted packed source-completion plan; the latter two prevent R3 from
+   materializing the durable/published page that would emit the member and
+   post-R6-ready observations. Direct-pending work is also tied inactive, but
+   is not needed for a packed-only path.
+2. `RouteARTL265a2PackReadPublicationHarness` demonstrates the downstream
+   chain only through test-only `*_activation_mode` controls, direct plan/status
+   stimulus, C4 observers, and structural ties. It is valid C3/C4 evidence but
+   cannot be instantiated by the measurement DUT.
+
+Consequently, moving the current `RouteAMeasurementDut` outer authorization or
+terminal/reclaim ports inside today would require either a new hot/merge-ready
+producer or test-harness stimulus. The former expands the frozen source-owner
+scope; the latter is explicitly prohibited. The authorized W0 implementation
+may therefore reuse the chain above only after a separate, source-owner-level
+authorization names those four inactive production inputs. It must not hide
+this gap through an outer simulated authorization, fixture, or tie-off.
+
+### Original W0 negative-regression matrix
+
+| Case | Existing evidence | W0 DUT status |
+|---|---|---|
+| Matching Full-KV request/response → READY → four commits → terminal/retire | `FullKVMeasurementDutSpec` | Covered. |
+| Full-KV stale response and duplicate commit | `FullKVMeasurementDutSpec` | Covered. |
+| Full-KV wrong fragment/order, slot/generation, response fault, reset-old identity, early release | No W0 DUT case | Missing. |
+| Packed R3/R5 publication, all-member R6 acceptance, no early read | RTL3.9-C C0--C2/C3 witnesses | Historical functional evidence; not covered in `RouteAMeasurementDut`. |
+| Packed source service, four commits, one terminal | RTL3.9-C3a/C3b witness | Historical functional evidence; not covered in `RouteAMeasurementDut`. |
+| Stale R1, stale R4, numeric fault, reset, reclaim-before-free/retire | RTL3.9-C4-C/C4-D witness | Historical functional evidence; not covered in `RouteAMeasurementDut`. |
+
+No W0 completion or physical claim follows from this audit.
