@@ -189,30 +189,42 @@ named functional partial and R4 boundaries may remain outer environments under
 the frozen RTL3 scope; they cannot create authorization, terminal, reclaim, or
 retire facts.
 
-### Hard pre-existing production gaps
+### Corrected production-gap classification
 
-The current production composition cannot drive either chain from a legal
-internal origin without adding work outside the previously completed closures:
+The prior W0 note incorrectly grouped four inactive compatibility carriers as
+new production source-owner work. The existing contracts require a narrower
+classification:
 
-1. `RouteAKVSubsystemTop` structurally inactivates `hot_source_open`,
-   `r6_merge_ready`, `p3_packed_write_issue`, and
-   `p3_packed_write_terminal`. The first two prevent R6 from creating a real
-   accepted packed source-completion plan; the latter two prevent R3 from
-   materializing the durable/published page that would emit the member and
-   post-R6-ready observations. Direct-pending work is also tied inactive, but
-   is not needed for a packed-only path.
-2. `RouteARTL265a2PackReadPublicationHarness` demonstrates the downstream
+1. `p3_packed_write_issue` and `p3_packed_write_terminal` **must remain
+   inactive**. RTL3.9-B1 already activates the sole legal production path:
+   R3 COMPLETE -> R3 packed-write candidate -> delivery-context/R2/R1/router
+   -> R3 typed durable terminal. Activating the direct legacy carriers would
+   create a second durability path and violate B1's unique-owner rule.
+2. `r6_merge_ready` is a compatibility input only for an identity that has no
+   accepted source-completion plan. RTL1-I3 requires the production path to
+   use R6's accepted plan plus exact owner releases; manufacturing a new
+   merge-ready producer would bypass that association.
+3. `hot_source_open` is an owner-local activation for the hot source, but a
+   packed-only plan does not contain a hot bit. Making it live requires the
+   separately unimplemented hot source-service/payload owner; it is not a
+   prerequisite for the packed R3/R5 chain.
+4. `RouteARTL265a2PackReadPublicationHarness` demonstrates the downstream
    chain only through test-only `*_activation_mode` controls, direct plan/status
    stimulus, C4 observers, and structural ties. It is valid C3/C4 evidence but
    cannot be instantiated by the measurement DUT.
 
-Consequently, moving the current `RouteAMeasurementDut` outer authorization or
-terminal/reclaim ports inside today would require either a new hot/merge-ready
-producer or test-harness stimulus. The former expands the frozen source-owner
-scope; the latter is explicitly prohibited. The authorized W0 implementation
-may therefore reuse the chain above only after a separate, source-owner-level
-authorization names those four inactive production inputs. It must not hide
-this gap through an outer simulated authorization, fixture, or tie-off.
+Consequently, W0 must not implement those four inactive carriers as a shortcut.
+The remaining legitimate integration work is to compose the already-existing
+R3 B1 candidate/durable path, R5 visibility path, R6 plan/release path, and
+their named outer functional boundaries in one production measurement contour.
+It must not hide that work through an outer simulated authorization, fixture,
+or tie-off.
+
+This classification was revalidated on 2026-10-16 by the no-model Chisel
+`RouteARTL39AMaterializationSpec` run in tmux session `kvzap-w0-b1-check`:
+all three B1 materialization/candidate/durable-terminal tests passed with exit
+code zero. This is evidence for the unique B1 production path only; it does
+not by itself close the W0 same-instance Route-A measurement contour.
 
 ### Original W0 negative-regression matrix
 
