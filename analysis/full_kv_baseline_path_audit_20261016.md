@@ -136,16 +136,32 @@ and `FullKVMeasurementDut`.  Its no-model elaboration smoke test and a
 directed transaction regression pass: a held `core_mem_if_v1` request is
 checked before release, only a matching response reaches `READY`, four distinct
 consumer commits precede terminal/retire, and stale response plus duplicate
-commit cases fail closed.  The second batch adds an independent
-`RouteAMeasurementDut` packed-read contour with named R3/R5 authorization,
-common-R2/R1, typed-delivery, S2, sidecar, consumer, and terminal/reclaim
-boundary ports. It neither instantiates the historical composition skeleton
-nor contains a structural tie-off helper; its dual-DUT elaboration regression
-passes. This is a **bounded, not same-instance C3/C4-complete** Route-A
-contour: R3/R5 authorization and terminal/reclaim remain explicit outer owner
-boundaries, rather than being replaced by fixture-generated events or a second
-R6. Therefore W0 is not complete under its original “preserve C3/C4 owner
-path” criterion. This is still functional integration evidence only: no DC,
+commit cases fail closed. The initial Route-A contour was bounded and retained
+outer authorization carriers; it was superseded by W0-R1 below.
+
+### W0-R1 production authorization integration (2026-10-16)
+
+`RouteAMeasurementDut` now composes the existing R3 B1, R5, R6, R2/R1,
+registry/router, binder, and packed-association children. The former external
+`packed_demand`, publication authorization, descriptor grant, and S2 lease
+ports have been removed. The retained external ports are only frozen named
+environments: lifecycle/source declaration, functional P3 backing,
+functional partial/R4 reference boundary, and `core_mem_if_v1`.
+
+The internal W0-R1 chain is:
+
+```text
+R3 B1 candidate -> delivery context -> R2/R1 -> typed durable delivery -> R3
+R3 member + actual R6 acceptance -> post-R6-ready -> activation binder
+activation binder -> R5 descriptor grant + S2 lease -> association owner
+```
+
+`DualMeasurementDutStructuralSpec` elaborates both DUTs and now statically
+guards the absence of the four former outer authorization ports plus the six
+owner-to-owner connections above. The no-model run passed 2/2 on 2026-10-16
+in tmux `kvzap-w0-r1-retry:1` (exit code zero). This establishes structural
+integration only; it is **not** a same-instance C3/C4 success witness and
+does not yet close source completion, terminal, reclaim, or retire. No DC,
 CACTI, macro, controller, numeric, timing, throughput, area, or energy work
 was run or implied.
 
