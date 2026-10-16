@@ -85,7 +85,36 @@ The integration bill must include, rather than optimize away, a future
 measurement-top's interface adaptation, reset/init gating, legal protocol
 fanout/muxing, delivery-context connectivity, and logical-wrapper adapters.
 Their membership and common-versus-differential classification remain explicit
-MBR review items; no unimplemented integration state is zero cost.
+MBR review items; no unimplemented integration state is zero cost. The BOM
+marks these five integration categories as `deferred_unestimated`; MBR.1 must
+assign each one a paired Full-KV common or Route-A differential responsibility
+before any comparative accounting.
+
+## Evidence references and array-versus-control split
+
+For every logical storage, numeric, and external-service row, the BOM now
+carries `cost_evidence_plan_ref`. These references deliberately point to the
+existing SRP.3 requirement register and SRP.4 differential-cost plan (plus the
+R4 or recovered A4.14.1 record where applicable); they are a route to later
+evidence, not a selection of a macro, CACTI configuration, numeric kernel, or
+external service model.
+
+`inside_logical_control_wrapper_boundary` never means that an entire Chisel
+module becomes a memory black box. Its split is fixed for MBR purposes:
+
+| Logical item | Candidate control retained in DUT | Future array-only treatment |
+|---|---|---|
+| M2 | protocol, mirrored update, publication, and wrapper peripheral | M2 storage array may receive a separately reviewed black-box/macro proxy. |
+| P3 stage | fill, sidecar association, durable-write, and release control | transient staging array may receive a separately reviewed proxy. |
+| R5 availability | allocator, generation, invalidation, reclaim, and peripheral control | availability-state array may receive a separately reviewed proxy. |
+| S2 payload | fill association, `READY`, four-consumer, release, and peripheral control | payload SRAM array may receive a separately reviewed proxy. |
+| S2 sidecar | immutable association, endpoint, completion, and peripheral control | sidecar storage array may receive a separately reviewed proxy. |
+
+Thus no future DC flow may black-box `RouteAS2GqaSourceWrapper`,
+`RouteAM2P3Wrapper`, or `RouteAPageManager` wholesale merely because it
+contains logical storage. The array boundary and the retained control must be
+made explicit by the later one-record-at-a-time wrapper decision and its frozen
+semantic regression.
 
 ## Cost and Full-KV treatment at MBR.0
 
