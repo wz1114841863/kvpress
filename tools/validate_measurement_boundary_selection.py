@@ -18,7 +18,7 @@ def main() -> int:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     bom = json.loads(BOM.read_text(encoding="utf-8"))
     assert bom["schema_version"] == "kvzap-route-a-mbr-0-measurement-boundary-bom-1.0"
-    assert bom["status"] == "candidate_selection_pending_human_review"
+    assert bom["status"] == "human_review_passed_mbr1_planning_authorized"
     assert bom["anchors"]["functional_closure_decision"] == "cf9f055"
     candidate = bom["candidate"]
     assert candidate["id"] == "route_a_measurement_control_cut"
@@ -65,7 +65,7 @@ def main() -> int:
         assert "analysis/srp4_differential_cost_evidence_plan.md" in by_id[record_id]["cost_evidence_plan_ref"]
     for record_id in ["m2_storage_realization", "p3_payload_stage_page", "r5_availability_state", "s2_common_payload_gqa_control", "s2_incremental_sidecar_storage"]:
         assert "array only may use a future black-box/macro proxy" in by_id[record_id]["array_treatment"]
-    assert bom["next_gate"].startswith("human MBR.0 review")
+    assert bom["next_gate"].startswith("MBR.1 paired Full-KV fairness-plan review")
 
     top = TOP.read_text(encoding="utf-8")
     assert "composition-only" in top
@@ -74,7 +74,7 @@ def main() -> int:
 
     selection = SELECTION.read_text(encoding="utf-8")
     for phrase in [
-        "Candidate selection complete; **pending human MBR review**",
+        "Candidate selection completed and **human MBR.0 review passed**",
         "route_a_measurement_control_cut",
         "Required non-tied functional contours",
         "Evidence references and array-versus-control split",
@@ -82,8 +82,8 @@ def main() -> int:
         "RouteAS2GqaSourceWrapper",
         "wholesale merely because it",
         "not the MBR.1 baseline design",
-        "**not** resolve SRP.5's future-top blocker",
-        "it does not authorize RTL, wrapper selection, synthesis, or PPA.",
+        "It **does not** resolve SRP.5's future-top",
+        "fairness-baseline planning; it does not authorize RTL, wrapper selection,",
     ]:
         assert phrase in selection, phrase
     print("PASS: MBR.0 selects a bounded candidate BOM without authorizing realization")

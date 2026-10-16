@@ -226,17 +226,21 @@ accelerator, or complete-inference work.  The exact authorization and stop
 conditions are machine-readable in
 [`synthesis_eligibility_manifest.json`](synthesis_eligibility_manifest.json).
 
-## MBR.0 successor-boundary planning
+## MBR.0--MBR.1 successor-boundary planning
 
-Under separate explicit authority, MBR.0 has produced the pending-human-review
-candidate [`measurement_boundary_selection.md`](measurement_boundary_selection.md)
-and its exactly-once [`measurement_boundary_bom.json`](measurement_boundary_bom.json).
-It is the bounded planning review for `top_future_synthesis_boundary`: the
-candidate retains required control/protocol and logical-wrapper boundaries,
-keeps numeric/source-partial/HBM/test-only functions outside, and identifies
-the integration cost that a later top cannot silently omit. It does not itself
-select a future top or clear the SRP.5 blocker; only a later human MBR review
-may authorize MBR.1 fairness-baseline planning.
+Under separate explicit authority, MBR.0 produced
+[`measurement_boundary_selection.md`](measurement_boundary_selection.md) and
+its exactly-once [`measurement_boundary_bom.json`](measurement_boundary_bom.json).
+Its human review passed after the deferred-integration, evidence-route, and
+array-versus-control corrections, authorizing only MBR.1 paired-baseline
+planning.  MBR.1 now records
+[`measurement_baseline_fairness_plan.md`](measurement_baseline_fairness_plan.md)
+and its exactly-once [`measurement_baseline_matrix.json`](measurement_baseline_matrix.json)
+for the planned `full_kv_measurement_control_cut`.  MBR.1 remains pending
+human review.  Both records retain required control/protocol and
+logical-wrapper boundaries, keep numeric/source-partial/HBM/test-only
+functions outside, and identify integration cost that a later top cannot
+silently omit.  They do not select a future top or clear the SRP.5 blocker.
 
 ## Required semantic and accounting safeguards
 

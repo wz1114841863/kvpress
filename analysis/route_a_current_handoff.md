@@ -24,8 +24,10 @@ historical review records, or the normative architecture contract.
 7. [`synthesis_realization_partition.md`](synthesis_realization_partition.md):
    approved SRP scope, classification axes, gates, and stop criteria.
 8. [`measurement_boundary_selection.md`](measurement_boundary_selection.md):
-   MBR.0 candidate measurement cut pending human review; it is not a selected
-   synthesis top.
+   MBR.0 human-approved candidate measurement cut; read
+   [`measurement_baseline_fairness_plan.md`](measurement_baseline_fairness_plan.md)
+   next for MBR.1's pending-review paired Full-KV fairness plan.  Neither is a
+   selected synthesis top.
 
 Use these only when the question needs the extra detail:
 
@@ -258,9 +260,10 @@ requirements decision planning, SRP.4 differential-cost evidence planning,
 and SRP.5 completion review are complete at their declared planning scopes.
 SRP conditionally passes only to a separately authorized realization-choice
 planning review. MBR.0 has begun that bounded `top_future_synthesis_boundary`
-planning review and produced a candidate measurement cut/BOM pending human
-review; it has not selected a future top or begun MBR.1;
-see [`synthesis_realization_partition.md`](synthesis_realization_partition.md)
+planning review, passed its human candidate-cut/BOM review, and authorized
+MBR.1.  MBR.1 has recorded a paired Full-KV fairness plan pending human
+review; neither record selects a future top or begins realization work. See
+[`synthesis_realization_partition.md`](synthesis_realization_partition.md)
 and its manifest.  No
 physical/numeric realization choice, wrapper implementation, synthesis, or
 PPA work is authorized by that planning approval.
@@ -278,7 +281,8 @@ RTL3 completion review
   -> SRP.3 realization requirements and decision planning
   -> SRP.4 differential-cost evidence plan + SRP.5 completion review
   -> MBR.0 candidate measurement-boundary review + human approval
-  -> separately authorized memory-interface and numeric-realization choices
+  -> MBR.1 paired Full-KV fairness-plan review
+  -> separately authorized measurement or realization-choice proposal
   -> synthesizable control/numeric wrapper implementation and verification
   -> targeted synthesis/formal/lint and physical proxy calibration
   -> profiling of the selected realized design
@@ -304,9 +308,10 @@ frozen.
 > Current state is RTL3 functional-subsystem closure complete. SRP.0--SRP.1-R
 > passed human partition review; SRP.2 source/toolchain eligibility, SRP.3
 > realization-requirements decision planning, SRP.4 differential-cost evidence
-> planning, and SRP.5 completion review are complete. MBR.0 has produced a
-> candidate measurement-boundary BOM pending human review; it has not selected
-> a top or begun MBR.1/realization work.
+> planning, and SRP.5 completion review are complete. MBR.0's candidate
+> measurement-boundary BOM passed human review, and MBR.1 has recorded a
+> paired Full-KV fairness plan pending human review; neither selects a top or
+> begins realization work.
 > Read
 > `analysis/synthesis_realization_partition.md` and
 > `analysis/srp3_realization_requirements_decision_plan.md`, and
@@ -314,6 +319,8 @@ frozen.
 > `analysis/srp5_completion_review.md`, and
 > `analysis/measurement_boundary_selection.md`, and
 > `analysis/measurement_boundary_bom.json`, and
+> `analysis/measurement_baseline_fairness_plan.md`, and
+> `analysis/measurement_baseline_matrix.json`, and
 > `analysis/synthesis_eligibility_manifest.json`. Do not advance to realization
 > choice, synthesis,
 > physical realization, PPA, or cost evaluation without a later approval;

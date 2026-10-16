@@ -1,6 +1,6 @@
 {
   "schema_version": "kvzap-route-a-mbr-0-measurement-boundary-bom-1.0",
-  "status": "candidate_selection_pending_human_review",
+  "status": "human_review_passed_mbr1_planning_authorized",
   "scope": "Read-only MBR.0 candidate measurement-boundary inventory for top_future_synthesis_boundary; not RTL, wrapper selection, synthesis, PPA, or a Full-KV baseline implementation.",
   "anchors": {
     "planning_head": "5c7600c",
@@ -19,8 +19,8 @@
     "integration_cost_evidence_status": "deferred_unestimated",
     "integration_cost_evidence_plan_ref": ["analysis/srp4_differential_cost_evidence_plan.md", "analysis/srp5_completion_review.md"],
     "integration_cost_allocation_due": "MBR.1 paired Full-KV classification",
-    "full_kv_baseline_status": "MBR.1 planning pending; common provision must be paired and differential activity cannot be inferred as zero.",
-    "authorization_limit": "pending human MBR review; no RTL, wrapper, numeric, macro, synthesis, timing, PPA, or cost result"
+    "full_kv_baseline_status": "MBR.1 paired Full-KV plan is pending human review; common provision must be paired and differential activity cannot be inferred as zero.",
+    "authorization_limit": "human MBR.0 PASS authorizes MBR.1 fairness-baseline planning only; no RTL, wrapper, numeric, macro, synthesis, timing, PPA, or cost result"
   },
   "membership_values": ["new_measurement_top_required", "inside_candidate_logic", "inside_candidate_logic_with_external_port", "inside_logical_control_wrapper_boundary", "external_boundary_pending_evidence", "excluded_functional_reference", "excluded_verification_only"],
   "records": [
@@ -56,5 +56,5 @@
     {"id":"testbench_observers_fixtures_and_oracles","partition_ids":["testbench_observers_fixtures_and_oracles"],"source_classes":["all src/test Scala sources","C3b/C4 observers","Python replay oracles"],"source_files":["src/test/scala"],"instances":[],"membership":"excluded_verification_only","cost_ownership":"not_applicable","full_kv_basis":"excluded","activation":"validation only; no DUT carrier or state","regression":"rtl3_9_c4_d_functional_completion_review.md","unresolved":"none"}
   ],
   "required_active_contours": ["maturity_to_publication_to_authority", "post_r6_demand_to_s2_ready", "source_service_to_r4_boundary_to_terminal_to_reclaim", "reset_stale_fault_backpressure"],
-  "next_gate": "human MBR.0 review; MBR.1 and all realization/implementation work are not started"
+  "next_gate": "MBR.1 paired Full-KV fairness-plan review; all realization/implementation work remains unstarted"
 }

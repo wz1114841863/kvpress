@@ -23,10 +23,11 @@ completed its SRP.0--SRP.1-R provenance/source inventory and
 revised partition proposal passed human review; SRP.2 source/toolchain
 eligibility, SRP.3 realization-requirements planning, SRP.4 differential-cost
 evidence planning, and SRP.5 completion review are complete at their declared
-planning scopes.  MBR.0 (Measurement Boundary Review) has now selected a
-candidate control/protocol measurement cut and complete source/partition BOM,
-but remains pending human review; it has not selected a future synthesis top
-or authorized implementation. The separate
+planning scopes.  MBR.0 (Measurement Boundary Review) has passed human review
+for its candidate control/protocol measurement cut and complete
+source/partition BOM.  MBR.1 has now recorded the paired Full-KV fairness plan
+and remains pending its own human review; neither stage has selected a future
+synthesis top or authorized implementation. The separate
 [`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md)
 has restored the ignored A4.14.1 report/input closure locally and passed its
 original preflight; this permits only read-only revalidation of the accepted
@@ -38,6 +39,8 @@ See
 [`srp5_completion_review.md`](srp5_completion_review.md),
 [`measurement_boundary_selection.md`](measurement_boundary_selection.md),
 [`measurement_boundary_bom.json`](measurement_boundary_bom.json),
+[`measurement_baseline_fairness_plan.md`](measurement_baseline_fairness_plan.md),
+[`measurement_baseline_matrix.json`](measurement_baseline_matrix.json),
 [`route_a_current_handoff.md`](route_a_current_handoff.md), and
 [`rtl3_9_c4_d_functional_completion_review.md`](rtl3_9_c4_d_functional_completion_review.md).
 

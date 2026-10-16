@@ -26,9 +26,10 @@ Read these in order before proposing a new change or successor-stage plan:
    — active SRP planning contract, including the human review gate before
    eligibility or realization work.
 7. [`measurement_boundary_selection.md`](measurement_boundary_selection.md)
-   — pending-human-review candidate measurement cut and its non-implementation
-   boundary; use the paired BOM only when an exact source classification is at
-   issue.
+   and [`measurement_baseline_fairness_plan.md`](measurement_baseline_fairness_plan.md)
+   — human-approved MBR.0 candidate cut plus MBR.1's pending-review paired
+   Full-KV fairness boundary; use their JSON records only when an exact source
+   or comparison classification is at issue.
 
 This is the **core conversational set**. It is intentionally not a substitute
 for stage evidence. Use this map to select exactly one additional record when
@@ -57,7 +58,7 @@ Read only when the question needs the corresponding history or object:
 | RTL3.9-A / B | R3 materialization, payload/descriptor durability, atomic publication, R6 authority | `rtl3_9_a*_contract.md`, `rtl3_9_b*_contract.md`, and their manifests; B3 is the publication/authority reference. |
 | RTL3.9-C | First packed read through S2, terminal/reclaim, event provenance, and completion review | `rtl3_9_c0_*` through `rtl3_9_c4_d_*`; begin with the C4-D review, then open the smallest named C0--C4 slice needed for a disputed condition. |
 | SRP | Minimum paper-relevant realization boundary, eligibility planning, and future cost-evidence routing | Start with `synthesis_realization_partition.md`, then `srp3_realization_requirements_decision_plan.md`, `srp4_differential_cost_evidence_plan.md`, `srp5_completion_review.md`, and `synthesis_eligibility_manifest.json`; consult `a4141_local_provenance_recovery_20261016.md` only for the resolved local-ledger availability item. SRP.0--SRP.5 conditionally passes only to a separately authorized realization-choice planning review. |
-| MBR.0 | Candidate synthesis-measurement cut and source/partition bill of materials | Read `measurement_boundary_selection.md`, then `measurement_boundary_bom.json` for an exact source entry. It is pending human review and neither selects a realizable top nor authorizes MBR.1, wrappers, synthesis, or PPA. |
+| MBR.0--MBR.1 | Candidate synthesis-measurement cut, source/partition BOM, and paired Full-KV fairness plan | Read `measurement_boundary_selection.md`, then `measurement_baseline_fairness_plan.md`; use `measurement_boundary_bom.json` or `measurement_baseline_matrix.json` for exact source/comparison entries. MBR.0 human PASS authorizes only MBR.1 planning; MBR.1 is pending human review and neither record selects a realizable top, wrapper, synthesis, or PPA. |
 
 ## Artifact role rules
 

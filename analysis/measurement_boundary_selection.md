@@ -1,7 +1,10 @@
 # MBR.0 — Candidate Measurement-Boundary Selection
 
-**Status:** Candidate selection complete; **pending human MBR review** on
-2026-10-16. This is a read-only planning record for the
+**Status:** Candidate selection completed and **human MBR.0 review passed** on
+2026-10-16.  The PASS incorporates the documented cost-evidence refinements
+(deferred future-top integration cost, explicit SRP.3/SRP.4 evidence routes,
+and the array-versus-control split).  It authorizes **MBR.1 fairness-baseline
+planning only**. This remains a read-only planning record for the
 `top_future_synthesis_boundary` SRP.5 blocker. It selects neither a new RTL
 top nor an implementation, memory macro, black box, numeric kernel, clock,
 synthesis flow, or PPA result.
@@ -131,14 +134,16 @@ MBR.0 supplies the comparison classification, not the MBR.1 baseline design:
 The A4 payload and metadata service coordinates remain non-additive. Thus this
 record does not infer latency, throughput, or energy from the candidate cut.
 
-## MBR.0 result and review gate
+## MBR.0 result and review disposition
 
-The candidate resolves the *ambiguity* of what must be described, but does
-**not** resolve SRP.5's future-top blocker until a human review accepts the
-BOM, its exclusions, and its no-tie-off obligations. It authorizes no MBR.1
-paired-baseline construction and no MBR.2 realization/cost-method choice.
+The candidate resolves the *ambiguity* of what must be described.  The human
+MBR.0 review has accepted the BOM, exclusions, no-tie-off obligations, and the
+three non-behavioral refinements recorded above.  This authorizes MBR.1's
+paired Full-KV fairness planning.  It **does not** resolve SRP.5's future-top
+blocker, select a future top, or authorize an MBR.2 realization/cost-method
+choice.
 
-The human MBR review must confirm all of the following:
+The completed human MBR review confirmed all of the following:
 
 - each of the 30 partition records occurs exactly once in the BOM;
 - every candidate logic member has an owner-to-owner activation contour and
@@ -150,6 +155,7 @@ The human MBR review must confirm all of the following:
 - the future integration shell's mux/state/interconnect is not silently
   excluded.
 
-Failure of any item returns to MBR.0 correction or an independent scope
-review. Passing this review may authorize only MBR.1 fairness-baseline
-planning; it does not authorize RTL, wrapper selection, synthesis, or PPA.
+Failure of any later challenge to an item returns to MBR.0 correction or an
+independent scope review.  The recorded PASS authorizes only MBR.1
+fairness-baseline planning; it does not authorize RTL, wrapper selection,
+synthesis, or PPA.
