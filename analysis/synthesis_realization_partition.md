@@ -226,6 +226,18 @@ accelerator, or complete-inference work.  The exact authorization and stop
 conditions are machine-readable in
 [`synthesis_eligibility_manifest.json`](synthesis_eligibility_manifest.json).
 
+## MBR.0 successor-boundary planning
+
+Under separate explicit authority, MBR.0 has produced the pending-human-review
+candidate [`measurement_boundary_selection.md`](measurement_boundary_selection.md)
+and its exactly-once [`measurement_boundary_bom.json`](measurement_boundary_bom.json).
+It is the bounded planning review for `top_future_synthesis_boundary`: the
+candidate retains required control/protocol and logical-wrapper boundaries,
+keeps numeric/source-partial/HBM/test-only functions outside, and identifies
+the integration cost that a later top cannot silently omit. It does not itself
+select a future top or clear the SRP.5 blocker; only a later human MBR review
+may authorize MBR.1 fairness-baseline planning.
+
 ## Required semantic and accounting safeguards
 
 Every proposed replacement/externalization must name its port mapping and

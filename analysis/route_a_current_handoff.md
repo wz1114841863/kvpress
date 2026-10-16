@@ -23,6 +23,9 @@ historical review records, or the normative architecture contract.
    current bounded functional-closure decision and its exclusions.
 7. [`synthesis_realization_partition.md`](synthesis_realization_partition.md):
    approved SRP scope, classification axes, gates, and stop criteria.
+8. [`measurement_boundary_selection.md`](measurement_boundary_selection.md):
+   MBR.0 candidate measurement cut pending human review; it is not a selected
+   synthesis top.
 
 Use these only when the question needs the extra detail:
 
@@ -254,7 +257,9 @@ corrections; SRP.2 source/toolchain eligibility, SRP.3 realization-
 requirements decision planning, SRP.4 differential-cost evidence planning,
 and SRP.5 completion review are complete at their declared planning scopes.
 SRP conditionally passes only to a separately authorized realization-choice
-planning review, which has not begun;
+planning review. MBR.0 has begun that bounded `top_future_synthesis_boundary`
+planning review and produced a candidate measurement cut/BOM pending human
+review; it has not selected a future top or begun MBR.1;
 see [`synthesis_realization_partition.md`](synthesis_realization_partition.md)
 and its manifest.  No
 physical/numeric realization choice, wrapper implementation, synthesis, or
@@ -272,6 +277,7 @@ RTL3 completion review
   -> SRP.2 source/toolchain eligibility
   -> SRP.3 realization requirements and decision planning
   -> SRP.4 differential-cost evidence plan + SRP.5 completion review
+  -> MBR.0 candidate measurement-boundary review + human approval
   -> separately authorized memory-interface and numeric-realization choices
   -> synthesizable control/numeric wrapper implementation and verification
   -> targeted synthesis/formal/lint and physical proxy calibration
@@ -298,13 +304,16 @@ frozen.
 > Current state is RTL3 functional-subsystem closure complete. SRP.0--SRP.1-R
 > passed human partition review; SRP.2 source/toolchain eligibility, SRP.3
 > realization-requirements decision planning, SRP.4 differential-cost evidence
-> planning, and SRP.5 completion review are complete.  Only a separately
-> authorized realization-choice planning review may follow; it has not begun.
+> planning, and SRP.5 completion review are complete. MBR.0 has produced a
+> candidate measurement-boundary BOM pending human review; it has not selected
+> a top or begun MBR.1/realization work.
 > Read
 > `analysis/synthesis_realization_partition.md` and
 > `analysis/srp3_realization_requirements_decision_plan.md`, and
 > `analysis/srp4_differential_cost_evidence_plan.md`, and
 > `analysis/srp5_completion_review.md`, and
+> `analysis/measurement_boundary_selection.md`, and
+> `analysis/measurement_boundary_bom.json`, and
 > `analysis/synthesis_eligibility_manifest.json`. Do not advance to realization
 > choice, synthesis,
 > physical realization, PPA, or cost evaluation without a later approval;
