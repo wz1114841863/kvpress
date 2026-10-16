@@ -196,10 +196,14 @@ descriptor maintenance, and R4 numeric/partial state as the first omitted-cost
 risk screen; later work is limited to owner-carried action taxonomies until a
 separately approved realization choice exists.
 
-The materialized A4.14.1 report is absent from the live tree.  SRP.4 therefore
-uses the accepted hash and the prior remote byte-verification record for
-provenance only; it does not re-hash the report, recompute a ledger value, or
-assert budget pass/fail.  The machine-readable mapping is in
+SRP.4 initially recorded the materialized A4.14.1 report as absent locally.
+The later read-only
+[`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md)
+restores the exact ignored report and required input closure, re-hashes them,
+and passes the original `--preflight-only` check without creating a new ledger
+output.  This resolves only availability for accepted-ledger revalidation; it
+does not recompute A4, establish physical cost, or assert a new budget result.
+The machine-readable mapping is in
 [`synthesis_eligibility_manifest.json`](synthesis_eligibility_manifest.json).
 SRP.5 Completion Review is the next permitted planning phase and has not
 begun at the time of SRP.4 completion; its later result is recorded below.
@@ -210,10 +214,11 @@ begun at the time of SRP.4 completion; its later result is recorded below.
 planning complete enough to conditionally pass into a **separately authorized,
 one-record-at-a-time realization-choice planning review**.  It distinguishes
 the normal next-stage tasks (physical wrapper mapping and candidate planning)
-from hard blockers: the missing A4.14.1 materialized report blocks numerical
-ledger/budget and final-net-benefit conclusions; the unselected future top
-blocks integration/synthesis; and any action without required owner-carried
-fields blocks a cost count for its row rather than becoming zero cost.
+from hard blockers: the prior A4.14.1 availability blocker is resolved only
+for read-only ledger/budget revalidation; the unselected future top blocks
+integration/synthesis; and any action without required owner-carried fields
+blocks a cost count for its row rather than becoming zero cost.  The recovered
+proxy ledger still cannot support a final physical net-benefit conclusion.
 
 The conditional pass authorizes neither RTL/wrapper implementation nor any
 macro/controller/numeric selection, synthesis, PPA, controller/PHY, attention

@@ -15,7 +15,7 @@ PLAN = ROOT / "analysis/srp4_differential_cost_evidence_plan.md"
 def main() -> int:
     data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     assert data["schema_version"] == (
-        "kvzap-route-a-srp-0-5-inventory-partition-eligibility-requirements-cost-review-1.5"
+        "kvzap-route-a-srp-0-5-inventory-partition-eligibility-requirements-cost-review-1.6"
     )
     assert data["status"] == "srp_0_5_completion_review_conditional_pass"
     srp4 = data["srp4_differential_cost_evidence_plan"]
@@ -24,8 +24,10 @@ def main() -> int:
     assert provenance["accepted_report_sha256"] == (
         "0f43ec6dc30912210e4c565ebdd57554b02b7ca3f22326a498924e4cf1f2fdcb"
     )
-    assert provenance["live_tree_report_status"].startswith("absent;")
+    assert provenance["live_tree_report_status"].startswith("present as ignored recovered artifact;")
     assert Path(ROOT / provenance["accepted_hash_verification_record"]).is_file()
+    assert provenance["recovery_record"] == "analysis/a4141_local_provenance_recovery_20261016.md"
+    assert Path(ROOT / provenance["recovery_record"]).is_file()
 
     all_partition_ids = {item["id"] for item in data["partition_records"]}
     rows = srp4["cost_mapping_rows"]
@@ -63,8 +65,9 @@ def main() -> int:
         "**Accounted subterms:**",
         "**Omitted subterms:**",
         "**unresolved evidence**",
-        "Payload and metadata service coordinates remain non-additive.",
-        "does **not** claim to have re-hashed",
+        "Payload and\nmetadata service coordinates remain non-additive.",
+        "read-only numerical\nbudget revalidation",
+        "is neither an A4 rerun nor a new cost result",
         "does not rerun A4",
     ]:
         assert token in plan, token

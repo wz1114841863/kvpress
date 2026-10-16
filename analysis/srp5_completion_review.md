@@ -54,7 +54,7 @@ timing/area/power claims, end-to-end performance, and complete LLM inference.
 
 | Item | Classification | Consequence |
 |---|---|---|
-| A4.14.1 materialized report and required inputs absent from live tree | **Blocks numerical ledger/budget revalidation and any final net-benefit conclusion.** | Recover read-only artifacts and re-hash before using budgets or comparing candidate costs numerically.  The accepted remote hash is provenance only. |
+| A4.14.1 report-availability blocker | **Resolved for read-only ledger/budget revalidation; still does not establish final physical net benefit.** | [`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md) records exact local report/input hashes and a passing original preflight.  The recovered proxy ledger remains conditional; omitted hardware costs, implementation choices, and physical evidence remain unresolved. |
 | Future synthesis top not selected | **Blocks top integration, integration-cost conclusion, and synthesis.** | Before either, provide a bill of materials that classifies added mux/state/interconnect as common or differential; it is deferred cost, not verification-only. |
 | An action lacks required owner-carried fields | **Blocks cost counting/conclusion for that row.** | Keep it as unresolved evidence; add an approved supplementary evidence route or stop for review.  Do not infer private state or set the term to zero. |
 | Physical wrapper port/clock/reset mapping not selected | Normal realization-choice work. | Candidate review must provide mapping and regression before implementation. |
@@ -69,8 +69,9 @@ frozen valid/ready, identity, reset/stale/fault, atomic-publication,
 no-early-read, four-consumer release, terminal, reclaim/free, or retire rules;
 uses a test-only provider as hardware; charges common provision wholesale to
 Route-A; omits an unobservable action from cost; or cannot retain a credible
-route against the A4.14.1 omitted-cost constraint after the original report is
-available and verified.
+route against the A4.14.1 omitted-cost constraint after the accepted report is
+available and verified.  Availability alone never makes omitted hardware cost
+zero or turns the proxy ledger into physical evidence.
 
 ## Completion result
 

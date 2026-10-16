@@ -24,7 +24,11 @@ revised partition proposal passed human review; SRP.2 source/toolchain
 eligibility, SRP.3 realization-requirements planning, SRP.4 differential-cost
 evidence planning, and SRP.5 completion review are complete at their declared
 planning scopes.  SRP conditionally passes only to a separately authorized
-realization-choice planning review.
+realization-choice planning review.  The separate
+[`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md)
+has restored the ignored A4.14.1 report/input closure locally and passed its
+original preflight; this permits only read-only revalidation of the accepted
+proxy-ledger constraints, not a physical or net-benefit conclusion.
 See
 [`synthesis_realization_partition.md`](synthesis_realization_partition.md),
 [`srp3_realization_requirements_decision_plan.md`](srp3_realization_requirements_decision_plan.md),

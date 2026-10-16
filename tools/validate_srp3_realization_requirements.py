@@ -27,7 +27,7 @@ EXPECTED_IDS = {
 def main() -> int:
     data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     assert data["schema_version"] == (
-        "kvzap-route-a-srp-0-5-inventory-partition-eligibility-requirements-cost-review-1.5"
+        "kvzap-route-a-srp-0-5-inventory-partition-eligibility-requirements-cost-review-1.6"
     )
     assert data["status"] == "srp_0_5_completion_review_conditional_pass"
     srp3 = data["srp3_realization_requirements_decision_planning"]

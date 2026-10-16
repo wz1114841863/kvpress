@@ -41,6 +41,11 @@ Use these only when the question needs the extra detail:
   is frozen backup work.
 - A4.11--A4.14.1 research evidence is closed. A4.14.1 remains conditional,
   proxy/accounting evidence rather than measured HBM, speedup, or PPA.
+- The ignored A4.14.1 report/input closure is now locally recoverable and
+  passing its original read-only preflight; see
+  [`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md).
+  This removes an availability blocker only, not omitted-cost, physical, or
+  net-benefit boundaries.
 - The architecture contract fixes the common S2 versus Route-A incremental
   split, M2/P3/page/sidecar semantics, legal GQA reuse, R1--R6 owners,
   `metadata_publish_commit` as the single authority linearization point, and

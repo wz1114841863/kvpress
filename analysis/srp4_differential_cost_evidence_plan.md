@@ -3,27 +3,30 @@
 **Status:** Complete at evidence-planning scope on 2026-10-15.  This record
 maps Route-A cost-bearing functions to the accepted A4.14.1 ledger or to an
 explicit remaining evidence gap, ranks the least-cost follow-up evidence, and
-sets stop conditions.  It does not rerun A4, recover or rewrite a frozen
-report, select an implementation, perform synthesis, or derive a new cost,
+sets stop conditions.  It does not rerun A4, rewrite a frozen report, select
+an implementation, perform synthesis, or derive a new cost,
 PPA, latency, throughput, or net-benefit result.
 
 ## Accounting authority and provenance limit
 
 The accounting authority is the accepted A4.14.1 report hash
 `0f43ec6dc30912210e4c565ebdd57554b02b7ca3f22326a498924e4cf1f2fdcb`, its
-contract, and the architecture specification.  The current live tree does not
-contain the ignored materialized report at
-`analysis/experiments/route_a4141_accounted_net_benefit_ledger_01/`; therefore
-SRP.4 does **not** claim to have re-hashed its bytes or rechecked its numerical
-rows.  The accepted hash was byte-verified remotely in
+contract, and the architecture specification.  SRP.4 initially found the
+ignored materialized report absent locally; the later, read-only
+[`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md)
+recovers that exact report and its preflight closure from the `algorithm`
+`zsy` worktree.  The local report and every needed direct/transitive input have
+the recorded SHA-256 values, and the original `--preflight-only` command now
+passes without creating a new report.  The earlier remote byte verification is
+preserved in
 [`architecture_gate_a0_remote_report_verification_20260928.md`](architecture_gate_a0_remote_report_verification_20260928.md).
 
-This plan uses that accepted provenance only to classify coverage.  Before any
-future numerical comparison, the exact report and all required inputs must be
-made available read-only and hash-verified again.  The A4.14.1 differential
-omitted-cost budgets (retrieval 27.646, summarization 40.498, reasoning
-167.442 mJ/request) remain constraints, not newly checked results or free-cost
-allowances.  Payload and metadata service coordinates remain non-additive.
+This recovery makes the accepted ledger available for read-only numerical
+budget revalidation; it is neither an A4 rerun nor a new cost result.  The
+A4.14.1 differential omitted-cost budgets (retrieval 27.646, summarization
+40.498, reasoning 167.442 mJ/request) remain conditional proxy-ledger
+constraints, not physical validation or free-cost allowances.  Payload and
+metadata service coordinates remain non-additive.
 
 ## Coverage vocabulary
 
