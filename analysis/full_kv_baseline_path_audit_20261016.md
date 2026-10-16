@@ -136,8 +136,15 @@ and `FullKVMeasurementDut`.  Its no-model elaboration smoke test and a
 directed transaction regression pass: a held `core_mem_if_v1` request is
 checked before release, only a matching response reaches `READY`, four distinct
 consumer commits precede terminal/retire, and stale response plus duplicate
-commit cases fail closed.  This is deliberately **not** W0 completion: the
-independent `RouteAMeasurementDut` contour and its paired structural regression
-remain open in the same authorized W0 package.  No DC, CACTI, macro,
-controller, numeric, timing, throughput, area, or energy work was run or
-implied by this batch.
+commit cases fail closed.  The second batch adds an independent
+`RouteAMeasurementDut` packed-read contour with named R3/R5 authorization,
+common-R2/R1, typed-delivery, S2, sidecar, consumer, and terminal/reclaim
+boundary ports. It neither instantiates the historical composition skeleton
+nor contains a structural tie-off helper; its dual-DUT elaboration regression
+passes. This is a **bounded, not same-instance C3/C4-complete** Route-A
+contour: R3/R5 authorization and terminal/reclaim remain explicit outer owner
+boundaries, rather than being replaced by fixture-generated events or a second
+R6. Therefore W0 is not complete under its original “preserve C3/C4 owner
+path” criterion. This is still functional integration evidence only: no DC,
+CACTI, macro, controller, numeric, timing, throughput, area, or energy work
+was run or implied.
