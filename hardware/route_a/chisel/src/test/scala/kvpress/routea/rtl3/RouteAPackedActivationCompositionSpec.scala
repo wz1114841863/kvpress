@@ -2,7 +2,7 @@ package kvpress.routea.rtl3
 
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
-import kvpress.routea.incremental.{RouteAPackedReadTerminalBridge, RouteASourceCompletionPlanActivationFork}
+import kvpress.routea.incremental.{RouteAHotSourcePlanActivationAdapter, RouteAPackedReadTerminalBridge, RouteASourceCompletionPlanActivationFork}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
@@ -49,6 +49,7 @@ final class RouteAPackedActivationCompositionSpec extends AnyFunSpec with Chisel
     simulate(new RouteASourceCompletionPlanActivationFork(p)) { d =>
       d.io.accepted_plan_in.valid.poke(false.B)
       d.io.packet_plan_out.ready.poke(true.B)
+      d.io.hot_activation_plan_out.ready.poke(true.B)
       d.io.packed_activation_plan_out.ready.poke(false.B)
       drivePlan(d.io.accepted_plan_in.bits, packed = true)
       d.clock.step()
@@ -60,6 +61,7 @@ final class RouteAPackedActivationCompositionSpec extends AnyFunSpec with Chisel
 
       d.io.packet_plan_out.valid.expect(true.B)
       d.io.packet_plan_out.bits.transaction_identity.request_id.expect(3.U)
+      d.io.hot_activation_plan_out.valid.expect(false.B)
       d.io.packed_activation_plan_out.valid.expect(true.B)
       d.io.packed_activation_plan_out.bits.packed_instance.instance_coordinate.expect(1.U)
       d.clock.step()
@@ -72,12 +74,43 @@ final class RouteAPackedActivationCompositionSpec extends AnyFunSpec with Chisel
       d.io.packed_activation_plan_out.valid.expect(false.B)
 
       drivePlan(d.io.accepted_plan_in.bits, packed = false)
+      d.io.hot_activation_plan_out.ready.poke(false.B)
       d.io.accepted_plan_in.valid.poke(true.B)
       d.io.accepted_plan_in.ready.expect(true.B)
       d.clock.step()
       d.io.accepted_plan_in.valid.poke(false.B)
       d.io.packet_plan_out.valid.expect(true.B)
+      d.io.hot_activation_plan_out.valid.expect(true.B)
+      d.io.hot_activation_plan_out.bits.hot_instance.source_kind.expect(RouteASourceKind.Hot.U)
       d.io.packed_activation_plan_out.valid.expect(false.B)
+      d.clock.step()
+      d.io.hot_activation_plan_out.valid.expect(true.B)
+      d.io.hot_activation_plan_out.ready.poke(true.B)
+      d.clock.step()
+      d.io.hot_activation_plan_out.valid.expect(false.B)
+    }
+  }
+
+  it("opens the existing hot owner only from a hot-present accepted plan") {
+    simulate(new RouteAHotSourcePlanActivationAdapter(p)) { d =>
+      d.io.accepted_plan_in.valid.poke(false.B)
+      d.io.hot_source_open_out.ready.poke(false.B)
+      drivePlan(d.io.accepted_plan_in.bits, packed = false)
+      d.clock.step()
+
+      d.io.accepted_plan_in.valid.poke(true.B)
+      d.io.accepted_plan_in.ready.expect(true.B)
+      d.clock.step()
+      d.io.accepted_plan_in.valid.poke(false.B)
+      d.io.hot_source_open_out.valid.expect(true.B)
+      d.io.hot_source_open_out.bits.transaction_identity.request_id.expect(3.U)
+      d.io.hot_source_open_out.bits.source_instance.source_kind.expect(RouteASourceKind.Hot.U)
+      d.io.hot_source_open_out.bits.source_instance.instance_coordinate.expect(0.U)
+      d.clock.step()
+      d.io.hot_source_open_out.valid.expect(true.B)
+      d.io.hot_source_open_out.ready.poke(true.B)
+      d.clock.step()
+      d.io.hot_source_open_out.valid.expect(false.B)
     }
   }
 

@@ -8,10 +8,10 @@ import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
 /**
   * Lossless exact-copy fork for the one R6-accepted completion plan.
   *
-  * The packet path observes every nonempty accepted plan.  The packed
-  * activation path receives the same bits only when packed is present.  Each
-  * consumer may backpressure independently; this module chooses no source and
-  * creates no second plan.
+ * The packet path observes every nonempty accepted plan.  The hot and packed
+ * activation paths receive the same bits only when their respective source is
+ * present.  Each consumer may backpressure independently; this module chooses
+ * no source and creates no second plan.
   */
 final class RouteASourceCompletionPlanActivationFork(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_source_completion_plan_activation_fork"
@@ -19,17 +19,21 @@ final class RouteASourceCompletionPlanActivationFork(p: RouteASkeletonParameters
   val io = IO(new Bundle {
     val accepted_plan_in = Flipped(RouteAChannels.source_completion_plan(p))
     val packet_plan_out = RouteAChannels.source_completion_plan(p)
+    val hot_activation_plan_out = RouteAChannels.source_completion_plan(p)
     val packed_activation_plan_out = RouteAChannels.source_completion_plan(p)
   })
 
   val full = RegInit(false.B)
   val packetPending = RegInit(false.B)
+  val hotPending = RegInit(false.B)
   val packedPending = RegInit(false.B)
   val held = Reg(new SourceCompletionPlan(p))
 
   io.accepted_plan_in.ready := !full
   io.packet_plan_out.valid := full && packetPending
   io.packet_plan_out.bits := held
+  io.hot_activation_plan_out.valid := full && hotPending
+  io.hot_activation_plan_out.bits := held
   io.packed_activation_plan_out.valid := full && packedPending
   io.packed_activation_plan_out.bits := held
 
@@ -37,11 +41,14 @@ final class RouteASourceCompletionPlanActivationFork(p: RouteASkeletonParameters
     held := io.accepted_plan_in.bits
     full := true.B
     packetPending := true.B
+    hotPending := io.accepted_plan_in.bits.source_presence(RouteASourceKind.Hot)
     packedPending := io.accepted_plan_in.bits.source_presence(RouteASourceKind.Packed)
   }
   when(io.packet_plan_out.fire) { packetPending := false.B }
+  when(io.hot_activation_plan_out.fire) { hotPending := false.B }
   when(io.packed_activation_plan_out.fire) { packedPending := false.B }
   when(full && (!packetPending || io.packet_plan_out.fire) &&
+      (!hotPending || io.hot_activation_plan_out.fire) &&
       (!packedPending || io.packed_activation_plan_out.fire)) {
     full := false.B
   }
@@ -51,10 +58,52 @@ final class RouteASourceCompletionPlanActivationFork(p: RouteASkeletonParameters
   when(RegNext(io.packet_plan_out.valid && !io.packet_plan_out.ready, false.B)) {
     assert(io.packet_plan_out.bits.asUInt === heldPacket.asUInt)
   }
+  val heldHot = RegEnable(io.hot_activation_plan_out.bits,
+    io.hot_activation_plan_out.valid && !io.hot_activation_plan_out.ready)
+  when(RegNext(io.hot_activation_plan_out.valid && !io.hot_activation_plan_out.ready, false.B)) {
+    assert(io.hot_activation_plan_out.bits.asUInt === heldHot.asUInt)
+  }
   val heldPacked = RegEnable(io.packed_activation_plan_out.bits,
     io.packed_activation_plan_out.valid && !io.packed_activation_plan_out.ready)
   when(RegNext(io.packed_activation_plan_out.valid && !io.packed_activation_plan_out.ready, false.B)) {
     assert(io.packed_activation_plan_out.bits.asUInt === heldPacked.asUInt)
+  }
+}
+
+/**
+ * Converts only the immutable hot selection already accepted by R6 into the
+ * existing hot-owner open carrier.  It has no payload, address, scheduling,
+ * or authority state: source selection remains in the accepted plan and hot
+ * residency remains owned by [[RouteAHotSourcePath]].
+ */
+final class RouteAHotSourcePlanActivationAdapter(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_hot_source_plan_activation_adapter"
+
+  val io = IO(new Bundle {
+    val accepted_plan_in = Flipped(RouteAChannels.source_completion_plan(p))
+    val hot_source_open_out = RouteAChannels.hot_source_open(p)
+  })
+
+  val pending = RegInit(false.B)
+  val held = Reg(new SourceCompletionPlan(p))
+  val inputLegal = io.accepted_plan_in.bits.source_presence(RouteASourceKind.Hot) &&
+    io.accepted_plan_in.bits.hot_instance.source_kind === RouteASourceKind.Hot.U
+
+  io.accepted_plan_in.ready := !pending && inputLegal
+  when(io.accepted_plan_in.fire) {
+    held := io.accepted_plan_in.bits
+    pending := true.B
+  }
+
+  io.hot_source_open_out.valid := pending
+  io.hot_source_open_out.bits.transaction_identity := held.transaction_identity
+  io.hot_source_open_out.bits.source_instance := held.hot_instance
+  when(io.hot_source_open_out.fire) { pending := false.B }
+
+  val heldOpen = RegEnable(io.hot_source_open_out.bits,
+    io.hot_source_open_out.valid && !io.hot_source_open_out.ready)
+  when(RegNext(io.hot_source_open_out.valid && !io.hot_source_open_out.ready, false.B)) {
+    assert(io.hot_source_open_out.bits.asUInt === heldOpen.asUInt)
   }
 }
 

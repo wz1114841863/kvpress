@@ -57,6 +57,7 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   val activationBinder = Module(new RouteAPackedReadActivationBinder(p))
   val associationOwner = Module(new RouteAPackedReadAssociationOwner(p))
   val planFork = Module(new RouteASourceCompletionPlanActivationFork(p))
+  val hotActivation = Module(new RouteAHotSourcePlanActivationAdapter(p))
   val terminalBridge = Module(new RouteAPackedReadTerminalBridge(p))
   val allocationMux = Module(new RouteAPackedAllocationOwnerMux(p))
   val sidecarDelivery = Module(new RouteAFunctionalSidecarDeliveryAdapter(p))
@@ -92,10 +93,10 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   io.session_retire_ack <> lifecycle.io.session_retire_ack
   lifecycle.io.component_status_in <> statusCollector.io.component_status_out
 
-  // Hot/direct source service is not a W0-R1 producer.  These inactive lanes
-  // cannot create authorization, a publication, a source release, or a merge.
+  // The hot owner opens only from the exact R6-accepted plan copy.  The
+  // adapter cannot select a source or construct a second plan.
   hot.io.lifecycle_control_in <> lifecycle.io.hot_control_out
-  inactive(hot.io.hot_source_open_in)
+  hot.io.hot_source_open_in <> hotActivation.io.hot_source_open_out
   lifecycle.io.hot_source_release_in <> hot.io.hot_release_out
   inactive(lifecycle.io.merge_ready_in)
   inactive(directPending.io.pending_source_open_in)
@@ -107,6 +108,7 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   lifecycle.io.source_completion_plan_in <> sourcePlanBinder.io.completion_plan_out
   planFork.io.accepted_plan_in <> lifecycle.io.source_completion_plan_copy_out
   packetAdapter.io.accepted_plan_in <> planFork.io.packet_plan_out
+  hotActivation.io.accepted_plan_in <> planFork.io.hot_activation_plan_out
   activationBinder.io.accepted_plan_in <> planFork.io.packed_activation_plan_out
 
   s2.io.drain_collection_enable := lifecycle.io.drain_collection_enable

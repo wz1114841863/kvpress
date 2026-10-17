@@ -285,10 +285,11 @@ classification:
    accepted source-completion plan. RTL1-I3 requires the production path to
    use R6's accepted plan plus exact owner releases; manufacturing a new
    merge-ready producer would bypass that association.
-3. `hot_source_open` is an owner-local activation for the hot source, but a
-   packed-only plan does not contain a hot bit. Making it live requires the
-   separately unimplemented hot source-service/payload owner; it is not a
-   prerequisite for the packed R3/R5 chain.
+3. `hot_source_open` is an owner-local activation for the hot source.  The
+   packed-only W0 plan did not exercise it.  MR-1A later connects it only from
+   an exact copy of an R6-accepted plan whose hot bit is set; functional source
+   partials remain at the existing outer boundary.  This does not activate the
+   direct-pending source or create a hot payload storage implementation.
 4. `RouteARTL265a2PackReadPublicationHarness` demonstrates the downstream
    chain only through test-only `*_activation_mode` controls, direct plan/status
    stimulus, C4 observers, and structural ties. It is valid C3/C4 evidence but
@@ -320,3 +321,41 @@ not by itself close the W0 same-instance Route-A measurement contour.
 | Stale R4, numeric fault, reset, reclaim-before-free/retire | RTL3.9-C4-C/C4-D witness | Historical functional evidence; not separately exercised by the W0 DUT regression. |
 
 No W0 completion or physical claim follows from this audit.
+
+## MR-1A Route-A hot activation record (2026-10-17)
+
+MR-1A begins the approved measurement RTL realization without reopening W0 or
+the MBR/SRP plans.  Its first, independently verified sub-batch makes the
+existing hot owner live in `RouteAMeasurementDut` only through the immutable
+R6-accepted source-completion plan:
+
+```text
+RouteALifecycleAdapter.source_completion_plan_copy_out
+  -> RouteASourceCompletionPlanActivationFork (exact hot-present copy)
+  -> RouteAHotSourcePlanActivationAdapter
+  -> RouteAHotSourcePath.hot_source_open_in
+  -> existing source-packet / four-consumer / R6 terminal path
+```
+
+The new adapter copies only transaction identity and the already selected hot
+`SourceInstance`.  It holds no payload, address, scheduling, authority, or
+source-selection state.  The functional partial provider and R4 numeric result
+boundary remain explicit outer environments, and the packed R3/R5/R6 path is
+unchanged.
+
+Directed evidence is split intentionally: the existing packed/W0 regression
+ran 4/4 tests successfully (exit 0; 1144 s wall time), while the current-source
+hot run filtered specifically for the two newly added cases and passed 2/2
+(exit 0; 545 s wall time): (1) hot-present plan copying and stable owner open,
+and (2) same-instance hot activation through four consumer commits to the one
+shared R6 terminal.  The persistent XML reports are
+`TEST-kvpress.routea.rtl3.RouteAPackedActivationCompositionSpec.xml` and
+`TEST-kvpress.routea.RouteAMeasurementDutR3Spec.xml`.
+
+`DualMeasurementDutStructuralSpec` then passed 2/2 (exit 0; 515 s wall time),
+confirming both independent measurement contours still elaborate and the W0-R1
+owner-to-owner guard remains intact.  This sub-batch does **not** close
+direct-pending association (MR-1B), Full-KV common lifecycle/S2/GQA work, any
+array-only wrapper boundary, functional-reference replacement, or synthesis
+eligibility.  It makes no controller, macro, numeric, timing, throughput,
+PPA, or physical-cost claim.
