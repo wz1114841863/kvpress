@@ -374,3 +374,14 @@ Route-A-only activity, not a cancellation of shared R2 control cost.
 with exit 0 (535 s wall time).  This sub-batch does not yet provide the
 baseline-local lifecycle/status or fault-terminal controls, and therefore does
 not close the Full-KV MR-1A contour or synthesis eligibility.
+
+### MR-1A Full-KV fault terminal (2026-10-17)
+
+`FullKVS2GqaSourceWrapper` now forwards one matching memory-fault terminal to
+the baseline-local terminal/retire owner.  A fault neither becomes `READY` nor
+accepts a consumer commit or fabricates a source release.  The owner retains
+the original transaction identity and fault status for the one outward
+terminal, followed by the existing matching retire/ack path.  The directed
+`FullKVMeasurementDutSpec` passes 3/3, including stale/duplicate rejection and
+the fault-to-terminal/retire case (exit 0; 22 s wall time).  Lifecycle/status
+collection and reset-specific coverage remain open.

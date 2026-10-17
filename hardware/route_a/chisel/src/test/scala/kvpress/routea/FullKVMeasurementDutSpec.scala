@@ -116,4 +116,32 @@ final class FullKVMeasurementDutSpec extends AnyFunSpec with ChiselSim {
       d.io.attention_terminal_rsp.valid.expect(false.B)
     }
   }
+
+  it("forwards one matching memory fault to terminal/retire without READY or release") {
+    simulate(new FullKVMeasurementDut(p)) { d =>
+      init(d); d.io.external_core_mem_if_v1.request.ready.poke(false.B); work(d); d.clock.step(8)
+      d.io.external_core_mem_if_v1.request.valid.expect(true.B)
+      d.io.external_core_mem_if_v1.request.ready.poke(true.B); d.clock.step()
+      d.io.attention_terminal_rsp.ready.poke(false.B)
+      response(d, id = 1, status = p.coreMemoryFaultStatusCode)
+      var terminalWait = 0
+      while (!d.io.attention_terminal_rsp.valid.peek().litToBoolean && terminalWait < 16) {
+        d.clock.step(); terminalWait += 1
+      }
+      d.io.source_ready_out.valid.expect(false.B)
+      d.io.full_kv_consumer_commit_in.valid.poke(true.B)
+      d.io.full_kv_consumer_commit_in.ready.expect(false.B)
+      d.io.full_kv_consumer_commit_in.valid.poke(false.B)
+      d.io.attention_terminal_rsp.valid.expect(true.B)
+      d.io.attention_terminal_rsp.bits.transaction_identity.request_id.expect(1.U)
+      d.io.attention_terminal_rsp.bits.terminal_status.expect(p.coreMemoryFaultStatusCode.U)
+      d.io.attention_terminal_rsp.ready.poke(true.B); d.clock.step()
+      d.io.runtime_retire_req.bits.session_id.poke(false.B)
+      d.io.runtime_retire_req.bits.transaction_identity.request_id.poke(1.U)
+      d.io.runtime_retire_req.bits.transaction_identity.incarnation.poke(1.U)
+      d.io.runtime_retire_req.valid.poke(true.B); d.io.runtime_retire_req.ready.expect(true.B)
+      d.clock.step(); d.io.runtime_retire_req.valid.poke(false.B)
+      d.io.session_retire_ack.valid.expect(true.B)
+    }
+  }
 }

@@ -69,6 +69,7 @@ final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
   io.source_ready_out := s2.io.source_ready_out
   s2.io.consumer_commit_in <> io.full_kv_consumer_commit_in
   terminal.io.source_release_in <> s2.io.source_release_out
+  terminal.io.source_fault_in <> s2.io.fault_terminal_out
   io.attention_terminal_rsp <> terminal.io.attention_terminal_rsp
   terminal.io.runtime_retire_req <> io.runtime_retire_req
   io.session_retire_ack <> terminal.io.session_retire_ack

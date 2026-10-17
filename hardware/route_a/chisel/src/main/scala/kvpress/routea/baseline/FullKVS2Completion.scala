@@ -15,6 +15,9 @@ final class FullKVS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     val source_ready_out = Output(Valid(new FullKVSourceReady(p)))
     val consumer_commit_in = Flipped(Decoupled(new FullKVGqaConsumerCommit(p)))
     val source_release_out = Decoupled(new FullKVSourceRelease(p))
+    // A fault never becomes READY or a synthetic release.  It crosses the
+    // baseline-local terminal owner with its original identity/status.
+    val fault_terminal_out = Decoupled(new FullKVFillTerminal(p))
   })
   val empty :: filling :: ready :: faulted :: Nil = Enum(4)
   val state = RegInit(VecInit(Seq.fill(2)(empty)))
@@ -23,6 +26,8 @@ final class FullKVS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   val expected = Reg(Vec(2, UInt(p.coreMemoryFragmentCountWidth.W)))
   val next = Reg(Vec(2, UInt(p.coreMemoryFragmentIndexWidth.W)))
   val commits = RegInit(VecInit(Seq.fill(2)(0.U(4.W))))
+  val faultPending = RegInit(false.B)
+  val faultTerminal = Reg(new FullKVFillTerminal(p))
 
   val open = io.fill_open_in.bits
   val openSlot = open.s2_slot
@@ -53,6 +58,10 @@ final class FullKVS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   io.terminal_in.ready := terminalLegal
   when(io.terminal_in.fire) {
     state(terminalSlot) := Mux(terminal.status === p.coreMemoryOkStatusCode.U, ready, faulted)
+    when(terminal.status === p.coreMemoryFaultStatusCode.U) {
+      faultTerminal := terminal
+      faultPending := true.B
+    }
   }
 
   val readySlot = Wire(UInt(RouteAAnchorWidths.S2SlotWidth.W))
@@ -80,12 +89,16 @@ final class FullKVS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   io.source_release_out.bits.source_instance.s2_slot := releaseSlot
   io.source_release_out.bits.source_instance.source_generation := generation(releaseSlot)
   when(io.source_release_out.fire) { state(releaseSlot) := empty; commits(releaseSlot) := 0.U }
+  io.fault_terminal_out.valid := faultPending
+  io.fault_terminal_out.bits := faultTerminal
+  when(io.fault_terminal_out.fire) { faultPending := false.B }
 }
 
 /** One baseline terminal followed by one matching session-retire acknowledgement. */
 final class FullKVTerminalRetireAdapter(p: RouteASkeletonParameters) extends Module {
   val io = IO(new Bundle {
     val source_release_in = Flipped(Decoupled(new FullKVSourceRelease(p)))
+    val source_fault_in = Flipped(Decoupled(new FullKVFillTerminal(p)))
     val attention_terminal_rsp = Decoupled(new AttentionTerminalResponse)
     val runtime_retire_req = Flipped(Decoupled(new RuntimeRetireRequest))
     val session_retire_ack = Decoupled(new SessionRetireAck)
@@ -94,12 +107,24 @@ final class FullKVTerminalRetireAdapter(p: RouteASkeletonParameters) extends Mod
   val idle :: terminal :: retire :: acknowledge :: Nil = Enum(4)
   val state = RegInit(idle)
   val identity = Reg(new TransactionIdentity)
+  val terminalStatus = Reg(UInt(RouteAAnchorWidths.TerminalStatusWidth.W))
   val sessionId = Reg(Bool())
-  io.source_release_in.ready := state === idle
-  when(io.source_release_in.fire) { identity := io.source_release_in.bits.transaction_identity; state := terminal }
+  io.source_release_in.ready := state === idle && !io.source_fault_in.valid
+  io.source_fault_in.ready := state === idle && !io.source_release_in.valid &&
+    io.source_fault_in.bits.status === p.coreMemoryFaultStatusCode.U
+  when(io.source_release_in.fire) {
+    identity := io.source_release_in.bits.transaction_identity
+    terminalStatus := p.coreMemoryOkStatusCode.U
+    state := terminal
+  }
+  when(io.source_fault_in.fire) {
+    identity := io.source_fault_in.bits.transaction_identity
+    terminalStatus := io.source_fault_in.bits.status
+    state := terminal
+  }
   io.attention_terminal_rsp.valid := state === terminal
   io.attention_terminal_rsp.bits.transaction_identity := identity
-  io.attention_terminal_rsp.bits.terminal_status := p.coreMemoryOkStatusCode.U
+  io.attention_terminal_rsp.bits.terminal_status := terminalStatus
   when(io.attention_terminal_rsp.fire) { state := retire }
   io.runtime_retire_req.ready := state === retire &&
     io.runtime_retire_req.bits.transaction_identity.asUInt === identity.asUInt
