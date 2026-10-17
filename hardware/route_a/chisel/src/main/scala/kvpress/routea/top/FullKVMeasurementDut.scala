@@ -1,7 +1,7 @@
 package kvpress.routea.top
 
 import chisel3._
-import chisel3.util.{Decoupled, Valid}
+import chisel3.util.{Decoupled, DecoupledIO, Valid}
 import kvpress.routea.baseline._
 import kvpress.routea.common._
 import kvpress.routea.interfaces._
@@ -16,9 +16,10 @@ import kvpress.routea.params.RouteASkeletonParameters
 final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
   val io = IO(new Bundle {
     val full_kv_read_work_in = Flipped(Decoupled(new FullKVReadWork(p)))
-    val common_legacy_candidate_in = Flipped(RouteAChannels.source_candidate(p))
     val external_core_mem_if_v1 = new CoreMemoryExternalPort(p)
     val source_ready_out = Output(Valid(new FullKVSourceReady(p)))
+    // The outer source-service provider supplies only the four accepted
+    // consumer-completion facts.  It is not an attention PE or numeric model.
     val full_kv_consumer_commit_in = Flipped(Decoupled(new FullKVGqaConsumerCommit(p)))
     val attention_terminal_rsp = RouteAChannels.attention_terminal_rsp
     val runtime_retire_req = Flipped(RouteAChannels.runtime_retire_req)
@@ -26,10 +27,12 @@ final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
     val r1_component_status_out = RouteAChannels.component_status(p)
     val r2_payload_drain_status_out = RouteAChannels.component_status(p)
     val r2_descriptor_drain_status_out = RouteAChannels.component_status(p)
-    val legacy_r3_packed_write_out = RouteAChannels.source_delivery(p)
-    val legacy_r5_append_out = RouteAChannels.source_delivery(p)
-    val legacy_r5_reclaim_out = RouteAChannels.source_delivery(p)
   })
+  private def inactive[T <: Data](channel: DecoupledIO[T]): Unit = {
+    channel.valid := false.B
+    channel.bits := 0.U.asTypeOf(channel.bits)
+  }
+  private def discard[T <: Data](channel: DecoupledIO[T]): Unit = channel.ready := true.B
   val producer = Module(new FullKVReadProducer(p))
   val bridge = Module(new FullKVDeliveryContextBridge(p))
   val arbiter = Module(new RouteACoreSideArbiter(p))
@@ -44,7 +47,11 @@ final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
   bridge.io.candidate_in <> producer.io.candidate_out
   s2.io.fill_open_in <> producer.io.fill_open_out
   arbiter.io.read_candidate_in <> bridge.io.candidate_out
-  arbiter.io.candidate_in <> io.common_legacy_candidate_in
+  // Full-KV owns no R3/R5 write-class producer.  The common R2 fabric keeps
+  // that input structurally explicit, but this baseline contour admits reads
+  // only from the named FullKVReadProducer above; no outer legacy candidate
+  // can bypass it.
+  inactive(arbiter.io.candidate_in)
   core.io.core_mem_req_in <> arbiter.io.core_mem_req
   arbiter.io.core_mem_rsp_in <> core.io.core_mem_rsp
   core.io.external_core_mem_if_v1 <> io.external_core_mem_if_v1
@@ -71,7 +78,9 @@ final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
   io.r1_component_status_out <> core.io.component_status_out
   io.r2_payload_drain_status_out <> arbiter.io.payload_drain_status_out
   io.r2_descriptor_drain_status_out <> arbiter.io.descriptor_drain_status_out
-  io.legacy_r3_packed_write_out <> router.io.r3_packed_write_out
-  io.legacy_r5_append_out <> router.io.r5_append_out
-  io.legacy_r5_reclaim_out <> router.io.r5_reclaim_out
+  // These Route-A-only typed egresses remain structurally present in the
+  // shared router but have no Full-KV producer or consumer in this contour.
+  discard(router.io.r3_packed_write_out)
+  discard(router.io.r5_append_out)
+  discard(router.io.r5_reclaim_out)
 }

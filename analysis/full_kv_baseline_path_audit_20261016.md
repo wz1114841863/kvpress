@@ -359,3 +359,18 @@ direct-pending association (MR-1B), Full-KV common lifecycle/S2/GQA work, any
 array-only wrapper boundary, functional-reference replacement, or synthesis
 eligibility.  It makes no controller, macro, numeric, timing, throughput,
 PPA, or physical-cost claim.
+
+### MR-1A Full-KV legacy-ABI removal (2026-10-17)
+
+The first Full-KV MR-1A sub-batch removes the raw legacy candidate ingress and
+the three Route-A-only R3/R5 typed egresses from `FullKVMeasurementDut`'s
+external ABI.  Its only R2 read ingress is now the named `FullKVReadProducer`.
+The shared R2 write-class input remains structurally explicit but is inactive
+because this baseline has no R3/R5 write-class owner; it cannot be driven by an
+outer fixture to bypass the Full-KV producer.  This is an absence of
+Route-A-only activity, not a cancellation of shared R2 control cost.
+
+`FullKVMeasurementDutSpec` and `DualMeasurementDutStructuralSpec` passed 4/4
+with exit 0 (535 s wall time).  This sub-batch does not yet provide the
+baseline-local lifecycle/status or fault-terminal controls, and therefore does
+not close the Full-KV MR-1A contour or synthesis eligibility.

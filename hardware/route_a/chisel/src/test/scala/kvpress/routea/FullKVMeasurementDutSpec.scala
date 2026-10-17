@@ -25,7 +25,6 @@ final class FullKVMeasurementDutSpec extends AnyFunSpec with ChiselSim {
 
   private def init(d: FullKVMeasurementDut): Unit = {
     d.io.full_kv_read_work_in.valid.poke(false.B)
-    d.io.common_legacy_candidate_in.valid.poke(false.B)
     d.io.external_core_mem_if_v1.init_ack.valid.poke(false.B)
     d.io.external_core_mem_if_v1.init_ack.bits.adapter_epoch_ready.poke(false.B)
     d.io.external_core_mem_if_v1.request.ready.poke(true.B)
@@ -37,9 +36,6 @@ final class FullKVMeasurementDutSpec extends AnyFunSpec with ChiselSim {
     d.io.r1_component_status_out.ready.poke(true.B)
     d.io.r2_payload_drain_status_out.ready.poke(true.B)
     d.io.r2_descriptor_drain_status_out.ready.poke(true.B)
-    d.io.legacy_r3_packed_write_out.ready.poke(true.B)
-    d.io.legacy_r5_append_out.ready.poke(true.B)
-    d.io.legacy_r5_reclaim_out.ready.poke(true.B)
     d.clock.step()
     d.io.external_core_mem_if_v1.init_ack.bits.adapter_epoch_ready.poke(true.B)
     d.io.external_core_mem_if_v1.init_ack.valid.poke(true.B)
