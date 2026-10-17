@@ -190,6 +190,46 @@ The guard includes the S2-release/R6-terminal and R5 reclaim owner-to-owner
 connections. Directed same-instance source/terminal/reclaim behavior and its
 negative cases remain deferred to W0-R3.
 
+### W0-R3 Route-A dynamic owner-path regression (2026-10-17)
+
+`RouteAMeasurementDutR3Spec` is the first same-instance dynamic regression of
+the W0 Route-A measurement contour.  It drives only the named legal outer
+environments: one source-owned pending-payload binding, one already-selected
+packed source-plan declaration, the functional `core_mem_if_v1`, the packed
+functional partial-provider packets, and the functional R4 result boundary.
+It does **not** supply publication, pending-to-packed authority acceptance,
+descriptor visibility, S2 lease, source release, R6 terminal, reclaim permit,
+or drain facts; those remain at their composed production owners.
+
+The positive case demonstrates this bounded owner path:
+
+```text
+R6 maturity + source-owned pending binding
+  -> R3 materialize / R2-R1 pending read / R3 packed write
+  -> R5 append + M2 publication + R6 accepted packed authority
+  -> R3 post-R6 observation / R5 descriptor / S2 lease
+  -> packed payload + sidecar reads -> S2 packed source
+  -> four functional partial packets + four exact functional R4 results
+  -> one R6 terminal -> runtime retire -> R6 permit
+  -> R5 reclaim descriptor write -> R5 completion -> R6 retire ack
+```
+
+Its paired negative case supplies a stale first packed-read response only
+after the production publication path has reached the actual packed read.  The
+stale carrier is consumed by R1 but produces no accepted partial packet, R4
+work, terminal, or subsequent sidecar request.  This is a bounded
+functional-control regression: it is not a controller, macro, numeric,
+timing, throughput, energy, area, or PPA result, and it does not replace the
+more detailed RTL3.9-C stale/fault/reset witnesses.
+
+The persistent report
+`hardware/route_a/chisel/target/test-reports/TEST-kvpress.routea.RouteAMeasurementDutR3Spec.xml`
+records 2 tests passed, with zero errors and zero failures, on 2026-10-17
+(1077.843 s test time).  The first attempt exposed a fixture-only issue: it
+waited on the request-dependent lifecycle `ready` without first presenting a
+legal session-start payload.  The corrected test holds that legal payload with
+`valid` low during production init collection; it injects no component status.
+
 ## W0 Route-A integration-closure audit (2026-10-16)
 
 This is a targeted owner-boundary audit within W0, not a new planning phase.
@@ -274,8 +314,9 @@ not by itself close the W0 same-instance Route-A measurement contour.
 | Matching Full-KV request/response → READY → four commits → terminal/retire | `FullKVMeasurementDutSpec` | Covered. |
 | Full-KV stale response and duplicate commit | `FullKVMeasurementDutSpec` | Covered. |
 | Full-KV wrong fragment/order, slot/generation, response fault, reset-old identity, early release | No W0 DUT case | Missing. |
-| Packed R3/R5 publication, all-member R6 acceptance, no early read | RTL3.9-C C0--C2/C3 witnesses | Historical functional evidence; not covered in `RouteAMeasurementDut`. |
-| Packed source service, four commits, one terminal | RTL3.9-C3a/C3b witness | Historical functional evidence; not covered in `RouteAMeasurementDut`. |
-| Stale R1, stale R4, numeric fault, reset, reclaim-before-free/retire | RTL3.9-C4-C/C4-D witness | Historical functional evidence; not covered in `RouteAMeasurementDut`. |
+| Packed R3/R5 publication and all-member R6 acceptance | RTL3.9-C C0--C2/C3 witnesses; `RouteAMeasurementDutR3Spec` | Same-instance positive owner path covered; C0's detailed partial/ready-low no-early-read cases remain historical RTL3.9-C coverage. |
+| Packed source service, four commits, one terminal, runtime retire, R5 reclaim, R6 retire ack | RTL3.9-C3a/C3b witness; `RouteAMeasurementDutR3Spec` | Same-instance positive owner path covered. |
+| Stale first R1 packed-read response | RTL3.9-C4-C witness; `RouteAMeasurementDutR3Spec` | Same-instance fail-closed case covered: no packet, R4 work, terminal, or sidecar request. |
+| Stale R4, numeric fault, reset, reclaim-before-free/retire | RTL3.9-C4-C/C4-D witness | Historical functional evidence; not separately exercised by the W0 DUT regression. |
 
 No W0 completion or physical claim follows from this audit.
