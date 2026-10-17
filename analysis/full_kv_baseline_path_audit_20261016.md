@@ -165,6 +165,31 @@ does not yet close source completion, terminal, reclaim, or retire. No DC,
 CACTI, macro, controller, numeric, timing, throughput, area, or energy work
 was run or implied.
 
+### W0-R2 terminal and reclaim integration (2026-10-16)
+
+W0-R2 completes the owner wiring that W0-R1 deliberately left inactive:
+
+```text
+S2 packed-source release -> R6 exact source release -> R6 merge request
+functional R4 result/fault -> R6 terminal -> outer runtime-retire request
+R6 reclaim permit -> R5 reclaim candidate -> delivery/R2/R1/router
+-> R5 reclaim delivery/complete -> R6 retire-ack eligibility
+```
+
+`functional_r4_result_in` and `functional_r4_numeric_fault_in` remain the
+already-declared functional reference boundary. They can provide neither a
+source release, a terminal identity, a reclaim permit, nor a retire fact. The
+new R5 reclaim route uses the existing descriptor-maintenance lane; it adds no
+new queue, scheduler, controller, or allocator authority.
+
+The persistent sbt XML report
+`hardware/route_a/chisel/target/test-reports/TEST-kvpress.routea.DualMeasurementDutStructuralSpec.xml`
+records the W0-R2 no-model elaboration/structural guard started on 2026-10-16
+at 18:46:31: 2 tests passed, with zero errors and zero failures (1053.403 s).
+The guard includes the S2-release/R6-terminal and R5 reclaim owner-to-owner
+connections. Directed same-instance source/terminal/reclaim behavior and its
+negative cases remain deferred to W0-R3.
+
 ## W0 Route-A integration-closure audit (2026-10-16)
 
 This is a targeted owner-boundary audit within W0, not a new planning phase.

@@ -200,8 +200,6 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   pageManager.io.reclaim_permit_in <> lifecycle.io.reclaim_permit_out
   lifecycle.io.r5_reclaim_complete_in := pageManager.io.reclaim_complete
   inactive(pageManager.io.descriptor_maintenance_terminal_in)
-  inactive(pageManager.io.reclaim_delivery_in)
-  discard(pageManager.io.reclaim_candidate_out)
   discard(pageManager.io.allocator_release_out)
 
   val r6ToPending = lifecycle.io.authority_transition_out.bits.from_authority === RouteAAuthorityStateCode.Hot.U &&
@@ -270,16 +268,15 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   delivery.io.r5_append_in <> pageManager.io.append_candidate_out
   inactive(delivery.io.r3_direct_pending_in)
   inactive(delivery.io.r5_s2_packed_in)
-  inactive(delivery.io.r5_reclaim_in)
+  delivery.io.r5_reclaim_in <> pageManager.io.reclaim_candidate_out
   discard(delivery.io.r3_direct_pending_out)
   discard(delivery.io.r5_s2_packed_out)
-  discard(delivery.io.r5_reclaim_out)
   delivery.io.r3_pack_read_in <> packReadIssue.io.candidate_out
   delivery.io.registry_allocate_out <> registry.io.allocation_in
   delivery.io.registry_allocation_ack_in <> registry.io.allocation_ack_out
   writeIngress.io.r3_packed_write_in <> delivery.io.r3_packed_write_out
   writeIngress.io.r5_append_in <> delivery.io.r5_append_out
-  inactive(writeIngress.io.r5_reclaim_in)
+  writeIngress.io.r5_reclaim_in <> delivery.io.r5_reclaim_out
   readIngress.io.r3_pack_read_in <> delivery.io.r3_pack_read_out
   inactive(readIngress.io.r3_direct_pending_in)
   packedReadIngress.io.payload_in <> packedReadIssue.io.candidate_out
@@ -287,7 +284,7 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   readIngress.io.r5_s2_packed_in <> packedReadIngress.io.out
   m2P3.io.p3_packed_write_delivery_in <> router.io.r3_packed_write_out
   pageManager.io.append_delivery_in <> router.io.r5_append_out
-  discard(router.io.r5_reclaim_out)
+  pageManager.io.reclaim_delivery_in <> router.io.r5_reclaim_out
 
   packedReadEndpoint.io.endpoint_filling_in := s2.io.s2_observe_filling
   packedReadEndpoint.io.endpoint_fill_open_in := s2.io.s2_observe_fill_open

@@ -48,6 +48,10 @@ final class DualMeasurementDutStructuralSpec extends AnyFunSpec with ChiselSim {
       "pageManager.io.descriptor_location_request_in <> activationBinder.io.descriptor_location_request_out",
       "delivery.io.r3_packed_write_in <> m2P3.io.p3_packed_write_candidate_out",
       "m2P3.io.p3_packed_write_delivery_in <> router.io.r3_packed_write_out",
+      "lifecycle.io.packed_source_release_in <> s2.io.s2_release_out",
+      "lifecycle.io.merge_terminal_in <> merge.io.merge_rsp_or_numeric_fault",
+      "delivery.io.r5_reclaim_in <> pageManager.io.reclaim_candidate_out",
+      "pageManager.io.reclaim_delivery_in <> router.io.r5_reclaim_out",
     ).foreach(connection => assert(source.contains(connection), s"missing W0-R1 connection: $connection"))
   }
 }
