@@ -71,6 +71,61 @@ associated lease resolves. Current code has no production carrier for this
 fact: introducing it is mandatory, and source-plan-side reconstruction is
 prohibited.
 
+### Executable unique-key and descriptor-production rule
+
+`SourceInstance` alone is not a payload key: its current fields are only
+`{source_kind, instance_coordinate, generation}` and do not name a KV record,
+address, layer/head/position, or `source_last`. MR-1B therefore requires one
+new immutable `PendingDescriptorKey`:
+
+```text
+{ pending_descriptor_ref, pending_descriptor_generation }
+```
+
+and a production `PendingSourceDescriptorRegistration` record:
+
+```text
+PendingDescriptorKey
++ { layer, kv_head, logical_position, payload_ref }
++ { payload_handle_or_address, pending_storage_generation, destination_endpoint }
++ { pending_ordinal, source_last, valid_count = 1 }
+```
+
+The pending-payload descriptor/location owner creates that registration at the
+same accepted pending-maturity event that establishes the immutable
+pending-payload location. `source_last` must arrive on this registration as an
+already-declared end-of-source fact from the pending-source descriptor builder;
+that builder is the sole producer of the fact and may not derive it from a
+page/group count, a missing neighbour, an R1 fragment, or a later attention
+plan. The descriptor/location owner stores the literal bit with the rest of
+the immutable descriptor and is only a custodian thereafter.
+
+The source-plan declaration side additionally emits the selected
+`PendingDescriptorKey` beside its selected `pending_instance`. The key is a
+selection association supplied by the existing source-plan declaration
+boundary, not a handle/address invented by the binder. The pending descriptor
+owner validates exactly:
+
+```text
+{ attention transaction_identity, pending SourceInstance,
+  PendingDescriptorKey, pending_storage_generation }
+```
+
+against its immutable registration before issuing
+`PendingDirectAssociationDeclaration`. This proves which descriptor belongs to
+which selected pending source without treating `SourceInstance` as an address.
+The plan-side source selector is still responsible only for selecting an
+already-described source/key pair; the descriptor owner remains the sole
+authority for all payload, generation, ordinal, and terminal facts.
+
+These two carriers are not present in the current Chisel production graph.
+They are unavoidable minimal interface additions, not an assertion that an
+unnamed existing owner already provides the mapping. The descriptor-directory
+state, association comparison, lease state, and their dynamic accesses are
+Route-A incremental **direct-pending transport/control** cost. The opaque
+payload and descriptor backing addressed by the record remain declared
+external-memory-service cost; neither may be silently charged as zero.
+
 ## Coverage boundary: R3 is not the direct association owner
 
 The existing R3 ledger contains admitted retained members for P3 pack-read
@@ -120,39 +175,63 @@ The opening materializer must preserve an immutable record under downstream
 backpressure and admit it once. Duplicate declarations, duplicate open acks,
 or duplicate work cannot produce a second lease or R1 request.
 
-## Selected lease rule and authority-transition race
+## Exact R2/R1/lease handshake and authority-transition race
 
-The selected rule is an **accepted direct-read lease**, owned by the
-pending-payload descriptor/location owner. It is not a new residency authority
-and does not delay or split the existing pending-to-packed atomic publication.
+The selected lifetime rule is one immutable **accepted-read lease**, owned by
+the pending-payload descriptor/location owner. It is not a new residency
+authority and does not delay or split pending-to-packed atomic publication.
 
-The exact rule is:
+The current R2 has these distinct events:
 
-1. The materializer presents the R2 candidate and a matching lease-acquire
-   request as one atomic owner-to-owner acceptance. The lease is created only
-   when R2 accepts that exact candidate; before then there is no live direct
-   lease or irrevocably accepted direct work.
-2. Lease acquisition proves the payload was pending-authoritative at the R2
-   acceptance edge and pins exactly that immutable handle/storage generation
-   through the matching direct record terminal (success or fault). It neither
-   creates a second authority nor grants a later retry.
-3. If pending-to-packed happens after the atomic R2/lease acceptance, the
-   accepted R1 request may finish using the lease. The transition remains the
-   sole authority handoff; the lease is only a response-validity pin.
-4. If the transition occurs before R2/lease acceptance, acquisition fails
-   closed: no R2 candidate may fire and the accepted plan enters the typed
-   association-failure path below. The materializer may not reinterpret the
-   pending plan as packed or issue a new read after the transition.
-5. The pending-payload owner releases the lease exactly when the matching
-   typed direct terminal is accepted. Later four-consumer source release is a
-   separate R6/source-service lifecycle event and is not a reason to retain
+| Event | Current meaning | Lease effect in MR-1B |
+| --- | --- | --- |
+| `direct_candidate_in.fire` | candidate is stored in an R2 class slot | no lease; this is only queue ingress and may later become stale |
+| R2 selection | combinational choice of the oldest eligible stored candidate | no architectural grant handshake exists yet |
+| `r2.core_mem_req.fire` | selected candidate is accepted by R1 | this is the **direct lease-acquire fire** |
+| `r1.core_mem_req_in.fire` | same wire handshake as the preceding R2 fire | identical event |
+| `external_core_mem_if_v1.request.fire` | R1 issues the exact request externally | identical event in the current R1, because R1 only raises ready when the external request is ready |
+
+Thus MR-1B does **not** acquire a lease at R2 ingress. It introduces a
+direct-class-only pre-issue gate: a selected direct candidate may assert
+`core_mem_req.valid` only when the descriptor owner accepts a matching
+`DirectPendingLeaseAcquire`. That handshake and
+`r2.core_mem_req.fire`/R1/external-request fire occur in the same cycle. The
+lease owner checks the descriptor key, descriptor generation, accepted pending
+instance, and current pending authority at that exact edge, then records one
+lease through the matching typed direct terminal.
+
+This is an explicit, limited **R2 semantic interface extension**: the direct
+class gains a descriptor-owner proof at its existing issue fire. It does not
+add a queue, change candidate ordering, alter the round-robin cursor rule, or
+create a second arbiter. The cursor still advances only on the existing
+`core_mem_req.fire`. Before a direct candidate has a grantable lease, R2 treats
+it as not issue-eligible and may select another already-eligible class using
+the frozen ordering rule.
+
+There is no combinational handshake loop: registered R2 candidate fields
+drive lease-acquire `valid`; descriptor-owner `ready` depends only on its
+registered descriptor/authority/lease state, never on R2 ready, R1 ready, or
+external ready; R2 exposes `core_mem_req.valid` only from the registered
+candidate plus lease-ready condition. R1/external ready can withhold the
+single joint fire without mutating the candidate, descriptor, or lease. A
+lease is accepted once because R2 removes the candidate only at the joint
+fire, while the owner marks the exact key live at that same edge.
+
+The resulting race rule is:
+
+1. pending-to-packed before the joint fire: descriptor-owner lease `ready`
+   stays low; no R2/R1/external request fires. The association enters the
+   failure/abort path below.
+2. pending-to-packed after the joint fire but before any response: the request
+   continues. The live lease pins only response validity for the exact
+   handle/storage generation through terminal; authority remains solely with
+   the already-completed atomic transition.
+3. R1 fault or malformed response after the joint fire uses the typed endpoint
+   terminal path; it is not reclassified as an association failure and cannot
+   create delivery/release.
+4. the matching terminal (success or fault) releases the one lease. GQA
+   source-release remains a later, distinct lifecycle event and never retains
    a memory-read lease.
-
-This needs a minimal lease-acquire/lease-release carrier between the direct
-producer path and the descriptor owner. The producer gates candidate validity
-on the owner's simultaneous lease acceptance, so R2's existing
-`PendingAuthoritative` predicate still denotes a true authority proof at its
-candidate-acceptance edge rather than an inferred sticky bit.
 
 ## Temporary backpressure versus permanent failure
 
@@ -162,14 +241,41 @@ not be the response to a known missing/mismatched descriptor after R6 accepts
 the plan.
 
 Add `DirectPendingAssociationFailure { transaction_identity, pending_instance,
-reason }`. The binder/materializer emits it exactly once when an R6-accepted
-pair cannot open, cannot obtain a lease because authority has transitioned, or
-finds an immutable identity/generation/descriptor mismatch. The lifecycle
-adapter accepts it only for its matching live pending source plan and produces
-the existing one outward fault terminal without a source release, GQA commit,
-merge/R4 success, or retire acknowledgement. It clears the matching attention
-tracker only when that fault terminal is accepted. This is fail-closed and
-bounded; it is neither retry/fallback nor a new authority transition.
+endpoint_generation, reason }`. The binder/materializer emits it exactly once
+when an R6-accepted pair cannot open, cannot acquire the joint R2/R1 lease
+because authority has transitioned, or finds an immutable
+identity/key/generation/descriptor mismatch.
+
+This requires a separate **R6 lifecycle interface extension**, not an adapter
+terminal: `RouteALifecycleAdapter` gains a matching pending-source-failure
+input. It accepts the event only for its live R6-accepted plan, and **R6**
+alone asserts the existing outward `attention_terminal_rsp` with fault status.
+The adapter cannot assert a terminal directly. R6 performs no source release,
+GQA commit, merge/R4 success, or retire acknowledgement for that failed plan;
+it clears the attention tracker only when its one outward fault terminal fires.
+
+If an endpoint has opened but the joint R2/R1/lease fire has not occurred,
+the materializer first sends `DirectPendingAbort { transaction_identity,
+pending_instance, endpoint_generation }`. The endpoint accepts abort only
+while active, nondeliverable, and before its `DirectPendingIssueObservation`
+has fired; it clears its local occupancy and returns an abort acknowledgement.
+Only after that acknowledgement may the materializer send the association
+failure into R6. The same reset clears endpoint, materializer, descriptor
+lease, and R2 candidate state.
+
+After `DirectPendingIssueObservation` (the joint R2/R1 fire), abort is illegal:
+the endpoint must await its typed R1 terminal so a late response cannot become
+an unconsumed outstanding delivery. A fault/malformed terminal then emits the
+same R6 pending-source-failure input with the exact endpoint/accepted-instance
+identity. This produces the R6-owned outward fault terminal rather than
+leaving an opened endpoint, R2 outstanding slot, or lifecycle tracker stuck.
+
+Pre-acceptance absence is intentionally different. If a plan declaration has
+pending presence but its companion descriptor declaration is absent, the binder
+applies ordinary pre-acceptance backpressure and does not send a plan to R6;
+there is no accepted plan and therefore no association-failure terminal. Once
+R6 has accepted the paired plan, every permanent failure follows the bounded
+R6 path above.
 
 Reset clears paired binder state, association materializer state, endpoint
 state, and live leases. A stale declaration, lease response/release, terminal,
@@ -182,18 +288,27 @@ success terminal, release, or retire effect.
 Approval of this revised contract authorizes only the following MR-1B work:
 
 - `RouteAInterfaces.scala`: association declaration, endpoint open/ack,
-  direct lease, and typed association-failure carriers;
+  descriptor registration/key, direct lease, issue/abort/ack, and typed
+  association-failure carriers;
 - `RouteAIncrementalSkeletons.scala`: paired binder retention, endpoint
-  accepted-instance/local-generation relation, lease-gated association
-  materializer, and lifecycle failure input;
+  accepted-instance/local-generation relation, descriptor-owner registration
+  and lookup boundary, R2 direct-class pre-issue lease gate, lease-gated
+  association materializer, endpoint abort, and lifecycle failure input;
 - `RouteAMeasurementDut.scala`: production descriptor-owner boundary plus the
   owner-to-owner direct producer, delivery, terminal, release, and failure
   connections, with no test-only provider or tie-off;
 - directed tests for exact success; descriptor/instance/storage-generation
-  mismatch; missing counterpart; endpoint reuse; stale/reset; duplicate;
-  plan/open/lease/R2 backpressure; R1 fault/malformed response; and both sides
-  of pending-to-packed around R2 acceptance; plus W0/MR-1A non-regression and
+  mismatch; missing pre-acceptance counterpart; endpoint reuse; stale/reset;
+  duplicate; plan/open/lease/R2/R1 backpressure; R1 fault/malformed response;
+  abort-before-issue; no-abort-after-issue; and both sides of pending-to-packed
+  around the joint R2/R1 lease fire; plus W0/MR-1A non-regression and
   structural guards.
+
+The approved scope is **single-record MR-1B only**: `valid_count = 1` and one
+immutable `source_last` descriptor fact. A passing MR-1B implementation is not
+evidence of multi-record direct-pending coverage; any such extension requires
+a separately reviewed multi-record association, lease, terminal, and test
+contract.
 
 The direct-pending source must still be an explicit functional-memory boundary;
 this proposal does not add an HBM controller, memory macro, attention PE,
