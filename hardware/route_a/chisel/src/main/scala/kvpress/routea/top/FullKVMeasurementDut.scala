@@ -51,6 +51,12 @@ final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
   // only from the named FullKVReadProducer above; no outer legacy candidate
   // can bypass it.
   inactive(arbiter.io.candidate_in)
+  // Full-KV has no Route-A direct-pending descriptor owner or lease.  Keep
+  // the shared R2 fabric inert on the Route-A-only sideband rather than
+  // letting the baseline acquire or account for an invented authority.
+  discard(arbiter.io.direct_lease_eligibility_query_out)
+  inactive(arbiter.io.direct_lease_eligibility_in)
+  discard(arbiter.io.direct_lease_commit_out)
   core.io.core_mem_req_in <> arbiter.io.core_mem_req
   arbiter.io.core_mem_rsp_in <> core.io.core_mem_rsp
   core.io.external_core_mem_if_v1 <> io.external_core_mem_if_v1

@@ -42,6 +42,9 @@ final class RouteACoreSideArbiterSpec extends AnyFunSpec with ChiselSim {
   }
   private def init(dut: RouteACoreSideArbiter): Unit = {
     dut.io.candidate_in.valid.poke(false.B); dut.io.read_candidate_in.valid.poke(false.B); dut.io.core_mem_req.ready.poke(false.B)
+    dut.io.direct_lease_eligibility_query_out.ready.poke(false.B)
+    dut.io.direct_lease_eligibility_in.valid.poke(false.B)
+    dut.io.direct_lease_commit_out.ready.poke(false.B)
     dut.io.core_mem_rsp_in.valid.poke(false.B); dut.io.source_delivery_out.ready.poke(true.B)
     dut.io.drain_collection_enable.poke(false.B)
     dut.io.reclaim_maintenance_enable.poke(false.B)

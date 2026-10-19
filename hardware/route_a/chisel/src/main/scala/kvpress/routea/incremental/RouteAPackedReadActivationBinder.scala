@@ -608,6 +608,7 @@ final class RouteAFunctionalSidecarDeliveryAdapter(p: RouteASkeletonParameters) 
   allocation.target_descriptor.direct_source_last := false.B
   allocation.target_descriptor.direct_pending_association := 0.U.asTypeOf(new DirectPendingAssociationId(p))
   allocation.target_descriptor.direct_pending_storage_generation := 0.U
+  allocation.target_descriptor.direct_pending_association_valid := false.B
   allocation.target_descriptor.pending_explicit_empty := false.B
 
   val allocationAckMatches = io.registry_allocation_ack_in.bits.allocation.asUInt === allocation.asUInt

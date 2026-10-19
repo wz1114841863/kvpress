@@ -89,6 +89,25 @@ final class DirectPendingCandidateAccepted(p: RouteASkeletonParameters) extends 
   val association_id = new DirectPendingAssociationId(p)
 }
 
+/** Read-only descriptor-owner proof request for one stored R2 direct slot. */
+final class DirectPendingLeaseEligibilityQuery(p: RouteASkeletonParameters) extends Bundle {
+  val association_id = new DirectPendingAssociationId(p)
+  val pending_storage_generation = UInt(p.sourceGenerationWidth.W)
+}
+
+/** Immutable response to an eligibility query; it never creates lease state. */
+final class DirectPendingLeaseEligibility(p: RouteASkeletonParameters) extends Bundle {
+  val association_id = new DirectPendingAssociationId(p)
+  val eligible = Bool()
+  val permanent_failure = Bool()
+}
+
+/** One lease-state request that is legal only on the joint R2/R1 issue fire. */
+final class DirectPendingLeaseCommit(p: RouteASkeletonParameters) extends Bundle {
+  val association_id = new DirectPendingAssociationId(p)
+  val pending_storage_generation = UInt(p.sourceGenerationWidth.W)
+}
+
 /**
   * Immutable typed routing descriptor supplied by the named producer before
   * R2 sees a candidate. R2 transports but never decodes it; the registry
@@ -121,6 +140,7 @@ final class DeliveryTargetDescriptor(p: RouteASkeletonParameters) extends Bundle
   // through R2 and the registry. Non-direct classes leave these fields inert.
   val direct_pending_association = new DirectPendingAssociationId(p)
   val direct_pending_storage_generation = UInt(p.sourceGenerationWidth.W)
+  val direct_pending_association_valid = Bool()
   val pending_explicit_empty = Bool()
 }
 
@@ -1193,6 +1213,9 @@ object RouteAChannels {
   def read_issue_descriptor(p: RouteASkeletonParameters) = Decoupled(new ReadIssueDescriptor(p))
   def p3_pack_read_work(p: RouteASkeletonParameters) = Decoupled(new P3PackReadWork(p))
   def direct_pending_read_work(p: RouteASkeletonParameters) = Decoupled(new DirectPendingReadWork(p))
+  def direct_pending_lease_eligibility_query(p: RouteASkeletonParameters) = Decoupled(new DirectPendingLeaseEligibilityQuery(p))
+  def direct_pending_lease_eligibility(p: RouteASkeletonParameters) = Decoupled(new DirectPendingLeaseEligibility(p))
+  def direct_pending_lease_commit(p: RouteASkeletonParameters) = Decoupled(new DirectPendingLeaseCommit(p))
   def packed_s2_read_work(p: RouteASkeletonParameters) = Decoupled(new PackedS2ReadWork(p))
   def sidecar_read_work(p: RouteASkeletonParameters) = Decoupled(new SidecarReadWork(p))
   def packed_source_demand(p: RouteASkeletonParameters) = Decoupled(new PackedSourceDemand(p))

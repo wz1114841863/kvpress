@@ -71,6 +71,54 @@ git diff --check                               pass
 The structural guard now requires the materializer's accepted-observation
 connection to R2 in addition to the batch-1 owner chain.
 
+## Implementation record — batch 2b: read-only eligibility and joint issue lease
+
+Batch 2b connects the pending descriptor owner's read-only eligibility query
+and its state-changing lease commit to the existing R2 direct class in
+`RouteAMeasurementDut`. A direct candidate is first stored by the pre-existing
+R2 ingress. R2 then queries the exact immutable association ID and storage
+generation; a descriptor-owner response merely caches grantability for that
+stored slot. It does not allocate a lease.
+
+Only after the existing R1 path reports the external request ready does R2
+present `DirectPendingLeaseCommit`. The shared request is valid only while the
+owner is ready to commit, so `r2.core_mem_req.fire`,
+`r1.core_mem_req_in.fire`, `external_core_mem_if_v1.request.fire`, and the
+lease-commit fire coincide. No external ready means no lease commit or owner
+state mutation. The production route connects all three channels directly:
+
+```text
+R2 direct stored slot
+  -> PendingDescriptorOwner.lease_eligibility_query_in
+  -> R2 cached read-only eligibility
+  -> PendingDescriptorOwner.lease_commit_in at existing joint issue fire
+```
+
+The Full-KV measurement DUT and the historical composition-only top keep these
+Route-A-only sideband ports inactive. The latter is not used as a measurement
+DUT. The legacy direct-path regression was upgraded to register a matching
+production descriptor owner; it no longer ties off lease traffic or supplies a
+fabricated eligibility response. Its directed ready-low check observes that no
+lease commit is asserted until the real external request becomes ready.
+
+Verification on 2026-10-19:
+
+```text
+env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'Test / compile'  pass
+testOnly RouteADirectPendingReadPathSpec                                      5/5
+git diff --check                                                              pass
+```
+
+`RouteACoreSideArbiterSpec` is temporarily not a valid execution signal after
+this carrier expansion: its direct-root ChiselSim Verilator bridge emits calls
+for several nested association fields without the corresponding DPI symbols.
+The same R2 implementation is exercised as a child in the passing production
+descriptor-owner path above. This is a simulator bridge/code-generation defect
+at that root interface, not a semantic failing assertion; it must be repaired
+or replaced by a flattened R2 harness before the final MR-1B non-regression
+record. It does not authorize skipping the later cancel, transition, abort,
+R6-terminal, or lease-release directed cases.
+
 ## Narrow purpose and revision decision
 
 MR-1B closes only this missing association:

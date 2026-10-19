@@ -564,6 +564,9 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
     // stored in R2.  It is emitted only on the existing ingress fire; it is
     // neither a grant nor a lease acquisition.
     val direct_candidate_accepted_out = Output(Valid(new DirectPendingCandidateAccepted(p)))
+    val direct_lease_eligibility_query_out = RouteAChannels.direct_pending_lease_eligibility_query(p)
+    val direct_lease_eligibility_in = Flipped(RouteAChannels.direct_pending_lease_eligibility(p))
+    val direct_lease_commit_out = RouteAChannels.direct_pending_lease_commit(p)
     val drain_collection_enable = Input(Bool())
     // R6 opens this only for the retirement descriptor-invalidating carrier.
     // It never reopens ordinary data-path candidate ingress during drain.
@@ -582,6 +585,10 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   val readCursor = RegInit(0.U(2.W))
   val outstandingValid = RegInit(VecInit(Seq.fill(requestIdSlots)(false.B)))
   val outstanding = Reg(Vec(requestIdSlots, new SourceCandidate(p)))
+  val directEligibilityKnown = RegInit(VecInit(Seq.fill(totalSlots)(false.B)))
+  val directEligibilityGranted = RegInit(VecInit(Seq.fill(totalSlots)(false.B)))
+  val directQueryInFlight = RegInit(false.B)
+  val directQuerySlot = Reg(UInt(slotIndexWidth.W))
 
   io.direct_candidate_accepted_out.valid := false.B
   io.direct_candidate_accepted_out.bits := 0.U.asTypeOf(new DirectPendingCandidateAccepted(p))
@@ -638,14 +645,16 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
       kind === p.coreMemoryWriteRequestCode.U && candidate.r1_request.expected_fragment_count === 1.U
   }
 
-  private def candidateEligible(candidate: SourceCandidate): Bool = {
+  private def candidateEligible(candidate: SourceCandidate, directLeaseEligible: Bool = true.B): Bool = {
     val c = candidate.candidate_class
     val sourceReady = MuxCase(
       false.B,
       Seq(
         (c === p.r2S2FullClassCode.U) -> commonReadReady(candidate),
         (c === p.r2S2PackedClassCode.U) -> (commonReadReady(candidate) && predicate(candidate, RouteAR2PredicateBits.PackedMetadataPublished)),
-        (c === p.r2DirectPendingClassCode.U) -> (commonReadReady(candidate) && predicate(candidate, RouteAR2PredicateBits.PendingAuthoritative)),
+        (c === p.r2DirectPendingClassCode.U) -> (commonReadReady(candidate) &&
+          predicate(candidate, RouteAR2PredicateBits.PendingAuthoritative) &&
+          (!candidate.delivery_target_descriptor.direct_pending_association_valid || directLeaseEligible)),
         (c === p.r2PackReadClassCode.U) -> (commonReadReady(candidate) && predicate(candidate, RouteAR2PredicateBits.PendingAuthoritative) && predicate(candidate, RouteAR2PredicateBits.P3StageReadyOwned)),
         (c === p.r2PackWriteClassCode.U) -> (commonWriteReady(candidate) && predicate(candidate, RouteAR2PredicateBits.PageAllocated) && predicate(candidate, RouteAR2PredicateBits.P3StageComplete) && predicate(candidate, RouteAR2PredicateBits.P3StageOwned)),
         (c === p.r2DescriptorMaintenanceClassCode.U) -> commonWriteReady(candidate),
@@ -679,7 +688,12 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   var rotatingReadIndex: UInt = 0.U(slotIndexWidth.W)
   for (offset <- 0 until readGroups) {
     val group = (readCursor + offset.U) % readGroups.U
-    val (found, index) = choose(slot => slotValid(slot) && candidateEligible(slots(slot)) && isReadClass(slots(slot)) && readGroup(slots(slot)) === group)
+    val (found, index) = choose(slot => slotValid(slot) &&
+      candidateEligible(slots(slot), !isReadClass(slots(slot)) ||
+        slots(slot).candidate_class =/= p.r2DirectPendingClassCode.U ||
+        !slots(slot).delivery_target_descriptor.direct_pending_association_valid ||
+        (directEligibilityKnown(slot) && directEligibilityGranted(slot))) &&
+      isReadClass(slots(slot)) && readGroup(slots(slot)) === group)
     rotatingReadIndex = Mux(!rotatingReadFound && found, index, rotatingReadIndex)
     rotatingReadFound = rotatingReadFound || found
   }
@@ -699,8 +713,47 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   val finalCandidate = slots(finalIndex)
   val finalFound = Mux(globalWinnerIsRead, rotatingReadFound, writeFound)
 
-  io.core_mem_req.valid := finalFound
+  val finalIsDirect = finalFound && finalCandidate.candidate_class === p.r2DirectPendingClassCode.U &&
+    finalCandidate.delivery_target_descriptor.direct_pending_association_valid
+  io.direct_lease_commit_out.bits.association_id := finalCandidate.delivery_target_descriptor.direct_pending_association
+  io.direct_lease_commit_out.bits.pending_storage_generation :=
+    finalCandidate.delivery_target_descriptor.direct_pending_storage_generation
+  // R1's ready is the existing external-request readiness. A direct lease is
+  // requested only when that same R1 issue can fire; owner ready gates the
+  // presented request, so neither event can occur alone.
+  io.direct_lease_commit_out.valid := finalIsDirect && io.core_mem_req.ready
+  io.core_mem_req.valid := finalFound && (!finalIsDirect || io.direct_lease_commit_out.ready)
   io.core_mem_req.bits := finalCandidate.r1_request
+
+  val directQueryCandidateFound = VecInit((0 until totalSlots).map(slot =>
+    slotValid(slot) && slots(slot).candidate_class === p.r2DirectPendingClassCode.U &&
+      slots(slot).delivery_target_descriptor.direct_pending_association_valid &&
+      !directEligibilityKnown(slot),
+  )).asUInt.orR
+  val directQueryCandidateSlot = PriorityEncoder(VecInit((0 until totalSlots).map(slot =>
+    slotValid(slot) && slots(slot).candidate_class === p.r2DirectPendingClassCode.U &&
+      slots(slot).delivery_target_descriptor.direct_pending_association_valid &&
+      !directEligibilityKnown(slot),
+  )))
+  io.direct_lease_eligibility_query_out.valid := directQueryCandidateFound && !directQueryInFlight
+  io.direct_lease_eligibility_query_out.bits.association_id :=
+    slots(directQueryCandidateSlot).delivery_target_descriptor.direct_pending_association
+  io.direct_lease_eligibility_query_out.bits.pending_storage_generation :=
+    slots(directQueryCandidateSlot).delivery_target_descriptor.direct_pending_storage_generation
+  when(io.direct_lease_eligibility_query_out.fire) {
+    directQueryInFlight := true.B
+    directQuerySlot := directQueryCandidateSlot
+  }
+  val eligibilityMatches = directQueryInFlight && slotValid(directQuerySlot) &&
+    slots(directQuerySlot).candidate_class === p.r2DirectPendingClassCode.U &&
+    io.direct_lease_eligibility_in.bits.association_id.asUInt ===
+      slots(directQuerySlot).delivery_target_descriptor.direct_pending_association.asUInt
+  io.direct_lease_eligibility_in.ready := eligibilityMatches
+  when(io.direct_lease_eligibility_in.fire) {
+    directEligibilityKnown(directQuerySlot) := true.B
+    directEligibilityGranted(directQuerySlot) := io.direct_lease_eligibility_in.bits.eligible
+    directQueryInFlight := false.B
+  }
 
   val selectedRequestStalled = io.core_mem_req.valid && !io.core_mem_req.ready
   val anyFreeSlot = !slotValid.reduce(_ && _)
@@ -731,7 +784,10 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
     val freeIndex = PriorityEncoder(VecInit(slotValid.map(! _)))
     slotValid(freeIndex) := true.B
     slots(freeIndex) := acceptedIncoming
-    when(acceptedIncoming.candidate_class === p.r2DirectPendingClassCode.U) {
+    directEligibilityKnown(freeIndex) := false.B
+    directEligibilityGranted(freeIndex) := false.B
+    when(acceptedIncoming.candidate_class === p.r2DirectPendingClassCode.U &&
+      acceptedIncoming.delivery_target_descriptor.direct_pending_association_valid) {
       io.direct_candidate_accepted_out.valid := true.B
       io.direct_candidate_accepted_out.bits.association_id :=
         acceptedIncoming.delivery_target_descriptor.direct_pending_association
@@ -740,6 +796,8 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
 
   when(io.core_mem_req.fire) {
     slotValid(finalIndex) := false.B
+    directEligibilityKnown(finalIndex) := false.B
+    directEligibilityGranted(finalIndex) := false.B
     when(isLaunchRequest(finalCandidate)) {
       val rid = finalCandidate.r1_request.transaction_identity.request_id
       outstandingValid(rid) := true.B
@@ -804,7 +862,12 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   // a_fifo_credit_losslessness: each issue arises from an eligible stored
   // candidate; a reservation is represented by exactly one outstanding RID.
   when(io.core_mem_req.fire) {
-    assert(candidateEligible(finalCandidate))
+    assert(candidateEligible(finalCandidate, !finalIsDirect ||
+      (directEligibilityKnown(finalIndex) && directEligibilityGranted(finalIndex))))
+    when(finalIsDirect) {
+      assert(io.direct_lease_commit_out.fire,
+        "MR-1B direct R2 issue must coincide with its lease commit")
+    }
   }
   when(io.source_delivery_out.fire && response.last) {
     assert(matchingResponse)
@@ -914,6 +977,7 @@ final class RouteAR3DirectPendingReadProducer(p: RouteASkeletonParameters) exten
   io.read_issue_out.bits.target_descriptor.direct_source_last := work.source_last
   io.read_issue_out.bits.target_descriptor.direct_pending_association := work.association_id
   io.read_issue_out.bits.target_descriptor.direct_pending_storage_generation := work.pending_storage_generation
+  io.read_issue_out.bits.target_descriptor.direct_pending_association_valid := true.B
   io.read_issue_out.bits.target_descriptor.pending_explicit_empty := false.B
   io.work_in.ready := workLegal && io.read_issue_out.ready
 }

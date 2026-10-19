@@ -28,6 +28,9 @@ private final class RouteAFairReclaimHarness(p: RouteASkeletonParameters) extend
   StructuralTieOff.source(r5.io.descriptor_location_request_in)
   StructuralTieOff.sink(r5.io.descriptor_location_grant_out)
   val r2 = Module(new RouteACoreSideArbiter(p))
+  StructuralTieOff.sink(r2.io.direct_lease_eligibility_query_out)
+  StructuralTieOff.source(r2.io.direct_lease_eligibility_in)
+  StructuralTieOff.sink(r2.io.direct_lease_commit_out)
   val r1 = Module(new RouteACoreMemIfV1(p))
 
   r6.io.frontend_lifecycle_req <> io.frontend

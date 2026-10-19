@@ -303,12 +303,19 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
     val registration_in = Flipped(RouteAChannels.pending_source_descriptor_registration(p))
     val association_query_in = Flipped(RouteAChannels.pending_direct_association_query(p))
     val association_declaration_out = RouteAChannels.pending_direct_association_declaration(p)
+    val lease_eligibility_query_in = Flipped(RouteAChannels.direct_pending_lease_eligibility_query(p))
+    val lease_eligibility_out = RouteAChannels.direct_pending_lease_eligibility(p)
+    val lease_commit_in = Flipped(RouteAChannels.direct_pending_lease_commit(p))
   })
 
   val registered = RegInit(false.B)
   val registration = Reg(new PendingSourceDescriptorRegistration(p))
   val declarationPending = RegInit(false.B)
   val declaration = Reg(new PendingDirectAssociationDeclaration(p))
+  val pendingAuthoritative = RegInit(false.B)
+  val leaseLive = RegInit(false.B)
+  val eligibilityPending = RegInit(false.B)
+  val eligibility = Reg(new DirectPendingLeaseEligibility(p))
   private def sameIdentity(left: TransactionIdentity, right: TransactionIdentity): Bool = left.asUInt === right.asUInt
   private def sameInstance(left: SourceInstance, right: SourceInstance): Bool = left.asUInt === right.asUInt
   private def sameKey(left: PendingDescriptorKey, right: PendingDescriptorKey): Bool = left.asUInt === right.asUInt
@@ -319,6 +326,8 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
   when(io.registration_in.fire) {
     registration := io.registration_in.bits
     registered := true.B
+    pendingAuthoritative := true.B
+    leaseLive := false.B
   }
 
   val query = io.association_query_in.bits
@@ -342,10 +351,41 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
   io.association_declaration_out.bits := declaration
   when(io.association_declaration_out.fire) { declarationPending := false.B }
 
+  val leaseQuery = io.lease_eligibility_query_in.bits
+  val leaseQueryMatches = registered &&
+    sameIdentity(leaseQuery.association_id.transaction_identity, registration.transaction_identity) &&
+    sameInstance(leaseQuery.association_id.pending_instance, registration.pending_instance) &&
+    sameKey(leaseQuery.association_id.key, registration.key) &&
+    leaseQuery.pending_storage_generation === registration.pending_storage_generation
+  io.lease_eligibility_query_in.ready := !eligibilityPending
+  when(io.lease_eligibility_query_in.fire) {
+    eligibility.association_id := leaseQuery.association_id
+    eligibility.eligible := leaseQueryMatches && pendingAuthoritative && !leaseLive
+    eligibility.permanent_failure := !leaseQueryMatches || !pendingAuthoritative
+    eligibilityPending := true.B
+  }
+  io.lease_eligibility_out.valid := eligibilityPending
+  io.lease_eligibility_out.bits := eligibility
+  when(io.lease_eligibility_out.fire) { eligibilityPending := false.B }
+
+  val commit = io.lease_commit_in.bits
+  val commitMatches = registered && !leaseLive && pendingAuthoritative &&
+    sameIdentity(commit.association_id.transaction_identity, registration.transaction_identity) &&
+    sameInstance(commit.association_id.pending_instance, registration.pending_instance) &&
+    sameKey(commit.association_id.key, registration.key) &&
+    commit.pending_storage_generation === registration.pending_storage_generation
+  io.lease_commit_in.ready := commitMatches
+  when(io.lease_commit_in.fire) { leaseLive := true.B }
+
   val heldDeclaration = RegEnable(io.association_declaration_out.bits,
     io.association_declaration_out.valid && !io.association_declaration_out.ready)
   when(RegNext(io.association_declaration_out.valid && !io.association_declaration_out.ready, false.B)) {
     assert(io.association_declaration_out.bits.asUInt === heldDeclaration.asUInt)
+  }
+  val heldEligibility = RegEnable(io.lease_eligibility_out.bits,
+    io.lease_eligibility_out.valid && !io.lease_eligibility_out.ready)
+  when(RegNext(io.lease_eligibility_out.valid && !io.lease_eligibility_out.ready, false.B)) {
+    assert(io.lease_eligibility_out.bits.asUInt === heldEligibility.asUInt)
   }
 }
 

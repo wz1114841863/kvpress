@@ -260,6 +260,12 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     // merges merely present ref-bound records; this top does not select one.
     arbiter.io.candidate_in <> r2_write_ingress.io.candidate_out
     arbiter.io.read_candidate_in <> r2_read_ingress.io.candidate_out
+    // The legacy composition shell does not instantiate the MR-1B pending
+    // descriptor owner.  Its direct-pending path remains inactive; the
+    // measurement DUT owns the production lease connection.
+    StructuralTieOff.sink(arbiter.io.direct_lease_eligibility_query_out)
+    StructuralTieOff.source(arbiter.io.direct_lease_eligibility_in)
+    StructuralTieOff.sink(arbiter.io.direct_lease_commit_out)
 
     core_memory.io.core_mem_req_in <> arbiter.io.core_mem_req
     arbiter.io.core_mem_rsp_in <> core_memory.io.core_mem_rsp

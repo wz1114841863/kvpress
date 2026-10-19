@@ -223,6 +223,9 @@ final class RouteARTL265eSameInstanceWitnessHarness(
     StructuralTieOff.source(readIngress.io.r3_direct_pending_in)
     r2.io.read_candidate_in <> readIngress.io.candidate_out
     StructuralTieOff.source(r2.io.candidate_in)
+    StructuralTieOff.sink(r2.io.direct_lease_eligibility_query_out)
+    StructuralTieOff.source(r2.io.direct_lease_eligibility_in)
+    StructuralTieOff.sink(r2.io.direct_lease_commit_out)
     r2.io.drain_collection_enable := r6.io.drain_collection_enable
     r2.io.reclaim_maintenance_enable := false.B
     r1.io.core_mem_req_in <> r2.io.core_mem_req

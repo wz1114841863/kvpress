@@ -62,6 +62,9 @@ final class DualMeasurementDutStructuralSpec extends AnyFunSpec with ChiselSim {
       "directAssociationMaterializer.io.direct_candidate_accepted_in <> arbiter.io.direct_candidate_accepted_out",
       "delivery.io.r3_direct_pending_in <> directPendingIssue.io.candidate_out",
       "readIngress.io.r3_direct_pending_in <> delivery.io.r3_direct_pending_out",
+      "pendingDescriptorOwner.io.lease_eligibility_query_in <> arbiter.io.direct_lease_eligibility_query_out",
+      "arbiter.io.direct_lease_eligibility_in <> pendingDescriptorOwner.io.lease_eligibility_out",
+      "pendingDescriptorOwner.io.lease_commit_in <> arbiter.io.direct_lease_commit_out",
       "directPendingReadEndpoint.io.resolved_fragment_in <> endpointDemux.io.direct_pending_out",
     ).foreach(connection => assert(source.contains(connection), s"missing W0-R1 connection: $connection"))
   }
