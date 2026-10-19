@@ -31,7 +31,10 @@ explicit user approval. The targeted Full-KV source audit initially found the
 three legal baseline paths absent. W0 has now completed its bounded dual-DUT
 functional contour, and MR-1A has completed the approved Route-A-hot plus
 Full-KV common lifecycle/status integration. MR-1B direct-pending source-plan
-association remains a separately scoped, unapproved measurement-RTL gap. None
+association now has a narrow
+[`mr1b_direct_pending_cross_owner_contract_proposal.md`](mr1b_direct_pending_cross_owner_contract_proposal.md)
+awaiting user approval; independent MR-2 array-only storage-boundary work may
+proceed. None
 of this is a selected future synthesis top or physical implementation. The separate
 [`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md)
 has restored the ignored A4.14.1 report/input closure locally and passed its

@@ -29,7 +29,9 @@ historical review records, or the normative architecture contract.
    next for MBR.1's approved paired Full-KV fairness plan, then
    [`full_kv_baseline_path_audit_20261016.md`](full_kv_baseline_path_audit_20261016.md)
    for the completed W0/MR-1A bounded measurement-RTL evidence and the
-   separately unapproved MR-1B direct-pending gap. Neither is a selected
+   separately proposed MR-1B direct-pending contract correction. Read
+   [`mr1b_direct_pending_cross_owner_contract_proposal.md`](mr1b_direct_pending_cross_owner_contract_proposal.md)
+   only when working on that gap. Neither is a selected
    synthesis top.
 
 Use these only when the question needs the extra detail:
@@ -269,8 +271,9 @@ corrections and received explicit user approval. The targeted Full-KV audit
 initially found all three legal baseline path segments absent; W0 has since
 completed its bounded dual-DUT functional contour, and MR-1A has completed
 its approved Route-A-hot and Full-KV common lifecycle/status integration.
-MR-1B direct-pending source-plan association remains a separately scoped
-measurement-RTL gap; no MBR review repeats. None of these records selects a
+MR-1B direct-pending source-plan association has a contract proposal awaiting
+user approval; no MBR review repeats. Independent MR-2 array-only storage
+boundary work may proceed without resolving that association. None of these records selects a
 future top or begins physical realization work. See
 [`synthesis_realization_partition.md`](synthesis_realization_partition.md)
 and its manifest.  No
@@ -294,7 +297,8 @@ RTL3 completion review
   -> Full-KV legal-path source audit (complete)
   -> separately authorized W0 dual-DUT Chisel implementation (complete)
   -> MR-1A Route-A-hot and Full-KV common measurement integration (complete)
-  -> separately scoped direct-pending association closure (MR-1B; not yet authorized)
+  -> MR-1B direct-pending contract approval and scoped implementation
+  -> MR-2 independent array-only storage-wrapper realization
   -> synthesizable control/numeric wrapper implementation and verification
   -> targeted synthesis/formal/lint and physical proxy calibration
   -> profiling of the selected realized design
@@ -326,8 +330,9 @@ frozen.
 > The Full-KV legal-path audit originally found all three baseline path
 > segments missing. W0 has completed its bounded dual-DUT functional scope,
 > and MR-1A has completed the Route-A-hot plus Full-KV common lifecycle/status
-> scope. Direct-pending source-plan association remains the next separately
-> scoped measurement gap (MR-1B) and is not authorized by MR-1A. None selects
+> scope. Direct-pending source-plan association has a narrow contract proposal
+> awaiting approval in `analysis/mr1b_direct_pending_cross_owner_contract_proposal.md`.
+> MR-2 array-only storage-boundary work may proceed independently. None selects
 > a top or begins physical realization work.
 > Read
 > `analysis/synthesis_realization_partition.md` and
