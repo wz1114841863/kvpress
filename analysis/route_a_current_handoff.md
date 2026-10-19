@@ -273,7 +273,10 @@ completed its bounded dual-DUT functional contour, and MR-1A has completed
 its approved Route-A-hot and Full-KV common lifecycle/status integration.
 MR-1B direct-pending source-plan association has a contract proposal awaiting
 user approval; no MBR review repeats. Independent MR-2 array-only storage
-boundary work may proceed without resolving that association. None of these records selects a
+boundary work may proceed without resolving that association. MR-2-P3 has
+isolated and directed-tested the P3 functional array interior; see
+[`mr2_p3_array_boundary_contract.md`](mr2_p3_array_boundary_contract.md).
+None of these records selects a
 future top or begins physical realization work. See
 [`synthesis_realization_partition.md`](synthesis_realization_partition.md)
 and its manifest.  No

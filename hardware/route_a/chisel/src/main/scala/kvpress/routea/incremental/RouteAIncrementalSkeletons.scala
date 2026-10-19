@@ -1183,6 +1183,47 @@ final class RouteAM2ReferenceProtocolProvider(p: RouteASkeletonParameters) exten
   }
 }
 
+/**
+  * MR-2 logical P3 array interior, isolated from the R3 control wrapper.
+  *
+  * The named payload and sidecar channels preserve the existing functional
+  * reference behavior only.  They are logical accepted-transaction accesses,
+  * not a selection of SRAM ports, banking, latency, macro, controller, clock,
+  * or PPA implementation.  R3 retains every fill, ordering, durability,
+  * pack-read/write, publication, and release decision around this child.
+  */
+final class RouteAP3StageArrayBoundary(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_p3_stage_array_boundary"
+
+  private val stages = 36
+  val io = IO(new Bundle {
+    val payload_write_enable = Input(Bool())
+    val payload_write_layer = Input(UInt(RouteAAnchorWidths.LayerWidth.W))
+    val payload_write_fragment = Input(UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W))
+    val payload_write_data = Input(UInt(RouteAAnchorWidths.CoreDataWidth.W))
+    val payload_read_layer = Input(UInt(RouteAAnchorWidths.LayerWidth.W))
+    val payload_read_fragment = Input(UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W))
+    val payload_read_data = Output(UInt(RouteAAnchorWidths.CoreDataWidth.W))
+    val sidecar_write_enable = Input(Bool())
+    val sidecar_write_layer = Input(UInt(RouteAAnchorWidths.LayerWidth.W))
+    val sidecar_write_ordinal = Input(UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W))
+    val sidecar_write_data = Input(UInt(64.W))
+  })
+
+  val payload = Mem(stages * 512, UInt(RouteAAnchorWidths.CoreDataWidth.W))
+  val sidecar = Mem(stages * 64, UInt(64.W))
+  private def payloadIndex(layer: UInt, fragment: UInt): UInt = layer * 512.U + fragment
+  private def sidecarIndex(layer: UInt, ordinal: UInt): UInt = layer * 64.U + ordinal
+
+  when(io.payload_write_enable) {
+    payload.write(payloadIndex(io.payload_write_layer, io.payload_write_fragment), io.payload_write_data)
+  }
+  when(io.sidecar_write_enable) {
+    sidecar.write(sidecarIndex(io.sidecar_write_layer, io.sidecar_write_ordinal), io.sidecar_write_data)
+  }
+  io.payload_read_data := payload.read(payloadIndex(io.payload_read_layer, io.payload_read_fragment))
+}
+
 /** RTL1.3 R3 control state: no P3 payload macro, M2 macro, or HBM controller. */
 final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_m2_p3_wrapper"
@@ -1264,16 +1305,18 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val stageTag = Reg(Vec(stages, UInt(p.transactionGroupTagWidth.W)))
   val stageM2Members = RegInit(VecInit(Seq.fill(stages)(0.U(2.W))))
   val stageDescriptorRequiredMask = Reg(Vec(stages, UInt(2.W)))
-  // Replaceable functional/reference backing for the fixed logical P3
-  // envelope: 64 records x 8 ordered 64-B fragments per layer, plus the
-  // 8-B logical-position sidecar. This does not choose an SRAM macro, port
-  // count, clock schedule, or physical HBM representation.
-  // Flat indexing retains the exact 36 x 512 and 36 x 64 logical capacities
-  // while deliberately leaving the future macro/port organization replaceable.
-  val stagePayload = Mem(stages * 512, UInt(RouteAAnchorWidths.CoreDataWidth.W))
-  val stageSidecar = Mem(stages * 64, UInt(64.W))
-  private def payloadStoreIndex(layer: UInt, fragment: UInt): UInt = layer * 512.U + fragment
-  private def sidecarStoreIndex(layer: UInt, ordinal: UInt): UInt = layer * 64.U + ordinal
+  // MR-2 keeps only the P3 array interior in the named child.  These logical
+  // access wires describe accepted functional transactions, not physical
+  // macro ports; all R3 state and protocol checks remain in this wrapper.
+  val stageStorage = Module(new RouteAP3StageArrayBoundary(p))
+  stageStorage.io.payload_write_enable := false.B
+  stageStorage.io.payload_write_layer := 0.U
+  stageStorage.io.payload_write_fragment := 0.U
+  stageStorage.io.payload_write_data := 0.U
+  stageStorage.io.sidecar_write_enable := false.B
+  stageStorage.io.sidecar_write_layer := 0.U
+  stageStorage.io.sidecar_write_ordinal := 0.U
+  stageStorage.io.sidecar_write_data := 0.U
   val stageDescriptorPrerequisite = RegInit(VecInit(Seq.fill(stages)(false.B)))
   // The following is a logical, per-record association ledger.  It contains
   // sidecar/payload references only, never K/V data or authoritative residency.
@@ -1306,6 +1349,8 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val packedWriteIdentity = Reg(new TransactionIdentity)
   val packedWriteSequence = RegInit(0.U((RouteAAnchorWidths.RequestIdWidth + RouteAAnchorWidths.IncarnationWidth).W))
   val payloadDurablePending = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  stageStorage.io.payload_read_layer := packedWriteLayer
+  stageStorage.io.payload_read_fragment := packedWriteFragment
 
   val claimAckValid = RegInit(false.B)
   val claimAckLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
@@ -1548,7 +1593,10 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
       stageState(fragmentLayer) := StateFaulted
     }.otherwise {
       val nextFragment = stageFragmentNext(fragmentLayer) + 1.U
-      stagePayload.write(payloadStoreIndex(fragmentLayer, fragment.fragment_index), fragment.data)
+      stageStorage.io.payload_write_enable := true.B
+      stageStorage.io.payload_write_layer := fragmentLayer
+      stageStorage.io.payload_write_fragment := fragment.fragment_index
+      stageStorage.io.payload_write_data := fragment.data
       stageFragmentNext(fragmentLayer) := nextFragment
       when(stageState(fragmentLayer) === StateReserved) { stageState(fragmentLayer) := StateFilling }
       when(fragment.last && stageSidecarNext(fragmentLayer) === stageValidRecords(fragmentLayer)) {
@@ -1571,7 +1619,10 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   io.p3_sidecar_bind_in.ready := sidecarMatches
   when(io.p3_sidecar_bind_in.fire) {
     val nextSidecar = stageSidecarNext(sidecarLayer) + 1.U
-    stageSidecar.write(sidecarStoreIndex(sidecarLayer, sidecarOrdinal), sidecar.logical_position)
+    stageStorage.io.sidecar_write_enable := true.B
+    stageStorage.io.sidecar_write_layer := sidecarLayer
+    stageStorage.io.sidecar_write_ordinal := sidecarOrdinal
+    stageStorage.io.sidecar_write_data := sidecar.logical_position
     stageSidecarNext(sidecarLayer) := nextSidecar
     when(stageFragmentNext(sidecarLayer) === expectedFragments(sidecarLayer) && nextSidecar === stageValidRecords(sidecarLayer)) {
       stageState(sidecarLayer) := StateComplete
@@ -1673,7 +1724,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   io.p3_packed_write_candidate_out.bits.r1_request.fragment_index := packedWriteFragment
   io.p3_packed_write_candidate_out.bits.r1_request.last := packedWriteFragment + 1.U === packedWriteExpected
   io.p3_packed_write_candidate_out.bits.r1_request.data := Mux(
-    packedWriteState === WriteData, stagePayload.read(payloadStoreIndex(packedWriteLayer, packedWriteFragment)), 0.U,
+    packedWriteState === WriteData, stageStorage.io.payload_read_data, 0.U,
   )
   when(io.p3_packed_write_candidate_out.fire) {
     when(packedWriteState === WriteRequest) {

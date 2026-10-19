@@ -34,7 +34,9 @@ Full-KV common lifecycle/status integration. MR-1B direct-pending source-plan
 association now has a narrow
 [`mr1b_direct_pending_cross_owner_contract_proposal.md`](mr1b_direct_pending_cross_owner_contract_proposal.md)
 awaiting user approval; independent MR-2 array-only storage-boundary work may
-proceed. None
+proceed. The P3-only first batch is recorded in
+[`mr2_p3_array_boundary_contract.md`](mr2_p3_array_boundary_contract.md) and
+remains short of any wrapper selection. None
 of this is a selected future synthesis top or physical implementation. The separate
 [`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md)
 has restored the ignored A4.14.1 report/input closure locally and passed its

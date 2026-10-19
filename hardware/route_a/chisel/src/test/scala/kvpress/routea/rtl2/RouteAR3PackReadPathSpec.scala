@@ -51,6 +51,12 @@ final class RouteAR3PackReadPathHarness(p: RouteASkeletonParameters) extends Mod
   r3.io.admission_authority_in <> io.admission_authority
   r3.io.pending_payload_binding_in <> io.pending_payload_binding
   r3.io.p3_pack_read_work_in <> io.pack_read_work
+  // This legacy RTL2 harness deliberately injects its own checked pack-read
+  // work.  RTL3.9-A added R3's separate owner-produced materializer outputs;
+  // keep them backpressured here so this test neither consumes nor models that
+  // later production path.
+  r3.io.p3_pack_read_materialized_work_out.ready := false.B
+  r3.io.p3_materialized_sidecar_out.ready := false.B
   issueAdapter.io.read_issue_in <> r3.io.p3_pack_read_issue_out
   bridge.io.r3_pack_read_in <> issueAdapter.io.candidate_out
   StructuralTieOff.source(bridge.io.r3_direct_pending_in)
