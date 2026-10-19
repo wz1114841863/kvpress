@@ -30,6 +30,16 @@ This revision makes five decisions that the first proposal left open:
 5. A permanent association failure becomes one typed lifecycle failure, not
    indefinite `ready-low`, a fabricated source release, or a success terminal.
 
+The `DirectPendingReadWork`/candidate exists before any lease commits. The
+lease is state only at the later joint R2/R1 issue edge; it is never a
+precondition for constructing or retaining the immutable work record.
+
+This implementation-level revision closes exactly three protocol points before
+RTL work: (a) work/candidate custody precedes lease state, (b) a stored but
+unissued direct-class candidate has an acknowledged cancellation path, and
+(c) lease eligibility is read-only and separate from the issue-edge state
+commit, including a deterministic pending-to-packed same-cycle priority.
+
 The current live production sources do not carry `source_last` or a complete
 direct-pending descriptor. Consequently the necessary descriptor carrier is a
 real interface addition, not a field that an existing top-level source-plan
@@ -160,11 +170,13 @@ The following interface changes are unavoidable.
    existing endpoint-local generation on open. It emits a new
    `DirectPendingOpenAck { identity, accepted_pending_instance,
    endpoint_generation }` only after this state is live.
-3. The association materializer joins the R6-accepted association copy,
-   `DirectPendingOpenAck`, and the accepted-read lease. It emits exactly one
+3. The association materializer joins only the R6-accepted association copy
+   and `DirectPendingOpenAck`. It then emits exactly one immutable
    `DirectPendingReadWork` using the descriptor owner's handle, destination,
-   ordinal, and `source_last`, and the endpoint's local generation. It is not
-   a selector, authority table, queue, or scheduler.
+   ordinal, and `source_last`, and the endpoint's local generation. The work
+   is retained by the existing direct-class candidate slot before any lease
+   exists; it never waits for, carries, or implies a committed lease. It is
+   not a selector, authority table, queue, or scheduler.
 4. The endpoint uses endpoint-local generation only for typed R1/direct
    fragment and terminal matching. Its GQA commit and `direct_release_out`
    use the latched R6 accepted `pending_instance`. Thus reset, endpoint reuse,
@@ -191,12 +203,43 @@ The current R2 has these distinct events:
 | `r1.core_mem_req_in.fire` | same wire handshake as the preceding R2 fire | identical event |
 | `external_core_mem_if_v1.request.fire` | R1 issues the exact request externally | identical event in the current R1, because R1 only raises ready when the external request is ready |
 
-Thus MR-1B does **not** acquire a lease at R2 ingress. It introduces a
-direct-class-only pre-issue gate: a selected direct candidate may assert
-`core_mem_req.valid` only when the descriptor owner accepts a matching
-`DirectPendingLeaseAcquire`. That handshake and
-`r2.core_mem_req.fire`/R1/external-request fire occur in the same cycle. The
-lease owner checks the descriptor key, descriptor generation, accepted pending
+Thus MR-1B does **not** acquire a lease at R2 ingress. The exact sequence is:
+
+1. The association materializer creates immutable
+   `DirectPendingReadWork { DirectPendingAssociationId, descriptor facts }`
+   before a lease exists. Its existing zero-buffer producer/bridge chain is
+   required to preserve the assertion `work_in.fire iff
+   r2_direct_candidate_in.fire`; that fire stores the candidate in R2 and
+   emits `DirectPendingCandidateAccepted` back to the materializer.
+2. R2 sends a read-only `DirectPendingLeaseEligibilityQuery` for the stored
+   association ID. The descriptor owner returns an exact
+   `DirectPendingLeaseEligible` response only while the descriptor is live,
+   the accepted pending instance/key/generation match, and pending authority
+   is currently present. This response changes no lease state.
+3. A selected direct slot with a matching cached eligibility response may
+   expose the existing `core_mem_req` request. In the same cycle that R1 and
+   the external port make that request fire, R2 presents
+   `DirectPendingLeaseCommit`. The descriptor owner rechecks the same facts
+   and commits the one lease only on that joint fire.
+
+`DirectPendingAssociationId` is the exact cancellation/lease key:
+
+```text
+{ attention transaction_identity, accepted pending SourceInstance,
+  PendingDescriptorKey, endpoint_local_generation }
+```
+
+It is carried in the direct-class candidate's new association sideband through
+the existing producer/bridge/R2 path; non-direct candidates carry no live
+association ID. This carrier is needed because `candidate_id`, request ID, and
+endpoint coordinate alone are not globally unique across reuse.
+
+The direct-class-only pre-issue gate therefore has two separate phases:
+eligibility is a non-mutating descriptor-owner response; state commit occurs
+only at the existing issue fire. `r2.core_mem_req.fire`,
+`r1.core_mem_req_in.fire`, `external_core_mem_if_v1.request.fire`, and
+`DirectPendingLeaseCommit.fire` are required to be the same cycle. The lease
+owner checks the descriptor key, descriptor generation, accepted pending
 instance, and current pending authority at that exact edge, then records one
 lease through the matching typed direct terminal.
 
@@ -208,20 +251,23 @@ create a second arbiter. The cursor still advances only on the existing
 it as not issue-eligible and may select another already-eligible class using
 the frozen ordering rule.
 
-There is no combinational handshake loop: registered R2 candidate fields
-drive lease-acquire `valid`; descriptor-owner `ready` depends only on its
-registered descriptor/authority/lease state, never on R2 ready, R1 ready, or
-external ready; R2 exposes `core_mem_req.valid` only from the registered
-candidate plus lease-ready condition. R1/external ready can withhold the
-single joint fire without mutating the candidate, descriptor, or lease. A
-lease is accepted once because R2 removes the candidate only at the joint
-fire, while the owner marks the exact key live at that same edge.
+There is no combinational handshake loop: registered R2 candidate fields drive
+the eligibility query and later lease-commit `valid`; descriptor-owner
+eligibility/commit readiness depends only on registered descriptor, authority,
+and lease state, never on R2/R1/external readiness. R2 exposes
+`core_mem_req.valid` from a registered candidate plus matching non-mutating
+eligibility and commit-ready condition. The lease-commit `valid` is additionally
+gated by the existing R1-ready/external-ready issue condition, so external
+ready-low cannot commit a lease early. R1/external ready may hold the candidate
+without mutating descriptor state or its eligibility response. A lease is
+accepted once because R2 removes the candidate only at the joint fire while
+the owner marks the exact association ID live at that same edge.
 
 The resulting race rule is:
 
-1. pending-to-packed before the joint fire: descriptor-owner lease `ready`
-   stays low; no R2/R1/external request fires. The association enters the
-   failure/abort path below.
+1. pending-to-packed before the joint fire: descriptor-owner eligibility and
+   commit readiness are withdrawn; no R2/R1/external request fires. The
+   association enters the cancellation/failure/abort path below.
 2. pending-to-packed after the joint fire but before any response: the request
    continues. The live lease pins only response validity for the exact
    handle/storage generation through terminal; authority remains solely with
@@ -232,6 +278,62 @@ The resulting race rule is:
 4. the matching terminal (success or fault) releases the one lease. GQA
    source-release remains a later, distinct lifecycle event and never retains
    a memory-read lease.
+
+If the descriptor owner's pending-to-packed authority-acceptance observation
+and a matching lease-commit are both offered in one cycle, authority transition
+has deterministic priority. The owner rejects the commit, R2 does not issue,
+and the candidate follows cancellation. This conservative same-cycle rule
+never creates a lease or an R1 request after the transition edge.
+
+### Required directed proof points
+
+The first implementation must demonstrate these exact observable boundaries:
+
+| Case | Required observation |
+| --- | --- |
+| candidate before issue | `DirectPendingReadWork` and `direct_candidate_in.fire` occur while no lease state is live; `DirectPendingCandidateAccepted` names the stored association ID |
+| external ready-low | the candidate and read-only eligibility may persist, but R2/R1/external request and `DirectPendingLeaseCommit.fire` are all low and no lease bit changes |
+| ordinary joint issue | the four fire events (`r2.core_mem_req`, `r1.core_mem_req_in`, external request, lease commit) occur together exactly once for the association ID |
+| permanent pre-issue failure | cancel fire/ack removes the exact stored slot; no subsequent request or cursor advance is possible for that ID |
+| transition-versus-issue tie | a same-cycle pending-to-packed acceptance suppresses all four issue/commit fires, then follows cancel, endpoint abort, and R6 failure |
+| post-issue transition | the existing request completes only through its typed R1 terminal and releases exactly its one lease; no cancel or endpoint abort occurs |
+
+## Direct-class cancellation before issue
+
+A stored direct candidate is not self-invalidating. Add the following exact
+carriers:
+
+```text
+DirectPendingCandidateAccepted { DirectPendingAssociationId }
+DirectPendingCandidateCancel    { DirectPendingAssociationId, reason }
+DirectPendingCandidateCancelAck { DirectPendingAssociationId }
+```
+
+The materializer may send cancel only after candidate acceptance and before
+the joint R2/R1 issue. R2 accepts cancel only if the exact direct-class slot is
+still stored and has no issue commit. It removes that slot and returns the
+acknowledgement; no slot, candidate-class credit, or outstanding-R1 identity
+remains live. Candidate removal has priority over selection for the same
+association ID in that cycle: R2 masks it from `core_mem_req.valid`, accepts
+cancel, and does not advance the read cursor. This leaves all noncancelled
+candidate ordering and the existing round-robin update rule unchanged.
+
+Permanent association mismatch, descriptor invalidation, or pending-to-packed
+before issue causes this order:
+
+```text
+descriptor-owner permanent failure
+  -> R2 candidate cancel fire / cancel ack
+  -> endpoint abort fire / abort ack
+  -> R6 pending-source-failure fire
+```
+
+If failure occurs before candidate ingress, the cancellation pair is skipped;
+the materializer aborts any opened endpoint before notifying R6. If reset
+occurs, R2 clears stored candidates and the descriptor owner clears eligibility
+and lease state; no cancel acknowledgement is required across reset. The
+zero-buffer acceptance assertion, no-issue-after-cancel assertion, and
+candidate-slot-count conservation are mandatory Chisel assertions.
 
 ## Temporary backpressure versus permanent failure
 
@@ -288,21 +390,24 @@ success terminal, release, or retire effect.
 Approval of this revised contract authorizes only the following MR-1B work:
 
 - `RouteAInterfaces.scala`: association declaration, endpoint open/ack,
-  descriptor registration/key, direct lease, issue/abort/ack, and typed
+  descriptor registration/key, direct candidate association/accept/cancel
+  sideband, split lease eligibility/commit, issue/abort/ack, and typed
   association-failure carriers;
 - `RouteAIncrementalSkeletons.scala`: paired binder retention, endpoint
   accepted-instance/local-generation relation, descriptor-owner registration
-  and lookup boundary, R2 direct-class pre-issue lease gate, lease-gated
-  association materializer, endpoint abort, and lifecycle failure input;
+  and lookup boundary, R2 direct-class candidate cancellation plus pre-issue
+  eligibility/commit gate, association materializer, endpoint abort, and
+  lifecycle failure input;
 - `RouteAMeasurementDut.scala`: production descriptor-owner boundary plus the
   owner-to-owner direct producer, delivery, terminal, release, and failure
   connections, with no test-only provider or tie-off;
 - directed tests for exact success; descriptor/instance/storage-generation
   mismatch; missing pre-acceptance counterpart; endpoint reuse; stale/reset;
   duplicate; plan/open/lease/R2/R1 backpressure; R1 fault/malformed response;
-  abort-before-issue; no-abort-after-issue; and both sides of pending-to-packed
-  around the joint R2/R1 lease fire; plus W0/MR-1A non-regression and
-  structural guards.
+  candidate-before-lease causality; cancel-before-issue; no-issue-after-cancel;
+  no-abort-after-issue; external-ready-low with no lease state; and both sides
+  of pending-to-packed including the same-cycle priority around the joint
+  R2/R1 lease fire; plus W0/MR-1A non-regression and structural guards.
 
 The approved scope is **single-record MR-1B only**: `valid_count = 1` and one
 immutable `source_last` descriptor fact. A passing MR-1B implementation is not
