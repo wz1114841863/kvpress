@@ -7,7 +7,7 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
-## Current disposition (2026-10-16)
+## Current disposition (2026-10-17)
 
 A4.11--A4.14.1 research DSE, architecture Reviewer-02, Gate-RTL0, RTL1,
 RTL2, and RTL3 functional-subsystem closure have each completed at their
@@ -27,10 +27,12 @@ planning scopes.  MBR.0 (Measurement Boundary Review) has passed human review
 for its candidate control/protocol measurement cut and complete
 source/partition BOM.  MBR.1 fairness planning and MBR.1-A
 implementation-preparation have passed external technical review and received
-explicit user approval.  The targeted Full-KV source audit has found the three
-legal baseline paths absent from the current modules and has recorded the
-bounded, implementation-pending W0 dual-DUT Chisel work package; it is not a
-selected future synthesis top or physical implementation. The separate
+explicit user approval. The targeted Full-KV source audit initially found the
+three legal baseline paths absent. W0 has now completed its bounded dual-DUT
+functional contour, and MR-1A has completed the approved Route-A-hot plus
+Full-KV common lifecycle/status integration. MR-1B direct-pending source-plan
+association remains a separately scoped, unapproved measurement-RTL gap. None
+of this is a selected future synthesis top or physical implementation. The separate
 [`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md)
 has restored the ignored A4.14.1 report/input closure locally and passed its
 original preflight; this permits only read-only revalidation of the accepted

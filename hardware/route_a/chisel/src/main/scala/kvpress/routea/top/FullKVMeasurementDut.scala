@@ -24,9 +24,6 @@ final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
     val attention_terminal_rsp = RouteAChannels.attention_terminal_rsp
     val runtime_retire_req = Flipped(RouteAChannels.runtime_retire_req)
     val session_retire_ack = RouteAChannels.session_retire_ack
-    val r1_component_status_out = RouteAChannels.component_status(p)
-    val r2_payload_drain_status_out = RouteAChannels.component_status(p)
-    val r2_descriptor_drain_status_out = RouteAChannels.component_status(p)
   })
   private def inactive[T <: Data](channel: DecoupledIO[T]): Unit = {
     channel.valid := false.B
@@ -42,7 +39,9 @@ final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
   val endpoint = Module(new FullKVS2ReadEndpoint(p))
   val s2 = Module(new FullKVS2GqaSourceWrapper(p))
   val terminal = Module(new FullKVTerminalRetireAdapter(p))
+  val statusCollector = Module(new FullKVStatusCollector(p))
 
+  producer.io.service_enable := terminal.io.service_enable
   producer.io.work_in <> io.full_kv_read_work_in
   bridge.io.candidate_in <> producer.io.candidate_out
   s2.io.fill_open_in <> producer.io.fill_open_out
@@ -66,19 +65,23 @@ final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
   registry.io.release_in <> router.io.release_out
   bridge.io.release_event_in := router.io.release_event_out
   s2.io.mem_init_done := core.io.r1_init_complete
+  s2.io.drain_collection_enable := terminal.io.drain_collection_enable
   io.source_ready_out := s2.io.source_ready_out
   s2.io.consumer_commit_in <> io.full_kv_consumer_commit_in
   terminal.io.source_release_in <> s2.io.source_release_out
   terminal.io.source_fault_in <> s2.io.fault_terminal_out
+  terminal.io.component_status_in <> statusCollector.io.status_out
   io.attention_terminal_rsp <> terminal.io.attention_terminal_rsp
   terminal.io.runtime_retire_req <> io.runtime_retire_req
   io.session_retire_ack <> terminal.io.session_retire_ack
-  core.io.r1_drain_permitted := terminal.io.drain_collection_enable
+  core.io.r1_drain_permitted := statusCollector.io.r1_drain_permitted
   arbiter.io.drain_collection_enable := terminal.io.drain_collection_enable
   arbiter.io.reclaim_maintenance_enable := false.B
-  io.r1_component_status_out <> core.io.component_status_out
-  io.r2_payload_drain_status_out <> arbiter.io.payload_drain_status_out
-  io.r2_descriptor_drain_status_out <> arbiter.io.descriptor_drain_status_out
+  statusCollector.io.drain_collection_enable := terminal.io.drain_collection_enable
+  statusCollector.io.sources(0) <> core.io.component_status_out
+  statusCollector.io.sources(1) <> arbiter.io.payload_drain_status_out
+  statusCollector.io.sources(2) <> arbiter.io.descriptor_drain_status_out
+  statusCollector.io.sources(3) <> s2.io.component_status_out
   // These Route-A-only typed egresses remain structurally present in the
   // shared router but have no Full-KV producer or consumer in this contour.
   discard(router.io.r3_packed_write_out)

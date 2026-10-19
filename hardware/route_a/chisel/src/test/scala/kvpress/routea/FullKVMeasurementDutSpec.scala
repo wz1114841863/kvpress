@@ -32,16 +32,17 @@ final class FullKVMeasurementDutSpec extends AnyFunSpec with ChiselSim {
     d.io.full_kv_consumer_commit_in.valid.poke(false.B)
     d.io.runtime_retire_req.valid.poke(false.B)
     d.io.attention_terminal_rsp.ready.poke(true.B)
-    d.io.session_retire_ack.ready.poke(true.B)
-    d.io.r1_component_status_out.ready.poke(true.B)
-    d.io.r2_payload_drain_status_out.ready.poke(true.B)
-    d.io.r2_descriptor_drain_status_out.ready.poke(true.B)
+    // Hold the final acknowledgement so tests can prove it is withheld until
+    // the actual R1/R2/S2 drain facts have crossed the local lifecycle.
+    d.io.session_retire_ack.ready.poke(false.B)
     d.clock.step()
     d.io.external_core_mem_if_v1.init_ack.bits.adapter_epoch_ready.poke(true.B)
     d.io.external_core_mem_if_v1.init_ack.valid.poke(true.B)
     d.io.external_core_mem_if_v1.init_ack.ready.expect(true.B)
     d.clock.step(); d.io.external_core_mem_if_v1.init_ack.valid.poke(false.B)
-    d.clock.step()
+    // R1 init is first captured by the one-record collector and then
+    // accepted by the lifecycle; leave explicit cycles for both handshakes.
+    d.clock.step(6)
   }
 
   private def work(d: FullKVMeasurementDut, id: Int = 1, generation: Int = 1): Unit = {
@@ -70,6 +71,22 @@ final class FullKVMeasurementDutSpec extends AnyFunSpec with ChiselSim {
     d.clock.step(); d.io.full_kv_consumer_commit_in.valid.poke(false.B)
   }
 
+  private def retire(d: FullKVMeasurementDut, id: Int = 1): Unit = {
+    d.io.runtime_retire_req.bits.session_id.poke(false.B)
+    d.io.runtime_retire_req.bits.transaction_identity.request_id.poke(id.U)
+    d.io.runtime_retire_req.bits.transaction_identity.incarnation.poke(1.U)
+    d.io.runtime_retire_req.valid.poke(true.B); d.io.runtime_retire_req.ready.expect(true.B)
+    d.clock.step(); d.io.runtime_retire_req.valid.poke(false.B)
+  }
+
+  private def awaitRetireAck(d: FullKVMeasurementDut): Unit = {
+    var wait = 0
+    while (!d.io.session_retire_ack.valid.peek().litToBoolean && wait < 24) {
+      d.clock.step(); wait += 1
+    }
+    d.io.session_retire_ack.valid.expect(true.B)
+  }
+
   it("reaches READY only after a matching full read, then retires after four commits") {
     simulate(new FullKVMeasurementDut(p)) { d =>
       init(d); d.io.external_core_mem_if_v1.request.ready.poke(false.B); work(d)
@@ -86,13 +103,13 @@ final class FullKVMeasurementDutSpec extends AnyFunSpec with ChiselSim {
       d.io.attention_terminal_rsp.valid.expect(true.B)
       d.io.attention_terminal_rsp.bits.transaction_identity.request_id.expect(1.U)
       d.io.attention_terminal_rsp.ready.poke(true.B); d.clock.step()
-      d.io.runtime_retire_req.bits.session_id.poke(false.B)
-      d.io.runtime_retire_req.bits.transaction_identity.request_id.poke(1.U)
-      d.io.runtime_retire_req.bits.transaction_identity.incarnation.poke(1.U)
-      d.io.runtime_retire_req.valid.poke(true.B); d.io.runtime_retire_req.ready.expect(true.B)
-      d.clock.step(); d.io.runtime_retire_req.valid.poke(false.B)
-      d.io.session_retire_ack.valid.expect(true.B)
+      retire(d)
+      // The retire acknowledgement cannot collapse into the immediate
+      // runtime-retire handshake: real R1/R2/S2 drain facts cross after it.
+      d.io.session_retire_ack.valid.expect(false.B)
+      awaitRetireAck(d)
       d.io.session_retire_ack.bits.transaction_identity.request_id.expect(1.U)
+      d.io.session_retire_ack.ready.poke(true.B); d.clock.step()
     }
   }
 
@@ -136,12 +153,48 @@ final class FullKVMeasurementDutSpec extends AnyFunSpec with ChiselSim {
       d.io.attention_terminal_rsp.bits.transaction_identity.request_id.expect(1.U)
       d.io.attention_terminal_rsp.bits.terminal_status.expect(p.coreMemoryFaultStatusCode.U)
       d.io.attention_terminal_rsp.ready.poke(true.B); d.clock.step()
-      d.io.runtime_retire_req.bits.session_id.poke(false.B)
-      d.io.runtime_retire_req.bits.transaction_identity.request_id.poke(1.U)
-      d.io.runtime_retire_req.bits.transaction_identity.incarnation.poke(1.U)
-      d.io.runtime_retire_req.valid.poke(true.B); d.io.runtime_retire_req.ready.expect(true.B)
-      d.clock.step(); d.io.runtime_retire_req.valid.poke(false.B)
+      retire(d)
+      d.io.session_retire_ack.valid.expect(false.B)
+      awaitRetireAck(d)
+      d.io.session_retire_ack.ready.poke(true.B); d.clock.step()
+    }
+  }
+
+  it("rejects work after reset until a fresh R1 init fact reaches the lifecycle") {
+    simulate(new FullKVMeasurementDut(p)) { d =>
+      init(d); d.io.full_kv_read_work_in.bits.expected_fragment_count.poke(1.U)
+      d.io.full_kv_read_work_in.ready.expect(true.B)
+      d.reset.poke(true.B); d.clock.step(); d.reset.poke(false.B)
+      d.io.full_kv_read_work_in.bits.expected_fragment_count.poke(1.U)
+      d.io.full_kv_read_work_in.valid.poke(true.B)
+      d.io.full_kv_read_work_in.ready.expect(false.B)
+      d.io.full_kv_read_work_in.valid.poke(false.B)
+      // An old reply is stale at the reset R1 boundary and cannot reopen S2.
+      d.io.external_core_mem_if_v1.response.valid.poke(true.B)
+      d.io.external_core_mem_if_v1.response.ready.expect(true.B)
+      d.clock.step(); d.io.external_core_mem_if_v1.response.valid.poke(false.B)
+      init(d); d.io.full_kv_read_work_in.bits.expected_fragment_count.poke(1.U)
+      d.io.full_kv_read_work_in.ready.expect(true.B)
+    }
+  }
+
+  it("retains real drain facts when runtime retire arrives after drain collection") {
+    simulate(new FullKVMeasurementDut(p)) { d =>
+      init(d); d.io.external_core_mem_if_v1.request.ready.poke(false.B); work(d)
+      d.clock.step(8); d.io.external_core_mem_if_v1.request.valid.expect(true.B)
+      d.io.external_core_mem_if_v1.request.ready.poke(true.B); d.clock.step()
+      response(d, id = 1); d.clock.step(4)
+      (0 until 3).foreach(commit(d, _))
+      d.io.attention_terminal_rsp.ready.poke(false.B)
+      commit(d, 3); d.clock.step(); d.io.attention_terminal_rsp.valid.expect(true.B)
+      d.io.attention_terminal_rsp.ready.poke(true.B); d.clock.step()
+      // Let collector/lifecycle accept its four actual drain facts while the
+      // environment deliberately withholds runtime-retire.
+      d.clock.step(16)
+      d.io.session_retire_ack.valid.expect(false.B)
+      retire(d)
       d.io.session_retire_ack.valid.expect(true.B)
+      d.io.session_retire_ack.ready.poke(true.B); d.clock.step()
     }
   }
 }

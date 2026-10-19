@@ -1,6 +1,6 @@
-# Route-A current handoff — RTL3 functional closure
+# Route-A current handoff — RTL3 closure and measurement RTL status
 
-**Status date:** 2026-10-15
+**Status date:** 2026-10-17
 **Repository state:** `research/kvzap-latest`, RTL3 functional-subsystem
 closure reviewed at `cf9f055 docs: complete C4-D functional subsystem review`.
 
@@ -28,8 +28,9 @@ historical review records, or the normative architecture contract.
    [`measurement_baseline_fairness_plan.md`](measurement_baseline_fairness_plan.md)
    next for MBR.1's approved paired Full-KV fairness plan, then
    [`full_kv_baseline_path_audit_20261016.md`](full_kv_baseline_path_audit_20261016.md)
-   for the implementation-pending W0 package. Neither is a selected synthesis
-   top.
+   for the completed W0/MR-1A bounded measurement-RTL evidence and the
+   separately unapproved MR-1B direct-pending gap. Neither is a selected
+   synthesis top.
 
 Use these only when the question needs the extra detail:
 
@@ -264,10 +265,13 @@ SRP conditionally passes only to a separately authorized realization-choice
 planning review. MBR.0 has begun that bounded `top_future_synthesis_boundary`
 planning review, passed its human candidate-cut/BOM review, and authorized
 MBR.1.  MBR.1 and MBR.1-A passed external technical review with minor
-corrections and received explicit user approval.  The targeted Full-KV audit
-found all three legal baseline path segments absent, so W0 is now the sole
-implementation-pending Chisel work package; no MBR review repeats.  None of
-these records selects a future top or begins physical realization work. See
+corrections and received explicit user approval. The targeted Full-KV audit
+initially found all three legal baseline path segments absent; W0 has since
+completed its bounded dual-DUT functional contour, and MR-1A has completed
+its approved Route-A-hot and Full-KV common lifecycle/status integration.
+MR-1B direct-pending source-plan association remains a separately scoped
+measurement-RTL gap; no MBR review repeats. None of these records selects a
+future top or begins physical realization work. See
 [`synthesis_realization_partition.md`](synthesis_realization_partition.md)
 and its manifest.  No
 physical/numeric realization choice, wrapper implementation, synthesis, or
@@ -288,7 +292,9 @@ RTL3 completion review
   -> MBR.0 candidate measurement-boundary review + human approval
   -> MBR.1 / MBR.1-A external review + user approval (complete)
   -> Full-KV legal-path source audit (complete)
-  -> separately authorized W0 dual-DUT Chisel implementation
+  -> separately authorized W0 dual-DUT Chisel implementation (complete)
+  -> MR-1A Route-A-hot and Full-KV common measurement integration (complete)
+  -> separately scoped direct-pending association closure (MR-1B; not yet authorized)
   -> synthesizable control/numeric wrapper implementation and verification
   -> targeted synthesis/formal/lint and physical proxy calibration
   -> profiling of the selected realized design
@@ -317,9 +323,12 @@ frozen.
 > planning, and SRP.5 completion review are complete. MBR.0's candidate
 > measurement-boundary BOM passed human review; MBR.1 and MBR.1-A passed
 > external technical review with minor corrections and received user approval.
-> The Full-KV legal-path audit found all three baseline path segments missing,
-> and W0 awaits explicit Chisel implementation authorization. None selects a
-> top or begins physical realization work.
+> The Full-KV legal-path audit originally found all three baseline path
+> segments missing. W0 has completed its bounded dual-DUT functional scope,
+> and MR-1A has completed the Route-A-hot plus Full-KV common lifecycle/status
+> scope. Direct-pending source-plan association remains the next separately
+> scoped measurement gap (MR-1B) and is not authorized by MR-1A. None selects
+> a top or begins physical realization work.
 > Read
 > `analysis/synthesis_realization_partition.md` and
 > `analysis/srp3_realization_requirements_decision_plan.md`, and

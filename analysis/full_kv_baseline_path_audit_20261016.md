@@ -385,3 +385,56 @@ terminal, followed by the existing matching retire/ack path.  The directed
 `FullKVMeasurementDutSpec` passes 3/3, including stale/duplicate rejection and
 the fault-to-terminal/retire case (exit 0; 22 s wall time).  Lifecycle/status
 collection and reset-specific coverage remain open.
+
+### MR-1A Full-KV baseline-local status collection (2026-10-17)
+
+The final Full-KV common-contour sub-batch removes the three status channels
+from the measurement DUT boundary and makes their ownership explicit inside
+`FullKVMeasurementDut`:
+
+```text
+R1 init/drain + R2 payload drain + R2 descriptor drain + S2 drain
+  -> FullKVStatusCollector (one staged accepted owner fact)
+  -> FullKVTerminalRetireAdapter
+  -> baseline-local retire acknowledgement
+```
+
+`FullKVStatusCollector` has exactly these four sources. It has no Route-A
+membership, M2/P3/R5/direct/merge, source-plan, completion, terminal, or
+retire ownership. The R1 init fact is the sole fact that enables the named
+`FullKVReadProducer`; a reset returns that gate to closed until a fresh R1
+init handshake crosses the collector. During retirement, R1 may report
+drained only after the real R2 payload and R2 descriptor drain observations
+have been accepted. R2 descriptor drain is not fabricated work: it reports
+that the existing shared R2 descriptor partition has neither a live slot nor
+an outstanding request. Full-KV has no descriptor-maintenance producer.
+
+The existing outer source-service boundary supplies only the four accepted
+consumer-completion carriers. It holds no additional in-DUT outstanding
+state; S2's fill/READY/four-commit/release state is therefore the relevant
+source-service drain responsibility. A matching fault clears its S2 slot only
+after its exact terminal carrier is accepted by the lifecycle, and never
+becomes READY or a synthetic release. `session_retire_ack` is withheld after
+the matching runtime-retire handshake until all four owner drain facts have
+crossed the lifecycle.
+
+`FullKVMeasurementDutSpec` passes 5/5 (success, stale/duplicate fail-closed,
+fault terminal, reset requiring fresh init, and delayed-runtime-retire drain
+retention), including the explicit no-early-retire-ack assertion. The source
+change also passed the independent
+non-regression command
+
+```text
+env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch \
+  'testOnly kvpress.routea.DualMeasurementDutStructuralSpec \
+  kvpress.routea.RouteAMeasurementDutR3Spec \
+  kvpress.routea.rtl3.RouteAPackedActivationCompositionSpec'
+```
+
+with 8/8 tests, exit 0, in 2453 s. It confirms both DUT elaborations, the W0
+owner-to-owner packed path, and the MR-1A hot path remain intact. Thus the
+approved MR-1A Full-KV common lifecycle/status scope is **PASS**. It does not
+close MR-1B's direct-pending source-plan association, array-only wrapper
+realization, functional-reference replacement, memory/numeric realization,
+synthesis eligibility, or any controller, macro, timing, throughput, PPA, or
+physical-cost claim.

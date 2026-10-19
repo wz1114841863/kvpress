@@ -8,6 +8,10 @@ import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
 /** Converts an already-selected baseline work item into the common R2 carrier. */
 final class FullKVReadProducer(p: RouteASkeletonParameters) extends Module {
   val io = IO(new Bundle {
+    // The baseline lifecycle owner admits work only after the real R1 init
+    // acknowledgement has crossed the status path.  This is a phase gate,
+    // not a second source-selection owner.
+    val service_enable = Input(Bool())
     val work_in = Flipped(Decoupled(new FullKVReadWork(p)))
     val fill_open_out = Decoupled(new FullKVFillOpen(p))
     val candidate_out = Decoupled(new SourceCandidate(p))
@@ -18,7 +22,7 @@ final class FullKVReadProducer(p: RouteASkeletonParameters) extends Module {
   val work = Reg(new FullKVReadWork(p))
   val legal = io.work_in.bits.expected_fragment_count =/= 0.U
 
-  io.work_in.ready := !opening && !issuing && legal
+  io.work_in.ready := io.service_enable && !opening && !issuing && legal
   when(io.work_in.fire) { work := io.work_in.bits; opening := true.B }
 
   io.fill_open_out.valid := opening
