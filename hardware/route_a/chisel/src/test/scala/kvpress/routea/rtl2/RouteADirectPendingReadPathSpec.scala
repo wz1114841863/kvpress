@@ -84,6 +84,7 @@ final class RouteADirectPendingReadPathHarness(p: RouteASkeletonParameters) exte
   direct.io.mem_init_done := io.direct_mem_init_done
   direct.io.drain_collection_enable := false.B
   direct.io.pending_source_open_in <> io.direct_open
+  StructuralTieOff.sink(direct.io.pending_source_open_ack_out)
   direct.io.gqa_consumer_commit_in <> io.direct_commit
   direct.io.direct_release_out.ready := true.B
   StructuralTieOff.sink(direct.io.component_status_out)
@@ -125,6 +126,7 @@ final class RouteADirectPendingReadPathSpec extends AnyFunSpec with ChiselSim {
   private def open(d: RouteADirectPendingReadPathHarness, rid: Int = 3, generation: Int = 1): Unit = {
     val o = d.io.direct_open.bits
     o.transaction_identity.request_id.poke(rid.U); o.transaction_identity.incarnation.poke(1.U)
+    o.pending_instance.source_kind.poke(RouteASourceKind.Pending.U); o.pending_instance.instance_coordinate.poke(0.U); o.pending_instance.generation.poke(generation.U)
     o.layer.poke(0.U); o.kv_head.poke(0.U); o.ordered_pending_descriptor_ref.poke(0.U); o.expected_generation_or_validity.poke(0.U)
     d.io.direct_open.valid.poke(true.B); d.io.direct_open.ready.expect(true.B); d.clock.step(); d.io.direct_open.valid.poke(false.B)
     d.io.direct_active.expect(true.B); d.io.direct_generation.expect(generation.U)

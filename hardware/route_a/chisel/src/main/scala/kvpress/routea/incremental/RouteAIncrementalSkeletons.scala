@@ -288,45 +288,240 @@ final class RouteAPackedReadAssociationOwner(p: RouteASkeletonParameters) extend
 }
 
 /**
-  * RTL2.3-C6 finite binder from an upstream immutable source declaration to
-  * R6's exact completion plan. It validates structure and holds a single
-  * accepted declaration; it does not choose sources, inspect payloads, or
-  * create attention state.
+  * Single-entry pending-payload descriptor/location owner for MR-1B.
+  *
+  * It retains owner-produced immutable descriptor facts and validates an
+  * already-selected `(transaction, pending SourceInstance, descriptor key)`
+  * query. It cannot select a source, construct an address, or change R6
+  * authority. A missing or mismatched registration is deliberately
+  * backpressured before R6 acceptance.
+  */
+final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_pending_descriptor_owner"
+
+  val io = IO(new Bundle {
+    val registration_in = Flipped(RouteAChannels.pending_source_descriptor_registration(p))
+    val association_query_in = Flipped(RouteAChannels.pending_direct_association_query(p))
+    val association_declaration_out = RouteAChannels.pending_direct_association_declaration(p)
+  })
+
+  val registered = RegInit(false.B)
+  val registration = Reg(new PendingSourceDescriptorRegistration(p))
+  val declarationPending = RegInit(false.B)
+  val declaration = Reg(new PendingDirectAssociationDeclaration(p))
+  private def sameIdentity(left: TransactionIdentity, right: TransactionIdentity): Bool = left.asUInt === right.asUInt
+  private def sameInstance(left: SourceInstance, right: SourceInstance): Bool = left.asUInt === right.asUInt
+  private def sameKey(left: PendingDescriptorKey, right: PendingDescriptorKey): Bool = left.asUInt === right.asUInt
+
+  val registrationLegal = io.registration_in.bits.pending_instance.source_kind === RouteASourceKind.Pending.U &&
+    io.registration_in.bits.valid_count === 1.U
+  io.registration_in.ready := !registered && registrationLegal
+  when(io.registration_in.fire) {
+    registration := io.registration_in.bits
+    registered := true.B
+  }
+
+  val query = io.association_query_in.bits
+  val queryMatches = registered && sameIdentity(query.transaction_identity, registration.transaction_identity) &&
+    sameInstance(query.pending_instance, registration.pending_instance) && sameKey(query.key, registration.key)
+  io.association_query_in.ready := queryMatches && !declarationPending
+  when(io.association_query_in.fire) {
+    declaration.transaction_identity := registration.transaction_identity
+    declaration.pending_instance := registration.pending_instance
+    declaration.key := registration.key
+    declaration.payload_handle_or_address := registration.payload_handle_or_address
+    declaration.pending_storage_generation := registration.pending_storage_generation
+    declaration.destination_endpoint := registration.destination_endpoint
+    declaration.pending_ordinal := registration.pending_ordinal
+    declaration.source_last := registration.source_last
+    declaration.valid_count := registration.valid_count
+    declarationPending := true.B
+  }
+
+  io.association_declaration_out.valid := declarationPending
+  io.association_declaration_out.bits := declaration
+  when(io.association_declaration_out.fire) { declarationPending := false.B }
+
+  val heldDeclaration = RegEnable(io.association_declaration_out.bits,
+    io.association_declaration_out.valid && !io.association_declaration_out.ready)
+  when(RegNext(io.association_declaration_out.valid && !io.association_declaration_out.ready, false.B)) {
+    assert(io.association_declaration_out.bits.asUInt === heldDeclaration.asUInt)
+  }
+}
+
+/**
+  * MR-1B's bounded owner-to-owner direct-pending association materializer.
+  * It receives only a post-R6-acceptance descriptor association, opens the
+  * endpoint with that exact R6 SourceInstance, and creates one immutable work
+  * item after the endpoint acknowledges its distinct local generation. It
+  * owns neither source selection, descriptor facts, authority, lease state,
+  * R2 arbitration, nor a queue.
+  */
+final class RouteADirectPendingAssociationMaterializer(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_direct_pending_association_materializer"
+
+  val io = IO(new Bundle {
+    val accepted_association_in = Flipped(RouteAChannels.pending_direct_association_declaration(p))
+    val direct_open_out = RouteAChannels.direct_pending_open(p)
+    val direct_open_ack_in = Flipped(RouteAChannels.direct_pending_open_ack(p))
+    val direct_work_out = RouteAChannels.direct_pending_read_work(p)
+  })
+
+  private val Idle = 0.U(2.W)
+  private val Open = 1.U(2.W)
+  private val AwaitAck = 2.U(2.W)
+  private val EmitWork = 3.U(2.W)
+  val state = RegInit(Idle)
+  val association = Reg(new PendingDirectAssociationDeclaration(p))
+  val endpointGeneration = Reg(UInt(p.sourceGenerationWidth.W))
+  val workOrdinal = RegInit(0.U(p.candidateOrdinalWidth.W))
+  private def sameIdentity(left: TransactionIdentity, right: TransactionIdentity): Bool = left.asUInt === right.asUInt
+  private def sameInstance(left: SourceInstance, right: SourceInstance): Bool = left.asUInt === right.asUInt
+
+  io.accepted_association_in.ready := state === Idle &&
+    io.accepted_association_in.bits.pending_instance.source_kind === RouteASourceKind.Pending.U &&
+    io.accepted_association_in.bits.valid_count === 1.U
+  when(io.accepted_association_in.fire) {
+    association := io.accepted_association_in.bits
+    state := Open
+  }
+
+  io.direct_open_out.valid := state === Open
+  io.direct_open_out.bits.transaction_identity := association.transaction_identity
+  io.direct_open_out.bits.pending_instance := association.pending_instance
+  io.direct_open_out.bits.layer := 0.U
+  io.direct_open_out.bits.kv_head := 0.U
+  io.direct_open_out.bits.ordered_pending_descriptor_ref := association.key.pending_descriptor_ref
+  io.direct_open_out.bits.expected_generation_or_validity := association.key.pending_descriptor_generation
+  when(io.direct_open_out.fire) { state := AwaitAck }
+
+  val ackMatches = sameIdentity(io.direct_open_ack_in.bits.transaction_identity, association.transaction_identity) &&
+    sameInstance(io.direct_open_ack_in.bits.accepted_pending_instance, association.pending_instance)
+  io.direct_open_ack_in.ready := state === AwaitAck && ackMatches
+  when(io.direct_open_ack_in.fire) {
+    endpointGeneration := io.direct_open_ack_in.bits.endpoint_generation
+    state := EmitWork
+  }
+
+  val directEligibility = (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.FifoPredecessor) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.Ownership) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.SourceCredit) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.DestinationReady) |
+    (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.PendingAuthoritative)
+  io.direct_work_out.valid := state === EmitWork
+  io.direct_work_out.bits.transaction_identity := association.transaction_identity
+  io.direct_work_out.bits.arrival_ordinal := workOrdinal
+  io.direct_work_out.bits.candidate_id := workOrdinal
+  io.direct_work_out.bits.eligibility_snapshot := directEligibility
+  io.direct_work_out.bits.payload_handle_or_address := association.payload_handle_or_address
+  io.direct_work_out.bits.valid_count := association.valid_count
+  io.direct_work_out.bits.destination_endpoint := association.destination_endpoint
+  io.direct_work_out.bits.endpoint_generation := endpointGeneration
+  io.direct_work_out.bits.pending_ordinal := association.pending_ordinal
+  io.direct_work_out.bits.source_last := association.source_last
+  when(io.direct_work_out.fire) {
+    workOrdinal := workOrdinal + 1.U
+    state := Idle
+  }
+
+  val heldOpen = RegEnable(io.direct_open_out.bits, io.direct_open_out.valid && !io.direct_open_out.ready)
+  when(RegNext(io.direct_open_out.valid && !io.direct_open_out.ready, false.B)) {
+    assert(io.direct_open_out.bits.asUInt === heldOpen.asUInt)
+  }
+  val heldWork = RegEnable(io.direct_work_out.bits, io.direct_work_out.valid && !io.direct_work_out.ready)
+  when(RegNext(io.direct_work_out.valid && !io.direct_work_out.ready, false.B)) {
+    assert(io.direct_work_out.bits.asUInt === heldWork.asUInt)
+  }
+}
+
+/**
+  * Finite binder from an upstream source declaration to R6's completion plan.
+  * A pending-present declaration first performs an exact descriptor-owner
+  * query, then emits its association copy only after the completion-plan
+  * handshake that R6 accepts. It has no source-selection or authority role.
   */
 final class RouteASourcePlanBinder(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_source_plan_binder"
 
   val io = IO(new Bundle {
     val declaration_in = Flipped(RouteAChannels.source_plan_declaration(p))
+    val association_query_out = RouteAChannels.pending_direct_association_query(p)
+    val association_declaration_in = Flipped(RouteAChannels.pending_direct_association_declaration(p))
     val completion_plan_out = RouteAChannels.source_completion_plan(p)
+    val accepted_pending_association_out = RouteAChannels.pending_direct_association_declaration(p)
   })
 
-  val full = RegInit(false.B)
-  val held = Reg(new SourceCompletionPlan(p))
+  val heldDeclaration = Reg(new SourcePlanDeclaration(p))
+  val haveDeclaration = RegInit(false.B)
+  val querySent = RegInit(false.B)
+  val haveAssociation = RegInit(false.B)
+  val heldAssociation = Reg(new PendingDirectAssociationDeclaration(p))
+  val associationCopyPending = RegInit(false.B)
+  val associationCopy = Reg(new PendingDirectAssociationDeclaration(p))
+  private def sameIdentity(left: TransactionIdentity, right: TransactionIdentity): Bool = left.asUInt === right.asUInt
+  private def sameInstance(left: SourceInstance, right: SourceInstance): Bool = left.asUInt === right.asUInt
+  private def sameKey(left: PendingDescriptorKey, right: PendingDescriptorKey): Bool = left.asUInt === right.asUInt
+
   val declaration = io.declaration_in.bits
   val declarationLegal = declaration.source_presence.orR &&
     declaration.hot_instance.source_kind === RouteASourceKind.Hot.U &&
     declaration.pending_instance.source_kind === RouteASourceKind.Pending.U &&
     declaration.packed_instance.source_kind === RouteASourceKind.Packed.U
+  val pendingPresent = heldDeclaration.source_presence(RouteASourceKind.Pending)
+  val associationMatches = sameIdentity(io.association_declaration_in.bits.transaction_identity, heldDeclaration.transaction_identity) &&
+    sameInstance(io.association_declaration_in.bits.pending_instance, heldDeclaration.pending_instance) &&
+    sameKey(io.association_declaration_in.bits.key, heldDeclaration.pending_descriptor_key) &&
+    io.association_declaration_in.bits.valid_count === 1.U
 
-  io.declaration_in.ready := !full && declarationLegal
+  io.declaration_in.ready := !haveDeclaration && !associationCopyPending && declarationLegal
   when(io.declaration_in.fire) {
-    held.transaction_identity := declaration.transaction_identity
-    held.source_presence := declaration.source_presence
-    held.hot_instance := declaration.hot_instance
-    held.pending_instance := declaration.pending_instance
-    held.packed_instance := declaration.packed_instance
-    full := true.B
+    heldDeclaration := declaration
+    haveDeclaration := true.B
+    querySent := false.B
+    haveAssociation := false.B
   }
 
-  io.completion_plan_out.valid := full
-  io.completion_plan_out.bits := held
-  when(io.completion_plan_out.fire) { full := false.B }
+  io.association_query_out.valid := haveDeclaration && pendingPresent && !querySent && !haveAssociation
+  io.association_query_out.bits.transaction_identity := heldDeclaration.transaction_identity
+  io.association_query_out.bits.pending_instance := heldDeclaration.pending_instance
+  io.association_query_out.bits.key := heldDeclaration.pending_descriptor_key
+  when(io.association_query_out.fire) { querySent := true.B }
+
+  io.association_declaration_in.ready := haveDeclaration && pendingPresent && querySent && !haveAssociation && associationMatches
+  when(io.association_declaration_in.fire) {
+    heldAssociation := io.association_declaration_in.bits
+    haveAssociation := true.B
+  }
+
+  io.completion_plan_out.valid := haveDeclaration && (!pendingPresent || haveAssociation)
+  io.completion_plan_out.bits.transaction_identity := heldDeclaration.transaction_identity
+  io.completion_plan_out.bits.source_presence := heldDeclaration.source_presence
+  io.completion_plan_out.bits.hot_instance := heldDeclaration.hot_instance
+  io.completion_plan_out.bits.pending_instance := heldDeclaration.pending_instance
+  io.completion_plan_out.bits.packed_instance := heldDeclaration.packed_instance
+  when(io.completion_plan_out.fire) {
+    haveDeclaration := false.B
+    querySent := false.B
+    haveAssociation := false.B
+    when(pendingPresent) {
+      associationCopy := heldAssociation
+      associationCopyPending := true.B
+    }
+  }
+
+  io.accepted_pending_association_out.valid := associationCopyPending
+  io.accepted_pending_association_out.bits := associationCopy
+  when(io.accepted_pending_association_out.fire) { associationCopyPending := false.B }
 
   val heldPlanWhileStalled = RegEnable(io.completion_plan_out.bits,
     io.completion_plan_out.valid && !io.completion_plan_out.ready)
   when(RegNext(io.completion_plan_out.valid && !io.completion_plan_out.ready, false.B)) {
     assert(io.completion_plan_out.bits.asUInt === heldPlanWhileStalled.asUInt)
+  }
+  val heldAssociationWhileStalled = RegEnable(io.accepted_pending_association_out.bits,
+    io.accepted_pending_association_out.valid && !io.accepted_pending_association_out.ready)
+  when(RegNext(io.accepted_pending_association_out.valid && !io.accepted_pending_association_out.ready, false.B)) {
+    assert(io.accepted_pending_association_out.bits.asUInt === heldAssociationWhileStalled.asUInt)
   }
 }
 
@@ -1025,6 +1220,7 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
     val mem_init_done = Input(Bool())
     val drain_collection_enable = Input(Bool())
     val pending_source_open_in = Flipped(RouteAChannels.direct_pending_open(p))
+    val pending_source_open_ack_out = RouteAChannels.direct_pending_open_ack(p)
     val direct_pending_record_terminal_in = Flipped(RouteAChannels.direct_pending_record_terminal(p))
     val gqa_consumer_commit_in = Flipped(RouteAChannels.gqa_consumer_commit(p))
     val direct_release_out = RouteAChannels.source_release(p)
@@ -1043,6 +1239,8 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
   val active = RegInit(false.B)
   val endpointGeneration = RegInit(0.U(p.sourceGenerationWidth.W))
   val identity = Reg(new TransactionIdentity)
+  val acceptedPendingInstance = Reg(new SourceInstance(p))
+  val openAckPending = RegInit(false.B)
   val expectedOrdinal = RegInit(0.U(RouteAAnchorWidths.LogicalPositionWidth.W))
   val deliverable = RegInit(false.B)
   val sourceClosed = RegInit(false.B)
@@ -1050,17 +1248,25 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
   val consumerMask = RegInit(0.U(4.W))
 
   val open = io.pending_source_open_in.bits
-  io.pending_source_open_in.ready := initialized && !active
+  val openLegal = open.pending_instance.source_kind === RouteASourceKind.Pending.U
+  io.pending_source_open_in.ready := initialized && !active && openLegal
   when(io.pending_source_open_in.fire) {
     active := true.B
     endpointGeneration := endpointGeneration + 1.U
     identity := open.transaction_identity
+    acceptedPendingInstance := open.pending_instance
+    openAckPending := true.B
     expectedOrdinal := 0.U
     deliverable := false.B
     sourceClosed := false.B
     faulted := false.B
     consumerMask := 0.U
   }
+  io.pending_source_open_ack_out.valid := openAckPending
+  io.pending_source_open_ack_out.bits.transaction_identity := identity
+  io.pending_source_open_ack_out.bits.accepted_pending_instance := acceptedPendingInstance
+  io.pending_source_open_ack_out.bits.endpoint_generation := endpointGeneration
+  when(io.pending_source_open_ack_out.fire) { openAckPending := false.B }
 
   val record = io.direct_pending_record_terminal_in.bits
   val recordMatches = initialized && active && !faulted && !sourceClosed &&
@@ -1086,9 +1292,8 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
   val consumerCommit = io.gqa_consumer_commit_in.bits
   val commitBit = (1.U(4.W) << consumerCommit.consumer_id)(3, 0)
   val commitMatches = initialized && active && deliverable && !faulted &&
-    consumerCommit.source_instance.source_kind === RouteASourceKind.Pending.U &&
-    consumerCommit.source_instance.instance_coordinate === 0.U &&
-    consumerCommit.source_instance.generation === endpointGeneration && identity.asUInt === consumerCommit.transaction_identity.asUInt &&
+    consumerCommit.source_instance.asUInt === acceptedPendingInstance.asUInt &&
+    identity.asUInt === consumerCommit.transaction_identity.asUInt &&
     consumerCommit.consumer_id < 4.U && (consumerMask & commitBit) =/= 0.U
   io.gqa_consumer_commit_in.ready := commitMatches
   when(io.gqa_consumer_commit_in.fire) {
@@ -1098,9 +1303,7 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
   val releaseEligible = active && deliverable && sourceClosed && !faulted && consumerMask === 0.U
   io.direct_release_out.valid := releaseEligible
   io.direct_release_out.bits.transaction_identity := identity
-  io.direct_release_out.bits.source_instance.source_kind := RouteASourceKind.Pending.U
-  io.direct_release_out.bits.source_instance.instance_coordinate := 0.U
-  io.direct_release_out.bits.source_instance.generation := endpointGeneration
+  io.direct_release_out.bits.source_instance := acceptedPendingInstance
   when(io.direct_release_out.fire) {
     active := false.B
     deliverable := false.B
@@ -1121,9 +1324,7 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
   io.direct_observe_generation := endpointGeneration
   io.direct_observe_active := active
   io.direct_observe_deliverable := active && deliverable && !faulted
-  io.direct_observe_instance.source_kind := RouteASourceKind.Pending.U
-  io.direct_observe_instance.instance_coordinate := 0.U
-  io.direct_observe_instance.generation := endpointGeneration
+  io.direct_observe_instance := acceptedPendingInstance
   io.component_status_out.valid := initialized && io.drain_collection_enable && !active
   io.component_status_out.bits.acknowledgement_name := p.r6.directPendingDrainedStatusCode.U
   io.component_status_out.bits.asserted := true.B

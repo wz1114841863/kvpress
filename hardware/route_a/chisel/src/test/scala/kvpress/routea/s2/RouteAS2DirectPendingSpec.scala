@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
 import kvpress.routea.common.RouteAS2GqaSourceWrapper
 import kvpress.routea.incremental.RouteADirectPendingEndpointV1
+import kvpress.routea.interfaces.RouteASourceKind
 import kvpress.routea.params.{RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
 
@@ -130,6 +131,7 @@ final class RouteAS2DirectPendingSpec extends AnyFunSpec with ChiselSim {
 
   private def initDirect(dut: RouteADirectPendingEndpointV1): Unit = {
     dut.io.mem_init_done.poke(false.B); dut.io.pending_source_open_in.valid.poke(false.B)
+    dut.io.pending_source_open_ack_out.ready.poke(true.B)
     dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
     dut.io.direct_pending_record_terminal_in.valid.poke(false.B); dut.io.gqa_consumer_commit_in.valid.poke(false.B)
     dut.io.direct_release_out.ready.poke(true.B); dut.io.mem_init_done.poke(true.B); dut.clock.step()
@@ -138,6 +140,7 @@ final class RouteAS2DirectPendingSpec extends AnyFunSpec with ChiselSim {
   private def openDirect(dut: RouteADirectPendingEndpointV1, rid: Int): Unit = {
     val open = dut.io.pending_source_open_in.bits
     open.transaction_identity.request_id.poke(rid.U); open.transaction_identity.incarnation.poke(0.U)
+    open.pending_instance.source_kind.poke(RouteASourceKind.Pending.U); open.pending_instance.instance_coordinate.poke(0.U); open.pending_instance.generation.poke(1.U)
     open.layer.poke(0.U); open.kv_head.poke(0.U); open.ordered_pending_descriptor_ref.poke(0.U); open.expected_generation_or_validity.poke(0.U)
     dut.io.pending_source_open_in.valid.poke(true.B); dut.io.pending_source_open_in.ready.expect(true.B); dut.clock.step(); dut.io.pending_source_open_in.valid.poke(false.B)
   }

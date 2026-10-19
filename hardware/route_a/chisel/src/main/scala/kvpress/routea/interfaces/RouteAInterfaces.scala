@@ -236,6 +236,62 @@ final class PendingPayloadReadBinding(p: RouteASkeletonParameters) extends Bundl
 }
 
 /**
+  * Immutable identity of one pending-payload descriptor.  This is a
+  * descriptor-directory key, not a payload address, R6 SourceInstance, or
+  * residency authority.
+  */
+final class PendingDescriptorKey(p: RouteASkeletonParameters) extends Bundle {
+  val pending_descriptor_ref = UInt(p.pendingDescriptorRefWidth.W)
+  val pending_descriptor_generation = UInt(p.pendingValidityWidth.W)
+}
+
+/**
+  * Pending-source descriptor facts produced by the pending payload/location
+  * owner at pending maturity.  In MR-1B this is deliberately one record only:
+  * `valid_count` must be exactly one and `source_last` is a literal
+  * descriptor fact, never reconstructed from R1 fragments or R3 membership.
+  */
+final class PendingSourceDescriptorRegistration(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val pending_instance = new SourceInstance(p)
+  val key = new PendingDescriptorKey(p)
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val logical_position = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
+  val payload_ref = UInt(RouteAAnchorWidths.PayloadRefWidth.W)
+  val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+  val pending_storage_generation = UInt(p.sourceGenerationWidth.W)
+  val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
+  val pending_ordinal = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
+  val source_last = Bool()
+  val valid_count = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+}
+
+/** Read-only request pairing a selected pending SourceInstance with its key. */
+final class PendingDirectAssociationQuery(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val pending_instance = new SourceInstance(p)
+  val key = new PendingDescriptorKey(p)
+}
+
+/**
+  * Descriptor-owner validated association copied only after R6 accepts the
+  * paired plan.  It carries facts; it is not a source-selection grant or a
+  * second authority record.
+  */
+final class PendingDirectAssociationDeclaration(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val pending_instance = new SourceInstance(p)
+  val key = new PendingDescriptorKey(p)
+  val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+  val pending_storage_generation = UInt(p.sourceGenerationWidth.W)
+  val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
+  val pending_ordinal = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
+  val source_last = Bool()
+  val valid_count = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+}
+
+/**
   * Control observation emitted only after the existing atomic metadata
   * publication acknowledgement.  It is not a second publication command.
   */
@@ -306,6 +362,10 @@ final class SourcePlanDeclaration(p: RouteASkeletonParameters) extends Bundle {
   val hot_instance = new SourceInstance(p)
   val pending_instance = new SourceInstance(p)
   val packed_instance = new SourceInstance(p)
+  // Meaningful only with pending presence. This key binds the already
+  // selected pending source to descriptor-owner facts without extending R6's
+  // frozen SourceCompletionPlan.
+  val pending_descriptor_key = new PendingDescriptorKey(p)
 }
 
 final class S2ServiceRequest extends Bundle {
@@ -316,10 +376,27 @@ final class S2ServiceRequest extends Bundle {
 
 final class DirectPendingOpen(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
+  // Exact R6-accepted pending SourceInstance; endpoint-local generation stays
+  // distinct and is returned by DirectPendingOpenAck.
+  val pending_instance = new SourceInstance(p)
   val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
   val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
   val ordered_pending_descriptor_ref = UInt(p.pendingDescriptorRefWidth.W)
   val expected_generation_or_validity = UInt(p.pendingValidityWidth.W)
+}
+
+/** Endpoint acknowledgement linking an accepted R6 instance to local transport generation. */
+final class DirectPendingOpenAck(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val accepted_pending_instance = new SourceInstance(p)
+  val endpoint_generation = UInt(p.sourceGenerationWidth.W)
+}
+
+/** Exact pre-issue endpoint cleanup request; it is not an R6 terminal. */
+final class DirectPendingAbort(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val pending_instance = new SourceInstance(p)
+  val endpoint_generation = UInt(p.sourceGenerationWidth.W)
 }
 
 /** Local S2 fill-control association; never a physical source-buffer port. */
@@ -1052,6 +1129,9 @@ object RouteAChannels {
   def r6_authority_transition(p: RouteASkeletonParameters) = Decoupled(new R6AuthorityTransition(p))
   def admission_context(p: RouteASkeletonParameters) = Decoupled(new AdmissionContext(p))
   def pending_payload_read_binding(p: RouteASkeletonParameters) = Decoupled(new PendingPayloadReadBinding(p))
+  def pending_source_descriptor_registration(p: RouteASkeletonParameters) = Decoupled(new PendingSourceDescriptorRegistration(p))
+  def pending_direct_association_query(p: RouteASkeletonParameters) = Decoupled(new PendingDirectAssociationQuery(p))
+  def pending_direct_association_declaration(p: RouteASkeletonParameters) = Decoupled(new PendingDirectAssociationDeclaration(p))
   def publication_commit_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationCommitObservation(p))
   def publication_member_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationMemberObservation(p))
   def post_r6_packed_page_ready_observation(p: RouteASkeletonParameters) = Decoupled(new PostR6PackedPageReadyObservation(p))
@@ -1060,6 +1140,8 @@ object RouteAChannels {
   def source_completion_plan(p: RouteASkeletonParameters) = Decoupled(new SourceCompletionPlan(p))
   def s2_service_req = Decoupled(new S2ServiceRequest)
   def direct_pending_open(p: RouteASkeletonParameters) = Decoupled(new DirectPendingOpen(p))
+  def direct_pending_open_ack(p: RouteASkeletonParameters) = Decoupled(new DirectPendingOpenAck(p))
+  def direct_pending_abort(p: RouteASkeletonParameters) = Decoupled(new DirectPendingAbort(p))
   def s2_fill_open(p: RouteASkeletonParameters) = Decoupled(new S2FillOpen(p))
   def s2_fill_terminal(p: RouteASkeletonParameters) = Decoupled(new S2FillTerminal(p))
   def s2_sidecar_complete(p: RouteASkeletonParameters) = Decoupled(new S2SidecarComplete(p))

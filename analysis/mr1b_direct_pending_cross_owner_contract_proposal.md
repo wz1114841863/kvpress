@@ -1,7 +1,47 @@
 # MR-1B — Direct-pending cross-owner association contract proposal
 
-**Status:** `revised_proposed_waiting_user_approval`; no RTL change is
-authorized by this document.
+**Status:** `implementation_in_progress`; the user approved the bounded
+single-record MR-1B RTL scope on 2026-10-19. Each implementation batch remains
+subject to its listed directed and non-regression checks.
+
+## Implementation record — batch 1: provenance to pre-lease work
+
+Batch 1 implements the real owner chain from pending descriptor registration
+through descriptor-owner validation, R6 plan acceptance, exact endpoint
+open/ack, and immutable `DirectPendingReadWork` into the pre-existing
+R2/R1/registry/typed-endpoint path. The descriptor key stays outside
+`SourceCompletionPlan`; R3's pack-read ledger is not queried. The endpoint now
+retains the accepted R6 pending `SourceInstance` separately from its local
+transport generation, so GQA commit/release use the accepted instance while
+typed R1 fragments retain the local generation guard.
+
+This batch intentionally does **not** claim lease, direct-class cancellation,
+pending-to-packed race, or R6 failure completion. Those approved carriers are
+the next implementation batch and remain fail-closed/inactive until connected;
+no direct candidate is granted a lease merely by this batch's work creation.
+
+### Batch-1 verification record
+
+On 2026-10-19, the local no-model Chisel compile and the following bounded
+checks passed after the production wiring change:
+
+```text
+env JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 sbt -batch 'Test / compile'
+testOnly RouteASourcePlanBinderSpec                 3/3
+testOnly RouteAS2DirectPendingSpec                  3/3
+testOnly RouteADirectPendingReadPathSpec            5/5
+testOnly RouteAResetEpochIntegrationSpec            4/4
+testOnly RouteAFourConsumerCompletionSpec           3/3
+testOnly RouteAMeasurementDutR3Spec                 3/3
+testOnly DualMeasurementDutStructuralSpec           2/2 (including B1 direct owner-chain guard)
+git diff --check                                    pass
+```
+
+The reset rerun also elaborated the legacy composition-only
+`RouteAKVSubsystemTop`. Its newly added MR-1B ports are explicitly tied
+fail-closed there because that historical shell is not a descriptor owner or a
+measurement DUT. This is an elaboration closure only; the production
+owner-to-owner connection is exclusively in `RouteAMeasurementDut`.
 
 ## Narrow purpose and revision decision
 

@@ -35,6 +35,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     d.io.frontend_lifecycle_req.valid.poke(false.B)
     d.io.runtime_retire_req.valid.poke(false.B)
     d.io.source_plan_declaration_in.valid.poke(false.B)
+    d.io.pending_source_descriptor_registration_in.valid.poke(false.B)
     d.io.hot_payload_fragment_in.valid.poke(false.B)
     d.io.hot_position_sidecar_in.valid.poke(false.B)
     d.io.pending_payload_read_binding_in.valid.poke(false.B)
@@ -51,6 +52,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     d.io.external_core_mem_if_v1.response.valid.poke(false.B)
     d.io.functional_r4_accepted_packet_out.ready.poke(true.B)
     d.io.functional_r4_merge_work_out.ready.poke(false.B)
+    d.io.functional_direct_pending_payload_fragment_out.ready.poke(true.B)
     d.io.attention_terminal_rsp.ready.poke(false.B)
     d.io.session_retire_ack.ready.poke(true.B)
   }

@@ -23,6 +23,10 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
     val attention_terminal_rsp = RouteAChannels.attention_terminal_rsp
     val session_retire_ack = RouteAChannels.session_retire_ack
     val source_plan_declaration_in = Flipped(RouteAChannels.source_plan_declaration(p))
+    // The pending-payload descriptor/location owner remains an explicit
+    // functional boundary. It supplies immutable descriptor facts only;
+    // selection, R6 acceptance, and direct work stay inside this DUT.
+    val pending_source_descriptor_registration_in = Flipped(RouteAChannels.pending_source_descriptor_registration(p))
     val hot_payload_fragment_in = Flipped(RouteAChannels.p3_pending_fragment(p))
     val hot_position_sidecar_in = Flipped(RouteAChannels.p3_sidecar_bind(p))
     val pending_payload_read_binding_in = Flipped(RouteAChannels.pending_payload_read_binding(p))
@@ -36,6 +40,9 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
     val functional_r4_merge_work_out = RouteAChannels.merge_req
     val functional_r4_result_in = Flipped(RouteAChannels.r4_result_stub)
     val functional_r4_numeric_fault_in = Flipped(RouteAChannels.r4_numeric_fault)
+    // Named outer functional direct-source transport boundary. It is neither
+    // a test-only authorization source nor a physical payload buffer.
+    val functional_direct_pending_payload_fragment_out = RouteAChannels.direct_pending_payload_fragment(p)
     val external_core_mem_if_v1 = new CoreMemoryExternalPort(p)
   })
 
@@ -49,6 +56,8 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   val hot = Module(new RouteAHotSourcePath(p))
   val s2 = Module(new RouteAS2GqaSourceWrapper(p))
   val directPending = Module(new RouteADirectPendingEndpointV1(p))
+  val pendingDescriptorOwner = Module(new RouteAPendingDescriptorOwner(p))
+  val directAssociationMaterializer = Module(new RouteADirectPendingAssociationMaterializer(p))
   val arbiter = Module(new RouteACoreSideArbiter(p))
   val coreMemory = Module(new RouteACoreMemIfV1(p))
   val m2P3 = Module(new RouteAM2P3Wrapper(p))
@@ -73,10 +82,13 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   val pendingIngress = Module(new RouteAExclusiveP3PendingIngress(p))
   val sidecarIngress = Module(new RouteAExclusiveP3SidecarIngress(p))
   val packReadIssue = Module(new RouteAReadIssueCandidateAdapter(p))
+  val directPendingProducer = Module(new RouteAR3DirectPendingReadProducer(p))
+  val directPendingIssue = Module(new RouteAReadIssueCandidateAdapter(p))
   val packedReadProducer = Module(new RouteAPackedS2ReadProducer(p))
   val packedReadIssue = Module(new RouteAReadIssueCandidateAdapter(p))
   val packedSidecarIssue = Module(new RouteAReadIssueCandidateAdapter(p))
   val packReadEndpoint = Module(new RouteAR3PackReadEndpoint(p))
+  val directPendingReadEndpoint = Module(new RouteADirectPendingReadEndpoint(p))
   val packedReadEndpoint = Module(new RouteAPackedS2ReadEndpoint(p))
   val packedSidecarEndpoint = Module(new RouteAS2PackedSidecarReadEndpoint(p))
   val sourcePlanBinder = Module(new RouteASourcePlanBinder(p))
@@ -99,12 +111,17 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   hot.io.hot_source_open_in <> hotActivation.io.hot_source_open_out
   lifecycle.io.hot_source_release_in <> hot.io.hot_release_out
   inactive(lifecycle.io.merge_ready_in)
-  inactive(directPending.io.pending_source_open_in)
-  inactive(directPending.io.direct_pending_record_terminal_in)
+  directPending.io.pending_source_open_in <> directAssociationMaterializer.io.direct_open_out
+  directAssociationMaterializer.io.direct_open_ack_in <> directPending.io.pending_source_open_ack_out
+  directPending.io.direct_pending_record_terminal_in <> directPendingReadEndpoint.io.record_terminal_out
   lifecycle.io.pending_source_release_in <> directPending.io.direct_release_out
   discard(lifecycle.io.direct_pending_open)
 
   sourcePlanBinder.io.declaration_in <> io.source_plan_declaration_in
+  pendingDescriptorOwner.io.registration_in <> io.pending_source_descriptor_registration_in
+  pendingDescriptorOwner.io.association_query_in <> sourcePlanBinder.io.association_query_out
+  sourcePlanBinder.io.association_declaration_in <> pendingDescriptorOwner.io.association_declaration_out
+  directAssociationMaterializer.io.accepted_association_in <> sourcePlanBinder.io.accepted_pending_association_out
   lifecycle.io.source_completion_plan_in <> sourcePlanBinder.io.completion_plan_out
   planFork.io.accepted_plan_in <> lifecycle.io.source_completion_plan_copy_out
   packetAdapter.io.accepted_plan_in <> planFork.io.packet_plan_out
@@ -187,9 +204,13 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   delivery.io.release_event_in := router.io.release_event_out
   endpointDemux.io.resolved_in <> router.io.read_fragment_out
   packReadEndpoint.io.resolved_fragment_in <> endpointDemux.io.p3_pack_read_out
+  directPendingReadEndpoint.io.resolved_fragment_in <> endpointDemux.io.direct_pending_out
+  directPendingReadEndpoint.io.endpoint_active_in := directPending.io.direct_observe_active
+  directPendingReadEndpoint.io.endpoint_identity_in := directPending.io.direct_observe_identity
+  directPendingReadEndpoint.io.endpoint_generation_in := directPending.io.direct_observe_generation
+  io.functional_direct_pending_payload_fragment_out <> directPendingReadEndpoint.io.payload_fragment_out
   packedReadEndpoint.io.resolved_fragment_in <> endpointDemux.io.packed_s2_out
   packedSidecarEndpoint.io.resolved_fragment_in <> endpointDemux.io.packed_s2_sidecar_out
-  discard(endpointDemux.io.direct_pending_out)
 
   // R3 B1 is internal: R3 materializes/owns its candidate, R2/R1 transport
   // it, and the typed delivery alone returns the durable terminal to R3.
@@ -268,10 +289,11 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   sidecarDelivery.io.registry_allocation_ack_in <> allocationMux.io.sidecar_ack_out
   delivery.io.r3_packed_write_in <> m2P3.io.p3_packed_write_candidate_out
   delivery.io.r5_append_in <> pageManager.io.append_candidate_out
-  inactive(delivery.io.r3_direct_pending_in)
+  directPendingProducer.io.work_in <> directAssociationMaterializer.io.direct_work_out
+  directPendingIssue.io.read_issue_in <> directPendingProducer.io.read_issue_out
+  delivery.io.r3_direct_pending_in <> directPendingIssue.io.candidate_out
   inactive(delivery.io.r5_s2_packed_in)
   delivery.io.r5_reclaim_in <> pageManager.io.reclaim_candidate_out
-  discard(delivery.io.r3_direct_pending_out)
   discard(delivery.io.r5_s2_packed_out)
   delivery.io.r3_pack_read_in <> packReadIssue.io.candidate_out
   delivery.io.registry_allocate_out <> registry.io.allocation_in
@@ -280,7 +302,7 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   writeIngress.io.r5_append_in <> delivery.io.r5_append_out
   writeIngress.io.r5_reclaim_in <> delivery.io.r5_reclaim_out
   readIngress.io.r3_pack_read_in <> delivery.io.r3_pack_read_out
-  inactive(readIngress.io.r3_direct_pending_in)
+  readIngress.io.r3_direct_pending_in <> delivery.io.r3_direct_pending_out
   packedReadIngress.io.payload_in <> packedReadIssue.io.candidate_out
   packedReadIngress.io.sidecar_in <> packedSidecarIssue.io.candidate_out
   readIngress.io.r5_s2_packed_in <> packedReadIngress.io.out

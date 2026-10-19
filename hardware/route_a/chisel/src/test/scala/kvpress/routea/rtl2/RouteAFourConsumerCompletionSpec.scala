@@ -70,6 +70,7 @@ final class RouteAFourConsumerCompletionHarness(p: RouteASkeletonParameters) ext
   direct.io.mem_init_done := true.B
   direct.io.drain_collection_enable := false.B
   direct.io.pending_source_open_in <> io.pending_open
+  StructuralTieOff.sink(direct.io.pending_source_open_ack_out)
   direct.io.direct_pending_record_terminal_in <> io.pending_terminal
   lifecycle.io.pending_source_release_in <> direct.io.direct_release_out
   StructuralTieOff.sink(direct.io.component_status_out)
@@ -179,7 +180,7 @@ final class RouteAFourConsumerCompletionSpec extends AnyFunSpec with ChiselSim {
     d.io.hot_open.valid.poke(true.B); d.io.hot_open.ready.expect(true.B); d.clock.step(); d.io.hot_open.valid.poke(false.B)
   }
   private def activatePending(d: RouteAFourConsumerCompletionHarness, rid: Int): Unit = {
-    val open = d.io.pending_open.bits; identity(open.transaction_identity, rid); open.layer.poke(0.U); open.kv_head.poke(0.U); open.ordered_pending_descriptor_ref.poke(0.U); open.expected_generation_or_validity.poke(0.U)
+    val open = d.io.pending_open.bits; identity(open.transaction_identity, rid); open.pending_instance.source_kind.poke(RouteASourceKind.Pending.U); open.pending_instance.instance_coordinate.poke(0.U); open.pending_instance.generation.poke(1.U); open.layer.poke(0.U); open.kv_head.poke(0.U); open.ordered_pending_descriptor_ref.poke(0.U); open.expected_generation_or_validity.poke(0.U)
     d.io.pending_open.valid.poke(true.B); d.io.pending_open.ready.expect(true.B); d.clock.step(); d.io.pending_open.valid.poke(false.B)
     val terminal = d.io.pending_terminal.bits; identity(terminal.transaction_identity, rid); terminal.endpoint_generation.poke(1.U); terminal.ordinal.poke(0.U); terminal.last.poke(true.B); terminal.status.poke(p.coreMemoryOkStatusCode.U); terminal.explicit_empty.poke(false.B)
     d.io.pending_terminal.valid.poke(true.B); d.io.pending_terminal.ready.expect(true.B); d.clock.step(); d.io.pending_terminal.valid.poke(false.B)

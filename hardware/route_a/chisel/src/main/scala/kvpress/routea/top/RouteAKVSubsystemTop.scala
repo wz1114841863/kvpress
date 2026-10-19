@@ -119,6 +119,13 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val r6_merge_ready = Wire(RouteAChannels.r6_merge_ready); StructuralTieOff.source(r6_merge_ready)
     lifecycle.io.merge_ready_in <> r6_merge_ready
     source_plan_binder.io.declaration_in <> source_plan_declaration_in
+    // MR-1B adds an owner-to-owner pending-descriptor association around the
+    // binder. This historical composition-only shell does not instantiate
+    // those owners, so it remains fail-closed: no query is accepted, no
+    // declaration is supplied, and no accepted association is observed here.
+    StructuralTieOff.sink(source_plan_binder.io.association_query_out)
+    StructuralTieOff.source(source_plan_binder.io.association_declaration_in)
+    StructuralTieOff.sink(source_plan_binder.io.accepted_pending_association_out)
     lifecycle.io.source_completion_plan_in <> source_plan_binder.io.completion_plan_out
     // R6 retains plan ownership.  The exact-copy fork delivers every plan to
     // the packet path and only a packed-present copy to the activation binder;
@@ -181,6 +188,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     // therefore comes only from R6's existing lifecycle carrier; the top no
     // longer merges a testbench carrier with it or manufactures an open.
     direct_pending.io.pending_source_open_in <> lifecycle.io.direct_pending_open
+    // The historical shell has no association materializer; consume its new
+    // acknowledgement observation locally. RouteAMeasurementDut owns the
+    // production connection.
+    StructuralTieOff.sink(direct_pending.io.pending_source_open_ack_out)
     val direct_record_terminal = direct_pending_read_endpoint.io.record_terminal_out
     val direct_release = Wire(RouteAChannels.source_release(p))
     direct_pending.io.direct_pending_record_terminal_in <> direct_record_terminal

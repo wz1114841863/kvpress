@@ -52,6 +52,16 @@ final class DualMeasurementDutStructuralSpec extends AnyFunSpec with ChiselSim {
       "lifecycle.io.merge_terminal_in <> merge.io.merge_rsp_or_numeric_fault",
       "delivery.io.r5_reclaim_in <> pageManager.io.reclaim_candidate_out",
       "pageManager.io.reclaim_delivery_in <> router.io.r5_reclaim_out",
+      "pendingDescriptorOwner.io.registration_in <> io.pending_source_descriptor_registration_in",
+      "pendingDescriptorOwner.io.association_query_in <> sourcePlanBinder.io.association_query_out",
+      "sourcePlanBinder.io.association_declaration_in <> pendingDescriptorOwner.io.association_declaration_out",
+      "directAssociationMaterializer.io.accepted_association_in <> sourcePlanBinder.io.accepted_pending_association_out",
+      "directPending.io.pending_source_open_in <> directAssociationMaterializer.io.direct_open_out",
+      "directAssociationMaterializer.io.direct_open_ack_in <> directPending.io.pending_source_open_ack_out",
+      "directPendingProducer.io.work_in <> directAssociationMaterializer.io.direct_work_out",
+      "delivery.io.r3_direct_pending_in <> directPendingIssue.io.candidate_out",
+      "readIngress.io.r3_direct_pending_in <> delivery.io.r3_direct_pending_out",
+      "directPendingReadEndpoint.io.resolved_fragment_in <> endpointDemux.io.direct_pending_out",
     ).foreach(connection => assert(source.contains(connection), s"missing W0-R1 connection: $connection"))
   }
 }

@@ -28,11 +28,38 @@ final class RouteASourcePlanBinderSpec extends AnyFunSpec with ChiselSim {
     driveInstance(declaration.hot_instance, hotKind, 10, 1)
     driveInstance(declaration.pending_instance, pendingKind, 11, 2)
     driveInstance(declaration.packed_instance, packedKind, 12, 3)
+    declaration.pending_descriptor_key.pending_descriptor_ref.poke(0.U)
+    declaration.pending_descriptor_key.pending_descriptor_generation.poke(0.U)
+  }
+
+  private def driveAssociation(dut: RouteASourcePlanBinder, rid: Int): Unit = {
+    val association = dut.io.association_declaration_in.bits
+    association.transaction_identity.request_id.poke(rid.U); association.transaction_identity.incarnation.poke(1.U)
+    driveInstance(association.pending_instance, RouteASourceKind.Pending, 11, 2)
+    association.key.pending_descriptor_ref.poke(0.U); association.key.pending_descriptor_generation.poke(0.U)
+    association.payload_handle_or_address.poke(3.U); association.pending_storage_generation.poke(2.U)
+    association.destination_endpoint.poke(0.U); association.pending_ordinal.poke(0.U)
+    association.source_last.poke(true.B); association.valid_count.poke(1.U)
+  }
+
+  private def acceptPendingAssociation(dut: RouteASourcePlanBinder, rid: Int, presence: Int): Unit = {
+    if ((presence & (1 << RouteASourceKind.Pending)) != 0) {
+      dut.io.association_query_out.valid.expect(true.B)
+      dut.clock.step()
+      driveAssociation(dut, rid)
+      dut.io.association_declaration_in.valid.poke(true.B)
+      dut.io.association_declaration_in.ready.expect(true.B)
+      dut.clock.step()
+      dut.io.association_declaration_in.valid.poke(false.B)
+    }
   }
 
   private def init(dut: RouteASourcePlanBinder): Unit = {
     dut.io.declaration_in.valid.poke(false.B); dut.io.completion_plan_out.ready.poke(false.B)
+    dut.io.association_query_out.ready.poke(true.B); dut.io.association_declaration_in.valid.poke(false.B)
+    dut.io.accepted_pending_association_out.ready.poke(true.B)
     driveDeclaration(dut, 0, 1)
+    driveAssociation(dut, 0)
   }
 
   private def expectPlan(dut: RouteASourcePlanBinder, rid: Int, presence: Int): Unit = {
@@ -52,8 +79,10 @@ final class RouteASourcePlanBinderSpec extends AnyFunSpec with ChiselSim {
         driveDeclaration(dut, presence, presence)
         dut.io.declaration_in.valid.poke(true.B); dut.io.declaration_in.ready.expect(true.B)
         dut.clock.step(); dut.io.declaration_in.valid.poke(false.B)
+        acceptPendingAssociation(dut, presence, presence)
         expectPlan(dut, presence, presence)
         dut.io.completion_plan_out.ready.poke(true.B); dut.clock.step(); dut.io.completion_plan_out.ready.poke(false.B)
+        if ((presence & (1 << RouteASourceKind.Pending)) != 0) { dut.clock.step() }
         dut.io.completion_plan_out.valid.expect(false.B)
       }
     }
@@ -78,6 +107,7 @@ final class RouteASourcePlanBinderSpec extends AnyFunSpec with ChiselSim {
       driveDeclaration(dut, 6, 5)
       dut.io.declaration_in.valid.poke(true.B); dut.io.declaration_in.ready.expect(true.B)
       dut.clock.step(); dut.io.declaration_in.valid.poke(false.B)
+      acceptPendingAssociation(dut, 6, 5)
       expectPlan(dut, 6, 5)
       driveDeclaration(dut, 7, 2)
       dut.io.declaration_in.ready.expect(false.B)
