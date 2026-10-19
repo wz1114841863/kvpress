@@ -119,6 +119,76 @@ or replaced by a flattened R2 harness before the final MR-1B non-regression
 record. It does not authorize skipping the later cancel, transition, abort,
 R6-terminal, or lease-release directed cases.
 
+## B2c transition-association amendment — approval required
+
+This is a narrow correction for the already-approved B2c cancellation scope.
+It neither changes R6 authority nor makes the descriptor owner a residency
+owner. It supplies the missing provenance needed for that owner to withdraw
+**read eligibility only** after an accepted R3 pending-to-packed transition.
+
+### Audit result
+
+`PendingPayloadReadBinding` is the real pending-payload/location-owner carrier
+and already contains `{ transaction_identity, entry_id, transaction_group_tag,
+source_generation, layer, kv_head, logical_position, payload_ref,
+group_member_ordinal, group_valid_records }`. The R3/M2 owner stores that
+binding at its accepted admission join and emits the actual
+pending-to-packed `R6AuthorityTransition` only for that stored entry.
+
+The current `PendingSourceDescriptorRegistration` has neither `entry_id` nor
+group tag/member scope, and the current transition has neither transaction
+identity nor pending-storage generation. Consequently neither carrier alone
+can identify a direct descriptor. Adding only `entry_id` would still admit a
+stale tag/generation or a same-entry multi-record ambiguity; no RTL may infer
+the missing fields from a source instance, ordinal, R3 private state, or a
+payload address.
+
+### Minimal proposed carrier change
+
+1. Extend the immutable descriptor-owner registration with the copied
+   provenance fields `{ entry_id, transaction_group_tag,
+   group_member_ordinal, group_valid_records }`. The pending-payload
+   descriptor/location owner must copy them from its own
+   `PendingPayloadReadBinding` at descriptor creation; the existing
+   `pending_storage_generation` must equal that binding's `source_generation`.
+   The descriptor owner validates the complete equality of transaction,
+   entry, tag, layer/head/position, payload reference, member scope, and
+   storage generation before registration becomes live.
+2. Add one read-only R3 accepted-event observation,
+   `PendingToPackedReadEligibilityWithdrawal`, emitted only on the existing
+   accepted pending-to-packed authority-transition fire. It carries exactly
+   `{ transaction_identity, entry_id, transaction_group_tag,
+   pending_storage_generation }`, copied from the stored pending binding and
+   the accepted transition. It is not an authority command, source selector,
+   or second residency table.
+3. The descriptor owner matches this observation against its immutable
+   registration key `{ transaction_identity, entry_id, transaction_group_tag,
+   pending_storage_generation }`. Before lease commit it permanently withdraws
+   eligibility and emits the existing B2c cancellation/failure sequence; after
+   lease commit it retains the exact live lease until its matching typed R1
+   terminal. If transition acceptance and issue would otherwise coincide, the
+   accepted withdrawal has priority, so no issue or lease commit fires.
+
+For the approved `valid_count = 1` MR-1B scope, duplicate live direct
+registrations for this key are rejected fail-closed. A future one-entry to
+multiple-direct-record scope must retain an explicit set of immutable
+`PendingDescriptorKey`s and apply the one accepted withdrawal observation to
+every matching record; it cannot choose one record by ordinal or address.
+
+### Required B2c tests after approval
+
+- exact transition withdraws a stored pre-issue candidate; unrelated entry,
+  stale tag, or stale storage generation does not;
+- duplicate registration is rejected in the single-record scope;
+- matching transition with external ready-low and transition/issue same cycle
+  produces no R1 request or lease commit, then performs exact cancel/abort/R6
+  fault handling;
+- transition after joint issue preserves only the matching lease through typed
+  terminal, and transition thereafter cannot admit a new candidate.
+
+This amendment requires the two carrier changes above. It is submitted for
+authorization before B2c RTL implementation.
+
 ## Narrow purpose and revision decision
 
 MR-1B closes only this missing association:
