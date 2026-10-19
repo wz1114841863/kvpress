@@ -43,6 +43,34 @@ fail-closed there because that historical shell is not a descriptor owner or a
 measurement DUT. This is an elaboration closure only; the production
 owner-to-owner connection is exclusively in `RouteAMeasurementDut`.
 
+## Implementation record — batch 2a: R2 stored-candidate causality
+
+Batch 2a adds `DirectPendingAssociationId` to the immutable work and typed
+direct descriptor. The ID contains only the accepted transaction, pending
+`SourceInstance`, descriptor key, and endpoint-local generation. It carries
+unchanged through the existing producer/registry/R2 direct-class path. R2 now
+emits `DirectPendingCandidateAccepted` only on the existing direct candidate
+ingress fire, after that exact candidate has been stored. The materializer
+holds its one association in `AwaitCandidate` until this matching observation
+arrives, so it cannot duplicate work or silently treat producer-side work fire
+as R2 acceptance.
+
+This is deliberately not a lease, grant, cancellation, or authority update:
+R2's class ordering and cursor update remain at `core_mem_req.fire`, and no
+new candidate is made issue-eligible by this carrier.
+
+Verification on 2026-10-19:
+
+```text
+testOnly RouteASourcePlanBinderSpec            3/3
+testOnly RouteADirectPendingReadPathSpec       5/5
+testOnly DualMeasurementDutStructuralSpec      2/2
+git diff --check                               pass
+```
+
+The structural guard now requires the materializer's accepted-observation
+connection to R2 in addition to the batch-1 owner chain.
+
 ## Narrow purpose and revision decision
 
 MR-1B closes only this missing association:

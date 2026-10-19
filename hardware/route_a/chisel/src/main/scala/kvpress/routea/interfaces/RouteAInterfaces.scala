@@ -73,6 +73,23 @@ final class TransactionIdentity extends Bundle {
 }
 
 /**
+  * Immutable identity used only to correlate one pending descriptor, one R2
+  * direct-class candidate, and the endpoint generation opened for it. It is
+  * neither a payload address nor a second authority record.
+  */
+final class DirectPendingAssociationId(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val pending_instance = new SourceInstance(p)
+  val key = new PendingDescriptorKey(p)
+  val endpoint_generation = UInt(p.sourceGenerationWidth.W)
+}
+
+/** R2's exact stored-candidate observation for the MR-1B direct class. */
+final class DirectPendingCandidateAccepted(p: RouteASkeletonParameters) extends Bundle {
+  val association_id = new DirectPendingAssociationId(p)
+}
+
+/**
   * Immutable typed routing descriptor supplied by the named producer before
   * R2 sees a candidate. R2 transports but never decodes it; the registry
   * retains the authoritative copy and the later router consumes only that
@@ -100,6 +117,10 @@ final class DeliveryTargetDescriptor(p: RouteASkeletonParameters) extends Bundle
   // Direct-pending source completion is distinct from the last fragment of a
   // 512-B record. This immutable flag reaches the typed endpoint unchanged.
   val direct_source_last = Bool()
+  // MR-1B preserves the descriptor/accepted-source/endpoint association
+  // through R2 and the registry. Non-direct classes leave these fields inert.
+  val direct_pending_association = new DirectPendingAssociationId(p)
+  val direct_pending_storage_generation = UInt(p.sourceGenerationWidth.W)
   val pending_explicit_empty = Bool()
 }
 
@@ -738,6 +759,7 @@ final class P3PackReadWork(p: RouteASkeletonParameters) extends Bundle {
 
 /** One R3-owned direct-pending 512-B record read, i.e. eight 64-B fragments. */
 final class DirectPendingReadWork(p: RouteASkeletonParameters) extends Bundle {
+  val association_id = new DirectPendingAssociationId(p)
   val transaction_identity = new TransactionIdentity
   val arrival_ordinal = UInt(p.candidateOrdinalWidth.W)
   val candidate_id = UInt(p.candidateIdWidth.W)
@@ -746,6 +768,7 @@ final class DirectPendingReadWork(p: RouteASkeletonParameters) extends Bundle {
   val valid_count = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
   val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
   val endpoint_generation = UInt(p.sourceGenerationWidth.W)
+  val pending_storage_generation = UInt(p.sourceGenerationWidth.W)
   val pending_ordinal = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
   val source_last = Bool()
 }

@@ -560,6 +560,10 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
     val core_mem_req = RouteAChannels.core_mem_req(p)
     val core_mem_rsp_in = Flipped(RouteAChannels.core_mem_rsp(p))
     val source_delivery_out = RouteAChannels.source_delivery(p)
+    // A non-backpressuring observation of the exact direct-class candidate
+    // stored in R2.  It is emitted only on the existing ingress fire; it is
+    // neither a grant nor a lease acquisition.
+    val direct_candidate_accepted_out = Output(Valid(new DirectPendingCandidateAccepted(p)))
     val drain_collection_enable = Input(Bool())
     // R6 opens this only for the retirement descriptor-invalidating carrier.
     // It never reopens ordinary data-path candidate ingress during drain.
@@ -578,6 +582,9 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   val readCursor = RegInit(0.U(2.W))
   val outstandingValid = RegInit(VecInit(Seq.fill(requestIdSlots)(false.B)))
   val outstanding = Reg(Vec(requestIdSlots, new SourceCandidate(p)))
+
+  io.direct_candidate_accepted_out.valid := false.B
+  io.direct_candidate_accepted_out.bits := 0.U.asTypeOf(new DirectPendingCandidateAccepted(p))
 
   private def predicate(candidate: SourceCandidate, bit: Int): Bool =
     candidate.eligibility_snapshot(bit)
@@ -724,6 +731,11 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
     val freeIndex = PriorityEncoder(VecInit(slotValid.map(! _)))
     slotValid(freeIndex) := true.B
     slots(freeIndex) := acceptedIncoming
+    when(acceptedIncoming.candidate_class === p.r2DirectPendingClassCode.U) {
+      io.direct_candidate_accepted_out.valid := true.B
+      io.direct_candidate_accepted_out.bits.association_id :=
+        acceptedIncoming.delivery_target_descriptor.direct_pending_association
+    }
   }
 
   when(io.core_mem_req.fire) {
@@ -900,6 +912,8 @@ final class RouteAR3DirectPendingReadProducer(p: RouteASkeletonParameters) exten
   io.read_issue_out.bits.target_descriptor.pending_ordinal := work.pending_ordinal
   io.read_issue_out.bits.target_descriptor.p3_member_payload_ref := 0.U
   io.read_issue_out.bits.target_descriptor.direct_source_last := work.source_last
+  io.read_issue_out.bits.target_descriptor.direct_pending_association := work.association_id
+  io.read_issue_out.bits.target_descriptor.direct_pending_storage_generation := work.pending_storage_generation
   io.read_issue_out.bits.target_descriptor.pending_explicit_empty := false.B
   io.work_in.ready := workLegal && io.read_issue_out.ready
 }

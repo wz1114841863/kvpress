@@ -365,18 +365,22 @@ final class RouteADirectPendingAssociationMaterializer(p: RouteASkeletonParamete
     val direct_open_out = RouteAChannels.direct_pending_open(p)
     val direct_open_ack_in = Flipped(RouteAChannels.direct_pending_open_ack(p))
     val direct_work_out = RouteAChannels.direct_pending_read_work(p)
+    val direct_candidate_accepted_in = Input(Valid(new DirectPendingCandidateAccepted(p)))
   })
 
-  private val Idle = 0.U(2.W)
-  private val Open = 1.U(2.W)
-  private val AwaitAck = 2.U(2.W)
-  private val EmitWork = 3.U(2.W)
+  private val Idle = 0.U(3.W)
+  private val Open = 1.U(3.W)
+  private val AwaitAck = 2.U(3.W)
+  private val EmitWork = 3.U(3.W)
+  private val AwaitCandidate = 4.U(3.W)
   val state = RegInit(Idle)
   val association = Reg(new PendingDirectAssociationDeclaration(p))
   val endpointGeneration = Reg(UInt(p.sourceGenerationWidth.W))
   val workOrdinal = RegInit(0.U(p.candidateOrdinalWidth.W))
   private def sameIdentity(left: TransactionIdentity, right: TransactionIdentity): Bool = left.asUInt === right.asUInt
   private def sameInstance(left: SourceInstance, right: SourceInstance): Bool = left.asUInt === right.asUInt
+  private def sameAssociation(left: DirectPendingAssociationId, right: DirectPendingAssociationId): Bool =
+    left.asUInt === right.asUInt
 
   io.accepted_association_in.ready := state === Idle &&
     io.accepted_association_in.bits.pending_instance.source_kind === RouteASourceKind.Pending.U &&
@@ -409,6 +413,10 @@ final class RouteADirectPendingAssociationMaterializer(p: RouteASkeletonParamete
     (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.DestinationReady) |
     (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.PendingAuthoritative)
   io.direct_work_out.valid := state === EmitWork
+  io.direct_work_out.bits.association_id.transaction_identity := association.transaction_identity
+  io.direct_work_out.bits.association_id.pending_instance := association.pending_instance
+  io.direct_work_out.bits.association_id.key := association.key
+  io.direct_work_out.bits.association_id.endpoint_generation := endpointGeneration
   io.direct_work_out.bits.transaction_identity := association.transaction_identity
   io.direct_work_out.bits.arrival_ordinal := workOrdinal
   io.direct_work_out.bits.candidate_id := workOrdinal
@@ -417,11 +425,24 @@ final class RouteADirectPendingAssociationMaterializer(p: RouteASkeletonParamete
   io.direct_work_out.bits.valid_count := association.valid_count
   io.direct_work_out.bits.destination_endpoint := association.destination_endpoint
   io.direct_work_out.bits.endpoint_generation := endpointGeneration
+  io.direct_work_out.bits.pending_storage_generation := association.pending_storage_generation
   io.direct_work_out.bits.pending_ordinal := association.pending_ordinal
   io.direct_work_out.bits.source_last := association.source_last
   when(io.direct_work_out.fire) {
     workOrdinal := workOrdinal + 1.U
-    state := Idle
+    state := AwaitCandidate
+  }
+  val emittedAssociation = Wire(new DirectPendingAssociationId(p))
+  emittedAssociation.transaction_identity := association.transaction_identity
+  emittedAssociation.pending_instance := association.pending_instance
+  emittedAssociation.key := association.key
+  emittedAssociation.endpoint_generation := endpointGeneration
+  when(state === AwaitCandidate && io.direct_candidate_accepted_in.valid) {
+    assert(sameAssociation(io.direct_candidate_accepted_in.bits.association_id, emittedAssociation),
+      "MR-1B direct candidate acceptance must name the exact emitted association")
+    when(sameAssociation(io.direct_candidate_accepted_in.bits.association_id, emittedAssociation)) {
+      state := Idle
+    }
   }
 
   val heldOpen = RegEnable(io.direct_open_out.bits, io.direct_open_out.valid && !io.direct_open_out.ready)

@@ -292,6 +292,7 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   directPendingProducer.io.work_in <> directAssociationMaterializer.io.direct_work_out
   directPendingIssue.io.read_issue_in <> directPendingProducer.io.read_issue_out
   delivery.io.r3_direct_pending_in <> directPendingIssue.io.candidate_out
+  directAssociationMaterializer.io.direct_candidate_accepted_in <> arbiter.io.direct_candidate_accepted_out
   inactive(delivery.io.r5_s2_packed_in)
   delivery.io.r5_reclaim_in <> pageManager.io.reclaim_candidate_out
   discard(delivery.io.r5_s2_packed_out)

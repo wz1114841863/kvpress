@@ -59,6 +59,7 @@ final class DualMeasurementDutStructuralSpec extends AnyFunSpec with ChiselSim {
       "directPending.io.pending_source_open_in <> directAssociationMaterializer.io.direct_open_out",
       "directAssociationMaterializer.io.direct_open_ack_in <> directPending.io.pending_source_open_ack_out",
       "directPendingProducer.io.work_in <> directAssociationMaterializer.io.direct_work_out",
+      "directAssociationMaterializer.io.direct_candidate_accepted_in <> arbiter.io.direct_candidate_accepted_out",
       "delivery.io.r3_direct_pending_in <> directPendingIssue.io.candidate_out",
       "readIngress.io.r3_direct_pending_in <> delivery.io.r3_direct_pending_out",
       "directPendingReadEndpoint.io.resolved_fragment_in <> endpointDemux.io.direct_pending_out",
