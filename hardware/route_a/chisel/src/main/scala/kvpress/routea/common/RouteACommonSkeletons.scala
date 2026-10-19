@@ -164,10 +164,54 @@ final class RouteAHotSourcePath(p: RouteASkeletonParameters) extends Module {
 }
 
 /**
-  * RTL2.3 logical S2 functional storage boundary. The two 32-KiB payload and
-  * 512-B sidecar capacities are modeled only as replaceable reference backing;
-  * this does not select a macro, port count, latency, controller, or PPA.
-  * Source service/GQA packetization remains a later owner-local RTL2.4 step.
+  * MR-2 logical S2 array interior, isolated from the S2 control wrapper.
+  *
+  * These named accesses preserve functional reference behavior only.  They
+  * are accepted-transaction accesses, not a selection of SRAM ports, banking,
+  * latency, macro, controller, clock, or PPA implementation.  The parent S2
+  * wrapper retains fill, READY, read authorization, GQA, release, and drain
+  * ownership.
+  */
+final class RouteAS2PayloadSidecarArrayBoundary(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_s2_payload_sidecar_array_boundary"
+
+  private val slots = 2
+  val io = IO(new Bundle {
+    val payload_write_enable = Input(Bool())
+    val payload_write_slot = Input(UInt(RouteAAnchorWidths.S2SlotWidth.W))
+    val payload_write_fragment = Input(UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W))
+    val payload_write_data = Input(UInt(RouteAAnchorWidths.CoreDataWidth.W))
+    val payload_read_slot = Input(UInt(RouteAAnchorWidths.S2SlotWidth.W))
+    val payload_read_fragment = Input(UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W))
+    val payload_read_data = Output(UInt(RouteAAnchorWidths.CoreDataWidth.W))
+    val sidecar_write_enable = Input(Bool())
+    val sidecar_write_slot = Input(UInt(RouteAAnchorWidths.S2SlotWidth.W))
+    val sidecar_write_ordinal = Input(UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W))
+    val sidecar_write_data = Input(UInt(64.W))
+    val sidecar_read_slot = Input(UInt(RouteAAnchorWidths.S2SlotWidth.W))
+    val sidecar_read_ordinal = Input(UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W))
+    val sidecar_read_data = Output(UInt(64.W))
+  })
+
+  val payload = Mem(slots * 512, UInt(RouteAAnchorWidths.CoreDataWidth.W))
+  val sidecar = Mem(slots * 64, UInt(64.W))
+  private def payloadIndex(slot: UInt, fragment: UInt): UInt = slot * 512.U + fragment
+  private def sidecarIndex(slot: UInt, ordinal: UInt): UInt = slot * 64.U + ordinal
+
+  when(io.payload_write_enable) {
+    payload.write(payloadIndex(io.payload_write_slot, io.payload_write_fragment), io.payload_write_data)
+  }
+  when(io.sidecar_write_enable) {
+    sidecar.write(sidecarIndex(io.sidecar_write_slot, io.sidecar_write_ordinal), io.sidecar_write_data)
+  }
+  io.payload_read_data := payload.read(payloadIndex(io.payload_read_slot, io.payload_read_fragment))
+  io.sidecar_read_data := sidecar.read(sidecarIndex(io.sidecar_read_slot, io.sidecar_read_ordinal))
+}
+
+/**
+  * RTL2.3 logical S2 control wrapper. The array interior is a replaceable
+  * functional boundary; S2 control does not select a macro, port count,
+  * latency, controller, or PPA.
   */
 final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_s2_gqa_source_wrapper"
@@ -226,13 +270,22 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   val requiresSidecar = RegInit(VecInit(Seq.fill(slots)(false.B)))
   val sidecarComplete = RegInit(VecInit(Seq.fill(slots)(false.B)))
   val consumerMask = RegInit(VecInit(Seq.fill(slots)(0.U(4.W))))
-  // Reference-only, flat logical storage: 2 x 512 payload fragments and
-  // 2 x 64 padded sidecar records. It remains replaceable by later SRAM
-  // realization and cannot be interpreted as a macro/port choice.
-  val payloadStore = Mem(slots * 512, UInt(RouteAAnchorWidths.CoreDataWidth.W))
-  val sidecarStore = Mem(slots * 64, UInt(64.W))
-  private def payloadIndex(slot: UInt, fragment: UInt): UInt = slot * 512.U + fragment
-  private def sidecarIndex(slot: UInt, ordinal: UInt): UInt = slot * 64.U + ordinal
+  // MR-2 keeps only the S2 byte arrays in the named child.  These wires name
+  // existing accepted functional accesses, not physical macro ports; the S2
+  // state machine owns every guard around them.
+  val storage = Module(new RouteAS2PayloadSidecarArrayBoundary(p))
+  storage.io.payload_write_enable := false.B
+  storage.io.payload_write_slot := 0.U
+  storage.io.payload_write_fragment := 0.U
+  storage.io.payload_write_data := 0.U
+  storage.io.sidecar_write_enable := false.B
+  storage.io.sidecar_write_slot := 0.U
+  storage.io.sidecar_write_ordinal := 0.U
+  storage.io.sidecar_write_data := 0.U
+  storage.io.payload_read_slot := 0.U
+  storage.io.payload_read_fragment := 0.U
+  storage.io.sidecar_read_slot := 0.U
+  storage.io.sidecar_read_ordinal := 0.U
   val payloadReadRspValid = RegInit(false.B)
   val payloadReadRsp = Reg(new S2PayloadReadResponse(p))
   val sidecarReadRspValid = RegInit(false.B)
@@ -326,7 +379,10 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     payloadFragment.last === payloadLastExpected
   io.s2_payload_fragment_in.ready := payloadMatches
   when(io.s2_payload_fragment_in.fire) {
-    payloadStore.write(payloadIndex(payloadSlot, payloadFragment.fragment_index), payloadFragment.data)
+    storage.io.payload_write_enable := true.B
+    storage.io.payload_write_slot := payloadSlot
+    storage.io.payload_write_fragment := payloadFragment.fragment_index
+    storage.io.payload_write_data := payloadFragment.data
     payloadNext(payloadSlot) := payloadNext(payloadSlot) + 1.U
   }
 
@@ -340,7 +396,10 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     sidecarFragment.record_ordinal === sidecarNext(sidecarFragmentSlot)
   io.s2_sidecar_fragment_in.ready := sidecarFragmentMatches
   when(io.s2_sidecar_fragment_in.fire) {
-    sidecarStore.write(sidecarIndex(sidecarFragmentSlot, sidecarFragment.record_ordinal), sidecarFragment.data)
+    storage.io.sidecar_write_enable := true.B
+    storage.io.sidecar_write_slot := sidecarFragmentSlot
+    storage.io.sidecar_write_ordinal := sidecarFragment.record_ordinal
+    storage.io.sidecar_write_data := sidecarFragment.data
     sidecarNext(sidecarFragmentSlot) := sidecarNext(sidecarFragmentSlot) + 1.U
   }
 
@@ -398,7 +457,9 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   when(io.s2_payload_read_req_in.fire) {
     payloadReadRspValid := true.B
     payloadReadRsp.request := payloadRead
-    payloadReadRsp.data := payloadStore.read(payloadIndex(payloadReadSlot, payloadRead.fragment_index))
+    storage.io.payload_read_slot := payloadReadSlot
+    storage.io.payload_read_fragment := payloadRead.fragment_index
+    payloadReadRsp.data := storage.io.payload_read_data
   }
 
   val sidecarRead = io.s2_sidecar_read_req_in.bits
@@ -414,7 +475,9 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   when(io.s2_sidecar_read_req_in.fire) {
     sidecarReadRspValid := true.B
     sidecarReadRsp.request := sidecarRead
-    sidecarReadRsp.data := sidecarStore.read(sidecarIndex(sidecarReadSlot, sidecarRead.record_ordinal))
+    storage.io.sidecar_read_slot := sidecarReadSlot
+    storage.io.sidecar_read_ordinal := sidecarRead.record_ordinal
+    sidecarReadRsp.data := storage.io.sidecar_read_data
   }
 
   // a_ready_low_nonmutation applies to the new owner-local functional-store

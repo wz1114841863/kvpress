@@ -29,6 +29,7 @@ final class RouteAInitDrainHarness(p: RouteASkeletonParameters) extends Module {
   StructuralTieOff.source(subsystem.source_plan_declaration_in)
   StructuralTieOff.source(subsystem.hot_payload_fragment_in)
   StructuralTieOff.source(subsystem.hot_position_sidecar_in)
+  StructuralTieOff.source(subsystem.pending_payload_read_binding_in)
   // RTL3.8.3's only outer source-packet boundary is the named functional
   // partial provider. Init/drain exercises no attention source, so keep each
   // provider carrier inert without restoring an interior verification ingress.

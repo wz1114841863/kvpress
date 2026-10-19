@@ -125,6 +125,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     // it makes no source selection and tolerates independent backpressure.
     packed_plan_fork.io.accepted_plan_in <> lifecycle.io.source_completion_plan_copy_out
     source_packet_adapter.io.accepted_plan_in <> packed_plan_fork.io.packet_plan_out
+    // This historical composition-only skeleton has no hot-activation
+    // consumer.  Drain the forked observation so the unused legacy contour
+    // remains elaboratable; RouteAMeasurementDut owns the production hot path.
+    StructuralTieOff.sink(packed_plan_fork.io.hot_activation_plan_out)
     packed_activation_binder.io.accepted_plan_in <> packed_plan_fork.io.packed_activation_plan_out
     lifecycle.io.hot_source_release_in <> hot_release
     s2.io.drain_collection_enable := lifecycle.io.drain_collection_enable

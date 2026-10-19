@@ -36,7 +36,10 @@ association now has a narrow
 awaiting user approval; independent MR-2 array-only storage-boundary work may
 proceed. The P3-only first batch is recorded in
 [`mr2_p3_array_boundary_contract.md`](mr2_p3_array_boundary_contract.md) and
-remains short of any wrapper selection. None
+the S2 payload/sidecar batch has isolated and directed-tested its logical
+array interior, recorded in
+[`mr2_s2_array_boundary_contract.md`](mr2_s2_array_boundary_contract.md).
+Both remain short of any wrapper selection. None
 of this is a selected future synthesis top or physical implementation. The separate
 [`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md)
 has restored the ignored A4.14.1 report/input closure locally and passed its
