@@ -1,6 +1,7 @@
 package kvpress.routea.rtl2
 
 import chisel3._
+import chisel3.util.Valid
 import chisel3.simulator.scalatest.ChiselSim
 import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAExclusiveP3PendingIngress, RouteAReadEndpointDemultiplexer, RouteAR2ReadIngressMerge, RouteAR3PackReadEndpoint, RouteAReadIssueCandidateAdapter, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
 import kvpress.routea.incremental.RouteAM2P3Wrapper
@@ -21,6 +22,9 @@ final class RouteAR3PackReadPathHarness(p: RouteASkeletonParameters) extends Mod
     val admission_context = Flipped(RouteAChannels.admission_context(p))
     val admission_authority = Flipped(RouteAChannels.r6_authority_transition(p))
     val pending_payload_binding = Flipped(RouteAChannels.pending_payload_read_binding(p))
+    val reconciliation_lookup = Flipped(RouteAChannels.pending_packing_reconciliation_lookup(p))
+    val reconciliation_result = RouteAChannels.pending_packing_reconciliation_result(p)
+    val accepted_binding_observation = Output(Valid(new AcceptedPendingPayloadBindingObservation(p)))
     val pack_read_work = Flipped(RouteAChannels.p3_pack_read_work(p))
     val p3_sidecar = Flipped(RouteAChannels.p3_sidecar_bind(p))
     val external = new CoreMemoryExternalPort(p)
@@ -53,6 +57,9 @@ final class RouteAR3PackReadPathHarness(p: RouteASkeletonParameters) extends Mod
   r3.io.admission_context_in <> io.admission_context
   r3.io.admission_authority_in <> io.admission_authority
   r3.io.pending_payload_binding_in <> io.pending_payload_binding
+  io.accepted_binding_observation := r3.io.accepted_pending_payload_binding_observation
+  r3.io.pending_packing_reconciliation_lookup_in <> io.reconciliation_lookup
+  io.reconciliation_result <> r3.io.pending_packing_reconciliation_result_out
   r3.io.p3_pack_read_work_in <> io.pack_read_work
   // This legacy RTL2 harness deliberately injects its own checked pack-read
   // work.  RTL3.9-A added R3's separate owner-produced materializer outputs;
@@ -149,6 +156,7 @@ final class RouteAR3PackReadPathSpec extends AnyFunSpec with ChiselSim {
     d.io.p3_mem_init_done.poke(false.B); d.io.p3_claim.valid.poke(false.B)
     d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B)
     d.io.pending_payload_binding.valid.poke(false.B)
+    d.io.reconciliation_lookup.valid.poke(false.B); d.io.reconciliation_result.ready.poke(false.B)
     d.io.pack_read_work.valid.poke(false.B); d.io.p3_sidecar.valid.poke(false.B)
     d.io.external.init_ack.valid.poke(false.B); d.io.external.request.ready.poke(false.B); d.io.external.response.valid.poke(false.B)
     d.io.external.init_ack.bits.adapter_epoch_ready.poke(true.B)
@@ -156,6 +164,44 @@ final class RouteAR3PackReadPathSpec extends AnyFunSpec with ChiselSim {
     d.io.external.response.bits.fragment_index.poke(0.U); d.io.external.response.bits.last.poke(true.B)
     d.io.external.response.bits.status.poke(p.coreMemoryOkStatusCode.U); d.io.external.response.bits.data.poke(0.U)
     d.io.p3_mem_init_done.poke(true.B); d.io.external.init_ack.valid.poke(true.B); d.clock.step(); d.io.external.init_ack.valid.poke(false.B)
+  }
+
+  private def fillReconciliationRegistration(
+    registration: PendingSourceDescriptorRegistration,
+    payloadRef: Int = 55,
+    sourceGeneration: Int = 1,
+    groupTag: Int = 1,
+  ): Unit = {
+    registration.transaction_identity.request_id.poke(3.U); registration.transaction_identity.incarnation.poke(1.U)
+    registration.pending_instance.source_kind.poke(RouteASourceKind.Pending.U)
+    registration.pending_instance.instance_coordinate.poke(0.U); registration.pending_instance.generation.poke(sourceGeneration.U)
+    registration.key.pending_descriptor_ref.poke(0.U); registration.key.pending_descriptor_generation.poke(0.U)
+    registration.entry_id.poke(0.U); registration.layer.poke(0.U); registration.kv_head.poke(0.U)
+    registration.logical_position.poke(0.U); registration.payload_ref.poke(payloadRef.U)
+    registration.transaction_group_tag.poke(groupTag.U); registration.group_member_ordinal.poke(0.U)
+    registration.group_valid_records.poke(1.U); registration.payload_handle_or_address.poke(payloadRef.U)
+    registration.pending_storage_generation.poke(sourceGeneration.U); registration.destination_endpoint.poke(0.U)
+    registration.pending_ordinal.poke(0.U); registration.source_last.poke(true.B); registration.valid_count.poke(1.U)
+  }
+
+  private def lookupReconciliation(
+    d: RouteAR3PackReadPathHarness,
+    payloadRef: Int = 55,
+    sourceGeneration: Int = 1,
+    groupTag: Int = 1,
+  ): BigInt = {
+    fillReconciliationRegistration(d.io.reconciliation_lookup.bits.registration, payloadRef, sourceGeneration, groupTag)
+    d.io.reconciliation_lookup.valid.poke(true.B)
+    var waited = 0
+    while (d.io.reconciliation_lookup.ready.peek().litValue == 0 && waited < 16) { d.clock.step(); waited += 1 }
+    d.io.reconciliation_lookup.ready.expect(true.B)
+    d.clock.step(); d.io.reconciliation_lookup.valid.poke(false.B)
+    waited = 0
+    while (d.io.reconciliation_result.valid.peek().litValue == 0 && waited < 16) { d.clock.step(); waited += 1 }
+    d.io.reconciliation_result.valid.expect(true.B)
+    val state = d.io.reconciliation_result.bits.state.peek().litValue
+    d.io.reconciliation_result.ready.poke(true.B); d.clock.step(); d.io.reconciliation_result.ready.poke(false.B)
+    state
   }
 
   private def claimAndAdmit(d: RouteAR3PackReadPathHarness, payloadRef: Int = 55): Unit = {
@@ -177,6 +223,40 @@ final class RouteAR3PackReadPathSpec extends AnyFunSpec with ChiselSim {
     d.io.admission_context.valid.poke(true.B); d.io.admission_authority.valid.poke(true.B); d.io.pending_payload_binding.valid.poke(true.B)
     d.io.admission_context.ready.expect(true.B); d.io.admission_authority.ready.expect(true.B); d.io.pending_payload_binding.ready.expect(true.B); d.clock.step()
     d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B); d.io.pending_payload_binding.valid.poke(false.B)
+  }
+
+  private def claimAdmitAndLookupSameCycle(d: RouteAR3PackReadPathHarness, payloadRef: Int = 55): Unit = {
+    val claim = d.io.p3_claim.bits
+    claim.layer.poke(0.U); claim.kv_head.poke(0.U); claim.owner.poke(0.U)
+    claim.page_ref.page_id.poke(1.U); claim.page_ref.generation.poke(1.U)
+    claim.valid_records.poke(1.U); claim.requires_tail_link.poke(false.B); claim.transaction_group_tag.poke(1.U)
+    d.io.p3_claim.valid.poke(true.B); d.io.p3_claim.ready.expect(true.B); d.clock.step(); d.io.p3_claim.valid.poke(false.B)
+
+    val admission = d.io.admission_context.bits
+    admission.entry_id.poke(0.U); admission.layer.poke(0.U); admission.kv_head.poke(0.U); admission.logical_position.poke(0.U)
+    admission.payload_ref.poke(payloadRef.U); admission.transaction_group_tag.poke(1.U); admission.group_member_ordinal.poke(0.U); admission.group_valid_records.poke(1.U)
+    val authority = d.io.admission_authority.bits
+    authority.entry_id.poke(0.U); authority.from_authority.poke(RouteAAuthorityStateCode.Hot.U); authority.to_authority.poke(RouteAAuthorityStateCode.Pending.U); authority.transaction_group_tag.poke(1.U)
+    val binding = d.io.pending_payload_binding.bits
+    binding.transaction_identity.request_id.poke(3.U); binding.transaction_identity.incarnation.poke(1.U)
+    binding.entry_id.poke(0.U); binding.layer.poke(0.U); binding.kv_head.poke(0.U); binding.logical_position.poke(0.U)
+    binding.payload_ref.poke(payloadRef.U); binding.transaction_group_tag.poke(1.U); binding.group_member_ordinal.poke(0.U); binding.group_valid_records.poke(1.U)
+    binding.payload_handle_or_address.poke(payloadRef.U); binding.source_generation.poke(1.U); binding.destination_endpoint.poke(0.U)
+    fillReconciliationRegistration(d.io.reconciliation_lookup.bits.registration, payloadRef = payloadRef)
+
+    d.io.admission_context.valid.poke(true.B); d.io.admission_authority.valid.poke(true.B); d.io.pending_payload_binding.valid.poke(true.B)
+    d.io.reconciliation_lookup.valid.poke(true.B)
+    d.io.admission_context.ready.expect(true.B); d.io.admission_authority.ready.expect(true.B); d.io.pending_payload_binding.ready.expect(true.B)
+    d.io.reconciliation_lookup.ready.expect(true.B)
+    // The Valid-only observation proves this lookup cannot deassert any
+    // member of the original three-way admission handshake.
+    d.io.accepted_binding_observation.valid.expect(true.B)
+    d.clock.step()
+    d.io.admission_context.valid.poke(false.B); d.io.admission_authority.valid.poke(false.B); d.io.pending_payload_binding.valid.poke(false.B)
+    d.io.reconciliation_lookup.valid.poke(false.B)
+    d.io.reconciliation_result.valid.expect(true.B)
+    d.io.reconciliation_result.bits.state.expect(PendingPackingReconciliationState.PendingMember.U)
+    d.io.reconciliation_result.ready.poke(true.B); d.clock.step(); d.io.reconciliation_result.ready.poke(false.B)
   }
 
   private def bindSidecar(d: RouteAR3PackReadPathHarness, payloadRef: Int = 55): Unit = {
@@ -223,6 +303,28 @@ final class RouteAR3PackReadPathSpec extends AnyFunSpec with ChiselSim {
       init(d); claimAndAdmit(d); bindSidecar(d); offerWork(d); acceptRead(d)
       (0 until 8).foreach { index => respond(d, index, index == 7) }
       d.io.p3_state.expect(3.U)
+    }
+  }
+
+  it("reconciles both admission/registration orders without admission backpressure") {
+    simulate(new RouteAR3PackReadPathHarness(p)) { d =>
+      init(d)
+      assert(lookupReconciliation(d) == PendingPackingReconciliationState.Unseen)
+      claimAndAdmit(d)
+      assert(lookupReconciliation(d) == PendingPackingReconciliationState.PendingMember)
+    }
+    simulate(new RouteAR3PackReadPathHarness(p)) { d =>
+      init(d); claimAndAdmit(d)
+      assert(lookupReconciliation(d) == PendingPackingReconciliationState.PendingMember)
+      assert(lookupReconciliation(d, payloadRef = 54) == PendingPackingReconciliationState.Unseen)
+    }
+  }
+
+  it("returns pending-member for an exact same-cycle admission and lookup") {
+    simulate(new RouteAR3PackReadPathHarness(p)) { d =>
+      init(d)
+      claimAdmitAndLookupSameCycle(d)
+      assert(lookupReconciliation(d) == PendingPackingReconciliationState.PendingMember)
     }
   }
 

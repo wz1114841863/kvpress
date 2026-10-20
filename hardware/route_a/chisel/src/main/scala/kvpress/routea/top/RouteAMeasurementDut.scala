@@ -119,6 +119,12 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
 
   sourcePlanBinder.io.declaration_in <> io.source_plan_declaration_in
   pendingDescriptorOwner.io.registration_in <> io.pending_source_descriptor_registration_in
+  pendingDescriptorOwner.io.accepted_pending_payload_binding_observation_in :=
+    m2P3.io.accepted_pending_payload_binding_observation
+  pendingDescriptorOwner.io.pending_packing_reconciliation_lookup_out <>
+    m2P3.io.pending_packing_reconciliation_lookup_in
+  pendingDescriptorOwner.io.pending_packing_reconciliation_result_in <>
+    m2P3.io.pending_packing_reconciliation_result_out
   pendingDescriptorOwner.io.association_query_in <> sourcePlanBinder.io.association_query_out
   sourcePlanBinder.io.association_declaration_in <> pendingDescriptorOwner.io.association_declaration_out
   directAssociationMaterializer.io.accepted_association_in <> sourcePlanBinder.io.accepted_pending_association_out

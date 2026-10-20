@@ -68,4 +68,28 @@ final class DualMeasurementDutStructuralSpec extends AnyFunSpec with ChiselSim {
       "directPendingReadEndpoint.io.resolved_fragment_in <> endpointDemux.io.direct_pending_out",
     ).foreach(connection => assert(source.contains(connection), s"missing W0-R1 connection: $connection"))
   }
+
+  it("keeps B2c reconciliation bounded, reset-only, and downstream of admission") {
+    val incremental = Files.readString(Paths.get(
+      "src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+    ))
+    val top = Files.readString(Paths.get(
+      "src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+    ))
+    Seq(
+      "RegInit(VecInit(Seq.fill(64)(false.B)))",
+      "Reg(Vec(64, new PendingPayloadReadBinding(p))",
+      "assert(PopCount(reconciliationPresent) <= 64.U)",
+      "io.admission_context_in.fire && pendingBindingOffered",
+      "io.pending_packing_reconciliation_lookup_in.ready := !reconciliationResultPending",
+      "PendingPackingReconciliationState.Unseen.U",
+      "PendingPackingReconciliationState.PendingMember.U",
+      "PendingPackingReconciliationState.TransitionedPacked.U",
+    ).foreach(fragment => assert(incremental.contains(fragment), s"missing B2c bounded reconciliation guard: $fragment"))
+    Seq(
+      "pendingDescriptorOwner.io.accepted_pending_payload_binding_observation_in :=",
+      "pendingDescriptorOwner.io.pending_packing_reconciliation_lookup_out <>",
+      "pendingDescriptorOwner.io.pending_packing_reconciliation_result_in <>",
+    ).foreach(connection => assert(top.contains(connection), s"missing B2c production connection: $connection"))
+  }
 }

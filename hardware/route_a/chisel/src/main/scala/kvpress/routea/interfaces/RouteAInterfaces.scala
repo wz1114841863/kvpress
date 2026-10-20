@@ -296,16 +296,55 @@ final class PendingSourceDescriptorRegistration(p: RouteASkeletonParameters) ext
   val transaction_identity = new TransactionIdentity
   val pending_instance = new SourceInstance(p)
   val key = new PendingDescriptorKey(p)
+  // Immutable provenance from the same pending-payload/location owner that
+  // formed this descriptor.  These fields do not select packing: they let R3
+  // later prove whether this descriptor was actually accepted into its
+  // retained-member ledger.
+  val entry_id = UInt(RouteAAnchorWidths.EntryIdWidth.W)
   val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
   val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
   val logical_position = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
   val payload_ref = UInt(RouteAAnchorWidths.PayloadRefWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val group_member_ordinal = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val group_valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
   val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
   val pending_storage_generation = UInt(p.sourceGenerationWidth.W)
   val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
   val pending_ordinal = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
   val source_last = Bool()
   val valid_count = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+}
+
+/** B2c's non-authoritative reconciliation state for one registered descriptor. */
+object PendingPackingReconciliationState {
+  final val Width = 2
+  final val Unseen = 0
+  final val PendingMember = 1
+  final val TransitionedPacked = 2
+}
+
+/**
+  * Read-only request from the pending descriptor owner to R3's bounded
+  * accepted-admission journal.  The registration is echoed, never altered.
+  */
+final class PendingPackingReconciliationLookup(p: RouteASkeletonParameters) extends Bundle {
+  val registration = new PendingSourceDescriptorRegistration(p)
+}
+
+/** Exact, read-only answer to a reconciliation lookup. */
+final class PendingPackingReconciliationResult(p: RouteASkeletonParameters) extends Bundle {
+  val registration = new PendingSourceDescriptorRegistration(p)
+  val state = UInt(PendingPackingReconciliationState.Width.W)
+}
+
+/**
+  * Non-backpressuring observation of an already accepted R3 admission member.
+  * It is an observation only: it cannot delay, reject, or mutate the frozen
+  * admission three-way join.
+  */
+final class AcceptedPendingPayloadBindingObservation(p: RouteASkeletonParameters) extends Bundle {
+  val payload_binding = new PendingPayloadReadBinding(p)
 }
 
 /** Read-only request pairing a selected pending SourceInstance with its key. */
@@ -1173,6 +1212,8 @@ object RouteAChannels {
   def admission_context(p: RouteASkeletonParameters) = Decoupled(new AdmissionContext(p))
   def pending_payload_read_binding(p: RouteASkeletonParameters) = Decoupled(new PendingPayloadReadBinding(p))
   def pending_source_descriptor_registration(p: RouteASkeletonParameters) = Decoupled(new PendingSourceDescriptorRegistration(p))
+  def pending_packing_reconciliation_lookup(p: RouteASkeletonParameters) = Decoupled(new PendingPackingReconciliationLookup(p))
+  def pending_packing_reconciliation_result(p: RouteASkeletonParameters) = Decoupled(new PendingPackingReconciliationResult(p))
   def pending_direct_association_query(p: RouteASkeletonParameters) = Decoupled(new PendingDirectAssociationQuery(p))
   def pending_direct_association_declaration(p: RouteASkeletonParameters) = Decoupled(new PendingDirectAssociationDeclaration(p))
   def publication_commit_observation(p: RouteASkeletonParameters) = Decoupled(new PublicationCommitObservation(p))

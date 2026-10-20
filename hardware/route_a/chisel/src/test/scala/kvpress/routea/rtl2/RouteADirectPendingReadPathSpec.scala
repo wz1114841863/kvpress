@@ -43,6 +43,25 @@ final class RouteADirectPendingReadPathHarness(p: RouteASkeletonParameters) exte
   val pendingDescriptorOwner = Module(new RouteAPendingDescriptorOwner(p))
 
   pendingDescriptorOwner.io.registration_in <> io.pending_descriptor_registration
+  // This unit harness has no R3 admission path.  Its explicit bounded reply
+  // models only the lawful `unseen` reconciliation outcome; it does not
+  // manufacture an admission, transition, lease, or authority fact.
+  val reconciliationReplyPending = RegInit(false.B)
+  val reconciliationReply = Reg(new PendingPackingReconciliationResult(p))
+  pendingDescriptorOwner.io.accepted_pending_payload_binding_observation_in.valid := false.B
+  pendingDescriptorOwner.io.accepted_pending_payload_binding_observation_in.bits :=
+    0.U.asTypeOf(new AcceptedPendingPayloadBindingObservation(p))
+  pendingDescriptorOwner.io.pending_packing_reconciliation_lookup_out.ready := !reconciliationReplyPending
+  when(pendingDescriptorOwner.io.pending_packing_reconciliation_lookup_out.fire) {
+    reconciliationReply.registration := pendingDescriptorOwner.io.pending_packing_reconciliation_lookup_out.bits.registration
+    reconciliationReply.state := PendingPackingReconciliationState.Unseen.U
+    reconciliationReplyPending := true.B
+  }
+  pendingDescriptorOwner.io.pending_packing_reconciliation_result_in.valid := reconciliationReplyPending
+  pendingDescriptorOwner.io.pending_packing_reconciliation_result_in.bits := reconciliationReply
+  when(pendingDescriptorOwner.io.pending_packing_reconciliation_result_in.fire) {
+    reconciliationReplyPending := false.B
+  }
   StructuralTieOff.source(pendingDescriptorOwner.io.association_query_in)
   StructuralTieOff.sink(pendingDescriptorOwner.io.association_declaration_out)
 
@@ -142,7 +161,8 @@ final class RouteADirectPendingReadPathSpec extends AnyFunSpec with ChiselSim {
     r.transaction_identity.request_id.poke(rid.U); r.transaction_identity.incarnation.poke(1.U)
     r.pending_instance.source_kind.poke(RouteASourceKind.Pending.U); r.pending_instance.instance_coordinate.poke(0.U); r.pending_instance.generation.poke(generation.U)
     r.key.pending_descriptor_ref.poke(0.U); r.key.pending_descriptor_generation.poke(0.U)
-    r.layer.poke(0.U); r.kv_head.poke(0.U); r.logical_position.poke(0.U); r.payload_ref.poke(0.U)
+    r.entry_id.poke(0.U); r.layer.poke(0.U); r.kv_head.poke(0.U); r.logical_position.poke(0.U); r.payload_ref.poke(0.U)
+    r.transaction_group_tag.poke(0.U); r.group_member_ordinal.poke(0.U); r.group_valid_records.poke(1.U)
     r.payload_handle_or_address.poke(55.U); r.pending_storage_generation.poke(1.U); r.destination_endpoint.poke(0.U)
     r.pending_ordinal.poke(ordinal.U); r.source_last.poke(sourceLast.B); r.valid_count.poke(1.U)
     d.io.pending_descriptor_registration.valid.poke(true.B)

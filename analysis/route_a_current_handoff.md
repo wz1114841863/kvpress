@@ -336,8 +336,11 @@ frozen.
 > The Full-KV legal-path audit originally found all three baseline path
 > segments missing. W0 has completed its bounded dual-DUT functional scope,
 > and MR-1A has completed the Route-A-hot plus Full-KV common lifecycle/status
-> scope. Direct-pending source-plan association has a narrow contract proposal
-> awaiting approval in `analysis/mr1b_direct_pending_cross_owner_contract_proposal.md`.
+> scope. Direct-pending source-plan association is in the approved bounded
+> MR-1B B2c implementation sequence: the first reset-only, fixed-64
+> reconciliation journal/query sub-batch is recorded in
+> `analysis/mr1b_direct_pending_cross_owner_contract_proposal.md`; atomic
+> withdrawal, cancel/abort, and R6-owned fault remain subsequent B2c work.
 > MR-2 array-only storage-boundary work may proceed independently. None selects
 > a top or begins physical realization work.
 > Read

@@ -610,6 +610,70 @@ or failure must match both transaction identity and its relevant accepted
 instance/generation; otherwise it is rejected without a deliverability,
 success terminal, release, or retire effect.
 
+## B2c bounded reconciliation implementation record
+
+The approved first B2c sub-batch is deliberately narrower than the later
+withdrawal/cancel/fault work.  It adds a read-only reconciliation journal to
+the existing `RouteAM2P3Wrapper` and connects it to the production
+`RouteAPendingDescriptorOwner`:
+
+```text
+accepted admission + immutable PendingPayloadReadBinding
+  -> Valid-only AcceptedPendingPayloadBindingObservation
+  -> fixed [0, 63] reset-only reconciliation journal
+  -> PendingPackingReconciliationLookup / Result
+  -> descriptor owner
+```
+
+The journal is not an authority owner.  A slot is written only on the existing
+accepted three-way admission (`admission_context_in.fire` together with its
+matched authority and binding), and its `transitioned_packed` bit may only be
+set on the matching accepted existing R3-to-R6 pending-to-packed transition.
+The observation is `Valid`, not a new ready/valid input: no lookup, descriptor
+owner, or future withdrawal consumer can backpressure admission, publication,
+or R6 authority acceptance.
+
+Within the current `RouteAMeasurementDut`, `RouteAAdmissionPublicationIngressAdapter`
+accepts one group containing at most 64 members and does not rearm before
+reset.  The journal is therefore a fixed 64-entry, reset-only tombstone.  It
+has an explicit `PopCount <= 64` structural assertion; it has no speculative
+eviction, runtime-retire deletion, or unbounded/reusable-adapter claim.
+
+An exact lookup compares all immutable binding provenance:
+`{transaction_identity, entry_id, layer, kv_head, logical_position,
+payload_ref, transaction_group_tag, group_member_ordinal,
+group_valid_records, payload_handle_or_address, pending_storage_generation ==
+source_generation, destination_endpoint}`.  It returns only:
+
+| Result | Meaning |
+| --- | --- |
+| `unseen` | no exact accepted admission fact has yet been observed; this is not a permanent negative and an ordinary direct source remains eligible under its real pending-authority rule |
+| `pending_member` | the exact immutable binding is an accepted packing member and no matching accepted transition has been observed |
+| `transitioned_packed` | the exact member has an accepted pending-to-packed transition recorded |
+
+The result channel is independently backpressurable and held stable, but it
+does not feed any original admission/publication ready equation.  Both legal
+orders are supported: registration before admission first observes `unseen`
+and later captures the Valid-only exact admission observation; admission before
+registration finds the retained immutable tombstone.  A same-cycle lookup and
+admission resolves to `pending_member`.  A transition-after-registration late
+lookup resolves to `transitioned_packed`; the subsequent B2c sub-batch must
+turn that observation into the already-approved atomic withdrawal, R2
+cancel/ack, endpoint abort/ack, and R6-owned fault path.
+
+This new journal/query/control state is Route-A incremental measurement DUT
+logic.  It must remain in the differential hardware BOM as an unestimated,
+non-zero control cost; it is neither an array-only proxy nor an external-memory
+service.
+
+P0 verification on 2026-10-20 used the no-model Chisel commands
+`testOnly kvpress.routea.rtl2.RouteAR3PackReadPathSpec` (6/6) and
+`testOnly kvpress.routea.rtl2.RouteADirectPendingReadPathSpec
+kvpress.routea.DualMeasurementDutStructuralSpec` (5/5 and 3/3).  The latter
+also elaborates both measurement DUTs.  These are functional/provenance checks
+only; they do not select a storage realization or provide synthesis, timing,
+area, energy, HBM-controller, or PPA evidence.
+
 ## Final minimum RTL scope if approved
 
 Approval of this revised contract authorizes only the following MR-1B work:

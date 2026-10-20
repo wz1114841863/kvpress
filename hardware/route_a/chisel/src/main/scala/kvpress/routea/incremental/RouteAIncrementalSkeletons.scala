@@ -301,6 +301,9 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
 
   val io = IO(new Bundle {
     val registration_in = Flipped(RouteAChannels.pending_source_descriptor_registration(p))
+    val accepted_pending_payload_binding_observation_in = Input(Valid(new AcceptedPendingPayloadBindingObservation(p)))
+    val pending_packing_reconciliation_lookup_out = RouteAChannels.pending_packing_reconciliation_lookup(p)
+    val pending_packing_reconciliation_result_in = Flipped(RouteAChannels.pending_packing_reconciliation_result(p))
     val association_query_in = Flipped(RouteAChannels.pending_direct_association_query(p))
     val association_declaration_out = RouteAChannels.pending_direct_association_declaration(p)
     val lease_eligibility_query_in = Flipped(RouteAChannels.direct_pending_lease_eligibility_query(p))
@@ -313,12 +316,33 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
   val declarationPending = RegInit(false.B)
   val declaration = Reg(new PendingDirectAssociationDeclaration(p))
   val pendingAuthoritative = RegInit(false.B)
+  val reconciliationLookupPending = RegInit(false.B)
+  val reconciliationAwaitingResult = RegInit(false.B)
+  val reconciliationKnown = RegInit(false.B)
+  val packingAssociated = RegInit(false.B)
+  val reconciliationTransitionedPacked = RegInit(false.B)
   val leaseLive = RegInit(false.B)
   val eligibilityPending = RegInit(false.B)
   val eligibility = Reg(new DirectPendingLeaseEligibility(p))
   private def sameIdentity(left: TransactionIdentity, right: TransactionIdentity): Bool = left.asUInt === right.asUInt
   private def sameInstance(left: SourceInstance, right: SourceInstance): Bool = left.asUInt === right.asUInt
   private def sameKey(left: PendingDescriptorKey, right: PendingDescriptorKey): Bool = left.asUInt === right.asUInt
+  private def matchesBinding(
+    descriptor: PendingSourceDescriptorRegistration,
+    binding: PendingPayloadReadBinding,
+  ): Bool =
+    sameIdentity(descriptor.transaction_identity, binding.transaction_identity) &&
+      descriptor.entry_id === binding.entry_id &&
+      descriptor.layer === binding.layer &&
+      descriptor.kv_head === binding.kv_head &&
+      descriptor.logical_position === binding.logical_position &&
+      descriptor.payload_ref === binding.payload_ref &&
+      descriptor.transaction_group_tag === binding.transaction_group_tag &&
+      descriptor.group_member_ordinal === binding.group_member_ordinal &&
+      descriptor.group_valid_records === binding.group_valid_records &&
+      descriptor.payload_handle_or_address === binding.payload_handle_or_address &&
+      descriptor.pending_storage_generation === binding.source_generation &&
+      descriptor.destination_endpoint === binding.destination_endpoint
 
   val registrationLegal = io.registration_in.bits.pending_instance.source_kind === RouteASourceKind.Pending.U &&
     io.registration_in.bits.valid_count === 1.U
@@ -327,13 +351,63 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
     registration := io.registration_in.bits
     registered := true.B
     pendingAuthoritative := true.B
+    reconciliationLookupPending := true.B
+    reconciliationAwaitingResult := false.B
+    reconciliationKnown := false.B
+    packingAssociated := false.B
+    reconciliationTransitionedPacked := false.B
     leaseLive := false.B
+  }
+
+  // The lookup is an owner-local, read-only reconciliation step.  It must
+  // complete before this descriptor can pair a pending source plan, but an
+  // `Unseen` answer remains a lawful direct source and keeps observing future
+  // accepted admissions.
+  io.pending_packing_reconciliation_lookup_out.valid := registered && reconciliationLookupPending
+  io.pending_packing_reconciliation_lookup_out.bits.registration := registration
+  when(io.pending_packing_reconciliation_lookup_out.fire) {
+    reconciliationLookupPending := false.B
+    reconciliationAwaitingResult := true.B
+  }
+
+  val reconciliationResult = io.pending_packing_reconciliation_result_in.bits
+  val reconciliationResultMatches = registered &&
+    reconciliationResult.registration.asUInt === registration.asUInt
+  io.pending_packing_reconciliation_result_in.ready := reconciliationAwaitingResult && reconciliationResultMatches
+  when(io.pending_packing_reconciliation_result_in.fire) {
+    reconciliationAwaitingResult := false.B
+    reconciliationKnown := true.B
+    when(reconciliationResult.state === PendingPackingReconciliationState.PendingMember.U) {
+      packingAssociated := true.B
+    }.elsewhen(reconciliationResult.state === PendingPackingReconciliationState.TransitionedPacked.U) {
+      reconciliationTransitionedPacked := true.B
+      pendingAuthoritative := false.B
+    }.otherwise {
+      assert(reconciliationResult.state === PendingPackingReconciliationState.Unseen.U)
+    }
+  }
+
+  // A registration may fire in the exact cycle that R3 accepts its matching
+  // admission.  Consume the Valid-only observation locally; it cannot feed
+  // backpressure into R3.  The later lookup result remains an exact duplicate
+  // check, not a prerequisite for this already accepted fact.
+  val registrationForObservation = Wire(new PendingSourceDescriptorRegistration(p))
+  registrationForObservation := registration
+  when(io.registration_in.fire) { registrationForObservation := io.registration_in.bits }
+  val observationMatches = io.accepted_pending_payload_binding_observation_in.valid &&
+    (registered || io.registration_in.fire) &&
+    matchesBinding(registrationForObservation,
+      io.accepted_pending_payload_binding_observation_in.bits.payload_binding)
+  when(observationMatches) {
+    packingAssociated := true.B
+    reconciliationKnown := true.B
   }
 
   val query = io.association_query_in.bits
   val queryMatches = registered && sameIdentity(query.transaction_identity, registration.transaction_identity) &&
     sameInstance(query.pending_instance, registration.pending_instance) && sameKey(query.key, registration.key)
-  io.association_query_in.ready := queryMatches && !declarationPending
+  io.association_query_in.ready := queryMatches && reconciliationKnown &&
+    !reconciliationTransitionedPacked && !declarationPending
   when(io.association_query_in.fire) {
     declaration.transaction_identity := registration.transaction_identity
     declaration.pending_instance := registration.pending_instance
@@ -1501,6 +1575,11 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     // the admitted member and stores it for the later, separate pack-read
     // work materializer; it does not create an R2/R1 request in this step.
     val pending_payload_binding_in = Flipped(RouteAChannels.pending_payload_read_binding(p))
+    // B2c reconciliation is a read-only observer/query path over accepted
+    // admissions.  It cannot feed ready into the three-way admission join.
+    val accepted_pending_payload_binding_observation = Output(Valid(new AcceptedPendingPayloadBindingObservation(p)))
+    val pending_packing_reconciliation_lookup_in = Flipped(RouteAChannels.pending_packing_reconciliation_lookup(p))
+    val pending_packing_reconciliation_result_out = RouteAChannels.pending_packing_reconciliation_result(p)
     // RTL3.9-A: R3's own immutable ledger and A0 provenance binding are the
     // only source of this functional-baseline work producer.  This output is
     // connected back to the existing checked input only by the composition
@@ -1586,6 +1665,16 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val membershipEntries = Reg(Vec(stages, Vec(64, new AdmissionContext(p))))
   val membershipPayloadBindingPresent = RegInit(VecInit(Seq.fill(stages)(0.U(64.W))))
   val membershipPayloadBindings = Reg(Vec(stages, Vec(64, new PendingPayloadReadBinding(p))))
+  // B2c: the current production ingress admits exactly one <=64-member group
+  // per reset.  This journal retains only the already accepted binding and
+  // its observed pending->packed outcome for late descriptor registration.
+  // It is not a second residency table and is cleared only by destructive
+  // reset, not by publication or runtime retirement.
+  val reconciliationPresent = RegInit(VecInit(Seq.fill(64)(false.B)))
+  val reconciliationBindings = Reg(Vec(64, new PendingPayloadReadBinding(p)))
+  val reconciliationTransitioned = RegInit(VecInit(Seq.fill(64)(false.B)))
+  val reconciliationResultPending = RegInit(false.B)
+  val reconciliationResult = Reg(new PendingPackingReconciliationResult(p))
   // RTL3.9-A materialization state is intentionally small functional control
   // only.  It neither holds KV payload nor grants R2 service.  A bit is set
   // only after the pre-existing work input accepts the exact generated item.
@@ -1692,6 +1781,11 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val pendingBindingOffered = io.pending_payload_binding_in.valid
   val admissionJoinReady = admissionStageMatches && admissionAuthorityMatches &&
     (!pendingBindingOffered || pendingPayloadBindingMatches)
+  // This is deliberately a Valid-only mirror of the actual accepted join.
+  // No descriptor-owner state can affect any of the three ready equations.
+  io.accepted_pending_payload_binding_observation.valid :=
+    io.admission_context_in.fire && pendingBindingOffered
+  io.accepted_pending_payload_binding_observation.bits.payload_binding := pendingPayloadBinding
   io.admission_context_in.ready := admissionJoinReady && io.admission_authority_in.valid
   io.admission_authority_in.ready := admissionJoinReady && io.admission_context_in.valid
   io.pending_payload_binding_in.ready := admissionJoinReady && io.admission_context_in.valid && io.admission_authority_in.valid
@@ -1703,6 +1797,10 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
       assert(io.pending_payload_binding_in.fire)
       membershipPayloadBindingPresent(admissionLayer) := membershipPayloadBindingPresent(admissionLayer) | admissionOrdinalMask
       membershipPayloadBindings(admissionLayer)(admission.group_member_ordinal(5, 0)) := pendingPayloadBinding
+      assert(!reconciliationPresent(admission.group_member_ordinal(5, 0)))
+      reconciliationPresent(admission.group_member_ordinal(5, 0)) := true.B
+      reconciliationBindings(admission.group_member_ordinal(5, 0)) := pendingPayloadBinding
+      reconciliationTransitioned(admission.group_member_ordinal(5, 0)) := false.B
     }
   }
   when(io.admission_authority_in.fire) {
@@ -2240,6 +2338,10 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   }
   when(io.authority_transition_out.fire) {
     observationAuthoritySent(observationLayer) := true.B
+    // The transition journal is updated only by the same accepted R3->R6
+    // event.  It observes authority; it neither originates nor duplicates it.
+    assert(reconciliationPresent(observationMemberOrdinal(observationLayer)(5, 0)))
+    reconciliationTransitioned(observationMemberOrdinal(observationLayer)(5, 0)) := true.B
   }
   val memberObservationDone = observationMemberSent(observationLayer) || io.publication_member_observation.fire
   val authorityObservationDone = observationAuthoritySent(observationLayer) || io.authority_transition_out.fire
@@ -2266,6 +2368,76 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   when(io.authority_transition_out.valid) {
     assert(io.authority_transition_out.bits.from_authority === RouteAAuthorityStateCode.Pending.U)
     assert(io.authority_transition_out.bits.to_authority === RouteAAuthorityStateCode.Packed.U)
+  }
+
+  // B2c late-registration reconciliation.  The lookup reads only immutable
+  // accepted bindings and their accepted-transition journal state.  It is
+  // entirely downstream of admission/publication ready paths.
+  private def reconciliationMatches(
+    registration: PendingSourceDescriptorRegistration,
+    binding: PendingPayloadReadBinding,
+  ): Bool =
+    registration.transaction_identity.asUInt === binding.transaction_identity.asUInt &&
+      registration.entry_id === binding.entry_id &&
+      registration.layer === binding.layer &&
+      registration.kv_head === binding.kv_head &&
+      registration.logical_position === binding.logical_position &&
+      registration.payload_ref === binding.payload_ref &&
+      registration.transaction_group_tag === binding.transaction_group_tag &&
+      registration.group_member_ordinal === binding.group_member_ordinal &&
+      registration.group_valid_records === binding.group_valid_records &&
+      registration.payload_handle_or_address === binding.payload_handle_or_address &&
+      registration.pending_storage_generation === binding.source_generation &&
+      registration.destination_endpoint === binding.destination_endpoint
+
+  val reconciliationLookup = io.pending_packing_reconciliation_lookup_in.bits
+  val reconciliationMatchVector = VecInit((0 until 64).map { index =>
+    reconciliationPresent(index) && reconciliationMatches(
+      reconciliationLookup.registration,
+      reconciliationBindings(index),
+    )
+  })
+  val reconciliationMatchAny = reconciliationMatchVector.asUInt.orR
+  val reconciliationMatchIndex = PriorityEncoder(reconciliationMatchVector)
+  val admissionMatchesLookup = io.admission_context_in.fire && pendingBindingOffered &&
+    reconciliationMatches(reconciliationLookup.registration, pendingPayloadBinding)
+  val transitionMatchesLookup = io.authority_transition_out.fire &&
+    reconciliationMatches(reconciliationLookup.registration,
+      reconciliationBindings(observationMemberOrdinal(observationLayer)(5, 0)))
+  io.pending_packing_reconciliation_lookup_in.ready := !reconciliationResultPending
+  when(io.pending_packing_reconciliation_lookup_in.fire) {
+    assert(PopCount(reconciliationMatchVector) <= 1.U)
+    reconciliationResult.registration := reconciliationLookup.registration
+    reconciliationResult.state := Mux(
+      transitionMatchesLookup,
+      PendingPackingReconciliationState.TransitionedPacked.U,
+      Mux(
+        admissionMatchesLookup,
+        PendingPackingReconciliationState.PendingMember.U,
+        Mux(
+        reconciliationMatchAny,
+        Mux(
+          reconciliationTransitioned(reconciliationMatchIndex),
+          PendingPackingReconciliationState.TransitionedPacked.U,
+          PendingPackingReconciliationState.PendingMember.U,
+        ),
+        PendingPackingReconciliationState.Unseen.U,
+      ),
+      ),
+    )
+    reconciliationResultPending := true.B
+  }
+  io.pending_packing_reconciliation_result_out.valid := reconciliationResultPending
+  io.pending_packing_reconciliation_result_out.bits := reconciliationResult
+  when(io.pending_packing_reconciliation_result_out.fire) {
+    reconciliationResultPending := false.B
+  }
+  assert(PopCount(reconciliationPresent) <= 64.U)
+  val heldReconciliationResult = RegEnable(io.pending_packing_reconciliation_result_out.bits,
+    io.pending_packing_reconciliation_result_out.valid && !io.pending_packing_reconciliation_result_out.ready)
+  when(RegNext(io.pending_packing_reconciliation_result_out.valid &&
+    !io.pending_packing_reconciliation_result_out.ready, false.B)) {
+    assert(io.pending_packing_reconciliation_result_out.bits.asUInt === heldReconciliationResult.asUInt)
   }
 
   val anyPostR6PageReady = postR6PageReadyActive.asUInt.orR
