@@ -189,6 +189,45 @@ every matching record; it cannot choose one record by ordinal or address.
 This amendment requires the two carrier changes above. It is submitted for
 authorization before B2c RTL implementation.
 
+### Implementation precondition found after approval — additional observation required
+
+The two changes above are necessary but not sufficient for an executable
+owner-to-owner proof in the current live graph. The registration currently
+enters `RouteAMeasurementDut` on an independent outer channel, while the real
+`PendingPayloadReadBinding` is consumed by the atomic
+`AdmissionPublicationIngressAdapter` three-way acceptance. There is no common
+accepted event from which the descriptor owner can verify that a registration
+actually names the binding R3 accepted. Field equality on an independently
+injected registration would not establish that fact.
+
+Before B2c RTL, add one more read-only carrier:
+
+```text
+AcceptedPendingPayloadBindingObservation { PendingPayloadReadBinding }
+```
+
+It is produced by the admission owner only after its existing atomic
+`admission-context + R6 hot->pending authority + pending-payload-binding`
+fire. The descriptor owner stores this immutable observation and accepts a
+direct descriptor registration only on complete equality with it, including
+the added entry/tag/member fields and `pending_storage_generation ==
+source_generation`. It emits no authority, allocation, or source-selection
+event.
+
+The withdrawal must also be an **atomic fanout** of the existing R3
+pending-to-packed transition: lifecycle/R6 and descriptor-owner withdrawal
+arms fire together from the one M2P3 transition offer. A later queued
+observation is insufficient because it could permit a conflicting R2 issue in
+the accepting cycle. The descriptor owner may deassert the matching
+lease-commit readiness combinationally while that exact offered transition is
+valid; the transition has no effect unless the shared fanout fires. This
+preserves R6 as sole authority and makes no delayed observation masquerade as
+same-cycle arbitration.
+
+These two wiring/observation requirements are an implementation-scope
+expansion beyond the originally approved two carrier edits. No B2c RTL is
+authorized by this document until they are explicitly approved.
+
 ## Narrow purpose and revision decision
 
 MR-1B closes only this missing association:
