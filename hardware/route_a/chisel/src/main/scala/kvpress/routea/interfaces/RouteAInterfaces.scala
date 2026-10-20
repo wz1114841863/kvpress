@@ -347,6 +347,17 @@ final class AcceptedPendingPayloadBindingObservation(p: RouteASkeletonParameters
   val payload_binding = new PendingPayloadReadBinding(p)
 }
 
+/**
+  * Read-only fanout of an already accepted R3-to-R6 pending-to-packed
+  * transition. The binding is copied from R3's immutable accepted-member
+  * journal so a direct descriptor can decide exact eligibility without using
+  * `entry_id` as an ambiguous payload key. This is not a residency
+  * transition, publication, or source-selection request.
+  */
+final class PendingToPackedReadEligibilityWithdrawal(p: RouteASkeletonParameters) extends Bundle {
+  val payload_binding = new PendingPayloadReadBinding(p)
+}
+
 /** Read-only request pairing a selected pending SourceInstance with its key. */
 final class PendingDirectAssociationQuery(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity

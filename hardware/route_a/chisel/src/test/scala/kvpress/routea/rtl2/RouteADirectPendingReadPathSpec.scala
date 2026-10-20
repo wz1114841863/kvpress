@@ -1,6 +1,7 @@
 package kvpress.routea.rtl2
 
 import chisel3._
+import chisel3.util.Valid
 import chisel3.simulator.scalatest.ChiselSim
 import kvpress.routea.common.{RouteACoreMemIfV1, RouteACoreSideArbiter, RouteADeliveryContextRegistry, RouteAReadEndpointDemultiplexer, RouteAR2ReadIngressMerge, RouteADirectPendingReadEndpoint, RouteAReadIssueCandidateAdapter, RouteAR3DirectPendingReadProducer, RouteATypedDeliveryRouter, RouteAUnifiedDeliveryContextAllocationBridge}
 import kvpress.routea.incremental.{RouteADirectPendingEndpointV1, RouteAPendingDescriptorOwner}
@@ -17,6 +18,7 @@ final class RouteADirectPendingReadPathHarness(p: RouteASkeletonParameters) exte
     // Test stimulus for the production descriptor-owner registration.  The
     // harness never fabricates a lease response or bypasses R2's owner query.
     val pending_descriptor_registration = Flipped(RouteAChannels.pending_source_descriptor_registration(p))
+    val pending_to_packed_withdrawal = Input(Valid(new PendingToPackedReadEligibilityWithdrawal(p)))
     val direct_payload = RouteAChannels.direct_pending_payload_fragment(p)
     val direct_commit = Flipped(RouteAChannels.gqa_consumer_commit(p))
     val external = new CoreMemoryExternalPort(p)
@@ -62,6 +64,7 @@ final class RouteADirectPendingReadPathHarness(p: RouteASkeletonParameters) exte
   when(pendingDescriptorOwner.io.pending_packing_reconciliation_result_in.fire) {
     reconciliationReplyPending := false.B
   }
+  pendingDescriptorOwner.io.pending_to_packed_read_eligibility_withdrawal_in := io.pending_to_packed_withdrawal
   StructuralTieOff.source(pendingDescriptorOwner.io.association_query_in)
   StructuralTieOff.sink(pendingDescriptorOwner.io.association_declaration_out)
 
@@ -147,6 +150,7 @@ final class RouteADirectPendingReadPathSpec extends AnyFunSpec with ChiselSim {
   private def init(d: RouteADirectPendingReadPathHarness): Unit = {
     d.io.direct_mem_init_done.poke(false.B); d.io.direct_open.valid.poke(false.B); d.io.direct_work.valid.poke(false.B)
     d.io.pending_descriptor_registration.valid.poke(false.B)
+    d.io.pending_to_packed_withdrawal.valid.poke(false.B)
     d.io.direct_payload.ready.poke(false.B); d.io.direct_commit.valid.poke(false.B)
     d.io.external.init_ack.valid.poke(false.B); d.io.external.request.ready.poke(false.B); d.io.external.response.valid.poke(false.B)
     d.io.external.init_ack.bits.adapter_epoch_ready.poke(true.B)
@@ -190,6 +194,16 @@ final class RouteADirectPendingReadPathSpec extends AnyFunSpec with ChiselSim {
     w.association_id.endpoint_generation.poke(generation.U)
     w.endpoint_generation.poke(generation.U); w.pending_storage_generation.poke(1.U); w.pending_ordinal.poke(ordinal.U); w.source_last.poke(sourceLast.B)
     d.io.direct_work.valid.poke(true.B)
+  }
+
+  private def withdraw(d: RouteADirectPendingReadPathHarness, payloadRef: Int = 0, generation: Int = 1): Unit = {
+    val b = d.io.pending_to_packed_withdrawal.bits.payload_binding
+    b.transaction_identity.request_id.poke(3.U); b.transaction_identity.incarnation.poke(1.U)
+    b.entry_id.poke(0.U); b.layer.poke(0.U); b.kv_head.poke(0.U); b.logical_position.poke(0.U)
+    b.payload_ref.poke(payloadRef.U); b.transaction_group_tag.poke(0.U)
+    b.group_member_ordinal.poke(0.U); b.group_valid_records.poke(1.U)
+    b.payload_handle_or_address.poke(55.U); b.source_generation.poke(generation.U); b.destination_endpoint.poke(0.U)
+    d.io.pending_to_packed_withdrawal.valid.poke(true.B)
   }
 
   private def acceptRead(d: RouteADirectPendingReadPathHarness): Unit = {
@@ -256,6 +270,35 @@ final class RouteADirectPendingReadPathSpec extends AnyFunSpec with ChiselSim {
       val bad = d.io.external.response.bits
       bad.transaction_identity.request_id.poke(3.U); bad.transaction_identity.incarnation.poke(1.U); bad.fragment_index.poke(0.U); bad.last.poke(false.B); bad.status.poke(0.U); bad.data.poke(0.U)
       d.io.external.response.valid.poke(true.B); d.clock.step(4); d.io.direct_payload.valid.expect(false.B); d.io.external.response.ready.expect(false.B); d.io.direct_active.expect(true.B)
+    }
+  }
+
+  it("gates a matching pre-issue direct candidate on accepted pending-to-packed withdrawal") {
+    simulate(new RouteADirectPendingReadPathHarness(p)) { d =>
+      init(d); registerDescriptor(d); open(d); offerWork(d)
+      var waited = 0
+      while (d.io.external.request.valid.peek().litValue == 0 && waited < 24) { d.clock.step(); waited += 1 }
+      d.io.external.request.valid.expect(true.B)
+      withdraw(d)
+      // Valid represents an already accepted authority transition.  It wins
+      // over this same-cycle R2/R1 lease attempt without creating a lease.
+      d.io.external.request.valid.expect(false.B); d.io.direct_lease_commit_fire.expect(false.B)
+      d.clock.step(); d.io.pending_to_packed_withdrawal.valid.poke(false.B)
+      d.io.external.request.ready.poke(true.B); d.clock.step(3); d.io.external.request.ready.poke(false.B)
+      d.io.external.request.valid.expect(false.B); d.io.direct_lease_commit_fire.expect(false.B)
+    }
+  }
+
+  it("does not withdraw a direct candidate for mismatched immutable provenance") {
+    simulate(new RouteADirectPendingReadPathHarness(p)) { d =>
+      init(d); registerDescriptor(d); open(d); offerWork(d)
+      var waited = 0
+      while (d.io.external.request.valid.peek().litValue == 0 && waited < 24) { d.clock.step(); waited += 1 }
+      d.io.external.request.valid.expect(true.B)
+      withdraw(d, payloadRef = 1)
+      d.io.external.request.valid.expect(true.B)
+      d.io.pending_to_packed_withdrawal.valid.poke(false.B)
+      acceptRead(d)
     }
   }
 

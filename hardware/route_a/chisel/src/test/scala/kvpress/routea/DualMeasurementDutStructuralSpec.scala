@@ -82,6 +82,8 @@ final class DualMeasurementDutStructuralSpec extends AnyFunSpec with ChiselSim {
       "assert(PopCount(reconciliationPresent) <= 64.U)",
       "io.admission_context_in.fire && pendingBindingOffered",
       "io.pending_packing_reconciliation_lookup_in.ready := !reconciliationResultPending",
+      "io.pending_to_packed_read_eligibility_withdrawal.valid := io.authority_transition_out.fire",
+      "assert(io.authority_transition_out.fire)",
       "PendingPackingReconciliationState.Unseen.U",
       "PendingPackingReconciliationState.PendingMember.U",
       "PendingPackingReconciliationState.TransitionedPacked.U",
@@ -90,6 +92,7 @@ final class DualMeasurementDutStructuralSpec extends AnyFunSpec with ChiselSim {
       "pendingDescriptorOwner.io.accepted_pending_payload_binding_observation_in :=",
       "pendingDescriptorOwner.io.pending_packing_reconciliation_lookup_out <>",
       "pendingDescriptorOwner.io.pending_packing_reconciliation_result_in <>",
+      "pendingDescriptorOwner.io.pending_to_packed_read_eligibility_withdrawal_in :=",
     ).foreach(connection => assert(top.contains(connection), s"missing B2c production connection: $connection"))
   }
 }

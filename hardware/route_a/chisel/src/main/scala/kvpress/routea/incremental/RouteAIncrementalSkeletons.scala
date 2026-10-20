@@ -304,6 +304,7 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
     val accepted_pending_payload_binding_observation_in = Input(Valid(new AcceptedPendingPayloadBindingObservation(p)))
     val pending_packing_reconciliation_lookup_out = RouteAChannels.pending_packing_reconciliation_lookup(p)
     val pending_packing_reconciliation_result_in = Flipped(RouteAChannels.pending_packing_reconciliation_result(p))
+    val pending_to_packed_read_eligibility_withdrawal_in = Input(Valid(new PendingToPackedReadEligibilityWithdrawal(p)))
     val association_query_in = Flipped(RouteAChannels.pending_direct_association_query(p))
     val association_declaration_out = RouteAChannels.pending_direct_association_declaration(p)
     val lease_eligibility_query_in = Flipped(RouteAChannels.direct_pending_lease_eligibility_query(p))
@@ -403,11 +404,22 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
     reconciliationKnown := true.B
   }
 
+  // Observe R6 authority already accepted; only local direct-read eligibility
+  // changes. The subsequent B2c cancel/ack sub-batch removes a stored R2
+  // candidate, but this same-cycle gate already prevents another lease/issue.
+  val withdrawalMatches = io.pending_to_packed_read_eligibility_withdrawal_in.valid && registered &&
+    matchesBinding(registration,
+      io.pending_to_packed_read_eligibility_withdrawal_in.bits.payload_binding)
+  when(withdrawalMatches) {
+    pendingAuthoritative := false.B
+    reconciliationTransitionedPacked := true.B
+  }
+
   val query = io.association_query_in.bits
   val queryMatches = registered && sameIdentity(query.transaction_identity, registration.transaction_identity) &&
     sameInstance(query.pending_instance, registration.pending_instance) && sameKey(query.key, registration.key)
   io.association_query_in.ready := queryMatches && reconciliationKnown &&
-    !reconciliationTransitionedPacked && !declarationPending
+    !reconciliationTransitionedPacked && !withdrawalMatches && !declarationPending
   when(io.association_query_in.fire) {
     declaration.transaction_identity := registration.transaction_identity
     declaration.pending_instance := registration.pending_instance
@@ -434,8 +446,8 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
   io.lease_eligibility_query_in.ready := !eligibilityPending
   when(io.lease_eligibility_query_in.fire) {
     eligibility.association_id := leaseQuery.association_id
-    eligibility.eligible := leaseQueryMatches && pendingAuthoritative && !leaseLive
-    eligibility.permanent_failure := !leaseQueryMatches || !pendingAuthoritative
+    eligibility.eligible := leaseQueryMatches && pendingAuthoritative && !withdrawalMatches && !leaseLive
+    eligibility.permanent_failure := !leaseQueryMatches || !pendingAuthoritative || withdrawalMatches
     eligibilityPending := true.B
   }
   io.lease_eligibility_out.valid := eligibilityPending
@@ -448,7 +460,7 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
     sameInstance(commit.association_id.pending_instance, registration.pending_instance) &&
     sameKey(commit.association_id.key, registration.key) &&
     commit.pending_storage_generation === registration.pending_storage_generation
-  io.lease_commit_in.ready := commitMatches
+  io.lease_commit_in.ready := commitMatches && !withdrawalMatches
   when(io.lease_commit_in.fire) { leaseLive := true.B }
 
   val heldDeclaration = RegEnable(io.association_declaration_out.bits,
@@ -1580,6 +1592,9 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     val accepted_pending_payload_binding_observation = Output(Valid(new AcceptedPendingPayloadBindingObservation(p)))
     val pending_packing_reconciliation_lookup_in = Flipped(RouteAChannels.pending_packing_reconciliation_lookup(p))
     val pending_packing_reconciliation_result_out = RouteAChannels.pending_packing_reconciliation_result(p)
+    // B2c's non-backpressuring, same-edge fanout of the *accepted* existing
+    // R3-to-R6 transition. It cannot stall or replace that authority event.
+    val pending_to_packed_read_eligibility_withdrawal = Output(Valid(new PendingToPackedReadEligibilityWithdrawal(p)))
     // RTL3.9-A: R3's own immutable ledger and A0 provenance binding are the
     // only source of this functional-baseline work producer.  This output is
     // connected back to the existing checked input only by the composition
@@ -2333,6 +2348,13 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   io.authority_transition_out.bits.from_authority := RouteAAuthorityStateCode.Pending.U
   io.authority_transition_out.bits.to_authority := RouteAAuthorityStateCode.Packed.U
   io.authority_transition_out.bits.transaction_group_tag := stageTag(observationLayer)
+  // `valid` is deliberately the accepted authority event, not merely the
+  // offered transition. No withdrawal receiver has a ready signal, so it
+  // cannot backpressure publication or R6. The binding was stored only by
+  // the original accepted admission join and prevents entry-id-only invalidation.
+  io.pending_to_packed_read_eligibility_withdrawal.valid := io.authority_transition_out.fire
+  io.pending_to_packed_read_eligibility_withdrawal.bits.payload_binding :=
+    reconciliationBindings(observationMemberOrdinal(observationLayer)(5, 0))
   when(io.publication_member_observation.fire) {
     observationMemberSent(observationLayer) := true.B
   }
@@ -2342,6 +2364,10 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     // event.  It observes authority; it neither originates nor duplicates it.
     assert(reconciliationPresent(observationMemberOrdinal(observationLayer)(5, 0)))
     reconciliationTransitioned(observationMemberOrdinal(observationLayer)(5, 0)) := true.B
+  }
+  when(io.pending_to_packed_read_eligibility_withdrawal.valid) {
+    assert(reconciliationPresent(observationMemberOrdinal(observationLayer)(5, 0)))
+    assert(io.authority_transition_out.fire)
   }
   val memberObservationDone = observationMemberSent(observationLayer) || io.publication_member_observation.fire
   val authorityObservationDone = observationAuthoritySent(observationLayer) || io.authority_transition_out.fire

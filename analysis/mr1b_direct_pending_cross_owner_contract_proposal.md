@@ -674,6 +674,25 @@ also elaborates both measurement DUTs.  These are functional/provenance checks
 only; they do not select a storage realization or provide synthesis, timing,
 area, energy, HBM-controller, or PPA evidence.
 
+The following B2c withdrawal sub-batch adds
+`PendingToPackedReadEligibilityWithdrawal`.  It is a `Valid`-only fanout of
+the exact immutable binding and is asserted only when the existing
+`authority_transition_out.fire` has accepted the R3-to-R6 transition.  The
+descriptor owner matches the complete binding before withdrawing its local
+pending-read eligibility.  Consequently, a matching same-cycle R2 lease
+commit/R1 request is suppressed, while an already issued lease remains outside
+this gate and an unrelated binding is unaffected.  This sub-batch does not
+backpressure the authority event or alter R2 ordering.  It intentionally does
+not yet reclaim a pre-issue R2 slot or abort an opened endpoint; those are the
+next approved cancel/ack and abort/ack sub-batches.
+
+Withdrawal verification on 2026-10-20 used
+`testOnly kvpress.routea.rtl2.RouteADirectPendingReadPathSpec` (7/7), followed
+by `testOnly kvpress.routea.rtl2.RouteAR3PackReadPathSpec
+kvpress.routea.DualMeasurementDutStructuralSpec` (6/6 and 3/3).  The latter
+guards the production `authority_transition_out.fire` relation and both DUT
+elaborations.  These remain functional control/provenance regressions only.
+
 ## Final minimum RTL scope if approved
 
 Approval of this revised contract authorizes only the following MR-1B work:
