@@ -25,6 +25,7 @@ final class RouteAR3PublicationHarness(p: RouteASkeletonParameters) extends Modu
     val admission_authority_in = Flipped(RouteAChannels.r6_authority_transition(p))
     val pending_payload_binding_in = Flipped(RouteAChannels.pending_payload_read_binding(p))
     val authority_transition_out = RouteAChannels.r6_authority_transition(p)
+    val pending_to_packed_withdrawal_valid = Output(Bool())
     val publication_commit_observation = RouteAChannels.publication_commit_observation(p)
     val publication_member_observation = RouteAChannels.publication_member_observation(p)
     val post_r6_packed_page_ready_observation = RouteAChannels.post_r6_packed_page_ready_observation(p)
@@ -53,6 +54,7 @@ final class RouteAR3PublicationHarness(p: RouteASkeletonParameters) extends Modu
   r3.io.admission_context_in <> io.admission_context_in; r3.io.admission_authority_in <> io.admission_authority_in
   r3.io.pending_payload_binding_in <> io.pending_payload_binding_in
   io.authority_transition_out <> r3.io.authority_transition_out
+  io.pending_to_packed_withdrawal_valid := r3.io.pending_to_packed_read_eligibility_withdrawal.valid
   io.publication_commit_observation <> r3.io.publication_commit_observation
   io.publication_member_observation <> r3.io.publication_member_observation
   io.post_r6_packed_page_ready_observation <> r3.io.post_r6_packed_page_ready_observation
@@ -309,6 +311,10 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
         dut.io.publication_member_observation.bits.group_member_ordinal.expect(ordinal.U)
         dut.io.authority_transition_out.bits.entry_id.expect((position * 288).U)
         dut.io.authority_transition_out.bits.from_authority.expect(2.U); dut.io.authority_transition_out.bits.to_authority.expect(3.U)
+        // These retained members carry no accepted pending-payload binding:
+        // their authority transition remains legal, but cannot withdraw a
+        // nonexistent direct-pending association.
+        dut.io.pending_to_packed_withdrawal_valid.expect(false.B)
         dut.clock.step()
       }
       dut.io.publication_member_observation.valid.expect(false.B); dut.io.authority_transition_out.valid.expect(false.B)

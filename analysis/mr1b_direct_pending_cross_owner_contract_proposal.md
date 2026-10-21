@@ -629,6 +629,10 @@ The journal is not an authority owner.  A slot is written only on the existing
 accepted three-way admission (`admission_context_in.fire` together with its
 matched authority and binding), and its `transitioned_packed` bit may only be
 set on the matching accepted existing R3-to-R6 pending-to-packed transition.
+An R3 member admitted without a pending-payload binding remains a legal
+packing-only member: its R3-to-R6 authority transition must still fire, but it
+does not set a journal bit and cannot emit a direct-read withdrawal because no
+direct-pending association exists to withdraw.
 The observation is `Valid`, not a new ready/valid input: no lookup, descriptor
 owner, or future withdrawal consumer can backpressure admission, publication,
 or R6 authority acceptance.
@@ -677,8 +681,9 @@ area, energy, HBM-controller, or PPA evidence.
 The following B2c withdrawal sub-batch adds
 `PendingToPackedReadEligibilityWithdrawal`.  It is a `Valid`-only fanout of
 the exact immutable binding and is asserted only when the existing
-`authority_transition_out.fire` has accepted the R3-to-R6 transition.  The
-descriptor owner matches the complete binding before withdrawing its local
+`authority_transition_out.fire` has accepted the R3-to-R6 transition **and**
+the exact member has an accepted pending-payload binding in the reconciliation
+journal.  The descriptor owner matches the complete binding before withdrawing its local
 pending-read eligibility.  Consequently, a matching same-cycle R2 lease
 commit/R1 request is suppressed, while an already issued lease remains outside
 this gate and an unrelated binding is unaffected.  This sub-batch does not

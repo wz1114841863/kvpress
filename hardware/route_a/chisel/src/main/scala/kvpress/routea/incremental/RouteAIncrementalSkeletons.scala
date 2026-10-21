@@ -2517,11 +2517,16 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   io.authority_transition_out.bits.from_authority := RouteAAuthorityStateCode.Pending.U
   io.authority_transition_out.bits.to_authority := RouteAAuthorityStateCode.Packed.U
   io.authority_transition_out.bits.transaction_group_tag := stageTag(observationLayer)
-  // `valid` is deliberately the accepted authority event, not merely the
-  // offered transition. No withdrawal receiver has a ready signal, so it
-  // cannot backpressure publication or R6. The binding was stored only by
-  // the original accepted admission join and prevents entry-id-only invalidation.
-  io.pending_to_packed_read_eligibility_withdrawal.valid := io.authority_transition_out.fire
+  // A packed transition is always forwarded to R6.  A direct-read withdrawal
+  // is narrower: it exists only for a member whose accepted admission also
+  // carried the immutable pending-payload binding recorded in this journal.
+  // Thus ordinary packing-only members neither invent a binding nor acquire a
+  // false direct-read withdrawal obligation.  No withdrawal receiver has a
+  // ready signal, so this qualified mirror cannot backpressure R3 or R6.
+  val transitionHasPendingReadBinding =
+    reconciliationPresent(observationMemberOrdinal(observationLayer)(5, 0))
+  io.pending_to_packed_read_eligibility_withdrawal.valid :=
+    io.authority_transition_out.fire && transitionHasPendingReadBinding
   io.pending_to_packed_read_eligibility_withdrawal.bits.payload_binding :=
     reconciliationBindings(observationMemberOrdinal(observationLayer)(5, 0))
   when(io.publication_member_observation.fire) {
@@ -2529,10 +2534,12 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   }
   when(io.authority_transition_out.fire) {
     observationAuthoritySent(observationLayer) := true.B
-    // The transition journal is updated only by the same accepted R3->R6
-    // event.  It observes authority; it neither originates nor duplicates it.
-    assert(reconciliationPresent(observationMemberOrdinal(observationLayer)(5, 0)))
-    reconciliationTransitioned(observationMemberOrdinal(observationLayer)(5, 0)) := true.B
+    // The journal observes only the subset of accepted transitions that own
+    // a direct-pending binding; it neither originates nor duplicates R6
+    // authority for ordinary packing-only members.
+    when(transitionHasPendingReadBinding) {
+      reconciliationTransitioned(observationMemberOrdinal(observationLayer)(5, 0)) := true.B
+    }
   }
   when(io.pending_to_packed_read_eligibility_withdrawal.valid) {
     assert(reconciliationPresent(observationMemberOrdinal(observationLayer)(5, 0)))
@@ -2596,7 +2603,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val reconciliationMatchIndex = PriorityEncoder(reconciliationMatchVector)
   val admissionMatchesLookup = io.admission_context_in.fire && pendingBindingOffered &&
     reconciliationMatches(reconciliationLookup.registration, pendingPayloadBinding)
-  val transitionMatchesLookup = io.authority_transition_out.fire &&
+  val transitionMatchesLookup = io.authority_transition_out.fire && transitionHasPendingReadBinding &&
     reconciliationMatches(reconciliationLookup.registration,
       reconciliationBindings(observationMemberOrdinal(observationLayer)(5, 0)))
   io.pending_packing_reconciliation_lookup_in.ready := !reconciliationResultPending
