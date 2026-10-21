@@ -35,6 +35,15 @@ interior can be isolated.
 
 ## Required verification
 
+The R3/R5 directed specification uses narrow, test-only simulator probes around
+the unchanged production owners.  The probes keep the publication/reclaim
+channels under test, but terminate unobserved packed-write and pack-read
+candidate carriers inside the probe.  This is necessary because the remote
+ChiselSim DPI bridge cannot generate accessors for B2c's deeply nested
+direct-pending association field when an otherwise unused full carrier is a
+simulation-root port.  It is a harness boundary only, not an R3/R5 RTL tie-off
+or a replacement for the production connection.
+
 - structural guard proves that availability/generation state is owned only by
   `RouteAR5AvailabilityArrayBoundary`, while PageManager retains no direct
   availability/generation `RegInit` vectors;

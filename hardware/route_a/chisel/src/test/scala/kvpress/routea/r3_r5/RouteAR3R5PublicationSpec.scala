@@ -2,9 +2,83 @@ package kvpress.routea.r3_r5
 
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
+import kvpress.routea.interfaces.{RouteAChannels, StructuralTieOff}
 import kvpress.routea.incremental.{RouteAM2P3Wrapper, RouteAPageManager}
 import kvpress.routea.params.{RouteADescriptorOperationKind, RouteAM2GroupMember, RouteAPublicationStatus, RouteAR6Encoding, RouteASkeletonParameters}
+import kvpress.routea.r5.RouteAReclaimHarness
 import org.scalatest.funspec.AnyFunSpec
+
+/**
+  * Narrow simulator-facing view of the production R3 owner.
+  *
+  * The publication checks never observe an R2 candidate or a pack-read issue.
+  * Keeping those rich carriers below this probe avoids the remote ChiselSim
+  * DPI generator's nested-direct-association limitation without changing R3.
+  */
+final class RouteAR3PublicationHarness(p: RouteASkeletonParameters) extends Module {
+  val io = IO(new Bundle {
+    val mem_init_done = Input(Bool())
+    val drain_collection_enable = Input(Bool())
+    val p3_claim_in = Flipped(RouteAChannels.p3_claim(p))
+    val p3_claim_ack = RouteAChannels.p3_claim_ack(p)
+    val admission_context_in = Flipped(RouteAChannels.admission_context(p))
+    val admission_authority_in = Flipped(RouteAChannels.r6_authority_transition(p))
+    val pending_payload_binding_in = Flipped(RouteAChannels.pending_payload_read_binding(p))
+    val authority_transition_out = RouteAChannels.r6_authority_transition(p)
+    val publication_commit_observation = RouteAChannels.publication_commit_observation(p)
+    val publication_member_observation = RouteAChannels.publication_member_observation(p)
+    val post_r6_packed_page_ready_observation = RouteAChannels.post_r6_packed_page_ready_observation(p)
+    val p3_pending_fragment_in = Flipped(RouteAChannels.p3_pending_fragment(p))
+    val p3_sidecar_bind_in = Flipped(RouteAChannels.p3_sidecar_bind(p))
+    val p3_packed_write_issue_in = Flipped(RouteAChannels.p3_packed_write_issue(p))
+    val p3_packed_write_terminal_in = Flipped(RouteAChannels.p3_packed_write_terminal(p))
+    val descriptor_durability_prerequisite_in = Flipped(RouteAChannels.descriptor_durability_prerequisite(p))
+    val m2_group_member_req_out = RouteAChannels.m2_group_member_req(p)
+    val m2_group_member_rsp_in = Flipped(RouteAChannels.m2_group_member_rsp(p))
+    val p3_observe_layer = Input(UInt(kvpress.routea.params.RouteAAnchorWidths.LayerWidth.W))
+    val p3_observe_state = Output(UInt(kvpress.routea.params.RouteAAnchorWidths.P3StateWidth.W))
+    val p3_observe_generation = Output(UInt(p.p3StageGenerationWidth.W))
+    val m2_publish_candidate_out = RouteAChannels.metadata_publish_req(p)
+    val m2_publish_req_in = Flipped(RouteAChannels.metadata_publish_req(p))
+    val metadata_publish_visibility_apply = RouteAChannels.metadata_publish_visibility(p)
+    val metadata_publish_visibility_ack_in = Flipped(RouteAChannels.metadata_publish_visibility_ack)
+    val m2_publish_ack = RouteAChannels.metadata_publish_ack(p)
+    val component_status_out = RouteAChannels.component_status(p)
+  })
+
+  private val r3 = Module(new RouteAM2P3Wrapper(p))
+  r3.io.mem_init_done := io.mem_init_done
+  r3.io.drain_collection_enable := io.drain_collection_enable
+  r3.io.p3_claim_in <> io.p3_claim_in; io.p3_claim_ack <> r3.io.p3_claim_ack
+  r3.io.admission_context_in <> io.admission_context_in; r3.io.admission_authority_in <> io.admission_authority_in
+  r3.io.pending_payload_binding_in <> io.pending_payload_binding_in
+  io.authority_transition_out <> r3.io.authority_transition_out
+  io.publication_commit_observation <> r3.io.publication_commit_observation
+  io.publication_member_observation <> r3.io.publication_member_observation
+  io.post_r6_packed_page_ready_observation <> r3.io.post_r6_packed_page_ready_observation
+  r3.io.p3_pending_fragment_in <> io.p3_pending_fragment_in; r3.io.p3_sidecar_bind_in <> io.p3_sidecar_bind_in
+  r3.io.p3_packed_write_issue_in <> io.p3_packed_write_issue_in
+  r3.io.p3_packed_write_terminal_in <> io.p3_packed_write_terminal_in
+  r3.io.descriptor_durability_prerequisite_in <> io.descriptor_durability_prerequisite_in
+  io.m2_group_member_req_out <> r3.io.m2_group_member_req_out; r3.io.m2_group_member_rsp_in <> io.m2_group_member_rsp_in
+  r3.io.p3_observe_layer := io.p3_observe_layer; io.p3_observe_state := r3.io.p3_observe_state
+  io.p3_observe_generation := r3.io.p3_observe_generation
+  io.m2_publish_candidate_out <> r3.io.m2_publish_candidate_out; r3.io.m2_publish_req_in <> io.m2_publish_req_in
+  io.metadata_publish_visibility_apply <> r3.io.metadata_publish_visibility_apply
+  r3.io.metadata_publish_visibility_ack_in <> io.metadata_publish_visibility_ack_in; io.m2_publish_ack <> r3.io.m2_publish_ack
+  io.component_status_out <> r3.io.component_status_out
+
+  StructuralTieOff.source(r3.io.pending_packing_reconciliation_lookup_in)
+  StructuralTieOff.sink(r3.io.pending_packing_reconciliation_result_out)
+  StructuralTieOff.sink(r3.io.p3_pack_read_materialized_work_out)
+  StructuralTieOff.sink(r3.io.p3_materialized_sidecar_out)
+  r3.io.p3_pack_read_work_in.valid := false.B
+  r3.io.p3_pack_read_work_in.bits := 0.U.asTypeOf(r3.io.p3_pack_read_work_in.bits)
+  StructuralTieOff.sink(r3.io.p3_pack_read_issue_out)
+  StructuralTieOff.sink(r3.io.p3_packed_write_candidate_out)
+  StructuralTieOff.source(r3.io.p3_packed_write_delivery_in)
+  StructuralTieOff.sink(r3.io.p3_payload_durable_out)
+}
 
 /** RTL1.3 directed control-contract checks; no payload macro/controller/PPA model. */
 final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
@@ -26,7 +100,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     r6 = RouteAR6Encoding.testOnlyAnchor,
   )
 
-  private def initR3(dut: RouteAM2P3Wrapper): Unit = {
+  private def initR3(dut: RouteAR3PublicationHarness): Unit = {
     dut.io.mem_init_done.poke(false.B); dut.io.p3_observe_layer.poke(0.U)
     dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
     dut.io.p3_claim_in.valid.poke(false.B); dut.io.p3_claim_ack.ready.poke(true.B)
@@ -38,10 +112,8 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.io.publication_commit_observation.ready.poke(true.B); dut.io.publication_member_observation.ready.poke(true.B)
     dut.io.post_r6_packed_page_ready_observation.ready.poke(true.B)
     dut.io.p3_pending_fragment_in.valid.poke(false.B); dut.io.p3_sidecar_bind_in.valid.poke(false.B)
-    dut.io.p3_pack_read_work_in.valid.poke(false.B); dut.io.p3_pack_read_issue_out.ready.poke(true.B)
     dut.io.p3_packed_write_issue_in.valid.poke(false.B); dut.io.p3_packed_write_terminal_in.valid.poke(false.B)
-    dut.io.p3_packed_write_candidate_out.ready.poke(true.B); dut.io.p3_packed_write_delivery_in.valid.poke(false.B)
-    dut.io.p3_payload_durable_out.ready.poke(true.B); dut.io.descriptor_durability_prerequisite_in.valid.poke(false.B)
+    dut.io.descriptor_durability_prerequisite_in.valid.poke(false.B)
     dut.io.m2_group_member_req_out.ready.poke(false.B)
     dut.io.m2_group_member_rsp_in.valid.poke(false.B); dut.io.m2_publish_req_in.valid.poke(false.B)
     dut.io.m2_publish_candidate_out.ready.poke(false.B)
@@ -50,7 +122,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.io.mem_init_done.poke(true.B); dut.clock.step()
   }
 
-  private def claimOneRecord(dut: RouteAM2P3Wrapper): Unit = {
+  private def claimOneRecord(dut: RouteAR3PublicationHarness): Unit = {
     val claim = dut.io.p3_claim_in.bits
     claim.layer.poke(0.U); claim.kv_head.poke(0.U); claim.owner.poke(0.U)
     claim.page_ref.page_id.poke(0.U); claim.page_ref.generation.poke(0.U)
@@ -69,7 +141,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.clock.step(); dut.io.admission_context_in.valid.poke(false.B); dut.io.admission_authority_in.valid.poke(false.B)
   }
 
-  private def finishP3AndM2(dut: RouteAM2P3Wrapper): Unit = {
+  private def finishP3AndM2(dut: RouteAR3PublicationHarness): Unit = {
     val fragment = dut.io.p3_pending_fragment_in.bits
     fragment.layer.poke(0.U); fragment.stage_generation.poke(1.U); fragment.status.poke(p.coreMemoryOkStatusCode.U); fragment.payload_ref.poke(9.U)
     for (fragmentIndex <- 0 until 8) {
@@ -99,7 +171,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     }
   }
 
-  private def acceptPublicationCandidate(dut: RouteAM2P3Wrapper): Unit = {
+  private def acceptPublicationCandidate(dut: RouteAR3PublicationHarness): Unit = {
     dut.io.m2_publish_candidate_out.valid.expect(true.B)
     dut.io.m2_publish_candidate_out.bits.transaction_group_tag.expect(1.U)
     dut.io.m2_publish_candidate_out.bits.p3_layer.expect(0.U)
@@ -107,7 +179,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.io.m2_publish_candidate_out.ready.poke(true.B); dut.clock.step(); dut.io.m2_publish_candidate_out.ready.poke(false.B)
   }
 
-  private def offerDescriptorPrerequisite(dut: RouteAM2P3Wrapper): Unit = {
+  private def offerDescriptorPrerequisite(dut: RouteAR3PublicationHarness): Unit = {
     val prerequisite = dut.io.descriptor_durability_prerequisite_in.bits
     prerequisite.layer.poke(0.U); prerequisite.kv_head.poke(0.U)
     prerequisite.page_ref.page_id.poke(0.U); prerequisite.page_ref.generation.poke(0.U)
@@ -120,7 +192,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.clock.step(); dut.io.descriptor_durability_prerequisite_in.valid.poke(false.B)
   }
 
-  private def admitMember(dut: RouteAM2P3Wrapper, ordinal: Int, position: Int, groupRecords: Int = 3): Unit = {
+  private def admitMember(dut: RouteAR3PublicationHarness, ordinal: Int, position: Int, groupRecords: Int = 3): Unit = {
     val context = dut.io.admission_context_in.bits
     context.entry_id.poke((position * 288).U); context.layer.poke(0.U); context.kv_head.poke(0.U)
     context.logical_position.poke(position.U); context.payload_ref.poke((100 + position).U)
@@ -133,7 +205,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.clock.step(); dut.io.admission_context_in.valid.poke(false.B); dut.io.admission_authority_in.valid.poke(false.B)
   }
 
-  private def finishGroupP3AndM2(dut: RouteAM2P3Wrapper, records: Int): Unit = {
+  private def finishGroupP3AndM2(dut: RouteAR3PublicationHarness, records: Int): Unit = {
     val fragment = dut.io.p3_pending_fragment_in.bits
     fragment.layer.poke(0.U); fragment.stage_generation.poke(1.U); fragment.status.poke(p.coreMemoryOkStatusCode.U)
     for (fragmentIndex <- 0 until records * 8) {
@@ -170,7 +242,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("publishes exactly once only after durable P3 and both private M2 members") {
-    simulate(new RouteAM2P3Wrapper(p)) { dut =>
+    simulate(new RouteAR3PublicationHarness(p)) { dut =>
       initR3(dut); claimOneRecord(dut)
       val publish = dut.io.m2_publish_req_in.bits
       publish.transaction_group_tag.poke(1.U); publish.p3_layer.poke(0.U); publish.p3_stage_generation.poke(1.U)
@@ -191,7 +263,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("fails closed on a P3 fault and never accepts publication") {
-    simulate(new RouteAM2P3Wrapper(p)) { dut =>
+    simulate(new RouteAR3PublicationHarness(p)) { dut =>
       initR3(dut); claimOneRecord(dut)
       val fragment = dut.io.p3_pending_fragment_in.bits
       fragment.layer.poke(0.U); fragment.stage_generation.poke(1.U); fragment.fragment_index.poke(0.U); fragment.payload_ref.poke(9.U); fragment.data.poke(0.U)
@@ -203,7 +275,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("records non-contiguous retained members and reports them only after the one atomic publish") {
-    simulate(new RouteAM2P3Wrapper(p)) { dut =>
+    simulate(new RouteAR3PublicationHarness(p)) { dut =>
       initR3(dut)
       val claim = dut.io.p3_claim_in.bits
       claim.layer.poke(0.U); claim.kv_head.poke(0.U); claim.owner.poke(0.U)
@@ -251,9 +323,8 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     }
   }
 
-  private def initR5(dut: RouteAPageManager): Unit = {
+  private def initR5(dut: RouteAReclaimHarness): Unit = {
     dut.io.mem_init_done.poke(false.B); dut.io.page_allocation_req_in.valid.poke(false.B)
-    dut.io.descriptor_location_request_in.valid.poke(false.B); dut.io.descriptor_location_grant_out.ready.poke(true.B)
     dut.io.drain_collection_enable.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
     dut.io.reclaim_permit_in.valid.poke(false.B); dut.io.reclaim_permit_in.bits.transaction_identity.request_id.poke(0.U)
     dut.io.reclaim_permit_in.bits.transaction_identity.incarnation.poke(0.U); dut.io.reclaim_candidate_out.ready.poke(false.B)
@@ -263,13 +334,13 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.io.mem_init_done.poke(true.B); dut.clock.step()
   }
 
-  private def allocate(dut: RouteAPageManager, tag: Int): Unit = {
+  private def allocate(dut: RouteAReclaimHarness, tag: Int): Unit = {
     val alloc = dut.io.page_allocation_req_in.bits
     alloc.layer.poke(0.U); alloc.kv_head.poke(0.U); alloc.valid_records.poke(1.U); alloc.transaction_group_tag.poke(tag.U)
     dut.io.page_allocation_req_in.valid.poke(true.B); dut.io.page_allocation_req_in.ready.expect(true.B); dut.clock.step(); dut.io.page_allocation_req_in.valid.poke(false.B)
   }
 
-  private def descriptorTerminal(dut: RouteAPageManager, page: Int, tag: Int, kind: Int, fault: Boolean = false): Unit = {
+  private def descriptorTerminal(dut: RouteAReclaimHarness, page: Int, tag: Int, kind: Int, fault: Boolean = false): Unit = {
     val terminal = dut.io.descriptor_maintenance_terminal_in.bits
     terminal.kind.poke(kind.U); terminal.page_ref.page_id.poke(page.U); terminal.page_ref.generation.poke(0.U)
     terminal.transaction_group_tag.poke(tag.U); terminal.status.poke((if (fault) p.coreMemoryFaultStatusCode else p.coreMemoryOkStatusCode).U)
@@ -278,7 +349,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("keeps descriptor-private pages unreachable until publication and requires a tail link on append") {
-    simulate(new RouteAPageManager(p)) { dut =>
+    simulate(new RouteAReclaimHarness(p)) { dut =>
       initR5(dut); allocate(dut, 1); dut.io.page_allocation_rsp.valid.expect(true.B); dut.io.page_allocation_rsp.bits.requires_tail_link.expect(false.B); dut.clock.step()
       dut.io.metadata_publish_visibility_in.bits.page_ref.page_id.poke(0.U); dut.io.metadata_publish_visibility_in.bits.page_ref.generation.poke(0.U); dut.io.metadata_publish_visibility_in.bits.transaction_group_tag.poke(1.U)
       dut.io.metadata_publish_visibility_in.valid.poke(true.B); dut.io.metadata_publish_visibility_in.ready.expect(false.B); dut.io.metadata_publish_visibility_in.valid.poke(false.B)
@@ -297,7 +368,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("fails closed on descriptor fault and rejects premature invalidation") {
-    simulate(new RouteAPageManager(p)) { dut =>
+    simulate(new RouteAReclaimHarness(p)) { dut =>
       initR5(dut); allocate(dut, 1); dut.clock.step()
       val terminal = dut.io.descriptor_maintenance_terminal_in.bits
       terminal.kind.poke(RouteADescriptorOperationKind.Invalidate.U); terminal.page_ref.page_id.poke(0.U)
