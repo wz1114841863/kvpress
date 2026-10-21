@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Offline launcher for the shared EDA-server Chisel platform.
+# Override these variables when using another project/server layout.
+platform_root="${CHISEL_PLATFORM_ROOT:-/home/yaz80/wz_project/chisel_platform}"
+project_root="${CHISEL_PROJECT_ROOT:-$PWD}"
+java_home="${JAVA_HOME:-/usr/lib/jvm/java-11-openjdk-amd64}"
+java_bin="${java_home}/bin/java"
+launch_jar="${SBT_LAUNCH_JAR:-${platform_root}/caches/coursier/arc/https/github.com/sbt/sbt/releases/download/v1.11.5/sbt-1.11.5.zip/sbt/bin/sbt-launch.jar}"
+
+for required_path in "$java_bin" "$launch_jar" "$project_root"; do
+  if [[ ! -e "$required_path" ]]; then
+    echo "chisel-sbt: missing ${required_path}" >&2
+    exit 2
+  fi
+done
+
+export COURSIER_CACHE="${COURSIER_CACHE:-${platform_root}/caches/coursier}"
+ivy_home="${IVY_HOME:-${platform_root}/caches/ivy2}"
+sbt_home="${SBT_HOME:-${platform_root}/sbt-home}"
+verilator_install="${VERILATOR_INSTALL:-${platform_root}/toolchains/verilator}"
+verilator_root="${VERILATOR_ROOT:-${verilator_install}/share/verilator}"
+if [[ -x "${verilator_install}/bin/verilator" ]]; then
+  export VERILATOR_ROOT="$verilator_root"
+  export PATH="${verilator_install}/bin:${PATH}"
+fi
+
+cd "$project_root"
+exec "$java_bin" \
+  "-Dsbt.boot.directory=${sbt_home}/boot" \
+  "-Dsbt.global.base=${sbt_home}/global" \
+  "-Dsbt.ivy.home=${ivy_home}" \
+  "-Dcoursier.cache=${COURSIER_CACHE}" \
+  -jar "$launch_jar" "$@"
