@@ -744,6 +744,31 @@ typed R1-fault, and malformed-response contours after P2a. It does not close
 the remaining latest reconciliation regression, dual-DUT structural guard, or
 the final required-case coverage audit.
 
+### Qualified-withdrawal regression — 2026-10-21
+
+`c32fffe` repairs the bounded B2c journal behavior for an R3 packing-only
+member: its accepted R3-to-R6 transition remains an authority event, while a
+withdrawal/journal transition is emitted only if that member carries the exact
+accepted pending-payload binding.  The repair cannot create a binding, change
+R3 publication, or backpressure the authority transition.  The narrow R3/R5
+probe explicitly checks that a non-binding member produces no withdrawal.
+
+On the EDA server, the post-repair focused command completed with **22/22
+passing** and `EXIT_CODE=0`:
+
+```text
+Test / testOnly kvpress.routea.rtl2.RouteADirectPendingReadPathSpec \
+  kvpress.routea.rtl2.RouteAR3PackReadPathSpec \
+  kvpress.routea.r3_r5.RouteAR3R5PublicationSpec \
+  kvpress.routea.RouteAMeasurementDutR3Spec
+```
+
+The saved log is
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr1b_b2c_regression_c32fffe.log`.
+This is functional control/provenance evidence only.  It is the minimum
+post-fix regression, not MR-1B final acceptance: latest W0/MR-1A
+non-regression and the dual-measurement-DUT structural guard remain required.
+
 ## Final minimum RTL scope if approved
 
 Approval of this revised contract authorizes only the following MR-1B work:
