@@ -2672,6 +2672,50 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   when(io.component_status_out.fire && initStatusPending) { initStatusReported := true.B }
 }
 
+/**
+  * MR-2 logical R5 availability/generation-array interior.
+  *
+  * The parent PageManager supplies only its already accepted allocation and
+  * durable-reclaim events.  This child neither chooses a free page nor grants
+  * allocation, descriptor visibility, invalidation, release, or retirement.
+  * Its logical vectors are not a macro, port, banking, latency, controller,
+  * clock, or PPA selection.
+  */
+final class RouteAR5AvailabilityArrayBoundary(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_r5_availability_array_boundary"
+
+  private val entries = p.r5AllocatorEntries
+  private val indexWidth = math.max(1, log2Ceil(entries))
+  private val lineWidth = math.max(1, log2Ceil(entries / 4))
+  val io = IO(new Bundle {
+    val allocation_commit = Input(Valid(UInt(indexWidth.W)))
+    val reclaim_invalidation_commit = Input(Valid(UInt(lineWidth.W)))
+    val allocated_view = Output(Vec(entries, Bool()))
+    val generation_view = Output(Vec(entries, UInt(RouteAAnchorWidths.PageGenerationWidth.W)))
+  })
+
+  val allocated = RegInit(VecInit(Seq.fill(entries)(false.B)))
+  val generations = RegInit(VecInit(Seq.fill(entries)(0.U(RouteAAnchorWidths.PageGenerationWidth.W))))
+  io.allocated_view := allocated
+  io.generation_view := generations
+
+  when(io.allocation_commit.valid) {
+    allocated(io.allocation_commit.bits) := true.B
+  }
+  when(io.reclaim_invalidation_commit.valid) {
+    for (line <- 0 until entries / 4; lane <- 0 until 4) {
+      val page = line * 4 + lane
+      when(io.reclaim_invalidation_commit.bits === line.U && allocated(page)) {
+        allocated(page) := false.B
+        generations(page) := generations(page) + 1.U
+      }
+    }
+  }
+  when(io.allocation_commit.valid && io.reclaim_invalidation_commit.valid) {
+    assert(false.B, "R5 cannot allocate while an accepted reclaim invalidates availability")
+  }
+}
+
 /** RTL1.3 R5 control state; descriptor payload/HBM traffic remains on R2/R1. */
 final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_page_manager"
@@ -2719,8 +2763,15 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val initialized = RegInit(false.B)
   when(io.mem_init_done) { initialized := true.B }
   val initStatusReported = RegInit(false.B)
-  val allocated = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))
-  val generations = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(0.U(RouteAAnchorWidths.PageGenerationWidth.W))))
+  // MR-2 retains all allocator/reclaim/visibility control here and moves only
+  // the logical availability/generation array state into the named child.
+  val availabilityStorage = Module(new RouteAR5AvailabilityArrayBoundary(p))
+  availabilityStorage.io.allocation_commit.valid := false.B
+  availabilityStorage.io.allocation_commit.bits := 0.U
+  availabilityStorage.io.reclaim_invalidation_commit.valid := false.B
+  availabilityStorage.io.reclaim_invalidation_commit.bits := 0.U
+  val allocated = availabilityStorage.io.allocated_view
+  val generations = availabilityStorage.io.generation_view
   // Verification-only assertion shadow: it is not a descriptor cache, a
   // second allocator, or an additional authority owner. It records that a
   // previously allocated lane has crossed the one accepted durable invalidate
@@ -2901,6 +2952,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     when(reclaimDelivery.r1_response.status === p.coreMemoryFaultStatusCode.U) {
       reclaimFaulted := true.B
     }.otherwise {
+      availabilityStorage.io.reclaim_invalidation_commit.valid := true.B
+      availabilityStorage.io.reclaim_invalidation_commit.bits := reclaimLine
       for (line <- 0 until descriptorLines; lane <- 0 until 4) {
         when(reclaimLine === line.U && allocated(line * 4 + lane)) {
           // Capture the live generation before this same terminal advances it.
@@ -2909,9 +2962,7 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
           releaseGeneration(line * 4 + lane) := generations(line * 4 + lane)
           releasePending(line * 4 + lane) := true.B
           durableInvalidation(line * 4 + lane) := true.B
-          allocated(line * 4 + lane) := false.B
           descriptorReadable(line * 4 + lane) := false.B
-          generations(line * 4 + lane) := generations(line * 4 + lane) + 1.U
         }
       }
       reclaimSequence := reclaimSequence + 1.U
@@ -2952,7 +3003,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   io.page_allocation_req_in.ready := initialized && !io.drain_collection_enable && !reclaimPermitted && !allocationRspValid && allocValidRecords &&
     allocStreamWide < streamSlots.U && !buildActive(allocStream) && freeExists
   when(io.page_allocation_req_in.fire) {
-    allocated(freeIndex) := true.B
+    availabilityStorage.io.allocation_commit.valid := true.B
+    availabilityStorage.io.allocation_commit.bits := freeIndex
     allocationSeen(freeIndex) := true.B
     durableInvalidation(freeIndex) := false.B
     buildActive(allocStream) := true.B
