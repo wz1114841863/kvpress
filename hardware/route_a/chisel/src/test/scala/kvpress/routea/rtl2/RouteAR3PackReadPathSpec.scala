@@ -43,6 +43,11 @@ final class RouteAR3PackReadPathHarness(p: RouteASkeletonParameters) extends Mod
   StructuralTieOff.sink(r2.io.direct_lease_eligibility_query_out)
   StructuralTieOff.source(r2.io.direct_lease_eligibility_in)
   StructuralTieOff.sink(r2.io.direct_lease_commit_out)
+  // This pack-read-only legacy contour instantiates R2 but never admits a
+  // direct-class candidate.  B2c adds an explicit direct-cancel sideband;
+  // hold its request inactive and consume any impossible acknowledgement.
+  StructuralTieOff.source(r2.io.direct_candidate_cancel_in)
+  StructuralTieOff.sink(r2.io.direct_candidate_cancel_ack_out)
   val r1 = Module(new RouteACoreMemIfV1(p))
   val registry = Module(new RouteADeliveryContextRegistry(p))
   val router = Module(new RouteATypedDeliveryRouter(p))
