@@ -149,6 +149,51 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     d.clock.step(); d.io.source_plan_declaration_in.valid.poke(false.B)
   }
 
+  /**
+    * Immutable facts from the named pending-payload/location owner.  This is
+    * deliberately a descriptor registration rather than an authority or a
+    * testbench-created direct read: the production binder must still query,
+    * match, and wait for R6's accepted source plan.
+    */
+  private def registerDirectPendingDescriptor(d: RouteAMeasurementDut): Unit = {
+    val registration = d.io.pending_source_descriptor_registration_in.bits
+    registration.transaction_identity.request_id.poke(3.U); registration.transaction_identity.incarnation.poke(0.U)
+    registration.pending_instance.source_kind.poke(RouteASourceKind.Pending.U)
+    registration.pending_instance.instance_coordinate.poke(0.U); registration.pending_instance.generation.poke(1.U)
+    registration.key.pending_descriptor_ref.poke(1.U); registration.key.pending_descriptor_generation.poke(1.U)
+    registration.entry_id.poke(0.U); registration.layer.poke(0.U); registration.kv_head.poke(0.U)
+    registration.logical_position.poke(0.U); registration.payload_ref.poke(55.U)
+    registration.transaction_group_tag.poke(1.U); registration.group_member_ordinal.poke(0.U)
+    registration.group_valid_records.poke(1.U)
+    registration.payload_handle_or_address.poke(55.U); registration.pending_storage_generation.poke(1.U)
+    registration.destination_endpoint.poke(0.U); registration.pending_ordinal.poke(0.U)
+    registration.source_last.poke(true.B); registration.valid_count.poke(1.U)
+    d.io.pending_source_descriptor_registration_in.valid.poke(true.B)
+    await(64, "timed out waiting for immutable direct-pending descriptor registration")(
+      d.io.pending_source_descriptor_registration_in.ready.peek().litToBoolean,
+    )(d.clock.step())
+    d.clock.step(); d.io.pending_source_descriptor_registration_in.valid.poke(false.B)
+  }
+
+  private def declarePendingPlan(d: RouteAMeasurementDut): Unit = {
+    val plan = d.io.source_plan_declaration_in.bits
+    plan.transaction_identity.request_id.poke(3.U); plan.transaction_identity.incarnation.poke(0.U)
+    plan.source_presence.poke(2.U)
+    plan.hot_instance.source_kind.poke(RouteASourceKind.Hot.U)
+    plan.hot_instance.instance_coordinate.poke(0.U); plan.hot_instance.generation.poke(0.U)
+    plan.pending_instance.source_kind.poke(RouteASourceKind.Pending.U)
+    plan.pending_instance.instance_coordinate.poke(0.U); plan.pending_instance.generation.poke(1.U)
+    plan.packed_instance.source_kind.poke(RouteASourceKind.Packed.U)
+    plan.packed_instance.instance_coordinate.poke(0.U); plan.packed_instance.generation.poke(0.U)
+    plan.pending_descriptor_key.pending_descriptor_ref.poke(1.U)
+    plan.pending_descriptor_key.pending_descriptor_generation.poke(1.U)
+    d.io.source_plan_declaration_in.valid.poke(true.B)
+    await(64, "timed out waiting for named pending source-plan declaration")(
+      d.io.source_plan_declaration_in.ready.peek().litToBoolean,
+    )(d.clock.step())
+    d.clock.step(); d.io.source_plan_declaration_in.valid.poke(false.B)
+  }
+
   private def bindAndMature(d: RouteAMeasurementDut): Unit = {
     lifecycle(d, p.r6.maturityDispositionEventCode, requestId = 0, retain = true,
       payloadRef = 55, groupTag = 1, ordinal = 0, validRecords = 1)
@@ -200,6 +245,23 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     waitRequest(d, p.coreMemoryWriteRequestCode, 0)
     val (descriptorId, descriptorIncarnation) = waitRequest(d, p.coreMemoryWriteDataCode, 0)
     response(d, descriptorId, 0, last = true, incarnation = descriptorIncarnation)
+  }
+
+  /**
+    * Stops after R1 accepted the descriptor data beat but before the matching
+    * functional response.  R3 has all prior durability facts, while its
+    * pending->packed transition remains unavailable.  This gives the real
+    * direct candidate a legal pre-issue interval without fabricating a
+    * transition or stalling any R3/R6 authority handshake.
+    */
+  private def materializeThroughDescriptorWrite(d: RouteAMeasurementDut): (Int, Int) = {
+    val (pendingId, pendingIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
+    (0 until 8).foreach(index => response(d, pendingId, index, index == 7, incarnation = pendingIncarnation))
+    val (writeId, writeIncarnation) = waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+    (0 until 8).foreach(index => waitRequest(d, p.coreMemoryWriteDataCode, index))
+    response(d, writeId, 0, last = true, incarnation = writeIncarnation)
+    waitRequest(d, p.coreMemoryWriteRequestCode, 0)
+    waitRequest(d, p.coreMemoryWriteDataCode, 0)
   }
 
   private def sendPackedPartial(d: RouteAMeasurementDut, consumer: Int): Unit = {
@@ -348,6 +410,45 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
       d.io.attention_terminal_rsp.valid.expect(false.B)
       d.io.functional_r4_accepted_packet_out.valid.expect(false.B)
       d.io.functional_r4_merge_work_out.valid.expect(false.B)
+      d.io.external_core_mem_if_v1.request.valid.expect(false.B)
+    }
+  }
+
+  it("cancels a pre-issue direct candidate on the real accepted packed transition and lets R6 fault-terminal it") {
+    simulate(new RouteAMeasurementDut(p)) { d =>
+      initialize(d)
+      lifecycle(d, p.r6.attentionServiceEventCode, requestId = 3, retain = false)
+      registerDirectPendingDescriptor(d)
+      bindAndMature(d)
+
+      // R2/R1 has accepted all packing traffic through the descriptor write,
+      // but its completion response is intentionally delayed.  A subsequent
+      // legal pending plan therefore reaches the real R2 direct-class slot
+      // before R3 can produce the accepted pending->packed transition.
+      val (descriptorId, descriptorIncarnation) = materializeThroughDescriptorWrite(d)
+      declarePendingPlan(d)
+      await(128, "timed out waiting for the pre-issue direct R1 request")(
+        d.io.external_core_mem_if_v1.request.valid.peek().litToBoolean,
+      )(d.clock.step())
+      d.io.external_core_mem_if_v1.request.bits.request_kind.expect(p.coreMemoryReadRequestCode.U)
+      // Do not accept that direct request: it must remain a stored candidate
+      // until the true R3/R6 transition withdraws eligibility.
+      d.io.external_core_mem_if_v1.request.ready.poke(false.B)
+      response(d, descriptorId, 0, last = true, incarnation = descriptorIncarnation)
+
+      await(64, "timed out waiting for exact R2 pre-issue candidate cancellation")(
+        !d.io.external_core_mem_if_v1.request.valid.peek().litToBoolean,
+      )(d.clock.step())
+
+      await(128, "timed out waiting for R6-owned direct-pending association fault terminal")(
+        d.io.attention_terminal_rsp.valid.peek().litToBoolean,
+      )(d.clock.step())
+      d.io.attention_terminal_rsp.bits.transaction_identity.request_id.expect(3.U)
+      d.io.attention_terminal_rsp.bits.terminal_status.expect(p.coreMemoryFaultStatusCode.U)
+      d.io.functional_direct_pending_payload_fragment_out.valid.expect(false.B)
+      d.io.functional_r4_accepted_packet_out.valid.expect(false.B)
+      d.io.attention_terminal_rsp.ready.poke(true.B); d.clock.step(); d.io.attention_terminal_rsp.ready.poke(false.B)
+      d.clock.step(4)
       d.io.external_core_mem_if_v1.request.valid.expect(false.B)
     }
   }

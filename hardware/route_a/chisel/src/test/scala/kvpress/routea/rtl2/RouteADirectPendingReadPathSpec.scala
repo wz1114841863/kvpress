@@ -65,6 +65,7 @@ final class RouteADirectPendingReadPathHarness(p: RouteASkeletonParameters) exte
     reconciliationReplyPending := false.B
   }
   pendingDescriptorOwner.io.pending_to_packed_read_eligibility_withdrawal_in := io.pending_to_packed_withdrawal
+  StructuralTieOff.sink(pendingDescriptorOwner.io.direct_pending_association_withdrawal_out)
   StructuralTieOff.source(pendingDescriptorOwner.io.association_query_in)
   StructuralTieOff.sink(pendingDescriptorOwner.io.association_declaration_out)
 
@@ -86,6 +87,8 @@ final class RouteADirectPendingReadPathHarness(p: RouteASkeletonParameters) exte
   StructuralTieOff.source(readIngress.io.r5_s2_packed_in)
   r2.io.read_candidate_in <> readIngress.io.candidate_out
   StructuralTieOff.source(r2.io.candidate_in)
+  StructuralTieOff.source(r2.io.direct_candidate_cancel_in)
+  StructuralTieOff.sink(r2.io.direct_candidate_cancel_ack_out)
   r2.io.direct_lease_eligibility_query_out <> pendingDescriptorOwner.io.lease_eligibility_query_in
   r2.io.direct_lease_eligibility_in <> pendingDescriptorOwner.io.lease_eligibility_out
   r2.io.direct_lease_commit_out <> pendingDescriptorOwner.io.lease_commit_in
@@ -120,6 +123,8 @@ final class RouteADirectPendingReadPathHarness(p: RouteASkeletonParameters) exte
   direct.io.drain_collection_enable := false.B
   direct.io.pending_source_open_in <> io.direct_open
   StructuralTieOff.sink(direct.io.pending_source_open_ack_out)
+  StructuralTieOff.source(direct.io.direct_abort_in)
+  StructuralTieOff.sink(direct.io.direct_abort_ack_out)
   direct.io.gqa_consumer_commit_in <> io.direct_commit
   direct.io.direct_release_out.ready := true.B
   StructuralTieOff.sink(direct.io.component_status_out)

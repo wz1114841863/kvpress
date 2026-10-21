@@ -89,6 +89,25 @@ final class DirectPendingCandidateAccepted(p: RouteASkeletonParameters) extends 
   val association_id = new DirectPendingAssociationId(p)
 }
 
+/** Descriptor-owner observation that one accepted association lost pending-read eligibility. */
+final class DirectPendingAssociationWithdrawal(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val pending_instance = new SourceInstance(p)
+  val key = new PendingDescriptorKey(p)
+  val pending_storage_generation = UInt(p.sourceGenerationWidth.W)
+}
+
+/** Exact R2 stored-candidate removal before the joint R2/R1 issue edge. */
+final class DirectPendingCandidateCancel(p: RouteASkeletonParameters) extends Bundle {
+  val association_id = new DirectPendingAssociationId(p)
+  val reason = UInt(2.W)
+}
+
+/** R2 acknowledges that it removed precisely the named pre-issue direct slot. */
+final class DirectPendingCandidateCancelAck(p: RouteASkeletonParameters) extends Bundle {
+  val association_id = new DirectPendingAssociationId(p)
+}
+
 /** Read-only descriptor-owner proof request for one stored R2 direct slot. */
 final class DirectPendingLeaseEligibilityQuery(p: RouteASkeletonParameters) extends Bundle {
   val association_id = new DirectPendingAssociationId(p)
@@ -488,6 +507,25 @@ final class DirectPendingAbort(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
   val pending_instance = new SourceInstance(p)
   val endpoint_generation = UInt(p.sourceGenerationWidth.W)
+}
+
+/** Endpoint acknowledgement for an exact pre-issue abort. */
+final class DirectPendingAbortAck(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val pending_instance = new SourceInstance(p)
+  val endpoint_generation = UInt(p.sourceGenerationWidth.W)
+}
+
+/**
+  * Owner-to-R6 notification after a cancelled candidate and aborted endpoint.
+  * It is not a terminal; R6 alone turns this accepted failure into the outward
+  * fault terminal for its live attention tracker.
+  */
+final class DirectPendingAssociationFailure(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val pending_instance = new SourceInstance(p)
+  val endpoint_generation = UInt(p.sourceGenerationWidth.W)
+  val reason = UInt(2.W)
 }
 
 /** Local S2 fill-control association; never a physical source-buffer port. */
@@ -1237,6 +1275,7 @@ object RouteAChannels {
   def direct_pending_open(p: RouteASkeletonParameters) = Decoupled(new DirectPendingOpen(p))
   def direct_pending_open_ack(p: RouteASkeletonParameters) = Decoupled(new DirectPendingOpenAck(p))
   def direct_pending_abort(p: RouteASkeletonParameters) = Decoupled(new DirectPendingAbort(p))
+  def direct_pending_abort_ack(p: RouteASkeletonParameters) = Decoupled(new DirectPendingAbortAck(p))
   def s2_fill_open(p: RouteASkeletonParameters) = Decoupled(new S2FillOpen(p))
   def s2_fill_terminal(p: RouteASkeletonParameters) = Decoupled(new S2FillTerminal(p))
   def s2_sidecar_complete(p: RouteASkeletonParameters) = Decoupled(new S2SidecarComplete(p))
@@ -1268,6 +1307,10 @@ object RouteAChannels {
   def direct_pending_lease_eligibility_query(p: RouteASkeletonParameters) = Decoupled(new DirectPendingLeaseEligibilityQuery(p))
   def direct_pending_lease_eligibility(p: RouteASkeletonParameters) = Decoupled(new DirectPendingLeaseEligibility(p))
   def direct_pending_lease_commit(p: RouteASkeletonParameters) = Decoupled(new DirectPendingLeaseCommit(p))
+  def direct_pending_association_withdrawal(p: RouteASkeletonParameters) = Decoupled(new DirectPendingAssociationWithdrawal(p))
+  def direct_pending_candidate_cancel(p: RouteASkeletonParameters) = Decoupled(new DirectPendingCandidateCancel(p))
+  def direct_pending_candidate_cancel_ack(p: RouteASkeletonParameters) = Decoupled(new DirectPendingCandidateCancelAck(p))
+  def direct_pending_association_failure(p: RouteASkeletonParameters) = Decoupled(new DirectPendingAssociationFailure(p))
   def packed_s2_read_work(p: RouteASkeletonParameters) = Decoupled(new PackedS2ReadWork(p))
   def sidecar_read_work(p: RouteASkeletonParameters) = Decoupled(new SidecarReadWork(p))
   def packed_source_demand(p: RouteASkeletonParameters) = Decoupled(new PackedSourceDemand(p))

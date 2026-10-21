@@ -1,6 +1,6 @@
 # Route-A current handoff — RTL3 closure and measurement RTL status
 
-**Status date:** 2026-10-17
+**Status date:** 2026-10-21
 **Repository state:** `research/kvzap-latest`, RTL3 functional-subsystem
 closure reviewed at `cf9f055 docs: complete C4-D functional subsystem review`.
 
@@ -318,6 +318,36 @@ controller, wire/clock, synthesis, timing, or power result. Likewise, DC is
 meaningful only after the synthesis-eligible partition, clocks, black-box or
 macro assumptions, and numeric/memory wrapper choices have been separately
 frozen.
+
+## Measurement RTL live status — 2026-10-21
+
+MR-1A remains complete at its authorized Route-A-hot and Full-KV-common
+functional scope. MR-1B B2c has three bounded implementation sub-batches:
+
+1. the reset-only, fixed-64 reconciliation journal/query (`5348de9`);
+2. accepted pending-to-packed eligibility withdrawal (`8fe1bba`); and
+3. pre-issue R2 candidate cancel/ack, endpoint abort/ack, and the resulting
+   R6-owned fault terminal (current directed P2a witness: 4/4 local tests
+   passed on 2026-10-21).
+
+The P2a witness is evidence for that sub-batch, not yet a final MR-1B B2c
+completion disposition. Final closure still requires committed provenance,
+remote directed/non-regression execution, and the applicable structural guards.
+The single-record `valid_count = 1` restriction remains in force.
+
+The new B2c direct-candidate-cancel ports also exposed a separate baseline
+integration issue: `FullKVMeasurementDut` leaves the corresponding
+`RouteACoreSideArbiter` input/ack interface uninitialized. It was observed by
+the remote `DualMeasurementDutStructuralSpec` platform smoke test. This is a
+Full-KV tie-off/integration defect, not a B2c success result and not a reason
+to change Route-A authority semantics. It is recorded for a separately scoped
+baseline-local repair; it blocks that dual-DUT structural guard but does not
+invalidate the local B2c P2a witness.
+
+The EDA-server Chisel platform is user-local and offline. See
+[`chisel_platform_handoff_20261021.md`](chisel_platform_handoff_20261021.md).
+Future remote implementation work must use a provenance-preserving Git checkout
+rather than the earlier rsync-only platform smoke snapshot.
 
 ## New-conversation prompt seed
 

@@ -305,6 +305,7 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
     val pending_packing_reconciliation_lookup_out = RouteAChannels.pending_packing_reconciliation_lookup(p)
     val pending_packing_reconciliation_result_in = Flipped(RouteAChannels.pending_packing_reconciliation_result(p))
     val pending_to_packed_read_eligibility_withdrawal_in = Input(Valid(new PendingToPackedReadEligibilityWithdrawal(p)))
+    val direct_pending_association_withdrawal_out = RouteAChannels.direct_pending_association_withdrawal(p)
     val association_query_in = Flipped(RouteAChannels.pending_direct_association_query(p))
     val association_declaration_out = RouteAChannels.pending_direct_association_declaration(p)
     val lease_eligibility_query_in = Flipped(RouteAChannels.direct_pending_lease_eligibility_query(p))
@@ -323,6 +324,9 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
   val packingAssociated = RegInit(false.B)
   val reconciliationTransitionedPacked = RegInit(false.B)
   val leaseLive = RegInit(false.B)
+  val associationDeclarationAccepted = RegInit(false.B)
+  val associationWithdrawalPending = RegInit(false.B)
+  val associationWithdrawal = Reg(new DirectPendingAssociationWithdrawal(p))
   val eligibilityPending = RegInit(false.B)
   val eligibility = Reg(new DirectPendingLeaseEligibility(p))
   private def sameIdentity(left: TransactionIdentity, right: TransactionIdentity): Bool = left.asUInt === right.asUInt
@@ -358,6 +362,8 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
     packingAssociated := false.B
     reconciliationTransitionedPacked := false.B
     leaseLive := false.B
+    associationDeclarationAccepted := false.B
+    associationWithdrawalPending := false.B
   }
 
   // The lookup is an owner-local, read-only reconciliation step.  It must
@@ -435,7 +441,28 @@ final class RouteAPendingDescriptorOwner(p: RouteASkeletonParameters) extends Mo
 
   io.association_declaration_out.valid := declarationPending
   io.association_declaration_out.bits := declaration
-  when(io.association_declaration_out.fire) { declarationPending := false.B }
+  when(io.association_declaration_out.fire) {
+    declarationPending := false.B
+    associationDeclarationAccepted := true.B
+  }
+
+  // The descriptor owner reports only an exact already-declared association
+  // that lost eligibility before its read lease was issued.  This held local
+  // event cannot delay the R3/R6 transition that caused it.
+  val withdrawalCanNameAssociation = withdrawalMatches && !leaseLive &&
+    (associationDeclarationAccepted || io.association_declaration_out.fire)
+  when(withdrawalCanNameAssociation) {
+    associationWithdrawal.transaction_identity := declaration.transaction_identity
+    associationWithdrawal.pending_instance := declaration.pending_instance
+    associationWithdrawal.key := declaration.key
+    associationWithdrawal.pending_storage_generation := declaration.pending_storage_generation
+    associationWithdrawalPending := true.B
+  }
+  io.direct_pending_association_withdrawal_out.valid := associationWithdrawalPending
+  io.direct_pending_association_withdrawal_out.bits := associationWithdrawal
+  when(io.direct_pending_association_withdrawal_out.fire) {
+    associationWithdrawalPending := false.B
+  }
 
   val leaseQuery = io.lease_eligibility_query_in.bits
   val leaseQueryMatches = registered &&
@@ -488,17 +515,29 @@ final class RouteADirectPendingAssociationMaterializer(p: RouteASkeletonParamete
 
   val io = IO(new Bundle {
     val accepted_association_in = Flipped(RouteAChannels.pending_direct_association_declaration(p))
+    val association_withdrawal_in = Flipped(RouteAChannels.direct_pending_association_withdrawal(p))
     val direct_open_out = RouteAChannels.direct_pending_open(p)
     val direct_open_ack_in = Flipped(RouteAChannels.direct_pending_open_ack(p))
     val direct_work_out = RouteAChannels.direct_pending_read_work(p)
     val direct_candidate_accepted_in = Input(Valid(new DirectPendingCandidateAccepted(p)))
+    val direct_candidate_cancel_out = RouteAChannels.direct_pending_candidate_cancel(p)
+    val direct_candidate_cancel_ack_in = Flipped(RouteAChannels.direct_pending_candidate_cancel_ack(p))
+    val direct_abort_out = RouteAChannels.direct_pending_abort(p)
+    val direct_abort_ack_in = Flipped(RouteAChannels.direct_pending_abort_ack(p))
+    val association_failure_out = RouteAChannels.direct_pending_association_failure(p)
   })
 
-  private val Idle = 0.U(3.W)
-  private val Open = 1.U(3.W)
-  private val AwaitAck = 2.U(3.W)
-  private val EmitWork = 3.U(3.W)
-  private val AwaitCandidate = 4.U(3.W)
+  private val Idle = 0.U(4.W)
+  private val Open = 1.U(4.W)
+  private val AwaitAck = 2.U(4.W)
+  private val EmitWork = 3.U(4.W)
+  private val AwaitCandidate = 4.U(4.W)
+  private val AwaitIssue = 5.U(4.W)
+  private val EmitCancel = 6.U(4.W)
+  private val AwaitCancelAck = 7.U(4.W)
+  private val EmitAbort = 8.U(4.W)
+  private val AwaitAbortAck = 9.U(4.W)
+  private val EmitFailure = 10.U(4.W)
   val state = RegInit(Idle)
   val association = Reg(new PendingDirectAssociationDeclaration(p))
   val endpointGeneration = Reg(UInt(p.sourceGenerationWidth.W))
@@ -507,6 +546,11 @@ final class RouteADirectPendingAssociationMaterializer(p: RouteASkeletonParamete
   private def sameInstance(left: SourceInstance, right: SourceInstance): Bool = left.asUInt === right.asUInt
   private def sameAssociation(left: DirectPendingAssociationId, right: DirectPendingAssociationId): Bool =
     left.asUInt === right.asUInt
+  private def withdrawalMatches(withdrawal: DirectPendingAssociationWithdrawal): Bool =
+    sameIdentity(withdrawal.transaction_identity, association.transaction_identity) &&
+      sameInstance(withdrawal.pending_instance, association.pending_instance) &&
+      withdrawal.key.asUInt === association.key.asUInt &&
+      withdrawal.pending_storage_generation === association.pending_storage_generation
 
   io.accepted_association_in.ready := state === Idle &&
     io.accepted_association_in.bits.pending_instance.source_kind === RouteASourceKind.Pending.U &&
@@ -554,22 +598,64 @@ final class RouteADirectPendingAssociationMaterializer(p: RouteASkeletonParamete
   io.direct_work_out.bits.pending_storage_generation := association.pending_storage_generation
   io.direct_work_out.bits.pending_ordinal := association.pending_ordinal
   io.direct_work_out.bits.source_last := association.source_last
-  when(io.direct_work_out.fire) {
-    workOrdinal := workOrdinal + 1.U
-    state := AwaitCandidate
-  }
   val emittedAssociation = Wire(new DirectPendingAssociationId(p))
   emittedAssociation.transaction_identity := association.transaction_identity
   emittedAssociation.pending_instance := association.pending_instance
   emittedAssociation.key := association.key
   emittedAssociation.endpoint_generation := endpointGeneration
+  val candidateAcceptanceMatches = io.direct_candidate_accepted_in.valid &&
+    sameAssociation(io.direct_candidate_accepted_in.bits.association_id, emittedAssociation)
+  // R2's existing accepted-candidate observation is Valid-only and may be
+  // produced combinationally on the exact same edge that this materializer's
+  // work crosses the producer/ingress chain.  Treat that edge as the first
+  // lawful AwaitCandidate edge; otherwise the observation would be lost and
+  // the association could never see a later accepted withdrawal.
+  when(io.direct_work_out.fire) {
+    workOrdinal := workOrdinal + 1.U
+    state := Mux(candidateAcceptanceMatches, AwaitIssue, AwaitCandidate)
+  }
   when(state === AwaitCandidate && io.direct_candidate_accepted_in.valid) {
     assert(sameAssociation(io.direct_candidate_accepted_in.bits.association_id, emittedAssociation),
       "MR-1B direct candidate acceptance must name the exact emitted association")
-    when(sameAssociation(io.direct_candidate_accepted_in.bits.association_id, emittedAssociation)) {
-      state := Idle
+    when(candidateAcceptanceMatches) {
+      state := AwaitIssue
     }
   }
+
+  // Descriptor owner holds this event until the endpoint has opened and R2
+  // has accepted the exact candidate.  It names no authority and is accepted
+  // only before the joint lease/R1 issue can have happened.
+  io.association_withdrawal_in.ready := state === AwaitIssue &&
+    withdrawalMatches(io.association_withdrawal_in.bits)
+  when(io.association_withdrawal_in.fire) { state := EmitCancel }
+
+  io.direct_candidate_cancel_out.valid := state === EmitCancel
+  io.direct_candidate_cancel_out.bits.association_id := emittedAssociation
+  io.direct_candidate_cancel_out.bits.reason := 1.U
+  when(io.direct_candidate_cancel_out.fire) { state := AwaitCancelAck }
+
+  val cancelAckMatches = sameAssociation(io.direct_candidate_cancel_ack_in.bits.association_id, emittedAssociation)
+  io.direct_candidate_cancel_ack_in.ready := state === AwaitCancelAck && cancelAckMatches
+  when(io.direct_candidate_cancel_ack_in.fire) { state := EmitAbort }
+
+  io.direct_abort_out.valid := state === EmitAbort
+  io.direct_abort_out.bits.transaction_identity := association.transaction_identity
+  io.direct_abort_out.bits.pending_instance := association.pending_instance
+  io.direct_abort_out.bits.endpoint_generation := endpointGeneration
+  when(io.direct_abort_out.fire) { state := AwaitAbortAck }
+
+  val abortAckMatches = sameIdentity(io.direct_abort_ack_in.bits.transaction_identity, association.transaction_identity) &&
+    sameInstance(io.direct_abort_ack_in.bits.pending_instance, association.pending_instance) &&
+    io.direct_abort_ack_in.bits.endpoint_generation === endpointGeneration
+  io.direct_abort_ack_in.ready := state === AwaitAbortAck && abortAckMatches
+  when(io.direct_abort_ack_in.fire) { state := EmitFailure }
+
+  io.association_failure_out.valid := state === EmitFailure
+  io.association_failure_out.bits.transaction_identity := association.transaction_identity
+  io.association_failure_out.bits.pending_instance := association.pending_instance
+  io.association_failure_out.bits.endpoint_generation := endpointGeneration
+  io.association_failure_out.bits.reason := 1.U
+  when(io.association_failure_out.fire) { state := Idle }
 
   val heldOpen = RegEnable(io.direct_open_out.bits, io.direct_open_out.valid && !io.direct_open_out.ready)
   when(RegNext(io.direct_open_out.valid && !io.direct_open_out.ready, false.B)) {
@@ -578,6 +664,20 @@ final class RouteADirectPendingAssociationMaterializer(p: RouteASkeletonParamete
   val heldWork = RegEnable(io.direct_work_out.bits, io.direct_work_out.valid && !io.direct_work_out.ready)
   when(RegNext(io.direct_work_out.valid && !io.direct_work_out.ready, false.B)) {
     assert(io.direct_work_out.bits.asUInt === heldWork.asUInt)
+  }
+  val heldCancel = RegEnable(io.direct_candidate_cancel_out.bits,
+    io.direct_candidate_cancel_out.valid && !io.direct_candidate_cancel_out.ready)
+  when(RegNext(io.direct_candidate_cancel_out.valid && !io.direct_candidate_cancel_out.ready, false.B)) {
+    assert(io.direct_candidate_cancel_out.bits.asUInt === heldCancel.asUInt)
+  }
+  val heldAbort = RegEnable(io.direct_abort_out.bits, io.direct_abort_out.valid && !io.direct_abort_out.ready)
+  when(RegNext(io.direct_abort_out.valid && !io.direct_abort_out.ready, false.B)) {
+    assert(io.direct_abort_out.bits.asUInt === heldAbort.asUInt)
+  }
+  val heldFailure = RegEnable(io.association_failure_out.bits,
+    io.association_failure_out.valid && !io.association_failure_out.ready)
+  when(RegNext(io.association_failure_out.valid && !io.association_failure_out.ready, false.B)) {
+    assert(io.association_failure_out.bits.asUInt === heldFailure.asUInt)
   }
 }
 
@@ -703,6 +803,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     // Exact copy of an R6-accepted plan for the later protocol-only packet
     // adapter. R6 remains the sole plan owner and source-set authority.
     val source_completion_plan_copy_out = RouteAChannels.source_completion_plan(p)
+    val pending_source_failure_in = Flipped(RouteAChannels.direct_pending_association_failure(p))
     val hot_source_release_in = Flipped(RouteAChannels.source_release(p))
     val pending_source_release_in = Flipped(RouteAChannels.source_release(p))
     val packed_source_release_in = Flipped(RouteAChannels.source_release(p))
@@ -783,6 +884,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val terminalIdentity = Reg(new TransactionIdentity)
   val terminalStatus = Reg(UInt(RouteAAnchorWidths.TerminalStatusWidth.W))
   val terminalTrackerSlot = Reg(UInt(trackerIndexWidth.W))
+  val terminalFromPendingFailure = RegInit(false.B)
 
   private def identityMatches(left: TransactionIdentity, right: TransactionIdentity): Bool =
     left.asUInt === right.asUInt
@@ -968,6 +1070,37 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   io.source_completion_plan_copy_out.bits := sourcePlanCopy
   when(io.source_completion_plan_copy_out.fire) { sourcePlanCopyPending := false.B }
 
+  // The adapter accepts only a failure for the exact pending SourceInstance
+  // of an R6-accepted live source plan.  It, not the materializer, owns the
+  // outward fault terminal and clears the tracker only after that terminal
+  // fires.  A failure never fabricates release or merge completion.
+  val pendingFailure = io.pending_source_failure_in.bits
+  val pendingFailureMatches = VecInit((0 until trackerEntries).map(slot =>
+    attentionValid(slot) && attentionStage(slot) === AwaitMergeReady && sourcePlanValid(slot) &&
+      sourcePlanPresence(slot)(RouteASourceKind.Pending) &&
+      identityMatches(attentionIdentity(slot), pendingFailure.transaction_identity) &&
+      sourcePlanPending(slot).asUInt === pendingFailure.pending_instance.asUInt,
+  ))
+  val pendingFailureSlot = PriorityEncoder(pendingFailureMatches)
+  // The B2c materializer may report a pre-issue cancellation only for the
+  // exact pending instance of a still-live R6 plan.  A stale/foreign failure
+  // must not be silently held forever or be mistaken for an ordinary source
+  // backpressure condition.
+  when(io.pending_source_failure_in.valid) {
+    assert(pendingFailureMatches.asUInt.orR,
+      "MR-1B pending association failure must name one live R6 pending source plan")
+  }
+  io.pending_source_failure_in.ready := (state === StateActive || state === StateRetiring) &&
+    !terminalPending && !mergePending && !mergeInFlight && pendingFailureMatches.asUInt.orR
+  when(io.pending_source_failure_in.fire) {
+    terminalPending := true.B
+    terminalIdentity := pendingFailure.transaction_identity
+    terminalStatus := p.coreMemoryFaultStatusCode.U
+    terminalTrackerSlot := pendingFailureSlot
+    terminalFromPendingFailure := true.B
+    sourcePlanValid(pendingFailureSlot) := false.B
+  }
+
   private def releaseMatches(release: SourceRelease, expectedKind: Int, expected: Int => SourceInstance) =
     VecInit((0 until trackerEntries).map(slot =>
       attentionValid(slot) && attentionStage(slot) === AwaitMergeReady && sourcePlanValid(slot) &&
@@ -1057,6 +1190,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
       terminalIdentity := mergeTerminal.transaction_identity
       terminalStatus := mergeTerminal.status
       terminalTrackerSlot := terminalMatchSlot
+      terminalFromPendingFailure := false.B
     }.elsewhen(mergeConsumer === 3.U) {
       // Group success is legal only after the fixed four associations have
       // each returned a matching success in consumer-ID order 0..3.
@@ -1064,6 +1198,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
       terminalIdentity := mergeTerminal.transaction_identity
       terminalStatus := mergeTerminal.status
       terminalTrackerSlot := terminalMatchSlot
+      terminalFromPendingFailure := false.B
     }.otherwise {
       mergePending := true.B
       mergeConsumer := mergeConsumer + 1.U
@@ -1075,10 +1210,12 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   io.attention_terminal_rsp.bits.terminal_status := terminalStatus
   when(io.attention_terminal_rsp.fire) {
     // a_exactly_one_terminal: only the one matching live tracker may retire here.
-    assert(attentionValid(terminalTrackerSlot) && attentionStage(terminalTrackerSlot) === MergeIssued)
+    assert(attentionValid(terminalTrackerSlot) &&
+      (terminalFromPendingFailure || attentionStage(terminalTrackerSlot) === MergeIssued))
     attentionValid(terminalTrackerSlot) := false.B
     sourcePlanValid(terminalTrackerSlot) := false.B
     terminalPending := false.B
+    terminalFromPendingFailure := false.B
   }
 
   io.runtime_retire_req.ready := state === StateActive && !io.runtime_retire_req.bits.session_id
@@ -1368,6 +1505,8 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
     val drain_collection_enable = Input(Bool())
     val pending_source_open_in = Flipped(RouteAChannels.direct_pending_open(p))
     val pending_source_open_ack_out = RouteAChannels.direct_pending_open_ack(p)
+    val direct_abort_in = Flipped(RouteAChannels.direct_pending_abort(p))
+    val direct_abort_ack_out = RouteAChannels.direct_pending_abort_ack(p)
     val direct_pending_record_terminal_in = Flipped(RouteAChannels.direct_pending_record_terminal(p))
     val gqa_consumer_commit_in = Flipped(RouteAChannels.gqa_consumer_commit(p))
     val direct_release_out = RouteAChannels.source_release(p)
@@ -1393,6 +1532,8 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
   val sourceClosed = RegInit(false.B)
   val faulted = RegInit(false.B)
   val consumerMask = RegInit(0.U(4.W))
+  val abortAckPending = RegInit(false.B)
+  val abortAck = Reg(new DirectPendingAbortAck(p))
 
   val open = io.pending_source_open_in.bits
   val openLegal = open.pending_instance.source_kind === RouteASourceKind.Pending.U
@@ -1414,6 +1555,29 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
   io.pending_source_open_ack_out.bits.accepted_pending_instance := acceptedPendingInstance
   io.pending_source_open_ack_out.bits.endpoint_generation := endpointGeneration
   when(io.pending_source_open_ack_out.fire) { openAckPending := false.B }
+
+  // A cancel chain may reclaim this endpoint only before any payload has been
+  // made deliverable.  It is a local cleanup acknowledgement, not a terminal
+  // and cannot release a source or invent a successful completion.
+  val abort = io.direct_abort_in.bits
+  val abortMatches = initialized && active && !deliverable && !sourceClosed && !faulted &&
+    identity.asUInt === abort.transaction_identity.asUInt &&
+    acceptedPendingInstance.asUInt === abort.pending_instance.asUInt &&
+    endpointGeneration === abort.endpoint_generation
+  io.direct_abort_in.ready := abortMatches && !abortAckPending
+  when(io.direct_abort_in.fire) {
+    active := false.B
+    deliverable := false.B
+    sourceClosed := false.B
+    consumerMask := 0.U
+    abortAck.transaction_identity := identity
+    abortAck.pending_instance := acceptedPendingInstance
+    abortAck.endpoint_generation := endpointGeneration
+    abortAckPending := true.B
+  }
+  io.direct_abort_ack_out.valid := abortAckPending
+  io.direct_abort_ack_out.bits := abortAck
+  when(io.direct_abort_ack_out.fire) { abortAckPending := false.B }
 
   val record = io.direct_pending_record_terminal_in.bits
   val recordMatches = initialized && active && !faulted && !sourceClosed &&
@@ -1465,6 +1629,11 @@ final class RouteADirectPendingEndpointV1(p: RouteASkeletonParameters) extends M
   val heldRelease = RegEnable(io.direct_release_out.bits, releaseStalled)
   when(RegNext(releaseStalled, false.B)) {
     assert(io.direct_release_out.bits.asUInt === heldRelease.asUInt)
+  }
+  val abortAckStalled = io.direct_abort_ack_out.valid && !io.direct_abort_ack_out.ready
+  val heldAbortAck = RegEnable(io.direct_abort_ack_out.bits, abortAckStalled)
+  when(RegNext(abortAckStalled, false.B)) {
+    assert(io.direct_abort_ack_out.bits.asUInt === heldAbortAck.asUInt)
   }
 
   io.direct_observe_identity := identity

@@ -564,6 +564,8 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
     // stored in R2.  It is emitted only on the existing ingress fire; it is
     // neither a grant nor a lease acquisition.
     val direct_candidate_accepted_out = Output(Valid(new DirectPendingCandidateAccepted(p)))
+    val direct_candidate_cancel_in = Flipped(RouteAChannels.direct_pending_candidate_cancel(p))
+    val direct_candidate_cancel_ack_out = RouteAChannels.direct_pending_candidate_cancel_ack(p)
     val direct_lease_eligibility_query_out = RouteAChannels.direct_pending_lease_eligibility_query(p)
     val direct_lease_eligibility_in = Flipped(RouteAChannels.direct_pending_lease_eligibility(p))
     val direct_lease_commit_out = RouteAChannels.direct_pending_lease_commit(p)
@@ -589,9 +591,14 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   val directEligibilityGranted = RegInit(VecInit(Seq.fill(totalSlots)(false.B)))
   val directQueryInFlight = RegInit(false.B)
   val directQuerySlot = Reg(UInt(slotIndexWidth.W))
+  val directCancelAckPending = RegInit(false.B)
+  val directCancelAck = Reg(new DirectPendingCandidateCancelAck(p))
 
   io.direct_candidate_accepted_out.valid := false.B
   io.direct_candidate_accepted_out.bits := 0.U.asTypeOf(new DirectPendingCandidateAccepted(p))
+  io.direct_candidate_cancel_ack_out.valid := directCancelAckPending
+  io.direct_candidate_cancel_ack_out.bits := directCancelAck
+  when(io.direct_candidate_cancel_ack_out.fire) { directCancelAckPending := false.B }
 
   private def predicate(candidate: SourceCandidate, bit: Int): Bool =
     candidate.eligibility_snapshot(bit)
@@ -670,6 +677,32 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
     left.arrival_ordinal < right.arrival_ordinal ||
       (left.arrival_ordinal === right.arrival_ordinal && left.candidate_id < right.candidate_id)
 
+  private def matchesDirectAssociation(candidate: SourceCandidate, association: DirectPendingAssociationId): Bool =
+    candidate.candidate_class === p.r2DirectPendingClassCode.U &&
+      candidate.delivery_target_descriptor.direct_pending_association_valid &&
+      candidate.delivery_target_descriptor.direct_pending_association.asUInt === association.asUInt
+
+  val cancelTargets = VecInit((0 until totalSlots).map(slot =>
+    slotValid(slot) && matchesDirectAssociation(slots(slot), io.direct_candidate_cancel_in.bits.association_id),
+  ))
+  val cancelTargetAny = cancelTargets.asUInt.orR
+  val cancelTargetSlot = PriorityEncoder(cancelTargets)
+  // Cancellation is accepted only for an existing, unissued direct-class
+  // slot.  While accepted, it suppresses all R2 issue and ingress work for
+  // that edge, preserving the direct transition's conservative priority.
+  io.direct_candidate_cancel_in.ready := !directCancelAckPending && cancelTargetAny
+  val cancelFire = io.direct_candidate_cancel_in.fire
+  when(cancelFire) {
+    slotValid(cancelTargetSlot) := false.B
+    directEligibilityKnown(cancelTargetSlot) := false.B
+    directEligibilityGranted(cancelTargetSlot) := false.B
+    when(directQueryInFlight && directQuerySlot === cancelTargetSlot) {
+      directQueryInFlight := false.B
+    }
+    directCancelAck.association_id := io.direct_candidate_cancel_in.bits.association_id
+    directCancelAckPending := true.B
+  }
+
   def choose(predicateForSlot: Int => Bool): (Bool, UInt) = {
     var found: Bool = false.B
     var selected: UInt = 0.U(slotIndexWidth.W)
@@ -689,7 +722,7 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   for (offset <- 0 until readGroups) {
     val group = (readCursor + offset.U) % readGroups.U
     val (found, index) = choose(slot => slotValid(slot) &&
-      candidateEligible(slots(slot), !isReadClass(slots(slot)) ||
+      !cancelFire && candidateEligible(slots(slot), !isReadClass(slots(slot)) ||
         slots(slot).candidate_class =/= p.r2DirectPendingClassCode.U ||
         !slots(slot).delivery_target_descriptor.direct_pending_association_valid ||
         (directEligibilityKnown(slot) && directEligibilityGranted(slot))) &&
@@ -721,8 +754,8 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
   // R1's ready is the existing external-request readiness. A direct lease is
   // requested only when that same R1 issue can fire; owner ready gates the
   // presented request, so neither event can occur alone.
-  io.direct_lease_commit_out.valid := finalIsDirect && io.core_mem_req.ready
-  io.core_mem_req.valid := finalFound && (!finalIsDirect || io.direct_lease_commit_out.ready)
+  io.direct_lease_commit_out.valid := !cancelFire && finalIsDirect && io.core_mem_req.ready
+  io.core_mem_req.valid := !cancelFire && finalFound && (!finalIsDirect || io.direct_lease_commit_out.ready)
   io.core_mem_req.bits := finalCandidate.r1_request
 
   val directQueryCandidateFound = VecInit((0 until totalSlots).map(slot =>
@@ -768,8 +801,8 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
       classCount < p.r2CandidateSlotsPerClass.U
   }
 
-  val legacyAcceptable = io.candidate_in.valid && ingressReady(io.candidate_in.bits)
-  val readAcceptable = io.read_candidate_in.valid && ingressReady(io.read_candidate_in.bits)
+  val legacyAcceptable = !cancelFire && io.candidate_in.valid && ingressReady(io.candidate_in.bits)
+  val readAcceptable = !cancelFire && io.read_candidate_in.valid && ingressReady(io.read_candidate_in.bits)
   // This is candidate acceptance inside R2, not a top-level mux or a second
   // scheduler.  It preserves the already-frozen ordinal/id rule whenever both
   // logical ingress carriers are simultaneously acceptable.
@@ -822,6 +855,11 @@ final class RouteACoreSideArbiter(p: RouteASkeletonParameters) extends Module {
 
   when(io.source_delivery_out.fire && response.last) {
     outstandingValid(responseRid) := false.B
+  }
+
+  when(cancelFire) {
+    assert(!io.core_mem_req.fire)
+    assert(!io.direct_lease_commit_out.fire)
   }
 
   // R2 is the only upstream issuer for R1. During retirement ordinary

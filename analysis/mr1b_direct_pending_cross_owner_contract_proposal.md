@@ -693,6 +693,37 @@ kvpress.routea.DualMeasurementDutStructuralSpec` (6/6 and 3/3).  The latter
 guards the production `authority_transition_out.fire` relation and both DUT
 elaborations.  These remain functional control/provenance regressions only.
 
+### B2c P2a cancellation/fault implementation record — 2026-10-21
+
+The next bounded sub-batch connects the exact pre-issue failure sequence,
+without changing R3 publication, R6 authority ownership, or R2's ordinary
+ordering rule:
+
+```text
+accepted transition withdrawal for an exact declared association
+  -> R2 direct-class candidate cancel / exact ack
+  -> direct endpoint abort / exact ack
+  -> typed association failure
+  -> R6 lifecycle adapter emits the sole outward fault terminal
+```
+
+The R2 cancel carrier matches the complete `DirectPendingAssociationId` and is
+accepted only for a live, unissued direct-class slot. Its accepted edge
+suppresses ingress, R1 issue, and direct lease commit for that cycle. The
+endpoint accepts abort only before delivery or source release and clears only
+its local endpoint occupancy; it cannot emit a release, terminal, or success
+packet. The materializer may report typed failure only after both exact acks.
+The lifecycle adapter accepts it only for the exact pending instance of a live
+R6-accepted plan and remains the sole owner of the outward fault terminal.
+
+The local directed witness
+`RouteAMeasurementDutR3Spec` passed 4/4 on 2026-10-21. Its new case holds the
+real external R1 request unaccepted, allows the actual R3/R6 transition to be
+accepted, observes no issue after cancellation, then observes the matching
+R6-owned fault terminal. This is limited single-record functional control
+evidence. It does not close the final B2c non-regression/structural gate,
+multi-record coverage, physical memory, timing, PPA, or synthesis claims.
+
 ## Final minimum RTL scope if approved
 
 Approval of this revised contract authorizes only the following MR-1B work:

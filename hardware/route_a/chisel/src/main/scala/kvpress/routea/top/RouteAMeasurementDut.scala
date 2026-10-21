@@ -127,12 +127,19 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
     m2P3.io.pending_packing_reconciliation_result_out
   pendingDescriptorOwner.io.pending_to_packed_read_eligibility_withdrawal_in :=
     m2P3.io.pending_to_packed_read_eligibility_withdrawal
+  directAssociationMaterializer.io.association_withdrawal_in <>
+    pendingDescriptorOwner.io.direct_pending_association_withdrawal_out
   pendingDescriptorOwner.io.association_query_in <> sourcePlanBinder.io.association_query_out
   sourcePlanBinder.io.association_declaration_in <> pendingDescriptorOwner.io.association_declaration_out
   directAssociationMaterializer.io.accepted_association_in <> sourcePlanBinder.io.accepted_pending_association_out
   pendingDescriptorOwner.io.lease_eligibility_query_in <> arbiter.io.direct_lease_eligibility_query_out
   arbiter.io.direct_lease_eligibility_in <> pendingDescriptorOwner.io.lease_eligibility_out
   pendingDescriptorOwner.io.lease_commit_in <> arbiter.io.direct_lease_commit_out
+  directAssociationMaterializer.io.direct_candidate_cancel_out <> arbiter.io.direct_candidate_cancel_in
+  directAssociationMaterializer.io.direct_candidate_cancel_ack_in <> arbiter.io.direct_candidate_cancel_ack_out
+  directAssociationMaterializer.io.direct_abort_out <> directPending.io.direct_abort_in
+  directAssociationMaterializer.io.direct_abort_ack_in <> directPending.io.direct_abort_ack_out
+  lifecycle.io.pending_source_failure_in <> directAssociationMaterializer.io.association_failure_out
   lifecycle.io.source_completion_plan_in <> sourcePlanBinder.io.completion_plan_out
   planFork.io.accepted_plan_in <> lifecycle.io.source_completion_plan_copy_out
   packetAdapter.io.accepted_plan_in <> planFork.io.packet_plan_out
