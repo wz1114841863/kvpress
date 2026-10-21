@@ -52,10 +52,12 @@ cache rather than downloaded by the EDA server.
    This is a source-level RTL connection failure, not a missing-platform or
    simulator failure, and is intentionally not changed by this setup batch.
 
-The remote workspace was synchronized from local commit
-`8fe1bba9ed28f12ff19950946018b95ba497bea6`, with the existing local working
-tree changes preserved locally and without copying generated `build/` or
-`target/` artifacts.
+The remote workspace was synchronized from a local working tree whose HEAD was
+`8fe1bba9ed28f12ff19950946018b95ba497bea6`; that tree was dirty, so the
+workspace is an exact source snapshot rather than a clean-commit checkout.
+Generated `build/` and `target/` artifacts were excluded. Future measurements
+should record a clean commit or an explicit diff hash before treating a remote
+run as a reproducible source snapshot.
 
 ## Reuse boundary
 
