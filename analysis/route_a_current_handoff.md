@@ -335,6 +335,13 @@ completion disposition. Final closure still requires committed provenance,
 remote directed/non-regression execution, and the applicable structural guards.
 The single-record `valid_count = 1` restriction remains in force.
 
+The P2a directed suite has now been reproduced from the clean remote Git
+checkout `46ff89a`: `RouteAMeasurementDutR3Spec` passed 4/4 with exit code 0
+on 2026-10-21. Its remote log is
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr1b_b2c_remote_p2a_46ff89a.log`.
+This confirms the user-local offline Chisel/Verilator platform for this
+directed Route-A test; it is not a dual-DUT structural or final B2c closure.
+
 The new B2c direct-candidate-cancel ports also exposed a separate baseline
 integration issue: `FullKVMeasurementDut` leaves the corresponding
 `RouteACoreSideArbiter` input/ack interface uninitialized. It was observed by

@@ -724,6 +724,12 @@ R6-owned fault terminal. This is limited single-record functional control
 evidence. It does not close the final B2c non-regression/structural gate,
 multi-record coverage, physical memory, timing, PPA, or synthesis claims.
 
+The same suite was reproduced on 2026-10-21 from the clean EDA-server Git
+checkout `46ff89a`: 4/4 passed, exit code 0, after compiling all 12 main and
+67 test Scala sources with the shared offline Chisel/Verilator platform. The
+remote log is
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr1b_b2c_remote_p2a_46ff89a.log`.
+
 ## Final minimum RTL scope if approved
 
 Approval of this revised contract authorizes only the following MR-1B work:
