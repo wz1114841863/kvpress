@@ -769,6 +769,19 @@ This is functional control/provenance evidence only.  It is the minimum
 post-fix regression, not MR-1B final acceptance: latest W0/MR-1A
 non-regression and the dual-measurement-DUT structural guard remain required.
 
+### Final-acceptance baseline/test tie-off repair — 2026-10-21
+
+The first final-acceptance attempt exposed uninitialized B2c sideband ports,
+before any behavioral assertion ran.  The baseline-local `FullKVMeasurementDut`
+now drives R2's Route-A-only direct-candidate cancellation ingress inactive
+and consumes its otherwise impossible acknowledgement.  The historical
+four-consumer completion harness likewise ties inactive the R6
+pending-association-failure ingress and direct-endpoint abort/ack channels
+that it does not exercise.  These are fail-closed wiring completions: Full-KV
+does not acquire a direct-pending owner, and the harness cannot fabricate a
+failure, abort, source release, or terminal.  The final W0/MR-1A/structural
+regression is rerun separately after this repair.
+
 ## Final minimum RTL scope if approved
 
 Approval of this revised contract authorizes only the following MR-1B work:

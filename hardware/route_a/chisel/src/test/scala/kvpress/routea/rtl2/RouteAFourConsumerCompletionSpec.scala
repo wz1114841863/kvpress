@@ -56,6 +56,7 @@ final class RouteAFourConsumerCompletionHarness(p: RouteASkeletonParameters) ext
   StructuralTieOff.sink(lifecycle.io.authority_transition_out)
   StructuralTieOff.sink(lifecycle.io.admission_context_out)
   StructuralTieOff.source(lifecycle.io.authority_transition_in)
+  StructuralTieOff.source(lifecycle.io.pending_source_failure_in)
   StructuralTieOff.source(lifecycle.io.merge_ready_in)
   StructuralTieOff.sink(lifecycle.io.s2_service_req)
   StructuralTieOff.sink(lifecycle.io.direct_pending_open)
@@ -71,6 +72,8 @@ final class RouteAFourConsumerCompletionHarness(p: RouteASkeletonParameters) ext
   direct.io.drain_collection_enable := false.B
   direct.io.pending_source_open_in <> io.pending_open
   StructuralTieOff.sink(direct.io.pending_source_open_ack_out)
+  StructuralTieOff.source(direct.io.direct_abort_in)
+  StructuralTieOff.sink(direct.io.direct_abort_ack_out)
   direct.io.direct_pending_record_terminal_in <> io.pending_terminal
   lifecycle.io.pending_source_release_in <> direct.io.direct_release_out
   StructuralTieOff.sink(direct.io.component_status_out)

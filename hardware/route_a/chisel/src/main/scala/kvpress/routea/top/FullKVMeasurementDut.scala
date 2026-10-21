@@ -57,6 +57,8 @@ final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
   discard(arbiter.io.direct_lease_eligibility_query_out)
   inactive(arbiter.io.direct_lease_eligibility_in)
   discard(arbiter.io.direct_lease_commit_out)
+  inactive(arbiter.io.direct_candidate_cancel_in)
+  discard(arbiter.io.direct_candidate_cancel_ack_out)
   core.io.core_mem_req_in <> arbiter.io.core_mem_req
   arbiter.io.core_mem_rsp_in <> core.io.core_mem_rsp
   core.io.external_core_mem_if_v1 <> io.external_core_mem_if_v1
