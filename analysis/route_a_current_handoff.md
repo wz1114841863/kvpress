@@ -342,6 +342,15 @@ on 2026-10-21. Its remote log is
 This confirms the user-local offline Chisel/Verilator platform for this
 directed Route-A test; it is not a dual-DUT structural or final B2c closure.
 
+The independent direct-path non-regression has also been reproduced from the
+clean remote Git checkout `3d44658`: `RouteADirectPendingReadPathSpec` passed
+7/7 with exit code 0 on 2026-10-21. Its log is
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr1b_b2c_remote_direct_nonreg_3d44658.log`.
+It confirms the pre-existing direct success/stale/mismatch/withdrawal/fault
+contour after P2a; it does not substitute for the remaining latest
+reconciliation regression, dual-DUT structural guard, or final B2c coverage
+audit.
+
 The new B2c direct-candidate-cancel ports also exposed a separate baseline
 integration issue: `FullKVMeasurementDut` leaves the corresponding
 `RouteACoreSideArbiter` input/ack interface uninitialized. It was observed by

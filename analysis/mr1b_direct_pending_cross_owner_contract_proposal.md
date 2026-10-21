@@ -730,6 +730,15 @@ checkout `46ff89a`: 4/4 passed, exit code 0, after compiling all 12 main and
 remote log is
 `/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr1b_b2c_remote_p2a_46ff89a.log`.
 
+The remote direct-path non-regression was subsequently run from clean checkout
+`3d44658`: `RouteADirectPendingReadPathSpec` passed 7/7 with exit code 0 on
+2026-10-21. Its log is
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr1b_b2c_remote_direct_nonreg_3d44658.log`.
+This covers the existing direct success, stale/mismatch, pre-issue withdrawal,
+typed R1-fault, and malformed-response contours after P2a. It does not close
+the remaining latest reconciliation regression, dual-DUT structural guard, or
+the final required-case coverage audit.
+
 ## Final minimum RTL scope if approved
 
 Approval of this revised contract authorizes only the following MR-1B work:
