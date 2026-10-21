@@ -2,7 +2,7 @@ package kvpress.routea.r5
 
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
-import kvpress.routea.interfaces.{RouteAChannels, StructuralTieOff}
+import kvpress.routea.interfaces.{RouteAChannels, StructuralTieOff, TransactionIdentity}
 import kvpress.routea.incremental.RouteAPageManager
 import kvpress.routea.params.{RouteAAnchorWidths, RouteADescriptorOperationKind, RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
