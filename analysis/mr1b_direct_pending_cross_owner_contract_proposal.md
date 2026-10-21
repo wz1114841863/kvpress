@@ -1,8 +1,9 @@
 # MR-1B — Direct-pending cross-owner association contract proposal
 
-**Status:** `implementation_in_progress`; the user approved the bounded
-single-record MR-1B RTL scope on 2026-10-19. Each implementation batch remains
-subject to its listed directed and non-regression checks.
+**Status:** `functional_completion_pass_single_record`; the user approved the
+bounded single-record MR-1B RTL scope on 2026-10-19. The final directed and
+non-regression evidence is recorded below; this status is not synthesis, PPA,
+or multi-record direct-pending closure.
 
 ## Implementation record — batch 1: provenance to pre-lease work
 
@@ -781,6 +782,19 @@ that it does not exercise.  These are fail-closed wiring completions: Full-KV
 does not acquire a direct-pending owner, and the harness cannot fabricate a
 failure, abort, source release, or terminal.  The final W0/MR-1A/structural
 regression is rerun separately after this repair.
+
+### Final MR-1B functional/structural acceptance — 2026-10-21
+
+The rerun from remote checkout `81b7443` passed **14/14** with `EXIT_CODE=0`:
+`FullKVMeasurementDutSpec` (5), `RouteAFourConsumerCompletionSpec` (3),
+`RouteAPackedActivationCompositionSpec` (3), and
+`DualMeasurementDutStructuralSpec` (3).  Its log is
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr1b_final_acceptance_81b7443.log`.
+Together with the qualified-withdrawal focused regression (22/22), this closes
+the approved **single-record** MR-1B functional/provenance and W0/MR-1A
+non-regression scope.  It does not close MR-2 storage realization, M2
+production replacement, synthesis eligibility, physical macros/controllers,
+timing, energy, area, or PPA.
 
 ## Final minimum RTL scope if approved
 

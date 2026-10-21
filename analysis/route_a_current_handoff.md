@@ -330,10 +330,8 @@ functional scope. MR-1B B2c has three bounded implementation sub-batches:
    R6-owned fault terminal (current directed P2a witness: 4/4 local tests
    passed on 2026-10-21).
 
-The P2a witness is evidence for that sub-batch, not yet a final MR-1B B2c
-completion disposition. Final closure still requires committed provenance,
-remote directed/non-regression execution, and the applicable structural guards.
-The single-record `valid_count = 1` restriction remains in force.
+The P2a witness was subsequently incorporated into the final bounded MR-1B
+acceptance.  The single-record `valid_count = 1` restriction remains in force.
 
 The P2a directed suite has now been reproduced from the clean remote Git
 checkout `46ff89a`: `RouteAMeasurementDutR3Spec` passed 4/4 with exit code 0
@@ -351,14 +349,13 @@ contour after P2a; it does not substitute for the remaining latest
 reconciliation regression, dual-DUT structural guard, or final B2c coverage
 audit.
 
-The new B2c direct-candidate-cancel ports also exposed a separate baseline
-integration issue: `FullKVMeasurementDut` leaves the corresponding
-`RouteACoreSideArbiter` input/ack interface uninitialized. It was observed by
-the remote `DualMeasurementDutStructuralSpec` platform smoke test. This is a
-Full-KV tie-off/integration defect, not a B2c success result and not a reason
-to change Route-A authority semantics. It is recorded for a separately scoped
-baseline-local repair; it blocks that dual-DUT structural guard but does not
-invalidate the local B2c P2a witness.
+The earlier Full-KV B2c sideband tie-off issue is resolved by `81b7443` with
+an explicit inactive direct-cancel ingress and consumed impossible ack.  The
+remote final run passed 14/14 (`EXIT_CODE=0`) across Full-KV baseline,
+four-consumer, packed activation, and dual-DUT structural suites; combined
+with `c32fffe`'s 22/22 B2c-focused rerun, MR-1B is **PASS at its approved
+single-record functional/provenance scope**.  This does not make MR-2, M2
+production replacement, synthesis eligibility, DC, or PPA ready.
 
 The EDA-server Chisel platform is user-local and offline. See
 [`chisel_platform_handoff_20261021.md`](chisel_platform_handoff_20261021.md).
@@ -382,12 +379,12 @@ rather than the earlier rsync-only platform smoke snapshot.
 > The Full-KV legal-path audit originally found all three baseline path
 > segments missing. W0 has completed its bounded dual-DUT functional scope,
 > and MR-1A has completed the Route-A-hot plus Full-KV common lifecycle/status
-> scope. Direct-pending source-plan association is in the approved bounded
-> MR-1B B2c implementation sequence: the first reset-only, fixed-64
-> reconciliation journal/query sub-batch is recorded in
-> `analysis/mr1b_direct_pending_cross_owner_contract_proposal.md`; atomic
-> withdrawal, cancel/abort, and R6-owned fault remain subsequent B2c work.
-> MR-2 array-only storage-boundary work may proceed independently. None selects
+> scope. MR-1B B2c is complete only for its approved single-record functional
+> contour: reconciliation, qualified withdrawal, cancel/abort, and R6-owned
+> fault have passed remote directed and W0/MR-1A structural regressions. The
+> next implementation gap is MR-2 storage realization, beginning with the
+> independent M2 production-replacement audit; M2 array isolation follows its
+> production protocol closure. None selects
 > a top or begins physical realization work.
 > Read
 > `analysis/synthesis_realization_partition.md` and
