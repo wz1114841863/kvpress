@@ -37,18 +37,21 @@ locked stage facts.  A bad bank, opaque reference, or owner is `ready=0` and
 cannot complete a member, publish metadata, or change authority.
 
 The replaceable functional M2 endpoint reflects the extended carrier only for
-legacy/test composition.  It is still excluded from the measurement DUT cost
-boundary and is not the forthcoming M2 production state owner.
+legacy/test composition.  It remains excluded from the measurement DUT cost
+boundary.  `RouteAMeasurementDut` now instantiates the separately documented
+bounded production control owner instead; the reference remains neither a
+production state owner nor an M2 cost proxy.
 
 ## Explicit non-goals and next boundary
 
 The carrier represents only the already-frozen logical group RMW operation;
 there is no M2 data/update payload at this functional boundary.  Hence this
 change does not claim that M2 storage contents, mirrored writes, or queue and
-staging dynamic accesses are implemented.  The next MR-2 M2 sub-batch may
-replace the reference protocol endpoint with a production control owner using
-this exact carrier.  Separating its array interior remains later work and may
-not black-box R3's member, publication, fault, or reset control.
+staging dynamic accesses are implemented.  The production-control replacement
+using this exact carrier is specified in
+`mr2_m2_production_control_owner_contract.md`; its composed-DUT verification
+is recorded separately.  Separating the array interior remains later work and
+may not black-box R3's member, publication, fault, or reset control.
 
 ## Verification record
 

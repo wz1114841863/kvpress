@@ -61,7 +61,9 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   val arbiter = Module(new RouteACoreSideArbiter(p))
   val coreMemory = Module(new RouteACoreMemIfV1(p))
   val m2P3 = Module(new RouteAM2P3Wrapper(p))
-  val m2Reference = Module(new RouteAM2ReferenceProtocolProvider(p))
+  // MR-2: the measurement contour owns its bounded M2 control protocol.
+  // The historical reference endpoint remains only in legacy/test skeletons.
+  val m2Control = Module(new RouteAM2ProductionControlOwner(p))
   val pageManager = Module(new RouteAPageManager(p))
   val activationBinder = Module(new RouteAPackedReadActivationBinder(p))
   val associationOwner = Module(new RouteAPackedReadAssociationOwner(p))
@@ -273,11 +275,11 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   packReadIssue.io.read_issue_in <> m2P3.io.p3_pack_read_issue_out
   inactive(m2P3.io.p3_packed_write_issue_in)
   inactive(m2P3.io.p3_packed_write_terminal_in)
-  m2Reference.io.member_request_in <> m2P3.io.m2_group_member_req_out
-  m2P3.io.m2_group_member_rsp_in <> m2Reference.io.member_response_out
+  m2Control.io.member_request_in <> m2P3.io.m2_group_member_req_out
+  m2P3.io.m2_group_member_rsp_in <> m2Control.io.member_response_out
   m2P3.io.p3_observe_layer := 0.U
-  m2Reference.io.publication_candidate_in <> m2P3.io.m2_publish_candidate_out
-  m2P3.io.m2_publish_req_in <> m2Reference.io.publication_request_out
+  m2Control.io.publication_candidate_in <> m2P3.io.m2_publish_candidate_out
+  m2P3.io.m2_publish_req_in <> m2Control.io.publication_request_out
   discard(lifecycle.io.metadata_publish_req)
   lifecycle.io.authority_transition_in <> m2P3.io.authority_transition_out
   discard(m2P3.io.publication_commit_observation)

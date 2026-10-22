@@ -1721,6 +1721,157 @@ final class RouteAM2ReferenceProtocolProvider(p: RouteASkeletonParameters) exten
 }
 
 /**
+  * Bounded production control owner for the existing logical M2 member and
+  * publication carriers.
+  *
+  * This owner replaces the measurement-DUT reference responder.  It retains
+  * the accepted control-operation facts needed to preserve the frozen eight
+  * head-affine logical banks, atomic mirrored head-control update, span-owner
+  * update, and exactly-two-member publication gate.  The retained facts are
+  * control/provenance state only: neither this module nor its registers define
+  * an M2 data-entry format, a physical SRAM, ports, latency, or a controller.
+  */
+final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_m2_production_control_owner"
+
+  val io = IO(new Bundle {
+    val member_request_in = Flipped(RouteAChannels.m2_group_member_req(p))
+    val member_response_out = RouteAChannels.m2_group_member_rsp(p)
+    val publication_candidate_in = Flipped(RouteAChannels.metadata_publish_req(p))
+    val publication_request_out = RouteAChannels.metadata_publish_req(p)
+  })
+
+  private val banks = 1 << RouteAAnchorWidths.KvHeadWidth
+  private val stages = 36
+
+  // The two head-control replicas receive the same accepted semantic RMW
+  // record on the same response fire.  They model no independently visible
+  // replica state or coherence policy.
+  val headReplicaAValid = RegInit(VecInit(Seq.fill(banks)(false.B)))
+  val headReplicaBValid = RegInit(VecInit(Seq.fill(banks)(false.B)))
+  val headReplicaAAddress = Reg(Vec(banks, UInt(p.coreMemoryAddressRefWidth.W)))
+  val headReplicaBAddress = Reg(Vec(banks, UInt(p.coreMemoryAddressRefWidth.W)))
+  val headReplicaAOwner = Reg(Vec(banks, UInt(RouteAAnchorWidths.RequestIdWidth.W)))
+  val headReplicaBOwner = Reg(Vec(banks, UInt(RouteAAnchorWidths.RequestIdWidth.W)))
+  val spanOwnerValid = RegInit(VecInit(Seq.fill(banks)(false.B)))
+  val spanOwnerAddress = Reg(Vec(banks, UInt(p.coreMemoryAddressRefWidth.W)))
+  val spanOwnerOwner = Reg(Vec(banks, UInt(RouteAAnchorWidths.RequestIdWidth.W)))
+
+  // R3 can carry one active P3 stage for each anchor layer.  These records
+  // retain only completed control-member provenance until that exact group has
+  // been accepted as a publication candidate; they are not an authority map.
+  val headCommitted = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  val spanCommitted = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  val groupGeneration = Reg(Vec(stages, UInt(p.p3StageGenerationWidth.W)))
+  val groupTag = Reg(Vec(stages, UInt(p.transactionGroupTagWidth.W)))
+  val groupHead = Reg(Vec(stages, UInt(RouteAAnchorWidths.KvHeadWidth.W)))
+  val groupAddress = Reg(Vec(stages, UInt(p.coreMemoryAddressRefWidth.W)))
+  val groupOwner = Reg(Vec(stages, UInt(RouteAAnchorWidths.RequestIdWidth.W)))
+
+  val memberPending = RegInit(false.B)
+  val memberRequest = Reg(new M2GroupMemberRequest(p))
+  val supportedMember = io.member_request_in.bits.member <= RouteAM2GroupMember.SpanOwnerRmw.U
+  val memberLayerInRange = io.member_request_in.bits.layer < stages.U
+  val requestedLayer = io.member_request_in.bits.layer
+  val requestMatchesRememberedGroup =
+    groupGeneration(requestedLayer) === io.member_request_in.bits.stage_generation &&
+      groupTag(requestedLayer) === io.member_request_in.bits.transaction_group_tag &&
+      groupHead(requestedLayer) === io.member_request_in.bits.kv_head &&
+      groupAddress(requestedLayer) === io.member_request_in.bits.opaque_address_ref &&
+      groupOwner(requestedLayer) === io.member_request_in.bits.owner
+  val requestedHeadMember = io.member_request_in.bits.member === RouteAM2GroupMember.HeadControlRmw.U
+  val requestedMemberAlreadyCommitted = Mux(requestedHeadMember,
+    headCommitted(requestedLayer), spanCommitted(requestedLayer))
+  val counterpartCommitted = Mux(requestedHeadMember,
+    spanCommitted(requestedLayer), headCommitted(requestedLayer))
+  // An incomplete group may receive its second member only when it is the
+  // exact immutable companion of the first.  This owner must never assemble a
+  // publication candidate from members belonging to different R3 groups.
+  val memberGroupEligible = !requestedMemberAlreadyCommitted &&
+    (!counterpartCommitted || requestMatchesRememberedGroup)
+  io.member_request_in.ready := !memberPending && supportedMember && memberLayerInRange && memberGroupEligible
+  when(io.member_request_in.fire) {
+    memberPending := true.B
+    memberRequest := io.member_request_in.bits
+  }
+
+  io.member_response_out.valid := memberPending
+  io.member_response_out.bits.layer := memberRequest.layer
+  io.member_response_out.bits.kv_head := memberRequest.kv_head
+  io.member_response_out.bits.stage_generation := memberRequest.stage_generation
+  io.member_response_out.bits.transaction_group_tag := memberRequest.transaction_group_tag
+  io.member_response_out.bits.member := memberRequest.member
+  io.member_response_out.bits.opaque_address_ref := memberRequest.opaque_address_ref
+  io.member_response_out.bits.owner := memberRequest.owner
+  io.member_response_out.bits.status := p.coreMemoryOkStatusCode.U
+  when(io.member_response_out.fire) {
+    memberPending := false.B
+    val bank = memberRequest.kv_head
+    val layer = memberRequest.layer
+    when(memberRequest.member === RouteAM2GroupMember.HeadControlRmw.U) {
+      headReplicaAValid(bank) := true.B
+      headReplicaBValid(bank) := true.B
+      headReplicaAAddress(bank) := memberRequest.opaque_address_ref
+      headReplicaBAddress(bank) := memberRequest.opaque_address_ref
+      headReplicaAOwner(bank) := memberRequest.owner
+      headReplicaBOwner(bank) := memberRequest.owner
+      headCommitted(layer) := true.B
+    }.otherwise {
+      spanOwnerValid(bank) := true.B
+      spanOwnerAddress(bank) := memberRequest.opaque_address_ref
+      spanOwnerOwner(bank) := memberRequest.owner
+      spanCommitted(layer) := true.B
+    }
+    groupGeneration(layer) := memberRequest.stage_generation
+    groupTag(layer) := memberRequest.transaction_group_tag
+    groupHead(layer) := memberRequest.kv_head
+    groupAddress(layer) := memberRequest.opaque_address_ref
+    groupOwner(layer) := memberRequest.owner
+  }
+
+  val publicationPending = RegInit(false.B)
+  val publicationCandidate = Reg(new MetadataPublishRequest(p))
+  val candidate = io.publication_candidate_in.bits
+  val candidateLayerInRange = candidate.p3_layer < stages.U
+  val candidateLayer = candidate.p3_layer
+  val publicationGroupReady = candidateLayerInRange &&
+    headCommitted(candidateLayer) && spanCommitted(candidateLayer) &&
+    groupGeneration(candidateLayer) === candidate.p3_stage_generation &&
+    groupTag(candidateLayer) === candidate.transaction_group_tag
+  io.publication_candidate_in.ready := !publicationPending && publicationGroupReady
+  when(io.publication_candidate_in.fire) {
+    publicationPending := true.B
+    publicationCandidate := candidate
+    // The same accepted group cannot form a second publication request.
+    headCommitted(candidateLayer) := false.B
+    spanCommitted(candidateLayer) := false.B
+  }
+  io.publication_request_out.valid := publicationPending
+  io.publication_request_out.bits := publicationCandidate
+  when(io.publication_request_out.fire) { publicationPending := false.B }
+
+  when(io.member_response_out.valid && !io.member_response_out.ready) {
+    assert(io.member_response_out.bits.layer === memberRequest.layer)
+    assert(io.member_response_out.bits.kv_head === memberRequest.kv_head)
+    assert(io.member_response_out.bits.stage_generation === memberRequest.stage_generation)
+    assert(io.member_response_out.bits.transaction_group_tag === memberRequest.transaction_group_tag)
+    assert(io.member_response_out.bits.member === memberRequest.member)
+    assert(io.member_response_out.bits.opaque_address_ref === memberRequest.opaque_address_ref)
+    assert(io.member_response_out.bits.owner === memberRequest.owner)
+    assert(io.member_response_out.bits.status === p.coreMemoryOkStatusCode.U)
+  }
+  when(io.publication_request_out.valid && !io.publication_request_out.ready) {
+    assert(io.publication_request_out.bits.asUInt === publicationCandidate.asUInt)
+  }
+  for (bank <- 0 until banks) {
+    when(headReplicaAValid(bank) && headReplicaBValid(bank)) {
+      assert(headReplicaAAddress(bank) === headReplicaBAddress(bank))
+      assert(headReplicaAOwner(bank) === headReplicaBOwner(bank))
+    }
+  }
+}
+
+/**
   * MR-2 logical P3 array interior, isolated from the R3 control wrapper.
   *
   * The named payload and sidecar channels preserve the existing functional

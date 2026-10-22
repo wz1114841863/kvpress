@@ -377,11 +377,21 @@ passed (`EXIT_CODE=0`) at
 The carrier's adapter/stage/outstanding-register control is recorded as
 Route-A incremental, unestimated-not-zero BOM cost.
 
-This closes only M2 **carrier provenance**, not M2 production replacement:
-`RouteAM2ReferenceProtocolProvider` remains the functional responder in the
-Route-A measurement DUT.  The next M2 sub-batch is to replace it with a
-production control owner using the now-exact carrier; only after that can the
-M2 storage-array interior be separated.  No macro, physical address, update
+M2 carrier provenance and the bounded measurement-DUT production-control
+replacement are closed.  `RouteAMeasurementDut` now instantiates
+`RouteAM2ProductionControlOwner`, which retains only eight-bank mirrored
+head/span control provenance plus a 36-stage exact two-member gate; it does
+not replace the M2 array interior.  Its final directed remote regression is
+4 suites/14 tests passed, `EXIT_CODE=0`, at
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_owner_final_directed.log`.
+The required W0/MR-1A/B2c non-regression is also 6 suites/27 tests passed,
+`EXIT_CODE=0`, at
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_owner_nonreg.log`.
+The earlier precheck is retained only as a precheck because its intended
+measurement-DUT selector used the wrong package.  The successor work is now
+the M2 storage-array-only boundary, which must preserve this owner and all
+R3 member/publication/fault/reset control in candidate DUT logic.  No macro,
+physical address, update
 payload, timing, energy, area, synthesis, DC, or PPA conclusion follows.
 
 The EDA-server Chisel platform is user-local and offline. See
