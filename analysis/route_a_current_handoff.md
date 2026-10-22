@@ -357,6 +357,33 @@ with `c32fffe`'s 22/22 B2c-focused rerun, MR-1B is **PASS at its approved
 single-record functional/provenance scope**.  This does not make MR-2, M2
 production replacement, synthesis eligibility, DC, or PPA ready.
 
+### MR-2 M2 carrier/provenance closure (2026-10-22)
+
+The minimal M2 production-carrier contract is now implemented and functionally
+verified.  The existing pending-payload/location owner supplies immutable,
+group-scoped `m2_group_opaque_address_ref` and `m2_group_owner` facts in its
+binding.  The admission adapter requires all accepted group members to agree,
+relays the facts through the accepted P3 claim, and R3 records them with the
+stage.  The two existing M2 group member requests and responses now carry
+`kv_head`, opaque reference, and owner; R3 accepts a completion only on an
+exact full identity match.  Wrong bank/reference/owner and group disagreement
+are fail-closed.
+
+Remote directed evidence is 11/11 passed (`EXIT_CODE=0`) at
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_carrier_directed.log`;
+W0/MR-1A/B2c non-regression and the dual-DUT structural guard are 27/27
+passed (`EXIT_CODE=0`) at
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_carrier_nonreg.log`.
+The carrier's adapter/stage/outstanding-register control is recorded as
+Route-A incremental, unestimated-not-zero BOM cost.
+
+This closes only M2 **carrier provenance**, not M2 production replacement:
+`RouteAM2ReferenceProtocolProvider` remains the functional responder in the
+Route-A measurement DUT.  The next M2 sub-batch is to replace it with a
+production control owner using the now-exact carrier; only after that can the
+M2 storage-array interior be separated.  No macro, physical address, update
+payload, timing, energy, area, synthesis, DC, or PPA conclusion follows.
+
 The EDA-server Chisel platform is user-local and offline. See
 [`chisel_platform_handoff_20261021.md`](chisel_platform_handoff_20261021.md).
 Future remote implementation work must use a provenance-preserving Git checkout
@@ -382,9 +409,10 @@ rather than the earlier rsync-only platform smoke snapshot.
 > scope. MR-1B B2c is complete only for its approved single-record functional
 > contour: reconciliation, qualified withdrawal, cancel/abort, and R6-owned
 > fault have passed remote directed and W0/MR-1A structural regressions. The
-> next implementation gap is MR-2 storage realization, beginning with the
-> independent M2 production-replacement audit; M2 array isolation follows its
-> production protocol closure. None selects
+> MR-2's M2 carrier provenance is complete, but the functional reference
+> responder has not yet been replaced.  The next implementation sub-batch is
+> the M2 production control owner; M2 array isolation follows its production
+> protocol closure. None selects
 > a top or begins physical realization work.
 > Read
 > `analysis/synthesis_realization_partition.md` and

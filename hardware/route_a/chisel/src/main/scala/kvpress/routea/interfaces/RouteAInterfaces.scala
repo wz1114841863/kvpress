@@ -293,6 +293,12 @@ final class PendingPayloadReadBinding(p: RouteASkeletonParameters) extends Bundl
   val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
   val source_generation = UInt(p.sourceGenerationWidth.W)
   val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
+  // MR-2 M2 carrier provenance.  These are an immutable, group-scoped
+  // logical M2 mapping fact supplied by the pending-payload/location owner
+  // when the binding participates in R3 packing.  They are neither a payload
+  // address nor a physical M2/SRAM address or owner encoding.
+  val m2_group_opaque_address_ref = UInt(p.coreMemoryAddressRefWidth.W)
+  val m2_group_owner = UInt(RouteAAnchorWidths.RequestIdWidth.W)
 }
 
 /**
@@ -1124,6 +1130,11 @@ final class P3Claim(p: RouteASkeletonParameters) extends Bundle {
   // this append without letting R3 infer stream-tail state.
   val requires_tail_link = Bool()
   val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  // Immutable group-level M2 mapping carried through the one accepted R3
+  // claim.  R3 records and later reflects it; R3 does not derive it from the
+  // page reference, payload reference, layer, tag, or any physical address.
+  val m2_group_opaque_address_ref = UInt(p.coreMemoryAddressRefWidth.W)
+  val m2_group_owner = UInt(RouteAAnchorWidths.RequestIdWidth.W)
 }
 
 final class P3ClaimAck(p: RouteASkeletonParameters) extends Bundle {
@@ -1193,17 +1204,23 @@ final class P3PayloadDurable(p: RouteASkeletonParameters) extends Bundle {
 /** A private result for one of the two fixed semantic M2 RMW members. */
 final class M2GroupMemberRequest(p: RouteASkeletonParameters) extends Bundle {
   val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
   val stage_generation = UInt(p.p3StageGenerationWidth.W)
   val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
   val member = UInt(1.W)
+  val opaque_address_ref = UInt(p.coreMemoryAddressRefWidth.W)
+  val owner = UInt(RouteAAnchorWidths.RequestIdWidth.W)
 }
 
 /** A private result for one of the two fixed semantic M2 RMW members. */
 final class M2GroupMemberResponse(p: RouteASkeletonParameters) extends Bundle {
   val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
   val stage_generation = UInt(p.p3StageGenerationWidth.W)
   val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
   val member = UInt(1.W)
+  val opaque_address_ref = UInt(p.coreMemoryAddressRefWidth.W)
+  val owner = UInt(RouteAAnchorWidths.RequestIdWidth.W)
   val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
 }
 

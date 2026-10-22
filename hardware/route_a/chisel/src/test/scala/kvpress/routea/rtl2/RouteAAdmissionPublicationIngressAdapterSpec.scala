@@ -61,6 +61,8 @@ final class RouteAAdmissionPublicationIngressAdapterSpec extends AnyFunSpec with
     dut.io.pending_payload_binding_in.bits.payload_handle_or_address.poke(0.U)
     dut.io.pending_payload_binding_in.bits.source_generation.poke(0.U)
     dut.io.pending_payload_binding_in.bits.destination_endpoint.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.m2_group_opaque_address_ref.poke(0.U)
+    dut.io.pending_payload_binding_in.bits.m2_group_owner.poke(0.U)
   }
 
   private def driveMember(
@@ -85,6 +87,7 @@ final class RouteAAdmissionPublicationIngressAdapterSpec extends AnyFunSpec with
     binding.logical_position.poke(position.U); binding.payload_ref.poke((position + 10).U)
     binding.transaction_group_tag.poke(tag.U); binding.group_member_ordinal.poke(ordinal.U); binding.group_valid_records.poke(records.U)
     binding.payload_handle_or_address.poke((0x40 + ordinal).U); binding.source_generation.poke(1.U); binding.destination_endpoint.poke(0.U)
+    binding.m2_group_opaque_address_ref.poke("h5a".U); binding.m2_group_owner.poke(6.U)
   }
 
   private def offerMember(dut: RouteAAdmissionPublicationIngressAdapter, ordinal: Int, records: Int, position: Int): Unit = {
@@ -134,6 +137,8 @@ final class RouteAAdmissionPublicationIngressAdapterSpec extends AnyFunSpec with
       dut.io.r3_p3_claim.valid.expect(true.B)
       dut.io.r3_p3_claim.bits.owner.expect(0.U); dut.io.r3_p3_claim.bits.page_ref.page_id.expect(3.U)
       dut.io.r3_p3_claim.bits.valid_records.expect(2.U); dut.clock.step()
+      dut.io.r3_p3_claim.bits.m2_group_opaque_address_ref.expect("h5a".U)
+      dut.io.r3_p3_claim.bits.m2_group_owner.expect(6.U)
       dut.io.r3_p3_claim.valid.expect(true.B)
       dut.io.r3_p3_claim.ready.poke(true.B); dut.clock.step(); dut.io.r3_p3_claim.ready.poke(false.B)
 
@@ -186,6 +191,14 @@ final class RouteAAdmissionPublicationIngressAdapterSpec extends AnyFunSpec with
       dut.io.r6_admission_context_in.valid.poke(false.B); dut.io.r6_authority_in.valid.poke(false.B)
 
       offerMember(dut, ordinal = 0, records = 2, position = 0)
+      // The logical M2 mapping is a group-level immutable fact.  A second
+      // retained member with a different mapping cannot be folded into the
+      // accepted group, even though its ordinary admission coordinates match.
+      driveMember(dut, ordinal = 1, records = 2, position = 1)
+      dut.io.pending_payload_binding_in.bits.m2_group_opaque_address_ref.poke("h6b".U)
+      dut.io.r6_admission_context_in.valid.poke(true.B); dut.io.r6_authority_in.valid.poke(true.B); dut.io.pending_payload_binding_in.valid.poke(true.B)
+      dut.io.r6_admission_context_in.ready.expect(false.B); dut.io.r6_authority_in.ready.expect(false.B); dut.io.pending_payload_binding_in.ready.expect(false.B)
+      dut.io.r6_admission_context_in.valid.poke(false.B); dut.io.r6_authority_in.valid.poke(false.B); dut.io.pending_payload_binding_in.valid.poke(false.B)
       // The first ordinal is now occupied; a duplicate cannot complete or
       // mutate the partially assembled association.
       driveMember(dut, ordinal = 0, records = 2, position = 0)

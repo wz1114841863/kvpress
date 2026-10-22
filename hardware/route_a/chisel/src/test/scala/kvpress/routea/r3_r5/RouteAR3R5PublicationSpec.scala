@@ -129,6 +129,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     claim.layer.poke(0.U); claim.kv_head.poke(0.U); claim.owner.poke(0.U)
     claim.page_ref.page_id.poke(0.U); claim.page_ref.generation.poke(0.U)
     claim.valid_records.poke(1.U); claim.requires_tail_link.poke(false.B); claim.transaction_group_tag.poke(1.U)
+    claim.m2_group_opaque_address_ref.poke("h5a".U); claim.m2_group_owner.poke(6.U)
     dut.io.p3_claim_in.valid.poke(true.B); dut.io.p3_claim_in.ready.expect(true.B); dut.clock.step()
     dut.io.p3_claim_in.valid.poke(false.B); dut.clock.step()
     dut.io.p3_observe_generation.expect(1.U)
@@ -165,10 +166,19 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     for (member <- Seq(RouteAM2GroupMember.HeadControlRmw, RouteAM2GroupMember.SpanOwnerRmw)) {
       dut.io.m2_group_member_req_out.valid.expect(true.B)
       dut.io.m2_group_member_req_out.bits.member.expect(member.U)
+      dut.io.m2_group_member_req_out.bits.kv_head.expect(0.U)
+      dut.io.m2_group_member_req_out.bits.opaque_address_ref.expect("h5a".U)
+      dut.io.m2_group_member_req_out.bits.owner.expect(6.U)
       dut.io.m2_group_member_req_out.ready.poke(true.B); dut.clock.step(); dut.io.m2_group_member_req_out.ready.poke(false.B)
       val response = dut.io.m2_group_member_rsp_in.bits
       response.layer.poke(0.U); response.stage_generation.poke(1.U); response.transaction_group_tag.poke(1.U)
-      response.member.poke(member.U); response.status.poke(p.coreMemoryOkStatusCode.U)
+      response.member.poke(member.U); response.kv_head.poke(0.U)
+      if (member == RouteAM2GroupMember.HeadControlRmw) {
+        response.opaque_address_ref.poke("h5a".U); response.owner.poke(5.U); response.status.poke(p.coreMemoryOkStatusCode.U)
+        dut.io.m2_group_member_rsp_in.valid.poke(true.B); dut.io.m2_group_member_rsp_in.ready.expect(false.B)
+        dut.io.m2_group_member_rsp_in.valid.poke(false.B)
+      }
+      response.opaque_address_ref.poke("h5a".U); response.owner.poke(6.U); response.status.poke(p.coreMemoryOkStatusCode.U)
       dut.io.m2_group_member_rsp_in.valid.poke(true.B); dut.io.m2_group_member_rsp_in.ready.expect(true.B); dut.clock.step(); dut.io.m2_group_member_rsp_in.valid.poke(false.B)
     }
   }
@@ -235,10 +245,14 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     for (member <- Seq(RouteAM2GroupMember.HeadControlRmw, RouteAM2GroupMember.SpanOwnerRmw)) {
       dut.io.m2_group_member_req_out.valid.expect(true.B)
       dut.io.m2_group_member_req_out.bits.member.expect(member.U)
+      dut.io.m2_group_member_req_out.bits.kv_head.expect(0.U)
+      dut.io.m2_group_member_req_out.bits.opaque_address_ref.expect(0.U)
+      dut.io.m2_group_member_req_out.bits.owner.expect(0.U)
       dut.io.m2_group_member_req_out.ready.poke(true.B); dut.clock.step(); dut.io.m2_group_member_req_out.ready.poke(false.B)
       val response = dut.io.m2_group_member_rsp_in.bits
       response.layer.poke(0.U); response.stage_generation.poke(1.U); response.transaction_group_tag.poke(1.U)
-      response.member.poke(member.U); response.status.poke(p.coreMemoryOkStatusCode.U)
+      response.member.poke(member.U); response.kv_head.poke(0.U)
+      response.opaque_address_ref.poke(0.U); response.owner.poke(0.U); response.status.poke(p.coreMemoryOkStatusCode.U)
       dut.io.m2_group_member_rsp_in.valid.poke(true.B); dut.io.m2_group_member_rsp_in.ready.expect(true.B); dut.clock.step(); dut.io.m2_group_member_rsp_in.valid.poke(false.B)
     }
   }

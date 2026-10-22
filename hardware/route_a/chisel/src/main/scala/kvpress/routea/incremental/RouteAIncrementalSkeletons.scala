@@ -1336,6 +1336,11 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
   val groupHead = Reg(UInt(RouteAAnchorWidths.KvHeadWidth.W))
   val groupTag = Reg(UInt(p.transactionGroupTagWidth.W))
   val groupValidRecords = Reg(UInt(ordinalWidth.W))
+  // Immutable group-scoped M2 mapping facts.  The pending-payload/location
+  // owner supplies them in each admitted binding; this adapter only checks
+  // group agreement and relays them to the accepted R3 claim.
+  val groupM2OpaqueAddressRef = Reg(UInt(p.coreMemoryAddressRefWidth.W))
+  val groupM2Owner = Reg(UInt(RouteAAnchorWidths.RequestIdWidth.W))
   val members = Reg(Vec(MemberCount, new AdmissionContext(p)))
   val authorities = Reg(Vec(MemberCount, new R6AuthorityTransition(p)))
   val payloadBindings = Reg(Vec(MemberCount, new PendingPayloadReadBinding(p)))
@@ -1353,6 +1358,9 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
   val firstMember = !present.orR
   val groupMatches = groupLayer === context.layer && groupHead === context.kv_head &&
     groupTag === context.transaction_group_tag && groupValidRecords === context.group_valid_records
+  val groupM2MappingMatches =
+    groupM2OpaqueAddressRef === payloadBinding.m2_group_opaque_address_ref &&
+      groupM2Owner === payloadBinding.m2_group_owner
   val authorityMatches = authority.entry_id === context.entry_id &&
     authority.from_authority === RouteAAuthorityStateCode.Hot.U &&
     authority.to_authority === RouteAAuthorityStateCode.Pending.U &&
@@ -1368,7 +1376,7 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
       payloadBinding.group_valid_records === context.group_valid_records
   val acceptedMember = state === StateCollect && ordinalInRange && authorityMatches &&
     payloadBindingMatches && context.entry_id === contextCoordinate &&
-    (firstMember || groupMatches) && (present & ordinalMask) === 0.U
+    (firstMember || (groupMatches && groupM2MappingMatches)) && (present & ordinalMask) === 0.U
 
   // R6 emits these as two independent decoupled channels, but the frozen
   // retained admission contract permits only an atomic pair at this ingress.
@@ -1383,6 +1391,8 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
       groupHead := context.kv_head
       groupTag := context.transaction_group_tag
       groupValidRecords := context.group_valid_records
+      groupM2OpaqueAddressRef := payloadBinding.m2_group_opaque_address_ref
+      groupM2Owner := payloadBinding.m2_group_owner
     }
     val nextPresent = present | ordinalMask
     present := nextPresent
@@ -1423,6 +1433,8 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
   io.r3_p3_claim.bits.valid_records := groupValidRecords
   io.r3_p3_claim.bits.requires_tail_link := allocatedRequiresTailLink
   io.r3_p3_claim.bits.transaction_group_tag := groupTag
+  io.r3_p3_claim.bits.m2_group_opaque_address_ref := groupM2OpaqueAddressRef
+  io.r3_p3_claim.bits.m2_group_owner := groupM2Owner
   when(io.r3_p3_claim.fire) { state := StateAwaitClaimAck }
 
   // P3ClaimAck deliberately contains only layer and stage generation.  The
@@ -1461,6 +1473,8 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
 
   when(io.r3_p3_claim.valid) {
     assert(io.r3_p3_claim.bits.owner === 0.U)
+    assert(io.r3_p3_claim.bits.m2_group_opaque_address_ref === groupM2OpaqueAddressRef)
+    assert(io.r3_p3_claim.bits.m2_group_owner === groupM2Owner)
     assert(io.r3_p3_claim.bits.valid_records =/= 0.U && io.r3_p3_claim.bits.valid_records <= MemberCount.U)
   }
   when(io.r3_admission_context_out.valid) {
@@ -1672,9 +1686,12 @@ final class RouteAM2ReferenceProtocolProvider(p: RouteASkeletonParameters) exten
   }
   io.member_response_out.valid := memberPending
   io.member_response_out.bits.layer := memberRequest.layer
+  io.member_response_out.bits.kv_head := memberRequest.kv_head
   io.member_response_out.bits.stage_generation := memberRequest.stage_generation
   io.member_response_out.bits.transaction_group_tag := memberRequest.transaction_group_tag
   io.member_response_out.bits.member := memberRequest.member
+  io.member_response_out.bits.opaque_address_ref := memberRequest.opaque_address_ref
+  io.member_response_out.bits.owner := memberRequest.owner
   io.member_response_out.bits.status := p.coreMemoryOkStatusCode.U
   when(io.member_response_out.fire) { memberPending := false.B }
 
@@ -1691,9 +1708,12 @@ final class RouteAM2ReferenceProtocolProvider(p: RouteASkeletonParameters) exten
 
   when(io.member_response_out.valid && !io.member_response_out.ready) {
     assert(io.member_response_out.bits.layer === memberRequest.layer)
+    assert(io.member_response_out.bits.kv_head === memberRequest.kv_head)
     assert(io.member_response_out.bits.stage_generation === memberRequest.stage_generation)
     assert(io.member_response_out.bits.transaction_group_tag === memberRequest.transaction_group_tag)
     assert(io.member_response_out.bits.member === memberRequest.member)
+    assert(io.member_response_out.bits.opaque_address_ref === memberRequest.opaque_address_ref)
+    assert(io.member_response_out.bits.owner === memberRequest.owner)
   }
   when(io.publication_request_out.valid && !io.publication_request_out.ready) {
     assert(io.publication_request_out.bits.asUInt === publicationCandidate.asUInt)
@@ -1828,6 +1848,8 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val stagePageRef = Reg(Vec(stages, new PageRef))
   val stageHead = Reg(Vec(stages, UInt(RouteAAnchorWidths.KvHeadWidth.W)))
   val stageTag = Reg(Vec(stages, UInt(p.transactionGroupTagWidth.W)))
+  val stageM2OpaqueAddressRef = Reg(Vec(stages, UInt(p.coreMemoryAddressRefWidth.W)))
+  val stageM2Owner = Reg(Vec(stages, UInt(RouteAAnchorWidths.RequestIdWidth.W)))
   val stageM2Members = RegInit(VecInit(Seq.fill(stages)(0.U(2.W))))
   val stageDescriptorRequiredMask = Reg(Vec(stages, UInt(2.W)))
   // MR-2 keeps only the P3 array interior in the named child.  These logical
@@ -1910,6 +1932,8 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     stagePageRef(claimLayer) := claim.page_ref
     stageHead(claimLayer) := claim.kv_head
     stageTag(claimLayer) := claim.transaction_group_tag
+    stageM2OpaqueAddressRef(claimLayer) := claim.m2_group_opaque_address_ref
+    stageM2Owner(claimLayer) := claim.m2_group_owner
     stageM2Members(claimLayer) := 0.U
     stageDescriptorRequiredMask(claimLayer) := Mux(claim.requires_tail_link, 3.U, 1.U)
     stageDescriptorPrerequisite(claimLayer) := false.B
@@ -2339,9 +2363,12 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   // completions are therefore inert at this boundary.
   val m2MemberRequestOutstanding = RegInit(false.B)
   val m2MemberRequestLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
+  val m2MemberRequestHead = Reg(UInt(RouteAAnchorWidths.KvHeadWidth.W))
   val m2MemberRequestGeneration = Reg(UInt(p.p3StageGenerationWidth.W))
   val m2MemberRequestTag = Reg(UInt(p.transactionGroupTagWidth.W))
   val m2MemberRequestMember = Reg(UInt(1.W))
+  val m2MemberRequestOpaqueAddressRef = Reg(UInt(p.coreMemoryAddressRefWidth.W))
+  val m2MemberRequestOwner = Reg(UInt(RouteAAnchorWidths.RequestIdWidth.W))
   val m2MemberEligible = VecInit((0 until stages).map { layer =>
     stageState(layer) === StateDurable && stageDescriptorPrerequisite(layer) &&
       stageM2Members(layer) =/= 3.U
@@ -2350,16 +2377,22 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val m2MemberIssueLayer = PriorityEncoder(m2MemberEligible)
   io.m2_group_member_req_out.valid := initialized && !m2MemberRequestOutstanding && m2MemberEligibleAny
   io.m2_group_member_req_out.bits.layer := m2MemberIssueLayer
+  io.m2_group_member_req_out.bits.kv_head := stageHead(m2MemberIssueLayer)
   io.m2_group_member_req_out.bits.stage_generation := stageGeneration(m2MemberIssueLayer)
   io.m2_group_member_req_out.bits.transaction_group_tag := stageTag(m2MemberIssueLayer)
   io.m2_group_member_req_out.bits.member := Mux(stageM2Members(m2MemberIssueLayer)(0),
     RouteAM2GroupMember.SpanOwnerRmw.U, RouteAM2GroupMember.HeadControlRmw.U)
+  io.m2_group_member_req_out.bits.opaque_address_ref := stageM2OpaqueAddressRef(m2MemberIssueLayer)
+  io.m2_group_member_req_out.bits.owner := stageM2Owner(m2MemberIssueLayer)
   when(io.m2_group_member_req_out.fire) {
     m2MemberRequestOutstanding := true.B
     m2MemberRequestLayer := m2MemberIssueLayer
+    m2MemberRequestHead := stageHead(m2MemberIssueLayer)
     m2MemberRequestGeneration := stageGeneration(m2MemberIssueLayer)
     m2MemberRequestTag := stageTag(m2MemberIssueLayer)
     m2MemberRequestMember := io.m2_group_member_req_out.bits.member
+    m2MemberRequestOpaqueAddressRef := stageM2OpaqueAddressRef(m2MemberIssueLayer)
+    m2MemberRequestOwner := stageM2Owner(m2MemberIssueLayer)
   }
 
   val m2Member = io.m2_group_member_rsp_in.bits
@@ -2367,12 +2400,18 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val memberBit = (1.U(2.W) << m2Member.member)(1, 0)
   val memberMatches = initialized && m2MemberRequestOutstanding &&
     memberLayer === m2MemberRequestLayer &&
+    m2Member.kv_head === m2MemberRequestHead &&
     m2Member.stage_generation === m2MemberRequestGeneration &&
     m2Member.transaction_group_tag === m2MemberRequestTag &&
     m2Member.member === m2MemberRequestMember &&
+    m2Member.opaque_address_ref === m2MemberRequestOpaqueAddressRef &&
+    m2Member.owner === m2MemberRequestOwner &&
     stageState(memberLayer) === StateDurable &&
+    stageHead(memberLayer) === m2Member.kv_head &&
     stageGeneration(memberLayer) === m2Member.stage_generation &&
     stageTag(memberLayer) === m2Member.transaction_group_tag &&
+    stageM2OpaqueAddressRef(memberLayer) === m2Member.opaque_address_ref &&
+    stageM2Owner(memberLayer) === m2Member.owner &&
     m2Member.member <= RouteAM2GroupMember.SpanOwnerRmw.U &&
     (stageM2Members(memberLayer) & memberBit) === 0.U
   val memberOk = m2Member.status === p.coreMemoryOkStatusCode.U
