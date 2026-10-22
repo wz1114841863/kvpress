@@ -1,7 +1,11 @@
 # MR-2 M2 four design-decision proposal
 
-**Status:** final approval proposal only.  It does not authorize Chisel,
-macro, DC/CACTI, or PPA work.
+**Status:** Package-A storage-encoding proposal and historical input only.  Its
+recommended full lifecycle-lowering branch is superseded for production scope
+by `mr2_m2_runtime_semantics_implementation_decision.md`: A4's detailed
+private/shared birth-ordered lifecycle remains replay/accounting evidence until
+a real runtime service-event source is separately selected.  This file does
+not authorize Chisel, macro, DC/CACTI, or PPA work.
 
 ## Evidence boundary and recommendation
 
