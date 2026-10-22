@@ -4,6 +4,12 @@
 researcher decisions**. This is a narrow interface proposal, not an RTL
 authorization, entry-layout selection, macro decision, or PPA result.
 
+The final four-decision approval package is
+`analysis/mr2_m2_four_design_decision_proposal.md`. It makes explicit that the
+frozen A4 two-source lifecycle facts are absent from the current non-contiguous
+R3 packed-group carriers; a group provenance journal must not be relabelled as
+M2 lifecycle storage.
+
 ## Scope and outcome
 
 `9c7541a` supplies a bounded production owner for the existing M2 group

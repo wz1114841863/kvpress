@@ -410,6 +410,18 @@ carrier only; it cannot change R3 atomic publication, admission, R6 authority,
 or R2 arbitration. Its future producer/peripheral/array costs are Route-A
 incremental and `unestimated_not_zero`.
 
+The final MR-2 four-decision approval proposal is
+`analysis/mr2_m2_four_design_decision_proposal.md`. Its preferred package uses
+128-bit real head/span entries, a 614-slot generation-tagged span pool, and
+generic fail-closed storage faults; the entry arrays alone are 152,320 bits
+(2.84× the frozen 64-bit accounting proxy) before tags, queues, or peripheral
+logic. Crucially, frozen A4 M2 records require explicit private/shared
+source-FIFO and create/dequeue/release facts that are absent from the current
+non-contiguous R3 packed group. Approval must therefore include one explicit
+upstream metadata-lifecycle declaration producer. Without that producer, only
+the current provenance journal is implementable and it must not be labelled M2
+storage realization.
+
 The EDA-server Chisel platform is user-local and offline. See
 [`chisel_platform_handoff_20261021.md`](chisel_platform_handoff_20261021.md).
 Future remote implementation work must use a provenance-preserving Git checkout
