@@ -388,9 +388,14 @@ The required W0/MR-1A/B2c non-regression is also 6 suites/27 tests passed,
 `EXIT_CODE=0`, at
 `/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_owner_nonreg.log`.
 The earlier precheck is retained only as a precheck because its intended
-measurement-DUT selector used the wrong package.  The successor work is now
-the M2 storage-array-only boundary, which must preserve this owner and all
-R3 member/publication/fault/reset control in candidate DUT logic.  No macro,
+measurement-DUT selector used the wrong package.  The required M2
+storage-array provenance audit is recorded in
+`analysis/mr2_m2_entry_update_provenance_gap.md`: current carriers have no
+legal entry/update-data producer, entry layout, RMW operand, write-enable, or
+storage-fault source. Storage RTL is therefore blocked pending explicit
+authorization of that narrow typed update carrier; no address/owner/fixture
+may be repurposed as data. Any successor must preserve this owner and all R3
+member/publication/fault/reset control in candidate DUT logic. No macro,
 physical address, update
 payload, timing, energy, area, synthesis, DC, or PPA conclusion follows.
 
