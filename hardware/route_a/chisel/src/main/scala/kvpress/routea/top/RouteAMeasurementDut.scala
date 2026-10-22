@@ -275,8 +275,10 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   packReadIssue.io.read_issue_in <> m2P3.io.p3_pack_read_issue_out
   inactive(m2P3.io.p3_packed_write_issue_in)
   inactive(m2P3.io.p3_packed_write_terminal_in)
+  m2Control.io.group_prepare_in <> admission.io.m2_group_prepare_out
   m2Control.io.member_request_in <> m2P3.io.m2_group_member_req_out
   m2P3.io.m2_group_member_rsp_in <> m2Control.io.member_response_out
+  m2Control.io.publication_resolution_in := m2P3.io.m2_group_publication_resolution
   m2P3.io.p3_observe_layer := 0.U
   m2Control.io.publication_candidate_in <> m2P3.io.m2_publish_candidate_out
   m2P3.io.m2_publish_req_in <> m2Control.io.publication_request_out

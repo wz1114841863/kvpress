@@ -215,6 +215,14 @@ object RouteAAnchorWidths {
   final val P3ValidRecordsWidth = 7
   final val P3FragmentIndexWidth = 9
   final val P3StateWidth = 3
+  // MR-2 bounded M2 storage-unit realization widths.  These are explicit
+  // Route-A measurement-DUT choices, not A4's historical 59/50-bit accounting
+  // envelope or a physical macro selection.
+  final val M2EntryWordWidth = 128
+  final val M2SpanSlotWidth = 10
+  final val M2SpanGenerationWidth = 8
+  final val M2LifecycleOperationIdWidth = 16
+  final val M2FaultReasonWidth = 3
 }
 
 /** Fixed semantic encodings, not physical controller/M2/P3 encodings. */

@@ -1,9 +1,9 @@
 # MR-2 M2 runtime-semantics implementation decision
 
 **Status:** decision proposed from frozen contracts and current production RTL;
-no metadata-lifecycle producer is implemented by this record.  The concurrent
-four-case `RouteAM2EntryStorageSpec` run may establish only the separately
-labelled storage-unit result.
+no metadata-lifecycle producer is implemented by this record.  The bounded
+four-case `RouteAM2EntryStorageSpec` suite subsequently passed and is recorded
+separately as a storage-unit result only.
 
 ## Decision
 
@@ -131,5 +131,5 @@ and incremental-cost review.  It cannot be smuggled into the append lowerer.
 |---|---|
 | A4 detailed private/shared span lifecycle as automatically required production RTL | **No** — replay/accounting only under current contracts. |
 | Architecture-required minimum M2 semantic responsibility | **Yes** — pending membership, credit, ownership, and append order, but carrier/data implementation still absent. |
-| Package-A `RouteAM2EntryStorage` | Storage-unit candidate only; full four-case result recorded separately. |
+| Package-A `RouteAM2EntryStorage` | **Storage-unit PASS** under four fixture-driven cases; still a candidate only and not production integration. |
 | Production M2 entry storage / array-only boundary / synthesis eligibility | **BLOCKED** pending the explicit minimal append and transaction carrier. |

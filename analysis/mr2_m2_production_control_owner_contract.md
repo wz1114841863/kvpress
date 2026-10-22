@@ -1,6 +1,9 @@
 # MR-2 M2 bounded production-control owner
 
-**Status:** implementation and bounded composed-DUT verification complete.
+**Status:** bounded production-control ownership is implemented.  The later
+prepare/resolution extension has directed-unit coverage; its current
+composed-DUT/non-regression refresh remains a separate required result.  This
+document does not claim M2 entry-data or production lifecycle closure.
 
 This MR-2 sub-batch replaces `RouteAM2ReferenceProtocolProvider` only in
 `RouteAMeasurementDut` with `RouteAM2ProductionControlOwner`. It is a bounded
@@ -20,8 +23,11 @@ receives only the exact request carrier established by
   member class;
 - immutable group provenance: `kv_head`, `opaque_address_ref`, and `owner`.
 
-It reflects an OK response only for an accepted in-range request. No request is
-accepted while a response is outstanding. R3's existing exact-response
+Before R3 can issue either member, the admission/publication adapter emits one
+immutable `M2GroupPrepareDeclaration` only after the existing P3 claim
+acknowledgement.  The owner stores that group privately.  It reflects an OK
+response only for an accepted in-range member that exactly matches this private
+group. No request is accepted while a response is outstanding. R3's existing exact-response
 comparison remains the fail-closed gate; this owner neither fabricates a
 completion nor converts a mismatch into a successful M2 member.
 
@@ -32,20 +38,30 @@ the owner contains only:
 
 1. two equal head-control mirrors and one span-owner record per one of eight
    head-affine logical banks; and
-2. a 36-entry group-completion scoreboard containing the two accepted member
-   bits and immutable group provenance needed to gate reflection.
+2. a 36-entry private group reservation/completion scoreboard containing the
+   prepare provenance, two accepted member bits, and an outstanding-publication
+   bit needed to gate reflection.
 
 The head member writes both mirrors together; the span member writes the span
 record. A candidate can be reflected only after both matching members have
-completed for its `(layer, generation, tag)`. Candidate reflection consumes
-those two completion bits, so it cannot emit a second publication request.
-The candidate's real publication handshake and linearization remain R3/R5's
-existing path; the M2 owner only supplies the pre-existing request/response and
-candidate/reflection protocol.
+completed for its `(layer, generation, tag)`. Candidate reflection locks the
+private reservation but does not release it.  `RouteAM2P3Wrapper` then emits a
+Valid-only `M2GroupPublicationResolution` on the actual accepted R3/R5
+publication acknowledgement; that fanout cannot backpressure the
+acknowledgement.  A matching Published *or* Fault resolution releases the
+private reservation.  The candidate's real publication handshake and
+linearization remain R3/R5's existing path; the M2 owner only supplies the
+pre-existing request/response and candidate/reflection protocol.
+
+This extension is **control/provenance only**.  It does not carry a
+`MetadataAppend` operand, allocate a span, mutate a 128-bit M2 entry, or
+provide the future two-object data prepare/commit.  Therefore it cannot by
+itself satisfy the grouped data-state atomicity requirement.
 
 ## Reset, backpressure, and exclusions
 
-Reset clears all response, candidate, bank-control, and group-completion state.
+Reset clears all response, candidate, bank-control, private reservation, and
+group-completion state.
 The response and reflected candidate remain stable under downstream
 backpressure. The owner has no external fault input and does not alter the
 existing R3 negative-response/fault tests.
@@ -64,17 +80,16 @@ Chisel/Verilator platform at the source state of this batch:
 
 | Scope | Result | Evidence |
 |---|---|---|
-| exact head-plus-span commit, wrong-tag/no-early reflection, output stability, out-of-range/reset failure, and cross-immutable-group rejection | 3/3 passed | `RouteAM2ProductionControlOwnerSpec` in `/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_owner_final_directed.log` |
-| production R3/R5/R6 packed path through terminal/reclaim, hot-plan path, stale packed-read rejection, and direct candidate cancellation/fault | 4/4 passed | `RouteAMeasurementDutR3Spec` in the same log |
-| admission provenance and atomic-publication non-regression | 7/7 passed | `RouteAAdmissionPublicationIngressAdapterSpec` plus `RouteAR3R5PublicationSpec` in the same log |
+| private prepare, exact two-member gating, wrong-tag/no-early reflection, response stability, out-of-range/reset failure, cross-immutable-group rejection, and Published/Fault resolution cleanup | **6/6 passed** | `RouteAM2ProductionControlOwnerSpec` and `RouteAAdmissionPublicationIngressAdapterSpec`, `/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_coord_p1_20261022.log`, exit 0 |
+| prepare/resolution-integrated production R3/R5/R6 packed path through terminal/reclaim, hot-plan path, stale packed-read rejection, and direct candidate cancellation/fault | **4/4 passed** | `RouteAMeasurementDutR3Spec`, `/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_coord_p2_retry_20261022.log`, exit 0 |
+| independent Full-KV/Route-A top elaboration, owner-chain source check, and bounded B2c structural guard | **3/3 passed** | `DualMeasurementDutStructuralSpec`, `mr2_m2_coord_p2_retry_20261022.log`, exit 0 |
+| historical R1/R2/R5/R6 fixed-stall reclaim witness after B2c test-only tie-offs | **1/1 passed** | `RouteAFairReclaimIntegrationSpec`, `mr2_m2_coord_p2_retry_20261022.log`, exit 0 |
 
-The combined run is 4 suites, 14/14 tests passed, `EXIT_CODE=0` (18 minutes,
-5 seconds). Its follow-on W0/MR-1A/B2c non-regression is 6 suites, 27/27
-passed, `EXIT_CODE=0` (51 minutes, 52 seconds), at
-`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_owner_nonreg.log`.
-That run covers Full-KV baseline-local lifecycle/fault/reset, shared
-four-consumer/S2 and packed activation, dual-DUT structural guards,
-direct-pending, and pack-read paths.
+The prepare/resolution extension is consequently **composed-DUT PASS only for
+the scoped eight directed checks above**.  The earlier 4-suite 14/14 and
+follow-on six-suite 27/27 runs remain historical evidence for the pre-extension
+owner replacement; the broader W0/MR-1A/MR-1B non-regression set still needs a
+current serial refresh before MR-2 as a whole can be accepted.
 
 This is functional Chisel evidence only; it does not establish an M2 array
 realization, macro, wrapper timing, synthesis, area, energy, or PPA.

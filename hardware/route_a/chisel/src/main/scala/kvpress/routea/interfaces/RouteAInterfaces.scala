@@ -1119,6 +1119,36 @@ final class MetadataPublishAck(p: RouteASkeletonParameters) extends Bundle {
   val status = UInt(RouteAAnchorWidths.PublicationStatusWidth.W)
 }
 
+/**
+  * Immutable control-only preparation of the two existing R3 M2 members.
+  *
+  * This carrier is produced after the original admission triple and P3 claim
+  * acknowledgement have fired. It deliberately has no entry/update operand:
+  * it proves only the group identity and logical mapping provenance already
+  * accepted by those owners. It is not a MetadataAppend data declaration.
+  */
+final class M2GroupPrepareDeclaration(p: RouteASkeletonParameters) extends Bundle {
+  val p3_layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val p3_stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val opaque_address_ref = UInt(p.coreMemoryAddressRefWidth.W)
+  val owner = UInt(RouteAAnchorWidths.RequestIdWidth.W)
+}
+
+/**
+  * Non-backpressuring observation of an already accepted R3 publication ack.
+  * It resolves a private M2 control preparation; it is neither a publication
+  * command nor a second visibility/authority owner.
+  */
+final class M2GroupPublicationResolution(p: RouteASkeletonParameters) extends Bundle {
+  val p3_layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val p3_stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val status = UInt(RouteAAnchorWidths.PublicationStatusWidth.W)
+}
+
 /** RTL1.3.0 local P3 claim carrier; never an HBM command or P3 macro port. */
 final class P3Claim(p: RouteASkeletonParameters) extends Bundle {
   val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
@@ -1222,6 +1252,81 @@ final class M2GroupMemberResponse(p: RouteASkeletonParameters) extends Bundle {
   val opaque_address_ref = UInt(p.coreMemoryAddressRefWidth.W)
   val owner = UInt(RouteAAnchorWidths.RequestIdWidth.W)
   val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
+}
+
+/** Fixed semantic operation kinds for the bounded MR-2 M2 storage unit. */
+object RouteAM2EntryUpdateKind {
+  final val AppendSpan = 0
+  final val SelectOldest = 1
+  final val DequeueSpan = 2
+  final val ReleaseSpan = 3
+}
+
+/** Private storage-unit diagnostics; public M2 member responses remain ok/fault. */
+object RouteAM2StorageFaultReason {
+  final val None = 0
+  final val DeclarationMismatch = 1
+  final val Capacity = 2
+  final val Stale = 3
+  final val SemanticPrecondition = 4
+  final val AtomicCommit = 5
+  final val GenerationExhausted = 6
+}
+
+/** One M2-local handle.  It is never an address, page reference, or authority. */
+final class M2SpanHandle extends Bundle {
+  val valid = Bool()
+  val slot = UInt(RouteAAnchorWidths.M2SpanSlotWidth.W)
+  val generation = UInt(RouteAAnchorWidths.M2SpanGenerationWidth.W)
+}
+
+/**
+  * The sole typed data declaration for the bounded MR-2 storage unit.
+  *
+  * The current production DUT has no source for the semantic lifecycle fields;
+  * this carrier is intentionally unit-test driven until the separately audited
+  * production lifecycle owner is approved and connected.  `grouped` permits
+  * exact association to the existing R3 two-member publication prerequisite;
+  * ungrouped operations must leave group association fields unused.
+  */
+final class M2EntryUpdateDeclaration(p: RouteASkeletonParameters) extends Bundle {
+  val operation_id = UInt(RouteAAnchorWidths.M2LifecycleOperationIdWidth.W)
+  val update_kind = UInt(2.W)
+  val grouped = Bool()
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val member = UInt(1.W)
+  val source = Bool() // false=private, true=shared; never inferred from owner
+  val birth_opportunity = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
+  val sequence_start = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
+  val initial_or_dequeue_count = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
+  val span_slot = UInt(RouteAAnchorWidths.M2SpanSlotWidth.W)
+  val span_generation = UInt(RouteAAnchorWidths.M2SpanGenerationWidth.W)
+  val expected_old_valid = Bool()
+  // Canonical semantic-field mask, not a physical write-enable.  It is checked
+  // against update_kind so a fixture cannot smuggle an arbitrary word update.
+  val operand_mask = UInt(4.W)
+  // Used only for grouped append association, never as an entry key/address.
+  val stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val opaque_mapping_ref = UInt(p.coreMemoryAddressRefWidth.W)
+  val mapping_owner = UInt(RouteAAnchorWidths.RequestIdWidth.W)
+}
+
+/** Storage-unit completion; only status is intended to map to public M2 ok/fault. */
+final class M2EntryUpdateResult(p: RouteASkeletonParameters) extends Bundle {
+  val operation_id = UInt(RouteAAnchorWidths.M2LifecycleOperationIdWidth.W)
+  val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
+  val fault_reason = UInt(RouteAAnchorWidths.M2FaultReasonWidth.W)
+  val span_handle = new M2SpanHandle
+  val grouped = Bool()
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val member = UInt(1.W)
+  val stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val opaque_mapping_ref = UInt(p.coreMemoryAddressRefWidth.W)
+  val mapping_owner = UInt(RouteAAnchorWidths.RequestIdWidth.W)
 }
 
 /** R5-local allocation request; no physical descriptor/HBM command is implied. */
@@ -1350,6 +1455,7 @@ object RouteAChannels {
   def metadata_publish_visibility(p: RouteASkeletonParameters) = Decoupled(new MetadataPublishVisibility(p))
   def metadata_publish_visibility_ack = Decoupled(new MetadataPublishVisibilityAck)
   def metadata_publish_ack(p: RouteASkeletonParameters) = Decoupled(new MetadataPublishAck(p))
+  def m2_group_prepare(p: RouteASkeletonParameters) = Decoupled(new M2GroupPrepareDeclaration(p))
   def p3_claim(p: RouteASkeletonParameters) = Decoupled(new P3Claim(p))
   def p3_claim_ack(p: RouteASkeletonParameters) = Decoupled(new P3ClaimAck(p))
   def p3_pending_fragment(p: RouteASkeletonParameters) = Decoupled(new P3PendingFragment(p))

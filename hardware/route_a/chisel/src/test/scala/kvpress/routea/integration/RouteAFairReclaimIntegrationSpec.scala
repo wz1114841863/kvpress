@@ -31,6 +31,11 @@ private final class RouteAFairReclaimHarness(p: RouteASkeletonParameters) extend
   StructuralTieOff.sink(r2.io.direct_lease_eligibility_query_out)
   StructuralTieOff.source(r2.io.direct_lease_eligibility_in)
   StructuralTieOff.sink(r2.io.direct_lease_commit_out)
+  // This historical reclaim-only harness has no direct-pending source.  Keep
+  // the later B2c cancellation extension inactive rather than leaving a
+  // test-scope sink uninitialized or inventing a cancellation event.
+  StructuralTieOff.source(r2.io.direct_candidate_cancel_in)
+  StructuralTieOff.sink(r2.io.direct_candidate_cancel_ack_out)
   val r1 = Module(new RouteACoreMemIfV1(p))
 
   r6.io.frontend_lifecycle_req <> io.frontend
@@ -48,6 +53,9 @@ private final class RouteAFairReclaimHarness(p: RouteASkeletonParameters) extend
   StructuralTieOff.source(r6.io.hot_source_release_in)
   StructuralTieOff.source(r6.io.pending_source_release_in)
   StructuralTieOff.source(r6.io.packed_source_release_in)
+  // No pending source is opened in this reclaim-only witness, so it has no
+  // legitimate B2c association-failure producer.
+  StructuralTieOff.source(r6.io.pending_source_failure_in)
   StructuralTieOff.sink(r6.io.s2_service_req)
   StructuralTieOff.sink(r6.io.direct_pending_open)
   StructuralTieOff.sink(r6.io.merge_req)

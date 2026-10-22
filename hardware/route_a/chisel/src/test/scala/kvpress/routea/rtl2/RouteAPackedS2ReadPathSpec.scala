@@ -43,6 +43,11 @@ final class RouteAPackedS2ReadPathHarness(p: RouteASkeletonParameters) extends M
   StructuralTieOff.sink(r2.io.direct_lease_eligibility_query_out)
   StructuralTieOff.source(r2.io.direct_lease_eligibility_in)
   StructuralTieOff.sink(r2.io.direct_lease_commit_out)
+  // This packed-only RTL2 harness has no direct-pending source.  Tie off the
+  // later B2c cancellation interface explicitly so it cannot become an
+  // uninitialized test-scope sink or claim a direct-source action.
+  StructuralTieOff.source(r2.io.direct_candidate_cancel_in)
+  StructuralTieOff.sink(r2.io.direct_candidate_cancel_ack_out)
   val r1 = Module(new RouteACoreMemIfV1(p))
   val registry = Module(new RouteADeliveryContextRegistry(p))
   val router = Module(new RouteATypedDeliveryRouter(p))

@@ -1314,19 +1314,24 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
     val r5_allocation_rsp_in = Flipped(RouteAChannels.page_allocation_rsp(p))
     val r3_p3_claim = RouteAChannels.p3_claim(p)
     val r3_p3_claim_ack_in = Flipped(RouteAChannels.p3_claim_ack(p))
+    // Control-only preparation for the production M2 coordinator. It runs
+    // after the immutable admission triple and P3 claim acknowledgement and
+    // carries no MetadataAppend operand.
+    val m2_group_prepare_out = RouteAChannels.m2_group_prepare(p)
     val r3_admission_context_out = RouteAChannels.admission_context(p)
     val r3_admission_authority_out = RouteAChannels.r6_authority_transition(p)
     val r3_pending_payload_binding_out = RouteAChannels.pending_payload_read_binding(p)
   })
 
-  private val states = Enum(7)
+  private val states = Enum(8)
   private val StateCollect = states(0)
   private val StateAllocate = states(1)
   private val StateAwaitAllocation = states(2)
   private val StateClaim = states(3)
   private val StateAwaitClaimAck = states(4)
-  private val StateRelay = states(5)
-  private val StateDone = states(6)
+  private val StatePrepareM2 = states(5)
+  private val StateRelay = states(6)
+  private val StateDone = states(7)
   private val MemberCount = 64
   private val ordinalWidth = RouteAAnchorWidths.P3ValidRecordsWidth
 
@@ -1346,6 +1351,7 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
   val payloadBindings = Reg(Vec(MemberCount, new PendingPayloadReadBinding(p)))
   val allocatedPageRef = Reg(new PageRef)
   val allocatedRequiresTailLink = RegInit(false.B)
+  val claimedStageGeneration = Reg(UInt(p.p3StageGenerationWidth.W))
   val relayOrdinal = RegInit(0.U(ordinalWidth.W))
 
   val context = io.r6_admission_context_in.bits
@@ -1444,9 +1450,20 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
   val claimAckMatches = state === StateAwaitClaimAck && claimAck.layer === groupLayer
   io.r3_p3_claim_ack_in.ready := claimAckMatches
   when(io.r3_p3_claim_ack_in.fire) {
+    claimedStageGeneration := claimAck.stage_generation
     relayOrdinal := 0.U
-    state := StateRelay
+    state := StatePrepareM2
   }
+
+  io.m2_group_prepare_out.valid := state === StatePrepareM2
+  io.m2_group_prepare_out.bits.p3_layer := groupLayer
+  io.m2_group_prepare_out.bits.kv_head := groupHead
+  io.m2_group_prepare_out.bits.p3_stage_generation := claimedStageGeneration
+  io.m2_group_prepare_out.bits.transaction_group_tag := groupTag
+  io.m2_group_prepare_out.bits.valid_records := groupValidRecords
+  io.m2_group_prepare_out.bits.opaque_address_ref := groupM2OpaqueAddressRef
+  io.m2_group_prepare_out.bits.owner := groupM2Owner
+  when(io.m2_group_prepare_out.fire) { state := StateRelay }
 
   val relayMember = members(relayOrdinal(5, 0))
   val relayAuthority = authorities(relayOrdinal(5, 0))
@@ -1488,6 +1505,14 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
     assert(relayPayloadBinding.entry_id === relayMember.entry_id)
     assert(relayPayloadBinding.payload_ref === relayMember.payload_ref)
     assert(relayPayloadBinding.transaction_group_tag === relayMember.transaction_group_tag)
+  }
+  when(io.m2_group_prepare_out.valid) {
+    assert(io.m2_group_prepare_out.bits.p3_layer === groupLayer)
+    assert(io.m2_group_prepare_out.bits.kv_head === groupHead)
+    assert(io.m2_group_prepare_out.bits.transaction_group_tag === groupTag)
+    assert(io.m2_group_prepare_out.bits.valid_records === groupValidRecords)
+    assert(io.m2_group_prepare_out.bits.opaque_address_ref === groupM2OpaqueAddressRef)
+    assert(io.m2_group_prepare_out.bits.owner === groupM2Owner)
   }
 
   val heldAllocation = RegEnable(io.r5_allocation_req.bits, io.r5_allocation_req.valid && !io.r5_allocation_req.ready)
@@ -1735,10 +1760,12 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   override def desiredName: String = "route_a_m2_production_control_owner"
 
   val io = IO(new Bundle {
+    val group_prepare_in = Flipped(RouteAChannels.m2_group_prepare(p))
     val member_request_in = Flipped(RouteAChannels.m2_group_member_req(p))
     val member_response_out = RouteAChannels.m2_group_member_rsp(p)
     val publication_candidate_in = Flipped(RouteAChannels.metadata_publish_req(p))
     val publication_request_out = RouteAChannels.metadata_publish_req(p)
+    val publication_resolution_in = Input(Valid(new M2GroupPublicationResolution(p)))
   })
 
   private val banks = 1 << RouteAAnchorWidths.KvHeadWidth
@@ -1762,6 +1789,10 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   // been accepted as a publication candidate; they are not an authority map.
   val headCommitted = RegInit(VecInit(Seq.fill(stages)(false.B)))
   val spanCommitted = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  // Group control is private until the existing R3/R5 publication
+  // acknowledgement resolves it. This is not metadata entry storage.
+  val groupPrepared = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  val groupPublicationOutstanding = RegInit(VecInit(Seq.fill(stages)(false.B)))
   val groupGeneration = Reg(Vec(stages, UInt(p.p3StageGenerationWidth.W)))
   val groupTag = Reg(Vec(stages, UInt(p.transactionGroupTagWidth.W)))
   val groupHead = Reg(Vec(stages, UInt(RouteAAnchorWidths.KvHeadWidth.W)))
@@ -1770,6 +1801,25 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
 
   val memberPending = RegInit(false.B)
   val memberRequest = Reg(new M2GroupMemberRequest(p))
+  val preparation = io.group_prepare_in.bits
+  val preparationLayerInRange = preparation.p3_layer < stages.U
+  val preparationLayer = preparation.p3_layer
+  val preparationAcceptable = preparationLayerInRange && !memberPending &&
+    !groupPrepared(preparationLayer) && !headCommitted(preparationLayer) &&
+    !spanCommitted(preparationLayer) && !groupPublicationOutstanding(preparationLayer) &&
+    preparation.valid_records =/= 0.U && preparation.valid_records <= 64.U
+  io.group_prepare_in.ready := preparationAcceptable
+  when(io.group_prepare_in.fire) {
+    groupPrepared(preparationLayer) := true.B
+    groupPublicationOutstanding(preparationLayer) := false.B
+    headCommitted(preparationLayer) := false.B
+    spanCommitted(preparationLayer) := false.B
+    groupGeneration(preparationLayer) := preparation.p3_stage_generation
+    groupTag(preparationLayer) := preparation.transaction_group_tag
+    groupHead(preparationLayer) := preparation.kv_head
+    groupAddress(preparationLayer) := preparation.opaque_address_ref
+    groupOwner(preparationLayer) := preparation.owner
+  }
   val supportedMember = io.member_request_in.bits.member <= RouteAM2GroupMember.SpanOwnerRmw.U
   val memberLayerInRange = io.member_request_in.bits.layer < stages.U
   val requestedLayer = io.member_request_in.bits.layer
@@ -1787,8 +1837,8 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   // An incomplete group may receive its second member only when it is the
   // exact immutable companion of the first.  This owner must never assemble a
   // publication candidate from members belonging to different R3 groups.
-  val memberGroupEligible = !requestedMemberAlreadyCommitted &&
-    (!counterpartCommitted || requestMatchesRememberedGroup)
+  val memberGroupEligible = groupPrepared(requestedLayer) && !groupPublicationOutstanding(requestedLayer) &&
+    requestMatchesRememberedGroup && !requestedMemberAlreadyCommitted
   io.member_request_in.ready := !memberPending && supportedMember && memberLayerInRange && memberGroupEligible
   when(io.member_request_in.fire) {
     memberPending := true.B
@@ -1822,11 +1872,7 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
       spanOwnerOwner(bank) := memberRequest.owner
       spanCommitted(layer) := true.B
     }
-    groupGeneration(layer) := memberRequest.stage_generation
-    groupTag(layer) := memberRequest.transaction_group_tag
-    groupHead(layer) := memberRequest.kv_head
-    groupAddress(layer) := memberRequest.opaque_address_ref
-    groupOwner(layer) := memberRequest.owner
+    assert(groupPrepared(layer))
   }
 
   val publicationPending = RegInit(false.B)
@@ -1835,6 +1881,7 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   val candidateLayerInRange = candidate.p3_layer < stages.U
   val candidateLayer = candidate.p3_layer
   val publicationGroupReady = candidateLayerInRange &&
+    groupPrepared(candidateLayer) && !groupPublicationOutstanding(candidateLayer) &&
     headCommitted(candidateLayer) && spanCommitted(candidateLayer) &&
     groupGeneration(candidateLayer) === candidate.p3_stage_generation &&
     groupTag(candidateLayer) === candidate.transaction_group_tag
@@ -1842,13 +1889,33 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   when(io.publication_candidate_in.fire) {
     publicationPending := true.B
     publicationCandidate := candidate
-    // The same accepted group cannot form a second publication request.
-    headCommitted(candidateLayer) := false.B
-    spanCommitted(candidateLayer) := false.B
+    // This is only the existing R3 publication request. The private group is
+    // retained until the accepted R3/R5 acknowledgement resolves it.
+    groupPublicationOutstanding(candidateLayer) := true.B
   }
   io.publication_request_out.valid := publicationPending
   io.publication_request_out.bits := publicationCandidate
   when(io.publication_request_out.fire) { publicationPending := false.B }
+
+  val resolution = io.publication_resolution_in.bits
+  val resolutionLayerInRange = resolution.p3_layer < stages.U
+  val resolutionMatches = resolutionLayerInRange && groupPrepared(resolution.p3_layer) &&
+    groupPublicationOutstanding(resolution.p3_layer) &&
+    groupGeneration(resolution.p3_layer) === resolution.p3_stage_generation &&
+    groupTag(resolution.p3_layer) === resolution.transaction_group_tag
+  when(io.publication_resolution_in.valid) {
+    assert(resolutionMatches)
+    when(resolutionMatches) {
+      // Both successful publication and fail-closed publication fault consume
+      // the private control reservation. Entry data is not modeled here;
+      // a future MetadataAppend transaction must provide its own atomic data
+      // prepare/commit behind this exact resolution.
+      groupPrepared(resolution.p3_layer) := false.B
+      groupPublicationOutstanding(resolution.p3_layer) := false.B
+      headCommitted(resolution.p3_layer) := false.B
+      spanCommitted(resolution.p3_layer) := false.B
+    }
+  }
 
   when(io.member_response_out.valid && !io.member_response_out.ready) {
     assert(io.member_response_out.bits.layer === memberRequest.layer)
@@ -1976,6 +2043,9 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     val metadata_publish_visibility_apply = RouteAChannels.metadata_publish_visibility(p)
     val metadata_publish_visibility_ack_in = Flipped(RouteAChannels.metadata_publish_visibility_ack)
     val m2_publish_ack = RouteAChannels.metadata_publish_ack(p)
+    // Same-fire resolution for the M2 control coordinator. This cannot
+    // backpressure the accepted publication acknowledgement.
+    val m2_group_publication_resolution = Output(Valid(new M2GroupPublicationResolution(p)))
     val component_status_out = RouteAChannels.component_status(p)
   })
 
@@ -2662,6 +2732,14 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     publicationActive := false.B
     publicationAwaitingVisibilityAck := false.B
     publishAckValid := false.B
+  }
+  io.m2_group_publication_resolution.valid := io.m2_publish_ack.fire
+  io.m2_group_publication_resolution.bits.p3_layer := publicationLayer
+  io.m2_group_publication_resolution.bits.p3_stage_generation := publicationRequestGeneration
+  io.m2_group_publication_resolution.bits.transaction_group_tag := publicationTag
+  io.m2_group_publication_resolution.bits.status := publishAckStatus
+  when(io.m2_group_publication_resolution.valid) {
+    assert(io.m2_publish_ack.fire)
   }
 
   // a_metadata_publish_commit: the only visible R3 publication is held behind

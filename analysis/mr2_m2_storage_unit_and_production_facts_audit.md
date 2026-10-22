@@ -1,8 +1,10 @@
 # MR-2 M2 storage unit and production-facts audit
 
-**Status:** storage-unit directed verification is in progress; production
-lifecycle integration is blocked on the facts recorded below.  The runtime
-scope decision is recorded in
+**Status:** the bounded storage-unit directed suite **passed** on 2026-10-22
+(`RouteAM2EntryStorageSpec`, 4/4, exit 0; remote log
+`mr2_m2_storage_20261022_full_current.log`).  Production lifecycle
+integration remains blocked on the facts recorded below.  The runtime scope
+decision is recorded in
 `mr2_m2_runtime_semantics_implementation_decision.md`: Package A remains a
 bounded storage-unit candidate, while A4's detailed source-FIFO lifecycle is
 not thereby promoted to a production owner.  This is a narrow follow-up to the
@@ -115,10 +117,27 @@ Exactly-once here means one mutation for one accepted declaration fire; it does
 not yet prove a production producer will not replay an operation.  That replay
 and source-lifecycle responsibility remains with the missing producer.
 
+## Verified storage-unit result
+
+The four fixture-driven cases passed:
+
+1. append/select/dequeue/release RMW and guarded slot reuse;
+2. malformed, stale, duplicate, and non-releasable declaration rejection
+   without mutation;
+3. result stability under backpressure and one-declaration acceptance; and
+4. capacity fault after all 614 bounded span slots are occupied.
+
+This is a **storage-unit PASS** only.  It validates the selected bounded
+candidate's local typed declaration/result behavior; it does not establish a
+production `MetadataAppend` producer, R3-integrated data transaction,
+array-only wrapper boundary, macro choice, or any area/energy/timing/PPA
+claim.  The test's long Verilator build time is a simulation-tool cost, not a
+hardware latency result.
+
 ## Current conclusion and next permitted boundary
 
-1. **Storage RTL unit:** independently implementable and currently under
-   directed regression.
+1. **Storage RTL unit:** independently implemented and **PASS** under its
+   four directed fixture cases.
 2. **Production lifecycle connection:** **BLOCKED** by the four absent
    accepted lifecycle events above.  No Route-A top integration is authorized
    from this audit alone.

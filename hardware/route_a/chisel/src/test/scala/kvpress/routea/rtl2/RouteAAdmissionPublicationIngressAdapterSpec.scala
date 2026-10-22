@@ -37,6 +37,7 @@ final class RouteAAdmissionPublicationIngressAdapterSpec extends AnyFunSpec with
     dut.io.r5_allocation_rsp_in.valid.poke(false.B)
     dut.io.r3_p3_claim.ready.poke(false.B)
     dut.io.r3_p3_claim_ack_in.valid.poke(false.B)
+    dut.io.m2_group_prepare_out.ready.poke(false.B)
     dut.io.r3_admission_context_out.ready.poke(false.B)
     dut.io.r3_admission_authority_out.ready.poke(false.B)
     dut.io.r3_pending_payload_binding_out.ready.poke(false.B)
@@ -147,6 +148,16 @@ final class RouteAAdmissionPublicationIngressAdapterSpec extends AnyFunSpec with
       dut.io.r3_p3_claim_ack_in.valid.poke(true.B); dut.io.r3_p3_claim_ack_in.ready.expect(false.B)
       dut.io.r3_p3_claim_ack_in.valid.poke(false.B)
       offerClaimAck(dut, generation = 3)
+
+      dut.io.m2_group_prepare_out.valid.expect(true.B)
+      dut.io.m2_group_prepare_out.bits.p3_layer.expect(0.U)
+      dut.io.m2_group_prepare_out.bits.kv_head.expect(0.U)
+      dut.io.m2_group_prepare_out.bits.p3_stage_generation.expect(3.U)
+      dut.io.m2_group_prepare_out.bits.transaction_group_tag.expect(1.U)
+      dut.io.m2_group_prepare_out.bits.valid_records.expect(2.U)
+      dut.io.m2_group_prepare_out.bits.opaque_address_ref.expect("h5a".U)
+      dut.io.m2_group_prepare_out.bits.owner.expect(6.U)
+      dut.io.m2_group_prepare_out.ready.poke(true.B); dut.clock.step(); dut.io.m2_group_prepare_out.ready.poke(false.B)
 
       // Relay canonical ordinal order, not arrival order; both R3 facts must fire together.
       dut.io.r3_admission_context_out.valid.expect(true.B); dut.io.r3_admission_authority_out.valid.expect(true.B); dut.io.r3_pending_payload_binding_out.valid.expect(true.B)
