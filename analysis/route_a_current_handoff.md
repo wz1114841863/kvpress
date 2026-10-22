@@ -399,6 +399,17 @@ member/publication/fault/reset control in candidate DUT logic. No macro,
 physical address, update
 payload, timing, energy, area, synthesis, DC, or PPA conclusion follows.
 
+The implementation-level declaration review is now recorded in
+`analysis/mr2_m2_entry_update_declaration_contract_proposal.md`. It separates
+the frozen 59/50-bit (64/64 padded) semantic-accounting envelopes from real
+entry words and finds no current production data-decision owner. Before M2
+storage RTL, four explicit choices remain: entry encoding/validity, head/span
+key and reuse rule, lifecycle-to-RMW lowering with one declaration producer,
+and typed storage-fault encoding. The proposed declaration is a single data
+carrier only; it cannot change R3 atomic publication, admission, R6 authority,
+or R2 arbitration. Its future producer/peripheral/array costs are Route-A
+incremental and `unestimated_not_zero`.
+
 The EDA-server Chisel platform is user-local and offline. See
 [`chisel_platform_handoff_20261021.md`](chisel_platform_handoff_20261021.md).
 Future remote implementation work must use a provenance-preserving Git checkout

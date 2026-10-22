@@ -1,7 +1,9 @@
 # MR-2 M2 entry/update-data provenance gap
 
 **Status:** bounded production-provenance audit complete; RTL storage realization
-is blocked pending one separately authorized typed update carrier.
+is blocked pending one separately authorized typed update carrier. The
+implementation-level proposal and its four remaining researcher decisions are
+in `analysis/mr2_m2_entry_update_declaration_contract_proposal.md`.
 
 ## Scope and conclusion
 
