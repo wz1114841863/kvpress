@@ -85,11 +85,19 @@ Chisel/Verilator platform at the source state of this batch:
 | independent Full-KV/Route-A top elaboration, owner-chain source check, and bounded B2c structural guard | **3/3 passed** | `DualMeasurementDutStructuralSpec`, `mr2_m2_coord_p2_retry_20261022.log`, exit 0 |
 | historical R1/R2/R5/R6 fixed-stall reclaim witness after B2c test-only tie-offs | **1/1 passed** | `RouteAFairReclaimIntegrationSpec`, `mr2_m2_coord_p2_retry_20261022.log`, exit 0 |
 
-The prepare/resolution extension is consequently **composed-DUT PASS only for
-the scoped eight directed checks above**.  The earlier 4-suite 14/14 and
-follow-on six-suite 27/27 runs remain historical evidence for the pre-extension
-owner replacement; the broader W0/MR-1A/MR-1B non-regression set still needs a
-current serial refresh before MR-2 as a whole can be accepted.
+The prepare/resolution extension is **composed-DUT PASS** for the scoped eight
+directed checks above.  Its current serial W0/MR-1A/MR-1B/M2 refresh also
+passed: eight suites, 33/33 tests, exit 0, in 52 minutes 03 seconds at
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_nonreg_current_20261022.log`.
+That selected set covers Full-KV lifecycle/fault/reset, four-consumer
+completion, packed activation, both-DUT structural guards, direct-pending,
+R3 pack-read/reconciliation, M2 control, and admission ingress.
+
+This verification closes neither the missing production `MetadataAppend`
+carrier nor grouped entry-data atomic commit.  It proves that the new
+control-only prepare/resolution state has not regressed the listed functional
+paths; production M2 entry integration and array-only boundary remain blocked
+as stated in the M2 runtime-semantics decision.
 
 This is functional Chisel evidence only; it does not establish an M2 array
 realization, macro, wrapper timing, synthesis, area, energy, or PPA.
