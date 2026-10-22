@@ -422,6 +422,42 @@ upstream metadata-lifecycle declaration producer. Without that producer, only
 the current provenance journal is implementable and it must not be labelled M2
 storage realization.
 
+### MR-2 minimal admission-to-metadata bridge (2026-10-22)
+
+The first approved minimal-runtime implementation sub-batch is now live in
+`RouteAMeasurementDut`. `RouteAAdmissionPublicationIngressAdapter` emits a
+`MetadataAppendMemberDeclaration` only on the same accepted fire as the
+existing retained admission context, R6 authority, and exact pending-payload
+binding. `RouteAMetadataAdmissionBridge` therefore records an actual immutable
+binding rather than reconstructing membership from group tag, ordinal, mapping
+reference, or a fixture. It holds one bounded group entry per P3 layer,
+up-to-64 exact member bindings, a local/shared/staging logical-credit
+classification, and a 16-bit per-stream append sequence. It gates pre-accept
+admission with ready-low before the triple fires; it neither revises the
+admission disposition nor creates R3 publication, R6 authority, source
+selection, or R2 arbitration.
+
+The bridge forwards the pre-existing M2 group prepare only after the exact
+member mask is complete. Publication faults keep pending membership and credit
+while discarding only private preparation. Credit is released only from the
+non-backpressuring R3 observation that the corresponding all-member post-R6
+handoff has fired. This is a bounded control/ledger implementation, not the
+approved-but-not-yet-implemented MetadataAppend operand producer, grouped
+entry-data prepare/commit/abort, actual M2 entry storage, or an array-only
+boundary closure. Its state is Route-A incremental and
+`unestimated_not_zero` in `analysis/measurement_boundary_bom.json`.
+
+Remote directed evidence is 4/4 passed (`EXIT=0`) at
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_admission_p1_indexfix_20261022.log`:
+non-contiguous real members, duplicate rejection, private prepare, publication
+then all-member handoff release, and local-to-shared bounded credit fallback.
+The previous dynamic stream-index width warnings were removed before this run.
+The current-source dual-DUT elaboration/structural guard is 3/3 passed
+(`EXIT=0`) at
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_admission_p1_structural_20261022.log`.
+Neither result is an M2 entry-data/storage realization, synthesis eligibility,
+or physical-cost conclusion.
+
 The EDA-server Chisel platform is user-local and offline. See
 [`chisel_platform_handoff_20261021.md`](chisel_platform_handoff_20261021.md).
 Future remote implementation work must use a provenance-preserving Git checkout
@@ -447,10 +483,13 @@ rather than the earlier rsync-only platform smoke snapshot.
 > scope. MR-1B B2c is complete only for its approved single-record functional
 > contour: reconciliation, qualified withdrawal, cancel/abort, and R6-owned
 > fault have passed remote directed and W0/MR-1A structural regressions. The
-> MR-2's M2 carrier provenance is complete, but the functional reference
-> responder has not yet been replaced.  The next implementation sub-batch is
-> the M2 production control owner; M2 array isolation follows its production
-> protocol closure. None selects
+> MR-2's bounded M2 production control and admission-to-metadata membership
+> bridge are live in `RouteAMeasurementDut`, but real MetadataAppend operands,
+> grouped entry-data prepare/commit/abort, actual entry storage, and the M2
+> array-only boundary remain open. The next implementation sub-batch must add
+> only approved real entry-data production facts and atomic storage integration;
+> it must not treat the current bridge or fixture-only storage tests as M2
+> storage closure. None selects
 > a top or begins physical realization work.
 > Read
 > `analysis/synthesis_realization_partition.md` and

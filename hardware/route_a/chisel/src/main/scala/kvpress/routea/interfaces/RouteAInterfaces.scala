@@ -1149,6 +1149,41 @@ final class M2GroupPublicationResolution(p: RouteASkeletonParameters) extends Bu
   val status = UInt(RouteAAnchorWidths.PublicationStatusWidth.W)
 }
 
+/**
+  * One immutable pending-membership fact accepted by the existing admission
+  * three-way join.  The complete pending binding is deliberately retained:
+  * group tag/ordinal describe only membership placement and never substitute
+  * for the pending-payload identity or generation.
+  */
+final class MetadataAppendMemberDeclaration(p: RouteASkeletonParameters) extends Bundle {
+  val payload_binding = new PendingPayloadReadBinding(p)
+}
+
+/**
+  * A private, group-scoped credit reservation selected by the minimal M2
+  * admission bridge.  It is a logical resource classification, not an A4
+  * source FIFO, physical queue address, or storage macro port.
+  */
+object MetadataAppendCreditPool {
+  final val Local = 0
+  final val Shared = 1
+  final val Staging = 2
+  final val Width = 2
+}
+
+/**
+  * Read-only observation that all members of one published group have fired
+  * their pending-to-packed authority transitions into R6.  It is emitted by
+  * R3 from the same completed fact as post-R6 page readiness and cannot
+  * backpressure publication, R6, or packed-read activation.
+  */
+final class MetadataMembershipHandoffObservation(p: RouteASkeletonParameters) extends Bundle {
+  val p3_layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val p3_stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+}
+
 /** RTL1.3.0 local P3 claim carrier; never an HBM command or P3 macro port. */
 final class P3Claim(p: RouteASkeletonParameters) extends Bundle {
   val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
@@ -1456,6 +1491,7 @@ object RouteAChannels {
   def metadata_publish_visibility_ack = Decoupled(new MetadataPublishVisibilityAck)
   def metadata_publish_ack(p: RouteASkeletonParameters) = Decoupled(new MetadataPublishAck(p))
   def m2_group_prepare(p: RouteASkeletonParameters) = Decoupled(new M2GroupPrepareDeclaration(p))
+  def metadata_append_member(p: RouteASkeletonParameters) = Decoupled(new MetadataAppendMemberDeclaration(p))
   def p3_claim(p: RouteASkeletonParameters) = Decoupled(new P3Claim(p))
   def p3_claim_ack(p: RouteASkeletonParameters) = Decoupled(new P3ClaimAck(p))
   def p3_pending_fragment(p: RouteASkeletonParameters) = Decoupled(new P3PendingFragment(p))

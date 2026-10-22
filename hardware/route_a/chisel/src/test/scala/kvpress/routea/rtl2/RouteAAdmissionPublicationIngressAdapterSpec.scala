@@ -37,6 +37,10 @@ final class RouteAAdmissionPublicationIngressAdapterSpec extends AnyFunSpec with
     dut.io.r5_allocation_rsp_in.valid.poke(false.B)
     dut.io.r3_p3_claim.ready.poke(false.B)
     dut.io.r3_p3_claim_ack_in.valid.poke(false.B)
+    // The production bridge consumes the immutable member declaration on the
+    // same fire as the admission triple.  This unit harness supplies only the
+    // ready side; it never fabricates member contents.
+    dut.io.metadata_append_member_out.ready.poke(true.B)
     dut.io.m2_group_prepare_out.ready.poke(false.B)
     dut.io.r3_admission_context_out.ready.poke(false.B)
     dut.io.r3_admission_authority_out.ready.poke(false.B)

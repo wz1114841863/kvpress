@@ -1318,6 +1318,10 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
     // after the immutable admission triple and P3 claim acknowledgement and
     // carries no MetadataAppend operand.
     val m2_group_prepare_out = RouteAChannels.m2_group_prepare(p)
+    // The exact accepted member fact for the minimal admission-to-metadata
+    // bridge.  It is emitted on the same fire as the frozen admission triple;
+    // the bridge may exert only pre-acceptance credit backpressure here.
+    val metadata_append_member_out = RouteAChannels.metadata_append_member(p)
     val r3_admission_context_out = RouteAChannels.admission_context(p)
     val r3_admission_authority_out = RouteAChannels.r6_authority_transition(p)
     val r3_pending_payload_binding_out = RouteAChannels.pending_payload_read_binding(p)
@@ -1384,14 +1388,22 @@ final class RouteAAdmissionPublicationIngressAdapter(p: RouteASkeletonParameters
     payloadBindingMatches && context.entry_id === contextCoordinate &&
     (firstMember || (groupMatches && groupM2MappingMatches)) && (present & ordinalMask) === 0.U
 
+  io.metadata_append_member_out.valid := state === StateCollect && acceptedMember &&
+    io.r6_admission_context_in.valid && io.r6_authority_in.valid && io.pending_payload_binding_in.valid
+  io.metadata_append_member_out.bits.payload_binding := payloadBinding
+
   // R6 emits these as two independent decoupled channels, but the frozen
   // retained admission contract permits only an atomic pair at this ingress.
-  io.r6_admission_context_in.ready := acceptedMember && io.r6_authority_in.valid && io.pending_payload_binding_in.valid
-  io.r6_authority_in.ready := acceptedMember && io.r6_admission_context_in.valid && io.pending_payload_binding_in.valid
-  io.pending_payload_binding_in.ready := acceptedMember && io.r6_admission_context_in.valid && io.r6_authority_in.valid
+  io.r6_admission_context_in.ready := acceptedMember && io.r6_authority_in.valid &&
+    io.pending_payload_binding_in.valid && io.metadata_append_member_out.ready
+  io.r6_authority_in.ready := acceptedMember && io.r6_admission_context_in.valid &&
+    io.pending_payload_binding_in.valid && io.metadata_append_member_out.ready
+  io.pending_payload_binding_in.ready := acceptedMember && io.r6_admission_context_in.valid &&
+    io.r6_authority_in.valid && io.metadata_append_member_out.ready
   when(io.r6_admission_context_in.fire) {
     assert(io.r6_authority_in.fire)
     assert(io.pending_payload_binding_in.fire)
+    assert(io.metadata_append_member_out.fire)
     when(firstMember) {
       groupLayer := context.layer
       groupHead := context.kv_head
@@ -2017,6 +2029,10 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     // member of the immutable published-page ledger has actually fired into
     // R6; R3 remains the only membership/ordinal owner.
     val post_r6_packed_page_ready_observation = RouteAChannels.post_r6_packed_page_ready_observation(p)
+    // MR-2: non-backpressuring mirror of the exact completed all-member R6
+    // handoff.  It exists solely for M2 pending-membership/credit release and
+    // cannot delay packed-read activation or create an authority transition.
+    val metadata_membership_handoff_observation = Output(Valid(new MetadataMembershipHandoffObservation(p)))
     // An explicit member work item is the R3-owned entry to the minimal
     // pending -> P3 pack-read path.  R3 validates it against the immutable
     // admitted-member ledger before emitting a pre-R2 descriptor; this port
@@ -2922,8 +2938,19 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     postR6PageReadyTag(postR6PageReadyLayer)
   io.post_r6_packed_page_ready_observation.bits.valid_records :=
     postR6PageReadyRecords(postR6PageReadyLayer)
+  io.metadata_membership_handoff_observation.valid := io.post_r6_packed_page_ready_observation.fire
+  io.metadata_membership_handoff_observation.bits.p3_layer := postR6PageReadyLayer
+  io.metadata_membership_handoff_observation.bits.p3_stage_generation :=
+    postR6PageReadyGeneration(postR6PageReadyLayer)
+  io.metadata_membership_handoff_observation.bits.transaction_group_tag :=
+    postR6PageReadyTag(postR6PageReadyLayer)
+  io.metadata_membership_handoff_observation.bits.valid_records :=
+    postR6PageReadyRecords(postR6PageReadyLayer)
   when(io.post_r6_packed_page_ready_observation.fire) {
     postR6PageReadyActive(postR6PageReadyLayer) := false.B
+  }
+  when(io.metadata_membership_handoff_observation.valid) {
+    assert(io.post_r6_packed_page_ready_observation.fire)
   }
   when(io.post_r6_packed_page_ready_observation.valid) {
     assert(io.post_r6_packed_page_ready_observation.bits.valid_records =/= 0.U)

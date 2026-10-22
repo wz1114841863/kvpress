@@ -64,6 +64,10 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   // MR-2: the measurement contour owns its bounded M2 control protocol.
   // The historical reference endpoint remains only in legacy/test skeletons.
   val m2Control = Module(new RouteAM2ProductionControlOwner(p))
+  // The admission bridge owns only accepted pending-membership, credit, and
+  // append-order state.  It is neither a second R3 publication owner nor an
+  // R6/R2 source-selection or arbitration participant.
+  val metadataAdmission = Module(new RouteAMetadataAdmissionBridge(p))
   val pageManager = Module(new RouteAPageManager(p))
   val activationBinder = Module(new RouteAPackedReadActivationBinder(p))
   val associationOwner = Module(new RouteAPackedReadAssociationOwner(p))
@@ -275,10 +279,14 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   packReadIssue.io.read_issue_in <> m2P3.io.p3_pack_read_issue_out
   inactive(m2P3.io.p3_packed_write_issue_in)
   inactive(m2P3.io.p3_packed_write_terminal_in)
-  m2Control.io.group_prepare_in <> admission.io.m2_group_prepare_out
+  admission.io.metadata_append_member_out <> metadataAdmission.io.member_in
+  metadataAdmission.io.group_prepare_in <> admission.io.m2_group_prepare_out
+  m2Control.io.group_prepare_in <> metadataAdmission.io.group_prepare_out
   m2Control.io.member_request_in <> m2P3.io.m2_group_member_req_out
   m2P3.io.m2_group_member_rsp_in <> m2Control.io.member_response_out
   m2Control.io.publication_resolution_in := m2P3.io.m2_group_publication_resolution
+  metadataAdmission.io.publication_resolution_in := m2P3.io.m2_group_publication_resolution
+  metadataAdmission.io.membership_handoff_in := m2P3.io.metadata_membership_handoff_observation
   m2P3.io.p3_observe_layer := 0.U
   m2Control.io.publication_candidate_in <> m2P3.io.m2_publish_candidate_out
   m2P3.io.m2_publish_req_in <> m2Control.io.publication_request_out

@@ -319,6 +319,11 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     admission_group_builder.io.r3_admission_context_out <> m2_p3.io.admission_context_in
     admission_group_builder.io.r3_admission_authority_out <> m2_p3.io.admission_authority_in
     admission_group_builder.io.r3_pending_payload_binding_out <> m2_p3.io.pending_payload_binding_in
+    // This historical composition-only top is not the measurement DUT and
+    // retains its reference M2 endpoint.  It observes the new immutable
+    // declaration only to keep that inert composition elaboratable; the real
+    // production bridge is instantiated exclusively by RouteAMeasurementDut.
+    admission_group_builder.io.metadata_append_member_out.ready := true.B
     p3_pending_ingress.io.hot_in <> hot_payload_fragment_in
     p3_pending_ingress.io.pack_read_in <> p3_pack_read_endpoint.io.p3_pending_fragment_out
     val p3_fragment = p3_pending_ingress.io.out
