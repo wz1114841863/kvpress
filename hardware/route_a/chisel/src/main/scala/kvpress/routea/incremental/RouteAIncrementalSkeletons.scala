@@ -1773,15 +1773,76 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
 
   val io = IO(new Bundle {
     val group_prepare_in = Flipped(RouteAChannels.m2_group_prepare(p))
+    val metadata_append_operand_in = Flipped(RouteAChannels.metadata_append_operand(p))
     val member_request_in = Flipped(RouteAChannels.m2_group_member_req(p))
     val member_response_out = RouteAChannels.m2_group_member_rsp(p)
     val publication_candidate_in = Flipped(RouteAChannels.metadata_publish_req(p))
     val publication_request_out = RouteAChannels.metadata_publish_req(p)
     val publication_resolution_in = Input(Valid(new M2GroupPublicationResolution(p)))
+    val metadata_membership_handoff_in = Input(Valid(new MetadataMembershipHandoffObservation(p)))
+    val metadata_group_abort_out = Output(Valid(new M2MetadataGroupAbort(p)))
+    // Test/structural observability only; neither output is a publication or
+    // authority signal.
+    val metadata_visible_span_count = Output(UInt(RouteAAnchorWidths.M2SpanSlotWidth.W))
+    val metadata_private_reservation_count = Output(UInt(6.W))
   })
 
   private val banks = 1 << RouteAAnchorWidths.KvHeadWidth
   private val stages = 36
+  private val headEntries = stages * banks
+  private val metadataSpanEntries = 614
+  private val maxMetadataGeneration = ((1 << RouteAAnchorWidths.M2SpanGenerationWidth) - 1).U
+
+  /** Minimal production head state: one append tail per layer/head stream. */
+  final class MetadataHeadEntry extends Bundle {
+    val valid = Bool()
+    val tail_slot = UInt(RouteAAnchorWidths.M2SpanSlotWidth.W)
+    val tail_generation = UInt(RouteAAnchorWidths.M2SpanGenerationWidth.W)
+    val append_sequence = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
+    val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+    val reserved = UInt(86.W)
+  }
+
+  /**
+    * Minimal production span-owner state.  It records only accepted pending
+    * membership association, ownership/credit classification, and append
+    * order.  It deliberately does not fabricate A4 source/birth/count/FIFO
+    * fields that the current runtime does not own.
+    */
+  final class MetadataSpanEntry extends Bundle {
+    val valid = Bool()
+    val generation = UInt(RouteAAnchorWidths.M2SpanGenerationWidth.W)
+    val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+    val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+    val p3_stage_generation = UInt(p.p3StageGenerationWidth.W)
+    val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+    val credit_pool = UInt(MetadataAppendCreditPool.Width.W)
+    val append_sequence = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
+    val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+    // Exact opaque mapping and all 64 immutable member bindings remain in
+    // the bridge/coordinator association ledger. They are validated before
+    // private preparation but are not entry payload, avoiding an accidental
+    // over-wide 128-bit word or a lossy in-word reconstruction.
+    val reserved = UInt((RouteAAnchorWidths.M2EntryWordWidth -
+      (1 + RouteAAnchorWidths.M2SpanGenerationWidth + RouteAAnchorWidths.LayerWidth +
+        RouteAAnchorWidths.KvHeadWidth + p.p3StageGenerationWidth + p.transactionGroupTagWidth +
+        MetadataAppendCreditPool.Width + RouteAAnchorWidths.ContextTokensWidth +
+        RouteAAnchorWidths.P3ValidRecordsWidth)).W)
+  }
+
+  private def headIndex(layer: UInt, head: UInt): UInt =
+    (layer * banks.U + head)(8, 0)
+  private def expectedMemberMask(validRecords: UInt): UInt =
+    VecInit((0 until 64).map(index => index.U < validRecords)).asUInt
+
+  val metadataHeadReplicaA = RegInit(VecInit(Seq.fill(headEntries)(0.U.asTypeOf(new MetadataHeadEntry))))
+  val metadataHeadReplicaB = RegInit(VecInit(Seq.fill(headEntries)(0.U.asTypeOf(new MetadataHeadEntry))))
+  val metadataSpan = RegInit(VecInit(Seq.fill(metadataSpanEntries)(0.U.asTypeOf(new MetadataSpanEntry))))
+  // A reservation is private before metadata_publish_commit; it becomes a
+  // visible span only on the accepted Published resolution.
+  val metadataSlotOccupied = RegInit(VecInit(Seq.fill(metadataSpanEntries)(false.B)))
+  val metadataSlotGeneration = RegInit(VecInit(Seq.fill(metadataSpanEntries)(0.U(RouteAAnchorWidths.M2SpanGenerationWidth.W))))
+  val metadataGenerationExhausted = RegInit(false.B)
 
   // The two head-control replicas receive the same accepted semantic RMW
   // record on the same response fire.  They model no independently visible
@@ -1810,28 +1871,89 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   val groupHead = Reg(Vec(stages, UInt(RouteAAnchorWidths.KvHeadWidth.W)))
   val groupAddress = Reg(Vec(stages, UInt(p.coreMemoryAddressRefWidth.W)))
   val groupOwner = Reg(Vec(stages, UInt(RouteAAnchorWidths.RequestIdWidth.W)))
+  val groupTransactionOk = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  val groupPreparedSlot = Reg(Vec(stages, UInt(RouteAAnchorWidths.M2SpanSlotWidth.W)))
+  val groupPreparedHead = Reg(Vec(stages, new MetadataHeadEntry))
+  val groupPreparedSpan = Reg(Vec(stages, new MetadataSpanEntry))
 
   val memberPending = RegInit(false.B)
   val memberRequest = Reg(new M2GroupMemberRequest(p))
   val preparation = io.group_prepare_in.bits
   val preparationLayerInRange = preparation.p3_layer < stages.U
   val preparationLayer = preparation.p3_layer
+  val operand = io.metadata_append_operand_in.bits
+  val operandAssociates = operand.p3_layer === preparation.p3_layer &&
+    operand.kv_head === preparation.kv_head &&
+    operand.p3_stage_generation === preparation.p3_stage_generation &&
+    operand.transaction_group_tag === preparation.transaction_group_tag &&
+    operand.opaque_mapping_ref === preparation.opaque_address_ref &&
+    operand.mapping_owner === preparation.owner && operand.valid_records === preparation.valid_records
+  val operandMemberShapeLegal = operand.valid_records =/= 0.U && operand.valid_records <= 64.U &&
+    operand.member_mask === expectedMemberMask(operand.valid_records) &&
+    VecInit((0 until 64).map { index =>
+      val member = operand.members(index)
+      Mux(index.U < operand.valid_records,
+        member.layer === operand.p3_layer && member.kv_head === operand.kv_head &&
+          member.transaction_group_tag === operand.transaction_group_tag &&
+          member.group_valid_records === operand.valid_records &&
+          member.group_member_ordinal === index.U &&
+          member.m2_group_opaque_address_ref === operand.opaque_mapping_ref &&
+          member.m2_group_owner === operand.mapping_owner,
+        !operand.member_mask(index))
+    }).asUInt.andR
+  val metadataFreeSlots = VecInit((0 until metadataSpanEntries).map(index => !metadataSlotOccupied(index)))
+  val metadataFreeSlotExists = metadataFreeSlots.asUInt.orR
+  val metadataFreeSlot = PriorityEncoder(metadataFreeSlots)
+  val metadataHeadAvailable = !metadataHeadReplicaA(headIndex(operand.p3_layer, operand.kv_head)).valid
+  val metadataPrepareOk = operandMemberShapeLegal && metadataFreeSlotExists &&
+    metadataSlotGeneration(metadataFreeSlot) =/= maxMetadataGeneration && metadataHeadAvailable
   val preparationAcceptable = preparationLayerInRange && !memberPending &&
     !groupPrepared(preparationLayer) && !headCommitted(preparationLayer) &&
     !spanCommitted(preparationLayer) && !groupPublicationOutstanding(preparationLayer) &&
     preparation.valid_records =/= 0.U && preparation.valid_records <= 64.U
-  io.group_prepare_in.ready := preparationAcceptable
+  // The existing prepare and its real lowering operand are one atomic ingress:
+  // no declaration can be consumed without its R3 group, or vice versa.
+  val jointPrepareAcceptable = preparationAcceptable && operandAssociates
+  io.group_prepare_in.ready := jointPrepareAcceptable && io.metadata_append_operand_in.valid
+  io.metadata_append_operand_in.ready := jointPrepareAcceptable && io.group_prepare_in.valid
   when(io.group_prepare_in.fire) {
+    assert(io.metadata_append_operand_in.fire)
     groupPrepared(preparationLayer) := true.B
     groupPublicationOutstanding(preparationLayer) := false.B
     headCommitted(preparationLayer) := false.B
     spanCommitted(preparationLayer) := false.B
+    groupTransactionOk(preparationLayer) := metadataPrepareOk
     groupGeneration(preparationLayer) := preparation.p3_stage_generation
     groupTag(preparationLayer) := preparation.transaction_group_tag
     groupHead(preparationLayer) := preparation.kv_head
     groupAddress(preparationLayer) := preparation.opaque_address_ref
     groupOwner(preparationLayer) := preparation.owner
+    when(metadataPrepareOk) {
+      val preparedHead = Wire(new MetadataHeadEntry)
+      preparedHead := 0.U.asTypeOf(new MetadataHeadEntry)
+      preparedHead.valid := true.B
+      preparedHead.tail_slot := metadataFreeSlot
+      preparedHead.tail_generation := metadataSlotGeneration(metadataFreeSlot)
+      preparedHead.append_sequence := operand.append_sequence
+      preparedHead.valid_records := operand.valid_records
+      val preparedSpan = Wire(new MetadataSpanEntry)
+      preparedSpan := 0.U.asTypeOf(new MetadataSpanEntry)
+      preparedSpan.valid := true.B
+      preparedSpan.generation := metadataSlotGeneration(metadataFreeSlot)
+      preparedSpan.layer := operand.p3_layer
+      preparedSpan.kv_head := operand.kv_head
+      preparedSpan.p3_stage_generation := operand.p3_stage_generation
+      preparedSpan.transaction_group_tag := operand.transaction_group_tag
+      preparedSpan.credit_pool := operand.credit_pool
+      preparedSpan.append_sequence := operand.append_sequence
+      preparedSpan.valid_records := operand.valid_records
+      groupPreparedSlot(preparationLayer) := metadataFreeSlot
+      groupPreparedHead(preparationLayer) := preparedHead
+      groupPreparedSpan(preparationLayer) := preparedSpan
+      metadataSlotOccupied(metadataFreeSlot) := true.B
+    }
   }
+  when(io.metadata_append_operand_in.fire) { assert(io.group_prepare_in.fire) }
   val supportedMember = io.member_request_in.bits.member <= RouteAM2GroupMember.SpanOwnerRmw.U
   val memberLayerInRange = io.member_request_in.bits.layer < stages.U
   val requestedLayer = io.member_request_in.bits.layer
@@ -1865,24 +1987,33 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   io.member_response_out.bits.member := memberRequest.member
   io.member_response_out.bits.opaque_address_ref := memberRequest.opaque_address_ref
   io.member_response_out.bits.owner := memberRequest.owner
-  io.member_response_out.bits.status := p.coreMemoryOkStatusCode.U
+  io.member_response_out.bits.status := Mux(groupTransactionOk(memberRequest.layer),
+    p.coreMemoryOkStatusCode.U, p.coreMemoryFaultStatusCode.U)
+  io.metadata_group_abort_out.valid := false.B
+  io.metadata_group_abort_out.bits := 0.U.asTypeOf(new M2MetadataGroupAbort(p))
   when(io.member_response_out.fire) {
     memberPending := false.B
     val bank = memberRequest.kv_head
     val layer = memberRequest.layer
-    when(memberRequest.member === RouteAM2GroupMember.HeadControlRmw.U) {
-      headReplicaAValid(bank) := true.B
-      headReplicaBValid(bank) := true.B
-      headReplicaAAddress(bank) := memberRequest.opaque_address_ref
-      headReplicaBAddress(bank) := memberRequest.opaque_address_ref
-      headReplicaAOwner(bank) := memberRequest.owner
-      headReplicaBOwner(bank) := memberRequest.owner
-      headCommitted(layer) := true.B
+    when(groupTransactionOk(layer)) {
+      when(memberRequest.member === RouteAM2GroupMember.HeadControlRmw.U) {
+        headCommitted(layer) := true.B
+      }.otherwise {
+        spanCommitted(layer) := true.B
+      }
     }.otherwise {
-      spanOwnerValid(bank) := true.B
-      spanOwnerAddress(bank) := memberRequest.opaque_address_ref
-      spanOwnerOwner(bank) := memberRequest.owner
-      spanCommitted(layer) := true.B
+      // A failed private prepare produces the existing typed member fault.
+      // The bridge consumes this observation only to mark its own pending
+      // membership nonpublishable; it cannot synthesize R3 stage faulting.
+      io.metadata_group_abort_out.valid := true.B
+      io.metadata_group_abort_out.bits.p3_layer := layer
+      io.metadata_group_abort_out.bits.p3_stage_generation := memberRequest.stage_generation
+      io.metadata_group_abort_out.bits.transaction_group_tag := memberRequest.transaction_group_tag
+      groupPrepared(layer) := false.B
+      groupPublicationOutstanding(layer) := false.B
+      headCommitted(layer) := false.B
+      spanCommitted(layer) := false.B
+      groupTransactionOk(layer) := false.B
     }
     assert(groupPrepared(layer))
   }
@@ -1894,7 +2025,7 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   val candidateLayer = candidate.p3_layer
   val publicationGroupReady = candidateLayerInRange &&
     groupPrepared(candidateLayer) && !groupPublicationOutstanding(candidateLayer) &&
-    headCommitted(candidateLayer) && spanCommitted(candidateLayer) &&
+    groupTransactionOk(candidateLayer) && headCommitted(candidateLayer) && spanCommitted(candidateLayer) &&
     groupGeneration(candidateLayer) === candidate.p3_stage_generation &&
     groupTag(candidateLayer) === candidate.transaction_group_tag
   io.publication_candidate_in.ready := !publicationPending && publicationGroupReady
@@ -1918,14 +2049,72 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   when(io.publication_resolution_in.valid) {
     assert(resolutionMatches)
     when(resolutionMatches) {
-      // Both successful publication and fail-closed publication fault consume
-      // the private control reservation. Entry data is not modeled here;
-      // a future MetadataAppend transaction must provide its own atomic data
-      // prepare/commit behind this exact resolution.
+      val layer = resolution.p3_layer
+      when(resolution.status === RouteAPublicationStatus.Published.U) {
+        assert(groupTransactionOk(layer))
+        val index = headIndex(layer, groupHead(layer))
+        // This is the only visibility commit for the real metadata entries.
+        // The two head replicas and one span owner entry are written from the
+        // same private prepared transaction in the same clock edge.
+        metadataHeadReplicaA(index) := groupPreparedHead(layer)
+        metadataHeadReplicaB(index) := groupPreparedHead(layer)
+        metadataSpan(groupPreparedSlot(layer)) := groupPreparedSpan(layer)
+        // Preserve the pre-existing control-only provenance mirrors, but make
+        // them visible only at this same resolved publication boundary.
+        headReplicaAValid(groupHead(layer)) := true.B
+        headReplicaBValid(groupHead(layer)) := true.B
+        headReplicaAAddress(groupHead(layer)) := groupAddress(layer)
+        headReplicaBAddress(groupHead(layer)) := groupAddress(layer)
+        headReplicaAOwner(groupHead(layer)) := groupOwner(layer)
+        headReplicaBOwner(groupHead(layer)) := groupOwner(layer)
+        spanOwnerValid(groupHead(layer)) := true.B
+        spanOwnerAddress(groupHead(layer)) := groupAddress(layer)
+        spanOwnerOwner(groupHead(layer)) := groupOwner(layer)
+      }.otherwise {
+        // Publication failed before the sole visibility boundary: undo only
+        // the private slot reservation. The bridge keeps legal pending
+        // membership/credit until an actual handoff or reset/retire fact.
+        when(groupTransactionOk(layer)) {
+          metadataSlotOccupied(groupPreparedSlot(layer)) := false.B
+        }
+      }
       groupPrepared(resolution.p3_layer) := false.B
       groupPublicationOutstanding(resolution.p3_layer) := false.B
       headCommitted(resolution.p3_layer) := false.B
       spanCommitted(resolution.p3_layer) := false.B
+      groupTransactionOk(resolution.p3_layer) := false.B
+    }
+  }
+
+  val handoff = io.metadata_membership_handoff_in.bits
+  val handoffMatches = VecInit((0 until metadataSpanEntries).map { slot =>
+    metadataSpan(slot).valid && metadataSpan(slot).layer === handoff.p3_layer &&
+      metadataSpan(slot).p3_stage_generation === handoff.p3_stage_generation &&
+      metadataSpan(slot).transaction_group_tag === handoff.transaction_group_tag &&
+      metadataSpan(slot).valid_records === handoff.valid_records
+  })
+  val handoffAny = handoffMatches.asUInt.orR
+  val handoffSlot = PriorityEncoder(handoffMatches)
+  when(io.metadata_membership_handoff_in.valid) {
+    assert(handoffAny)
+    assert(PopCount(handoffMatches) === 1.U)
+    when(handoffAny) {
+      val live = metadataSpan(handoffSlot)
+      val index = headIndex(live.layer, live.kv_head)
+      assert(metadataHeadReplicaA(index).valid)
+      assert(metadataHeadReplicaA(index).tail_slot === handoffSlot)
+      assert(metadataHeadReplicaA(index).tail_generation === live.generation)
+      metadataHeadReplicaA(index) := 0.U.asTypeOf(new MetadataHeadEntry)
+      metadataHeadReplicaB(index) := 0.U.asTypeOf(new MetadataHeadEntry)
+      metadataSpan(handoffSlot) := 0.U.asTypeOf(new MetadataSpanEntry)
+      when(metadataSlotGeneration(handoffSlot) === maxMetadataGeneration) {
+        // Generation wrap is fail-closed: this slot cannot alias a stale
+        // member and remains unavailable until reset.
+        metadataGenerationExhausted := true.B
+      }.otherwise {
+        metadataSlotOccupied(handoffSlot) := false.B
+        metadataSlotGeneration(handoffSlot) := metadataSlotGeneration(handoffSlot) + 1.U
+      }
     }
   }
 
@@ -1948,6 +2137,11 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
       assert(headReplicaAOwner(bank) === headReplicaBOwner(bank))
     }
   }
+  for (index <- 0 until headEntries) {
+    assert(metadataHeadReplicaA(index).asUInt === metadataHeadReplicaB(index).asUInt)
+  }
+  io.metadata_visible_span_count := PopCount(VecInit(metadataSpan.map(_.valid)).asUInt)
+  io.metadata_private_reservation_count := PopCount(VecInit((0 until stages).map(groupPrepared)).asUInt)
 }
 
 /**

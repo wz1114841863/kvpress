@@ -282,9 +282,12 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   admission.io.metadata_append_member_out <> metadataAdmission.io.member_in
   metadataAdmission.io.group_prepare_in <> admission.io.m2_group_prepare_out
   m2Control.io.group_prepare_in <> metadataAdmission.io.group_prepare_out
+  m2Control.io.metadata_append_operand_in <> metadataAdmission.io.metadata_append_operand_out
   m2Control.io.member_request_in <> m2P3.io.m2_group_member_req_out
   m2P3.io.m2_group_member_rsp_in <> m2Control.io.member_response_out
   m2Control.io.publication_resolution_in := m2P3.io.m2_group_publication_resolution
+  m2Control.io.metadata_membership_handoff_in := m2P3.io.metadata_membership_handoff_observation
+  metadataAdmission.io.metadata_group_abort_in := m2Control.io.metadata_group_abort_out
   metadataAdmission.io.publication_resolution_in := m2P3.io.m2_group_publication_resolution
   metadataAdmission.io.membership_handoff_in := m2P3.io.metadata_membership_handoff_observation
   m2P3.io.p3_observe_layer := 0.U

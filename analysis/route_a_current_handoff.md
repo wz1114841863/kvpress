@@ -378,10 +378,10 @@ The carrier's adapter/stage/outstanding-register control is recorded as
 Route-A incremental, unestimated-not-zero BOM cost.
 
 M2 carrier provenance and the bounded measurement-DUT production-control
-replacement are closed.  `RouteAMeasurementDut` now instantiates
-`RouteAM2ProductionControlOwner`, which retains only eight-bank mirrored
-head/span control provenance plus a 36-stage exact two-member gate; it does
-not replace the M2 array interior.  Its final directed remote regression is
+replacement were closed before entry-data lowering. `RouteAMeasurementDut`
+instantiated `RouteAM2ProductionControlOwner` with eight-bank mirrored
+head/span control provenance plus a 36-stage exact two-member gate. Its
+then-final directed remote regression was
 4 suites/14 tests passed, `EXIT_CODE=0`, at
 `/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_owner_final_directed.log`.
 The required W0/MR-1A/B2c non-regression is also 6 suites/27 tests passed,
@@ -392,12 +392,10 @@ measurement-DUT selector used the wrong package.  The required M2
 storage-array provenance audit is recorded in
 `analysis/mr2_m2_entry_update_provenance_gap.md`: current carriers have no
 legal entry/update-data producer, entry layout, RMW operand, write-enable, or
-storage-fault source. Storage RTL is therefore blocked pending explicit
-authorization of that narrow typed update carrier; no address/owner/fixture
-may be repurposed as data. Any successor must preserve this owner and all R3
-member/publication/fault/reset control in candidate DUT logic. No macro,
-physical address, update
-payload, timing, energy, area, synthesis, DC, or PPA conclusion follows.
+storage-fault source. That historical block was resolved only by the later
+approved minimal-runtime implementation below; it was not resolved by
+repurposing an address, owner, or fixture as entry data. No macro, physical
+address, timing, energy, area, synthesis, DC, or PPA conclusion follows.
 
 The implementation-level declaration review is now recorded in
 `analysis/mr2_m2_entry_update_declaration_contract_proposal.md`. It separates
@@ -441,10 +439,10 @@ The bridge forwards the pre-existing M2 group prepare only after the exact
 member mask is complete. Publication faults keep pending membership and credit
 while discarding only private preparation. Credit is released only from the
 non-backpressuring R3 observation that the corresponding all-member post-R6
-handoff has fired. This is a bounded control/ledger implementation, not the
-approved-but-not-yet-implemented MetadataAppend operand producer, grouped
-entry-data prepare/commit/abort, actual M2 entry storage, or an array-only
-boundary closure. Its state is Route-A incremental and
+handoff has fired. At this bridge-only checkpoint, it was not yet the grouped
+entry-data prepare/commit/abort or actual M2 entry storage. Those bounded
+production pieces are implemented in the following record; the M2 array-only
+boundary remains separately open. Its state is Route-A incremental and
 `unestimated_not_zero` in `analysis/measurement_boundary_bom.json`.
 
 Remote directed evidence is 4/4 passed (`EXIT=0`) at
@@ -455,8 +453,48 @@ The previous dynamic stream-index width warnings were removed before this run.
 The current-source dual-DUT elaboration/structural guard is 3/3 passed
 (`EXIT=0`) at
 `/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_admission_p1_structural_20261022.log`.
-Neither result is an M2 entry-data/storage realization, synthesis eligibility,
-or physical-cost conclusion.
+Neither bridge-only result alone was an M2 entry-data/storage realization,
+synthesis eligibility, or physical-cost conclusion.
+
+### MR-2 M2 grouped entry-data production integration (2026-10-23)
+
+The approved bounded-runtime lowering is now integrated in
+`RouteAMeasurementDut`. The existing accepted retained-member declaration
+enters `RouteAMetadataAdmissionBridge`; the bridge preserves immutable full
+member bindings, credit class, and append sequence, and fires
+`MetadataAppendOperand` only jointly with the pre-existing R3 M2 group
+prepare. `RouteAM2ProductionControlOwner` validates the exact member mask and
+binding provenance, reserves private head/span state, and returns the two
+existing typed M2 member responses. It returns OK only after joint validation
+of both objects; a failed validation produces the existing typed fault and
+private abort rather than a partial update.
+
+The real bounded entry state is two mirrored 128-bit head entries for each of
+288 head keys and one 128-bit span entry for each of 614 slots (152,320 entry
+bits before occupancy/generation and peripheral state). Both head replicas and
+the matching span become visible together only on the existing accepted
+`metadata_publish_commit`/Published resolution. A publication fault or reset
+clears only private state and retains legal pending membership and credit.
+Only the exact non-backpressuring post-R6 all-member handoff clears a visible
+entry, advances its generation for stale-safe reuse, and releases bridge
+credit. Generation wrap remains fail-closed.
+
+Evidence is remote 11/11 directed (`EXIT=0`) at
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_grouped_p1_entryverify_20261022.log`,
+followed by remote 40/40 selected W0/MR-1A/MR-1B/M2/dual-DUT non-regression
+(`EXIT=0`) at
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_grouped_p1_full_nonreg_20261022.log`.
+The evidence includes pre-publication invisibility, joint member completion,
+typed semantic fault/abort, publication fault, reset, exact post-R6 handoff
+release, credit fallback/release, stale/duplicate rejection, Full-KV
+lifecycle/fault/reset, packed/hot/direct-pending paths, and the dual-DUT
+structural guard.
+
+This closes **bounded functional M2 production entry-data integration** only.
+It does not close the M2 array-only boundary, select an SRAM/macro or ports,
+or turn functional storage into physical/PPA evidence. M2 queue/staging
+activity and wrapper cost remain `unestimated_not_zero`; the old fixture-only
+`RouteAM2EntryStorage` remains separate from this production result.
 
 The EDA-server Chisel platform is user-local and offline. See
 [`chisel_platform_handoff_20261021.md`](chisel_platform_handoff_20261021.md).

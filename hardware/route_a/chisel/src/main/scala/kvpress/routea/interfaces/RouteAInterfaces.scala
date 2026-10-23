@@ -1160,6 +1160,44 @@ final class MetadataAppendMemberDeclaration(p: RouteASkeletonParameters) extends
 }
 
 /**
+  * One fully validated, group-scoped lowering operand for the minimal M2
+  * metadata runtime.  Its member bindings are copied only from the accepted
+  * admission ledger; `layer/head`, credit pool, and append order are explicit
+  * facts, rather than a reconstruction from a group tag or opaque reference.
+  *
+  * This is deliberately not the historical A4 source/birth/count span ABI.
+  * It contains no source-FIFO class, birth opportunity, dequeue amount, or
+  * physical address.  M2 allocates its own stale-safe slot only after this
+  * operand and the existing grouped prepare are jointly accepted.
+  */
+final class MetadataAppendOperand(p: RouteASkeletonParameters) extends Bundle {
+  val p3_layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val p3_stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val opaque_mapping_ref = UInt(p.coreMemoryAddressRefWidth.W)
+  val mapping_owner = UInt(RouteAAnchorWidths.RequestIdWidth.W)
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val member_mask = UInt(64.W)
+  val credit_pool = UInt(MetadataAppendCreditPool.Width.W)
+  val append_sequence = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
+  val predecessor_valid = Bool()
+  val predecessor_sequence = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
+  val members = Vec(64, new PendingPayloadReadBinding(p))
+}
+
+/**
+  * A non-backpressuring M2-local abort observation.  It reports only that a
+  * previously private grouped entry transaction could not produce the exact
+  * legacy member response.  R3 remains the sole stage-fault/publication owner.
+  */
+final class M2MetadataGroupAbort(p: RouteASkeletonParameters) extends Bundle {
+  val p3_layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val p3_stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+}
+
+/**
   * A private, group-scoped credit reservation selected by the minimal M2
   * admission bridge.  It is a logical resource classification, not an A4
   * source FIFO, physical queue address, or storage macro port.
@@ -1492,6 +1530,7 @@ object RouteAChannels {
   def metadata_publish_ack(p: RouteASkeletonParameters) = Decoupled(new MetadataPublishAck(p))
   def m2_group_prepare(p: RouteASkeletonParameters) = Decoupled(new M2GroupPrepareDeclaration(p))
   def metadata_append_member(p: RouteASkeletonParameters) = Decoupled(new MetadataAppendMemberDeclaration(p))
+  def metadata_append_operand(p: RouteASkeletonParameters) = Decoupled(new MetadataAppendOperand(p))
   def p3_claim(p: RouteASkeletonParameters) = Decoupled(new P3Claim(p))
   def p3_claim_ack(p: RouteASkeletonParameters) = Decoupled(new P3ClaimAck(p))
   def p3_pending_fragment(p: RouteASkeletonParameters) = Decoupled(new P3PendingFragment(p))

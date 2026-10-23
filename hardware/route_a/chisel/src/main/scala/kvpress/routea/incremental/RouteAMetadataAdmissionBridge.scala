@@ -31,10 +31,12 @@ final class RouteAMetadataAdmissionBridge(p: RouteASkeletonParameters) extends M
     val member_in = Flipped(RouteAChannels.metadata_append_member(p))
     val group_prepare_in = Flipped(RouteAChannels.m2_group_prepare(p))
     val group_prepare_out = RouteAChannels.m2_group_prepare(p)
+    val metadata_append_operand_out = RouteAChannels.metadata_append_operand(p)
     // Both are read-only, non-backpressuring observations of existing R3/R5
     // events.  The bridge never creates a second publication or authority.
     val publication_resolution_in = Input(Valid(new M2GroupPublicationResolution(p)))
     val membership_handoff_in = Input(Valid(new MetadataMembershipHandoffObservation(p)))
+    val metadata_group_abort_in = Input(Valid(new M2MetadataGroupAbort(p)))
     // Test/structural observability only.  These signals are not a new R2
     // predicate source or a publication-visible metadata interface.
     val local_credit_in_use = Output(Vec(8, UInt(6.W)))
@@ -173,12 +175,32 @@ final class RouteAMetadataAdmissionBridge(p: RouteASkeletonParameters) extends M
   }
   io.group_prepare_out.valid := preparePending
   io.group_prepare_out.bits := prepareReg
+  io.metadata_append_operand_out.valid := preparePending
+  io.metadata_append_operand_out.bits.p3_layer := prepareReg.p3_layer
+  io.metadata_append_operand_out.bits.kv_head := prepareReg.kv_head
+  io.metadata_append_operand_out.bits.p3_stage_generation := prepareReg.p3_stage_generation
+  io.metadata_append_operand_out.bits.transaction_group_tag := prepareReg.transaction_group_tag
+  io.metadata_append_operand_out.bits.opaque_mapping_ref := prepareReg.opaque_address_ref
+  io.metadata_append_operand_out.bits.mapping_owner := prepareReg.owner
+  io.metadata_append_operand_out.bits.valid_records := groupValidRecords(prepareReg.p3_layer)
+  io.metadata_append_operand_out.bits.member_mask := groupMemberMask(prepareReg.p3_layer)
+  io.metadata_append_operand_out.bits.credit_pool := groupCreditPool(prepareReg.p3_layer)
+  io.metadata_append_operand_out.bits.append_sequence := groupAppendSequence(prepareReg.p3_layer)
+  io.metadata_append_operand_out.bits.predecessor_valid := groupPredecessorValid(prepareReg.p3_layer)
+  io.metadata_append_operand_out.bits.predecessor_sequence := groupPredecessorSequence(prepareReg.p3_layer)
+  io.metadata_append_operand_out.bits.members := groupMembers(prepareReg.p3_layer)
+  // M2 accepts preparation and its lowerer operand together.  Neither half
+  // may become an independently consumable declaration.
   when(io.group_prepare_out.fire) {
+    assert(io.metadata_append_operand_out.fire)
     val layer = prepareReg.p3_layer
     assert(groupActive(layer))
     assert(groupMemberMask(layer) === expectedMask(groupValidRecords(layer)))
     groupPrepared(layer) := true.B
     preparePending := false.B
+  }
+  when(io.metadata_append_operand_out.fire) {
+    assert(io.group_prepare_out.fire)
   }
 
   val resolution = io.publication_resolution_in.bits
@@ -206,6 +228,23 @@ final class RouteAMetadataAdmissionBridge(p: RouteASkeletonParameters) extends M
         groupPrepared(resolution.p3_layer) := false.B
         groupFaultedPending(resolution.p3_layer) := true.B
       }
+    }
+  }
+
+  val abort = io.metadata_group_abort_in.bits
+  val abortLayerInRange = abort.p3_layer < Stages.U
+  val abortMatches = io.metadata_group_abort_in.valid && abortLayerInRange &&
+    groupActive(abort.p3_layer) && groupPrepared(abort.p3_layer) &&
+    groupStageGeneration(abort.p3_layer) === abort.p3_stage_generation &&
+    groupTag(abort.p3_layer) === abort.transaction_group_tag
+  when(io.metadata_group_abort_in.valid) {
+    assert(abortMatches)
+    when(abortMatches) {
+      // A member fault cannot make a group publishable.  It does not erase a
+      // legal pending membership or consume its credit; only M2's private
+      // prepare is discarded until reset/retire supplies a real reclaim fact.
+      groupPrepared(abort.p3_layer) := false.B
+      groupFaultedPending(abort.p3_layer) := true.B
     }
   }
 

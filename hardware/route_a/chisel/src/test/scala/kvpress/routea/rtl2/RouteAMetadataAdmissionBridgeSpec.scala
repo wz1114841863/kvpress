@@ -28,8 +28,10 @@ final class RouteAMetadataAdmissionBridgeSpec extends AnyFunSpec with ChiselSim 
     dut.io.member_in.valid.poke(false.B)
     dut.io.group_prepare_in.valid.poke(false.B)
     dut.io.group_prepare_out.ready.poke(false.B)
+    dut.io.metadata_append_operand_out.ready.poke(true.B)
     dut.io.publication_resolution_in.valid.poke(false.B)
     dut.io.membership_handoff_in.valid.poke(false.B)
+    dut.io.metadata_group_abort_in.valid.poke(false.B)
   }
 
   private def driveMember(
