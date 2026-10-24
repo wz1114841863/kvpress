@@ -491,10 +491,37 @@ lifecycle/fault/reset, packed/hot/direct-pending paths, and the dual-DUT
 structural guard.
 
 This closes **bounded functional M2 production entry-data integration** only.
-It does not close the M2 array-only boundary, select an SRAM/macro or ports,
-or turn functional storage into physical/PPA evidence. M2 queue/staging
-activity and wrapper cost remain `unestimated_not_zero`; the old fixture-only
-`RouteAM2EntryStorage` remains separate from this production result.
+It did not at that point close the M2 array-only boundary, select an
+SRAM/macro or ports, or turn functional storage into physical/PPA evidence.
+The boundary result is recorded next; M2 queue/staging activity and wrapper
+cost remain `unestimated_not_zero`, and the old fixture-only
+`RouteAM2EntryStorage` remains separate from the production result.
+
+### MR-2 M2 logical entry-array boundary (2026-10-24)
+
+`RouteAM2EntryArrayBoundary` now owns only the bounded functional entry-word
+interior: 288 logical head keys with two mirrored 128-bit head-control entries
+each, plus 614 logical 128-bit span-owner entries. It accepts only parent-owned
+already-decided publication-commit and all-member-handoff-release updates. The
+production owner still exclusively owns accepted operand association, immutable
+validation, RMW decision, private prepare/abort, slot and generation control,
+credit, typed faults, `metadata_publish_commit`, and post-R6 handoff
+qualification. Both updates may occur in one cycle only for distinct logical
+locations; the boundary asserts that condition and mirrored-head equality.
+
+The boundary structural/preflight suite passed locally (8 tests, including all
+four M2/P3/S2/R5 boundary guards and MBR/SRP validators). Remote targeted
+evidence passed 3 suites / 11 tests, `EXIT=0`, at
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_array_boundary_p0_20261023.log`.
+Remote selected W0/MR-1A/MR-1B/M2/dual-DUT non-regression then passed 10
+suites / 40 tests, `EXIT=0`, at
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_array_boundary_p1_full_nonreg_20261023.log`.
+
+This closes **only the logical functional M2 entry-array boundary**. It does
+not select a memory macro, physical banking/ports/latency, controller,
+queue/staging activity model, DC, CACTI, timing, area, power, throughput, or
+PPA conclusion. Those retained and unestimated items must be addressed by the
+separate realization-preparation stage.
 
 The EDA-server Chisel platform is user-local and offline. See
 [`chisel_platform_handoff_20261021.md`](chisel_platform_handoff_20261021.md).
@@ -522,12 +549,12 @@ rather than the earlier rsync-only platform smoke snapshot.
 > contour: reconciliation, qualified withdrawal, cancel/abort, and R6-owned
 > fault have passed remote directed and W0/MR-1A structural regressions. The
 > MR-2's bounded M2 production control and admission-to-metadata membership
-> bridge are live in `RouteAMeasurementDut`, but real MetadataAppend operands,
-> grouped entry-data prepare/commit/abort, actual entry storage, and the M2
-> array-only boundary remain open. The next implementation sub-batch must add
-> only approved real entry-data production facts and atomic storage integration;
-> it must not treat the current bridge or fixture-only storage tests as M2
-> storage closure. None selects
+> bridge, real `MetadataAppend` operands, grouped entry-data
+> prepare/commit/abort, actual bounded production entry state, and the M2
+> logical entry-array boundary are live in `RouteAMeasurementDut`. The
+> fixture-only `RouteAM2EntryStorage` is still not production evidence, and no
+> result selects a macro, wrapper ports/latency, or physical realization. None
+> selects
 > a top or begins physical realization work.
 > Read
 > `analysis/synthesis_realization_partition.md` and

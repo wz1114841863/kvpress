@@ -1757,16 +1757,103 @@ final class RouteAM2ReferenceProtocolProvider(p: RouteASkeletonParameters) exten
   }
 }
 
+/** Bounded M2 head-control entry stored only by the array boundary. */
+final class RouteAM2MetadataHeadEntry extends Bundle {
+  val valid = Bool()
+  val tail_slot = UInt(RouteAAnchorWidths.M2SpanSlotWidth.W)
+  val tail_generation = UInt(RouteAAnchorWidths.M2SpanGenerationWidth.W)
+  val append_sequence = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val reserved = UInt(86.W)
+}
+
+/** Bounded M2 span-owner entry stored only by the array boundary. */
+final class RouteAM2MetadataSpanEntry(p: RouteASkeletonParameters) extends Bundle {
+  val valid = Bool()
+  val generation = UInt(RouteAAnchorWidths.M2SpanGenerationWidth.W)
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
+  val p3_stage_generation = UInt(p.p3StageGenerationWidth.W)
+  val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
+  val credit_pool = UInt(MetadataAppendCreditPool.Width.W)
+  val append_sequence = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val reserved = UInt((RouteAAnchorWidths.M2EntryWordWidth -
+    (1 + RouteAAnchorWidths.M2SpanGenerationWidth + RouteAAnchorWidths.LayerWidth +
+      RouteAAnchorWidths.KvHeadWidth + p.p3StageGenerationWidth + p.transactionGroupTagWidth +
+      MetadataAppendCreditPool.Width + RouteAAnchorWidths.ContextTokensWidth +
+      RouteAAnchorWidths.P3ValidRecordsWidth)).W)
+}
+
+/**
+  * One owner-selected logical entry-array update. The parent has already made
+  * every lifecycle, validation, RMW, and publication decision before driving
+  * this carrier; it is deliberately not an independent protocol.
+  */
+final class RouteAM2MetadataEntryArrayUpdate(p: RouteASkeletonParameters) extends Bundle {
+  val head_index = UInt(9.W)
+  val head_entry = new RouteAM2MetadataHeadEntry
+  val span_index = UInt(RouteAAnchorWidths.M2SpanSlotWidth.W)
+  val span_entry = new RouteAM2MetadataSpanEntry(p)
+}
+
+/**
+  * MR-2 M2 logical entry-array interior. It owns only two mirrored 128-bit
+  * head entry arrays and one 128-bit span entry array. Its parent supplies
+  * already accepted publication and handoff updates, and retains allocation,
+  * generation, stale validation, RMW, credit, private prepare/abort, and all
+  * R3/R6 lifecycle control. These logical vectors select no macro, physical
+  * ports, banking, latency, controller, clock, timing, area, power, or PPA.
+  */
+final class RouteAM2EntryArrayBoundary(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_m2_entry_array_boundary"
+
+  private val banks = 1 << RouteAAnchorWidths.KvHeadWidth
+  private val headEntries = 36 * banks
+  private val spanEntries = 614
+  require((new RouteAM2MetadataHeadEntry).getWidth == RouteAAnchorWidths.M2EntryWordWidth)
+  require((new RouteAM2MetadataSpanEntry(p)).getWidth == RouteAAnchorWidths.M2EntryWordWidth)
+
+  val io = IO(new Bundle {
+    val publication_commit = Input(Valid(new RouteAM2MetadataEntryArrayUpdate(p)))
+    val handoff_release = Input(Valid(new RouteAM2MetadataEntryArrayUpdate(p)))
+    val head_replica_a_view = Output(Vec(headEntries, new RouteAM2MetadataHeadEntry))
+    val head_replica_b_view = Output(Vec(headEntries, new RouteAM2MetadataHeadEntry))
+    val span_view = Output(Vec(spanEntries, new RouteAM2MetadataSpanEntry(p)))
+  })
+
+  val headReplicaA = RegInit(VecInit(Seq.fill(headEntries)(0.U.asTypeOf(new RouteAM2MetadataHeadEntry))))
+  val headReplicaB = RegInit(VecInit(Seq.fill(headEntries)(0.U.asTypeOf(new RouteAM2MetadataHeadEntry))))
+  val span = RegInit(VecInit(Seq.fill(spanEntries)(0.U.asTypeOf(new RouteAM2MetadataSpanEntry(p)))))
+  io.head_replica_a_view := headReplicaA
+  io.head_replica_b_view := headReplicaB
+  io.span_view := span
+
+  when(io.publication_commit.valid) {
+    val update = io.publication_commit.bits
+    headReplicaA(update.head_index) := update.head_entry
+    headReplicaB(update.head_index) := update.head_entry
+    span(update.span_index) := update.span_entry
+  }
+  when(io.handoff_release.valid) {
+    val update = io.handoff_release.bits
+    headReplicaA(update.head_index) := update.head_entry
+    headReplicaB(update.head_index) := update.head_entry
+    span(update.span_index) := update.span_entry
+  }
+  when(io.publication_commit.valid && io.handoff_release.valid) {
+    assert(io.publication_commit.bits.head_index =/= io.handoff_release.bits.head_index)
+    assert(io.publication_commit.bits.span_index =/= io.handoff_release.bits.span_index)
+  }
+  for (index <- 0 until headEntries) {
+    assert(headReplicaA(index).asUInt === headReplicaB(index).asUInt)
+  }
+}
+
 /**
   * Bounded production control owner for the existing logical M2 member and
-  * publication carriers.
-  *
-  * This owner replaces the measurement-DUT reference responder.  It retains
-  * the accepted control-operation facts needed to preserve the frozen eight
-  * head-affine logical banks, atomic mirrored head-control update, span-owner
-  * update, and exactly-two-member publication gate.  The retained facts are
-  * control/provenance state only: neither this module nor its registers define
-  * an M2 data-entry format, a physical SRAM, ports, latency, or a controller.
+  * publication carriers. It owns every decision around the separate entry
+  * array boundary but does not own the entry-array registers themselves.
   */
 final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_m2_production_control_owner"
@@ -1793,51 +1880,21 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   private val metadataSpanEntries = 614
   private val maxMetadataGeneration = ((1 << RouteAAnchorWidths.M2SpanGenerationWidth) - 1).U
 
-  /** Minimal production head state: one append tail per layer/head stream. */
-  final class MetadataHeadEntry extends Bundle {
-    val valid = Bool()
-    val tail_slot = UInt(RouteAAnchorWidths.M2SpanSlotWidth.W)
-    val tail_generation = UInt(RouteAAnchorWidths.M2SpanGenerationWidth.W)
-    val append_sequence = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
-    val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
-    val reserved = UInt(86.W)
-  }
-
-  /**
-    * Minimal production span-owner state.  It records only accepted pending
-    * membership association, ownership/credit classification, and append
-    * order.  It deliberately does not fabricate A4 source/birth/count/FIFO
-    * fields that the current runtime does not own.
-    */
-  final class MetadataSpanEntry extends Bundle {
-    val valid = Bool()
-    val generation = UInt(RouteAAnchorWidths.M2SpanGenerationWidth.W)
-    val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
-    val kv_head = UInt(RouteAAnchorWidths.KvHeadWidth.W)
-    val p3_stage_generation = UInt(p.p3StageGenerationWidth.W)
-    val transaction_group_tag = UInt(p.transactionGroupTagWidth.W)
-    val credit_pool = UInt(MetadataAppendCreditPool.Width.W)
-    val append_sequence = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
-    val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
-    // Exact opaque mapping and all 64 immutable member bindings remain in
-    // the bridge/coordinator association ledger. They are validated before
-    // private preparation but are not entry payload, avoiding an accidental
-    // over-wide 128-bit word or a lossy in-word reconstruction.
-    val reserved = UInt((RouteAAnchorWidths.M2EntryWordWidth -
-      (1 + RouteAAnchorWidths.M2SpanGenerationWidth + RouteAAnchorWidths.LayerWidth +
-        RouteAAnchorWidths.KvHeadWidth + p.p3StageGenerationWidth + p.transactionGroupTagWidth +
-        MetadataAppendCreditPool.Width + RouteAAnchorWidths.ContextTokensWidth +
-        RouteAAnchorWidths.P3ValidRecordsWidth)).W)
-  }
-
   private def headIndex(layer: UInt, head: UInt): UInt =
     (layer * banks.U + head)(8, 0)
   private def expectedMemberMask(validRecords: UInt): UInt =
     VecInit((0 until 64).map(index => index.U < validRecords)).asUInt
 
-  val metadataHeadReplicaA = RegInit(VecInit(Seq.fill(headEntries)(0.U.asTypeOf(new MetadataHeadEntry))))
-  val metadataHeadReplicaB = RegInit(VecInit(Seq.fill(headEntries)(0.U.asTypeOf(new MetadataHeadEntry))))
-  val metadataSpan = RegInit(VecInit(Seq.fill(metadataSpanEntries)(0.U.asTypeOf(new MetadataSpanEntry))))
+  // Only entry words live in the named boundary. Parent-local registers below
+  // are lifecycle/peripheral control, never a second entry array.
+  val entryStorage = Module(new RouteAM2EntryArrayBoundary(p))
+  entryStorage.io.publication_commit.valid := false.B
+  entryStorage.io.publication_commit.bits := 0.U.asTypeOf(new RouteAM2MetadataEntryArrayUpdate(p))
+  entryStorage.io.handoff_release.valid := false.B
+  entryStorage.io.handoff_release.bits := 0.U.asTypeOf(new RouteAM2MetadataEntryArrayUpdate(p))
+  val metadataHeadReplicaA = entryStorage.io.head_replica_a_view
+  val metadataHeadReplicaB = entryStorage.io.head_replica_b_view
+  val metadataSpan = entryStorage.io.span_view
   // A reservation is private before metadata_publish_commit; it becomes a
   // visible span only on the accepted Published resolution.
   val metadataSlotOccupied = RegInit(VecInit(Seq.fill(metadataSpanEntries)(false.B)))
@@ -1873,8 +1930,8 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   val groupOwner = Reg(Vec(stages, UInt(RouteAAnchorWidths.RequestIdWidth.W)))
   val groupTransactionOk = RegInit(VecInit(Seq.fill(stages)(false.B)))
   val groupPreparedSlot = Reg(Vec(stages, UInt(RouteAAnchorWidths.M2SpanSlotWidth.W)))
-  val groupPreparedHead = Reg(Vec(stages, new MetadataHeadEntry))
-  val groupPreparedSpan = Reg(Vec(stages, new MetadataSpanEntry))
+  val groupPreparedHead = Reg(Vec(stages, new RouteAM2MetadataHeadEntry))
+  val groupPreparedSpan = Reg(Vec(stages, new RouteAM2MetadataSpanEntry(p)))
 
   val memberPending = RegInit(false.B)
   val memberRequest = Reg(new M2GroupMemberRequest(p))
@@ -1929,15 +1986,15 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
     groupAddress(preparationLayer) := preparation.opaque_address_ref
     groupOwner(preparationLayer) := preparation.owner
     when(metadataPrepareOk) {
-      val preparedHead = Wire(new MetadataHeadEntry)
-      preparedHead := 0.U.asTypeOf(new MetadataHeadEntry)
+      val preparedHead = Wire(new RouteAM2MetadataHeadEntry)
+      preparedHead := 0.U.asTypeOf(new RouteAM2MetadataHeadEntry)
       preparedHead.valid := true.B
       preparedHead.tail_slot := metadataFreeSlot
       preparedHead.tail_generation := metadataSlotGeneration(metadataFreeSlot)
       preparedHead.append_sequence := operand.append_sequence
       preparedHead.valid_records := operand.valid_records
-      val preparedSpan = Wire(new MetadataSpanEntry)
-      preparedSpan := 0.U.asTypeOf(new MetadataSpanEntry)
+      val preparedSpan = Wire(new RouteAM2MetadataSpanEntry(p))
+      preparedSpan := 0.U.asTypeOf(new RouteAM2MetadataSpanEntry(p))
       preparedSpan.valid := true.B
       preparedSpan.generation := metadataSlotGeneration(metadataFreeSlot)
       preparedSpan.layer := operand.p3_layer
@@ -2056,9 +2113,11 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
         // This is the only visibility commit for the real metadata entries.
         // The two head replicas and one span owner entry are written from the
         // same private prepared transaction in the same clock edge.
-        metadataHeadReplicaA(index) := groupPreparedHead(layer)
-        metadataHeadReplicaB(index) := groupPreparedHead(layer)
-        metadataSpan(groupPreparedSlot(layer)) := groupPreparedSpan(layer)
+        entryStorage.io.publication_commit.valid := true.B
+        entryStorage.io.publication_commit.bits.head_index := index
+        entryStorage.io.publication_commit.bits.head_entry := groupPreparedHead(layer)
+        entryStorage.io.publication_commit.bits.span_index := groupPreparedSlot(layer)
+        entryStorage.io.publication_commit.bits.span_entry := groupPreparedSpan(layer)
         // Preserve the pre-existing control-only provenance mirrors, but make
         // them visible only at this same resolved publication boundary.
         headReplicaAValid(groupHead(layer)) := true.B
@@ -2104,9 +2163,11 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
       assert(metadataHeadReplicaA(index).valid)
       assert(metadataHeadReplicaA(index).tail_slot === handoffSlot)
       assert(metadataHeadReplicaA(index).tail_generation === live.generation)
-      metadataHeadReplicaA(index) := 0.U.asTypeOf(new MetadataHeadEntry)
-      metadataHeadReplicaB(index) := 0.U.asTypeOf(new MetadataHeadEntry)
-      metadataSpan(handoffSlot) := 0.U.asTypeOf(new MetadataSpanEntry)
+      entryStorage.io.handoff_release.valid := true.B
+      entryStorage.io.handoff_release.bits.head_index := index
+      entryStorage.io.handoff_release.bits.head_entry := 0.U.asTypeOf(new RouteAM2MetadataHeadEntry)
+      entryStorage.io.handoff_release.bits.span_index := handoffSlot
+      entryStorage.io.handoff_release.bits.span_entry := 0.U.asTypeOf(new RouteAM2MetadataSpanEntry(p))
       when(metadataSlotGeneration(handoffSlot) === maxMetadataGeneration) {
         // Generation wrap is fail-closed: this slot cannot alias a stale
         // member and remains unavailable until reset.
@@ -2136,9 +2197,6 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
       assert(headReplicaAAddress(bank) === headReplicaBAddress(bank))
       assert(headReplicaAOwner(bank) === headReplicaBOwner(bank))
     }
-  }
-  for (index <- 0 until headEntries) {
-    assert(metadataHeadReplicaA(index).asUInt === metadataHeadReplicaB(index).asUInt)
   }
   io.metadata_visible_span_count := PopCount(VecInit(metadataSpan.map(_.valid)).asUInt)
   io.metadata_private_reservation_count := PopCount(VecInit((0 until stages).map(groupPrepared)).asUInt)
