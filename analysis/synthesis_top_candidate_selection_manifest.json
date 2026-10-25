@@ -1,0 +1,42 @@
+{
+  "schema_version": "kvzap-synthesis-top-candidate-selection-1.0",
+  "status": "conditional_paired_control_top_candidates_selected",
+  "review_date": "2026-10-25",
+  "measurement_cut_freeze": {
+    "record": "analysis/measurement_dut_cut_freeze_20261025.json",
+    "source_anchor": "fc06fdbc763325e55638f6cc164cf251b424a2f2"
+  },
+  "rejected_current_top": {
+    "class": "kvpress.routea.top.RouteAKVSubsystemTop",
+    "reason": "composition-only skeleton with inactive carrier ties; functional witness does not activate it"
+  },
+  "candidates": [
+    {
+      "id": "route_a_synthesis_control_top_candidate_v1",
+      "projection_from": "kvpress.routea.top.RouteAMeasurementDut",
+      "selection": "conditional",
+      "included_partition_classes": ["r6_common_lifecycle_control", "common_hot_residency_control", "r2_shared_arbitration_control", "r1_core_transaction_control", "shared_delivery_context_state", "typed_read_delivery_control", "r3_materialization_publication_control", "m2_control_protocol", "m2_storage_realization", "p3_wrapper_control", "p3_payload_stage_page", "r5_allocator_reclaim_control", "r5_availability_state", "packed_read_activation_and_demand_control", "packed_s2_read_ingress_control", "s2_common_payload_gqa_control", "s2_incremental_sidecar_storage", "direct_pending_transport_control", "r4_structural_merge_control", "r6_route_a_packed_activity", "r6_component_status_collection"],
+      "external_or_wrapper_partitions": ["p3_pending_hbm_backing", "r5_descriptor_hbm_region", "r4_numeric_partial_state", "outer_attention_partial_provider", "external_memory_service"],
+      "excluded_partition_classes": ["m2_reference_provider", "functional_sidecar_delivery_reference", "testbench_observers_fixtures_and_oracles"],
+      "excluded_functional_reference_classes": ["RouteAFunctionalSidecarDeliveryAdapter", "RouteAFunctionalPartialProviderBoundary", "RouteAFunctionalR4ReferenceBoundary"],
+      "direct_pending_limit": "valid_count=1 only"
+    },
+    {
+      "id": "full_kv_synthesis_control_top_candidate_v1",
+      "projection_from": "kvpress.routea.top.FullKVMeasurementDut",
+      "selection": "conditional",
+      "included_control_classes": ["FullKVReadProducer", "FullKVDeliveryContextBridge", "RouteACoreSideArbiter", "RouteACoreMemIfV1", "RouteADeliveryContextRegistry", "RouteATypedDeliveryRouter", "FullKVS2ReadEndpoint", "FullKVS2GqaSourceWrapper", "FullKVTerminalRetireAdapter", "FullKVStatusCollector"],
+      "excluded_route_a_only_classes": ["R3/M2/P3/R5 control", "packed ingress/sidecar", "direct pending", "R4 cross-source merge"],
+      "route_a_only_sideband_policy": "direct_candidate_cancel inactive; impossible acknowledgement consumed"
+    }
+  ],
+  "common_equivalence": {
+    "structurally_shared_now": ["RouteACoreSideArbiter", "RouteACoreMemIfV1", "RouteADeliveryContextRegistry", "RouteATypedDeliveryRouter"],
+    "semantically_paired_but_nonidentical": ["S2 payload/GQA", "lifecycle/status"],
+    "pre_dc_fairness_condition": "RouteAHotSourcePath has no same-class Full-KV counterpart; realize a legal counterpart or approve explicit common/differential allocation before any cancellation"
+  },
+  "deferred_partition_classes": ["top_future_synthesis_boundary"],
+  "mandatory_pre_dc_conditions": ["common-equivalence resolution", "array-only wrapper-interface contracts", "external/reference replacement boundaries", "integration-shell implementation plan", "successor source freeze and semantic regressions"],
+  "prohibited_actions": ["modify frozen Route-A semantics", "treat a functional reference as synthesis logic", "select a physical macro or controller", "run DC/CACTI", "make PPA or cost claims"],
+  "next_authorized_activity": "array-only wrapper-interface planning and common-equivalence disposition"
+}

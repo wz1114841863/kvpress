@@ -561,6 +561,18 @@ classes and the absent same-class Full-KV hot owner as **not automatically
 cancellable**. The next gate is a separately approved realization-preparation
 review; this freeze does not select a synthesis top or physical wrapper.
 
+### Synthesis-top candidate selection (2026-10-25)
+
+The two future control-top candidates are selected conditionally from the
+frozen measurement DUT projections, while `RouteAKVSubsystemTop` remains
+rejected as a composition skeleton. The review
+[`synthesis_top_candidate_selection_review.md`](synthesis_top_candidate_selection_review.md)
+records retained/excluded controls, outer boundaries, no-wholesale-black-box
+rules and the pre-DC stop conditions. In particular, actual shared R2/R1/
+registry/router classes do not resolve the Full-KV hot and S2/lifecycle
+equivalence differences. The next permitted work is wrapper-interface planning
+and common-equivalence disposition, not RTL, macro selection, DC or PPA.
+
 The EDA-server Chisel platform is user-local and offline. See
 [`chisel_platform_handoff_20261021.md`](chisel_platform_handoff_20261021.md).
 Future remote implementation work must use a provenance-preserving Git checkout
