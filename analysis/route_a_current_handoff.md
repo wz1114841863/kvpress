@@ -549,6 +549,18 @@ in the candidate DUT. The review is
 physical storage nor authorizes synthesis/PPA. The next bounded task is the
 dual-DUT measurement-cut freeze, before any realization-choice work.
 
+### Dual-DUT measurement-cut freeze (2026-10-25)
+
+The actual `FullKVMeasurementDut` and `RouteAMeasurementDut` instance/source
+lists, outer interfaces, cost classifications and single-record direct-pending
+limit are frozen at `fc06fdbc`. The record is
+[`measurement_dut_cut_freeze_20261025.md`](measurement_dut_cut_freeze_20261025.md)
+with its machine-checked JSON inventory. It confirms actual shared R2/R1/
+delivery classes, but deliberately records non-identical Full-KV S2/lifecycle
+classes and the absent same-class Full-KV hot owner as **not automatically
+cancellable**. The next gate is a separately approved realization-preparation
+review; this freeze does not select a synthesis top or physical wrapper.
+
 The EDA-server Chisel platform is user-local and offline. See
 [`chisel_platform_handoff_20261021.md`](chisel_platform_handoff_20261021.md).
 Future remote implementation work must use a provenance-preserving Git checkout
