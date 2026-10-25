@@ -578,6 +578,25 @@ The EDA-server Chisel platform is user-local and offline. See
 Future remote implementation work must use a provenance-preserving Git checkout
 rather than the earlier rsync-only platform smoke snapshot.
 
+### Realization-preparation wrapper/common disposition (2026-10-25)
+
+The first post-selection decision package is now review-ready in
+[`realization_preparation_wrapper_common_disposition.md`](realization_preparation_wrapper_common_disposition.md)
+with a machine-checked manifest.  It proposes typed future access contracts
+for M2, P3, S2 and R5 array interiors, retains their named parent control and
+adapter/peripheral cost, and keeps R5 descriptors external.  It also resolves
+the current fairness stance conservatively: only identical R2/R1/registry/router
+shells can become common later; Full-KV S2 and lifecycle/status are not yet
+cancellable, and the actual Route-A-only hot source is Route-A differential
+until a successor freeze proves a legal baseline counterpart.  R4 numeric,
+partial-provider, external memory, P3 pending backing and R5 descriptor service
+remain named nonzero external/unestimated responsibilities.
+
+This is **pending human approval**.  It selects no macro, physical port count,
+latency, clock, controller, numeric unit, DC/CACTI or PPA.  Approval would
+authorize only a follow-on wrapper-RTL work package and successor source/port
+freeze, not synthesis itself.
+
 ## New-conversation prompt seed
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read
@@ -621,8 +640,10 @@ rather than the earlier rsync-only platform smoke snapshot.
 > `analysis/measurement_realization_candidate_manifest.json`, and
 > `analysis/full_kv_baseline_path_audit_20261016.md`, and
 > `analysis/full_kv_baseline_path_audit_20261016.json`, and
-> `analysis/synthesis_eligibility_manifest.json`. Do not advance to realization
-> choice, synthesis,
+> `analysis/synthesis_eligibility_manifest.json`, and
+> `analysis/realization_preparation_wrapper_common_disposition.md`. The
+> wrapper/common disposition is review-ready but pending human approval: do
+> not advance to wrapper RTL, realization choice, synthesis,
 > physical realization, PPA, or cost evaluation without a later approval;
 > do not reopen pruning/admission/page/scheduler/atomicity or introduce
 > physical HBM/SRAM, numeric pipeline, timing, PPA, model/GPU, or new A4 DSE

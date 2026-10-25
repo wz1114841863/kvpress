@@ -1,0 +1,105 @@
+{
+  "schema_version": "kvzap-realization-preparation-wrapper-common-1.0",
+  "status": "review_ready_pending_human_approval",
+  "review_date": "2026-10-25",
+  "anchors": {
+    "top_selection": "analysis/synthesis_top_candidate_selection_manifest.json",
+    "measurement_cut": "analysis/measurement_dut_cut_freeze_20261025.json",
+    "srp3": "analysis/srp3_realization_requirements_decision_plan.md",
+    "srp4": "analysis/srp4_differential_cost_evidence_plan.md"
+  },
+  "candidate_tops": {
+    "route_a": "kvpress.routea.top.RouteAMeasurementDut",
+    "full_kv": "kvpress.routea.top.FullKVMeasurementDut",
+    "rejected": "kvpress.routea.top.RouteAKVSubsystemTop"
+  },
+  "wrapper_contracts": [
+    {
+      "id": "m2_entry_access_v1",
+      "interior": "RouteAM2EntryArrayBoundary head/span words only",
+      "operations": ["lookup", "publication_commit", "handoff_release"],
+      "required_tags": ["head_key", "span_slot", "generation_or_provenance", "typed_response"],
+      "retained_owner": "RouteAM2ProductionControlOwner",
+      "atomicity": "mirrored_head_and_span_all_or_nothing",
+      "reset_clock": "candidate_top_reset_only; no CDC or latency selected",
+      "cost_ownership": "route_a_incremental_unestimated_not_zero",
+      "physical_wrapper_mapping_pending": true
+    },
+    {
+      "id": "p3_stage_access_v1",
+      "interior": "RouteAP3StageArrayBoundary payload and sidecar only",
+      "operations": ["payload_write", "sidecar_write", "payload_read_response"],
+      "required_tags": ["layer", "fragment_or_record_ordinal", "identity_tag"],
+      "retained_owner": "RouteAM2P3Wrapper",
+      "atomicity": "no_complete_or_durable_from_wrapper_access_alone",
+      "reset_clock": "candidate_top_reset_and_existing_mem_init_gate; no CDC or latency selected",
+      "cost_ownership": "route_a_incremental_unestimated_not_zero",
+      "physical_wrapper_mapping_pending": true
+    },
+    {
+      "id": "s2_payload_access_v1",
+      "interior": "S2 payload; Route-A additionally has sidecar access",
+      "operations": ["payload_fill_write", "payload_read_response", "route_a_sidecar_read_write"],
+      "required_tags": ["slot", "source_generation", "fragment_or_ordinal", "response_hold"],
+      "retained_owner": "RouteAS2GqaSourceWrapper or FullKVS2GqaSourceWrapper",
+      "atomicity": "ready_and_four_consumer_release_remain_parent_owned",
+      "reset_clock": "candidate_top_reset_and_existing_mem_init_gate; no CDC or latency selected",
+      "cost_ownership": "payload_pending_paired_proof; sidecar_route_a_incremental_unestimated_not_zero",
+      "physical_wrapper_mapping_pending": true,
+      "full_kv_gap": "current FullKVS2GqaSourceWrapper has no payload-read array interface"
+    },
+    {
+      "id": "r5_availability_access_v1",
+      "interior": "RouteAR5AvailabilityArrayBoundary availability and generation only",
+      "operations": ["availability_lookup_response", "allocation_update_ack", "reclaim_generation_update_ack"],
+      "required_tags": ["page_ref", "generation", "reclaim_lane_or_line", "typed_response"],
+      "retained_owner": "RouteAPageManager",
+      "atomicity": "no_allocation_or_reuse_before_matching_update_ack",
+      "reset_clock": "candidate_top_reset_and_existing_mem_init_gate; no CDC or latency selected",
+      "cost_ownership": "route_a_incremental_unestimated_not_zero",
+      "descriptor_treatment": "external_memory_service_not_local_array",
+      "physical_wrapper_mapping_pending": true
+    }
+  ],
+  "common_equivalence": [
+    {
+      "provision": "r2_r1_registry_router",
+      "disposition": "eligible_common_after_identical_shell",
+      "required_proof": ["same_parameters", "same_reset_init", "same_external_memory_profile", "live_owner_paths", "successor_semantic_regression"]
+    },
+    {
+      "provision": "delivery_context_bridges",
+      "disposition": "bridge_specific_not_cancelled",
+      "required_proof": ["allocation_release_identity", "reset_reuse", "live_route_map"]
+    },
+    {
+      "provision": "s2_payload_gqa",
+      "disposition": "noncancellable_pending_full_kv_payload_wrapper",
+      "required_proof": ["common_s2_payload_access_v1", "equal_gqa_reset_fault_contract", "paired_access_map"]
+    },
+    {
+      "provision": "lifecycle_status",
+      "disposition": "noncancellable_paired_semantics",
+      "required_proof": ["terminal_owner", "drain_order", "reset_stale_fault_conformance"]
+    },
+    {
+      "provision": "hot_residency",
+      "disposition": "route_a_differential_for_current_pair",
+      "required_proof": ["successor_freeze_and_legal_full_kv_counterpart_for_any_future_common_claim"]
+    }
+  ],
+  "integration_shell": {
+    "categories": ["interface_adaptation", "reset_init_gating", "protocol_fanout_muxing", "delivery_context_connectivity", "logical_storage_wrapper_adapters"],
+    "evidence_status": "mixed_common_differential_unestimated_not_zero",
+    "rule": "retain every mux_state_interconnect_and_adapter in a named top BOM; no cancellation merely from semantic similarity"
+  },
+  "external_numeric_costs": {
+    "r4_numeric_partial_state": "route_a_differential_unestimated_not_zero",
+    "outer_attention_partial_provider": "route_a_differential_unestimated_not_zero",
+    "external_memory_service": "external_system_cost_nonzero_same_declared_profile",
+    "p3_pending_hbm_backing": "route_a_external_service_nonzero",
+    "r5_descriptor_hbm_region": "route_a_external_descriptor_service_nonzero"
+  },
+  "prohibited_actions": ["wrapper RTL before approval", "macro or port-count selection", "latency or clock/frequency selection", "CDC/controller/numeric implementation", "DC/CACTI", "PPA or quantitative cost claim"],
+  "next_gate": "human approval of wrapper-interface and common-equivalence dispositions"
+}
