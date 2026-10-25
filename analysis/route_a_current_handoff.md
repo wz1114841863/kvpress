@@ -538,6 +538,17 @@ This closes only the logical functional R5 array boundary. It does not select
 an R5 macro, ports, latency, descriptor service, controller, DC, CACTI, or
 PPA, and all remaining storage/access costs remain `unestimated_not_zero`.
 
+### MR-2 completion review (2026-10-25)
+
+MR-2 now passes at its approved **functional measurement-boundary** scope:
+P3 stage, S2 payload/sidecar, M2 entry, and R5 availability/generation
+interiors are separated while every parent-owned protocol, atomicity,
+identity/generation, lifecycle, reset, and external-service control remains
+in the candidate DUT. The review is
+[`mr2_completion_review.md`](mr2_completion_review.md). It neither selects
+physical storage nor authorizes synthesis/PPA. The next bounded task is the
+dual-DUT measurement-cut freeze, before any realization-choice work.
+
 The EDA-server Chisel platform is user-local and offline. See
 [`chisel_platform_handoff_20261021.md`](chisel_platform_handoff_20261021.md).
 Future remote implementation work must use a provenance-preserving Git checkout
