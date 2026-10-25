@@ -13,7 +13,7 @@ TOP_SELECTION = ROOT / "analysis/synthesis_top_candidate_selection_manifest.json
 def test_wrapper_disposition_covers_only_array_interiors_and_preserves_owners() -> None:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     assert manifest["schema_version"] == "kvzap-realization-preparation-wrapper-common-1.0"
-    assert manifest["status"] == "review_ready_pending_human_approval"
+    assert manifest["status"] == "human_approved_wrapper_rtl_in_progress"
     wrappers = {row["id"]: row for row in manifest["wrapper_contracts"]}
     assert set(wrappers) == {
         "m2_entry_access_v1",
@@ -22,6 +22,7 @@ def test_wrapper_disposition_covers_only_array_interiors_and_preserves_owners() 
         "r5_availability_access_v1",
     }
     assert wrappers["m2_entry_access_v1"]["retained_owner"] == "RouteAM2ProductionControlOwner"
+    assert wrappers["m2_entry_access_v1"]["implementation_status"] == "parent_side_lookup_commit_ack_adapter_pending_remote_directed_regression"
     assert wrappers["p3_stage_access_v1"]["retained_owner"] == "RouteAM2P3Wrapper"
     assert wrappers["r5_availability_access_v1"]["retained_owner"] == "RouteAPageManager"
     assert wrappers["r5_availability_access_v1"]["descriptor_treatment"] == "external_memory_service_not_local_array"
@@ -47,7 +48,7 @@ def test_disposition_succeeds_the_selected_tops_without_premature_realization() 
     assert {manifest["candidate_tops"]["route_a"], manifest["candidate_tops"]["full_kv"]} == selected_classes
     review = REVIEW.read_text(encoding="utf-8")
     for required in (
-        "review_ready_pending_human_approval",
+        "human_approved_wrapper_rtl_in_progress",
         "equivalent implementation",
         "route_a_differential_for_current_pair",
         "unestimated_not_zero",

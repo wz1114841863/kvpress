@@ -592,10 +592,15 @@ until a successor freeze proves a legal baseline counterpart.  R4 numeric,
 partial-provider, external memory, P3 pending backing and R5 descriptor service
 remain named nonzero external/unestimated responsibilities.
 
-This is **pending human approval**.  It selects no macro, physical port count,
-latency, clock, controller, numeric unit, DC/CACTI or PPA.  Approval would
-authorize only a follow-on wrapper-RTL work package and successor source/port
-freeze, not synthesis itself.
+Human approval has authorized the bounded wrapper-RTL work package.  The first
+M2 parent-side keyed lookup plus publication/handoff commit-ack adapter is
+implemented locally and queued for remote directed regression; it replaces the
+whole-array parent views without moving M2 membership, credit, RMW, private
+prepare/abort, publication, stale, reclaim, or authority control into the
+array child.  Its adapter/provenance-index cost remains Route-A incremental
+`unestimated_not_zero`.  This selects no macro, physical port count, latency,
+clock, controller, numeric unit, DC/CACTI or PPA.  Each later wrapper batch
+still requires a successor source/port freeze, not synthesis itself.
 
 ## New-conversation prompt seed
 
@@ -642,8 +647,9 @@ freeze, not synthesis itself.
 > `analysis/full_kv_baseline_path_audit_20261016.json`, and
 > `analysis/synthesis_eligibility_manifest.json`, and
 > `analysis/realization_preparation_wrapper_common_disposition.md`. The
-> wrapper/common disposition is review-ready but pending human approval: do
-> not advance to wrapper RTL, realization choice, synthesis,
+> wrapper/common disposition is human-approved and the M2 parent adapter is
+> pending remote directed regression. Do not advance beyond approved wrapper
+> RTL to realization choice, synthesis,
 > physical realization, PPA, or cost evaluation without a later approval;
 > do not reopen pruning/admission/page/scheduler/atomicity or introduce
 > physical HBM/SRAM, numeric pipeline, timing, PPA, model/GPU, or new A4 DSE

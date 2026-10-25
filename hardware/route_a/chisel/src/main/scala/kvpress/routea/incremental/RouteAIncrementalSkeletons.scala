@@ -1,7 +1,7 @@
 package kvpress.routea.incremental
 
 import chisel3._
-import chisel3.util.{Cat, Enum, Fill, MuxCase, PopCount, PriorityEncoder, RegEnable, Valid, is, log2Ceil, switch}
+import chisel3.util.{Cat, Decoupled, Enum, Fill, MuxCase, PopCount, PriorityEncoder, RegEnable, Valid, is, log2Ceil, switch}
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteADescriptorOperationKind, RouteAM2GroupMember, RouteAPublicationStatus, RouteASkeletonParameters}
 
@@ -1798,6 +1798,26 @@ final class RouteAM2MetadataEntryArrayUpdate(p: RouteASkeletonParameters) extend
 }
 
 /**
+  * Parent-side M2 entry lookup result.  It is deliberately limited to the
+  * one head entry needed by the owner to decide a private prepare.  A parent
+  * must not receive an all-entry functional view from a future macro wrapper.
+  */
+final class RouteAM2MetadataHeadLookupResponse extends Bundle {
+  val head_index = UInt(9.W)
+  val head_entry = new RouteAM2MetadataHeadEntry
+}
+
+/**
+  * Accepted-write observation emitted after an M2 entry-array update commits.
+  * It is an adapter acknowledgement, not a second publication or authority
+  * signal and cannot turn a published R3 result into a later fault.
+  */
+final class RouteAM2MetadataEntryArrayWriteAck extends Bundle {
+  val head_index = UInt(9.W)
+  val span_index = UInt(RouteAAnchorWidths.M2SpanSlotWidth.W)
+}
+
+/**
   * MR-2 M2 logical entry-array interior. It owns only two mirrored 128-bit
   * head entry arrays and one 128-bit span entry array. Its parent supplies
   * already accepted publication and handoff updates, and retains allocation,
@@ -1815,31 +1835,65 @@ final class RouteAM2EntryArrayBoundary(p: RouteASkeletonParameters) extends Modu
   require((new RouteAM2MetadataSpanEntry(p)).getWidth == RouteAAnchorWidths.M2EntryWordWidth)
 
   val io = IO(new Bundle {
+    // One explicit, backpressure-capable logical read port.  The registered
+    // response models a bounded one-cycle access contract without selecting a
+    // macro, clock target, or physical library.
+    val head_lookup_req = Flipped(Decoupled(UInt(9.W)))
+    val head_lookup_rsp = Decoupled(new RouteAM2MetadataHeadLookupResponse)
+    // Publication and handoff are existing non-backpressuring accepted owner
+    // events.  They use independent logical write lanes because the frozen
+    // boundary allows distinct publication and handoff updates in one cycle.
     val publication_commit = Input(Valid(new RouteAM2MetadataEntryArrayUpdate(p)))
     val handoff_release = Input(Valid(new RouteAM2MetadataEntryArrayUpdate(p)))
-    val head_replica_a_view = Output(Vec(headEntries, new RouteAM2MetadataHeadEntry))
-    val head_replica_b_view = Output(Vec(headEntries, new RouteAM2MetadataHeadEntry))
-    val span_view = Output(Vec(spanEntries, new RouteAM2MetadataSpanEntry(p)))
+    val publication_commit_ack = Output(Valid(new RouteAM2MetadataEntryArrayWriteAck))
+    val handoff_release_ack = Output(Valid(new RouteAM2MetadataEntryArrayWriteAck))
   })
 
   val headReplicaA = RegInit(VecInit(Seq.fill(headEntries)(0.U.asTypeOf(new RouteAM2MetadataHeadEntry))))
   val headReplicaB = RegInit(VecInit(Seq.fill(headEntries)(0.U.asTypeOf(new RouteAM2MetadataHeadEntry))))
   val span = RegInit(VecInit(Seq.fill(spanEntries)(0.U.asTypeOf(new RouteAM2MetadataSpanEntry(p)))))
-  io.head_replica_a_view := headReplicaA
-  io.head_replica_b_view := headReplicaB
-  io.span_view := span
+  val lookupRspValid = RegInit(false.B)
+  val lookupRsp = Reg(new RouteAM2MetadataHeadLookupResponse)
+  io.head_lookup_req.ready := !lookupRspValid
+  io.head_lookup_rsp.valid := lookupRspValid
+  io.head_lookup_rsp.bits := lookupRsp
+  when(io.head_lookup_req.fire) {
+    val index = io.head_lookup_req.bits
+    assert(headReplicaA(index).asUInt === headReplicaB(index).asUInt)
+    lookupRsp.head_index := index
+    lookupRsp.head_entry := headReplicaA(index)
+    lookupRspValid := true.B
+  }
+  when(io.head_lookup_rsp.fire) { lookupRspValid := false.B }
+
+  val publicationAckValid = RegInit(false.B)
+  val publicationAck = Reg(new RouteAM2MetadataEntryArrayWriteAck)
+  val handoffAckValid = RegInit(false.B)
+  val handoffAck = Reg(new RouteAM2MetadataEntryArrayWriteAck)
+  io.publication_commit_ack.valid := publicationAckValid
+  io.publication_commit_ack.bits := publicationAck
+  io.handoff_release_ack.valid := handoffAckValid
+  io.handoff_release_ack.bits := handoffAck
+  publicationAckValid := false.B
+  handoffAckValid := false.B
 
   when(io.publication_commit.valid) {
     val update = io.publication_commit.bits
     headReplicaA(update.head_index) := update.head_entry
     headReplicaB(update.head_index) := update.head_entry
     span(update.span_index) := update.span_entry
+    publicationAck.head_index := update.head_index
+    publicationAck.span_index := update.span_index
+    publicationAckValid := true.B
   }
   when(io.handoff_release.valid) {
     val update = io.handoff_release.bits
     headReplicaA(update.head_index) := update.head_entry
     headReplicaB(update.head_index) := update.head_entry
     span(update.span_index) := update.span_entry
+    handoffAck.head_index := update.head_index
+    handoffAck.span_index := update.span_index
+    handoffAckValid := true.B
   }
   when(io.publication_commit.valid && io.handoff_release.valid) {
     assert(io.publication_commit.bits.head_index =/= io.handoff_release.bits.head_index)
@@ -1888,18 +1942,28 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   // Only entry words live in the named boundary. Parent-local registers below
   // are lifecycle/peripheral control, never a second entry array.
   val entryStorage = Module(new RouteAM2EntryArrayBoundary(p))
+  val headLookupReqValid = WireDefault(false.B)
+  val headLookupReqBits = WireDefault(0.U(9.W))
+  entryStorage.io.head_lookup_req.valid := headLookupReqValid
+  entryStorage.io.head_lookup_req.bits := headLookupReqBits
   entryStorage.io.publication_commit.valid := false.B
   entryStorage.io.publication_commit.bits := 0.U.asTypeOf(new RouteAM2MetadataEntryArrayUpdate(p))
   entryStorage.io.handoff_release.valid := false.B
   entryStorage.io.handoff_release.bits := 0.U.asTypeOf(new RouteAM2MetadataEntryArrayUpdate(p))
-  val metadataHeadReplicaA = entryStorage.io.head_replica_a_view
-  val metadataHeadReplicaB = entryStorage.io.head_replica_b_view
-  val metadataSpan = entryStorage.io.span_view
   // A reservation is private before metadata_publish_commit; it becomes a
   // visible span only on the accepted Published resolution.
   val metadataSlotOccupied = RegInit(VecInit(Seq.fill(metadataSpanEntries)(false.B)))
   val metadataSlotGeneration = RegInit(VecInit(Seq.fill(metadataSpanEntries)(0.U(RouteAAnchorWidths.M2SpanGenerationWidth.W))))
   val metadataGenerationExhausted = RegInit(false.B)
+  // This is a parent-local handoff/reuse index, not a second copy of the M2
+  // entry word.  It contains only the immutable lookup keys needed to turn an
+  // already accepted all-member handoff into the exact array release request.
+  val metadataVisible = RegInit(VecInit(Seq.fill(metadataSpanEntries)(false.B)))
+  val metadataVisibleLayer = Reg(Vec(metadataSpanEntries, UInt(RouteAAnchorWidths.LayerWidth.W)))
+  val metadataVisibleHead = Reg(Vec(metadataSpanEntries, UInt(RouteAAnchorWidths.KvHeadWidth.W)))
+  val metadataVisibleStageGeneration = Reg(Vec(metadataSpanEntries, UInt(p.p3StageGenerationWidth.W)))
+  val metadataVisibleTag = Reg(Vec(metadataSpanEntries, UInt(p.transactionGroupTagWidth.W)))
+  val metadataVisibleRecords = Reg(Vec(metadataSpanEntries, UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)))
 
   // The two head-control replicas receive the same accepted semantic RMW
   // record on the same response fire.  They model no independently visible
@@ -1922,6 +1986,7 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   // Group control is private until the existing R3/R5 publication
   // acknowledgement resolves it. This is not metadata entry storage.
   val groupPrepared = RegInit(VecInit(Seq.fill(stages)(false.B)))
+  val groupLookupResolved = RegInit(VecInit(Seq.fill(stages)(false.B)))
   val groupPublicationOutstanding = RegInit(VecInit(Seq.fill(stages)(false.B)))
   val groupGeneration = Reg(Vec(stages, UInt(p.p3StageGenerationWidth.W)))
   val groupTag = Reg(Vec(stages, UInt(p.transactionGroupTagWidth.W)))
@@ -1932,6 +1997,21 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   val groupPreparedSlot = Reg(Vec(stages, UInt(RouteAAnchorWidths.M2SpanSlotWidth.W)))
   val groupPreparedHead = Reg(Vec(stages, new RouteAM2MetadataHeadEntry))
   val groupPreparedSpan = Reg(Vec(stages, new RouteAM2MetadataSpanEntry(p)))
+
+  // A single explicit M2 head-lookup request may be outstanding.  This is a
+  // storage-wrapper backpressure point, not a new R3/R6/R2 scheduling owner.
+  val prepareLookupPending = RegInit(false.B)
+  val prepareLookupIssued = RegInit(false.B)
+  val prepareLookupLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
+  val prepareLookupHeadIndex = Reg(UInt(9.W))
+  val prepareLookupStaticOk = RegInit(false.B)
+  val prepareLookupSlot = Reg(UInt(RouteAAnchorWidths.M2SpanSlotWidth.W))
+  // Drive the child response ready and the parent consume transition from the
+  // same explicit accepted condition.  Keeping this as one named wire avoids
+  // a response being observed by one side but not the other under elaboration
+  // scheduling of the parent/child Decoupled connection.
+  val headLookupResponseAccept = prepareLookupPending && prepareLookupIssued
+  entryStorage.io.head_lookup_rsp.ready := headLookupResponseAccept
 
   val memberPending = RegInit(false.B)
   val memberRequest = Reg(new M2GroupMemberRequest(p))
@@ -1961,31 +2041,34 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   val metadataFreeSlots = VecInit((0 until metadataSpanEntries).map(index => !metadataSlotOccupied(index)))
   val metadataFreeSlotExists = metadataFreeSlots.asUInt.orR
   val metadataFreeSlot = PriorityEncoder(metadataFreeSlots)
-  val metadataHeadAvailable = !metadataHeadReplicaA(headIndex(operand.p3_layer, operand.kv_head)).valid
-  val metadataPrepareOk = operandMemberShapeLegal && metadataFreeSlotExists &&
-    metadataSlotGeneration(metadataFreeSlot) =/= maxMetadataGeneration && metadataHeadAvailable
+  // The mutable head word is no longer read through a whole-array view.  The
+  // static facts are captured at the joint ingress; the one explicit lookup
+  // completes the head-valid portion before either M2 member may proceed.
+  val metadataPrepareStaticOk = operandMemberShapeLegal && metadataFreeSlotExists &&
+    metadataSlotGeneration(metadataFreeSlot) =/= maxMetadataGeneration
   val preparationAcceptable = preparationLayerInRange && !memberPending &&
     !groupPrepared(preparationLayer) && !headCommitted(preparationLayer) &&
     !spanCommitted(preparationLayer) && !groupPublicationOutstanding(preparationLayer) &&
     preparation.valid_records =/= 0.U && preparation.valid_records <= 64.U
   // The existing prepare and its real lowering operand are one atomic ingress:
   // no declaration can be consumed without its R3 group, or vice versa.
-  val jointPrepareAcceptable = preparationAcceptable && operandAssociates
+  val jointPrepareAcceptable = preparationAcceptable && operandAssociates && !prepareLookupPending
   io.group_prepare_in.ready := jointPrepareAcceptable && io.metadata_append_operand_in.valid
   io.metadata_append_operand_in.ready := jointPrepareAcceptable && io.group_prepare_in.valid
   when(io.group_prepare_in.fire) {
     assert(io.metadata_append_operand_in.fire)
     groupPrepared(preparationLayer) := true.B
+    groupLookupResolved(preparationLayer) := !metadataPrepareStaticOk
     groupPublicationOutstanding(preparationLayer) := false.B
     headCommitted(preparationLayer) := false.B
     spanCommitted(preparationLayer) := false.B
-    groupTransactionOk(preparationLayer) := metadataPrepareOk
+    groupTransactionOk(preparationLayer) := false.B
     groupGeneration(preparationLayer) := preparation.p3_stage_generation
     groupTag(preparationLayer) := preparation.transaction_group_tag
     groupHead(preparationLayer) := preparation.kv_head
     groupAddress(preparationLayer) := preparation.opaque_address_ref
     groupOwner(preparationLayer) := preparation.owner
-    when(metadataPrepareOk) {
+    when(metadataPrepareStaticOk) {
       val preparedHead = Wire(new RouteAM2MetadataHeadEntry)
       preparedHead := 0.U.asTypeOf(new RouteAM2MetadataHeadEntry)
       preparedHead.valid := true.B
@@ -2008,9 +2091,34 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
       groupPreparedHead(preparationLayer) := preparedHead
       groupPreparedSpan(preparationLayer) := preparedSpan
       metadataSlotOccupied(metadataFreeSlot) := true.B
+      prepareLookupPending := true.B
+      prepareLookupIssued := false.B
+      prepareLookupLayer := preparationLayer
+      prepareLookupHeadIndex := headIndex(operand.p3_layer, operand.kv_head)
+      prepareLookupStaticOk := true.B
+      prepareLookupSlot := metadataFreeSlot
     }
   }
   when(io.metadata_append_operand_in.fire) { assert(io.group_prepare_in.fire) }
+  headLookupReqValid := prepareLookupPending && !prepareLookupIssued
+  headLookupReqBits := prepareLookupHeadIndex
+  when(entryStorage.io.head_lookup_req.fire) {
+    prepareLookupIssued := true.B
+  }
+  when(entryStorage.io.head_lookup_rsp.fire) {
+    assert(headLookupResponseAccept)
+    assert(entryStorage.io.head_lookup_rsp.bits.head_index === prepareLookupHeadIndex)
+    val lookupLayer = prepareLookupLayer
+    groupLookupResolved(lookupLayer) := true.B
+    groupTransactionOk(lookupLayer) := prepareLookupStaticOk && !entryStorage.io.head_lookup_rsp.bits.head_entry.valid
+    when(entryStorage.io.head_lookup_rsp.bits.head_entry.valid) {
+      // The slot was a private reservation only. A busy head yields the
+      // existing typed member fault and cannot leak an occupied slot.
+      metadataSlotOccupied(prepareLookupSlot) := false.B
+    }
+    prepareLookupPending := false.B
+    prepareLookupIssued := false.B
+  }
   val supportedMember = io.member_request_in.bits.member <= RouteAM2GroupMember.SpanOwnerRmw.U
   val memberLayerInRange = io.member_request_in.bits.layer < stages.U
   val requestedLayer = io.member_request_in.bits.layer
@@ -2028,7 +2136,7 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   // An incomplete group may receive its second member only when it is the
   // exact immutable companion of the first.  This owner must never assemble a
   // publication candidate from members belonging to different R3 groups.
-  val memberGroupEligible = groupPrepared(requestedLayer) && !groupPublicationOutstanding(requestedLayer) &&
+  val memberGroupEligible = groupPrepared(requestedLayer) && groupLookupResolved(requestedLayer) && !groupPublicationOutstanding(requestedLayer) &&
     requestMatchesRememberedGroup && !requestedMemberAlreadyCommitted
   io.member_request_in.ready := !memberPending && supportedMember && memberLayerInRange && memberGroupEligible
   when(io.member_request_in.fire) {
@@ -2067,6 +2175,7 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
       io.metadata_group_abort_out.bits.p3_stage_generation := memberRequest.stage_generation
       io.metadata_group_abort_out.bits.transaction_group_tag := memberRequest.transaction_group_tag
       groupPrepared(layer) := false.B
+      groupLookupResolved(layer) := false.B
       groupPublicationOutstanding(layer) := false.B
       headCommitted(layer) := false.B
       spanCommitted(layer) := false.B
@@ -2118,6 +2227,14 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
         entryStorage.io.publication_commit.bits.head_entry := groupPreparedHead(layer)
         entryStorage.io.publication_commit.bits.span_index := groupPreparedSlot(layer)
         entryStorage.io.publication_commit.bits.span_entry := groupPreparedSpan(layer)
+        // Retain only handoff/reuse lookup provenance in the parent.  The
+        // actual 128-bit entry words remain exclusively inside the adapter.
+        metadataVisible(groupPreparedSlot(layer)) := true.B
+        metadataVisibleLayer(groupPreparedSlot(layer)) := groupPreparedSpan(layer).layer
+        metadataVisibleHead(groupPreparedSlot(layer)) := groupPreparedSpan(layer).kv_head
+        metadataVisibleStageGeneration(groupPreparedSlot(layer)) := groupPreparedSpan(layer).p3_stage_generation
+        metadataVisibleTag(groupPreparedSlot(layer)) := groupPreparedSpan(layer).transaction_group_tag
+        metadataVisibleRecords(groupPreparedSlot(layer)) := groupPreparedSpan(layer).valid_records
         // Preserve the pre-existing control-only provenance mirrors, but make
         // them visible only at this same resolved publication boundary.
         headReplicaAValid(groupHead(layer)) := true.B
@@ -2138,6 +2255,7 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
         }
       }
       groupPrepared(resolution.p3_layer) := false.B
+      groupLookupResolved(resolution.p3_layer) := false.B
       groupPublicationOutstanding(resolution.p3_layer) := false.B
       headCommitted(resolution.p3_layer) := false.B
       spanCommitted(resolution.p3_layer) := false.B
@@ -2147,10 +2265,10 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
 
   val handoff = io.metadata_membership_handoff_in.bits
   val handoffMatches = VecInit((0 until metadataSpanEntries).map { slot =>
-    metadataSpan(slot).valid && metadataSpan(slot).layer === handoff.p3_layer &&
-      metadataSpan(slot).p3_stage_generation === handoff.p3_stage_generation &&
-      metadataSpan(slot).transaction_group_tag === handoff.transaction_group_tag &&
-      metadataSpan(slot).valid_records === handoff.valid_records
+    metadataVisible(slot) && metadataVisibleLayer(slot) === handoff.p3_layer &&
+      metadataVisibleStageGeneration(slot) === handoff.p3_stage_generation &&
+      metadataVisibleTag(slot) === handoff.transaction_group_tag &&
+      metadataVisibleRecords(slot) === handoff.valid_records
   })
   val handoffAny = handoffMatches.asUInt.orR
   val handoffSlot = PriorityEncoder(handoffMatches)
@@ -2158,16 +2276,13 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
     assert(handoffAny)
     assert(PopCount(handoffMatches) === 1.U)
     when(handoffAny) {
-      val live = metadataSpan(handoffSlot)
-      val index = headIndex(live.layer, live.kv_head)
-      assert(metadataHeadReplicaA(index).valid)
-      assert(metadataHeadReplicaA(index).tail_slot === handoffSlot)
-      assert(metadataHeadReplicaA(index).tail_generation === live.generation)
+      val index = headIndex(metadataVisibleLayer(handoffSlot), metadataVisibleHead(handoffSlot))
       entryStorage.io.handoff_release.valid := true.B
       entryStorage.io.handoff_release.bits.head_index := index
       entryStorage.io.handoff_release.bits.head_entry := 0.U.asTypeOf(new RouteAM2MetadataHeadEntry)
       entryStorage.io.handoff_release.bits.span_index := handoffSlot
       entryStorage.io.handoff_release.bits.span_entry := 0.U.asTypeOf(new RouteAM2MetadataSpanEntry(p))
+      metadataVisible(handoffSlot) := false.B
       when(metadataSlotGeneration(handoffSlot) === maxMetadataGeneration) {
         // Generation wrap is fail-closed: this slot cannot alias a stale
         // member and remains unavailable until reset.
@@ -2198,7 +2313,10 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
       assert(headReplicaAOwner(bank) === headReplicaBOwner(bank))
     }
   }
-  io.metadata_visible_span_count := PopCount(VecInit(metadataSpan.map(_.valid)).asUInt)
+  // This count is a parent-visible occupancy observation, not a full-span
+  // array readback path.  It changes only on the exact accepted commit/release
+  // events above.
+  io.metadata_visible_span_count := PopCount(metadataVisible.asUInt)
   io.metadata_private_reservation_count := PopCount(VecInit((0 until stages).map(groupPrepared)).asUInt)
 }
 

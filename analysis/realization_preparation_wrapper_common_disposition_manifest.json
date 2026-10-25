@@ -1,6 +1,6 @@
 {
   "schema_version": "kvzap-realization-preparation-wrapper-common-1.0",
-  "status": "review_ready_pending_human_approval",
+  "status": "human_approved_wrapper_rtl_in_progress",
   "review_date": "2026-10-25",
   "anchors": {
     "top_selection": "analysis/synthesis_top_candidate_selection_manifest.json",
@@ -23,7 +23,8 @@
       "atomicity": "mirrored_head_and_span_all_or_nothing",
       "reset_clock": "candidate_top_reset_only; no CDC or latency selected",
       "cost_ownership": "route_a_incremental_unestimated_not_zero",
-      "physical_wrapper_mapping_pending": true
+      "physical_wrapper_mapping_pending": true,
+      "implementation_status": "parent_side_lookup_commit_ack_adapter_pending_remote_directed_regression"
     },
     {
       "id": "p3_stage_access_v1",
@@ -100,6 +101,6 @@
     "p3_pending_hbm_backing": "route_a_external_service_nonzero",
     "r5_descriptor_hbm_region": "route_a_external_descriptor_service_nonzero"
   },
-  "prohibited_actions": ["wrapper RTL before approval", "macro or port-count selection", "latency or clock/frequency selection", "CDC/controller/numeric implementation", "DC/CACTI", "PPA or quantitative cost claim"],
-  "next_gate": "human approval of wrapper-interface and common-equivalence dispositions"
+  "prohibited_actions": ["macro or port-count selection", "latency or clock/frequency selection", "CDC/controller/numeric implementation", "DC/CACTI", "PPA or quantitative cost claim"],
+  "next_gate": "remote directed regression for each implemented wrapper batch, then successor source/port freeze"
 }

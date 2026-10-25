@@ -1,11 +1,12 @@
 # Realization preparation — wrapper-interface and common-equivalence disposition
 
-**Status:** `review_ready_pending_human_approval` (2026-10-25).  This is the
-first decision package after the conditional synthesis-top selection.  It
+**Status:** `human_approved_wrapper_rtl_in_progress` (2026-10-25).  This is
+the first decision package after the conditional synthesis-top selection.  It
 turns the four MR-2 logical array boundaries and the frozen dual-DUT cut into
-an implementable *future* wrapper plan.  It authorizes neither wrapper RTL nor
-a macro, port count, latency, clock, library, controller, numeric unit, DC,
-CACTI, PPA, area, energy, or performance result.
+an implementable wrapper plan.  M2 parent-side adapter RTL is implemented but
+still awaiting its remote directed regression; no macro, port count, clock,
+library, controller, numeric unit, DC, CACTI, PPA, area, energy, or performance
+result is selected or claimed.
 
 ## Decision scope and inputs
 
@@ -34,7 +35,7 @@ not choose a number of cycles, clock, frequency, pipeline, or CDC scheme.
 
 | Interior | Required logical access contract for later adapter | Parent/peripheral that stays in the candidate DUT | Timing, reset, and fault rule | Cost disposition |
 | --- | --- | --- | --- | --- |
-| M2 head/span entries | `m2_entry_access_v1`: tagged `lookup`, `publication_commit`, and `handoff_release` requests with head key, span slot, generation/provenance tag, and typed response. A lookup returns the old head/span words; a commit/release returns exactly one accepted/fault result. | `RouteAM2ProductionControlOwner`: membership and credit, slot/generation, RMW lowering, private prepare/abort, two member responses, atomic publication resolution, and handoff qualification. | Both head replicas plus the paired span update are one all-or-nothing logical commit. The parent holds a request under backpressure; it may expose no entry state before `metadata_publish_commit` succeeds. Reset clears the interior and parent private state; stale/alias/fault response aborts without a partial write. | Route-A incremental. Array interior **and** adapter/lookup/commit buffering/peripheral are `unestimated_not_zero`; only the interior may later be macro/proxy. |
+| M2 head/span entries | `m2_entry_access_v1`: one registered keyed head `lookup` request/response plus independent `publication_commit` and `handoff_release` lanes with exact write acknowledgements. | `RouteAM2ProductionControlOwner`: membership and credit, slot/generation, RMW lowering, private prepare/abort, two member responses, atomic publication resolution, and handoff qualification. | The lookup response holds under backpressure. Both head replicas plus the paired span update are one all-or-nothing logical commit. Publication/handoff have distinct-lane non-alias assertion; their acks cannot revise already accepted R3/R6 decisions. Reset clears the interior and parent private state. | Route-A incremental. Array interior **and** adapter/lookup/commit buffering/provenance-index peripheral are `unestimated_not_zero`; only the interior may later be macro/proxy. |
 | P3 payload stage and sidecar | `p3_stage_access_v1`: tagged payload write, sidecar write, and payload read/response. Every tag carries layer plus fragment or record ordinal; a read response is identity-tagged. | `RouteAM2P3Wrapper`: claim/generation, accepted-binding ledger, exact ordering, materializer reservation, durable packed write, publication and release. | A fill/read access may stall but cannot reorder, forge completion, or cause `COMPLETE`/`DURABLE`. Child reset does not relax the parent `mem_init_done`, stale, or fault gates. | Route-A incremental P3 stage interior and adapter are `unestimated_not_zero`. Pending backing is a separate external service, not this wrapper. |
 | S2 payload (both contours) and Route-A sidecar | `s2_payload_access_v1`: tagged payload fill/write and payload read/response; Route-A additionally needs `s2_sidecar_access_v1` for sidecar write/read. Each response carries slot/generation and is held under downstream backpressure. | Route-A `RouteAS2GqaSourceWrapper`: fill-open, READY, four commits, release, drain; Full-KV `FullKVS2GqaSourceWrapper`: baseline-local fill/READY/four commits/release/fault. | `READY` remains parent-owned and occurs only after matching terminal/complete conditions. Read data may be released only after matching READY validation; reset/stale/fault are fail-closed. The current Full-KV class tracks completion but has no payload-read array interface, so it is **not yet** an equivalent implementation of `s2_payload_access_v1`. | Route-A sidecar is incremental and unestimated. Payload is not cancellable today; physical common treatment requires a successor Full-KV payload-wrapper implementation and conformance evidence. |
 | R5 availability/generation | `r5_availability_access_v1`: parent-owned availability lookup/read response, allocation-update acknowledgement, and typed multi-lane reclaim/generation-update acknowledgement. The descriptor image is excluded. | `RouteAPageManager`: free-page selection, PageRef formation/validation, descriptor visibility, invalidate-before-free, reclaim sequencing, drain/reset, and descriptor-service traffic. | Allocation is not outwardly accepted until its matching availability update succeeds. Reclaim cannot make a page reusable until the matching lane updates and generation advance succeed. Stale/fault/reset leaves the old state unavailable or aborts the request; wrapper never owns page selection. | Route-A incremental availability interior plus scan/lookup/update adapter/peripheral are `unestimated_not_zero`. Descriptor maintenance remains an external-memory service, never a local SRAM proxy. |
@@ -107,8 +108,8 @@ as synthesized hardware merely to make elaboration succeed.
 
 ## Approval gate and successor work
 
-Human approval of the dispositions in this record would authorize **only** a
-wrapper-RTL work package with these order constraints:
+The approved dispositions authorize **only** a wrapper-RTL work package with
+these order constraints:
 
 1. implement typed parent-side adapters and preserve each named parent owner;
 2. close the Full-KV S2 payload-wrapper choice or retain it as a non-cancelled

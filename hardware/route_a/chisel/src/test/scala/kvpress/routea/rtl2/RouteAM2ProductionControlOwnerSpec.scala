@@ -2,7 +2,7 @@ package kvpress.routea.rtl2
 
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
-import kvpress.routea.incremental.RouteAM2ProductionControlOwner
+import kvpress.routea.incremental.{RouteAM2EntryArrayBoundary, RouteAM2ProductionControlOwner}
 import kvpress.routea.params.{RouteAM2GroupMember, RouteAPublicationStatus, RouteAR6Encoding, RouteASkeletonParameters}
 import org.scalatest.funspec.AnyFunSpec
 
@@ -67,6 +67,15 @@ final class RouteAM2ProductionControlOwnerSpec extends AnyFunSpec with ChiselSim
     dut.io.group_prepare_in.valid.poke(true.B); dut.io.metadata_append_operand_in.valid.poke(true.B)
     dut.io.group_prepare_in.ready.expect(true.B); dut.io.metadata_append_operand_in.ready.expect(true.B)
     dut.clock.step(); dut.io.group_prepare_in.valid.poke(false.B); dut.io.metadata_append_operand_in.valid.poke(false.B)
+    // The parent must wait for the explicit one-cycle entry-array lookup
+    // response before either semantic member can be accepted.
+    dut.io.member_request_in.ready.expect(false.B)
+    dut.clock.step()
+    dut.clock.step()
+    dut.clock.step()
+    // The array response is registered first; its accepted result becomes
+    // parent member eligibility only after the response/parent handshake.
+    dut.io.member_request_in.ready.expect(true.B)
   }
 
   private def issueMember(dut: RouteAM2ProductionControlOwner, member: Int): Unit = {
@@ -269,6 +278,106 @@ final class RouteAM2ProductionControlOwnerSpec extends AnyFunSpec with ChiselSim
       // Abort makes the exact layer reusable; it never promotes a faulted
       // declaration into a publication candidate.
       issuePrepare(dut)
+    }
+  }
+}
+
+/** Direct logical-port checks for the M2 array interior, without selecting a macro. */
+final class RouteAM2EntryArrayBoundarySpec extends AnyFunSpec with ChiselSim {
+  private val p = RouteASkeletonParameters(
+    frontendEventKindWidth = 3, componentStatusNameWidth = 4, hotControlKindWidth = 2,
+    pendingDescriptorRefWidth = 1, pendingValidityWidth = 1,
+    candidateClassWidth = 3, candidateOrdinalWidth = 4, candidateIdWidth = 4, candidatePredicateWidth = 10,
+    r2S2FullClassCode = 0, r2S2PackedClassCode = 1, r2DirectPendingClassCode = 2,
+    r2PackReadClassCode = 3, r2PackWriteClassCode = 4, r2DescriptorMaintenanceClassCode = 5,
+    r2CandidateSlotsPerClass = 2,
+    coreMemoryRequestKindWidth = 3, coreMemoryDestinationWidth = 2, coreMemoryAddressRefWidth = 8,
+    coreMemoryFragmentCountWidth = 3, coreMemoryFragmentIndexWidth = 3,
+    coreMemoryReadRequestCode = 0, coreMemoryWriteRequestCode = 1, coreMemoryWriteDataCode = 2,
+    coreMemoryOkStatusCode = 0, coreMemoryFaultStatusCode = 1,
+    sourceDeliveryOpaqueWidth = 1, transactionGroupTagWidth = 2, p3StageGenerationWidth = 2,
+    r5AllocatorEntries = 8, r5StreamSlots = 8, sourceGenerationWidth = 2,
+    r6 = RouteAR6Encoding.testOnlyAnchor,
+  )
+
+  private def clearInputs(dut: RouteAM2EntryArrayBoundary): Unit = {
+    dut.io.head_lookup_req.valid.poke(false.B)
+    dut.io.head_lookup_req.bits.poke(0.U)
+    dut.io.head_lookup_rsp.ready.poke(false.B)
+    dut.io.publication_commit.valid.poke(false.B)
+    dut.io.publication_commit.bits.asUInt.poke(0.U)
+    dut.io.handoff_release.valid.poke(false.B)
+    dut.io.handoff_release.bits.asUInt.poke(0.U)
+  }
+
+  private def driveUpdate(dut: RouteAM2EntryArrayBoundary, publication: Boolean, valid: Boolean): Unit = {
+    val update = if (publication) dut.io.publication_commit.bits else dut.io.handoff_release.bits
+    update.head_index.poke(3.U)
+    update.head_entry.asUInt.poke(0.U)
+    update.head_entry.valid.poke(valid.B)
+    update.head_entry.tail_slot.poke(5.U)
+    update.head_entry.tail_generation.poke(1.U)
+    update.head_entry.append_sequence.poke(9.U)
+    update.head_entry.valid_records.poke(1.U)
+    update.span_index.poke(5.U)
+    update.span_entry.asUInt.poke(0.U)
+    update.span_entry.valid.poke(valid.B)
+    update.span_entry.generation.poke(1.U)
+    update.span_entry.layer.poke(0.U)
+    update.span_entry.kv_head.poke(3.U)
+    update.span_entry.p3_stage_generation.poke(1.U)
+    update.span_entry.transaction_group_tag.poke(2.U)
+    update.span_entry.credit_pool.poke(0.U)
+    update.span_entry.append_sequence.poke(9.U)
+    update.span_entry.valid_records.poke(1.U)
+  }
+
+  it("holds an explicit lookup response and acknowledges exact independent commits") {
+    simulate(new RouteAM2EntryArrayBoundary(p)) { dut =>
+      clearInputs(dut)
+
+      driveUpdate(dut, publication = true, valid = true)
+      dut.io.publication_commit.valid.poke(true.B)
+      dut.clock.step()
+      dut.io.publication_commit.valid.poke(false.B)
+      dut.io.publication_commit_ack.valid.expect(true.B)
+      dut.io.publication_commit_ack.bits.head_index.expect(3.U)
+      dut.io.publication_commit_ack.bits.span_index.expect(5.U)
+
+      dut.io.head_lookup_req.bits.poke(3.U)
+      dut.io.head_lookup_req.valid.poke(true.B)
+      dut.io.head_lookup_req.ready.expect(true.B)
+      dut.clock.step()
+      dut.io.head_lookup_req.valid.poke(false.B)
+      dut.io.head_lookup_rsp.valid.expect(true.B)
+      dut.io.head_lookup_rsp.bits.head_index.expect(3.U)
+      dut.io.head_lookup_rsp.bits.head_entry.valid.expect(true.B)
+      dut.io.head_lookup_rsp.bits.head_entry.tail_slot.expect(5.U)
+      // Backpressure holds the exact registered lookup result rather than
+      // exposing a parent-side whole-array read path.
+      dut.clock.step()
+      dut.io.head_lookup_rsp.valid.expect(true.B)
+      dut.io.head_lookup_rsp.bits.head_entry.append_sequence.expect(9.U)
+      dut.io.head_lookup_rsp.ready.poke(true.B)
+      dut.clock.step()
+      dut.io.head_lookup_rsp.ready.poke(false.B)
+      dut.io.head_lookup_rsp.valid.expect(false.B)
+
+      driveUpdate(dut, publication = false, valid = false)
+      dut.io.handoff_release.valid.poke(true.B)
+      dut.clock.step()
+      dut.io.handoff_release.valid.poke(false.B)
+      dut.io.handoff_release_ack.valid.expect(true.B)
+      dut.io.handoff_release_ack.bits.head_index.expect(3.U)
+      dut.io.handoff_release_ack.bits.span_index.expect(5.U)
+
+      dut.io.head_lookup_req.bits.poke(3.U)
+      dut.io.head_lookup_req.valid.poke(true.B)
+      dut.io.head_lookup_req.ready.expect(true.B)
+      dut.clock.step()
+      dut.io.head_lookup_req.valid.poke(false.B)
+      dut.io.head_lookup_rsp.valid.expect(true.B)
+      dut.io.head_lookup_rsp.bits.head_entry.valid.expect(false.B)
     }
   }
 }
