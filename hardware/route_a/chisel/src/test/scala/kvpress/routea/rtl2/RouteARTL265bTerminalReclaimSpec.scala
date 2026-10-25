@@ -80,6 +80,8 @@ final class RouteARTL265bTerminalReclaimHarness(p: RouteASkeletonParameters) ext
   StructuralTieOff.sink(r2.io.direct_lease_eligibility_query_out)
   StructuralTieOff.source(r2.io.direct_lease_eligibility_in)
   StructuralTieOff.sink(r2.io.direct_lease_commit_out)
+  StructuralTieOff.source(r2.io.direct_candidate_cancel_in)
+  StructuralTieOff.sink(r2.io.direct_candidate_cancel_ack_out)
   val r1 = Module(new RouteACoreMemIfV1(p))
   val collector = Module(new RouteAComponentStatusCollector(p))
   val s2 = Module(new RouteAS2GqaSourceWrapper(p))
@@ -113,6 +115,7 @@ final class RouteARTL265bTerminalReclaimHarness(p: RouteASkeletonParameters) ext
   StructuralTieOff.sink(r6.io.direct_pending_open)
   StructuralTieOff.sink(r6.io.metadata_publish_req)
   StructuralTieOff.source(r6.io.metadata_publish_ack_in)
+  StructuralTieOff.source(r6.io.pending_source_failure_in)
 
   r5.io.mem_init_done := r1.io.r1_init_complete
   r5.io.drain_collection_enable := r6.io.drain_collection_enable

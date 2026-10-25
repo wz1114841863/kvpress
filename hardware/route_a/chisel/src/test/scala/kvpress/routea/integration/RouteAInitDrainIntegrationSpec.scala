@@ -19,6 +19,10 @@ final class RouteAInitDrainHarness(p: RouteASkeletonParameters) extends Module {
     val attention_terminal_rsp = RouteAChannels.attention_terminal_rsp
     val session_retire_ack = RouteAChannels.session_retire_ack
     val external_core_mem_if_v1 = new CoreMemoryExternalPort(p)
+    // Keep this named top-level functional boundary visible to the elaborator.
+    // The init/drain tests below hold valid low; no payload binding producer is
+    // modelled or accepted by this harness.
+    val pending_payload_read_binding_in = Flipped(RouteAChannels.pending_payload_read_binding(p))
   })
 
   val subsystem = Module(new RouteAKVSubsystemTop(p))
@@ -29,7 +33,7 @@ final class RouteAInitDrainHarness(p: RouteASkeletonParameters) extends Module {
   StructuralTieOff.source(subsystem.source_plan_declaration_in)
   StructuralTieOff.source(subsystem.hot_payload_fragment_in)
   StructuralTieOff.source(subsystem.hot_position_sidecar_in)
-  StructuralTieOff.source(subsystem.pending_payload_read_binding_in)
+  subsystem.pending_payload_read_binding_in <> io.pending_payload_read_binding_in
   // RTL3.8.3's only outer source-packet boundary is the named functional
   // partial provider. Init/drain exercises no attention source, so keep each
   // provider carrier inert without restoring an interior verification ingress.
@@ -83,6 +87,7 @@ final class RouteAInitDrainIntegrationSpec extends AnyFunSpec with ChiselSim {
   private def initTop(dut: RouteAInitDrainHarness): Unit = {
     dut.io.frontend_lifecycle_req.valid.poke(false.B); driveLifecycleZero(dut)
     dut.io.runtime_retire_req.valid.poke(false.B); dut.io.runtime_retire_req.bits.session_id.poke(false.B)
+    dut.io.pending_payload_read_binding_in.valid.poke(false.B)
     dut.io.runtime_retire_req.bits.transaction_identity.request_id.poke(0.U)
     dut.io.runtime_retire_req.bits.transaction_identity.incarnation.poke(0.U)
     dut.io.attention_terminal_rsp.ready.poke(true.B); dut.io.session_retire_ack.ready.poke(true.B)

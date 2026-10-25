@@ -3,9 +3,10 @@ package kvpress.routea.integration
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
 import kvpress.routea.common.{RouteACoreMemIfV1, RouteAS2GqaSourceWrapper}
-import kvpress.routea.incremental.{RouteADirectPendingEndpointV1, RouteAPageManager}
+import kvpress.routea.incremental.RouteADirectPendingEndpointV1
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteADescriptorOperationKind, RouteAR6Encoding, RouteASkeletonParameters}
+import kvpress.routea.r5.RouteAReclaimHarness
 import org.scalatest.funspec.AnyFunSpec
 
 /** RTL2.5.1 reset-epoch checks; no controller, numeric, or PPA model. */
@@ -72,17 +73,20 @@ final class RouteAResetEpochIntegrationSpec extends AnyFunSpec with ChiselSim {
     }
   }
 
-  private def initR5(dut: RouteAPageManager): Unit = {
+  // Keep the production PageManager below the existing narrow R5 probe. Its
+  // rich reclaim candidate contains B2c's unused direct-association branch,
+  // which the remote ChiselSim DPI generator cannot expose as a root port.
+  // The probe changes no PageManager control or R5 input under this test.
+  private def initR5(dut: RouteAReclaimHarness): Unit = {
     dut.io.mem_init_done.poke(false.B); dut.io.drain_collection_enable.poke(false.B); dut.io.reclaim_permit_in.valid.poke(false.B)
     dut.io.reclaim_permit_in.bits.transaction_identity.request_id.poke(0.U); dut.io.reclaim_permit_in.bits.transaction_identity.incarnation.poke(0.U)
     dut.io.page_allocation_req_in.valid.poke(false.B); dut.io.page_allocation_rsp.ready.poke(true.B)
-    dut.io.descriptor_location_request_in.valid.poke(false.B); dut.io.descriptor_location_grant_out.ready.poke(true.B)
     dut.io.descriptor_maintenance_terminal_in.valid.poke(false.B); dut.io.metadata_publish_visibility_in.valid.poke(false.B)
     dut.io.metadata_publish_visibility_ack.ready.poke(true.B); dut.io.reclaim_candidate_out.ready.poke(true.B)
     dut.io.reclaim_delivery_in.valid.poke(false.B); dut.io.component_status_out.ready.poke(true.B)
   }
 
-  private def allocateAndPublishR5(dut: RouteAPageManager, tag: Int): Unit = {
+  private def allocateAndPublishR5(dut: RouteAReclaimHarness, tag: Int): Unit = {
     val allocation = dut.io.page_allocation_req_in.bits
     allocation.layer.poke(0.U); allocation.kv_head.poke(0.U); allocation.valid_records.poke(1.U); allocation.transaction_group_tag.poke(tag.U)
     dut.io.page_allocation_req_in.valid.poke(true.B); dut.io.page_allocation_req_in.ready.expect(true.B)
@@ -99,7 +103,7 @@ final class RouteAResetEpochIntegrationSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("clears published R5 local reachability on reset and gates old descriptor facts until re-init") {
-    simulate(new RouteAPageManager(p)) { dut =>
+    simulate(new RouteAReclaimHarness(p)) { dut =>
       initR5(dut); dut.io.mem_init_done.poke(true.B); dut.clock.step(); dut.clock.step()
       allocateAndPublishR5(dut, tag = 1)
 
@@ -183,6 +187,7 @@ final class RouteAResetEpochIntegrationSpec extends AnyFunSpec with ChiselSim {
 
   private def initTop(dut: RouteAInitDrainHarness): Unit = {
     dut.io.frontend_lifecycle_req.valid.poke(false.B); dut.io.runtime_retire_req.valid.poke(false.B)
+    dut.io.pending_payload_read_binding_in.valid.poke(false.B)
     dut.io.attention_terminal_rsp.ready.poke(true.B); dut.io.session_retire_ack.ready.poke(true.B)
     dut.io.external_core_mem_if_v1.init_ack.valid.poke(false.B); dut.io.external_core_mem_if_v1.init_ack.bits.adapter_epoch_ready.poke(false.B)
     dut.io.external_core_mem_if_v1.request.ready.poke(true.B); dut.io.external_core_mem_if_v1.response.valid.poke(false.B)

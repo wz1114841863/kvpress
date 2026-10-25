@@ -126,6 +126,10 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     StructuralTieOff.sink(source_plan_binder.io.association_query_out)
     StructuralTieOff.source(source_plan_binder.io.association_declaration_in)
     StructuralTieOff.sink(source_plan_binder.io.accepted_pending_association_out)
+    // B2c fault ownership exists only in the production measurement contour.
+    // This composition-only shell has no association materializer, so an
+    // inactive input is the only fail-closed legal behavior.
+    StructuralTieOff.source(lifecycle.io.pending_source_failure_in)
     lifecycle.io.source_completion_plan_in <> source_plan_binder.io.completion_plan_out
     // R6 retains plan ownership.  The exact-copy fork delivers every plan to
     // the packet path and only a packed-present copy to the activation binder;
@@ -192,6 +196,8 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     // acknowledgement observation locally. RouteAMeasurementDut owns the
     // production connection.
     StructuralTieOff.sink(direct_pending.io.pending_source_open_ack_out)
+    StructuralTieOff.source(direct_pending.io.direct_abort_in)
+    StructuralTieOff.sink(direct_pending.io.direct_abort_ack_out)
     val direct_record_terminal = direct_pending_read_endpoint.io.record_terminal_out
     val direct_release = Wire(RouteAChannels.source_release(p))
     direct_pending.io.direct_pending_record_terminal_in <> direct_record_terminal
@@ -266,6 +272,8 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     StructuralTieOff.sink(arbiter.io.direct_lease_eligibility_query_out)
     StructuralTieOff.source(arbiter.io.direct_lease_eligibility_in)
     StructuralTieOff.sink(arbiter.io.direct_lease_commit_out)
+    StructuralTieOff.source(arbiter.io.direct_candidate_cancel_in)
+    StructuralTieOff.sink(arbiter.io.direct_candidate_cancel_ack_out)
 
     core_memory.io.core_mem_req_in <> arbiter.io.core_mem_req
     arbiter.io.core_mem_rsp_in <> core_memory.io.core_mem_rsp
@@ -324,6 +332,7 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     // declaration only to keep that inert composition elaboratable; the real
     // production bridge is instantiated exclusively by RouteAMeasurementDut.
     admission_group_builder.io.metadata_append_member_out.ready := true.B
+    admission_group_builder.io.m2_group_prepare_out.ready := true.B
     p3_pending_ingress.io.hot_in <> hot_payload_fragment_in
     p3_pending_ingress.io.pack_read_in <> p3_pack_read_endpoint.io.p3_pending_fragment_out
     val p3_fragment = p3_pending_ingress.io.out
@@ -352,6 +361,8 @@ final class RouteAKVSubsystemTop(p: RouteASkeletonParameters) extends RawModule 
     val p3_write_terminal = Wire(RouteAChannels.p3_packed_write_terminal(p)); StructuralTieOff.source(p3_write_terminal)
     m2_p3.io.p3_pending_fragment_in <> p3_fragment
     m2_p3.io.p3_sidecar_bind_in <> p3_sidecar
+    StructuralTieOff.source(m2_p3.io.pending_packing_reconciliation_lookup_in)
+    StructuralTieOff.sink(m2_p3.io.pending_packing_reconciliation_result_out)
     p3_pack_read_issue <> m2_p3.io.p3_pack_read_issue_out
     p3_pack_read_issue_adapter.io.candidate_out <> delivery_context_composition.io.r3_pack_read_in
     m2_p3.io.p3_packed_write_issue_in <> p3_write_issue

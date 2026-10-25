@@ -1,7 +1,7 @@
 # MR-2-R5 — availability/generation array-only boundary
 
-**Status:** `implementation_pending_verification`; independent of MR-1B and
-of the separately required M2 production replacement.
+**Status:** `functional_boundary_passed` (2026-10-25); independent of MR-1B
+and of the separately required M2 production replacement.
 
 ## Scope
 
@@ -56,3 +56,28 @@ or a replacement for the production connection.
 No result from this work validates a physical R5 macro or descriptor HBM
 service, nor changes R3 publication, R6 authority, R2 ordering, page size,
 admission, pruning, GQA, or scheduler semantics.
+
+## Verification record
+
+- Local array-boundary structural guard passed (`2/2`), proving that only
+  `RouteAR5AvailabilityArrayBoundary` owns the availability/generation vectors
+  and that `RouteAPageManager` retains the parent control effects.
+- Remote R5 directed evidence passed (`6` suites / `21` tests, `EXIT=0`) at
+  `/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_r5_final_p0_directed_final_20261024.log`.
+  It covers allocation, descriptor-private-to-visible publication ordering,
+  successful/faulted/stale/multi-lane reclaim, generation reuse, R1/R2/R5/R6
+  terminal/reclaim, reset, and packed R5-to-S2 descriptor facts.
+- The init/reset harness correction was also separately verified (`2` suites /
+  `6` tests, `EXIT=0`) at
+  `/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_r5_init_reset_fix4_20261024.log`.
+  It exposes an existing but inactive outer payload-binding port so Verilator
+  cannot constant-fold an unrelated admission comparison; it changes neither
+  the production owner graph nor payload-binding behavior.
+- Latest-source selected cross-stage evidence passed in two non-overlapping
+  invocations: `3` suites / `13` tests (`EXIT=0`) at
+  `/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_r5_p1_full_nonreg_20261024.log`,
+  and `7` suites / `27` tests (`EXIT=0`) at
+  `/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_r5_p1_missing_nonreg_20261025.log`.
+  Together these are the selected `10` suites / `40` tests covering Full-KV,
+  Route-A packed/hot/direct-pending, S2/GQA completion, M2 owner/bridge and
+  fixture separation, and the dual-DUT structural guard.

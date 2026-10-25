@@ -1,6 +1,6 @@
 # Route-A current handoff — RTL3 closure and measurement RTL status
 
-**Status date:** 2026-10-21
+**Status date:** 2026-10-25
 **Repository state:** `research/kvzap-latest`, RTL3 functional-subsystem
 closure reviewed at `cf9f055 docs: complete C4-D functional subsystem review`.
 
@@ -523,6 +523,21 @@ queue/staging activity model, DC, CACTI, timing, area, power, throughput, or
 PPA conclusion. Those retained and unestimated items must be addressed by the
 separate realization-preparation stage.
 
+### MR-2 R5 logical availability/generation boundary (2026-10-25)
+
+`RouteAR5AvailabilityArrayBoundary` is now the sole logical owner of the R5
+availability/generation vectors. `RouteAPageManager` retains allocation choice,
+PageRef/generation validation, descriptor visibility, durable
+invalidate-before-free, reclaim, drain/reset/init, and all descriptor-service
+and wrapper-peripheral behavior. Remote directed R5 evidence passed `21/21`;
+the latest-source selected cross-stage evidence passed in two non-overlapping
+invocations totalling `40/40`. The record is
+[`mr2_r5_availability_array_boundary_contract.md`](mr2_r5_availability_array_boundary_contract.md).
+
+This closes only the logical functional R5 array boundary. It does not select
+an R5 macro, ports, latency, descriptor service, controller, DC, CACTI, or
+PPA, and all remaining storage/access costs remain `unestimated_not_zero`.
+
 The EDA-server Chisel platform is user-local and offline. See
 [`chisel_platform_handoff_20261021.md`](chisel_platform_handoff_20261021.md).
 Future remote implementation work must use a provenance-preserving Git checkout
@@ -552,7 +567,9 @@ rather than the earlier rsync-only platform smoke snapshot.
 > bridge, real `MetadataAppend` operands, grouped entry-data
 > prepare/commit/abort, actual bounded production entry state, and the M2
 > logical entry-array boundary are live in `RouteAMeasurementDut`. The
-> fixture-only `RouteAM2EntryStorage` is still not production evidence, and no
+> fixture-only `RouteAM2EntryStorage` is still not production evidence. The
+> R5 availability/generation array-only boundary is also functionally closed;
+> both M2 and R5 remain logical boundaries only, and no
 > result selects a macro, wrapper ports/latency, or physical realization. None
 > selects
 > a top or begins physical realization work.
