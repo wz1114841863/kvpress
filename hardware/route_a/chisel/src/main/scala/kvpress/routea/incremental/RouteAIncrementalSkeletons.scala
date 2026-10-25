@@ -2001,16 +2001,15 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   // A single explicit M2 head-lookup request may be outstanding.  This is a
   // storage-wrapper backpressure point, not a new R3/R6/R2 scheduling owner.
   val prepareLookupPending = RegInit(false.B)
-  val prepareLookupIssued = RegInit(false.B)
   val prepareLookupLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
   val prepareLookupHeadIndex = Reg(UInt(9.W))
   val prepareLookupStaticOk = RegInit(false.B)
   val prepareLookupSlot = Reg(UInt(RouteAAnchorWidths.M2SpanSlotWidth.W))
-  // Drive the child response ready and the parent consume transition from the
-  // same explicit accepted condition.  Keeping this as one named wire avoids
-  // a response being observed by one side but not the other under elaboration
-  // scheduling of the parent/child Decoupled connection.
-  val headLookupResponseAccept = prepareLookupPending && prepareLookupIssued
+  // A pending parent transaction accepts its one registered child response.
+  // The child cannot assert response-valid before its request fire, so this
+  // needs no second issued-state gate (which would create a needless
+  // request/response timing dependency).
+  val headLookupResponseAccept = prepareLookupPending
   entryStorage.io.head_lookup_rsp.ready := headLookupResponseAccept
 
   val memberPending = RegInit(false.B)
@@ -2092,7 +2091,6 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
       groupPreparedSpan(preparationLayer) := preparedSpan
       metadataSlotOccupied(metadataFreeSlot) := true.B
       prepareLookupPending := true.B
-      prepareLookupIssued := false.B
       prepareLookupLayer := preparationLayer
       prepareLookupHeadIndex := headIndex(operand.p3_layer, operand.kv_head)
       prepareLookupStaticOk := true.B
@@ -2100,11 +2098,8 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
     }
   }
   when(io.metadata_append_operand_in.fire) { assert(io.group_prepare_in.fire) }
-  headLookupReqValid := prepareLookupPending && !prepareLookupIssued
+  headLookupReqValid := prepareLookupPending && !entryStorage.io.head_lookup_rsp.valid
   headLookupReqBits := prepareLookupHeadIndex
-  when(entryStorage.io.head_lookup_req.fire) {
-    prepareLookupIssued := true.B
-  }
   when(entryStorage.io.head_lookup_rsp.fire) {
     assert(headLookupResponseAccept)
     assert(entryStorage.io.head_lookup_rsp.bits.head_index === prepareLookupHeadIndex)
@@ -2117,7 +2112,6 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
       metadataSlotOccupied(prepareLookupSlot) := false.B
     }
     prepareLookupPending := false.B
-    prepareLookupIssued := false.B
   }
   val supportedMember = io.member_request_in.bits.member <= RouteAM2GroupMember.SpanOwnerRmw.U
   val memberLayerInRange = io.member_request_in.bits.layer < stages.U
