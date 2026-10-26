@@ -1942,10 +1942,6 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   // Only entry words live in the named boundary. Parent-local registers below
   // are lifecycle/peripheral control, never a second entry array.
   val entryStorage = Module(new RouteAM2EntryArrayBoundary(p))
-  val headLookupReqValid = WireDefault(false.B)
-  val headLookupReqBits = WireDefault(0.U(9.W))
-  entryStorage.io.head_lookup_req.valid := headLookupReqValid
-  entryStorage.io.head_lookup_req.bits := headLookupReqBits
   entryStorage.io.publication_commit.valid := false.B
   entryStorage.io.publication_commit.bits := 0.U.asTypeOf(new RouteAM2MetadataEntryArrayUpdate(p))
   entryStorage.io.handoff_release.valid := false.B
@@ -2005,6 +2001,11 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   val prepareLookupHeadIndex = Reg(UInt(9.W))
   val prepareLookupStaticOk = RegInit(false.B)
   val prepareLookupSlot = Reg(UInt(RouteAAnchorWidths.M2SpanSlotWidth.W))
+  // Connect the single outstanding parent state directly to the child's
+  // Decoupled request.  Do not route it through a defaulted Wire: the storage
+  // request is a real adapter transaction, not a best-effort observation.
+  entryStorage.io.head_lookup_req.valid := prepareLookupPending && !entryStorage.io.head_lookup_rsp.valid
+  entryStorage.io.head_lookup_req.bits := prepareLookupHeadIndex
   // The parent permits exactly one outstanding lookup and has no downstream
   // response consumer to backpressure.  Therefore the child response is
   // always accepted; the fire-side assertion below proves it belongs to the
@@ -2097,8 +2098,6 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
     }
   }
   when(io.metadata_append_operand_in.fire) { assert(io.group_prepare_in.fire) }
-  headLookupReqValid := prepareLookupPending && !entryStorage.io.head_lookup_rsp.valid
-  headLookupReqBits := prepareLookupHeadIndex
   when(entryStorage.io.head_lookup_rsp.fire) {
     assert(prepareLookupPending)
     assert(entryStorage.io.head_lookup_rsp.bits.head_index === prepareLookupHeadIndex)
