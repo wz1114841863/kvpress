@@ -18,8 +18,13 @@ def test_mr2_r5_availability_state_is_isolated_from_page_manager_control() -> No
     assert "val availabilityStorage = Module(new RouteAR5AvailabilityArrayBoundary(p))" in page_manager
     assert "val allocated = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))" not in page_manager
     assert "val generations = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)" not in page_manager
-    assert "availabilityStorage.io.allocation_commit.valid := true.B" in page_manager
-    assert "availabilityStorage.io.reclaim_invalidation_commit.valid := true.B" in page_manager
+    assert "availabilityStorage.io.availability_lookup_req.valid := scanAllowed" in page_manager
+    assert "availabilityStorage.io.allocation_update.valid := true.B" in page_manager
+    assert "availabilityStorage.io.reclaim_generation_update.valid := true.B" in page_manager
+    assert "availabilityStorage.io.allocation_update_ack.valid" in page_manager
+    assert "availabilityStorage.io.reclaim_generation_update_ack.valid" in page_manager
+    assert "allocated_view" not in page_manager
+    assert "generation_view" not in page_manager
 
 
 def test_mr2_r5_contract_records_array_only_and_retained_control_boundary() -> None:

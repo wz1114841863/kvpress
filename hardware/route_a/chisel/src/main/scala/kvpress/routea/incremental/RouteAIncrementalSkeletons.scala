@@ -3345,6 +3345,32 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   * Its logical vectors are not a macro, port, banking, latency, controller,
   * clock, or PPA selection.
   */
+/** One registered availability/generation lookup result from the R5 interior. */
+final class RouteAR5AvailabilityLookupResponse extends Bundle {
+  val page_id = UInt(RouteAAnchorWidths.PageIdWidth.W)
+  val allocated = Bool()
+  val generation = UInt(RouteAAnchorWidths.PageGenerationWidth.W)
+}
+
+/** Exact acknowledgement of one parent-selected allocation update. */
+final class RouteAR5AllocationUpdateAck extends Bundle {
+  val page_id = UInt(RouteAAnchorWidths.PageIdWidth.W)
+  val generation = UInt(RouteAAnchorWidths.PageGenerationWidth.W)
+}
+
+/**
+  * Exact acknowledgement of one accepted descriptor-line reclaim update.
+  * `old_generations` are captured before the child advances allocated lanes,
+  * allowing the parent to emit the existing old-PageRef release observations
+  * without retaining a second generation array.
+  */
+final class RouteAR5ReclaimGenerationUpdateAck(p: RouteASkeletonParameters) extends Bundle {
+  private val descriptorLineWidth = math.max(1, log2Ceil(p.r5AllocatorEntries / 4))
+  val descriptor_line = UInt(descriptorLineWidth.W)
+  val allocated_mask = UInt(4.W)
+  val old_generations = Vec(4, UInt(RouteAAnchorWidths.PageGenerationWidth.W))
+}
+
 final class RouteAR5AvailabilityArrayBoundary(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_r5_availability_array_boundary"
 
@@ -3352,30 +3378,75 @@ final class RouteAR5AvailabilityArrayBoundary(p: RouteASkeletonParameters) exten
   private val indexWidth = math.max(1, log2Ceil(entries))
   private val lineWidth = math.max(1, log2Ceil(entries / 4))
   val io = IO(new Bundle {
-    val allocation_commit = Input(Valid(UInt(indexWidth.W)))
-    val reclaim_invalidation_commit = Input(Valid(UInt(lineWidth.W)))
-    val allocated_view = Output(Vec(entries, Bool()))
-    val generation_view = Output(Vec(entries, UInt(RouteAAnchorWidths.PageGenerationWidth.W)))
+    val availability_lookup_req = Flipped(Decoupled(UInt(indexWidth.W)))
+    val availability_lookup_rsp = Decoupled(new RouteAR5AvailabilityLookupResponse)
+    val allocation_update = Input(Valid(UInt(indexWidth.W)))
+    val reclaim_generation_update = Input(Valid(UInt(lineWidth.W)))
+    val allocation_update_ack = Output(Valid(new RouteAR5AllocationUpdateAck))
+    val reclaim_generation_update_ack = Output(Valid(new RouteAR5ReclaimGenerationUpdateAck(p)))
   })
 
   val allocated = RegInit(VecInit(Seq.fill(entries)(false.B)))
   val generations = RegInit(VecInit(Seq.fill(entries)(0.U(RouteAAnchorWidths.PageGenerationWidth.W))))
-  io.allocated_view := allocated
-  io.generation_view := generations
-
-  when(io.allocation_commit.valid) {
-    allocated(io.allocation_commit.bits) := true.B
+  val lookupRspValid = RegInit(false.B)
+  val lookupRsp = Reg(new RouteAR5AvailabilityLookupResponse)
+  io.availability_lookup_req.ready := !lookupRspValid
+  io.availability_lookup_rsp.valid := lookupRspValid
+  io.availability_lookup_rsp.bits := lookupRsp
+  when(io.availability_lookup_req.fire) {
+    val index = io.availability_lookup_req.bits
+    assert(index < entries.U, "R5 availability lookup index must be in range")
+    lookupRsp.page_id := index
+    lookupRsp.allocated := allocated(index)
+    lookupRsp.generation := generations(index)
+    lookupRspValid := true.B
   }
-  when(io.reclaim_invalidation_commit.valid) {
-    for (line <- 0 until entries / 4; lane <- 0 until 4) {
-      val page = line * 4 + lane
-      when(io.reclaim_invalidation_commit.bits === line.U && allocated(page)) {
-        allocated(page) := false.B
-        generations(page) := generations(page) + 1.U
+  when(io.availability_lookup_rsp.fire) { lookupRspValid := false.B }
+
+  val allocationAckValid = RegInit(false.B)
+  val allocationAck = Reg(new RouteAR5AllocationUpdateAck)
+  val reclaimAckValid = RegInit(false.B)
+  val reclaimAck = Reg(new RouteAR5ReclaimGenerationUpdateAck(p))
+  io.allocation_update_ack.valid := allocationAckValid
+  io.allocation_update_ack.bits := allocationAck
+  io.reclaim_generation_update_ack.valid := reclaimAckValid
+  io.reclaim_generation_update_ack.bits := reclaimAck
+  allocationAckValid := false.B
+  reclaimAckValid := false.B
+
+  when(io.allocation_update.valid) {
+    assert(io.allocation_update.bits < entries.U, "R5 allocation update index must be in range")
+    allocated(io.allocation_update.bits) := true.B
+    allocationAck.page_id := io.allocation_update.bits
+    allocationAck.generation := generations(io.allocation_update.bits)
+    allocationAckValid := true.B
+  }
+  when(io.reclaim_generation_update.valid) {
+    val lineInRange = io.reclaim_generation_update.bits < (entries / 4).U
+    assert(lineInRange, "R5 reclaim descriptor line must be in range")
+    when(lineInRange) {
+      reclaimAck.descriptor_line := io.reclaim_generation_update.bits
+      reclaimAck.allocated_mask := VecInit((0 until 4).map { lane =>
+        val page = (io.reclaim_generation_update.bits * 4.U + lane.U)(indexWidth - 1, 0)
+        allocated(page)
+      }).asUInt
+      for (lane <- 0 until 4) {
+        val page = (io.reclaim_generation_update.bits * 4.U + lane.U)(indexWidth - 1, 0)
+        reclaimAck.old_generations(lane) := generations(page)
       }
+      for (line <- 0 until entries / 4; lane <- 0 until 4) {
+        val page = line * 4 + lane
+        when(io.reclaim_generation_update.bits === line.U) {
+          when(allocated(page)) {
+            allocated(page) := false.B
+            generations(page) := generations(page) + 1.U
+          }
+        }
+      }
+      reclaimAckValid := true.B
     }
   }
-  when(io.allocation_commit.valid && io.reclaim_invalidation_commit.valid) {
+  when(io.allocation_update.valid && io.reclaim_generation_update.valid) {
     assert(false.B, "R5 cannot allocate while an accepted reclaim invalidates availability")
   }
 }
@@ -3420,22 +3491,26 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   private val descriptorLines = p.r5AllocatorEntries / 4
   private val descriptorLineWidth = math.max(1, log2Ceil(descriptorLines))
   private val allocatorIndexWidth = math.max(1, log2Ceil(p.r5AllocatorEntries))
-  private val ReclaimIdle = 0.U(2.W)
-  private val ReclaimRequest = 1.U(2.W)
-  private val ReclaimData = 2.U(2.W)
-  private val ReclaimAwaitTerminal = 3.U(2.W)
+  private val ReclaimIdle = 0.U(3.W)
+  private val ReclaimRequest = 1.U(3.W)
+  private val ReclaimData = 2.U(3.W)
+  private val ReclaimAwaitTerminal = 3.U(3.W)
+  private val ReclaimAwaitAvailabilityAck = 4.U(3.W)
   val initialized = RegInit(false.B)
   when(io.mem_init_done) { initialized := true.B }
   val initStatusReported = RegInit(false.B)
-  // MR-2 retains all allocator/reclaim/visibility control here and moves only
-  // the logical availability/generation array state into the named child.
+  // MR-2 retains allocator selection, descriptor ownership, reclaim ordering,
+  // and publication control here.  The child owns only availability/generation
+  // words and exposes them through registered keyed reads and typed update
+  // acknowledgements: the parent never consumes a whole-array view.
   val availabilityStorage = Module(new RouteAR5AvailabilityArrayBoundary(p))
-  availabilityStorage.io.allocation_commit.valid := false.B
-  availabilityStorage.io.allocation_commit.bits := 0.U
-  availabilityStorage.io.reclaim_invalidation_commit.valid := false.B
-  availabilityStorage.io.reclaim_invalidation_commit.bits := 0.U
-  val allocated = availabilityStorage.io.allocated_view
-  val generations = availabilityStorage.io.generation_view
+  availabilityStorage.io.availability_lookup_req.valid := false.B
+  availabilityStorage.io.availability_lookup_req.bits := 0.U
+  availabilityStorage.io.availability_lookup_rsp.ready := true.B
+  availabilityStorage.io.allocation_update.valid := false.B
+  availabilityStorage.io.allocation_update.bits := 0.U
+  availabilityStorage.io.reclaim_generation_update.valid := false.B
+  availabilityStorage.io.reclaim_generation_update.bits := 0.U
   // Verification-only assertion shadow: it is not a descriptor cache, a
   // second allocator, or an additional authority owner. It records that a
   // previously allocated lane has crossed the one accepted durable invalidate
@@ -3463,6 +3538,9 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val visibilityAckSlot = Reg(UInt(streamIndexWidth.W))
   val allocationRspValid = RegInit(false.B)
   val allocationRsp = Reg(new PageAllocationResponse(p))
+  val allocationUpdatePending = RegInit(false.B)
+  val pendingAllocation = Reg(new PageAllocationRequest(p))
+  val pendingAllocationIndex = Reg(UInt(allocatorIndexWidth.W))
   val reclaimPermitted = RegInit(false.B)
   val reclaimState = RegInit(ReclaimIdle)
   val reclaimLine = Reg(UInt(descriptorLineWidth.W))
@@ -3481,6 +3559,16 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val descriptorValidRecords = Reg(Vec(p.r5AllocatorEntries, UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)))
   val descriptorGrantPending = RegInit(false.B)
   val descriptorGrant = Reg(new DescriptorLocationGrant(p))
+  // One bit per descriptor line is parent-side control state used solely for
+  // reclaim scheduling and drain.  It is not an availability/generation
+  // replica: free selection remains a keyed scan of the child array.
+  val allocatedLine = RegInit(VecInit(Seq.fill(descriptorLines)(false.B)))
+  val scanIndex = RegInit(0.U(allocatorIndexWidth.W))
+  val scanOutstanding = RegInit(false.B)
+  val scanComplete = RegInit(false.B)
+  val freeHintValid = RegInit(false.B)
+  val freeHintIndex = Reg(UInt(allocatorIndexWidth.W))
+  val freeHintGeneration = Reg(UInt(RouteAAnchorWidths.PageGenerationWidth.W))
   private def allocatorIndex(pageId: UInt): UInt = pageId(allocatorIndexWidth - 1, 0)
   private val AppendIdle = 0.U(2.W)
   private val AppendRequest = 1.U(2.W)
@@ -3492,11 +3580,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val appendIdentity = Reg(new TransactionIdentity)
   val appendSequence = RegInit(0.U((RouteAAnchorWidths.RequestIdWidth + RouteAAnchorWidths.IncarnationWidth).W))
 
-  val lineAllocated = VecInit((0 until descriptorLines).map { line =>
-    (0 until 4).map(lane => allocated(line * 4 + lane)).reduce(_ || _)
-  })
-  val anyAllocatedLine = lineAllocated.asUInt.orR
-  val nextAllocatedLine = PriorityEncoder(lineAllocated)
+  val anyAllocatedLine = allocatedLine.asUInt.orR
+  val nextAllocatedLine = PriorityEncoder(allocatedLine)
 
   private def reclaimIdentity: TransactionIdentity = {
     val identity = Wire(new TransactionIdentity)
@@ -3507,7 +3592,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   private def descriptorLaneImage(lane: Int): UInt = {
     val pageIndexWide = reclaimLine * 4.U + lane.U
     val pageIndex = pageIndexWide(log2Ceil(p.r5AllocatorEntries) - 1, 0)
-    val nextGeneration = Mux(allocated(pageIndex), generations(pageIndex) + 1.U, generations(pageIndex))
+    val oldGeneration = descriptorEntryImage(pageIndex)(51, 44)
+    val nextGeneration = Mux(descriptorReadable(pageIndex), oldGeneration + 1.U, oldGeneration)
     // [1:0]=FREE; [51:44]=page generation; all other descriptor fields zero.
     Cat(0.U(76.W), nextGeneration, 0.U(44.W))
   }
@@ -3525,9 +3611,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val descriptorRequest = io.descriptor_location_request_in.bits
   val descriptorRequestIndex = allocatorIndex(descriptorRequest.page_ref.page_id)
   val descriptorPageInRange = descriptorRequest.page_ref.page_id < p.r5AllocatorEntries.U
-  val descriptorRequestMatches = descriptorPageInRange && allocated(descriptorRequestIndex) &&
-    descriptorReadable(descriptorRequestIndex) &&
-    generations(descriptorRequestIndex) === descriptorRequest.page_ref.generation &&
+  val descriptorRequestMatches = descriptorPageInRange && descriptorReadable(descriptorRequestIndex) &&
+    descriptorEntryImage(descriptorRequestIndex)(51, 44) === descriptorRequest.page_ref.generation &&
     descriptorValidRecords(descriptorRequestIndex) === descriptorRequest.valid_records &&
     descriptorRequest.valid_records =/= 0.U && descriptorRequest.valid_records <= 64.U
   io.descriptor_location_request_in.ready := initialized && !io.drain_collection_enable && !reclaimPermitted &&
@@ -3556,9 +3641,13 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     releasePending(releaseIndex) := false.B
   }
 
-  io.reclaim_permit_in.ready := initialized && !reclaimPermitted && reclaimLocalSafe
+  io.reclaim_permit_in.ready := initialized && !reclaimPermitted && reclaimLocalSafe && !allocationUpdatePending
   when(io.reclaim_permit_in.fire) {
     reclaimPermitted := true.B
+    scanIndex := 0.U
+    scanOutstanding := false.B
+    scanComplete := false.B
+    freeHintValid := false.B
   }
   when(reclaimPermitted && reclaimState === ReclaimIdle && anyAllocatedLine && !reclaimFaulted) {
     reclaimLine := nextAllocatedLine
@@ -3616,21 +3705,9 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     when(reclaimDelivery.r1_response.status === p.coreMemoryFaultStatusCode.U) {
       reclaimFaulted := true.B
     }.otherwise {
-      availabilityStorage.io.reclaim_invalidation_commit.valid := true.B
-      availabilityStorage.io.reclaim_invalidation_commit.bits := reclaimLine
-      for (line <- 0 until descriptorLines; lane <- 0 until 4) {
-        when(reclaimLine === line.U && allocated(line * 4 + lane)) {
-          // Capture the live generation before this same terminal advances it.
-          // The resulting carrier is an observation of this accepted durable
-          // transition, never an independent free command.
-          releaseGeneration(line * 4 + lane) := generations(line * 4 + lane)
-          releasePending(line * 4 + lane) := true.B
-          durableInvalidation(line * 4 + lane) := true.B
-          descriptorReadable(line * 4 + lane) := false.B
-        }
-      }
-      reclaimSequence := reclaimSequence + 1.U
-      reclaimState := ReclaimIdle
+      availabilityStorage.io.reclaim_generation_update.valid := true.B
+      availabilityStorage.io.reclaim_generation_update.bits := reclaimLine
+      reclaimState := ReclaimAwaitAvailabilityAck
     }
   }
   // A fault intentionally leaves the matching line allocated and blocks final
@@ -3641,13 +3718,35 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     // the matching terminal R1 descriptor response.
     assert(reclaimDeliveryMatches)
     assert(reclaimPermitted)
-    assert(lineAllocated(reclaimLine))
+    assert(allocatedLine(reclaimLine))
+  }
+
+  when(availabilityStorage.io.reclaim_generation_update_ack.valid) {
+    val ack = availabilityStorage.io.reclaim_generation_update_ack.bits
+    assert(reclaimState === ReclaimAwaitAvailabilityAck,
+      "R5 reclaim availability acknowledgement requires one matching pending reclaim")
+    assert(ack.descriptor_line === reclaimLine,
+      "R5 reclaim availability acknowledgement must name the active descriptor line")
+    for (line <- 0 until descriptorLines; lane <- 0 until 4) {
+      val page = line * 4 + lane
+      when(ack.descriptor_line === line.U && ack.allocated_mask(lane)) {
+        // Capture exactly the old generation returned by the child commit.
+        releaseGeneration(page) := ack.old_generations(lane)
+        releasePending(page) := true.B
+        durableInvalidation(page) := true.B
+        descriptorReadable(page) := false.B
+      }
+    }
+    allocatedLine(ack.descriptor_line) := false.B
+    reclaimSequence := reclaimSequence + 1.U
+    reclaimState := ReclaimIdle
+    scanIndex := 0.U
+    scanOutstanding := false.B
+    scanComplete := false.B
+    freeHintValid := false.B
   }
   for (page <- 0 until p.r5AllocatorEntries) {
-    when(!allocated(page) && allocationSeen(page)) {
-      assert(durableInvalidation(page))
-    }
-    when(allocated(page)) {
+    when(descriptorReadable(page)) {
       assert(!durableInvalidation(page))
     }
   }
@@ -3662,43 +3761,89 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val allocStreamWide = streamIndexWide(alloc.layer, alloc.kv_head)
   val allocStream = allocStreamWide(streamIndexWidth - 1, 0)
   val allocValidRecords = alloc.valid_records =/= 0.U && alloc.valid_records <= 64.U
-  val freeExists = !allocated.reduce(_ && _)
-  val freeIndex = PriorityEncoder(VecInit(allocated.map(! _)))
-  io.page_allocation_req_in.ready := initialized && !io.drain_collection_enable && !reclaimPermitted && !allocationRspValid && allocValidRecords &&
-    allocStreamWide < streamSlots.U && !buildActive(allocStream) && freeExists
+  // The parent chooses the first free page only from registered keyed lookup
+  // results.  This deliberately serial scan is a functional wrapper contract,
+  // not a physical SRAM port/timing choice.
+  val scanAllowed = initialized && !io.drain_collection_enable && !reclaimPermitted &&
+    !allocationUpdatePending && !allocationRspValid && !reclaimActive &&
+    !scanOutstanding && !scanComplete && !io.reclaim_permit_in.valid
+  availabilityStorage.io.availability_lookup_req.valid := scanAllowed
+  availabilityStorage.io.availability_lookup_req.bits := scanIndex
+  when(availabilityStorage.io.availability_lookup_req.fire) {
+    scanOutstanding := true.B
+  }
+  when(availabilityStorage.io.availability_lookup_rsp.fire && !io.reclaim_permit_in.fire) {
+    val lookup = availabilityStorage.io.availability_lookup_rsp.bits
+    assert(scanOutstanding, "R5 availability lookup response requires a pending scan request")
+    assert(lookup.page_id === scanIndex,
+      "R5 availability lookup response must preserve the scanned page identity")
+    scanOutstanding := false.B
+    when(!lookup.allocated && !freeHintValid) {
+      freeHintValid := true.B
+      freeHintIndex := lookup.page_id
+      freeHintGeneration := lookup.generation
+    }
+    when(scanIndex === (p.r5AllocatorEntries - 1).U) {
+      scanComplete := true.B
+    }.otherwise {
+      scanIndex := scanIndex + 1.U
+    }
+  }
+  io.page_allocation_req_in.ready := initialized && !io.drain_collection_enable && !reclaimPermitted &&
+    !allocationRspValid && !allocationUpdatePending && allocValidRecords && scanComplete && freeHintValid &&
+    allocStreamWide < streamSlots.U && !buildActive(allocStream)
   when(io.page_allocation_req_in.fire) {
-    availabilityStorage.io.allocation_commit.valid := true.B
-    availabilityStorage.io.allocation_commit.bits := freeIndex
-    allocationSeen(freeIndex) := true.B
-    durableInvalidation(freeIndex) := false.B
-    buildActive(allocStream) := true.B
-    buildFault(allocStream) := false.B
-    buildPayloadDurable(allocStream) := false.B
-    buildPrerequisiteReported(allocStream) := false.B
-    buildLayer(allocStream) := alloc.layer
-    buildHead(allocStream) := alloc.kv_head
-    buildValidRecords(allocStream) := alloc.valid_records
-    buildPageId(allocStream) := freeIndex
-    buildGeneration(allocStream) := generations(freeIndex)
-    buildTag(allocStream) := alloc.transaction_group_tag
-    buildNewDurable(allocStream) := false.B
-    buildTailDurable(allocStream) := false.B
-    buildNeedsTail(allocStream) := visibleTailPresent(allocStream)
-    // ALLOCATED_UNPUBLISHED, with no successor, as the private functional
-    // descriptor image. Visibility remains separately guarded by R3 commit.
-    descriptorEntryImage(freeIndex) := Cat(
-      0.U(76.W), generations(freeIndex), 0.U(8.W), Fill(18, 1.U(1.W)),
-      alloc.valid_records, alloc.kv_head, alloc.layer, 1.U(2.W),
+    availabilityStorage.io.allocation_update.valid := true.B
+    availabilityStorage.io.allocation_update.bits := freeHintIndex
+    pendingAllocation := alloc
+    pendingAllocationIndex := freeHintIndex
+    allocationUpdatePending := true.B
+    scanIndex := 0.U
+    scanComplete := false.B
+    freeHintValid := false.B
+  }
+  when(availabilityStorage.io.allocation_update_ack.valid) {
+    val ack = availabilityStorage.io.allocation_update_ack.bits
+    val ackIndex = allocatorIndex(ack.page_id)
+    val ackLine = (ackIndex >> 2)(descriptorLineWidth - 1, 0)
+    val pendingStreamWide = streamIndexWide(pendingAllocation.layer, pendingAllocation.kv_head)
+    val pendingStream = pendingStreamWide(streamIndexWidth - 1, 0)
+    assert(allocationUpdatePending,
+      "R5 allocation acknowledgement requires an accepted parent allocation request")
+    assert(ack.page_id === pendingAllocationIndex,
+      "R5 allocation acknowledgement must name the parent-selected free page")
+    allocationSeen(ackIndex) := true.B
+    durableInvalidation(ackIndex) := false.B
+    allocatedLine(ackLine) := true.B
+    buildActive(pendingStream) := true.B
+    buildFault(pendingStream) := false.B
+    buildPayloadDurable(pendingStream) := false.B
+    buildPrerequisiteReported(pendingStream) := false.B
+    buildLayer(pendingStream) := pendingAllocation.layer
+    buildHead(pendingStream) := pendingAllocation.kv_head
+    buildValidRecords(pendingStream) := pendingAllocation.valid_records
+    buildPageId(pendingStream) := ack.page_id
+    buildGeneration(pendingStream) := ack.generation
+    buildTag(pendingStream) := pendingAllocation.transaction_group_tag
+    buildNewDurable(pendingStream) := false.B
+    buildTailDurable(pendingStream) := false.B
+    buildNeedsTail(pendingStream) := visibleTailPresent(pendingStream)
+    // ALLOCATED_UNPUBLISHED private descriptor image.  Publication remains
+    // guarded by the existing R3 visibility acknowledgement.
+    descriptorEntryImage(ackIndex) := Cat(
+      0.U(76.W), ack.generation, 0.U(8.W), Fill(18, 1.U(1.W)),
+      pendingAllocation.valid_records, pendingAllocation.kv_head, pendingAllocation.layer, 1.U(2.W),
     )
-    descriptorReadable(freeIndex) := false.B
-    descriptorValidRecords(freeIndex) := alloc.valid_records
+    descriptorReadable(ackIndex) := false.B
+    descriptorValidRecords(ackIndex) := pendingAllocation.valid_records
     allocationRspValid := true.B
-    allocationRsp.layer := alloc.layer
-    allocationRsp.kv_head := alloc.kv_head
-    allocationRsp.page_ref.page_id := freeIndex
-    allocationRsp.page_ref.generation := generations(freeIndex)
-    allocationRsp.requires_tail_link := visibleTailPresent(allocStream)
-    allocationRsp.transaction_group_tag := alloc.transaction_group_tag
+    allocationRsp.layer := pendingAllocation.layer
+    allocationRsp.kv_head := pendingAllocation.kv_head
+    allocationRsp.page_ref.page_id := ack.page_id
+    allocationRsp.page_ref.generation := ack.generation
+    allocationRsp.requires_tail_link := visibleTailPresent(pendingStream)
+    allocationRsp.transaction_group_tag := pendingAllocation.transaction_group_tag
+    allocationUpdatePending := false.B
   }
 
   val payloadDurable = io.p3_payload_durable_in.bits
@@ -3882,10 +4027,10 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   when(io.metadata_publish_visibility_in.fire) {
     assert(visibilityAnyMatch)
   }
-  val allocatorEmpty = !allocated.asUInt.orR
+  val allocatorEmpty = !allocatedLine.asUInt.orR
   val buildsEmpty = !buildActive.asUInt.orR
   val locallyDrained = allocatorEmpty && buildsEmpty && !allocationRspValid && !visibilityAckPending && !descriptorGrantPending &&
-    !reclaimActive && (!reclaimPermitted || io.reclaim_complete)
+    !allocationUpdatePending && !reclaimActive && (!reclaimPermitted || io.reclaim_complete)
   val initStatusPending = initialized && !initStatusReported
   io.component_status_out.valid := initStatusPending ||
     (initialized && initStatusReported && io.drain_collection_enable && locallyDrained)

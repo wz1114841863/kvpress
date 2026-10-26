@@ -89,8 +89,18 @@ final class RouteAResetEpochIntegrationSpec extends AnyFunSpec with ChiselSim {
   private def allocateAndPublishR5(dut: RouteAReclaimHarness, tag: Int): Unit = {
     val allocation = dut.io.page_allocation_req_in.bits
     allocation.layer.poke(0.U); allocation.kv_head.poke(0.U); allocation.valid_records.poke(1.U); allocation.transaction_group_tag.poke(tag.U)
-    dut.io.page_allocation_req_in.valid.poke(true.B); dut.io.page_allocation_req_in.ready.expect(true.B)
+    dut.io.page_allocation_req_in.valid.poke(true.B)
+    var waitCycles = 0
+    while (!dut.io.page_allocation_req_in.ready.peek().litToBoolean && waitCycles < 32) {
+      dut.clock.step(); waitCycles += 1
+    }
+    dut.io.page_allocation_req_in.ready.expect(true.B)
     dut.clock.step(); dut.io.page_allocation_req_in.valid.poke(false.B)
+    waitCycles = 0
+    while (!dut.io.page_allocation_rsp.valid.peek().litToBoolean && waitCycles < 8) {
+      dut.clock.step(); waitCycles += 1
+    }
+    dut.io.page_allocation_rsp.valid.expect(true.B); dut.clock.step()
     val terminal = dut.io.descriptor_maintenance_terminal_in.bits
     terminal.kind.poke(RouteADescriptorOperationKind.NewPage.U); terminal.page_ref.page_id.poke(0.U); terminal.page_ref.generation.poke(0.U)
     terminal.transaction_group_tag.poke(tag.U); terminal.status.poke(p.coreMemoryOkStatusCode.U); terminal.r1_descriptor_durable.poke(true.B)

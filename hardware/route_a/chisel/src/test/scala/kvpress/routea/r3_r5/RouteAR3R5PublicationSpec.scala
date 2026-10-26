@@ -357,7 +357,17 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
   private def allocate(dut: RouteAReclaimHarness, tag: Int): Unit = {
     val alloc = dut.io.page_allocation_req_in.bits
     alloc.layer.poke(0.U); alloc.kv_head.poke(0.U); alloc.valid_records.poke(1.U); alloc.transaction_group_tag.poke(tag.U)
-    dut.io.page_allocation_req_in.valid.poke(true.B); dut.io.page_allocation_req_in.ready.expect(true.B); dut.clock.step(); dut.io.page_allocation_req_in.valid.poke(false.B)
+    dut.io.page_allocation_req_in.valid.poke(true.B)
+    var waitCycles = 0
+    while (!dut.io.page_allocation_req_in.ready.peek().litToBoolean && waitCycles < 32) {
+      dut.clock.step(); waitCycles += 1
+    }
+    dut.io.page_allocation_req_in.ready.expect(true.B); dut.clock.step(); dut.io.page_allocation_req_in.valid.poke(false.B)
+    waitCycles = 0
+    while (!dut.io.page_allocation_rsp.valid.peek().litToBoolean && waitCycles < 8) {
+      dut.clock.step(); waitCycles += 1
+    }
+    dut.io.page_allocation_rsp.valid.expect(true.B); dut.clock.step()
   }
 
   private def descriptorTerminal(dut: RouteAReclaimHarness, page: Int, tag: Int, kind: Int, fault: Boolean = false): Unit = {

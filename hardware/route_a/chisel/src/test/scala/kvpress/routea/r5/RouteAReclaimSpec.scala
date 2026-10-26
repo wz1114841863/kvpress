@@ -103,8 +103,19 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
   private def publishOne(dut: RouteAReclaimHarness, head: Int = 0, tag: Int = 1, page: Int = 0): Unit = {
     val alloc = dut.io.page_allocation_req_in.bits
     alloc.layer.poke(0.U); alloc.kv_head.poke(head.U); alloc.valid_records.poke(1.U); alloc.transaction_group_tag.poke(tag.U)
-    dut.io.page_allocation_req_in.valid.poke(true.B); dut.io.page_allocation_req_in.ready.expect(true.B)
+    dut.io.page_allocation_req_in.valid.poke(true.B)
+    var waitCycles = 0
+    while (!dut.io.page_allocation_req_in.ready.peek().litToBoolean && waitCycles < 32) {
+      dut.clock.step(); waitCycles += 1
+    }
+    dut.io.page_allocation_req_in.ready.expect(true.B)
     dut.clock.step(); dut.io.page_allocation_req_in.valid.poke(false.B)
+    waitCycles = 0
+    while (!dut.io.page_allocation_rsp.valid.peek().litToBoolean && waitCycles < 8) {
+      dut.clock.step(); waitCycles += 1
+    }
+    dut.io.page_allocation_rsp.valid.expect(true.B)
+    dut.clock.step()
     val terminal = dut.io.descriptor_maintenance_terminal_in.bits
     terminal.kind.poke(RouteADescriptorOperationKind.NewPage.U); terminal.page_ref.page_id.poke(page.U); terminal.page_ref.generation.poke(0.U)
     terminal.transaction_group_tag.poke(tag.U); terminal.status.poke(p.coreMemoryOkStatusCode.U); terminal.r1_descriptor_durable.poke(true.B)
@@ -138,6 +149,9 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
     rsp.r1_response.status.poke((if (fault) p.coreMemoryFaultStatusCode else p.coreMemoryOkStatusCode).U); rsp.r1_response.data.poke(0.U)
     dut.io.reclaim_delivery_in.valid.poke(true.B); dut.io.reclaim_delivery_in.ready.expect(true.B)
     dut.clock.step(); dut.io.reclaim_delivery_in.valid.poke(false.B)
+    // A successful terminal launches the child availability update; the
+    // parent observes its typed acknowledgement on the following cycle.
+    dut.clock.step()
   }
 
   it("writes a complete 64-B invalidation line and frees only after its terminal") {
