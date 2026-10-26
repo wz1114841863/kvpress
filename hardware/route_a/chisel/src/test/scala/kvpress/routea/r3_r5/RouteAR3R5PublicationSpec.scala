@@ -367,7 +367,9 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     while (!dut.io.page_allocation_rsp.valid.peek().litToBoolean && waitCycles < 8) {
       dut.clock.step(); waitCycles += 1
     }
-    dut.io.page_allocation_rsp.valid.expect(true.B); dut.clock.step()
+    // Leave the response asserted for the caller's original PageRef/tail-link
+    // assertions; its ready is high, so an extra helper clock would consume it.
+    dut.io.page_allocation_rsp.valid.expect(true.B)
   }
 
   private def descriptorTerminal(dut: RouteAReclaimHarness, page: Int, tag: Int, kind: Int, fault: Boolean = false): Unit = {
