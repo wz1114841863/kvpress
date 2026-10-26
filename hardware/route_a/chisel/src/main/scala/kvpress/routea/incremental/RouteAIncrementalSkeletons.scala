@@ -2005,12 +2005,11 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   val prepareLookupHeadIndex = Reg(UInt(9.W))
   val prepareLookupStaticOk = RegInit(false.B)
   val prepareLookupSlot = Reg(UInt(RouteAAnchorWidths.M2SpanSlotWidth.W))
-  // A pending parent transaction accepts its one registered child response.
-  // The child cannot assert response-valid before its request fire, so this
-  // needs no second issued-state gate (which would create a needless
-  // request/response timing dependency).
-  val headLookupResponseAccept = prepareLookupPending
-  entryStorage.io.head_lookup_rsp.ready := headLookupResponseAccept
+  // The parent permits exactly one outstanding lookup and has no downstream
+  // response consumer to backpressure.  Therefore the child response is
+  // always accepted; the fire-side assertion below proves it belongs to the
+  // pending parent transaction rather than silently dropping an orphan.
+  entryStorage.io.head_lookup_rsp.ready := true.B
 
   val memberPending = RegInit(false.B)
   val memberRequest = Reg(new M2GroupMemberRequest(p))
@@ -2101,7 +2100,7 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   headLookupReqValid := prepareLookupPending && !entryStorage.io.head_lookup_rsp.valid
   headLookupReqBits := prepareLookupHeadIndex
   when(entryStorage.io.head_lookup_rsp.fire) {
-    assert(headLookupResponseAccept)
+    assert(prepareLookupPending)
     assert(entryStorage.io.head_lookup_rsp.bits.head_index === prepareLookupHeadIndex)
     val lookupLayer = prepareLookupLayer
     groupLookupResolved(lookupLayer) := true.B
