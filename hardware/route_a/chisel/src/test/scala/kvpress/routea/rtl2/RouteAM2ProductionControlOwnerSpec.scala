@@ -312,22 +312,24 @@ final class RouteAM2EntryArrayBoundarySpec extends AnyFunSpec with ChiselSim {
     dut.io.head_lookup_req.bits.poke(0.U)
     dut.io.head_lookup_rsp.ready.poke(false.B)
     dut.io.publication_commit.valid.poke(false.B)
-    dut.io.publication_commit.bits.asUInt.poke(0.U)
     dut.io.handoff_release.valid.poke(false.B)
-    dut.io.handoff_release.bits.asUInt.poke(0.U)
+    // ChiselSim does not permit aggregate `asUInt` construction while a test
+    // drives a live DUT.  Initialise each incoming update through the same
+    // field-level producer helper used by the test transactions.
+    driveUpdate(dut, publication = true, valid = false)
+    driveUpdate(dut, publication = false, valid = false)
   }
 
   private def driveUpdate(dut: RouteAM2EntryArrayBoundary, publication: Boolean, valid: Boolean): Unit = {
     val update = if (publication) dut.io.publication_commit.bits else dut.io.handoff_release.bits
     update.head_index.poke(3.U)
-    update.head_entry.asUInt.poke(0.U)
     update.head_entry.valid.poke(valid.B)
     update.head_entry.tail_slot.poke(5.U)
     update.head_entry.tail_generation.poke(1.U)
     update.head_entry.append_sequence.poke(9.U)
     update.head_entry.valid_records.poke(1.U)
+    update.head_entry.reserved.poke(0.U)
     update.span_index.poke(5.U)
-    update.span_entry.asUInt.poke(0.U)
     update.span_entry.valid.poke(valid.B)
     update.span_entry.generation.poke(1.U)
     update.span_entry.layer.poke(0.U)
@@ -337,6 +339,7 @@ final class RouteAM2EntryArrayBoundarySpec extends AnyFunSpec with ChiselSim {
     update.span_entry.credit_pool.poke(0.U)
     update.span_entry.append_sequence.poke(9.U)
     update.span_entry.valid_records.poke(1.U)
+    update.span_entry.reserved.poke(0.U)
   }
 
   it("holds an explicit lookup response and acknowledges exact independent commits") {
