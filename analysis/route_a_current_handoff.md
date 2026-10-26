@@ -606,6 +606,27 @@ implementation sub-batch is R5 parent-side availability/generation access;
 each later wrapper batch still requires a successor source/port freeze, not
 synthesis itself.
 
+### R5 parent-side availability/generation adapter (2026-10-26)
+
+Successor `3aab1ce` replaces PageManager's direct whole-array availability and
+generation views with `r5_availability_access_v1`: a registered keyed lookup,
+an allocation-update ack, and a typed four-lane reclaim-generation-update ack.
+PageManager still selects the free key with a bounded scan, forms/validates
+PageRefs, owns descriptor visibility and reclaim sequencing, and releases an
+old PageRef only after the matching child reclaim ack. The child remains unable
+to create allocation, reclaim, release, publication, authority, or terminal
+facts.
+
+Remote directed evidence is `15/15`: boundary/reclaim `6/6` at
+`r5_parent_adapter_directed_f4b35ca_rerun.log`, then R3/R5 publication/reset
+`9/9` at `r5_parent_adapter_pubfix_3aab1ce.log`. This is a functional wrapper
+adapter result only. The availability interior plus parent scan/ack peripheral
+remain Route-A incremental `unestimated_not_zero`; no macro, port count,
+latency, descriptor controller, DC, CACTI, or PPA result follows. A
+current-source selected cross-stage non-regression is required before the
+successor source/port freeze; only P3/S2 wrapper RTL remains unimplemented in
+the approved sequence.
+
 ## New-conversation prompt seed
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

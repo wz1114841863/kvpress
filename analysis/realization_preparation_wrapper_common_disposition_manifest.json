@@ -67,7 +67,16 @@
       "reset_clock": "candidate_top_reset_and_existing_mem_init_gate; no CDC or latency selected",
       "cost_ownership": "route_a_incremental_unestimated_not_zero",
       "descriptor_treatment": "external_memory_service_not_local_array",
-      "physical_wrapper_mapping_pending": true
+      "physical_wrapper_mapping_pending": true,
+      "implementation_status": "parent_side_lookup_update_ack_adapter_functionally_verified",
+      "verification": {
+        "source_commit": "3aab1ce17304490a4ac0605a3a455be4fb907a26",
+        "remote_directed": [
+          "RouteAR5AvailabilityArrayBoundarySpec 1/1 and RouteAReclaimSpec 5/5, EXIT_STATUS=0, r5_parent_adapter_directed_f4b35ca_rerun.log",
+          "RouteAR3R5PublicationSpec 5/5 and RouteAResetEpochIntegrationSpec 4/4, EXIT_STATUS=0, r5_parent_adapter_pubfix_3aab1ce.log"
+        ],
+        "remaining": "current-source selected cross-stage non-regression required before successor source/port freeze"
+      }
     }
   ],
   "common_equivalence": [

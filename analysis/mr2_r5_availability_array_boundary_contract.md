@@ -1,7 +1,7 @@
 # MR-2-R5 — availability/generation array-only boundary
 
-**Status:** `functional_boundary_passed` (2026-10-25); independent of MR-1B
-and of the separately required M2 production replacement.
+**Status:** `parent_access_adapter_functionally_verified` (2026-10-26);
+independent of MR-1B and of the separately required M2 production replacement.
 
 ## Scope
 
@@ -11,21 +11,26 @@ of page-allocation selection, PageRef formation, descriptor visibility,
 append/reclaim sequencing, durable invalidate-before-free, allocator-release
 observation, drain, reset/init, and all external descriptor-service traffic.
 
-The child receives no ready/valid protocol and cannot create an allocation,
-descriptor request, visibility fact, reclaim permit, release, terminal, or
-retirement fact.  Its two inputs are observations of already accepted parent
-events:
+The child cannot create an allocation, descriptor request, visibility fact,
+reclaim permit, release, terminal, or retirement fact. It owns only the
+availability/generation words behind `r5_availability_access_v1`; the parent
+selects every key and accepts each typed result. It exposes one registered
+keyed lookup, an allocation-update acknowledgement, and a multi-lane reclaim
+generation-update acknowledgement:
 
-| Parent accepted event | Array-only effect | Control retained in PageManager |
+| Parent event / access | Array-only effect | Control retained in PageManager |
 | --- | --- | --- |
-| `page_allocation_req_in.fire` | mark the parent-selected free page allocated; retain its generation | free search, request validation, PageRef/allocation response, build state and descriptor image |
-| matching successful `reclaim_delivery_in.fire` | for each allocated lane in the selected descriptor line, clear availability and increment generation | R6 permit, exact R2/R1 terminal match, old-generation release observation, descriptor unreadability, fault/drain rules |
+| parent keyed `availability_lookup_req.fire` | return the exact registered `{page_id, allocated, generation}` response and hold it under ready-low | scan progression and first-free selection; no macro-side allocator |
+| accepted `page_allocation_req_in.fire` with the parent scan's free key | mark that selected page allocated and return its generation in `allocation_update_ack` | request validation, free scan, PageRef/allocation response, build state and descriptor image; outward response waits for ack |
+| matching successful `reclaim_delivery_in.fire` | receive the parent-selected line update, then return every lane's old generation and allocated mask while clearing/incrementing allocated lanes | R6 permit, exact R2/R1 terminal match, old-PageRef release observation, descriptor unreadability, fault/drain rules; reuse waits for ack |
 
-Reads of the child vectors remain PageManager-local control observations for
-free search, PageRef/generation validation, descriptor-line invalidation data,
-descriptor location checks, and drain assertions.  The boundary is a logical
-functional reference split only: it selects no SRAM macro, banking, physical
-ports, latency, controller, clock, timing, area, power, throughput, or PPA.
+`RouteAPageManager` has no whole-array `allocated_view` or `generation_view`.
+It retains only descriptor-line reclaim scheduling state and the existing
+external descriptor-service proxy; free search is a bounded parent-side keyed
+scan, descriptor validation uses the existing descriptor image, and release
+facts come only from the typed reclaim ack. The boundary selects no SRAM
+macro, banking, physical port count, latency, controller, clock, timing, area,
+power, throughput, or PPA.
 
 The functional `descriptorEntryImage` remains in PageManager as the already
 declared external descriptor-service proxy.  It is explicitly not an R5 local
@@ -81,3 +86,13 @@ admission, pruning, GQA, or scheduler semantics.
   Together these are the selected `10` suites / `40` tests covering Full-KV,
   Route-A packed/hot/direct-pending, S2/GQA completion, M2 owner/bridge and
   fixture separation, and the dual-DUT structural guard.
+- Parent-side access-adapter evidence on successor `3aab1ce` passed `4`
+  suites / `15` tests in two remote invocations: direct keyed
+  availability/ack contract plus reclaim (`1/1` and `5/5`) at
+  `/home/yaz80/wz_project/chisel_projects/kvpress/logs/r5_parent_adapter_directed_f4b35ca_rerun.log`,
+  then R3/R5 publication and reset (`5/5` and `4/4`) at
+  `/home/yaz80/wz_project/chisel_projects/kvpress/logs/r5_parent_adapter_pubfix_3aab1ce.log`.
+  These verify response holding, ack-derived PageRef/reclaim generations,
+  publication-before-visibility, fault fail-closed behavior, and reset
+  isolation. A later current-source cross-stage non-regression remains
+  required before any successor source/port freeze.

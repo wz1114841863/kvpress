@@ -4,8 +4,9 @@
 the first decision package after the conditional synthesis-top selection.  It
 turns the four MR-2 logical array boundaries and the frozen dual-DUT cut into
 an implementable wrapper plan.  The M2 parent-side adapter RTL has passed its
-remote directed and 10-suite cross-stage regression on successor `3f3a489`;
-R5, P3, and S2 wrapper RTL remains pending. No macro, port count, clock,
+remote directed and 10-suite cross-stage regression on successor `3f3a489`.
+The R5 parent-side adapter is functionally verified on the current bounded
+contour; P3 and S2 wrapper RTL remain pending. No macro, port count, clock,
 library, controller, numeric unit, DC, CACTI, PPA, area, energy, or performance
 result is selected or claimed.
 
@@ -43,8 +44,10 @@ not choose a number of cycles, clock, frequency, pipeline, or CDC scheme.
 
 ### Required implementation consequence
 
-The present M2 and R5 functional children expose whole-array views to their
-parents.  A physical-array replacement cannot retain that form as a black-box
+The earlier M2 and R5 functional children exposed whole-array views to their
+parents. The implemented M2 and R5 parent adapters replace those views with
+typed access carriers; P3/S2 remain to be implemented. A physical-array
+replacement cannot retain a whole-array form as a black-box
 port without charging a wide snapshot/mux network or changing control
 ownership.  The proposed `m2_entry_access_v1` and `r5_availability_access_v1`
 therefore require a later, explicit parent-side lookup/update adapter.  That
