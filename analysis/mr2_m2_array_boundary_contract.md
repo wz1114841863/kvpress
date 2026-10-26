@@ -1,10 +1,10 @@
 # MR-2-M2 — bounded entry-array-only boundary
 
-**Status:** `parent_access_adapter_implementation_in_progress`; follows bounded
+**Status:** `parent_access_adapter_functionally_verified`; follows bounded
 functional M2 production entry-data integration and does not select a physical
 macro.  The prior logical-boundary evidence remains valid; the present
 successor replaces the parent whole-array functional views with explicit
-logical accesses and is not yet a macro/physical conclusion.
+logical accesses and is not a macro/physical conclusion.
 
 ## Scope
 
@@ -76,9 +76,21 @@ child register's ordinary destructive initialization.
   successor source, including
   `tests/test_mr2_m2_array_boundary.py`, plus all MBR/SRP manifest validators
   and `git diff --check`.
-- The directed Chisel/Verilator adapter and production-owner suite is running
-  on the successor source.  No adapter regression result is claimed until its
-  completed test report and exit status are recorded.
+- Remote direct adapter evidence on successor `3f3a4895b9a35ef6a69013e934c907166fc5ab3c`:
+  `RouteAM2ProductionControlOwnerSpec` passed `5/5` (owner lookup/member,
+  fault/abort, publication and reset), recorded at
+  `/home/yaz80/wz_project/chisel_projects/kvpress/logs/m2_owner_a61b2ec.log`;
+  `RouteAM2EntryArrayBoundarySpec` passed `1/1` (registered response holding,
+  exact independent commit/release acknowledgements, and released-word
+  readback), recorded at
+  `/home/yaz80/wz_project/chisel_projects/kvpress/logs/m2_boundary_3f3a489.log`.
+- Remote successor cross-stage non-regression passed `10` suites / `40` tests,
+  `EXIT_STATUS=0`, recorded at
+  `/home/yaz80/wz_project/chisel_projects/kvpress/logs/m2_adapter_p1_full_nonreg_20261026.log`.
+  It reran the Full-KV contour, Route-A packed/hot/direct-pending paths,
+  four-consumer completion, M2 fixture and production owner/bridge paths, and
+  the dual-DUT structural guard on the adapter successor rather than relying
+  on the earlier logical-boundary log.
 - Remote targeted production evidence: 3 suites / 11 tests passed, `EXIT=0`,
   at
   `/home/yaz80/wz_project/chisel_projects/kvpress/logs/mr2_m2_array_boundary_p0_20261023.log`.

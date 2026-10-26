@@ -24,7 +24,15 @@
       "reset_clock": "candidate_top_reset_only; no CDC or latency selected",
       "cost_ownership": "route_a_incremental_unestimated_not_zero",
       "physical_wrapper_mapping_pending": true,
-      "implementation_status": "parent_side_lookup_commit_ack_adapter_pending_remote_directed_regression"
+      "implementation_status": "parent_side_lookup_commit_ack_adapter_functionally_verified",
+      "verification": {
+        "source_commit": "3f3a4895b9a35ef6a69013e934c907166fc5ab3c",
+        "remote_directed": [
+          "RouteAM2ProductionControlOwnerSpec 5/5, EXIT_STATUS=0, m2_owner_a61b2ec.log",
+          "RouteAM2EntryArrayBoundarySpec 1/1, EXIT_STATUS=0, m2_boundary_3f3a489.log"
+        ],
+        "remote_cross_stage": "10 suites / 40 tests, EXIT_STATUS=0, m2_adapter_p1_full_nonreg_20261026.log"
+      }
     },
     {
       "id": "p3_stage_access_v1",

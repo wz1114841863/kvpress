@@ -594,13 +594,17 @@ remain named nonzero external/unestimated responsibilities.
 
 Human approval has authorized the bounded wrapper-RTL work package.  The first
 M2 parent-side keyed lookup plus publication/handoff commit-ack adapter is
-implemented locally and queued for remote directed regression; it replaces the
-whole-array parent views without moving M2 membership, credit, RMW, private
-prepare/abort, publication, stale, reclaim, or authority control into the
-array child.  Its adapter/provenance-index cost remains Route-A incremental
-`unestimated_not_zero`.  This selects no macro, physical port count, latency,
-clock, controller, numeric unit, DC/CACTI or PPA.  Each later wrapper batch
-still requires a successor source/port freeze, not synthesis itself.
+functionally verified on remote successor `3f3a489`: the owner suite is 5/5,
+the direct array-boundary suite is 1/1, and the current-source W0/MR-1A/MR-1B/
+M2/dual-DUT cross-stage suite is 10 suites / 40 tests, all with exit 0. It
+replaces the whole-array parent views without moving M2 membership, credit,
+RMW, private prepare/abort, publication, stale, reclaim, or authority control
+into the array child. Its adapter/provenance-index cost remains Route-A
+incremental `unestimated_not_zero`. This selects no macro, physical port count,
+latency, clock, controller, numeric unit, DC/CACTI or PPA. The next wrapper
+implementation sub-batch is R5 parent-side availability/generation access;
+each later wrapper batch still requires a successor source/port freeze, not
+synthesis itself.
 
 ## New-conversation prompt seed
 
@@ -647,8 +651,9 @@ still requires a successor source/port freeze, not synthesis itself.
 > `analysis/full_kv_baseline_path_audit_20261016.json`, and
 > `analysis/synthesis_eligibility_manifest.json`, and
 > `analysis/realization_preparation_wrapper_common_disposition.md`. The
-> wrapper/common disposition is human-approved and the M2 parent adapter is
-> pending remote directed regression. Do not advance beyond approved wrapper
+> wrapper/common disposition is human-approved; the M2 parent adapter is
+> functionally verified (remote owner 5/5, boundary 1/1, cross-stage 40/40),
+> while R5/P3/S2 wrapper RTL remains pending. Do not advance beyond approved wrapper
 > RTL to realization choice, synthesis,
 > physical realization, PPA, or cost evaluation without a later approval;
 > do not reopen pruning/admission/page/scheduler/atomicity or introduce

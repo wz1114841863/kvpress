@@ -22,7 +22,8 @@ def test_wrapper_disposition_covers_only_array_interiors_and_preserves_owners() 
         "r5_availability_access_v1",
     }
     assert wrappers["m2_entry_access_v1"]["retained_owner"] == "RouteAM2ProductionControlOwner"
-    assert wrappers["m2_entry_access_v1"]["implementation_status"] == "parent_side_lookup_commit_ack_adapter_pending_remote_directed_regression"
+    assert wrappers["m2_entry_access_v1"]["implementation_status"] == "parent_side_lookup_commit_ack_adapter_functionally_verified"
+    assert wrappers["m2_entry_access_v1"]["verification"]["remote_cross_stage"].startswith("10 suites / 40 tests")
     assert wrappers["p3_stage_access_v1"]["retained_owner"] == "RouteAM2P3Wrapper"
     assert wrappers["r5_availability_access_v1"]["retained_owner"] == "RouteAPageManager"
     assert wrappers["r5_availability_access_v1"]["descriptor_treatment"] == "external_memory_service_not_local_array"

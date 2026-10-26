@@ -3,8 +3,9 @@
 **Status:** `human_approved_wrapper_rtl_in_progress` (2026-10-25).  This is
 the first decision package after the conditional synthesis-top selection.  It
 turns the four MR-2 logical array boundaries and the frozen dual-DUT cut into
-an implementable wrapper plan.  M2 parent-side adapter RTL is implemented but
-still awaiting its remote directed regression; no macro, port count, clock,
+an implementable wrapper plan.  The M2 parent-side adapter RTL has passed its
+remote directed and 10-suite cross-stage regression on successor `3f3a489`;
+R5, P3, and S2 wrapper RTL remains pending. No macro, port count, clock,
 library, controller, numeric unit, DC, CACTI, PPA, area, energy, or performance
 result is selected or claimed.
 
