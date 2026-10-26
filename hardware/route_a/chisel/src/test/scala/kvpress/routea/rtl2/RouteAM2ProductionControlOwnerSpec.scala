@@ -67,6 +67,13 @@ final class RouteAM2ProductionControlOwnerSpec extends AnyFunSpec with ChiselSim
     dut.io.group_prepare_in.valid.poke(true.B); dut.io.metadata_append_operand_in.valid.poke(true.B)
     dut.io.group_prepare_in.ready.expect(true.B); dut.io.metadata_append_operand_in.ready.expect(true.B)
     dut.clock.step(); dut.io.group_prepare_in.valid.poke(false.B); dut.io.metadata_append_operand_in.valid.poke(false.B)
+    // ready is intentionally payload-qualified by the production owner.  Do
+    // not let this timing check depend on uninitialised or stale request bits
+    // from an earlier transaction.
+    val request = dut.io.member_request_in.bits
+    request.layer.poke(0.U); request.kv_head.poke(3.U); request.stage_generation.poke(1.U)
+    request.transaction_group_tag.poke(tag.U); request.member.poke(RouteAM2GroupMember.HeadControlRmw.U)
+    request.opaque_address_ref.poke("h5a".U); request.owner.poke(6.U)
     // The parent must wait for the explicit one-cycle entry-array lookup
     // response before either semantic member can be accepted.
     dut.io.member_request_in.ready.expect(false.B)
