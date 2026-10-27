@@ -33,6 +33,21 @@ final class RouteAR3PublicationHarness(p: RouteASkeletonParameters) extends Modu
     val p3_sidecar_bind_in = Flipped(RouteAChannels.p3_sidecar_bind(p))
     val p3_packed_write_issue_in = Flipped(RouteAChannels.p3_packed_write_issue(p))
     val p3_packed_write_terminal_in = Flipped(RouteAChannels.p3_packed_write_terminal(p))
+    // Flattened, simulator-facing probe of the existing R3-owned candidate.
+    // Keeping the deep delivery descriptor below this harness avoids the
+    // known remote ChiselSim DPI generator defect; this does not alter the
+    // production R2/R1 connection in RouteAMeasurementDut.
+    val p3_candidate_valid = Output(Bool())
+    val p3_candidate_ready = Input(Bool())
+    val p3_candidate_request_kind = Output(UInt(p.coreMemoryRequestKindWidth.W))
+    val p3_candidate_fragment_index = Output(UInt(p.coreMemoryFragmentIndexWidth.W))
+    val p3_candidate_last = Output(Bool())
+    val p3_candidate_data = Output(UInt(kvpress.routea.params.RouteAAnchorWidths.CoreDataWidth.W))
+    val p3_candidate_id = Output(UInt(p.candidateIdWidth.W))
+    val p3_delivery_valid = Input(Bool())
+    val p3_delivery_ready = Output(Bool())
+    val p3_delivery_candidate_id = Input(UInt(p.candidateIdWidth.W))
+    val p3_delivery_status = Input(UInt(kvpress.routea.params.RouteAAnchorWidths.TerminalStatusWidth.W))
     val descriptor_durability_prerequisite_in = Flipped(RouteAChannels.descriptor_durability_prerequisite(p))
     val m2_group_member_req_out = RouteAChannels.m2_group_member_req(p)
     val m2_group_member_rsp_in = Flipped(RouteAChannels.m2_group_member_rsp(p))
@@ -77,8 +92,20 @@ final class RouteAR3PublicationHarness(p: RouteASkeletonParameters) extends Modu
   r3.io.p3_pack_read_work_in.valid := false.B
   r3.io.p3_pack_read_work_in.bits := 0.U.asTypeOf(r3.io.p3_pack_read_work_in.bits)
   StructuralTieOff.sink(r3.io.p3_pack_read_issue_out)
-  StructuralTieOff.sink(r3.io.p3_packed_write_candidate_out)
-  StructuralTieOff.source(r3.io.p3_packed_write_delivery_in)
+  io.p3_candidate_valid := r3.io.p3_packed_write_candidate_out.valid
+  r3.io.p3_packed_write_candidate_out.ready := io.p3_candidate_ready
+  io.p3_candidate_request_kind := r3.io.p3_packed_write_candidate_out.bits.r1_request.request_kind
+  io.p3_candidate_fragment_index := r3.io.p3_packed_write_candidate_out.bits.r1_request.fragment_index
+  io.p3_candidate_last := r3.io.p3_packed_write_candidate_out.bits.r1_request.last
+  io.p3_candidate_data := r3.io.p3_packed_write_candidate_out.bits.r1_request.data
+  io.p3_candidate_id := r3.io.p3_packed_write_candidate_out.bits.candidate_id
+  r3.io.p3_packed_write_delivery_in.valid := io.p3_delivery_valid
+  r3.io.p3_packed_write_delivery_in.bits := 0.U.asTypeOf(r3.io.p3_packed_write_delivery_in.bits)
+  r3.io.p3_packed_write_delivery_in.bits.candidate_class := p.r2PackWriteClassCode.U
+  r3.io.p3_packed_write_delivery_in.bits.candidate_id := io.p3_delivery_candidate_id
+  r3.io.p3_packed_write_delivery_in.bits.r1_response.status := io.p3_delivery_status
+  r3.io.p3_packed_write_delivery_in.bits.r1_response.last := true.B
+  io.p3_delivery_ready := r3.io.p3_packed_write_delivery_in.ready
   StructuralTieOff.sink(r3.io.p3_payload_durable_out)
 }
 
@@ -115,6 +142,8 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.io.post_r6_packed_page_ready_observation.ready.poke(true.B)
     dut.io.p3_pending_fragment_in.valid.poke(false.B); dut.io.p3_sidecar_bind_in.valid.poke(false.B)
     dut.io.p3_packed_write_issue_in.valid.poke(false.B); dut.io.p3_packed_write_terminal_in.valid.poke(false.B)
+    dut.io.p3_candidate_ready.poke(false.B); dut.io.p3_delivery_valid.poke(false.B)
+    dut.io.p3_delivery_candidate_id.poke(0.U); dut.io.p3_delivery_status.poke(p.coreMemoryOkStatusCode.U)
     dut.io.descriptor_durability_prerequisite_in.valid.poke(false.B)
     dut.io.m2_group_member_req_out.ready.poke(false.B)
     dut.io.m2_group_member_rsp_in.valid.poke(false.B); dut.io.m2_publish_req_in.valid.poke(false.B)
@@ -142,6 +171,26 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.io.admission_context_in.valid.poke(true.B); dut.io.admission_authority_in.valid.poke(true.B)
     dut.io.admission_context_in.ready.expect(true.B); dut.io.admission_authority_in.ready.expect(true.B)
     dut.clock.step(); dut.io.admission_context_in.valid.poke(false.B); dut.io.admission_authority_in.valid.poke(false.B)
+  }
+
+  private def fillOneP3Record(dut: RouteAR3PublicationHarness, base: Int = 0): Unit = {
+    val fragment = dut.io.p3_pending_fragment_in.bits
+    fragment.layer.poke(0.U); fragment.stage_generation.poke(1.U)
+    fragment.status.poke(p.coreMemoryOkStatusCode.U); fragment.payload_ref.poke(9.U)
+    for (fragmentIndex <- 0 until 8) {
+      fragment.fragment_index.poke(fragmentIndex.U); fragment.last.poke((fragmentIndex == 7).B)
+      fragment.data.poke((base + fragmentIndex).U); dut.io.p3_pending_fragment_in.valid.poke(true.B)
+      var wait = 0; while (!dut.io.p3_pending_fragment_in.ready.peek().litToBoolean && wait < 8) { dut.clock.step(); wait += 1 }
+      require(wait < 8, "timed out waiting for P3 payload-write acceptance")
+      dut.clock.step(); dut.io.p3_pending_fragment_in.valid.poke(false.B); dut.clock.step()
+    }
+    val sidecar = dut.io.p3_sidecar_bind_in.bits
+    sidecar.layer.poke(0.U); sidecar.stage_generation.poke(1.U); sidecar.record_ordinal.poke(0.U)
+    sidecar.payload_ref.poke(9.U); sidecar.logical_position.poke(0.U); dut.io.p3_sidecar_bind_in.valid.poke(true.B)
+    var wait = 0; while (!dut.io.p3_sidecar_bind_in.ready.peek().litToBoolean && wait < 8) { dut.clock.step(); wait += 1 }
+    require(wait < 8, "timed out waiting for P3 sidecar-write acceptance")
+    dut.clock.step(); dut.io.p3_sidecar_bind_in.valid.poke(false.B); dut.clock.step()
+    dut.io.p3_observe_state.expect(3.U)
   }
 
   private def finishP3AndM2(dut: RouteAR3PublicationHarness): Unit = {
@@ -265,6 +314,39 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
       response.member.poke(member.U); response.kv_head.poke(0.U)
       response.opaque_address_ref.poke(0.U); response.owner.poke(0.U); response.status.poke(p.coreMemoryOkStatusCode.U)
       dut.io.m2_group_member_rsp_in.valid.poke(true.B); dut.io.m2_group_member_rsp_in.ready.expect(true.B); dut.clock.step(); dut.io.m2_group_member_rsp_in.valid.poke(false.B)
+    }
+  }
+
+  it("uses the P3 parent read response before each R3-owned packed-write data beat") {
+    simulate(new RouteAR3PublicationHarness(p)) { dut =>
+      initR3(dut); claimOneRecord(dut); fillOneP3Record(dut, base = 0x40)
+
+      // The first candidate is the request phase; data cannot appear until
+      // the parent has issued a tagged P3 array read and accepted its response.
+      var wait = 0; while (!dut.io.p3_candidate_valid.peek().litToBoolean && wait < 8) { dut.clock.step(); wait += 1 }
+      require(wait < 8, "timed out waiting for P3 packed-write request")
+      dut.io.p3_candidate_request_kind.expect(p.coreMemoryWriteRequestCode.U)
+      dut.io.p3_candidate_fragment_index.expect(0.U)
+      dut.io.p3_candidate_ready.poke(true.B); dut.clock.step()
+
+      for (fragment <- 0 until 8) {
+        wait = 0
+        while (!dut.io.p3_candidate_valid.peek().litToBoolean && wait < 8) { dut.clock.step(); wait += 1 }
+        require(wait < 8, "timed out waiting for P3 parent read/response")
+        dut.io.p3_candidate_request_kind.expect(p.coreMemoryWriteDataCode.U)
+        dut.io.p3_candidate_fragment_index.expect(fragment.U)
+        dut.io.p3_candidate_data.expect((0x40 + fragment).U)
+        dut.io.p3_candidate_last.expect((fragment == 7).B)
+        dut.clock.step()
+      }
+      dut.io.p3_candidate_ready.poke(false.B)
+      dut.io.p3_observe_state.expect(4.U)
+      dut.io.p3_delivery_candidate_id.poke(0.U); dut.io.p3_delivery_status.poke(p.coreMemoryOkStatusCode.U)
+      dut.io.p3_delivery_valid.poke(true.B)
+      wait = 0; while (!dut.io.p3_delivery_ready.peek().litToBoolean && wait < 8) { dut.clock.step(); wait += 1 }
+      require(wait < 8, "timed out waiting for matching P3 packed-write terminal")
+      dut.clock.step(); dut.io.p3_delivery_valid.poke(false.B)
+      dut.io.p3_observe_state.expect(5.U)
     }
   }
 
