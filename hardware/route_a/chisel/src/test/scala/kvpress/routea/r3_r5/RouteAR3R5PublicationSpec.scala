@@ -119,7 +119,10 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     r2PackReadClassCode = 3, r2PackWriteClassCode = 4, r2DescriptorMaintenanceClassCode = 5,
     r2CandidateSlotsPerClass = 2,
     coreMemoryRequestKindWidth = 3, coreMemoryDestinationWidth = 2, coreMemoryAddressRefWidth = 8,
-    coreMemoryFragmentCountWidth = 3, coreMemoryFragmentIndexWidth = 3,
+    // The production P3 pack writer emits up to 512 logical fragments.  Its
+    // existing legal activation guard requires these anchor widths; using the
+    // old 3-bit legacy-direct-test values would correctly keep it fail-closed.
+    coreMemoryFragmentCountWidth = 10, coreMemoryFragmentIndexWidth = 9,
     coreMemoryReadRequestCode = 0, coreMemoryWriteRequestCode = 1, coreMemoryWriteDataCode = 2,
     coreMemoryOkStatusCode = 0, coreMemoryFaultStatusCode = 1,
     sourceDeliveryOpaqueWidth = 1, transactionGroupTagWidth = 2, p3StageGenerationWidth = 2,
