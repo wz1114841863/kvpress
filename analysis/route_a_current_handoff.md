@@ -632,8 +632,35 @@ This is a functional wrapper adapter result only. The availability interior
 plus parent scan/ack peripheral remain Route-A incremental
 `unestimated_not_zero`; no macro, port count, latency, descriptor controller,
 DC, CACTI, or PPA result follows. A successor source/port freeze is still a
-separate gate; only P3/S2 wrapper RTL remains unimplemented in the approved
-sequence.
+separate gate; P3/S2 wrapper RTL was the remaining approved sequence.
+
+### P3 parent-side stage/sidecar access adapter (2026-10-27)
+
+Successors `c3ec15d` through `0023e76` complete the next approved P3 wrapper
+sub-batch. `RouteAP3StageArrayBoundary` now provides typed payload-write and
+sidecar-write request/ack paths plus a held, tagged payload-read response.
+`RouteAM2P3Wrapper` still owns all P3 control: claim/generation, accepted
+member/binding ledger, order checks, materialization, packed-write sequence,
+durability, M2 publication, R6 observation and release. A payload or sidecar
+ingress fire cannot advance its parent order/state until the exact child ack;
+a packed-write data beat cannot issue before the exact tagged payload-read
+response.
+
+Remote evidence at current successor `0023e76` is `EXIT_CODE=0`, with
+`RouteAP3StageArrayBoundarySpec` 1/1 and the narrow parent/publication probe
+`RouteAR3R5PublicationSpec` 6/6, recorded in
+`p3_parent_adapter_isolated_rerun_0023e76.log`. The parent probe is deliberately
+flat because the remote ChiselSim DPI generator cannot expose a pre-existing,
+unrelated B2c nested direct-pending association as a root port; no production
+carrier is tied off or changed. The root-level materialization test is not
+current remote evidence for this reason.
+
+This verifies only the functional logical P3 array/access boundary. P3
+payload/sidecar interiors and parent request/ack/read-response peripheral are
+Route-A incremental `unestimated_not_zero`; the pending-HBM backing remains a
+separate external service. No macro, physical port count, timing, controller,
+DC, CACTI or PPA result follows. Only S2 wrapper RTL remains unimplemented in
+the approved wrapper sequence.
 
 ## New-conversation prompt seed
 
@@ -682,7 +709,8 @@ sequence.
 > `analysis/realization_preparation_wrapper_common_disposition.md`. The
 > wrapper/common disposition is human-approved; the M2 parent adapter is
 > functionally verified (remote owner 5/5, boundary 1/1, cross-stage 40/40),
-> while R5/P3/S2 wrapper RTL remains pending. Do not advance beyond approved wrapper
+> while R5 and P3 parent adapters are functionally verified and S2 wrapper RTL
+> remains pending. Do not advance beyond approved wrapper
 > RTL to realization choice, synthesis,
 > physical realization, PPA, or cost evaluation without a later approval;
 > do not reopen pruning/admission/page/scheduler/atomicity or introduce
