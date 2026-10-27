@@ -119,10 +119,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     r2PackReadClassCode = 3, r2PackWriteClassCode = 4, r2DescriptorMaintenanceClassCode = 5,
     r2CandidateSlotsPerClass = 2,
     coreMemoryRequestKindWidth = 3, coreMemoryDestinationWidth = 2, coreMemoryAddressRefWidth = 8,
-    // The production P3 pack writer emits up to 512 logical fragments.  Its
-    // existing legal activation guard requires these anchor widths; using the
-    // old 3-bit legacy-direct-test values would correctly keep it fail-closed.
-    coreMemoryFragmentCountWidth = 10, coreMemoryFragmentIndexWidth = 9,
+    coreMemoryFragmentCountWidth = 3, coreMemoryFragmentIndexWidth = 3,
     coreMemoryReadRequestCode = 0, coreMemoryWriteRequestCode = 1, coreMemoryWriteDataCode = 2,
     coreMemoryOkStatusCode = 0, coreMemoryFaultStatusCode = 1,
     sourceDeliveryOpaqueWidth = 1, transactionGroupTagWidth = 2, p3StageGenerationWidth = 2,
@@ -130,6 +127,13 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     r5StreamSlots = 8,
     sourceGenerationWidth = 2,
     r6 = RouteAR6Encoding.testOnlyAnchor,
+  )
+  // Only the parent-read probe activates the production P3 pack writer.  The
+  // five legacy publication tests intentionally inject their own direct
+  // packed-write terminal and therefore retain their historic narrow width.
+  private val pP3ParentProbe = p.copy(
+    coreMemoryFragmentCountWidth = 10,
+    coreMemoryFragmentIndexWidth = 9,
   )
 
   private def initR3(dut: RouteAR3PublicationHarness): Unit = {
@@ -321,7 +325,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("uses the P3 parent read response before each R3-owned packed-write data beat") {
-    simulate(new RouteAR3PublicationHarness(p)) { dut =>
+    simulate(new RouteAR3PublicationHarness(pP3ParentProbe)) { dut =>
       initR3(dut); claimOneRecord(dut); fillOneP3Record(dut, base = 0x40)
 
       // The first candidate is the request phase; data cannot appear until
