@@ -16,9 +16,14 @@ def test_mr2_p3_array_boundary_keeps_storage_out_of_r3_control_wrapper() -> None
     assert "val stageStorage = Module(new RouteAP3StageArrayBoundary(p))" in wrapper
     assert "val stagePayload = Mem(" not in wrapper
     assert "val stageSidecar = Mem(" not in wrapper
-    assert "stageStorage.io.payload_write_enable := true.B" in wrapper
-    assert "stageStorage.io.sidecar_write_enable := true.B" in wrapper
-    assert "stageStorage.io.payload_read_data" in wrapper
+    assert "stageStorage.io.payload_write_req.valid := true.B" in wrapper
+    assert "stageStorage.io.payload_write_ack.ready := payloadWritePending" in wrapper
+    assert "stageStorage.io.sidecar_write_req.valid := true.B" in wrapper
+    assert "stageStorage.io.sidecar_write_ack.ready := sidecarWritePending" in wrapper
+    assert "stageStorage.io.payload_read_req.valid := packedWriteState === WriteReadRequest" in wrapper
+    assert "stageStorage.io.payload_read_rsp.ready := packedWriteState === WriteReadResponse" in wrapper
+    assert "P3 payload read response must match the parent-selected packed-write fragment" in wrapper
+    assert "P3 payload write acknowledgement must match the parent-selected request" in wrapper
 
 
 def test_mr2_p3_contract_records_array_only_and_retained_control_boundary() -> None:

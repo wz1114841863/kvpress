@@ -2321,22 +2321,56 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
   * or PPA implementation.  R3 retains every fill, ordering, durability,
   * pack-read/write, publication, and release decision around this child.
   */
+/** Parent-selected logical write into the P3 payload interior. */
+final class RouteAP3PayloadWriteRequest extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val fragment = UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W)
+  val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
+}
+
+/** Exact acknowledgement of one P3 payload write. */
+final class RouteAP3PayloadWriteAck extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val fragment = UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W)
+}
+
+/** Parent-selected logical write into the P3 position-sidecar interior. */
+final class RouteAP3SidecarWriteRequest extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val ordinal = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val data = UInt(64.W)
+}
+
+/** Exact acknowledgement of one P3 sidecar write. */
+final class RouteAP3SidecarWriteAck extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val ordinal = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+}
+
+/** Parent-selected P3 payload read; response identity is retained separately. */
+final class RouteAP3PayloadReadRequest extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val fragment = UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W)
+}
+
+/** Registered P3 payload response, held until the parent accepts it. */
+final class RouteAP3PayloadReadResponse extends Bundle {
+  val layer = UInt(RouteAAnchorWidths.LayerWidth.W)
+  val fragment = UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W)
+  val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
+}
+
 final class RouteAP3StageArrayBoundary(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_p3_stage_array_boundary"
 
   private val stages = 36
   val io = IO(new Bundle {
-    val payload_write_enable = Input(Bool())
-    val payload_write_layer = Input(UInt(RouteAAnchorWidths.LayerWidth.W))
-    val payload_write_fragment = Input(UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W))
-    val payload_write_data = Input(UInt(RouteAAnchorWidths.CoreDataWidth.W))
-    val payload_read_layer = Input(UInt(RouteAAnchorWidths.LayerWidth.W))
-    val payload_read_fragment = Input(UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W))
-    val payload_read_data = Output(UInt(RouteAAnchorWidths.CoreDataWidth.W))
-    val sidecar_write_enable = Input(Bool())
-    val sidecar_write_layer = Input(UInt(RouteAAnchorWidths.LayerWidth.W))
-    val sidecar_write_ordinal = Input(UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W))
-    val sidecar_write_data = Input(UInt(64.W))
+    val payload_write_req = Flipped(Decoupled(new RouteAP3PayloadWriteRequest))
+    val payload_write_ack = Decoupled(new RouteAP3PayloadWriteAck)
+    val sidecar_write_req = Flipped(Decoupled(new RouteAP3SidecarWriteRequest))
+    val sidecar_write_ack = Decoupled(new RouteAP3SidecarWriteAck)
+    val payload_read_req = Flipped(Decoupled(new RouteAP3PayloadReadRequest))
+    val payload_read_rsp = Decoupled(new RouteAP3PayloadReadResponse)
   })
 
   val payload = Mem(stages * 512, UInt(RouteAAnchorWidths.CoreDataWidth.W))
@@ -2344,13 +2378,47 @@ final class RouteAP3StageArrayBoundary(p: RouteASkeletonParameters) extends Modu
   private def payloadIndex(layer: UInt, fragment: UInt): UInt = layer * 512.U + fragment
   private def sidecarIndex(layer: UInt, ordinal: UInt): UInt = layer * 64.U + ordinal
 
-  when(io.payload_write_enable) {
-    payload.write(payloadIndex(io.payload_write_layer, io.payload_write_fragment), io.payload_write_data)
+  val payloadWriteAckValid = RegInit(false.B)
+  val payloadWriteAck = Reg(new RouteAP3PayloadWriteAck)
+  io.payload_write_req.ready := !payloadWriteAckValid
+  io.payload_write_ack.valid := payloadWriteAckValid
+  io.payload_write_ack.bits := payloadWriteAck
+  when(io.payload_write_req.fire) {
+    assert(io.payload_write_req.bits.layer < stages.U, "P3 payload write layer must be in range")
+    payload.write(payloadIndex(io.payload_write_req.bits.layer, io.payload_write_req.bits.fragment), io.payload_write_req.bits.data)
+    payloadWriteAck.layer := io.payload_write_req.bits.layer
+    payloadWriteAck.fragment := io.payload_write_req.bits.fragment
+    payloadWriteAckValid := true.B
   }
-  when(io.sidecar_write_enable) {
-    sidecar.write(sidecarIndex(io.sidecar_write_layer, io.sidecar_write_ordinal), io.sidecar_write_data)
+  when(io.payload_write_ack.fire) { payloadWriteAckValid := false.B }
+
+  val sidecarWriteAckValid = RegInit(false.B)
+  val sidecarWriteAck = Reg(new RouteAP3SidecarWriteAck)
+  io.sidecar_write_req.ready := !sidecarWriteAckValid
+  io.sidecar_write_ack.valid := sidecarWriteAckValid
+  io.sidecar_write_ack.bits := sidecarWriteAck
+  when(io.sidecar_write_req.fire) {
+    assert(io.sidecar_write_req.bits.layer < stages.U, "P3 sidecar write layer must be in range")
+    sidecar.write(sidecarIndex(io.sidecar_write_req.bits.layer, io.sidecar_write_req.bits.ordinal), io.sidecar_write_req.bits.data)
+    sidecarWriteAck.layer := io.sidecar_write_req.bits.layer
+    sidecarWriteAck.ordinal := io.sidecar_write_req.bits.ordinal
+    sidecarWriteAckValid := true.B
   }
-  io.payload_read_data := payload.read(payloadIndex(io.payload_read_layer, io.payload_read_fragment))
+  when(io.sidecar_write_ack.fire) { sidecarWriteAckValid := false.B }
+
+  val payloadReadRspValid = RegInit(false.B)
+  val payloadReadRsp = Reg(new RouteAP3PayloadReadResponse)
+  io.payload_read_req.ready := !payloadReadRspValid
+  io.payload_read_rsp.valid := payloadReadRspValid
+  io.payload_read_rsp.bits := payloadReadRsp
+  when(io.payload_read_req.fire) {
+    assert(io.payload_read_req.bits.layer < stages.U, "P3 payload read layer must be in range")
+    payloadReadRsp.layer := io.payload_read_req.bits.layer
+    payloadReadRsp.fragment := io.payload_read_req.bits.fragment
+    payloadReadRsp.data := payload.read(payloadIndex(io.payload_read_req.bits.layer, io.payload_read_req.bits.fragment))
+    payloadReadRspValid := true.B
+  }
+  when(io.payload_read_rsp.fire) { payloadReadRspValid := false.B }
 }
 
 /** RTL1.3 R3 control state: no P3 payload macro, M2 macro, or HBM controller. */
@@ -2451,18 +2519,19 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val stageM2Owner = Reg(Vec(stages, UInt(RouteAAnchorWidths.RequestIdWidth.W)))
   val stageM2Members = RegInit(VecInit(Seq.fill(stages)(0.U(2.W))))
   val stageDescriptorRequiredMask = Reg(Vec(stages, UInt(2.W)))
-  // MR-2 keeps only the P3 array interior in the named child.  These logical
-  // access wires describe accepted functional transactions, not physical
-  // macro ports; all R3 state and protocol checks remain in this wrapper.
+  // MR-2 keeps only the P3 array interior in the named child.  The typed
+  // request/acknowledgement paths are parent-selected logical accesses, not
+  // physical macro ports; all R3 state and protocol checks remain here.
   val stageStorage = Module(new RouteAP3StageArrayBoundary(p))
-  stageStorage.io.payload_write_enable := false.B
-  stageStorage.io.payload_write_layer := 0.U
-  stageStorage.io.payload_write_fragment := 0.U
-  stageStorage.io.payload_write_data := 0.U
-  stageStorage.io.sidecar_write_enable := false.B
-  stageStorage.io.sidecar_write_layer := 0.U
-  stageStorage.io.sidecar_write_ordinal := 0.U
-  stageStorage.io.sidecar_write_data := 0.U
+  stageStorage.io.payload_write_req.valid := false.B
+  stageStorage.io.payload_write_req.bits := 0.U.asTypeOf(new RouteAP3PayloadWriteRequest)
+  stageStorage.io.payload_write_ack.ready := false.B
+  stageStorage.io.sidecar_write_req.valid := false.B
+  stageStorage.io.sidecar_write_req.bits := 0.U.asTypeOf(new RouteAP3SidecarWriteRequest)
+  stageStorage.io.sidecar_write_ack.ready := false.B
+  stageStorage.io.payload_read_req.valid := false.B
+  stageStorage.io.payload_read_req.bits := 0.U.asTypeOf(new RouteAP3PayloadReadRequest)
+  stageStorage.io.payload_read_rsp.ready := false.B
   val stageDescriptorPrerequisite = RegInit(VecInit(Seq.fill(stages)(false.B)))
   // The following is a logical, per-record association ledger.  It contains
   // sidecar/payload references only, never K/V data or authoritative residency.
@@ -2495,18 +2564,29 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val observationMemberSent = RegInit(VecInit(Seq.fill(stages)(false.B)))
   val observationAuthoritySent = RegInit(VecInit(Seq.fill(stages)(false.B)))
 
-  private val WriteIdle = 0.U(2.W)
-  private val WriteRequest = 1.U(2.W)
-  private val WriteData = 2.U(2.W)
-  private val WriteAwaitTerminal = 3.U(2.W)
+  private val WriteIdle = 0.U(3.W)
+  private val WriteRequest = 1.U(3.W)
+  private val WriteReadRequest = 2.U(3.W)
+  private val WriteReadResponse = 3.U(3.W)
+  private val WriteData = 4.U(3.W)
+  private val WriteAwaitTerminal = 5.U(3.W)
   val packedWriteState = RegInit(WriteIdle)
   val packedWriteLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
   val packedWriteFragment = RegInit(0.U(RouteAAnchorWidths.P3FragmentIndexWidth.W))
   val packedWriteIdentity = Reg(new TransactionIdentity)
   val packedWriteSequence = RegInit(0.U((RouteAAnchorWidths.RequestIdWidth + RouteAAnchorWidths.IncarnationWidth).W))
+  val packedWriteData = Reg(UInt(RouteAAnchorWidths.CoreDataWidth.W))
   val payloadDurablePending = RegInit(VecInit(Seq.fill(stages)(false.B)))
-  stageStorage.io.payload_read_layer := packedWriteLayer
-  stageStorage.io.payload_read_fragment := packedWriteFragment
+  val payloadWritePending = RegInit(false.B)
+  val payloadWriteLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
+  val payloadWriteFragment = Reg(UInt(RouteAAnchorWidths.P3FragmentIndexWidth.W))
+  val payloadWriteLast = RegInit(false.B)
+  val payloadWriteMaterializer = RegInit(false.B)
+  val payloadWriteMaterializerOrdinal = Reg(UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W))
+  val sidecarWritePending = RegInit(false.B)
+  val sidecarWriteLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
+  val sidecarWriteOrdinal = Reg(UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W))
+  val sidecarWriteMaterializer = RegInit(false.B)
 
   val claimAckValid = RegInit(false.B)
   val claimAckLayer = Reg(UInt(RouteAAnchorWidths.LayerWidth.W))
@@ -2754,21 +2834,42 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val fragmentOk = fragment.status === p.coreMemoryOkStatusCode.U
   val fragmentFault = fragment.status === p.coreMemoryFaultStatusCode.U
   io.p3_pending_fragment_in.ready := fragmentMatches &&
-    ((fragmentOk && fragmentOrdinalOk && fragment.last === fragmentLastExpected) || fragmentFault)
+    ((fragmentOk && fragmentOrdinalOk && fragment.last === fragmentLastExpected &&
+      !payloadWritePending && stageStorage.io.payload_write_req.ready) || fragmentFault)
   when(io.p3_pending_fragment_in.fire) {
     when(fragmentFault) {
       stageState(fragmentLayer) := StateFaulted
     }.otherwise {
-      val nextFragment = stageFragmentNext(fragmentLayer) + 1.U
-      stageStorage.io.payload_write_enable := true.B
-      stageStorage.io.payload_write_layer := fragmentLayer
-      stageStorage.io.payload_write_fragment := fragment.fragment_index
-      stageStorage.io.payload_write_data := fragment.data
-      stageFragmentNext(fragmentLayer) := nextFragment
-      when(stageState(fragmentLayer) === StateReserved) { stageState(fragmentLayer) := StateFilling }
-      when(fragment.last && stageSidecarNext(fragmentLayer) === stageValidRecords(fragmentLayer)) {
-        stageState(fragmentLayer) := StateComplete
-      }
+      stageStorage.io.payload_write_req.valid := true.B
+      stageStorage.io.payload_write_req.bits.layer := fragmentLayer
+      stageStorage.io.payload_write_req.bits.fragment := fragment.fragment_index
+      stageStorage.io.payload_write_req.bits.data := fragment.data
+      assert(stageStorage.io.payload_write_req.fire)
+      payloadWritePending := true.B
+      payloadWriteLayer := fragmentLayer
+      payloadWriteFragment := fragment.fragment_index
+      payloadWriteLast := fragment.last
+      payloadWriteMaterializer := materializerActive(fragmentLayer) &&
+        fragmentRecordOrdinal === materializerOrdinal(fragmentLayer)
+      payloadWriteMaterializerOrdinal := fragmentRecordOrdinal
+    }
+  }
+
+  stageStorage.io.payload_write_ack.ready := payloadWritePending
+  val payloadWriteCommit = stageStorage.io.payload_write_ack.fire
+  when(payloadWriteCommit) {
+    val ack = stageStorage.io.payload_write_ack.bits
+    assert(ack.layer === payloadWriteLayer && ack.fragment === payloadWriteFragment,
+      "P3 payload write acknowledgement must match the parent-selected request")
+    payloadWritePending := false.B
+    val nextFragment = stageFragmentNext(payloadWriteLayer) + 1.U
+    stageFragmentNext(payloadWriteLayer) := nextFragment
+    when(stageState(payloadWriteLayer) === StateReserved) { stageState(payloadWriteLayer) := StateFilling }
+    val sidecarsComplete = stageSidecarNext(payloadWriteLayer) === stageValidRecords(payloadWriteLayer) ||
+      (sidecarWriteCommit && sidecarWriteLayer === payloadWriteLayer &&
+        stageSidecarNext(payloadWriteLayer) + 1.U === stageValidRecords(payloadWriteLayer))
+    when(payloadWriteLast && sidecarsComplete) {
+      stageState(payloadWriteLayer) := StateComplete
     }
   }
 
@@ -2783,16 +2884,34 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
     stageGeneration(sidecarLayer) === sidecar.stage_generation &&
     stageSidecarNext(sidecarLayer) < stageValidRecords(sidecarLayer) &&
     sidecar.record_ordinal === stageSidecarNext(sidecarLayer) && sidecarPayloadMatches
-  io.p3_sidecar_bind_in.ready := sidecarMatches
+  io.p3_sidecar_bind_in.ready := sidecarMatches && !sidecarWritePending &&
+    stageStorage.io.sidecar_write_req.ready
   when(io.p3_sidecar_bind_in.fire) {
-    val nextSidecar = stageSidecarNext(sidecarLayer) + 1.U
-    stageStorage.io.sidecar_write_enable := true.B
-    stageStorage.io.sidecar_write_layer := sidecarLayer
-    stageStorage.io.sidecar_write_ordinal := sidecarOrdinal
-    stageStorage.io.sidecar_write_data := sidecar.logical_position
-    stageSidecarNext(sidecarLayer) := nextSidecar
-    when(stageFragmentNext(sidecarLayer) === expectedFragments(sidecarLayer) && nextSidecar === stageValidRecords(sidecarLayer)) {
-      stageState(sidecarLayer) := StateComplete
+    stageStorage.io.sidecar_write_req.valid := true.B
+    stageStorage.io.sidecar_write_req.bits.layer := sidecarLayer
+    stageStorage.io.sidecar_write_req.bits.ordinal := sidecarOrdinal
+    stageStorage.io.sidecar_write_req.bits.data := sidecar.logical_position
+    assert(stageStorage.io.sidecar_write_req.fire)
+    sidecarWritePending := true.B
+    sidecarWriteLayer := sidecarLayer
+    sidecarWriteOrdinal := sidecarOrdinal
+    sidecarWriteMaterializer := materializerActive(sidecarLayer) &&
+      sidecarOrdinal === materializerOrdinal(sidecarLayer)
+  }
+
+  stageStorage.io.sidecar_write_ack.ready := sidecarWritePending
+  val sidecarWriteCommit = stageStorage.io.sidecar_write_ack.fire
+  when(sidecarWriteCommit) {
+    val ack = stageStorage.io.sidecar_write_ack.bits
+    assert(ack.layer === sidecarWriteLayer && ack.ordinal === sidecarWriteOrdinal,
+      "P3 sidecar write acknowledgement must match the parent-selected request")
+    sidecarWritePending := false.B
+    val nextSidecar = stageSidecarNext(sidecarWriteLayer) + 1.U
+    stageSidecarNext(sidecarWriteLayer) := nextSidecar
+    val fragmentsComplete = stageFragmentNext(sidecarWriteLayer) === expectedFragments(sidecarWriteLayer) ||
+      (payloadWriteCommit && payloadWriteLayer === sidecarWriteLayer && payloadWriteLast)
+    when(fragmentsComplete && nextSidecar === stageValidRecords(sidecarWriteLayer)) {
+      stageState(sidecarWriteLayer) := StateComplete
     }
   }
 
@@ -2803,9 +2922,11 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   // terminal for the active member and leaves the stage faulted, so no later
   // member can be materialized from that stage.
   for (layer <- 0 until stages) {
-    val activeFragmentTerminal = io.p3_pending_fragment_in.fire && fragmentLayer === layer.U &&
-      materializerActive(layer) && fragmentRecordOrdinal === materializerOrdinal(layer) &&
-      (fragment.last || fragmentFault)
+    val activeFragmentTerminal = (payloadWriteCommit && payloadWriteLayer === layer.U &&
+      payloadWriteMaterializer && payloadWriteMaterializerOrdinal === materializerOrdinal(layer) &&
+      payloadWriteLast) ||
+      (io.p3_pending_fragment_in.fire && fragmentLayer === layer.U && materializerActive(layer) &&
+        fragmentRecordOrdinal === materializerOrdinal(layer) && fragmentFault)
     val activeSidecarAccepted = io.p3_materialized_sidecar_out.fire && materializerSidecarLayer === layer.U
     when(activeFragmentTerminal) {
       materializerPayloadDone(layer) := true.B
@@ -2891,19 +3012,38 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   io.p3_packed_write_candidate_out.bits.r1_request.fragment_index := packedWriteFragment
   io.p3_packed_write_candidate_out.bits.r1_request.last := packedWriteFragment + 1.U === packedWriteExpected
   io.p3_packed_write_candidate_out.bits.r1_request.data := Mux(
-    packedWriteState === WriteData, stageStorage.io.payload_read_data, 0.U,
+    packedWriteState === WriteData, packedWriteData, 0.U,
   )
   when(io.p3_packed_write_candidate_out.fire) {
     when(packedWriteState === WriteRequest) {
       stageState(packedWriteLayer) := StateWriteIssued
-      packedWriteState := WriteData
+      packedWriteState := WriteReadRequest
     }.otherwise {
       when(packedWriteFragment + 1.U === packedWriteExpected) {
         packedWriteState := WriteAwaitTerminal
       }.otherwise {
         packedWriteFragment := packedWriteFragment + 1.U
+        packedWriteState := WriteReadRequest
       }
     }
+  }
+
+  // The parent owns packed-write identity, order and delivery.  It obtains
+  // only the one requested payload fragment through the array boundary and
+  // cannot treat an unacknowledged or mismatched response as write data.
+  stageStorage.io.payload_read_req.valid := packedWriteState === WriteReadRequest
+  stageStorage.io.payload_read_req.bits.layer := packedWriteLayer
+  stageStorage.io.payload_read_req.bits.fragment := packedWriteFragment
+  when(stageStorage.io.payload_read_req.fire) {
+    packedWriteState := WriteReadResponse
+  }
+  stageStorage.io.payload_read_rsp.ready := packedWriteState === WriteReadResponse
+  when(stageStorage.io.payload_read_rsp.fire) {
+    val rsp = stageStorage.io.payload_read_rsp.bits
+    assert(rsp.layer === packedWriteLayer && rsp.fragment === packedWriteFragment,
+      "P3 payload read response must match the parent-selected packed-write fragment")
+    packedWriteData := rsp.data
+    packedWriteState := WriteData
   }
 
   val packedWriteDelivery = io.p3_packed_write_delivery_in.bits

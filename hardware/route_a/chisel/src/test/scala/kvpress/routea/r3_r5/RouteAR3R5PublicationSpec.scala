@@ -149,12 +149,18 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     fragment.layer.poke(0.U); fragment.stage_generation.poke(1.U); fragment.status.poke(p.coreMemoryOkStatusCode.U); fragment.payload_ref.poke(9.U)
     for (fragmentIndex <- 0 until 8) {
       fragment.fragment_index.poke(fragmentIndex.U); fragment.last.poke((fragmentIndex == 7).B); fragment.data.poke(fragmentIndex.U)
-      dut.io.p3_pending_fragment_in.valid.poke(true.B); dut.io.p3_pending_fragment_in.ready.expect(true.B); dut.clock.step()
+      dut.io.p3_pending_fragment_in.valid.poke(true.B)
+      var wait = 0; while (!dut.io.p3_pending_fragment_in.ready.peek().litToBoolean && wait < 8) { dut.clock.step(); wait += 1 }
+      require(wait < 8, "timed out waiting for P3 payload-write acceptance")
+      dut.clock.step(); dut.io.p3_pending_fragment_in.valid.poke(false.B); dut.clock.step()
     }
     dut.io.p3_pending_fragment_in.valid.poke(false.B)
     val sidecar = dut.io.p3_sidecar_bind_in.bits
     sidecar.layer.poke(0.U); sidecar.stage_generation.poke(1.U); sidecar.record_ordinal.poke(0.U); sidecar.payload_ref.poke(9.U); sidecar.logical_position.poke(0.U)
-    dut.io.p3_sidecar_bind_in.valid.poke(true.B); dut.io.p3_sidecar_bind_in.ready.expect(true.B); dut.clock.step(); dut.io.p3_sidecar_bind_in.valid.poke(false.B)
+    dut.io.p3_sidecar_bind_in.valid.poke(true.B)
+    var sidecarWait = 0; while (!dut.io.p3_sidecar_bind_in.ready.peek().litToBoolean && sidecarWait < 8) { dut.clock.step(); sidecarWait += 1 }
+    require(sidecarWait < 8, "timed out waiting for P3 sidecar-write acceptance")
+    dut.clock.step(); dut.io.p3_sidecar_bind_in.valid.poke(false.B); dut.clock.step()
     dut.io.p3_packed_write_terminal_in.bits.layer.poke(0.U); dut.io.p3_packed_write_terminal_in.bits.stage_generation.poke(1.U)
     dut.io.p3_packed_write_terminal_in.bits.transaction_group_tag.poke(1.U); dut.io.p3_packed_write_terminal_in.bits.status.poke(p.coreMemoryOkStatusCode.U)
     dut.io.p3_packed_write_terminal_in.bits.r1_payload_durable.poke(true.B)
@@ -223,7 +229,10 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     for (fragmentIndex <- 0 until records * 8) {
       fragment.fragment_index.poke(fragmentIndex.U); fragment.last.poke((fragmentIndex == records * 8 - 1).B)
       fragment.payload_ref.poke(Seq(103, 107, 111)(fragmentIndex / 8).U); fragment.data.poke(fragmentIndex.U)
-      dut.io.p3_pending_fragment_in.valid.poke(true.B); dut.io.p3_pending_fragment_in.ready.expect(true.B); dut.clock.step()
+      dut.io.p3_pending_fragment_in.valid.poke(true.B)
+      var wait = 0; while (!dut.io.p3_pending_fragment_in.ready.peek().litToBoolean && wait < 8) { dut.clock.step(); wait += 1 }
+      require(wait < 8, "timed out waiting for P3 payload-write acceptance")
+      dut.clock.step(); dut.io.p3_pending_fragment_in.valid.poke(false.B); dut.clock.step()
     }
     dut.io.p3_pending_fragment_in.valid.poke(false.B)
     val sidecar = dut.io.p3_sidecar_bind_in.bits
@@ -231,7 +240,9 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     for (ordinal <- 0 until records) {
       sidecar.record_ordinal.poke(ordinal.U); sidecar.payload_ref.poke(Seq(103, 107, 111)(ordinal).U)
       sidecar.logical_position.poke(Seq(3, 7, 11)(ordinal).U); dut.io.p3_sidecar_bind_in.valid.poke(true.B)
-      dut.io.p3_sidecar_bind_in.ready.expect(true.B); dut.clock.step()
+      var sidecarWait = 0; while (!dut.io.p3_sidecar_bind_in.ready.peek().litToBoolean && sidecarWait < 8) { dut.clock.step(); sidecarWait += 1 }
+      require(sidecarWait < 8, "timed out waiting for P3 sidecar-write acceptance")
+      dut.clock.step(); dut.io.p3_sidecar_bind_in.valid.poke(false.B); dut.clock.step()
     }
     dut.io.p3_sidecar_bind_in.valid.poke(false.B)
     dut.io.p3_packed_write_issue_in.bits.layer.poke(0.U); dut.io.p3_packed_write_issue_in.bits.stage_generation.poke(1.U)

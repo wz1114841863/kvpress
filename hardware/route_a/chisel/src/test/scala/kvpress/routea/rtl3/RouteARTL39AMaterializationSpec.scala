@@ -84,12 +84,15 @@ final class RouteARTL39AMaterializationSpec extends AnyFunSpec with ChiselSim {
       sidecar.payload_ref.poke(99.U); sidecar.logical_position.poke(7.U)
       d.io.p3_sidecar_bind_in.valid.poke(true.B)
       d.io.p3_materialized_sidecar_out.ready.poke(true.B); d.clock.step(); d.io.p3_materialized_sidecar_out.ready.poke(false.B)
-      d.io.p3_sidecar_bind_in.valid.poke(false.B)
+      // P3 array writes are acknowledged separately; do not assume a direct
+      // functional-array write completes on the ingress fire.
+      d.io.p3_sidecar_bind_in.valid.poke(false.B); d.clock.step()
       val fragment = d.io.p3_pending_fragment_in.bits
       fragment.layer.poke(0.U); fragment.stage_generation.poke(1.U); fragment.status.poke(p.coreMemoryOkStatusCode.U); fragment.payload_ref.poke(99.U)
       for (index <- 0 until 8) {
         fragment.fragment_index.poke(index.U); fragment.last.poke((index == 7).B); fragment.data.poke(index.U)
         d.io.p3_pending_fragment_in.valid.poke(true.B); d.io.p3_pending_fragment_in.ready.expect(true.B); d.clock.step()
+        d.io.p3_pending_fragment_in.valid.poke(false.B); d.clock.step()
       }
       d.io.p3_pending_fragment_in.valid.poke(false.B)
       d.io.p3_pack_fill_reservation_out.expect(false.B)
@@ -126,12 +129,13 @@ final class RouteARTL39AMaterializationSpec extends AnyFunSpec with ChiselSim {
       sidecar.layer.poke(0.U); sidecar.stage_generation.poke(1.U); sidecar.record_ordinal.poke(0.U)
       sidecar.payload_ref.poke(99.U); sidecar.logical_position.poke(7.U)
       d.io.p3_sidecar_bind_in.valid.poke(true.B); d.io.p3_materialized_sidecar_out.ready.poke(true.B); d.clock.step()
-      d.io.p3_sidecar_bind_in.valid.poke(false.B); d.io.p3_materialized_sidecar_out.ready.poke(false.B)
+      d.io.p3_sidecar_bind_in.valid.poke(false.B); d.io.p3_materialized_sidecar_out.ready.poke(false.B); d.clock.step()
       val fragment = d.io.p3_pending_fragment_in.bits
       fragment.layer.poke(0.U); fragment.stage_generation.poke(1.U); fragment.status.poke(p.coreMemoryOkStatusCode.U); fragment.payload_ref.poke(99.U)
       for (index <- 0 until 8) {
         fragment.fragment_index.poke(index.U); fragment.last.poke((index == 7).B); fragment.data.poke((0x40 + index).U)
         d.io.p3_pending_fragment_in.valid.poke(true.B); d.io.p3_pending_fragment_in.ready.expect(true.B); d.clock.step()
+        d.io.p3_pending_fragment_in.valid.poke(false.B); d.clock.step()
       }
       d.io.p3_pending_fragment_in.valid.poke(false.B)
       d.io.p3_observe_state.expect(3.U) // COMPLETE, not durable or published.
@@ -158,6 +162,9 @@ final class RouteARTL39AMaterializationSpec extends AnyFunSpec with ChiselSim {
 
       d.io.p3_packed_write_candidate_out.ready.poke(true.B); d.clock.step()
       for (index <- 0 until 8) {
+        var wait = 0
+        while (!d.io.p3_packed_write_candidate_out.valid.peek().litToBoolean && wait < 8) { d.clock.step(); wait += 1 }
+        require(wait < 8, "timed out waiting for P3 payload read response")
         d.io.p3_packed_write_candidate_out.valid.expect(true.B)
         candidate.r1_request.request_kind.expect(p.coreMemoryWriteDataCode.U)
         candidate.r1_request.fragment_index.expect(index.U)
