@@ -659,8 +659,42 @@ This verifies only the functional logical P3 array/access boundary. P3
 payload/sidecar interiors and parent request/ack/read-response peripheral are
 Route-A incremental `unestimated_not_zero`; the pending-HBM backing remains a
 separate external service. No macro, physical port count, timing, controller,
-DC, CACTI or PPA result follows. Only S2 wrapper RTL remains unimplemented in
-the approved wrapper sequence.
+DC, CACTI or PPA result follows. The remaining approved Route-A wrapper
+sub-batch was S2.
+
+### Route-A S2 payload/sidecar parent-access adapter (2026-10-27)
+
+The S2 sub-batch is now complete for the Route-A contour.  The parent
+`RouteAS2GqaSourceWrapper` keeps all source/lifecycle control and accesses
+`RouteAS2PayloadSidecarArrayBoundary` through typed payload and sidecar write
+request/acknowledgement plus read request/response paths.  Parent order moves
+only after the exact child write acknowledgement; reads are authorized by the
+parent while READY and their external response is held by the parent.  Thus
+the child has no identity/generation, READY, four-consumer, release, fault, or
+authority ownership.
+
+Remote directed evidence is `9/9` (`RouteAS2DirectPendingSpec` 3/3 and
+`RouteAPackedS2ReadPathSpec` 6/6) in
+`s2_adapter_directed_rerun.log`, `S2_ADAPTER_RERUN_EXIT=0`.  The selected
+cross-stage result is Route-A measurement 4/4, Full-KV measurement 5/5
+non-regression only, dual-DUT structural 3/3, and four-consumer 3/3.  The
+initial combined run had a fixed-cycle terminal-ready test assumption after a
+child write; the explicit ack-aware rerun is
+`s2_fourconsumer_rerun.log`, `S2_FOURCONSUMER_RERUN_EXIT=0`.
+
+This is a Route-A logical functional-wrapper result, not a paired S2 common
+implementation. `FullKVS2GqaSourceWrapper` still lacks an equivalent payload
+access interface; its five-test result cannot cancel payload or adapter cost.
+The next ordered work is therefore a separately scoped Full-KV payload access
+wrapper, followed by paired access-map/equivalence disposition.  Neither this
+record nor the preceding P3/M2/R5 results choose a macro, physical port count,
+latency, clock, controller, DC, CACTI or PPA.
+
+The immutable cut-freeze at `fc06fdbc` is not rewritten by wrapper successors.
+Its current source-SHA guard reports the already recorded P3 incremental-source
+drift and the new S2 common-source drift.  This is a provenance status, not a
+functional failure: the successor source/port/filelist freeze remains deferred
+until the Full-KV S2 pairing and P3 full-root ChiselSim DPI harness recovery.
 
 ## New-conversation prompt seed
 

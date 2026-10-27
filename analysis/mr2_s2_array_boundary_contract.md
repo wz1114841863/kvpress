@@ -1,6 +1,9 @@
 # MR-2-S2 — S2 payload/sidecar array-only boundary
 
-**Status:** `implemented_directed_tested`; independent of MR-1B.
+**Status:** `route_a_parent_access_adapter_functionally_verified`; independent
+of MR-1B.  This is Route-A-only evidence.  `FullKVS2GqaSourceWrapper` has no
+equivalent payload-read array interface yet, so this result creates no
+common-cost cancellation.
 
 ## Scope and closed precondition
 
@@ -12,18 +15,22 @@ Its previous in-wrapper reference arrays were the only S2 payload/sidecar
 `Mem` declarations.
 
 MR-2-S2 moves only those two byte-array interiors into
-`route_a_s2_payload_sidecar_array_boundary`. The child has no ready/valid
-protocol and cannot create a source instance, fill, READY, GQA commit, release,
-authority transition, or lifecycle fact.
+`route_a_s2_payload_sidecar_array_boundary`. The child exposes bounded typed
+payload/sidecar write request/acknowledgements and read request/responses.  It
+has no transaction identity, source generation, READY, GQA, release,
+authority-transition, lifecycle, allocator, or selection state.  The parent
+captures only already accepted, fully validated coordinates; its matching ack
+or response is required before parent order advances or an outward response is
+offered.
 
 ## Exact logical access boundary
 
 | Existing accepted S2 event | Array-only access | Control retained in S2 wrapper |
 | --- | --- | --- |
-| `s2_payload_fragment_in.fire` | payload write at `{slot, fragment}` | exact identity/generation, FILLING, fill-open, ordinal and `last` validation |
-| `s2_sidecar_fragment_in.fire` | sidecar write at `{slot, record ordinal}` | exact identity/generation, FILLING, sidecar-required and ordinal validation |
-| `s2_payload_read_req_in.fire` | payload read at `{slot, fragment}` | READY, identity/generation, range and response-hold ownership |
-| `s2_sidecar_read_req_in.fire` | sidecar read at `{slot, record ordinal}` | READY, identity/generation, sidecar-required/range and response-hold ownership |
+| `s2_payload_fragment_in.fire` | parent captures tagged payload write; child `payload_write_req.fire` writes `{slot, fragment}`; matching `payload_write_ack.fire` advances payload order | exact identity/generation, FILLING, fill-open, ordinal and `last` validation |
+| `s2_sidecar_fragment_in.fire` | parent captures tagged sidecar write; child `sidecar_write_req.fire` writes `{slot, record ordinal}`; matching `sidecar_write_ack.fire` advances sidecar order | exact identity/generation, FILLING, sidecar-required and ordinal validation |
+| `s2_payload_read_req_in.fire` | parent captures approved read; child `payload_read_req.fire` / matching `payload_read_rsp.fire` supplies `{slot, fragment}` data | READY, identity/generation, range and external response-hold ownership |
+| `s2_sidecar_read_req_in.fire` | parent captures approved read; child `sidecar_read_req.fire` / matching `sidecar_read_rsp.fire` supplies `{slot, record ordinal}` data | READY, identity/generation, sidecar-required/range and external response-hold ownership |
 
 The logical capacity stays fixed at two slots, each with 512 64-B payload
 fragments and 64 8-B padded sidecar records. This is not an SRAM macro,
@@ -45,8 +52,8 @@ conclusion changes in this batch.
 
 ## Executed verification record
 
-All commands below were run against the implementation in this batch on
-2026-10-19.
+The historical direct-boundary results below remain valid.  The typed parent
+adapter successor was run remotely on 2026-10-27.
 
 | Check | Command / result |
 | --- | --- |
@@ -63,3 +70,24 @@ The final standalone structural command ended with
 `MR2_S2_STRUCTURAL_EXIT=0`. This is functional/structural regression evidence
 only; it does not select a physical wrapper or establish synthesis/PPA
 eligibility.
+
+### Parent-access adapter successor (2026-10-27)
+
+| Check | Result |
+| --- | --- |
+| local no-model guard | `.venv/bin/python -m pytest -q tests/test_mr2_s2_array_boundary.py` — `2 passed`; `git diff --check` passed |
+| Route-A S2 directed | remote `RouteAS2DirectPendingSpec` `3/3` plus `RouteAPackedS2ReadPathSpec` `6/6`; `s2_adapter_directed_rerun.log`, `S2_ADAPTER_RERUN_EXIT=0` |
+| selected cross-stage non-regression | Route-A measurement `4/4`, Full-KV measurement `5/5`, dual-DUT structural `3/3`, and four-consumer `3/3`. The first combined execution exposed only a fixed-cycle S2 terminal-ready test assumption; `RouteAFourConsumerCompletionSpec` was rerun after it waited for the required child write ack, `S2_FOURCONSUMER_RERUN_EXIT=0` |
+
+The Full-KV five-test result is a non-regression control only.  It does not
+provide a Full-KV payload access adapter, an access-map equivalence proof, or
+a common-cost cancellation.  No macro, physical port count, latency, clock,
+controller, DC, CACTI, or PPA conclusion follows.
+
+The immutable `measurement_dut_cut_freeze_20261025.json` remains anchored to
+`fc06fdbc` and is deliberately not rewritten.  Its live-source SHA guard now
+reports the prior P3 successor drift in `RouteAIncrementalSkeletons.scala` and
+this S2 successor drift in `RouteACommonSkeletons.scala`; that expected
+historical-manifest mismatch is not a semantic regression.  A new source/port
+freeze is deferred until the approved Full-KV S2 pairing and P3 full-root DPI
+harness recovery are both complete.

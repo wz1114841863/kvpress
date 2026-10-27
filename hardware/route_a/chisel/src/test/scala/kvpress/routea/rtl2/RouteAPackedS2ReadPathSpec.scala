@@ -209,17 +209,31 @@ final class RouteAPackedS2ReadPathSpec extends AnyFunSpec with ChiselSim {
       val sidecar = d.io.sidecar_fragment.bits
       sidecar.transaction_identity.request_id.poke(rid.U); sidecar.transaction_identity.incarnation.poke(1.U)
       sidecar.s2_slot.poke(0.U); sidecar.source_generation.poke(generation.U); sidecar.record_ordinal.poke(ordinal.U); sidecar.data.poke((0x900 + ordinal).U)
-      d.io.sidecar_fragment.valid.poke(true.B); d.io.sidecar_fragment.ready.expect(true.B); d.clock.step(); d.io.sidecar_fragment.valid.poke(false.B)
+      d.io.sidecar_fragment.valid.poke(true.B)
+      var waited = 0
+      while (d.io.sidecar_fragment.ready.peek().litValue == 0 && waited < 32) { d.clock.step(); waited += 1 }
+      d.io.sidecar_fragment.ready.expect(true.B); d.clock.step(); d.io.sidecar_fragment.valid.poke(false.B)
     }
     val complete = d.io.sidecar_complete.bits
     complete.transaction_identity.request_id.poke(rid.U); complete.transaction_identity.incarnation.poke(1.U); complete.s2_slot.poke(0.U); complete.source_generation.poke(generation.U)
-    d.io.sidecar_complete.valid.poke(true.B); d.io.sidecar_complete.ready.expect(true.B); d.clock.step(); d.io.sidecar_complete.valid.poke(false.B)
+    d.io.sidecar_complete.valid.poke(true.B)
+    var waited = 0
+    while (d.io.sidecar_complete.ready.peek().litValue == 0 && waited < 32) { d.clock.step(); waited += 1 }
+    d.io.sidecar_complete.ready.expect(true.B); d.clock.step(); d.io.sidecar_complete.valid.poke(false.B)
+    // Payload terminal and sidecar-complete are independent owner events.  A
+    // typed child-array write acknowledgement may delay the final payload
+    // terminal beyond the sidecar completion handshake; wait for the parent
+    // to observe both before treating the slot as READY.
+    waited = 0
+    while (d.io.s2_state.peek().litValue != 2 && waited < 32) { d.clock.step(); waited += 1 }
   }
 
   private def readPayload(d: RouteAPackedS2ReadPathHarness, index: Int, expected: Int): Unit = {
     val read = d.io.payload_read_req.bits
     read.transaction_identity.request_id.poke(3.U); read.transaction_identity.incarnation.poke(1.U); read.s2_slot.poke(0.U); read.source_generation.poke(1.U); read.fragment_index.poke(index.U)
     d.io.payload_read_req.valid.poke(true.B); d.io.payload_read_req.ready.expect(true.B); d.clock.step(); d.io.payload_read_req.valid.poke(false.B)
+    var waited = 0
+    while (d.io.payload_read_rsp.valid.peek().litValue == 0 && waited < 32) { d.clock.step(); waited += 1 }
     d.io.payload_read_rsp.valid.expect(true.B); d.io.payload_read_rsp.bits.data.expect(expected.U); d.io.payload_read_rsp.ready.poke(true.B); d.clock.step(); d.io.payload_read_rsp.ready.poke(false.B)
   }
 

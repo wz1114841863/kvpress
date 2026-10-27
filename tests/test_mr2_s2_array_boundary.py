@@ -18,10 +18,31 @@ def test_mr2_s2_array_boundary_keeps_arrays_out_of_s2_control_wrapper() -> None:
     assert "val storage = Module(new RouteAS2PayloadSidecarArrayBoundary(p))" in wrapper
     assert "val payloadStore = Mem(" not in wrapper
     assert "val sidecarStore = Mem(" not in wrapper
-    assert "storage.io.payload_write_enable := true.B" in wrapper
-    assert "storage.io.sidecar_write_enable := true.B" in wrapper
-    assert "storage.io.payload_read_data" in wrapper
-    assert "storage.io.sidecar_read_data" in wrapper
+    for required in (
+        "class S2PayloadArrayWriteRequest",
+        "class S2PayloadArrayWriteAck",
+        "class S2PayloadArrayReadRequest",
+        "class S2PayloadArrayReadResponse",
+        "class S2SidecarArrayWriteRequest",
+        "class S2SidecarArrayWriteAck",
+        "class S2SidecarArrayReadRequest",
+        "class S2SidecarArrayReadResponse",
+        "storage.io.payload_write_req",
+        "storage.io.payload_write_ack",
+        "storage.io.payload_read_req",
+        "storage.io.payload_read_rsp",
+        "storage.io.sidecar_write_req",
+        "storage.io.sidecar_write_ack",
+        "storage.io.sidecar_read_req",
+        "storage.io.sidecar_read_rsp",
+        "payloadWriteAwaitAck",
+        "sidecarWriteAwaitAck",
+        "payloadReadOutstanding",
+        "sidecarReadOutstanding",
+    ):
+        assert required in text
+    assert "storage.io.payload_write_enable" not in wrapper
+    assert "storage.io.sidecar_write_enable" not in wrapper
 
 
 def test_mr2_s2_contract_records_array_only_and_retained_control_boundary() -> None:

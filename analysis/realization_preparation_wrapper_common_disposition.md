@@ -5,9 +5,10 @@ the first decision package after the conditional synthesis-top selection.  It
 turns the four MR-2 logical array boundaries and the frozen dual-DUT cut into
 an implementable wrapper plan.  The M2 parent-side adapter RTL has passed its
 remote directed and 10-suite cross-stage regression on successor `3f3a489`.
-The R5 parent-side adapter is functionally verified on the current bounded
-contour; P3's parent-side typed access adapter is now functionally verified,
-while S2 wrapper RTL remains pending. No macro, port count, clock,
+The R5 and P3 parent-side adapters are functionally verified on the current
+bounded contour; Route-A S2's parent-side typed access adapter is also
+functionally verified.  Full-KV S2 payload access remains a separately pending
+paired implementation. No macro, port count, clock,
 library, controller, numeric unit, DC, CACTI, PPA, area, energy, or performance
 result is selected or claimed.
 
@@ -45,9 +46,9 @@ not choose a number of cycles, clock, frequency, pipeline, or CDC scheme.
 
 ### Required implementation consequence
 
-The earlier M2, R5 and P3 functional children exposed whole-array views to
-their parents. The implemented M2, R5 and P3 parent adapters replace those
-views with typed access carriers; S2 remains to be implemented. A physical-array
+The earlier M2, R5, P3 and S2 functional children exposed direct functional
+array views to their parents. The implemented Route-A M2, R5, P3 and S2 parent
+adapters replace those views with typed access carriers. A physical-array
 replacement cannot retain a whole-array form as a black-box
 port without charging a wide snapshot/mux network or changing control
 ownership.  The proposed `m2_entry_access_v1` and `r5_availability_access_v1`
@@ -116,8 +117,9 @@ as synthesized hardware merely to make elaboration succeed.
 The approved dispositions authorize **only** a wrapper-RTL work package with
 these order constraints:
 
-1. implement typed parent-side adapters and preserve each named parent owner;
-2. close the Full-KV S2 payload-wrapper choice or retain it as a non-cancelled
+1. preserve the implemented typed Route-A parent-side adapters and each named
+   parent owner;
+2. implement and verify the Full-KV S2 payload wrapper, or retain it as a non-cancelled
    paired provision;
 3. create a successor source/port/filelist freeze and run owner, reset/stale,
    atomicity, and paired-cut regressions; then

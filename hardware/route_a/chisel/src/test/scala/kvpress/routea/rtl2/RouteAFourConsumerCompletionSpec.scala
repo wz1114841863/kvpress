@@ -196,6 +196,10 @@ final class RouteAFourConsumerCompletionSpec extends AnyFunSpec with ChiselSim {
     val payload = d.io.s2_payload.bits; identity(payload.transaction_identity, rid); payload.s2_slot.poke(0.U); payload.source_generation.poke(1.U); payload.fragment_index.poke(0.U); payload.last.poke(true.B); payload.data.poke(0.U)
     d.io.s2_payload.valid.poke(true.B); d.io.s2_payload.ready.expect(true.B); d.clock.step(); d.io.s2_payload.valid.poke(false.B)
     val terminal = d.io.s2_terminal.bits; identity(terminal.transaction_identity, rid); terminal.s2_slot.poke(0.U); terminal.source_generation.poke(1.U); terminal.fragment_index.poke(0.U); terminal.last.poke(true.B); terminal.status.poke(p.coreMemoryOkStatusCode.U)
+    // The parent exposes terminal readiness only after the typed array child
+    // has acknowledged this accepted final payload write.
+    var waited = 0
+    while (d.io.s2_terminal.ready.peek().litValue == 0 && waited < 16) { d.clock.step(); waited += 1 }
     d.io.s2_terminal.valid.poke(true.B); d.io.s2_terminal.ready.expect(true.B); d.clock.step(); d.io.s2_terminal.valid.poke(false.B)
   }
   private def sendPlan(d: RouteAFourConsumerCompletionHarness, rid: Int, presence: Int): Unit = {

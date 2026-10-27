@@ -57,7 +57,13 @@
       "reset_clock": "candidate_top_reset_and_existing_mem_init_gate; no CDC or latency selected",
       "cost_ownership": "payload_pending_paired_proof; sidecar_route_a_incremental_unestimated_not_zero",
       "physical_wrapper_mapping_pending": true,
-      "full_kv_gap": "current FullKVS2GqaSourceWrapper has no payload-read array interface"
+      "implementation_status": "route_a_parent_access_adapter_functionally_verified_full_kv_paired_wrapper_pending",
+      "verification": {
+        "remote_directed": "RouteAS2DirectPendingSpec 3/3 plus RouteAPackedS2ReadPathSpec 6/6, s2_adapter_directed_rerun.log, EXIT_STATUS=0",
+        "remote_cross_stage": "RouteAMeasurementDutR3Spec 4/4; FullKVMeasurementDutSpec 5/5 non-regression only; DualMeasurementDutStructuralSpec 3/3; RouteAFourConsumerCompletionSpec 3/3 after ack-aware test timing update, s2_fourconsumer_rerun.log, EXIT_STATUS=0",
+        "local_guard": "tests/test_mr2_s2_array_boundary.py 2/2 and git diff --check"
+      },
+      "full_kv_gap": "current FullKVS2GqaSourceWrapper has no payload-read array interface; its non-regression tests are not a paired access-map proof"
     },
     {
       "id": "r5_availability_access_v1",
