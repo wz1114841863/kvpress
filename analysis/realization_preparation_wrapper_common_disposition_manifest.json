@@ -70,12 +70,13 @@
       "physical_wrapper_mapping_pending": true,
       "implementation_status": "parent_side_lookup_update_ack_adapter_functionally_verified",
       "verification": {
-        "source_commit": "3aab1ce17304490a4ac0605a3a455be4fb907a26",
+        "source_commit": "bfa441cf3bca4c1119350cbcf1d4e2349900d4c6",
         "remote_directed": [
           "RouteAR5AvailabilityArrayBoundarySpec 1/1 and RouteAReclaimSpec 5/5, EXIT_STATUS=0, r5_parent_adapter_directed_f4b35ca_rerun.log",
           "RouteAR3R5PublicationSpec 5/5 and RouteAResetEpochIntegrationSpec 4/4, EXIT_STATUS=0, r5_parent_adapter_pubfix_3aab1ce.log"
         ],
-        "remaining": "current-source selected cross-stage non-regression required before successor source/port freeze"
+        "remote_cross_stage": "10 real suites / 40 tests, EXIT_STATUS=0, combined r5_parent_adapter_p1_full_nonreg_a60e525.log (six real suites; four 0/0 selectors excluded), r5_parent_adapter_p1_missed_suites_a60e525.log, and r5_parent_adapter_p1_owner_direct_bfa441c.log; bfa441c changes test timing only",
+        "remaining": "successor source/port freeze and physical wrapper mapping remain separately required"
       }
     }
   ],

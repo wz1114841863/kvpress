@@ -619,13 +619,21 @@ facts.
 
 Remote directed evidence is `15/15`: boundary/reclaim `6/6` at
 `r5_parent_adapter_directed_f4b35ca_rerun.log`, then R3/R5 publication/reset
-`9/9` at `r5_parent_adapter_pubfix_3aab1ce.log`. This is a functional wrapper
-adapter result only. The availability interior plus parent scan/ack peripheral
-remain Route-A incremental `unestimated_not_zero`; no macro, port count,
-latency, descriptor controller, DC, CACTI, or PPA result follows. A
-current-source selected cross-stage non-regression is required before the
-successor source/port freeze; only P3/S2 wrapper RTL remains unimplemented in
-the approved sequence.
+`9/9` at `r5_parent_adapter_pubfix_3aab1ce.log`. The current-source selected
+cross-stage evidence is additionally complete: `10` real suites / `40` tests
+on the unchanged R5 production RTL, using the six real suites from
+`r5_parent_adapter_p1_full_nonreg_a60e525.log` plus correct-package reruns at
+`r5_parent_adapter_p1_missed_suites_a60e525.log` and
+`r5_parent_adapter_p1_owner_direct_bfa441c.log`. Four initial `0/0` selector
+outputs are explicitly excluded; `bfa441c` only makes owner-fact test timing
+wait for the required allocation ack.
+
+This is a functional wrapper adapter result only. The availability interior
+plus parent scan/ack peripheral remain Route-A incremental
+`unestimated_not_zero`; no macro, port count, latency, descriptor controller,
+DC, CACTI, or PPA result follows. A successor source/port freeze is still a
+separate gate; only P3/S2 wrapper RTL remains unimplemented in the approved
+sequence.
 
 ## New-conversation prompt seed
 

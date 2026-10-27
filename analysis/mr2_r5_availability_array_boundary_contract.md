@@ -94,5 +94,16 @@ admission, pruning, GQA, or scheduler semantics.
   `/home/yaz80/wz_project/chisel_projects/kvpress/logs/r5_parent_adapter_pubfix_3aab1ce.log`.
   These verify response holding, ack-derived PageRef/reclaim generations,
   publication-before-visibility, fault fail-closed behavior, and reset
-  isolation. A later current-source cross-stage non-regression remains
-  required before any successor source/port freeze.
+- The selected current-source cross-stage regression is now complete on the
+  unchanged R5 production RTL of `f4b35ca`: `10` real suites / `40` tests,
+  `EXIT=0`. The initial invocation on `a60e525` ran six real suites / `23`
+  tests; four incorrectly package-qualified selectors produced `0/0` and are
+  explicitly excluded. Correct-package reruns contributed four-consumer and
+  packed-composition `6/6` at
+  `r5_parent_adapter_p1_missed_suites_a60e525.log`, then owner-fact and
+  direct-pending `11/11` at
+  `r5_parent_adapter_p1_owner_direct_bfa441c.log`. Commit `bfa441c` changes
+  only the owner-fact test to wait for the contract-required allocation ack;
+  it does not alter production RTL. This completes the R5 batch's
+  current-source selected non-regression, but not any successor source/port
+  freeze, macro, or physical-realization decision.
