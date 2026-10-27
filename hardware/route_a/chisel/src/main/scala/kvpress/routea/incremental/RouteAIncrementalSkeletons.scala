@@ -2857,6 +2857,11 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
 
   stageStorage.io.payload_write_ack.ready := payloadWritePending
   val payloadWriteCommit = stageStorage.io.payload_write_ack.fire
+  // Define this before either completion path references it.  The ready
+  // assignment is made below with the sidecar request path; `fire` remains
+  // the same hardware event and permits the explicit same-cycle completion
+  // case without a Scala forward-reference during elaboration.
+  val sidecarWriteCommit = stageStorage.io.sidecar_write_ack.fire
   when(payloadWriteCommit) {
     val ack = stageStorage.io.payload_write_ack.bits
     assert(ack.layer === payloadWriteLayer && ack.fragment === payloadWriteFragment,
@@ -2900,7 +2905,6 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   }
 
   stageStorage.io.sidecar_write_ack.ready := sidecarWritePending
-  val sidecarWriteCommit = stageStorage.io.sidecar_write_ack.fire
   when(sidecarWriteCommit) {
     val ack = stageStorage.io.sidecar_write_ack.bits
     assert(ack.layer === sidecarWriteLayer && ack.ordinal === sidecarWriteOrdinal,
