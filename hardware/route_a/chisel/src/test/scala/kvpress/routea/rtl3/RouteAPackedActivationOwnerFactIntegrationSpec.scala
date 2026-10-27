@@ -109,7 +109,17 @@ final class RouteAPackedActivationOwnerFactIntegrationSpec extends AnyFunSpec wi
   private def publishPage0(d: RouteAPackedActivationOwnerFactHarness, records: Int = 2): Unit = {
     val a = d.io.allocation.bits
     a.layer.poke(0.U); a.kv_head.poke(0.U); a.valid_records.poke(records.U); a.transaction_group_tag.poke(6.U)
-    d.io.allocation.valid.poke(true.B); d.io.allocation.ready.expect(true.B); d.clock.step(); d.io.allocation.valid.poke(false.B)
+    d.io.allocation.valid.poke(true.B)
+    var waitCycles = 0
+    while (!d.io.allocation.ready.peek().litToBoolean && waitCycles < 32) {
+      d.clock.step(); waitCycles += 1
+    }
+    d.io.allocation.ready.expect(true.B)
+    d.clock.step(); d.io.allocation.valid.poke(false.B)
+    // The typed allocation update is accepted by the child on the allocation
+    // fire; only the following parent cycle observes its ack and forms the
+    // build/PageRef state required by the descriptor terminal.
+    d.clock.step()
     val t = d.io.descriptor_terminal.bits
     t.kind.poke(RouteADescriptorOperationKind.NewPage.U); t.page_ref.page_id.poke(0.U); t.page_ref.generation.poke(0.U)
     t.transaction_group_tag.poke(6.U); t.status.poke(p.coreMemoryOkStatusCode.U); t.r1_descriptor_durable.poke(true.B)
