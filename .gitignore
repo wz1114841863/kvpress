@@ -177,6 +177,7 @@ cython_debug/
 # IDE
 .vscode/
 
+EDA服务器访问说明.md
 # Generated KVzap traces (keep large score/mask artifacts out of git)
 traces/*
 !traces/.gitkeep
