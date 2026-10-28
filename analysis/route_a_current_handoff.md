@@ -839,6 +839,21 @@ external-service declarations, then inspect actual synthesis connectivity and
 optimization.  No DC, macro, area, timing, power, PPA or net-benefit claim is
 authorized by this freeze.
 
+### DC environment preflight (2026-10-29)
+
+[`dc_environment_preflight_20261029.md`](dc_environment_preflight_20261029.md)
+records that `dc-server` has an executable Synopsys `dc_shell O-2018.06-SP1`
+and the inherited TSMC28 standard-cell `.db` candidates under the existing
+`dc_project/pdk` root.  The explicit sourceable environment and read-only
+preflight live in `hardware/route_a/dc/`; they verify the selected feasibility
+library path, frozen HDL archive hash, and the independent 1-SV Full-KV and
+182-SV Route-A filelists without invoking DC.  The 2026-10-29 remote preflight
+passed with candidate-library SHA-256
+`5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d`.
+Clock/reset constraints,
+array/black-box treatment and external-service stubs remain intentionally
+unselected and are the next separately authorized DC-feasibility inputs.
+
 ## New-conversation prompt seed
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read
