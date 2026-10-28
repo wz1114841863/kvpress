@@ -44,7 +44,7 @@
       "reset_clock": "candidate_top_reset_and_existing_mem_init_gate; no CDC or latency selected",
       "cost_ownership": "route_a_incremental_unestimated_not_zero",
       "implementation_status": "parent_access_adapter_functionally_verified",
-      "evidence": "remote p3_parent_adapter_isolated_rerun_0023e76.log: RouteAP3StageArrayBoundarySpec 1/1 plus RouteAR3R5PublicationSpec 6/6, EXIT_CODE=0; narrow probe avoids known unrelated B2c deep-carrier ChiselSim DPI root defect",
+      "evidence": "remote p3_parent_adapter_isolated_rerun_0023e76.log: RouteAP3StageArrayBoundarySpec 1/1 plus RouteAR3R5PublicationSpec 6/6, EXIT_CODE=0; p3_fullroot_dpi_harness_20261028.log restores RouteARTL39AMaterializationSpec 3/3 through a flat observation root containing an unchanged RouteAM2P3Wrapper child; p3_fullroot_dpi_nonreg_20261028.log reruns RouteAP3StageArrayBoundarySpec 1/1 plus RouteAR3R5PublicationSpec 6/6, P3_FULLROOT_DPI_NONREG_EXIT=0",
       "physical_wrapper_mapping_pending": true
     },
     {
@@ -129,5 +129,5 @@
     "r5_descriptor_hbm_region": "route_a_external_descriptor_service_nonzero"
   },
   "prohibited_actions": ["macro or port-count selection", "latency or clock/frequency selection", "CDC/controller/numeric implementation", "DC/CACTI", "PPA or quantitative cost claim"],
-  "next_gate": "bounded P3 full-root ChiselSim DPI harness recovery, then successor source/port/filelist freeze and paired shell conformance"
+  "next_gate": "successor source/port/filelist freeze and paired shell conformance; the Full-KV focused 3-bit versus Route-A anchor 9-bit/512-fragment S2 geometry must be resolved as a fairness gate before any common-cost cancellation"
 }

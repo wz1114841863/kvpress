@@ -75,19 +75,38 @@ RouteAR3R5PublicationSpec                         6/6
 EXIT_CODE=0
 ```
 
-The sixth R3/R5 case is a narrow simulator-facing parent probe: it proves the
-P3 request -> tagged read response -> exact packed-write data sequence while
-leaving the production candidate/delivery carriers below the probe. This is
-required because the remote ChiselSim DPI bridge cannot generate C++ accessors
-for an unrelated, existing B2c deep `direct_pending_association` field when
-the full R3 wrapper is the simulation root. It is a test-harness limitation,
-not a production tie-off, carrier change, or P3 semantic exception.
+The sixth R3/R5 case remains a narrow simulator-facing parent probe: it proves
+the P3 request -> tagged read response -> exact packed-write data sequence
+while leaving the production candidate/delivery carriers below the probe.
 
-The historical direct-root `RouteARTL39AMaterializationSpec` is therefore not
-used as current remote P3-wrapper evidence; its root DPI failure must not be
-counted as a P3 functional failure or as a passing regression. The narrow
-probe and P3-child test above are the current directed evidence for this
-adapter sub-batch.
+The former direct-root `RouteARTL39AMaterializationSpec` DPI failure was
+repaired on 2026-10-28 without changing `RouteAM2P3Wrapper`: the test now
+instantiates that complete production child below
+`RouteARTL39AMaterializationHarness`, which exposes only the materialization,
+packed-write and durable fields actually asserted by the test. The B2c
+`direct_pending_association` leaf remains inside the child, so the remote
+ChiselSim C++ bridge no longer tries to generate an invalid root accessor.
+This is an observation-root repair, not a production tie-off, carrier change,
+or P3 semantic exception.
+
+Remote EDA evidence is:
+
+```text
+/home/yaz80/wz_project/chisel_projects/kvpress/logs/
+  p3_fullroot_dpi_harness_20261028.log
+  RouteARTL39AMaterializationSpec                    3/3
+  P3_FULLROOT_DPI_HARNESS_EXIT=0
+
+  p3_fullroot_dpi_nonreg_20261028.log
+  RouteAP3StageArrayBoundarySpec                     1/1
+  RouteAR3R5PublicationSpec                          6/6
+  P3_FULLROOT_DPI_NONREG_EXIT=0
+```
+
+The restored full-root evidence covers exact materialized work/sidecar,
+fault-driven reservation release, packed-write beat formation, mismatched
+terminal rejection, and durable emission. It complements rather than replaces
+the P3-child and narrow publication probes above.
 
 The following commands passed from the current live worktree on 2026-10-19:
 

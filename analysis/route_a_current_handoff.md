@@ -702,8 +702,7 @@ controller, DC, CACTI or PPA.
 The immutable cut-freeze at `fc06fdbc` is not rewritten by wrapper successors.
 Its current source-SHA guard reports the already recorded P3 incremental-source
 drift and the new S2 common-source drift.  This is a provenance status, not a
-functional failure: the successor source/port/filelist freeze remains deferred
-until the Full-KV S2 pairing and P3 full-root ChiselSim DPI harness recovery.
+functional failure.
 
 ### Paired S2 payload access-map disposition (2026-10-28)
 
@@ -720,9 +719,21 @@ parameterized payload geometry and baseline-local lifecycle/fault shell.  Both
 payload interiors/adapters remain named nonzero costs.  A common payload result
 requires a same-parameter future shell, explicit wrapper equivalence, paired
 reset/init/stale/fault/release conformance, and the successor source/port/filelist
-freeze.  The ordered next work is the bounded P3 full-root ChiselSim DPI
-harness recovery; this disposition neither chooses physical storage nor starts
-DC/CACTI/PPA.
+freeze.  The P3 full-root ChiselSim DPI harness recovery is now complete. The
+test root is `RouteARTL39AMaterializationHarness`, which contains the unchanged
+production `RouteAM2P3Wrapper` and flattens only the fields asserted by
+`RouteARTL39AMaterializationSpec`; it is not a production wrapper or a
+substitute for the candidate/delivery paths. Remote evidence is
+`p3_fullroot_dpi_harness_20261028.log` (3/3, exit 0) and
+`p3_fullroot_dpi_nonreg_20261028.log` (P3 boundary 1/1 plus R3/R5 publication
+6/6, exit 0).
+
+The ordered next work is the successor source/port/filelist freeze and paired
+shell conformance. Before any common-cost cancellation, it must resolve the
+Full-KV focused 3-bit geometry versus Route-A anchor 9-bit/512-fragment
+geometry: prove a legal same-configuration implementation or retain the
+realized difference as separately nonzero cost. This recovery neither chooses
+physical storage nor starts DC/CACTI/PPA.
 
 ## New-conversation prompt seed
 
