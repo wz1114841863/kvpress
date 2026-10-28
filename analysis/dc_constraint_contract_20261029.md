@@ -44,7 +44,8 @@ candidate from `dc_environment_preflight_20261029.md`.
 
 `check_kvzap_control_projection_constraints.sh` checks both frozen HDL roots,
 all required Tcl variables and commands, and rejects an accidental synchronous
-reset false path.  It may run without DC and leaves all numeric values unset.
+reset false path. It may run without DC; its required variables are supplied
+by the separately frozen `dc_feasibility_fair_v1` manifest/environment.
 
 The remote static contract check passed on 2026-10-29 for both actual generated
 top roots.  `tclsh` is not installed on the EDA server, so no standalone Tcl

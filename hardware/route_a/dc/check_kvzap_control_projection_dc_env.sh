@@ -73,5 +73,5 @@ note "hdl_archive_sha256=$archive_actual"
 note "run_root_not_created=$KVZAP_DC_RUN_ROOT"
 note "ARRAY_BLACKBOX_TREATMENT=unselected"
 note "EXTERNAL_SERVICE_STUB_TREATMENT=unselected"
-note "CLOCK_RESET_CONSTRAINTS=unselected"
+note "CLOCK_RESET_CONSTRAINT_PROFILE=$KVZAP_DC_CONSTRAINT_PROFILE period_ns=$KVZAP_DC_CLOCK_PERIOD_NS setup_ns=$KVZAP_DC_CLOCK_SETUP_UNCERTAINTY_NS hold_ns=$KVZAP_DC_CLOCK_HOLD_UNCERTAINTY_NS input_delay_ns=$KVZAP_DC_INPUT_DELAY_NS output_delay_ns=$KVZAP_DC_OUTPUT_DELAY_NS input_transition_ns=$KVZAP_DC_INPUT_TRANSITION_NS output_load_pf=$KVZAP_DC_OUTPUT_LOAD_PF"
 printf '%s\n' 'KVZAP_DC_ENVIRONMENT_PASS: tools, feasibility-library candidate, and independent HDL inputs are present; this does not authorize or launch DC.'

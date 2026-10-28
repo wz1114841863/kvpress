@@ -43,4 +43,4 @@ done
 if command -v tclsh >/dev/null 2>&1; then
   tclsh "$constraint_tcl"
 fi
-printf '%s\n' 'KVZAP_DC_CONSTRAINT_CONTRACT_PASS: parameterized synchronous clock/reset and I/O contract is structurally valid; numerical values remain explicitly unselected.'
+printf '%s\n' 'KVZAP_DC_CONSTRAINT_CONTRACT_PASS: parameterized synchronous clock/reset and I/O contract is structurally valid; dc_feasibility_fair_v1 numerical defaults are separately manifest-verified.'

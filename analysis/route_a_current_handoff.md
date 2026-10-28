@@ -869,6 +869,41 @@ check passed for both actual generated roots; the server has no standalone
 `tclsh`, so only the future authorized DC Tcl source will perform the final DC
 parser check.
 
+### `dc_feasibility_fair_v1` numerical constraint freeze (2026-10-29)
+
+[`dc_feasibility_fair_v1_constraint_freeze_20261029.md`](dc_feasibility_fair_v1_constraint_freeze_20261029.md)
+freezes the first paired DC feasibility profile: 2.0 ns period, 0.10/0.02 ns
+setup/hold uncertainty, 0.20 ns I/O delays, 0.05 ns input transition and
+0.005 pF lightweight top-level output load under the inherited TSMC28 LVT SSG
+library.  It applies identically to both generated top roots; reset is timed
+as a synchronous input, with no false-path or multicycle exception.  A static
+coverage report will enumerate every actual top port, but DC's ignored-
+constraint and unconstrained-path reports remain required during the later
+authorized run.
+
+The freeze also makes the remaining readiness block explicit: M2/P3/R5/S2
+array interiors need a typed generic black-box/stub materialization before DC;
+their parent control/peripherals stay in RTL.  Current external services are
+typed top-level ports but still require an interface-conformant harness/stub
+and nonzero/unestimated cost treatment.  No behavioral array may be treated
+as free synthesized logic, and no DC launch is authorized by this record.
+
+### DC feasibility fair-v1 input readiness (2026-10-29)
+
+[`dc_feasibility_input_readiness_review_20261029.md`](dc_feasibility_input_readiness_review_20261029.md)
+accepts the approved fair-v1 manifest and static coverage: the actual frozen
+Full-KV root has 41 ordinary inputs/36 outputs, Route-A has 244/115, and both
+have zero static unconstrained ports under the collection-based single-clock
+contract. DC-native ignored-constraint and unconstrained-path evidence is
+still deferred until an authorized run.
+
+The input package is not DC-ready yet: only M2/P3/R5/S2 typed array interiors
+may be generic black-box/proxy materialized, and that implementation has not
+yet been done. Synthesizing behavioral arrays as ordinary free logic, or
+black-boxing an entire boundary and losing parent control, is prohibited. The
+next bounded work is interior-only materialization plus successor filelist and
+regression closure; no DC/PPA run is authorized until it passes.
+
 ## New-conversation prompt seed
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

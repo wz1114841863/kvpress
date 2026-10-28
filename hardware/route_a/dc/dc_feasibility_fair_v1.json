@@ -1,0 +1,68 @@
+{
+  "schema_version": "kvzap-dc-feasibility-constraint-profile-v1",
+  "profile_id": "dc_feasibility_fair_v1",
+  "status": "approved_static_coverage_pending_DC_tool_coverage",
+  "scope": "first paired Full-KV versus Route-A control-projection DC feasibility only",
+  "constraints": {
+    "clock_period_ns": "2.0",
+    "setup_uncertainty_ns": "0.10",
+    "hold_uncertainty_ns": "0.02",
+    "input_delay_ns": "0.20",
+    "output_delay_ns": "0.20",
+    "input_transition_ns": "0.05",
+    "output_load_pf": "0.005",
+    "output_load_interpretation": "lightweight top-level feasibility load; not HBM, package, PHY, or system-interconnect load"
+  },
+  "library": {
+    "path": "/home/yaz80/wz_project/dc_project/pdk/TSMC28/tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db",
+    "corner": "TSMC28 LVT SSG 0.81V 125C",
+    "selection_scope": "existing H3 feasibility-library inheritance only; not a PPA library/corner sweep",
+    "sha256": "5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d"
+  },
+  "integrity": {
+    "hdl_archive_sha256": "335942f0f01c24124b1fda56c6ebbd8b3425afdb2c31220cac04ff871aa94310",
+    "constraint_tcl_sha256": "3bc9d0e4b3caf9244f38e265ad1222f2ea36d89bed0a31d27a4d3cba19fe5007",
+    "target_library_sha256": "5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d"
+  },
+  "tops": {
+    "full_kv": {
+      "top_module": "full_kv_control_projection",
+      "top_sv": "full_kv_control_projection.sv",
+      "filelist": "full_kv_control_projection.f",
+      "filelist_root": "",
+      "expected_file_count": 1
+    },
+    "route_a": {
+      "top_module": "route_a_control_projection",
+      "top_sv": "route_a_control_projection_split/route_a_control_projection.sv",
+      "filelist": "route_a_control_projection_split/route_a_control_projection.f",
+      "filelist_root": "route_a_control_projection_split/",
+      "expected_file_count": 182
+    }
+  },
+  "constraint_coverage_rule": {
+    "clock": "exactly one port named clock; excluded from input delay and transition",
+    "reset": "exactly one port named reset; treated as an ordinary synchronous input",
+    "inputs": "all top inputs other than clock receive input delay and transition",
+    "outputs": "all top outputs receive output delay and load",
+    "forbidden_path_exceptions": ["set_false_path", "set_multicycle_path"],
+    "DC_tool_coverage_required_later": ["check_timing", "report_constraint -all_violators", "unconstrained path report", "ignored-constraint diagnostics"]
+  },
+  "array_and_external_boundary_rule": {
+    "array_interiors": {
+      "status": "typed_array_only_blackbox_materialization_required_before_DC_invocation",
+      "M2": "m2_entry_access_v1; retain parent RMW/prepare/commit/abort/credit/publication/reclaim control",
+      "P3": "p3_stage_access_v1; retain parent binding/durability/publication/release control",
+      "R5": "r5_availability_access_v1; retain page selection/generation/reclaim/descriptor control",
+      "S2": "s2_payload_access_v1 plus Route-A s2_sidecar_access_v1; retain READY/four-consumer/release/fault control",
+      "rule": "only the array interior may become a generic black-box or later macro proxy; no whole-array view, parent control, adapter, mux, fanout, or state may disappear"
+    },
+    "external_services": {
+      "status": "typed_top_level_boundary_no_internal_stub_in_current_HDL",
+      "services": ["external_core_mem_if_v1", "P3 pending backing", "R5 descriptor service", "functional sidecar delivery", "partial provider", "R4 numeric/partial service"],
+      "rule": "the current projections expose these as real typed top ports; a later DC harness may add only interface-conformant boundary stubs and must retain their nonzero/unestimated cost classification"
+    },
+    "cost_rule": "no array or external service is zero-cost, and S2 remains non-cancellable"
+  },
+  "prohibited_conclusions": ["target operating frequency", "HBM/package/system I/O model", "macro selection", "DC feasibility pass", "area/timing/power/PPA", "common-cost cancellation", "system speedup or net benefit"]
+}
