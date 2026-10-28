@@ -33,3 +33,14 @@ export KVZAP_DC_HDL_ARCHIVE="${KVZAP_DC_HDL_ARCHIVE:-$KVZAP_DC_HDL_ROOT/paired_c
 # This root is deliberately not created by the environment precheck.  A
 # separately authorized DC-feasibility run must choose an immutable run ID.
 export KVZAP_DC_RUN_ROOT="${KVZAP_DC_RUN_ROOT:-/home/yaz80/wz_project/dc_project/kvzap_control_projection/runs}"
+
+# These are intentionally empty until the DC-feasibility owner supplies an
+# approved numerical constraint profile.  Leaving them unselected is safer
+# than silently inheriting a decoder experiment's period or I/O assumptions.
+export KVZAP_DC_CLOCK_PERIOD_NS="${KVZAP_DC_CLOCK_PERIOD_NS:-}"
+export KVZAP_DC_CLOCK_SETUP_UNCERTAINTY_NS="${KVZAP_DC_CLOCK_SETUP_UNCERTAINTY_NS:-}"
+export KVZAP_DC_CLOCK_HOLD_UNCERTAINTY_NS="${KVZAP_DC_CLOCK_HOLD_UNCERTAINTY_NS:-}"
+export KVZAP_DC_INPUT_DELAY_NS="${KVZAP_DC_INPUT_DELAY_NS:-}"
+export KVZAP_DC_OUTPUT_DELAY_NS="${KVZAP_DC_OUTPUT_DELAY_NS:-}"
+export KVZAP_DC_INPUT_TRANSITION_NS="${KVZAP_DC_INPUT_TRANSITION_NS:-}"
+export KVZAP_DC_OUTPUT_LOAD_PF="${KVZAP_DC_OUTPUT_LOAD_PF:-}"

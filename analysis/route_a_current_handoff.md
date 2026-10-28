@@ -854,6 +854,21 @@ Clock/reset constraints,
 array/black-box treatment and external-service stubs remain intentionally
 unselected and are the next separately authorized DC-feasibility inputs.
 
+### DC constraint contract (2026-10-29)
+
+[`dc_constraint_contract_20261029.md`](dc_constraint_contract_20261029.md)
+adds a static-checked `hardware/route_a/dc/constraints_control_projection.tcl`
+for either frozen top.  It fixes the single `clock`/synchronous `reset`
+interface rule and constrains reset rather than hiding it with a false path.
+It deliberately requires an approved run manifest to specify all period,
+uncertainty, I/O delay/transition and output-load numbers; none is inherited
+from H3.  The resulting contract is ready, but numerical constraints,
+array/black-box treatment and external-service stubs remain required before a
+separately authorized DC-feasibility invocation.  The remote static contract
+check passed for both actual generated roots; the server has no standalone
+`tclsh`, so only the future authorized DC Tcl source will perform the final DC
+parser check.
+
 ## New-conversation prompt seed
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

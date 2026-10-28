@@ -33,3 +33,21 @@ top must use its own frozen `.f`; do not combine the two filelists because the
 independent generated units define common module names.  See
 [`analysis/paired_control_projection_hdl_freeze_20261028.md`](../../../analysis/paired_control_projection_hdl_freeze_20261028.md)
 for the HDL, source and evidence boundary.
+
+## Constraint contract
+
+`constraints_control_projection.tcl` is a parameterized, single-clock
+constraint procedure for either selected top.  It requires the run manifest to
+provide a period, setup/hold uncertainty, input/output delays, input transition
+and output load.  It does not default these from a previous decoder project.
+The only frozen top-level facts are one `clock` and one synchronous `reset`;
+reset remains timed as an input and is not marked false-path.  Check the
+contract without DC via:
+
+```bash
+hardware/route_a/dc/check_kvzap_control_projection_constraints.sh
+```
+
+The procedure is sourced and called only after a future DC run has analyzed
+and elaborated one top.  Supplying its numerical values and running that Tcl
+still require the separate DC-feasibility authorization.
