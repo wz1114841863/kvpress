@@ -13,7 +13,7 @@ import kvpress.routea.params.RouteASkeletonParameters
   * `core_mem_if_v1` and the source-partial/consumer boundary remain explicit
   * outer contracts.  This is neither a memory controller nor an attention PE.
   */
-final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
+class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
   val io = IO(new Bundle {
     val full_kv_read_work_in = Flipped(Decoupled(new FullKVReadWork(p)))
     val external_core_mem_if_v1 = new CoreMemoryExternalPort(p)
@@ -101,4 +101,14 @@ final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
   discard(router.io.r3_packed_write_out)
   discard(router.io.r5_append_out)
   discard(router.io.r5_reclaim_out)
+}
+
+/**
+  * Parameterized Full-KV control projection for a future synthesis-input
+  * generator. It intentionally has no default parameter profile: callers
+  * must supply an explicitly approved RouteASkeletonParameters instance.
+  */
+final class FullKVControlProjection(p: RouteASkeletonParameters)
+    extends FullKVMeasurementDut(p) {
+  override def desiredName: String = "full_kv_control_projection"
 }

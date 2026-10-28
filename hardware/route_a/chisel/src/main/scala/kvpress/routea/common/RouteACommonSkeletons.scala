@@ -2399,8 +2399,8 @@ final class RouteAFunctionalPartialProviderBoundary(p: RouteASkeletonParameters)
   * remains the only outward-terminal owner.  This child only owns the
   * reference-environment association/response protocol.
   */
-final class RouteAFunctionalR4ReferenceBoundary(p: RouteASkeletonParameters) extends Module {
-  override def desiredName: String = "route_a_functional_r4_reference_boundary"
+class RouteAR4ExternalProtocolAdapter(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "route_a_r4_external_protocol_adapter"
 
   val io = IO(new Bundle {
     val accepted_packet_in = Flipped(RouteAChannels.r4_accepted_partial_packet(p))
@@ -2552,6 +2552,17 @@ final class RouteAFunctionalR4ReferenceBoundary(p: RouteASkeletonParameters) ext
   when(RegNext(io.r4_numeric_fault_out.valid && !io.r4_numeric_fault_out.ready, false.B)) {
     assert(io.r4_numeric_fault_out.valid && io.r4_numeric_fault_out.bits.asUInt === heldFault.asUInt)
   }
+}
+
+/**
+  * Historical functional-reference name retained for its isolated RTL3 tests.
+  * Measurement/synthesis-control projections use RouteAR4ExternalProtocolAdapter
+  * directly: it is transport/association control only and has no numeric
+  * implementation.
+  */
+final class RouteAFunctionalR4ReferenceBoundary(p: RouteASkeletonParameters)
+    extends RouteAR4ExternalProtocolAdapter(p) {
+  override def desiredName: String = "route_a_functional_r4_reference_boundary"
 }
 
 /**

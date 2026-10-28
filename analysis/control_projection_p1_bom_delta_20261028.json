@@ -1,0 +1,46 @@
+{
+  "schema_version": "kvzap-control-projection-p1-bom-delta-1.0",
+  "status": "typed_externalization_implemented_no_cost_cancellation",
+  "date": "2026-10-28",
+  "base_bom": "analysis/measurement_boundary_bom.json",
+  "projection_sources": [
+    "kvpress.routea.top.FullKVControlProjection",
+    "kvpress.routea.top.RouteAControlProjection"
+  ],
+  "rows": [
+    {
+      "id": "route_a_sidecar_externalization_adapter",
+      "implementation": "typed top-level work/release/allocation/issue boundary replacing RouteAFunctionalSidecarDeliveryAdapter in RouteAControlProjection",
+      "cost_ownership": "route_a_incremental",
+      "cost_evidence_status": "unestimated_not_zero",
+      "treatment": "integration adapter and external sidecar service are not tied off or cancelled"
+    },
+    {
+      "id": "route_a_partial_provider_boundary",
+      "implementation": "direct typed offer/fragment ports to RouteASourceServicePacketAdapter; no functional pass-through child",
+      "cost_ownership": "differential_activity",
+      "cost_evidence_status": "unestimated_not_zero",
+      "treatment": "outer provider remains outside the control projection and is not a zero-cost black box"
+    },
+    {
+      "id": "route_a_r4_external_protocol_adapter",
+      "implementation": "inside-projection packet/result/fault association transport; numeric provider remains external",
+      "cost_ownership": "route_a_incremental",
+      "cost_evidence_status": "unestimated_not_zero",
+      "treatment": "transport control is retained; arithmetic and partial state are not synthesized or cancelled"
+    },
+    {
+      "id": "full_kv_control_projection_shell",
+      "implementation": "explicit subclass of FullKVMeasurementDut with no additional Route-A-specific control",
+      "cost_ownership": "mixed_common_differential_deferred",
+      "cost_evidence_status": "deferred_unestimated",
+      "treatment": "common cancellation still requires the frozen paired shell-equivalence conditions"
+    }
+  ],
+  "prohibited_conclusions": [
+    "functional references are synthesized production implementations",
+    "external numeric or memory service has zero cost",
+    "S2 or lifecycle cost cancellation",
+    "physical macro, timing, DC, CACTI, or PPA result"
+  ]
+}

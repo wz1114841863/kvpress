@@ -764,10 +764,32 @@ nonzero integration-shell responsibility. It expressly records that neither a
 projection generator nor generated HDL/DC filelist exists yet: the current
 parameterized measurement DUTs cannot be sent directly to DC because the
 Route-A functional reference classes must first be externalized rather than
-synthesized or tied off. The next bounded implementation requires separate
-approval for paired control-projection generator(s) plus typed external
-reference boundary replacement, followed by a refreshed source freeze and
-semantic regression. No DC/CACTI/PPA is authorized.
+synthesized or tied off. That package is a pre-implementation inventory. Its
+later P1 successor below does not retroactively alter this frozen record. No
+DC/CACTI/PPA is authorized.
+
+### Control-projection P1 externalization (2026-10-28)
+
+The bounded implementation record is
+[`control_projection_p1_externalization.md`](control_projection_p1_externalization.md).
+`FullKVControlProjection` and `RouteAControlProjection` now construct the
+selected measurement-DUT controls directly; `RouteAKVSubsystemTop` remains
+excluded. Route-A externalizes the former functional sidecar-delivery child by
+typed work/release/allocation/issue ports, removes the stateless functional
+partial-provider pass-through in favor of the original typed outer ports, and
+retains only an internal R4 packet/result/fault protocol adapter while numeric
+work remains external.
+
+Remote `ControlProjectionElaborationSpec` passed 1/1 with
+`PROJECTION_P1_ELAB_EXIT=0` in
+`projection_p1_elaboration_rerun_20261028.log`. This is an elaboration guard
+using the pre-existing paired functional profile, not final HDL or a physical
+profile. The explicit externalization BOM delta is
+[`control_projection_p1_bom_delta_20261028.json`](control_projection_p1_bom_delta_20261028.json):
+all new boundary/adapter and external-service rows remain nonzero and
+unestimated. The next bounded activity is to choose one explicit, bounded
+control-projection parameter profile; it must not consume
+`RouteAR6Encoding.testOnlyAnchor`.
 
 ## New-conversation prompt seed
 

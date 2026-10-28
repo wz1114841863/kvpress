@@ -16,7 +16,10 @@ import kvpress.routea.params.RouteASkeletonParameters
   * publication authorization, descriptor grant, and S2 lease are internal
   * owner-to-owner carriers, not testbench inputs.
   */
-final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
+class RouteAMeasurementDut(
+  p: RouteASkeletonParameters,
+  externalizeFunctionalReferences: Boolean = false,
+) extends Module {
   val io = IO(new Bundle {
     val frontend_lifecycle_req = Flipped(RouteAChannels.frontend_lifecycle_req(p))
     val runtime_retire_req = Flipped(RouteAChannels.runtime_retire_req)
@@ -30,6 +33,16 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
     val hot_payload_fragment_in = Flipped(RouteAChannels.p3_pending_fragment(p))
     val hot_position_sidecar_in = Flipped(RouteAChannels.p3_sidecar_bind(p))
     val pending_payload_read_binding_in = Flipped(RouteAChannels.pending_payload_read_binding(p))
+    // Dormant in the functional measurement contour. The control projection
+    // exposes the former sidecar-delivery reference as typed outer channels
+    // instead of synthesizing it.
+    val functional_sidecar_work_out = RouteAChannels.sidecar_read_work(p)
+    val functional_sidecar_payload_release_out = RouteAChannels.packed_read_release_observation(p)
+    val functional_sidecar_registry_allocate_in = Flipped(RouteAChannels.delivery_context_allocate(p))
+    val functional_sidecar_registry_allocation_ordinal_in = Input(UInt(p.candidateOrdinalWidth.W))
+    val functional_sidecar_registry_allocation_candidate_id_in = Input(UInt(p.candidateIdWidth.W))
+    val functional_sidecar_registry_allocation_ack_out = RouteAChannels.delivery_context_allocation_ack(p)
+    val functional_sidecar_read_issue_in = Flipped(RouteAChannels.read_issue_descriptor(p))
     val functional_partial_hot_offer_in = Flipped(RouteAChannels.source_service_partial_offer(p))
     val functional_partial_pending_offer_in = Flipped(RouteAChannels.source_service_partial_offer(p))
     val functional_partial_packed_offer_in = Flipped(RouteAChannels.source_service_partial_offer(p))
@@ -75,7 +88,8 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   val hotActivation = Module(new RouteAHotSourcePlanActivationAdapter(p))
   val terminalBridge = Module(new RouteAPackedReadTerminalBridge(p))
   val allocationMux = Module(new RouteAPackedAllocationOwnerMux(p))
-  val sidecarDelivery = Module(new RouteAFunctionalSidecarDeliveryAdapter(p))
+  val sidecarDelivery = if (externalizeFunctionalReferences) None
+    else Some(Module(new RouteAFunctionalSidecarDeliveryAdapter(p)))
   val packedReadIngress = Module(new RouteAExclusivePackedS2ReadIngress(p))
   val fillTerminalIngress = Module(new RouteAExclusiveS2FillTerminalIngress(p))
   val admission = Module(new RouteAAdmissionPublicationIngressAdapter(p))
@@ -99,8 +113,9 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   val packedSidecarEndpoint = Module(new RouteAS2PackedSidecarReadEndpoint(p))
   val sourcePlanBinder = Module(new RouteASourcePlanBinder(p))
   val packetAdapter = Module(new RouteASourceServicePacketAdapter(p))
-  val partialProvider = Module(new RouteAFunctionalPartialProviderBoundary(p))
-  val r4Reference = Module(new RouteAFunctionalR4ReferenceBoundary(p))
+  // This is typed packet/work/result protocol control only. The numeric R4
+  // provider remains outside the projection through existing outer ports.
+  val r4Protocol = Module(new RouteAR4ExternalProtocolAdapter(p))
   val commitDemux = Module(new RouteASourceCommitDemultiplexer(p))
   val merge = Module(new RouteAMergeBoundary(p))
   val statusCollector = Module(new RouteAComponentStatusCollector(p))
@@ -170,8 +185,19 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   associationOwner.io.s2_fill_lease_in <> activationBinder.io.s2_fill_lease_out
   associationOwner.io.invalidation_in.valid := false.B
   associationOwner.io.invalidation_in.bits := 0.U.asTypeOf(new PackedReadInvalidation)
-  associationOwner.io.sidecar_read_work_out <> sidecarDelivery.io.work_in
-  associationOwner.io.release_observation_out <> sidecarDelivery.io.payload_release_in
+  if (externalizeFunctionalReferences) {
+    associationOwner.io.sidecar_read_work_out <> io.functional_sidecar_work_out
+    associationOwner.io.release_observation_out <> io.functional_sidecar_payload_release_out
+  } else {
+    val adapter = sidecarDelivery.get
+    associationOwner.io.sidecar_read_work_out <> adapter.io.work_in
+    associationOwner.io.release_observation_out <> adapter.io.payload_release_in
+    inactive(io.functional_sidecar_work_out)
+    inactive(io.functional_sidecar_payload_release_out)
+    discard(io.functional_sidecar_registry_allocate_in)
+    inactive(io.functional_sidecar_registry_allocation_ack_out)
+    discard(io.functional_sidecar_read_issue_in)
+  }
 
   packetAdapter.io.hot_available_in.valid := hot.io.hot_observe_active
   packetAdapter.io.hot_available_in.transaction_identity := hot.io.hot_observe_identity
@@ -182,29 +208,26 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   packetAdapter.io.packed_available_in.valid := s2.io.s2_observe_available
   packetAdapter.io.packed_available_in.transaction_identity := s2.io.s2_observe_identity
   packetAdapter.io.packed_available_in.source_instance := s2.io.s2_observe_instance
-  partialProvider.io.hot_offer_in <> io.functional_partial_hot_offer_in
-  partialProvider.io.pending_offer_in <> io.functional_partial_pending_offer_in
-  partialProvider.io.packed_offer_in <> io.functional_partial_packed_offer_in
-  partialProvider.io.hot_fragment_in <> io.functional_partial_hot_fragment_in
-  partialProvider.io.pending_fragment_in <> io.functional_partial_pending_fragment_in
-  partialProvider.io.packed_fragment_in <> io.functional_partial_packed_fragment_in
-  packetAdapter.io.hot_offer_in <> partialProvider.io.hot_offer_out
-  packetAdapter.io.pending_offer_in <> partialProvider.io.pending_offer_out
-  packetAdapter.io.packed_offer_in <> partialProvider.io.packed_offer_out
-  packetAdapter.io.hot_fragment_in <> partialProvider.io.hot_fragment_out
-  packetAdapter.io.pending_fragment_in <> partialProvider.io.pending_fragment_out
-  packetAdapter.io.packed_fragment_in <> partialProvider.io.packed_fragment_out
+  // The partial provider is an outer contract in both contours.  The former
+  // functional pass-through child added no state or policy, so direct typed
+  // wiring preserves the exact ready/valid path without synthesizing it.
+  packetAdapter.io.hot_offer_in <> io.functional_partial_hot_offer_in
+  packetAdapter.io.pending_offer_in <> io.functional_partial_pending_offer_in
+  packetAdapter.io.packed_offer_in <> io.functional_partial_packed_offer_in
+  packetAdapter.io.hot_fragment_in <> io.functional_partial_hot_fragment_in
+  packetAdapter.io.pending_fragment_in <> io.functional_partial_pending_fragment_in
+  packetAdapter.io.packed_fragment_in <> io.functional_partial_packed_fragment_in
   merge.io.r4_partial_header_in <> packetAdapter.io.r4_partial_header_out
   merge.io.r4_source_instance_in <> packetAdapter.io.r4_source_instance_out
   merge.io.r4_value_fragment_in <> packetAdapter.io.r4_value_fragment_out
-  r4Reference.io.accepted_packet_in <> merge.io.r4_accepted_partial_packet_out
-  r4Reference.io.active_merge_observation_in := merge.io.r4_active_merge_observation
-  io.functional_r4_accepted_packet_out <> r4Reference.io.accepted_packet_out
-  io.functional_r4_merge_work_out <> r4Reference.io.merge_work_out
-  r4Reference.io.functional_result_in <> io.functional_r4_result_in
-  r4Reference.io.functional_numeric_fault_in <> io.functional_r4_numeric_fault_in
-  merge.io.r4_result_stub_in <> r4Reference.io.r4_result_stub_out
-  merge.io.r4_numeric_fault_in <> r4Reference.io.r4_numeric_fault_out
+  r4Protocol.io.accepted_packet_in <> merge.io.r4_accepted_partial_packet_out
+  r4Protocol.io.active_merge_observation_in := merge.io.r4_active_merge_observation
+  io.functional_r4_accepted_packet_out <> r4Protocol.io.accepted_packet_out
+  io.functional_r4_merge_work_out <> r4Protocol.io.merge_work_out
+  r4Protocol.io.functional_result_in <> io.functional_r4_result_in
+  r4Protocol.io.functional_numeric_fault_in <> io.functional_r4_numeric_fault_in
+  merge.io.r4_result_stub_in <> r4Protocol.io.r4_result_stub_out
+  merge.io.r4_numeric_fault_in <> r4Protocol.io.r4_numeric_fault_out
   commitDemux.io.commit_in <> merge.io.consumer_partial_commit
   hot.io.gqa_consumer_commit_in <> commitDemux.io.hot_commit_out
   directPending.io.gqa_consumer_commit_in <> commitDemux.io.pending_commit_out
@@ -307,19 +330,31 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   terminalBridge.io.work_in <> associationOwner.io.packed_s2_work_out
   packedReadProducer.io.work_in <> terminalBridge.io.work_out
   packedReadIssue.io.read_issue_in <> packedReadProducer.io.read_issue_out
-  sidecarDelivery.io.read_issue_out <> packedSidecarIssue.io.read_issue_in
   allocationMux.io.payload_allocate_in <> associationOwner.io.registry_allocate_out
   allocationMux.io.payload_ordinal_in := associationOwner.io.registry_allocation_arrival_ordinal_out
   allocationMux.io.payload_candidate_id_in := associationOwner.io.registry_allocation_candidate_id_out
-  allocationMux.io.sidecar_allocate_in <> sidecarDelivery.io.registry_allocate_out
-  allocationMux.io.sidecar_ordinal_in := sidecarDelivery.io.registry_allocation_arrival_ordinal_out
-  allocationMux.io.sidecar_candidate_id_in := sidecarDelivery.io.registry_allocation_candidate_id_out
+  if (externalizeFunctionalReferences) {
+    io.functional_sidecar_read_issue_in <> packedSidecarIssue.io.read_issue_in
+    allocationMux.io.sidecar_allocate_in <> io.functional_sidecar_registry_allocate_in
+    allocationMux.io.sidecar_ordinal_in := io.functional_sidecar_registry_allocation_ordinal_in
+    allocationMux.io.sidecar_candidate_id_in := io.functional_sidecar_registry_allocation_candidate_id_in
+  } else {
+    val adapter = sidecarDelivery.get
+    adapter.io.read_issue_out <> packedSidecarIssue.io.read_issue_in
+    allocationMux.io.sidecar_allocate_in <> adapter.io.registry_allocate_out
+    allocationMux.io.sidecar_ordinal_in := adapter.io.registry_allocation_arrival_ordinal_out
+    allocationMux.io.sidecar_candidate_id_in := adapter.io.registry_allocation_candidate_id_out
+  }
   delivery.io.packed_association_allocate_in <> allocationMux.io.allocate_out
   delivery.io.packed_association_arrival_ordinal_in := allocationMux.io.ordinal_out
   delivery.io.packed_association_candidate_id_in := allocationMux.io.candidate_id_out
   allocationMux.io.ack_in <> delivery.io.packed_association_allocation_ack_out
   associationOwner.io.registry_allocation_ack_in <> allocationMux.io.payload_ack_out
-  sidecarDelivery.io.registry_allocation_ack_in <> allocationMux.io.sidecar_ack_out
+  if (externalizeFunctionalReferences) {
+    io.functional_sidecar_registry_allocation_ack_out <> allocationMux.io.sidecar_ack_out
+  } else {
+    sidecarDelivery.get.io.registry_allocation_ack_in <> allocationMux.io.sidecar_ack_out
+  }
   delivery.io.r3_packed_write_in <> m2P3.io.p3_packed_write_candidate_out
   delivery.io.r5_append_in <> pageManager.io.append_candidate_out
   directPendingProducer.io.work_in <> directAssociationMaterializer.io.direct_work_out
@@ -380,4 +415,14 @@ final class RouteAMeasurementDut(p: RouteASkeletonParameters) extends Module {
   statusCollector.io.status_sources(5) <> s2.io.component_status_out
   statusCollector.io.status_sources(6) <> directPending.io.component_status_out
   statusCollector.io.status_sources(7) <> merge.io.component_status_out
+}
+
+/**
+  * Parameterized Route-A control projection.  It retains every production
+  * owner and parent array peripheral while externalizing only the named
+  * functional sidecar/partial/numeric reference contracts.
+  */
+final class RouteAControlProjection(p: RouteASkeletonParameters)
+    extends RouteAMeasurementDut(p, externalizeFunctionalReferences = true) {
+  override def desiredName: String = "route_a_control_projection"
 }
