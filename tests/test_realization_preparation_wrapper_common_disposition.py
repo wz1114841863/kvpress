@@ -26,8 +26,8 @@ def test_wrapper_disposition_covers_only_array_interiors_and_preserves_owners() 
     assert wrappers["m2_entry_access_v1"]["verification"]["remote_cross_stage"].startswith("10 suites / 40 tests")
     assert wrappers["p3_stage_access_v1"]["retained_owner"] == "RouteAM2P3Wrapper"
     assert wrappers["s2_payload_access_v1"]["retained_owner"] == "RouteAS2GqaSourceWrapper or FullKVS2GqaSourceWrapper"
-    assert wrappers["s2_payload_access_v1"]["implementation_status"] == "route_a_parent_access_adapter_functionally_verified_full_kv_paired_wrapper_pending"
-    assert "FullKVMeasurementDutSpec 5/5 non-regression only" in wrappers["s2_payload_access_v1"]["verification"]["remote_cross_stage"]
+    assert wrappers["s2_payload_access_v1"]["implementation_status"] == "route_a_and_full_kv_payload_parent_access_adapters_functionally_verified_paired_access_map_complete_shell_equivalence_pending"
+    assert "FullKVMeasurementDutSpec 5/5" in wrappers["s2_payload_access_v1"]["verification"]["remote_cross_stage"]
     assert wrappers["r5_availability_access_v1"]["retained_owner"] == "RouteAPageManager"
     assert wrappers["r5_availability_access_v1"]["descriptor_treatment"] == "external_memory_service_not_local_array"
     assert all(row["physical_wrapper_mapping_pending"] for row in wrappers.values())
@@ -37,7 +37,7 @@ def test_common_disposition_is_fail_closed_and_keeps_external_costs_nonzero() ->
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     dispositions = {row["provision"]: row["disposition"] for row in manifest["common_equivalence"]}
     assert dispositions["r2_r1_registry_router"] == "eligible_common_after_identical_shell"
-    assert dispositions["s2_payload_gqa"] == "noncancellable_pending_full_kv_payload_wrapper"
+    assert dispositions["s2_payload_gqa"] == "noncancellable_paired_access_map_complete_shell_equivalence_pending"
     assert dispositions["lifecycle_status"] == "noncancellable_paired_semantics"
     assert dispositions["hot_residency"] == "route_a_differential_for_current_pair"
     assert manifest["external_numeric_costs"]["r4_numeric_partial_state"] == "route_a_differential_unestimated_not_zero"

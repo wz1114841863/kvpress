@@ -705,6 +705,25 @@ drift and the new S2 common-source drift.  This is a provenance status, not a
 functional failure: the successor source/port/filelist freeze remains deferred
 until the Full-KV S2 pairing and P3 full-root ChiselSim DPI harness recovery.
 
+### Paired S2 payload access-map disposition (2026-10-28)
+
+The Full-KV S2 successor now makes the two payload parent-to-child routes
+comparable.  The map in
+[`s2_paired_access_map_common_equivalence_disposition.md`](s2_paired_access_map_common_equivalence_disposition.md)
+confirms the same logical roles for validated payload write/ack, READY-gated
+read/response, parent-held response under backpressure, and exclusion of
+identity/generation/lifecycle/authority from either child array.
+
+The conclusion is deliberately **not** that the S2 cost is now common.  Route-A
+retains sidecar plus packed lease/page and R6-path control; Full-KV retains a
+parameterized payload geometry and baseline-local lifecycle/fault shell.  Both
+payload interiors/adapters remain named nonzero costs.  A common payload result
+requires a same-parameter future shell, explicit wrapper equivalence, paired
+reset/init/stale/fault/release conformance, and the successor source/port/filelist
+freeze.  The ordered next work is the bounded P3 full-root ChiselSim DPI
+harness recovery; this disposition neither chooses physical storage nor starts
+DC/CACTI/PPA.
+
 ## New-conversation prompt seed
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

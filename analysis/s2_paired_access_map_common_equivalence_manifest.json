@@ -1,0 +1,54 @@
+{
+  "schema_version": "kvzap-s2-paired-access-map-common-equivalence-1.0",
+  "status": "payload_access_role_mapped_not_cancellable",
+  "review_date": "2026-10-28",
+  "anchors": {
+    "route_a_parent": "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala:RouteAS2GqaSourceWrapper",
+    "full_kv_parent": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVS2Completion.scala:FullKVS2GqaSourceWrapper",
+    "wrapper_disposition": "analysis/realization_preparation_wrapper_common_disposition.md",
+    "s2_boundary_contract": "analysis/mr2_s2_array_boundary_contract.md"
+  },
+  "payload_access_roles": {
+    "write": {
+      "route_a": "validated payload fragment -> held {slot,fragment,data} child request -> matching child ack advances parent order",
+      "full_kv": "validated payload fragment -> held {slot,fragment,data} child request -> matching child ack advances parent order",
+      "disposition": "logical_role_conformant"
+    },
+    "read": {
+      "route_a": "READY/identity/generation/range parent check -> one child read -> held outward response",
+      "full_kv": "READY/identity/generation/range parent check -> one child read -> held outward response",
+      "disposition": "logical_role_conformant"
+    },
+    "array_child_exclusions": [
+      "transaction_identity",
+      "source_generation",
+      "READY",
+      "consumer_commits",
+      "release",
+      "terminal_or_fault",
+      "source_selection_or_authority"
+    ]
+  },
+  "non_equivalences": {
+    "route_a_sidecar": "route_a_incremental_unestimated_not_zero",
+    "geometry": "Route-A payload fragment coordinate is fixed 9-bit/512; Full-KV coordinate is parameterized and focused wrapper test uses 3 bits",
+    "fill_provenance": "Route-A packed lease/page and optional sidecar completion differ from Full-KV baseline producer fill",
+    "lifecycle_fault_shell": "Route-A packed SourceInstance/R6 path differs from Full-KV baseline-local source and terminal-retire path"
+  },
+  "common_equivalence_disposition": "not_cancellable_pending_same_parameter_shell_and_paired_conformance",
+  "required_before_any_payload_cancellation": [
+    "matching_9_bit_payload_geometry_in_both_synthesis_shells",
+    "explicit_equal_payload_wrapper_mapping",
+    "equal_reset_init_stale_fault_release_shell_conformance",
+    "equal_source_service_request_response_holding",
+    "successor_source_port_filelist_freeze",
+    "paired_exact_shell_regression"
+  ],
+  "cost_rule": "both payload interiors and parent adapters remain nonzero; Route-A sidecar and packed controls remain Route-A incremental",
+  "prohibited_conclusions": [
+    "current_S2_cost_cancellation",
+    "whole_S2_black_box",
+    "physical_port_or_macro_selection",
+    "DC_CACTI_or_PPA_claim"
+  ]
+}

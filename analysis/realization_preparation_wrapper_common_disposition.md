@@ -7,8 +7,9 @@ an implementable wrapper plan.  The M2 parent-side adapter RTL has passed its
 remote directed and 10-suite cross-stage regression on successor `3f3a489`.
 The R5 and P3 parent-side adapters are functionally verified on the current
 bounded contour; Route-A S2's parent-side typed access adapter and the
-payload-only Full-KV paired successor are also functionally verified.  A
-paired access-map and shell-equivalence disposition remains pending. No macro, port count, clock,
+payload-only Full-KV paired successor are also functionally verified.  Their
+paired access map is complete and records a fail-closed non-cancellation;
+shell-equivalence remains pending. No macro, port count, clock,
 library, controller, numeric unit, DC, CACTI, PPA, area, energy, or performance
 result is selected or claimed.
 
@@ -74,7 +75,7 @@ regression evidence.  It is not a current cancellation.
 | --- | --- | --- | --- |
 | R2/R1 core transaction path | Both tops instantiate `RouteACoreSideArbiter`, `RouteACoreMemIfV1`, `RouteADeliveryContextRegistry`, and `RouteATypedDeliveryRouter`, and expose `core_mem_if_v1`. | `eligible_common_after_identical_shell`. Route-A-only sidebands in the shared arbiter/router are a Route-A differential adaptation unless proven optimized/identical by the future paired shell. | Same parameters, reset/init behavior, external-memory profile, live producer/consumer paths, and successor structural/semantic regression. |
 | Delivery-context connectivity | Registry/router classes are shared, but `FullKVDeliveryContextBridge` and `RouteAUnifiedDeliveryContextAllocationBridge` are not the same class or route set. | Registry/router only are eligible-common; bridge-specific allocation/release muxing is separately charged to its owning contour until a paired mapping exists. | Exact context schema, allocation/release identity, reset/reuse and live route map. |
-| S2 payload/GQA | Both own read-to-READY, four consumer commits, and release, but classes/interfaces differ; Full-KV currently lacks the Route-A payload-read storage access boundary. | `noncancellable_pending_full_kv_payload_wrapper`. Do not charge all S2 to Route-A, but do not cancel it from the pair yet. | A common `s2_payload_access_v1` implementation, equal GQA/reset/fault contracts, and access-map comparison in both tops. |
+| S2 payload/GQA | Both now use typed parent-to-child payload write-ack/read-response paths.  The paired map proves the same payload access role, but Route-A has sidecar/packed lease provenance and the Full-KV fragment geometry remains parameterized. | `noncancellable_paired_access_map_complete_shell_equivalence_pending`. Do not charge all S2 to Route-A, and do not cancel payload/adapter cost from the pair. | Matching 9-bit future shell geometry, explicit equal wrapper mapping, paired reset/init/stale/fault/release and response-hold conformance, then a successor source/port/filelist freeze. See `s2_paired_access_map_common_equivalence_disposition.md`. |
 | Lifecycle/status | Both enforce init, stale/fault terminal, retire, and drain responsibilities; Route-A uses R6/lifecycle/status classes while Full-KV is baseline-local. | `noncancellable_paired_semantics`. Keep each contour's lifecycle/status logic in its own BOM until a future shared wrapper or a demonstrated equivalent implementation exists. | One explicit lifecycle/status conformance map, including terminal ownership, drain ordering, reset, and stale/fault behavior. |
 | Hot residency | `RouteAHotSourcePath` exists only in Route-A's actual source list. | `route_a_differential_for_current_pair`. Do not invent a Full-KV hot module merely to cancel cost. A later change requires a successor measurement-cut freeze and a separate fairness decision. | None for the current differential classification; any future common claim needs a legal Full-KV counterpart and identical behavior. |
 | R3/M2/P3/R5, packed/direct/sidecar, R4 structural merge | Present only in Route-A. | Route-A incremental. | No cancellation; retain each unresolved row as nonzero. |
@@ -119,9 +120,8 @@ these order constraints:
 
 1. preserve the implemented typed Route-A parent-side adapters and each named
    parent owner;
-2. implement and verify the Full-KV S2 payload wrapper, or retain it as a non-cancelled
-   paired provision;
-3. create a successor source/port/filelist freeze and run owner, reset/stale,
+2. retain the completed payload access map as a non-cancelled paired provision;
+3. repair the P3 full-root ChiselSim DPI harness, then create a successor source/port/filelist freeze and run owner, reset/stale,
    atomicity, and paired-cut regressions; then
 4. prepare (not run) the dual-top synthesis input package for a separately
    authorized DC feasibility step.
