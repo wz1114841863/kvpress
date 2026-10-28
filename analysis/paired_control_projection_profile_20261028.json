@@ -1,0 +1,58 @@
+{
+  "schema_version": "kvzap-paired-control-projection-profile-1.0",
+  "profile_id": "qwen3_8b_32k_s1_control_projection_v1",
+  "status": "bounded_control_profile_selected_not_physical",
+  "applies_to": [
+    "kvpress.routea.top.FullKVControlProjection",
+    "kvpress.routea.top.RouteAControlProjection"
+  ],
+  "anchor": {
+    "source": "analysis/architecture_gate_a3_rtl_entry_qwen3_8b_32k_s1_v1.json",
+    "layers": 36,
+    "kv_heads": 8,
+    "max_context_tokens": 32768,
+    "max_concurrent_sequences": 1,
+    "page_records": 64,
+    "core_data_bits": 512,
+    "s2_slots": 2,
+    "gqa_consumers": 4,
+    "max_live_reads": 4
+  },
+  "parameters": {
+    "frontendEventKindWidth": 2,
+    "componentStatusNameWidth": 4,
+    "hotControlKindWidth": 2,
+    "pendingDescriptorRefWidth": 18,
+    "pendingValidityWidth": 8,
+    "candidateClassWidth": 3,
+    "candidateOrdinalWidth": 7,
+    "candidateIdWidth": 4,
+    "candidatePredicateWidth": 10,
+    "r2CandidateSlotsPerClass": 2,
+    "coreMemoryRequestKindWidth": 3,
+    "coreMemoryDestinationWidth": 3,
+    "coreMemoryAddressRefWidth": 64,
+    "coreMemoryFragmentCountWidth": 10,
+    "coreMemoryFragmentIndexWidth": 9,
+    "sourceDeliveryOpaqueWidth": 4,
+    "transactionGroupTagWidth": 8,
+    "p3StageGenerationWidth": 8,
+    "r5AllocatorEntries": 146880,
+    "r5StreamSlots": 288,
+    "sourceGenerationWidth": 8,
+    "r6AttentionTrackerEntries": 4
+  },
+  "implementation_cost_rows": [
+    "r2 candidate slots and delivery-context registry",
+    "R6 tracker and association tag/generation registers",
+    "R5 availability/generation logical state",
+    "M2/P3/S2 parent control and array adapters",
+    "Route-A sidecar, external memory, R4 numeric, outer provider, and integration shell"
+  ],
+  "nonclaims": [
+    "physical macro, port count, latency, controller, clock, frequency, DC, CACTI, PPA, or continuous wrap/reuse proof",
+    "S2/lifecycle common-cost cancellation",
+    "multi-record direct-pending coverage"
+  ],
+  "next_required_evidence": "emit paired HDL only through the explicit profile and verify source/port/filelist plus external-boundary connectivity before a separately authorized DC-feasibility request"
+}

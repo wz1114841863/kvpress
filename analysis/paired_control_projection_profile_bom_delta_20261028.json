@@ -1,0 +1,49 @@
+{
+  "schema_version": "kvzap-paired-control-projection-profile-bom-delta-1.0",
+  "status": "bounded_control_profile_passed_no_physical_cost_conclusion",
+  "profile": "qwen3_8b_32k_s1_control_projection_v1",
+  "profile_record": "analysis/paired_control_projection_profile_20261028.json",
+  "verification": {
+    "test": "RouteASynthesisControlProjectionProfileSpec",
+    "remote_log": "/home/yaz80/wz_project/chisel_projects/kvpress/logs/paired_control_projection_profile_20261028.log",
+    "exit_marker": "PAIRED_CONTROL_PROFILE_EXIT=0"
+  },
+  "added_or_resized_control_rows": [
+    {
+      "id": "r2_candidate_and_delivery_context_capacity",
+      "state": "6 classes x 2 candidate slots plus 16 delivery-context references",
+      "cost_ownership": "mixed_common_differential_deferred",
+      "cost_evidence_status": "unestimated_not_zero",
+      "rule": "Do not cancel before an equal paired shell/route map exists."
+    },
+    {
+      "id": "route_a_association_generation_state",
+      "state": "8-bit group tag, P3-stage generation, and source generation plus four R6 tracker entries",
+      "cost_ownership": "route_a_incremental",
+      "cost_evidence_status": "unestimated_not_zero",
+      "rule": "Finite bounded namespaces do not prove continuous reuse or erase stale/reset logic."
+    },
+    {
+      "id": "r5_anchor_capacity_profile",
+      "state": "146880 logical page entries and 288 logical streams",
+      "cost_ownership": "route_a_incremental",
+      "cost_evidence_status": "unestimated_not_zero",
+      "rule": "This preserves the logical A3 allocator envelope; it does not select a macro, port count, or descriptor-service implementation."
+    }
+  ],
+  "retained_external_rows": [
+    "external_core_mem_if_v1",
+    "p3_pending_hbm_backing",
+    "r5_descriptor_hbm_region",
+    "r4_numeric_partial_state",
+    "outer_attention_partial_provider",
+    "Route-A sidecar and integration adapters"
+  ],
+  "prohibited_conclusions": [
+    "top elaboration at the full profile has passed",
+    "generated HDL or a DC filelist exists",
+    "macro/controller/clock/latency/PPA is selected",
+    "common cost cancellation",
+    "continuous generation/tag wrap handling is proven"
+  ]
+}

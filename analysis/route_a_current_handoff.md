@@ -791,6 +791,26 @@ unestimated. The next bounded activity is to choose one explicit, bounded
 control-projection parameter profile; it must not consume
 `RouteAR6Encoding.testOnlyAnchor`.
 
+### Paired bounded control-projection profile (2026-10-28)
+
+[`paired_control_projection_profile_20261028.md`](paired_control_projection_profile_20261028.md)
+records `qwen3_8b_32k_s1_control_projection_v1`, the common explicit parameter
+object for `FullKVControlProjection` and `RouteAControlProjection`. It is not a
+third top: the two emitted module names remain `full_kv_control_projection` and
+`route_a_control_projection`. The profile binds the A3 36-layer/8-head/32K/s1
+control anchor to 146,880 logical R5 pages, 288 streams, 9-bit/512-fragment
+geometry, bounded R2/context capacity, and explicit non-test-only association
+encodings.
+
+Remote `RouteASynthesisControlProjectionProfileSpec` passed 1/1 with
+`PAIRED_CONTROL_PROFILE_EXIT=0` in
+`paired_control_projection_profile_20261028.log`. The profile check validates
+the Scala object only; it intentionally does not elaborate the large full
+profile or generate HDL. The bounded control-state BOM delta is
+[`paired_control_projection_profile_bom_delta_20261028.json`](paired_control_projection_profile_bom_delta_20261028.json).
+It retains all newly sized control, wrapper, external-memory and numeric rows
+as nonzero/unestimated, and does not authorize DC/CACTI/PPA.
+
 ## New-conversation prompt seed
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read
