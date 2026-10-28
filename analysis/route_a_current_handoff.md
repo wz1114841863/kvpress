@@ -751,8 +751,23 @@ The successor paired 9-bit regression is complete: `FullKVMeasurementDutSpec`
 `s2_paired_9bit_conformance_20261028.log` with exit 0. This resolves the
 focused Full-KV 3-bit geometry as a functional-conformance gap, but not as a
 common-cost decision: the two shells remain non-identical, and Route-A sidecar,
-packed lease/page and R6 controls remain incremental. The next bounded work is
-the dual synthesis-top input package, still without DC/CACTI/PPA.
+packed lease/page and R6 controls remain incremental.
+
+### Dual synthesis-top input package (2026-10-28)
+
+[`dual_synthesis_top_input_package_20261028.md`](dual_synthesis_top_input_package_20261028.md)
+converts the successor freeze into a pre-DC inventory for the two selected
+control-top projections. It fixes their admissible Scala closure, exact
+outer-port lists, retained parent controls, array-only boundaries, external
+and functional-reference contracts, paired 9-bit conformance restriction, and
+nonzero integration-shell responsibility. It expressly records that neither a
+projection generator nor generated HDL/DC filelist exists yet: the current
+parameterized measurement DUTs cannot be sent directly to DC because the
+Route-A functional reference classes must first be externalized rather than
+synthesized or tied off. The next bounded implementation requires separate
+approval for paired control-projection generator(s) plus typed external
+reference boundary replacement, followed by a refreshed source freeze and
+semantic regression. No DC/CACTI/PPA is authorized.
 
 ## New-conversation prompt seed
 

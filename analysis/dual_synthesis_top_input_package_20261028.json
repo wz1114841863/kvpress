@@ -1,0 +1,97 @@
+{
+  "schema_version": "kvzap-dual-synthesis-top-input-package-1.0",
+  "status": "input_inventory_prepared_projection_generator_and_externalization_pending",
+  "prepared_date": "2026-10-28",
+  "preparation_anchor": {
+    "git_commit": "afc1ae1",
+    "branch": "research/kvzap-latest",
+    "source_port_freeze": "analysis/successor_synthesis_source_port_filelist_freeze_20261028.json",
+    "source_port_freeze_anchor": "000ee9052f8e7c9e3b85131d08f5e6947c105abc",
+    "excluded_dirty_paths": [".gitignore"]
+  },
+  "scope": {
+    "purpose": "pre-DC input inventory for two future control-top projections",
+    "not_yet": ["generated SystemVerilog or a DC .f filelist", "a synthesis-top generator or projection module", "physical macro, port-count, latency, clock, or reset implementation choice", "DC, CACTI, PPA, or common-cost cancellation"]
+  },
+  "scala_source_closure": {
+    "authoritative_hash_inventory": "analysis/successor_synthesis_source_port_filelist_freeze_20261028.json#scala_filelist",
+    "build_inputs": ["hardware/route_a/chisel/build.sbt", "hardware/route_a/chisel/project/build.properties"],
+    "included_main_sources": [
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/FullKVMeasurementDut.scala",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAComponentStatusCollector.scala",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVMeasurementInterfaces.scala",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVReadPath.scala",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVS2Completion.scala",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala"
+    ],
+    "excluded_main_sources": {
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "rejected composition-only skeleton with inactive carrier ties",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAM2EntryStorage.scala": "uninstantiated fixture-only Package-A storage candidate"
+    },
+    "excluded_test_sources": "all src/test Scala, including flat observation harnesses, are verification-only",
+    "filelist_rule": "This is an elaboration-closure inventory, not a Scala compiler exclusion list and not a generated-Verilog/DC filelist. A later generator must emit an exact successor HDL closure and corresponding .f after the projection source exists."
+  },
+  "candidates": {
+    "full_kv": {
+      "id": "full_kv_synthesis_control_top_candidate_v1",
+      "projection_source_class": "kvpress.routea.top.FullKVMeasurementDut",
+      "projection_source_file": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/FullKVMeasurementDut.scala",
+      "outer_ports": ["full_kv_read_work_in", "external_core_mem_if_v1", "source_ready_out", "full_kv_payload_read_req_in", "full_kv_payload_read_rsp_out", "full_kv_consumer_commit_in", "attention_terminal_rsp", "runtime_retire_req", "session_retire_ack"],
+      "retained_control": ["FullKVReadProducer", "FullKVDeliveryContextBridge", "RouteACoreSideArbiter", "RouteACoreMemIfV1", "RouteADeliveryContextRegistry", "RouteATypedDeliveryRouter", "FullKVS2ReadEndpoint", "FullKVS2GqaSourceWrapper", "FullKVTerminalRetireAdapter", "FullKVStatusCollector"],
+      "projection_requirement": "retain the named production owner chain and external core-memory/source-service boundary; do not reintroduce Route-A-only carriers as an inactive baseline substitute"
+    },
+    "route_a": {
+      "id": "route_a_synthesis_control_top_candidate_v1",
+      "projection_source_class": "kvpress.routea.top.RouteAMeasurementDut",
+      "projection_source_file": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "outer_ports": ["frontend_lifecycle_req", "runtime_retire_req", "attention_terminal_rsp", "session_retire_ack", "source_plan_declaration_in", "pending_source_descriptor_registration_in", "hot_payload_fragment_in", "hot_position_sidecar_in", "pending_payload_read_binding_in", "functional_partial_hot_offer_in", "functional_partial_pending_offer_in", "functional_partial_packed_offer_in", "functional_partial_hot_fragment_in", "functional_partial_pending_fragment_in", "functional_partial_packed_fragment_in", "functional_r4_accepted_packet_out", "functional_r4_merge_work_out", "functional_r4_result_in", "functional_r4_numeric_fault_in", "functional_direct_pending_payload_fragment_out", "external_core_mem_if_v1"],
+      "retained_control": ["RouteALifecycleAdapter", "RouteAHotSourcePath", "RouteAS2GqaSourceWrapper", "RouteAPendingDescriptorOwner", "RouteADirectPendingAssociationMaterializer", "RouteACoreSideArbiter", "RouteACoreMemIfV1", "RouteAM2P3Wrapper", "RouteAM2ProductionControlOwner", "RouteAMetadataAdmissionBridge", "RouteAPageManager", "RouteAPackedReadActivationBinder", "RouteAPackedReadAssociationOwner", "RouteADeliveryContextRegistry", "RouteAUnifiedDeliveryContextAllocationBridge", "RouteATypedDeliveryRouter", "RouteAComponentStatusCollector"],
+      "direct_pending_limit": "valid_count=1 only",
+      "projection_requirement": "retain R3 publication, R6 sole authority, R2 arbitration, M2/R5/P3/S2 parent control and all wrapper peripherals; no functional input may become a tied-off authorization or payload surrogate"
+    }
+  },
+  "shared_elaboration_profile": {
+    "name": "paired_9bit_functional_conformance_anchor",
+    "evidence": "s2_paired_9bit_conformance_20261028.log: FullKVMeasurementDutSpec 5/5 plus RouteAPackedS2ReadPathSpec 6/6, S2_PAIRED_9BIT_CONFORMANCE_EXIT=0",
+    "matched_fields": {"candidateOrdinalWidth": 4, "candidateIdWidth": 4, "r2CandidateSlotsPerClass": 2, "coreMemoryAddressRefWidth": 64, "coreMemoryFragmentCountWidth": 10, "coreMemoryFragmentIndexWidth": 9, "sourceDeliveryOpaqueWidth": 2, "transactionGroupTagWidth": 2, "p3StageGenerationWidth": 2},
+    "restriction": "This is a bounded functional-conformance profile. Its test-only R6 encoding and remaining test parameters are not a deployment, macro, timing, or area configuration. A future generator requires one separately approved complete parameter profile, equal on any proposed common provision."
+  },
+  "array_only_boundaries": [
+    {"id": "m2_entry_access_v1", "array_interior": "RouteAM2EntryArrayBoundary head/span entry words only", "parent_control_retained": "RouteAM2ProductionControlOwner and RouteAM2P3Wrapper retain lookup, RMW, grouped prepare/commit/abort, credit, stale checking and publication resolution", "cost_ownership": "route_a_incremental_unestimated_not_zero"},
+    {"id": "p3_stage_access_v1", "array_interior": "RouteAP3StageArrayBoundary payload and sidecar only", "parent_control_retained": "RouteAM2P3Wrapper retains fill/order, identity/generation, durable-write, publication and release control", "cost_ownership": "route_a_incremental_unestimated_not_zero"},
+    {"id": "r5_availability_access_v1", "array_interior": "RouteAR5AvailabilityArrayBoundary availability and generation words only", "parent_control_retained": "RouteAPageManager retains keyed scan, PageRef/generation, descriptor visibility, invalidate-before-free, reclaim, drain and reset control", "cost_ownership": "route_a_incremental_unestimated_not_zero"},
+    {"id": "s2_payload_access_v1", "array_interior": "FullKVS2PayloadArrayBoundary payload only; RouteAS2PayloadSidecarArrayBoundary payload plus Route-A sidecar only", "parent_control_retained": "Both parents retain identity/generation, fill, READY, four-consumer release, drain, stale/fault and typed access peripherals; Route-A also retains sidecar/packed/R6 controls", "cost_ownership": "noncancellable_paired_payload_and_adapter_unestimated_not_zero"}
+  ],
+  "external_and_reference_boundary_plan": [
+    {"id": "external_core_mem_if_v1", "treatment": "external service port on both projections", "cost_ownership": "external_system_cost_nonzero_same_declared_profile", "projection_action": "retain the actual typed port; no controller, PHY, CDC or calibration logic is included"},
+    {"id": "p3_pending_hbm_backing", "treatment": "Route-A external service through the named core-memory boundary", "cost_ownership": "route_a_external_service_nonzero", "projection_action": "do not replace with an on-chip array or zero-cost stub"},
+    {"id": "r5_descriptor_hbm_region", "treatment": "Route-A external descriptor service through the named core-memory boundary", "cost_ownership": "route_a_external_descriptor_service_nonzero", "projection_action": "do not classify as a local R5 array"},
+    {"id": "functional_sidecar_delivery_reference", "current_class": "RouteAFunctionalSidecarDeliveryAdapter", "treatment": "must be externalized from the future Route-A projection without changing its named sidecar contract", "cost_ownership": "route_a_incremental_unestimated_not_zero", "projection_action": "a later projection module must replace the functional class by typed top-level boundary connectivity; this package supplies no tie-off or replacement RTL"},
+    {"id": "outer_attention_partial_provider", "current_class": "RouteAFunctionalPartialProviderBoundary", "treatment": "external partial-provider contract, not candidate synthesis logic", "cost_ownership": "route_a_differential_unestimated_not_zero", "projection_action": "retain offer/fragment ports and do not infer an attention PE"},
+    {"id": "r4_numeric_partial_state", "current_class": "RouteAFunctionalR4ReferenceBoundary", "treatment": "external numeric/result-or-fault contract, not candidate synthesis logic", "cost_ownership": "route_a_differential_unestimated_not_zero", "projection_action": "retain accepted-packet, merge-work, result and numeric-fault boundary ports; no numeric implementation is selected"}
+  ],
+  "integration_shell_cost_rows": {
+    "interface_adaptation": "mixed_common_differential_unestimated_not_zero",
+    "reset_init_gating": "mixed_common_differential_unestimated_not_zero",
+    "protocol_fanout_muxing": "mixed_common_differential_unestimated_not_zero",
+    "delivery_context_connectivity": "mixed_common_differential_unestimated_not_zero",
+    "logical_storage_wrapper_adapters": "mixed_common_differential_unestimated_not_zero",
+    "rule": "Every added top-level adapter, mux, register, fanout or boundary wrapper is an explicit BOM row. Semantic similarity does not cancel cost."
+  },
+  "synthesis_input_readiness": {
+    "projection_generator": "pending: selected source classes take RouteASkeletonParameters and no dedicated control-projection emitter exists",
+    "generated_hdl_filelists": "pending: no generated SystemVerilog closure or DC .f is produced by this package",
+    "external_reference_externalization": "pending for the three named Route-A functional reference classes",
+    "complete_parameter_profile": "pending separate approval; the paired 9-bit test profile cannot be reused as a physical configuration by implication",
+    "common_equivalence": "pending: same-parameter functional S2 conformance passed, but S2/lifecycle shells remain non-identical and non-cancellable",
+    "eligibility_disposition": "not DC ready; input inventory only"
+  },
+  "next_authorized_work": "separately approve and implement paired control-projection generator(s) plus typed external-reference boundary replacement, then rerun source/port/filelist freeze and semantic regression before any DC feasibility request",
+  "prohibited_conclusions": ["existing MeasurementDut classes are direct DC tops", "generated Verilog or a DC filelist exists", "synthesis_ready or PPA ready", "S2/common cost cancellation", "physical macro, port-count, latency, clock, controller, numeric or external-memory selection", "multi-record direct-pending support"]
+}

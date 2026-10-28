@@ -51,5 +51,7 @@ def test_paired_s2_map_fails_closed_on_common_cost_cancellation() -> None:
     s2 = next(row for row in wrapper["wrapper_contracts"] if row["id"] == "s2_payload_access_v1")
     assert s2["paired_access_map"] == "analysis/s2_paired_access_map_common_equivalence_disposition.md"
     assert wrapper["next_gate"].startswith(
-        "prepare the dual synthesis-top source/port/filelist input package"
+        "dual synthesis-top input inventory prepared at "
+        "analysis/dual_synthesis_top_input_package_20261028.json"
     )
+    assert "projection-generator/external-reference externalization" in wrapper["next_gate"]

@@ -129,5 +129,5 @@
     "r5_descriptor_hbm_region": "route_a_external_descriptor_service_nonzero"
   },
   "prohibited_actions": ["macro or port-count selection", "latency or clock/frequency selection", "CDC/controller/numeric implementation", "DC/CACTI", "PPA or quantitative cost claim"],
-  "next_gate": "prepare the dual synthesis-top source/port/filelist input package from the successor freeze; retain distinct S2 shell costs and every external/reference boundary, without DC/CACTI/PPA"
+  "next_gate": "dual synthesis-top input inventory prepared at analysis/dual_synthesis_top_input_package_20261028.json; separately approve paired projection-generator/external-reference externalization before any refreshed source freeze or DC-feasibility request"
 }
