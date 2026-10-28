@@ -5,6 +5,72 @@ import chisel3.util.{Decoupled, Enum, PriorityEncoder, RegEnable, UIntToOH, Vali
 import kvpress.routea.interfaces._
 import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
 
+/** Parent-authorized Full-KV payload-array write. Identity/generation remain
+  * in the baseline S2 parent and never become array-child state. */
+final class FullKVPayloadArrayWriteRequest(p: RouteASkeletonParameters) extends Bundle {
+  val slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val fragment = UInt(p.coreMemoryFragmentIndexWidth.W)
+  val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
+}
+final class FullKVPayloadArrayWriteAck(p: RouteASkeletonParameters) extends Bundle {
+  val slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val fragment = UInt(p.coreMemoryFragmentIndexWidth.W)
+}
+final class FullKVPayloadArrayReadRequest(p: RouteASkeletonParameters) extends Bundle {
+  val slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val fragment = UInt(p.coreMemoryFragmentIndexWidth.W)
+}
+final class FullKVPayloadArrayReadResponse(p: RouteASkeletonParameters) extends Bundle {
+  val slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val fragment = UInt(p.coreMemoryFragmentIndexWidth.W)
+  val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
+}
+
+/**
+  * Full-KV logical payload-array interior only.  It has no source selection,
+  * identity, generation, READY, terminal, consumer, release or fault state.
+  */
+final class FullKVS2PayloadArrayBoundary(p: RouteASkeletonParameters) extends Module {
+  override def desiredName: String = "full_kv_s2_payload_array_boundary"
+
+  private val slots = 2
+  private val fragmentsPerSlot = 1 << p.coreMemoryFragmentIndexWidth
+  val io = IO(new Bundle {
+    val write_req = Flipped(Decoupled(new FullKVPayloadArrayWriteRequest(p)))
+    val write_ack = Decoupled(new FullKVPayloadArrayWriteAck(p))
+    val read_req = Flipped(Decoupled(new FullKVPayloadArrayReadRequest(p)))
+    val read_rsp = Decoupled(new FullKVPayloadArrayReadResponse(p))
+  })
+  val payload = Mem(slots * fragmentsPerSlot, UInt(RouteAAnchorWidths.CoreDataWidth.W))
+  private def index(slot: UInt, fragment: UInt): UInt = slot * fragmentsPerSlot.U + fragment
+
+  val writeAckValid = RegInit(false.B)
+  val writeAck = Reg(new FullKVPayloadArrayWriteAck(p))
+  io.write_req.ready := !writeAckValid
+  io.write_ack.valid := writeAckValid
+  io.write_ack.bits := writeAck
+  when(io.write_req.fire) {
+    payload.write(index(io.write_req.bits.slot, io.write_req.bits.fragment), io.write_req.bits.data)
+    writeAck.slot := io.write_req.bits.slot
+    writeAck.fragment := io.write_req.bits.fragment
+    writeAckValid := true.B
+  }
+  when(io.write_ack.fire) { writeAckValid := false.B }
+
+  val readRspValid = RegInit(false.B)
+  val readRsp = Reg(new FullKVPayloadArrayReadResponse(p))
+  io.read_req.ready := !readRspValid
+  io.read_rsp.valid := readRspValid
+  io.read_rsp.bits := readRsp
+  when(io.read_req.fire) {
+    readRsp.slot := io.read_req.bits.slot
+    readRsp.fragment := io.read_req.bits.fragment
+    readRsp.data := payload.read(index(io.read_req.bits.slot, io.read_req.bits.fragment))
+    readRspValid := true.B
+  }
+  when(io.read_rsp.fire) { readRspValid := false.B }
+}
+
 /** Baseline-local two-slot FILL -> READY -> four-consumer -> release control. */
 final class FullKVS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module {
   val io = IO(new Bundle {
@@ -13,6 +79,8 @@ final class FullKVS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     val fill_open_in = Flipped(Decoupled(new FullKVFillOpen(p)))
     val payload_in = Flipped(Decoupled(new FullKVPayloadFragment(p)))
     val terminal_in = Flipped(Decoupled(new FullKVFillTerminal(p)))
+    val payload_read_req_in = Flipped(Decoupled(new FullKVPayloadReadRequest(p)))
+    val payload_read_rsp_out = Decoupled(new FullKVPayloadReadResponse(p))
     val source_ready_out = Output(Valid(new FullKVSourceReady(p)))
     val consumer_commit_in = Flipped(Decoupled(new FullKVGqaConsumerCommit(p)))
     val source_release_out = Decoupled(new FullKVSourceRelease(p))
@@ -30,6 +98,37 @@ final class FullKVS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   val commits = RegInit(VecInit(Seq.fill(2)(0.U(4.W))))
   val faultPending = RegInit(false.B)
   val faultTerminal = Reg(new FullKVFillTerminal(p))
+  val storage = Module(new FullKVS2PayloadArrayBoundary(p))
+
+  val payloadWritePending = RegInit(false.B)
+  val payloadWriteRequest = Reg(new FullKVPayloadArrayWriteRequest(p))
+  val payloadWriteAwaitAck = RegInit(false.B)
+  storage.io.write_req.valid := payloadWritePending
+  storage.io.write_req.bits := payloadWriteRequest
+  storage.io.write_ack.ready := payloadWriteAwaitAck
+  when(storage.io.write_req.fire) {
+    payloadWritePending := false.B
+    payloadWriteAwaitAck := true.B
+  }
+  when(storage.io.write_ack.fire) {
+    assert(storage.io.write_ack.bits.slot === payloadWriteRequest.slot)
+    assert(storage.io.write_ack.bits.fragment === payloadWriteRequest.fragment)
+    payloadWriteAwaitAck := false.B
+    when(state(storage.io.write_ack.bits.slot) === filling) {
+      next(storage.io.write_ack.bits.slot) := next(storage.io.write_ack.bits.slot) + 1.U
+    }
+  }
+
+  val payloadReadRspValid = RegInit(false.B)
+  val payloadReadRsp = Reg(new FullKVPayloadReadResponse(p))
+  val payloadReadPending = RegInit(false.B)
+  val payloadReadRequest = Reg(new FullKVPayloadReadRequest(p))
+  val payloadReadOutstanding = RegInit(false.B)
+  storage.io.read_req.valid := payloadReadPending
+  storage.io.read_req.bits.slot := payloadReadRequest.s2_slot
+  storage.io.read_req.bits.fragment := payloadReadRequest.fragment_index
+  storage.io.read_rsp.ready := payloadReadOutstanding && !payloadReadRspValid
+  when(storage.io.read_req.fire) { payloadReadPending := false.B }
 
   val open = io.fill_open_in.bits
   val openSlot = open.s2_slot
@@ -43,12 +142,17 @@ final class FullKVS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
 
   val payload = io.payload_in.bits
   val payloadSlot = payload.s2_slot
-  val payloadLegal = state(payloadSlot) === filling &&
+  val payloadLegal = !payloadWritePending && !payloadWriteAwaitAck && state(payloadSlot) === filling &&
     identity(payloadSlot).asUInt === payload.transaction_identity.asUInt &&
     generation(payloadSlot) === payload.source_generation && next(payloadSlot) === payload.fragment_index &&
     payload.fragment_index < expected(payloadSlot)
   io.payload_in.ready := payloadLegal
-  when(io.payload_in.fire) { next(payloadSlot) := next(payloadSlot) + 1.U }
+  when(io.payload_in.fire) {
+    payloadWritePending := true.B
+    payloadWriteRequest.slot := payloadSlot
+    payloadWriteRequest.fragment := payload.fragment_index
+    payloadWriteRequest.data := payload.data
+  }
 
   val terminal = io.terminal_in.bits
   val terminalSlot = terminal.s2_slot
@@ -64,6 +168,36 @@ final class FullKVS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
       faultTerminal := terminal
       faultPending := true.B
     }
+  }
+
+  val payloadRead = io.payload_read_req_in.bits
+  val payloadReadSlot = payloadRead.s2_slot
+  val payloadReadLegal = io.mem_init_done && !payloadReadOutstanding && !payloadReadRspValid &&
+    state(payloadReadSlot) === ready &&
+    identity(payloadReadSlot).asUInt === payloadRead.transaction_identity.asUInt &&
+    generation(payloadReadSlot) === payloadRead.source_generation &&
+    payloadRead.fragment_index < expected(payloadReadSlot)
+  io.payload_read_req_in.ready := payloadReadLegal
+  io.payload_read_rsp_out.valid := payloadReadRspValid
+  io.payload_read_rsp_out.bits := payloadReadRsp
+  when(io.payload_read_rsp_out.fire) { payloadReadRspValid := false.B }
+  when(io.payload_read_req_in.fire) {
+    payloadReadPending := true.B
+    payloadReadOutstanding := true.B
+    payloadReadRequest := payloadRead
+  }
+  when(storage.io.read_rsp.fire) {
+    assert(storage.io.read_rsp.bits.slot === payloadReadRequest.s2_slot)
+    assert(storage.io.read_rsp.bits.fragment === payloadReadRequest.fragment_index)
+    payloadReadRsp.request := payloadReadRequest
+    payloadReadRsp.data := storage.io.read_rsp.bits.data
+    payloadReadRspValid := true.B
+    payloadReadOutstanding := false.B
+  }
+  val payloadReadRspStalled = io.payload_read_rsp_out.valid && !io.payload_read_rsp_out.ready
+  val heldPayloadReadRsp = RegEnable(io.payload_read_rsp_out.bits, payloadReadRspStalled)
+  when(RegNext(payloadReadRspStalled, false.B)) {
+    assert(io.payload_read_rsp_out.bits.asUInt === heldPayloadReadRsp.asUInt)
   }
 
   val readySlot = Wire(UInt(RouteAAnchorWidths.S2SlotWidth.W))

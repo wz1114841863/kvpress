@@ -682,13 +682,22 @@ initial combined run had a fixed-cycle terminal-ready test assumption after a
 child write; the explicit ack-aware rerun is
 `s2_fourconsumer_rerun.log`, `S2_FOURCONSUMER_RERUN_EXIT=0`.
 
-This is a Route-A logical functional-wrapper result, not a paired S2 common
-implementation. `FullKVS2GqaSourceWrapper` still lacks an equivalent payload
-access interface; its five-test result cannot cancel payload or adapter cost.
-The next ordered work is therefore a separately scoped Full-KV payload access
-wrapper, followed by paired access-map/equivalence disposition.  Neither this
-record nor the preceding P3/M2/R5 results choose a macro, physical port count,
-latency, clock, controller, DC, CACTI or PPA.
+This Route-A logical functional-wrapper result is now followed by a bounded
+Full-KV payload-only successor.  `FullKVS2GqaSourceWrapper` retains all
+baseline-local lifecycle ownership and accesses a typed
+`full_kv_s2_payload_array_boundary` through parent-owned write-ack and
+read-response paths.  The remote rerun passed `FullKVMeasurementDutSpec` 5/5
+and `DualMeasurementDutStructuralSpec` 3/3 (`fullkv_s2_directed_rerun.log`,
+`FULLKV_S2_RERUN_EXIT=0`).  It covers READY after the matching child ack,
+exact read identity/generation, held read response, stale, fault, reset,
+four-consumer completion, release, and retire/drain.
+
+This remains a pair of functional payload adapters, **not** a paired S2 common
+implementation.  Full-KV has no Route-A sidecar/packed logic, and payload or
+adapter cost cannot cancel until the ordered paired access-map and
+shell-equivalence disposition is complete.  Neither this record nor the
+preceding P3/M2/R5 results choose a macro, physical port count, latency, clock,
+controller, DC, CACTI or PPA.
 
 The immutable cut-freeze at `fc06fdbc` is not rewritten by wrapper successors.
 Its current source-SHA guard reports the already recorded P3 incremental-source

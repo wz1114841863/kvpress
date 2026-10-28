@@ -38,6 +38,22 @@ final class FullKVPayloadFragment(p: RouteASkeletonParameters) extends Bundle {
   val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
 }
 
+/**
+  * Baseline-local source-service read of an already READY Full-KV S2 slot.
+  * This carries no Route-A source kind, page, sidecar, or selection fact.
+  */
+final class FullKVPayloadReadRequest(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val fragment_index = UInt(p.coreMemoryFragmentIndexWidth.W)
+}
+
+final class FullKVPayloadReadResponse(p: RouteASkeletonParameters) extends Bundle {
+  val request = new FullKVPayloadReadRequest(p)
+  val data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
+}
+
 final class FullKVFillTerminal(p: RouteASkeletonParameters) extends Bundle {
   val transaction_identity = new TransactionIdentity
   val s2_slot = UInt(RouteAAnchorWidths.S2SlotWidth.W)

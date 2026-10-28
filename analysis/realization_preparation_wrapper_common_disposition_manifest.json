@@ -57,13 +57,13 @@
       "reset_clock": "candidate_top_reset_and_existing_mem_init_gate; no CDC or latency selected",
       "cost_ownership": "payload_pending_paired_proof; sidecar_route_a_incremental_unestimated_not_zero",
       "physical_wrapper_mapping_pending": true,
-      "implementation_status": "route_a_parent_access_adapter_functionally_verified_full_kv_paired_wrapper_pending",
+      "implementation_status": "route_a_and_full_kv_payload_parent_access_adapters_functionally_verified_paired_access_map_pending",
       "verification": {
         "remote_directed": "RouteAS2DirectPendingSpec 3/3 plus RouteAPackedS2ReadPathSpec 6/6, s2_adapter_directed_rerun.log, EXIT_STATUS=0",
-        "remote_cross_stage": "RouteAMeasurementDutR3Spec 4/4; FullKVMeasurementDutSpec 5/5 non-regression only; DualMeasurementDutStructuralSpec 3/3; RouteAFourConsumerCompletionSpec 3/3 after ack-aware test timing update, s2_fourconsumer_rerun.log, EXIT_STATUS=0",
+        "remote_cross_stage": "RouteAMeasurementDutR3Spec 4/4; RouteAFourConsumerCompletionSpec 3/3 after ack-aware test timing update, s2_fourconsumer_rerun.log, EXIT_STATUS=0; FullKVMeasurementDutSpec 5/5 plus DualMeasurementDutStructuralSpec 3/3 through real Full-KV payload write-ack/read-response path, fullkv_s2_directed_rerun.log, FULLKV_S2_RERUN_EXIT=0",
         "local_guard": "tests/test_mr2_s2_array_boundary.py 2/2 and git diff --check"
       },
-      "full_kv_gap": "current FullKVS2GqaSourceWrapper has no payload-read array interface; its non-regression tests are not a paired access-map proof"
+      "full_kv_gap": "Full-KV now has a payload-only typed parent-to-array-child access path; paired access-map, exact shell equivalence, and any common-cost disposition remain pending. Route-A sidecar/packed control remains Route-A incremental."
     },
     {
       "id": "r5_availability_access_v1",
@@ -101,7 +101,7 @@
     },
     {
       "provision": "s2_payload_gqa",
-      "disposition": "noncancellable_pending_full_kv_payload_wrapper",
+      "disposition": "noncancellable_pending_paired_access_map_and_shell_equivalence",
       "required_proof": ["common_s2_payload_access_v1", "equal_gqa_reset_fault_contract", "paired_access_map"]
     },
     {

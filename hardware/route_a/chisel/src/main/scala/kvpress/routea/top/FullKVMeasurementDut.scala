@@ -18,6 +18,10 @@ final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
     val full_kv_read_work_in = Flipped(Decoupled(new FullKVReadWork(p)))
     val external_core_mem_if_v1 = new CoreMemoryExternalPort(p)
     val source_ready_out = Output(Valid(new FullKVSourceReady(p)))
+    // Owner-only source-service access to an already READY baseline S2 slot.
+    // It is neither an attention PE nor a Route-A source/sidecar interface.
+    val full_kv_payload_read_req_in = Flipped(Decoupled(new FullKVPayloadReadRequest(p)))
+    val full_kv_payload_read_rsp_out = Decoupled(new FullKVPayloadReadResponse(p))
     // The outer source-service provider supplies only the four accepted
     // consumer-completion facts.  It is not an attention PE or numeric model.
     val full_kv_consumer_commit_in = Flipped(Decoupled(new FullKVGqaConsumerCommit(p)))
@@ -70,6 +74,8 @@ final class FullKVMeasurementDut(p: RouteASkeletonParameters) extends Module {
   endpoint.io.resolved_in <> router.io.read_fragment_out
   s2.io.payload_in <> endpoint.io.payload_out
   s2.io.terminal_in <> endpoint.io.terminal_out
+  s2.io.payload_read_req_in <> io.full_kv_payload_read_req_in
+  io.full_kv_payload_read_rsp_out <> s2.io.payload_read_rsp_out
   registry.io.release_in <> router.io.release_out
   bridge.io.release_event_in := router.io.release_event_out
   s2.io.mem_init_done := core.io.r1_init_complete

@@ -1,9 +1,11 @@
 # MR-2-S2 — S2 payload/sidecar array-only boundary
 
-**Status:** `route_a_parent_access_adapter_functionally_verified`; independent
-of MR-1B.  This is Route-A-only evidence.  `FullKVS2GqaSourceWrapper` has no
-equivalent payload-read array interface yet, so this result creates no
-common-cost cancellation.
+**Status:** `route_a_and_full_kv_parent_access_adapters_functionally_verified`;
+independent of MR-1B.  Both contours now have a payload-only typed logical
+array access path.  This remains implementation evidence, not a paired
+access-map or common-cost cancellation decision: Route-A retains its distinct
+sidecar path and the two parent shells have not yet been dispositioned as
+equivalent.
 
 ## Scope and closed precondition
 
@@ -36,6 +38,35 @@ The logical capacity stays fixed at two slots, each with 512 64-B payload
 fragments and 64 8-B padded sidecar records. This is not an SRAM macro,
 banking, port, latency, controller, clock, energy, area, throughput, or PPA
 selection.
+
+## Full-KV payload-only paired successor (2026-10-28)
+
+`FullKVS2GqaSourceWrapper` now owns a real parent-to-child payload path through
+`full_kv_s2_payload_array_boundary`.  The child accepts only `{slot, fragment,
+data}` writes and `{slot, fragment}` reads, returning typed acknowledgements
+and data.  It contains no transaction identity, source generation, READY,
+terminal, four-consumer, release, fault, or source-selection state.  The
+baseline parent keeps those facts and admits an outward read only for a READY
+slot with exact identity, generation, and fragment range.  Its write order
+advances only after a matching child acknowledgement; its read response is
+held by the parent under downstream backpressure.
+
+This is deliberately payload-only.  Full-KV does not acquire Route-A packed
+sidecar, packed-page, or Route-A direct-source control merely to make an
+interface look similar.  The common payload classification remains pending
+the separate paired access-map and shell-equivalence disposition.
+
+| Remote directed successor | Result |
+| --- | --- |
+| `FullKVMeasurementDutSpec` | `5/5` passed: async write-ack/READY, read data and response hold, stale identity, fault without READY/release, reset and lifecycle drain |
+| `DualMeasurementDutStructuralSpec` | `3/3` passed |
+| remote log / marker | `fullkv_s2_directed_rerun.log`, `FULLKV_S2_RERUN_EXIT=0` |
+
+The first remote run exposed a test-only fixed-cycle assumption about child
+write-ack timing.  The rerun waits for the actual parent-owned READY fact; it
+does not weaken the wrapper protocol or use a test tie-off.  These results are
+functional/structural only and neither select physical ports, macros, timing,
+DC, CACTI, nor PPA.
 
 ## Required regression
 
