@@ -746,9 +746,13 @@ to the earlier `fc06fdbc` cut, excludes the rejected composition-only top and
 uninstantiated Package-A storage candidate, and keeps all test harnesses out
 of the synthesis input set.
 
-This is a source/port provenance freeze, not a common-cost decision. Same 9-bit
-S2 geometry and paired shell semantics remain the next bounded gate; the
-focused Full-KV 3-bit test cannot be used for any payload/adapter cancellation.
+The successor paired 9-bit regression is complete: `FullKVMeasurementDutSpec`
+5/5 and `RouteAPackedS2ReadPathSpec` 6/6 passed together in
+`s2_paired_9bit_conformance_20261028.log` with exit 0. This resolves the
+focused Full-KV 3-bit geometry as a functional-conformance gap, but not as a
+common-cost decision: the two shells remain non-identical, and Route-A sidecar,
+packed lease/page and R6 controls remain incremental. The next bounded work is
+the dual synthesis-top input package, still without DC/CACTI/PPA.
 
 ## New-conversation prompt seed
 

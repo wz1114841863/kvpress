@@ -1,6 +1,6 @@
 # Successor synthesis source/port/filelist freeze — 2026-10-28
 
-**Status:** `source_port_filelist_frozen_paired_shell_conformance_pending`.
+**Status:** `source_port_filelist_frozen_paired_9bit_functional_conformance_passed_non_cancellable`.
 
 This is the successor to the immutable functional cut at `fc06fdbc`. It fixes
 the exact current control-top Scala dependency closure, outer interfaces, build
@@ -36,11 +36,17 @@ functional wrapper regression used a 3-bit geometry, while the Route-A packed
 anchor is 9-bit/512-addressable fragments. The two cannot support payload or
 adapter cost cancellation.
 
-The next bounded conformance batch must use one explicit 9-bit parameter vector
-on both shells and cover reset/init, stale, fault, release, and held payload
-response behavior. It must also demonstrate an equal wrapper mapping. Until
-then, both payload interiors/adapters remain nonzero and the Route-A sidecar,
-packed lease/page and R6 controls remain Route-A incremental.
+The bounded paired regression now uses one explicit 9-bit parameter vector on
+both shells. `s2_paired_9bit_conformance_20261028.log` records
+`FullKVMeasurementDutSpec` 5/5 plus `RouteAPackedS2ReadPathSpec` 6/6 with
+`S2_PAIRED_9BIT_CONFORMANCE_EXIT=0`. It covers the named READY, reset/stale,
+fault, release and held-response behavior through each contour's real parent
+and child path.
+
+This is functional conformance, not an equal wrapper mapping. Route-A still
+has sidecar, packed lease/page and R6 control that Full-KV does not implement.
+Both payload interiors/adapters therefore remain nonzero and the Route-A-only
+controls remain incremental.
 
 ## Evidence and next gate
 
@@ -49,6 +55,6 @@ adjacent non-regression passed 7/7, both with remote exit marker zero. This
 freeze merely records the source boundary those results exercised; it does not
 convert them into physical or common-cost evidence.
 
-The next gate is the bounded same-parameter S2 shell-conformance regression,
-followed by a disposition that either proves the allowed common subset or keeps
-the actual shells separately costed. No DC/CACTI/PPA work is authorized.
+The next gate is to prepare the dual synthesis-top input package from this
+source freeze, retaining the separately costed S2 shells and all named external
+boundaries. No DC/CACTI/PPA work is authorized.

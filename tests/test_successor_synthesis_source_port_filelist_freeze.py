@@ -11,7 +11,9 @@ FREEZE = ROOT / "analysis/successor_synthesis_source_port_filelist_freeze_202610
 
 def test_successor_freeze_pins_current_source_closure_and_live_ports() -> None:
     freeze = json.loads(FREEZE.read_text(encoding="utf-8"))
-    assert freeze["status"] == "source_port_filelist_frozen_paired_shell_conformance_pending"
+    assert freeze["status"] == (
+        "source_port_filelist_frozen_paired_9bit_functional_conformance_passed_non_cancellable"
+    )
     assert freeze["source_anchor"]["excluded_dirty_paths"] == [".gitignore"]
 
     filelist = freeze["scala_filelist"]
@@ -38,5 +40,6 @@ def test_successor_freeze_blocks_s2_cancellation_on_geometry() -> None:
     geometry = freeze["paired_s2_geometry_gate"]
     assert "3-bit" in geometry["full_kv_focused_functional_test"]
     assert "9-bit" in geometry["route_a_anchor"]
-    assert geometry["status"].startswith("pending")
+    assert geometry["status"].startswith("same-parameter functional conformance passed")
+    assert "S2_PAIRED_9BIT_CONFORMANCE_EXIT=0" in geometry["paired_9bit_regression"]
     assert "common_cost_cancellation" in freeze["prohibited_conclusions"]

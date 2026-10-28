@@ -1,6 +1,6 @@
 {
   "schema_version": "kvzap-successor-synthesis-source-port-filelist-freeze-1.0",
-  "status": "source_port_filelist_frozen_paired_shell_conformance_pending",
+  "status": "source_port_filelist_frozen_paired_9bit_functional_conformance_passed_non_cancellable",
   "freeze_date": "2026-10-28",
   "source_anchor": {
     "git_commit": "000ee9052f8e7c9e3b85131d08f5e6947c105abc",
@@ -56,8 +56,9 @@
     "route_a_anchor": "9-bit fragment index, 512-addressable-fragment anchor",
     "full_kv_focused_functional_test": "3-bit fragment index; not eligible for common-cost evidence",
     "shared_current_source_capability": "both selected tops accept RouteASkeletonParameters.coreMemoryFragmentIndexWidth=9",
-    "required_before_cancellation": ["same 9-bit parameter vector for both shells", "paired reset/init/stale/fault/release/response-hold regression on that vector", "explicit equal wrapper mapping"],
-    "status": "pending; no payload or adapter cancellation"
+    "paired_9bit_regression": "s2_paired_9bit_conformance_20261028.log: FullKVMeasurementDutSpec 5/5 plus RouteAPackedS2ReadPathSpec 6/6, S2_PAIRED_9BIT_CONFORMANCE_EXIT=0",
+    "remaining_before_cancellation": ["an actually equal wrapper/shell mapping; current Route-A sidecar, packed lease/page and R6 control remain non-identical"],
+    "status": "same-parameter functional conformance passed; no payload or adapter cancellation"
   },
   "nonzero_external_and_reference_boundaries": ["external_core_mem_if_v1", "p3_pending_hbm_backing", "r5_descriptor_hbm_region", "functional_partial_provider", "functional_r4_reference_boundary", "r4_numeric_partial_state"],
   "prohibited_conclusions": ["synthesis_ready", "common_cost_cancellation", "physical_macro_or_port_selection", "DC_CACTI_or_PPA", "multi_record_direct_pending"]

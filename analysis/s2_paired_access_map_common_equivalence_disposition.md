@@ -69,3 +69,10 @@ Functional prerequisites are Route-A S2 directed `9/9`, Route-A four-consumer
 `fullkv_s2_directed_rerun.log`, `FULLKV_S2_RERUN_EXIT=0`. The Full-KV evidence
 uses the actual parent-to-child access path, not a fixture, tie-off, or
 zero-test selector.
+
+The successor paired 9-bit regression then ran `FullKVMeasurementDutSpec` 5/5
+and `RouteAPackedS2ReadPathSpec` 6/6 together (`s2_paired_9bit_conformance_20261028.log`,
+`S2_PAIRED_9BIT_CONFORMANCE_EXIT=0`). It removes the focused 3-bit geometry as
+a conformance gap, while preserving this record's non-cancellation: the two
+parents/wrappers remain distinct and Route-A sidecar, packed lease/page and R6
+controls stay Route-A incremental.
