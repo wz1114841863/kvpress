@@ -1,0 +1,64 @@
+{
+  "schema_version": "kvzap-successor-synthesis-source-port-filelist-freeze-1.0",
+  "status": "source_port_filelist_frozen_paired_shell_conformance_pending",
+  "freeze_date": "2026-10-28",
+  "source_anchor": {
+    "git_commit": "000ee9052f8e7c9e3b85131d08f5e6947c105abc",
+    "branch": "research/kvzap-latest",
+    "predecessor_functional_cut": "fc06fdbc763325e55638f6cc164cf251b424a2f2",
+    "excluded_dirty_paths": [".gitignore"]
+  },
+  "candidate_tops": {
+    "full_kv": {
+      "class": "kvpress.routea.top.FullKVMeasurementDut",
+      "outer_interfaces": ["full_kv_read_work_in", "external_core_mem_if_v1", "source_ready_out", "full_kv_payload_read_req_in", "full_kv_payload_read_rsp_out", "full_kv_consumer_commit_in", "attention_terminal_rsp", "runtime_retire_req", "session_retire_ack"],
+      "included_control": ["FullKVReadProducer", "FullKVDeliveryContextBridge", "RouteACoreSideArbiter", "RouteACoreMemIfV1", "RouteADeliveryContextRegistry", "RouteATypedDeliveryRouter", "FullKVS2ReadEndpoint", "FullKVS2GqaSourceWrapper", "FullKVTerminalRetireAdapter", "FullKVStatusCollector"]
+    },
+    "route_a": {
+      "class": "kvpress.routea.top.RouteAMeasurementDut",
+      "outer_interfaces": ["frontend_lifecycle_req", "runtime_retire_req", "attention_terminal_rsp", "session_retire_ack", "source_plan_declaration_in", "pending_source_descriptor_registration_in", "hot_payload_fragment_in", "hot_position_sidecar_in", "pending_payload_read_binding_in", "functional_partial_hot_offer_in", "functional_partial_pending_offer_in", "functional_partial_packed_offer_in", "functional_partial_hot_fragment_in", "functional_partial_pending_fragment_in", "functional_partial_packed_fragment_in", "functional_r4_accepted_packet_out", "functional_r4_merge_work_out", "functional_r4_result_in", "functional_r4_numeric_fault_in", "functional_direct_pending_payload_fragment_out", "external_core_mem_if_v1"],
+      "direct_pending_limit": "valid_count=1 only",
+      "included_control": ["RouteALifecycleAdapter", "RouteAHotSourcePath", "RouteAS2GqaSourceWrapper", "RouteAPendingDescriptorOwner", "RouteADirectPendingAssociationMaterializer", "RouteACoreSideArbiter", "RouteACoreMemIfV1", "RouteAM2P3Wrapper", "RouteAM2ProductionControlOwner", "RouteAMetadataAdmissionBridge", "RouteAPageManager", "RouteAPackedReadActivationBinder", "RouteAPackedReadAssociationOwner", "RouteADeliveryContextRegistry", "RouteAUnifiedDeliveryContextAllocationBridge", "RouteATypedDeliveryRouter", "RouteAComponentStatusCollector"]
+    }
+  },
+  "scala_filelist": {
+    "build_inputs": {
+      "hardware/route_a/chisel/build.sbt": "db34502c68dee1c9b0ecedddf5789f0ec3924b67c5b40d9a275b3a49121a3b2f",
+      "hardware/route_a/chisel/project/build.properties": "c78258dca59e72a7d2ff00a59398affb462c886c1e4f8242865e716e66d3f747"
+    },
+    "included_main_sources": {
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/FullKVMeasurementDut.scala": "aeb623ab4188e993ad89b6c29a4ae08a1c661c89738277b1da4cb0e75b3729eb",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala": "6db51c94d96b7cf2bf93cc1d0a1d4d5f6b122c0bb94ab312059307d714020d61",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAComponentStatusCollector.scala": "6b83963f747ad3f32c379df0bed30a84468fe891d9493cd9f0b3aea3f47ee329",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVMeasurementInterfaces.scala": "839fce10bce65d04d0cd586d467d494c04e43e28c4a5dff9aa01e03332481a96",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVReadPath.scala": "e82a577221ea775170c89755f8967c2246a36202300a3ca3b1f012c35d5f816a",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVS2Completion.scala": "ed28226bff0d973fe8b8a17f0059f121c1dc6f96d79f263d66d94dd3e521e24c",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "07bbe0c31e6f4b27d81a5ab09ee5f0d24aa38d749c8555cc11c88d0966a737a6",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "f3dc69c68932326556e6c1a4c882ad98ee7caff27c224bb75559d2837383f3d0",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala": "c38ec16eb79c180293b932ea5c5889240bf22a7b12520df3b636412cebea2bee",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala": "588966a7f4845284c89c04c79dd93348909101b1ff5d590e022eca6cda22ab39",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "2c6fc454cf26f4578111230970bb2eb10b2fb93c4e7f75957a382ea7c3f0625d",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493"
+    },
+    "excluded_main_sources": {
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": "rejected composition-only skeleton; not either selected candidate top",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAM2EntryStorage.scala": "uninstantiated Package-A storage candidate; not on the current production M2 control dependency closure"
+    },
+    "excluded_test_sources": "all src/test Scala, including RouteARTL39AMaterializationHarness, are verification-only and not synthesis inputs"
+  },
+  "current_delta_from_fc06fdbc": {
+    "changed_production_sources": ["FullKVMeasurementInterfaces.scala", "FullKVS2Completion.scala", "RouteACommonSkeletons.scala", "RouteAIncrementalSkeletons.scala", "FullKVMeasurementDut.scala"],
+    "full_kv_new_outer_access_boundary": ["full_kv_payload_read_req_in", "full_kv_payload_read_rsp_out"],
+    "route_a_wrapper_successors": ["M2 typed access", "R5 availability access", "P3 payload/sidecar access", "Route-A S2 payload/sidecar access"],
+    "full_kv_wrapper_successor": "payload write-ack/read-response access"
+  },
+  "paired_s2_geometry_gate": {
+    "route_a_anchor": "9-bit fragment index, 512-addressable-fragment anchor",
+    "full_kv_focused_functional_test": "3-bit fragment index; not eligible for common-cost evidence",
+    "shared_current_source_capability": "both selected tops accept RouteASkeletonParameters.coreMemoryFragmentIndexWidth=9",
+    "required_before_cancellation": ["same 9-bit parameter vector for both shells", "paired reset/init/stale/fault/release/response-hold regression on that vector", "explicit equal wrapper mapping"],
+    "status": "pending; no payload or adapter cancellation"
+  },
+  "nonzero_external_and_reference_boundaries": ["external_core_mem_if_v1", "p3_pending_hbm_backing", "r5_descriptor_hbm_region", "functional_partial_provider", "functional_r4_reference_boundary", "r4_numeric_partial_state"],
+  "prohibited_conclusions": ["synthesis_ready", "common_cost_cancellation", "physical_macro_or_port_selection", "DC_CACTI_or_PPA", "multi_record_direct_pending"]
+}

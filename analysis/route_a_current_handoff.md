@@ -735,6 +735,21 @@ geometry: prove a legal same-configuration implementation or retain the
 realized difference as separately nonzero cost. This recovery neither chooses
 physical storage nor starts DC/CACTI/PPA.
 
+### Successor source/port/filelist freeze (2026-10-28)
+
+The successor record
+[`successor_synthesis_source_port_filelist_freeze_20261028.md`](successor_synthesis_source_port_filelist_freeze_20261028.md)
+now pins the current two candidate tops, their live outer ports, the twelve
+main Scala dependency sources, build inputs, SHA-256 values and intentional
+exclusions. It adds Full-KV's real payload read request/response outer boundary
+to the earlier `fc06fdbc` cut, excludes the rejected composition-only top and
+uninstantiated Package-A storage candidate, and keeps all test harnesses out
+of the synthesis input set.
+
+This is a source/port provenance freeze, not a common-cost decision. Same 9-bit
+S2 geometry and paired shell semantics remain the next bounded gate; the
+focused Full-KV 3-bit test cannot be used for any payload/adapter cancellation.
+
 ## New-conversation prompt seed
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

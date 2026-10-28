@@ -50,4 +50,4 @@ def test_paired_s2_map_fails_closed_on_common_cost_cancellation() -> None:
     wrapper = json.loads(WRAPPER.read_text(encoding="utf-8"))
     s2 = next(row for row in wrapper["wrapper_contracts"] if row["id"] == "s2_payload_access_v1")
     assert s2["paired_access_map"] == "analysis/s2_paired_access_map_common_equivalence_disposition.md"
-    assert wrapper["next_gate"].startswith("bounded P3 full-root ChiselSim DPI harness recovery")
+    assert wrapper["next_gate"].startswith("successor source/port/filelist freeze")

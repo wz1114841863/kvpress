@@ -121,7 +121,7 @@ these order constraints:
 1. preserve the implemented typed Route-A parent-side adapters and each named
    parent owner;
 2. retain the completed payload access map as a non-cancelled paired provision;
-3. repair the P3 full-root ChiselSim DPI harness, then create a successor source/port/filelist freeze and run owner, reset/stale,
+3. after the P3 full-root ChiselSim DPI repair, create a successor source/port/filelist freeze and run owner, reset/stale,
    atomicity, and paired-cut regressions; then
 4. prepare (not run) the dual-top synthesis input package for a separately
    authorized DC feasibility step.
