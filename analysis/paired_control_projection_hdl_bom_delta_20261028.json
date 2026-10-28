@@ -1,0 +1,43 @@
+{
+  "schema_version": "kvzap-paired-control-projection-hdl-bom-delta-1.0",
+  "status": "generated_hdl_no_cost_reclassification",
+  "date": "2026-10-28",
+  "base_records": [
+    "analysis/control_projection_p1_bom_delta_20261028.json",
+    "analysis/paired_control_projection_profile_bom_delta_20261028.json",
+    "analysis/measurement_boundary_bom.json"
+  ],
+  "implementation_evidence": "actual independent Full-KV and Route-A control-projection SystemVerilog compilation units",
+  "rows": [
+    {
+      "id": "paired_projection_generator_and_filelists",
+      "cost_ownership": "tooling_not_hardware_function",
+      "cost_evidence_status": "not_an_hardware_cost_row",
+      "treatment": "generator, archive, verifier and per-top filelists freeze inputs; they add no cancellation or zero-cost inference"
+    },
+    {
+      "id": "route_a_projection_parent_controls_and_array_peripherals",
+      "cost_ownership": "route_a_incremental_or_mixed_as_previously_partitioned",
+      "cost_evidence_status": "unestimated_not_zero",
+      "treatment": "R3/R6, M2/P3/R5/S2 parent controls, RMW, publication, credit, stale, reclaim, reset/fault, adapters, muxes and fanout remain in generated control RTL"
+    },
+    {
+      "id": "external_sidecar_partial_r4_and_memory_services",
+      "cost_ownership": "external_or_differential_activity_as_previously_partitioned",
+      "cost_evidence_status": "unestimated_not_zero",
+      "treatment": "typed external ports replace functional references; no black-box is construed as zero area, energy or latency"
+    },
+    {
+      "id": "s2_common_equivalence",
+      "cost_ownership": "non_cancellable",
+      "cost_evidence_status": "unestimated_not_zero",
+      "treatment": "the generated HDL does not resolve Full-KV/Route-A shell and geometry differences; no common-cost cancellation is made"
+    }
+  ],
+  "prohibited_conclusions": [
+    "generated HDL is a DC or PPA result",
+    "external services have zero cost",
+    "all common modules cancel",
+    "single-record direct-pending proves multi-record coverage"
+  ]
+}

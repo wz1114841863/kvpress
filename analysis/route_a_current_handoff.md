@@ -811,6 +811,34 @@ profile or generate HDL. The bounded control-state BOM delta is
 It retains all newly sized control, wrapper, external-memory and numeric rows
 as nonzero/unestimated, and does not authorize DC/CACTI/PPA.
 
+### Paired generated control-projection HDL freeze (2026-10-28)
+
+[`paired_control_projection_hdl_freeze_20261028.md`](paired_control_projection_hdl_freeze_20261028.md)
+and its JSON companion now freeze actual generated SystemVerilog for the
+approved `qwen3_8b_32k_s1_control_projection_v1` profile:
+`full_kv_control_projection` is one SV compilation unit and
+`route_a_control_projection` is a recursive 182-SV split compilation unit,
+each with an independent exact `.f` file.  The archived artifact has SHA-256
+`335942f0f01c24124b1fda56c6ebbd8b3425afdb2c31220cac04ff871aa94310`.
+
+The generated-HDL structural verifier passed both top/module/filelist checks
+and confirmed typed external boundaries plus exclusion of the composition
+skeleton and retired functional-reference modules.  Nine post-emission semantic
+suites passed 34/34 actual tests; the complete dual-DUT structural guard passed
+3/3 by CHIRRTL elaboration.  The guard changed only from a failing ChiselSim
+DPI wrapper to same-root CHIRRTL elaboration; it neither narrows DUT IO nor
+changes production control.
+
+This is a pre-DC input freeze only.  The companion
+[`paired_control_projection_hdl_bom_delta_20261028.json`](paired_control_projection_hdl_bom_delta_20261028.json)
+retains all parent controls/adapters and external sidecar/partial/R4/memory
+services as nonzero or unestimated.  Direct-pending remains single-record;
+S2 remains non-cancellable.  A later, separately authorized DC-feasibility
+batch must first supply library/link, clock/reset, black-box/array and
+external-service declarations, then inspect actual synthesis connectivity and
+optimization.  No DC, macro, area, timing, power, PPA or net-benefit claim is
+authorized by this freeze.
+
 ## New-conversation prompt seed
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

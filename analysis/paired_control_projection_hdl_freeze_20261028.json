@@ -1,0 +1,81 @@
+{
+  "schema_version": "kvzap-paired-control-projection-hdl-freeze-1.0",
+  "status": "generated_hdl_pre_dc_input_frozen",
+  "freeze_date": "2026-10-28",
+  "branch": "research/kvzap-latest",
+  "profile": {
+    "id": "qwen3_8b_32k_s1_control_projection_v1",
+    "scope": "bounded Qwen3-8B 32K single-sequence control anchor only",
+    "does_not_select": ["memory_macro", "physical_port_or_latency", "clock_or_frequency", "HBM_controller", "R4_numeric_implementation", "PPA"]
+  },
+  "source_anchor": {
+    "pre_emission_git_head": "0af324374d4f96450856d3b4158e5cb7b46bf610",
+    "predecessor_freeze": "analysis/successor_synthesis_source_port_filelist_freeze_20261028.json",
+    "added_or_changed_sources": {
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/SynthesisControlProjectionGenerators.scala": "70a357c23138300e6179268209154db7b3f4caefdf66b06706d40955d217a934",
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PairedControlProjectionHdlEmitter.scala": "8f0da8fd243199272a61d1c79ca3bb8d24646cb0ced6ab6484f57f6313b2d316",
+      "hardware/route_a/chisel/src/test/scala/kvpress/routea/DualMeasurementDutStructuralSpec.scala": "48877adbbae812ba196f280d0a6e37aba26c86c8f5298fee003ad37c19794c42",
+      "tools/verify_paired_control_projection_hdl.py": "49ab4cebc55b442ac985a699ea97a9f4bc7ba292fe5f058039dd8a13d2a04178"
+    },
+    "excluded": ["RouteAKVSubsystemTop", "RouteAM2EntryStorage", "all src/test Scala from synthesis inputs", ".gitignore user worktree change"]
+  },
+  "tops": {
+    "full_kv": {
+      "module": "full_kv_control_projection",
+      "source_class": "kvpress.routea.top.FullKVControlProjection",
+      "filelist": "full_kv_control_projection.f",
+      "format": "single SystemVerilog compilation unit",
+      "sv_file_count": 1,
+      "top_sv": "full_kv_control_projection.sv",
+      "top_sv_bytes": 822385,
+      "top_sv_sha256": "5e4d9918030e3d517d9913ff7c56e2325bd3c1f640e1a844d88a8a4473792256",
+      "typed_outer_contract": ["full_kv_read_work_in", "external_core_mem_if_v1", "source_ready_out", "full_kv_payload_read_req_in", "full_kv_payload_read_rsp_out", "full_kv_consumer_commit_in", "attention_terminal_rsp", "runtime_retire_req", "session_retire_ack"]
+    },
+    "route_a": {
+      "module": "route_a_control_projection",
+      "source_class": "kvpress.routea.top.RouteAControlProjection",
+      "filelist": "route_a_control_projection_split/route_a_control_projection.f",
+      "format": "split SystemVerilog compilation unit",
+      "sv_file_count": 182,
+      "top_sv": "route_a_control_projection_split/route_a_control_projection.sv",
+      "top_sv_bytes": 1338526,
+      "top_sv_sha256": "af8d7d2c5d2cb30f9adbc0f6d3f8bc06425b7020652d91cee0bae400c3b88de7",
+      "direct_pending_limit": "valid_count=1 only",
+      "typed_outer_contract": ["frontend_lifecycle_req", "runtime_retire_req", "attention_terminal_rsp", "session_retire_ack", "source_plan_declaration_in", "pending_source_descriptor_registration_in", "hot_payload_fragment_in", "hot_position_sidecar_in", "pending_payload_read_binding_in", "functional_sidecar_work_out", "functional_sidecar_payload_release_out", "functional_sidecar_registry_allocate_in", "functional_sidecar_read_issue_in", "functional_partial_hot_offer_in", "functional_partial_pending_offer_in", "functional_partial_packed_offer_in", "functional_partial_hot_fragment_in", "functional_partial_pending_fragment_in", "functional_partial_packed_fragment_in", "functional_r4_accepted_packet_out", "functional_r4_merge_work_out", "functional_r4_result_in", "functional_r4_numeric_fault_in", "functional_direct_pending_payload_fragment_out", "external_core_mem_if_v1"]
+    }
+  },
+  "archive": {
+    "path": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_v1/paired_control_projection_hdl_qwen3_8b_32k_s1_control_projection_v1.tar.gz",
+    "entries": 192,
+    "sha256": "335942f0f01c24124b1fda56c6ebbd8b3425afdb2c31220cac04ff871aa94310",
+    "combined_sv_file_count": 183,
+    "combined_sv_bytes": 738300596,
+    "integrity_file": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_v1/paired_control_projection_hdl_archive.sha256",
+    "structural_report": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_v1/paired_control_projection_hdl_check.json"
+  },
+  "generation": {
+    "chisel": "7.15.0",
+    "sbt": "1.11.5",
+    "java": "11.0.19",
+    "firtool": "1.158.0",
+    "route_a_recovery": "unchanged full-root CHIRRTL followed by firtool --format=fir -O=debug --mlir-disable-threading --strip-debug-info --lowering-options=locationInfoStyle=none,emittedLineLength=160 --split-verilog",
+    "monolithic_route_a_firtool_status": "exit 139; replaced only by the recorded split-output tool invocation"
+  },
+  "verification": {
+    "structural_verifier": "PASS: both top modules, exact filelists, required external tokens, and forbidden-module exclusions",
+    "semantic_regression_actual_test_count": 34,
+    "semantic_regression_suites": ["RouteASynthesisControlProjectionProfileSpec", "ControlProjectionElaborationSpec", "FullKVMeasurementDutSpec", "RouteAR3R5PublicationSpec", "RouteAPackedS2ReadPathSpec", "RouteAFourConsumerCompletionSpec", "RouteAReclaimSpec", "RouteAResetEpochIntegrationSpec", "RouteAPackedActivationCompositionSpec"],
+    "full_root_structural_guard": "PASS 3/3 via CHIRRTL elaboration; replaces ChiselSim DPI-wrapper compilation only"
+  },
+  "cost_boundary": {
+    "new_cost_cancellation": "none",
+    "still_nonzero_or_unestimated": ["external_core_mem_if_v1", "P3 pending backing", "R5 descriptor service", "functional sidecar delivery", "partial provider", "R4 numeric/partial service", "array-wrapper peripherals and control adapters"],
+    "S2_common_cost_status": "non-cancellable pending actual equal shell and wrapper evidence"
+  },
+  "next_gate": {
+    "status": "DC feasibility requires separate approval",
+    "remaining_conditions": ["target standard-cell library and link setup", "clock/reset constraints", "array and black-box treatment", "independent per-top filelist invocation", "external-service implementation/cost declarations", "post-synthesis connectivity and optimization inspection"],
+    "not_claimed": ["DC feasibility pass", "area", "timing", "power", "physical macro", "PPA", "common-cost cancellation", "multi-record direct-pending", "KVZap net benefit"]
+  }
+}
