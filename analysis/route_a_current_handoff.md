@@ -76,6 +76,26 @@ Use these only when the question needs the extra detail:
 | RTL3.9-B0/B1/B2/B3 | The same immutable member reaches payload durability, R5 descriptor durability, two required M2 member round trips, R5 visibility acknowledgement, exactly one R3 publication acknowledgement, and R6 acceptance of the exact `pending -> packed` authority transition. |
 | RTL3.9-C0--C4-D | First owner-correct packed read, S2 READY/source service, terminal/reclaim, accepted-event replay, negative-event coverage, and bounded functional-subsystem review complete. |
 
+### Current hardware-realization position (2026-10-29)
+
+The project has moved beyond functional RTL closure and measurement-boundary
+work into the **first paired DC feasibility execution**.  The stages are
+deliberately distinct:
+
+| Layer | Status | What it establishes | What it does not establish |
+|---|---|---|---|
+| Architecture/A4 ledger | frozen conditional architecture disposition | Route-A semantic and differential-cost accounting scope | physical realization or PPA |
+| RTL3.9-C | complete at bounded functional scope | owner-to-owner packed read through terminal/reclaim | physical storage, numeric or controller behavior |
+| W0, MR-1A/B and MR-2 | completed within their approved bounded contours | paired DUT owners plus M2/P3/R5/S2 logical array boundaries | macro selection or whole-system inference |
+| Projection/wrapper realization | completed for the current successor | parent control retained; functional sidecar/partial/R4 and R5 descriptor backing are typed external boundaries | zero external cost or common-cost cancellation |
+| DC input/preflight | passed | exact Full-KV 1-file and Route-A 48-file source lists, typed array proxies and identical fair-v1 constraints | DC result |
+| Paired DC feasibility | **running** | tool/link/netlist/constraint diagnostics for the selected successor | final timing, area, power, PPA or net-benefit conclusion |
+
+The active run is recorded in
+[`dc_feasibility_run_r5_descriptor_externalized_20261029.md`](dc_feasibility_run_r5_descriptor_externalized_20261029.md).
+It must finish with both per-top exit markers and native reports before this
+row can be promoted from `running` to any feasibility disposition.
+
 The B3 witness is functional control/dataflow evidence only. It does **not**
 claim physical M2/SRAM/HBM, controller or CDC behavior, numeric datapath,
 frequency, bandwidth, throughput, area, energy, PPA, model/GPU evidence, or a

@@ -1,6 +1,6 @@
 # R5 descriptor externalization — control-projection contract
 
-**Status:** `implementation_in_progress` (2026-10-29).
+**Status:** `implementation_complete_dc_feasibility_running` (2026-10-29).
 
 ## Purpose and boundary
 
@@ -57,3 +57,8 @@ This is a control-projection replacement only.  It changes neither R3's
 publication linearization point, R6 authority, R2 arbitration, the page size,
 admission, pruning, GQA, nor scheduler behavior.  It is not a physical HBM
 controller, memory macro, PPA result, or descriptor-service cost measurement.
+
+The externalized successor source, typed array-proxy transformation and static
+constraint/input preflight have passed.  The first fair paired DC feasibility
+run is in progress; its eventual reports, exit markers and tool diagnostics
+remain required before making any feasibility conclusion.

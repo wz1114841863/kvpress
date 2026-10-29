@@ -42,12 +42,14 @@ remains large because parent control, R5 availability/generation, reclaim
 state and assertion shadow are deliberately retained.  This is not evidence
 that the removed functional descriptor backing remains present.
 
-## Next input transformation
+## Downstream input transformation and current state
 
-The next bounded step is to apply the already-approved typed array-interior
-proxy materialization to this successor package, using a new manifest and
-without modifying the frozen v1 package.  The resulting paired proxy source
-root—not this unproxied split source—will become the Route-A input to the next
-DC feasibility successor.  R5 descriptor service remains a typed top-level
-external boundary with nonzero, unestimated capacity, latency, bandwidth,
-controller/PHY and energy cost.
+The already-approved typed array-interior proxy materialization has passed on
+this successor package without modifying the frozen v1 package.  The resulting
+paired proxy source root—not this unproxied split source—is the Route-A input
+to the active DC-feasibility successor; see
+[`dc_successor_input_preflight_r5_descriptor_externalized_20261029.md`](dc_successor_input_preflight_r5_descriptor_externalized_20261029.md)
+and [`dc_feasibility_run_r5_descriptor_externalized_20261029.md`](dc_feasibility_run_r5_descriptor_externalized_20261029.md).
+R5 descriptor service remains a typed top-level external boundary with
+nonzero, unestimated capacity, latency, bandwidth, controller/PHY and energy
+cost.

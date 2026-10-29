@@ -1,6 +1,6 @@
 # DC successor input preflight — R5 descriptor externalized
 
-**Status:** `preflight_pass_no_DC_run` (2026-10-29).
+**Status:** `preflight_pass_downstream_DC_feasibility_running` (2026-10-29).
 
 This record advances the descriptor-externalized Route-A source freeze through
 the already-approved typed array-interior proxy transformation.  It does not
@@ -46,6 +46,8 @@ The remote no-DC checks passed:
 4. static fair-constraint coverage for both successor top headers.
 
 The environment and runner now select this successor proxy root and the new
-48-entry Route-A filelist.  An actual DC run remains a separate action whose
-only permitted initial claims are tool feasibility, netlist completeness and
-constraint/optimization diagnostics.
+48-entry Route-A filelist.  The separately authorized run is now active and
+is tracked by
+[`dc_feasibility_run_r5_descriptor_externalized_20261029.md`](dc_feasibility_run_r5_descriptor_externalized_20261029.md).
+Its only permitted initial claims are tool feasibility, netlist completeness
+and constraint/optimization diagnostics.
