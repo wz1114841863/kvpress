@@ -42,10 +42,14 @@ def main():
             if "syn_black_box" in parent_text[max(0, parent_start - 96):parent_start] or parent_body.strip() == "endmodule":
                 raise RuntimeError("parent control was incorrectly proxied: " + parent["module"])
         report["boundaries"].append({"id": boundary["id"], "module": boundary["module"], "proxy": True})
-    for root, filelist, expected in [
-        (args.proxy_root, "full_kv_control_projection.f", 1),
-        (args.proxy_root / "route_a_control_projection_split", "route_a_control_projection.f", 182),
-    ]:
+    filelists = manifest.get("filelists", [
+        {"root": ".", "path": "full_kv_control_projection.f", "expected_entries": 1},
+        {"root": "route_a_control_projection_split", "path": "route_a_control_projection.f", "expected_entries": 182},
+    ])
+    for item in filelists:
+        root = args.proxy_root / item["root"]
+        filelist = item["path"]
+        expected = item["expected_entries"]
         entries = [line.strip() for line in (root / filelist).read_text().splitlines() if line.strip()]
         if len(entries) != expected or any(not (root / entry).is_file() for entry in entries):
             raise RuntimeError("filelist broken: " + str(root / filelist))

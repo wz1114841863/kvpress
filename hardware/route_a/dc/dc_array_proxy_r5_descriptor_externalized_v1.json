@@ -1,0 +1,55 @@
+{
+  "schema_version": "kvzap-dc-array-proxy-v2",
+  "profile_id": "dc_feasibility_fair_v1",
+  "status": "approved_typed_array_interior_proxy_materialization",
+  "input_hdl_archive_sha256": "9d58f0df438555dba433390b9db2c4f5a1e85fee67e431d142b60d026b810093",
+  "source_freeze": "analysis/r5_descriptor_externalized_successor_input_freeze_20261029.md",
+  "rule": "replace only named array-boundary implementation bodies with same-header syn_black_box proxies; retain every named parent control module and all top ports/filelists",
+  "filelists": [
+    {"top":"full_kv","root":".","path":"full_kv_control_projection.f","expected_entries":1},
+    {"top":"route_a","root":".","path":"route_a_control_projection_successor.f","expected_entries":48}
+  ],
+  "boundaries": [
+    {
+      "id": "full_kv_s2_payload",
+      "top": "full_kv",
+      "source_member": "full_kv_control_projection.sv",
+      "module": "full_kv_s2_payload_array_boundary",
+      "parent_controls": [{"module": "FullKVS2GqaSourceWrapper", "source_member": "full_kv_control_projection.sv"}]
+    },
+    {
+      "id": "route_a_m2_entry",
+      "top": "route_a",
+      "source_member": "route_a_control_projection_split/route_a_m2_entry_array_boundary.sv",
+      "module": "route_a_m2_entry_array_boundary",
+      "parent_controls": [{"module": "route_a_m2_production_control_owner", "source_member": "route_a_control_projection_split/route_a_m2_production_control_owner.sv"}]
+    },
+    {
+      "id": "route_a_p3_stage",
+      "top": "route_a",
+      "source_member": "route_a_control_projection_split/route_a_p3_stage_array_boundary.sv",
+      "module": "route_a_p3_stage_array_boundary",
+      "parent_controls": [{"module": "route_a_m2_p3_wrapper", "source_member": "route_a_control_projection_split/route_a_m2_p3_wrapper.sv"}]
+    },
+    {
+      "id": "route_a_r5_availability",
+      "top": "route_a",
+      "source_member": "route_a_control_projection_split/route_a_r5_availability_array_boundary.sv",
+      "module": "route_a_r5_availability_array_boundary",
+      "parent_controls": [{"module": "route_a_page_manager", "source_member": "route_a_control_projection_split/route_a_page_manager.sv"}]
+    },
+    {
+      "id": "route_a_s2_payload_sidecar",
+      "top": "route_a",
+      "source_member": "route_a_control_projection_split/route_a_s2_payload_sidecar_array_boundary.sv",
+      "module": "route_a_s2_payload_sidecar_array_boundary",
+      "parent_controls": [{"module": "route_a_s2_gqa_source_wrapper", "source_member": "route_a_control_projection_split/route_a_s2_gqa_source_wrapper.sv"}]
+    }
+  ],
+  "external_service_rule": {
+    "status": "typed_top_level_ports_no_internal_hdl_stub",
+    "services": ["external_core_mem_if_v1", "P3 pending backing", "R5 descriptor service", "functional sidecar delivery", "partial provider", "R4 numeric/partial service"],
+    "cost": "nonzero_unestimated"
+  },
+  "prohibited": ["whole_parent_boundary_blackbox", "whole_array_snapshot_port", "removal_of_parent_RMW_or_atomicity", "removal_of_credit_READY_stale_reclaim_or_fault_control", "zero_cost_array_or_external_service", "physical_macro_or_latency_selection"]
+}

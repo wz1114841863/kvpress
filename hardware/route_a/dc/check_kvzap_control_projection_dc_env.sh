@@ -19,17 +19,17 @@ require_file "$KVZAP_DC_TARGET_LIBRARY"
 require_dir "$KVZAP_DC_HDL_ROOT"
 require_file "$KVZAP_DC_HDL_ARCHIVE"
 
-full_filelist="$KVZAP_DC_HDL_ROOT/full_kv_control_projection.f"
-route_dir="$KVZAP_DC_HDL_ROOT/route_a_control_projection_split"
-route_filelist="$route_dir/route_a_control_projection.f"
+full_filelist="$KVZAP_DC_HDL_ROOT/$KVZAP_DC_FULL_FILELIST"
+route_dir="$KVZAP_DC_HDL_ROOT/$KVZAP_DC_ROUTE_FILELIST_ROOT"
+route_filelist="$KVZAP_DC_HDL_ROOT/$KVZAP_DC_ROUTE_FILELIST"
 require_file "$KVZAP_DC_HDL_ROOT/full_kv_control_projection.sv"
 require_file "$full_filelist"
 require_dir "$route_dir"
-require_file "$route_dir/route_a_control_projection.sv"
+require_file "$KVZAP_DC_HDL_ROOT/route_a_control_projection_split/route_a_control_projection.sv"
 require_file "$route_filelist"
 
 check_filelist() {
-  local root=$1 list=$2 expected_count=$3 top=$4
+  local root=$1 list=$2 expected_count=$3 top=$4 top_source=$5
   local line count=0
   declare -A seen=()
   while IFS= read -r line || [[ -n "$line" ]]; do
@@ -40,14 +40,14 @@ check_filelist() {
     count=$((count + 1))
   done < "$list"
   [[ $count -eq $expected_count ]] || fail "$top filelist count is $count, expected $expected_count"
-  grep -Eq "^module ${top}(\\s|\\(|$)" "$root/${top}.sv" || fail "missing top module ${top}"
+  grep -Eq "^module ${top}(\\s|\\(|$)" "$root/$top_source" || fail "missing top module ${top}"
   note "$top filelist_count=$count top_present=yes"
 }
 
-check_filelist "$KVZAP_DC_HDL_ROOT" "$full_filelist" 1 full_kv_control_projection
-check_filelist "$route_dir" "$route_filelist" 182 route_a_control_projection
+check_filelist "$KVZAP_DC_HDL_ROOT" "$full_filelist" 1 full_kv_control_projection full_kv_control_projection.sv
+check_filelist "$route_dir" "$route_filelist" "$KVZAP_DC_ROUTE_FILELIST_COUNT" route_a_control_projection route_a_control_projection_split/route_a_control_projection.sv
 
-archive_expected=335942f0f01c24124b1fda56c6ebbd8b3425afdb2c31220cac04ff871aa94310
+archive_expected="$KVZAP_DC_HDL_ARCHIVE_SHA256"
 archive_actual=$(sha256sum "$KVZAP_DC_HDL_ARCHIVE" | awk '{print $1}')
 [[ "$archive_actual" == "$archive_expected" ]] || fail "HDL archive SHA-256 differs: $archive_actual"
 
@@ -71,7 +71,7 @@ note "target_library=$KVZAP_DC_TARGET_LIBRARY"
 note "target_library_sha256=$(sha256sum "$KVZAP_DC_TARGET_LIBRARY" | awk '{print $1}')"
 note "hdl_archive_sha256=$archive_actual"
 note "run_root_not_created=$KVZAP_DC_RUN_ROOT"
-note "ARRAY_BLACKBOX_TREATMENT=unselected"
+note "ARRAY_BLACKBOX_TREATMENT=typed_array_proxy_materialized_successor"
 note "EXTERNAL_SERVICE_STUB_TREATMENT=unselected"
 note "CLOCK_RESET_CONSTRAINT_PROFILE=$KVZAP_DC_CONSTRAINT_PROFILE period_ns=$KVZAP_DC_CLOCK_PERIOD_NS setup_ns=$KVZAP_DC_CLOCK_SETUP_UNCERTAINTY_NS hold_ns=$KVZAP_DC_CLOCK_HOLD_UNCERTAINTY_NS input_delay_ns=$KVZAP_DC_INPUT_DELAY_NS output_delay_ns=$KVZAP_DC_OUTPUT_DELAY_NS input_transition_ns=$KVZAP_DC_INPUT_TRANSITION_NS output_load_pf=$KVZAP_DC_OUTPUT_LOAD_PF"
 printf '%s\n' 'KVZAP_DC_ENVIRONMENT_PASS: tools, feasibility-library candidate, and independent HDL inputs are present; this does not authorize or launch DC.'

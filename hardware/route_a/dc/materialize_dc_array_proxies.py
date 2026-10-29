@@ -132,10 +132,15 @@ def main():
             "retained_parent_controls": [parent["module"] for parent in boundary["parent_controls"]],
         })
 
-    for top, root, filelist, expected in [
-        ("full_kv", args.output, "full_kv_control_projection.f", 1),
-        ("route_a", args.output / "route_a_control_projection_split", "route_a_control_projection.f", 182),
-    ]:
+    filelists = manifest.get("filelists", [
+        {"top": "full_kv", "root": ".", "path": "full_kv_control_projection.f", "expected_entries": 1},
+        {"top": "route_a", "root": "route_a_control_projection_split", "path": "route_a_control_projection.f", "expected_entries": 182},
+    ])
+    for item in filelists:
+        top = item["top"]
+        root = args.output / item["root"]
+        filelist = item["path"]
+        expected = item["expected_entries"]
         entries = [line.strip() for line in (root / filelist).read_text(encoding="utf-8").splitlines() if line.strip()]
         if len(entries) != expected or len(entries) != len(set(entries)):
             raise RuntimeError("invalid " + top + " filelist")

@@ -27,8 +27,20 @@ export KVZAP_DC_TARGET_LIBRARY="${KVZAP_DC_TARGET_LIBRARY:-$KVZAP_DC_PDK_ROOT/tc
 # Generated HDL is stored outside the rsync --delete Chisel workspace.  The
 # archive and the extracted compilation units have independent SHA/filelist
 # checks in the paired HDL freeze.  Override both paths for another host.
-export KVZAP_DC_HDL_ROOT="${KVZAP_DC_HDL_ROOT:-/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/qwen3_8b_32k_s1_control_projection_v1}"
-export KVZAP_DC_HDL_ARCHIVE="${KVZAP_DC_HDL_ARCHIVE:-$KVZAP_DC_HDL_ROOT/paired_control_projection_hdl_qwen3_8b_32k_s1_control_projection_v1.tar.gz}"
+export KVZAP_DC_HDL_ROOT="${KVZAP_DC_HDL_ROOT:-/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/qwen3_8b_32k_s1_control_projection_r5_descriptor_externalized_v1}"
+export KVZAP_DC_HDL_ARCHIVE="${KVZAP_DC_HDL_ARCHIVE:-$KVZAP_DC_HDL_ROOT/paired_control_projection_r5_descriptor_externalized_v1.tar.gz}"
+export KVZAP_DC_HDL_ARCHIVE_SHA256="${KVZAP_DC_HDL_ARCHIVE_SHA256:-9d58f0df438555dba433390b9db2c4f5a1e85fee67e431d142b60d026b810093}"
+export KVZAP_DC_FULL_FILELIST="${KVZAP_DC_FULL_FILELIST:-full_kv_control_projection.f}"
+export KVZAP_DC_ROUTE_FILELIST="${KVZAP_DC_ROUTE_FILELIST:-route_a_control_projection_successor.f}"
+export KVZAP_DC_ROUTE_FILELIST_ROOT="${KVZAP_DC_ROUTE_FILELIST_ROOT:-}"
+export KVZAP_DC_ROUTE_FILELIST_COUNT="${KVZAP_DC_ROUTE_FILELIST_COUNT:-48}"
+
+# The actual first DC-feasibility run consumes this independently checked
+# successor tree, not the behavioral-array source tree above.  It replaces
+# only the typed M2/P3/R5/S2 array-interior module bodies with same-header
+# syn_black_box proxies; all parent control remains in the filelists.
+export KVZAP_DC_PROXY_ROOT="${KVZAP_DC_PROXY_ROOT:-/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/qwen3_8b_32k_s1_control_projection_r5_descriptor_externalized_v1_dc_array_proxy_v1_r1}"
+export KVZAP_DC_ARRAY_PROXY_MANIFEST="${KVZAP_DC_ARRAY_PROXY_MANIFEST:-$KVZAP_DC_SCRIPT_DIR/dc_array_proxy_r5_descriptor_externalized_v1.json}"
 
 # This root is deliberately not created by the environment precheck.  A
 # separately authorized DC-feasibility run must choose an immutable run ID.
@@ -45,4 +57,4 @@ export KVZAP_DC_INPUT_DELAY_NS="${KVZAP_DC_INPUT_DELAY_NS:-0.20}"
 export KVZAP_DC_OUTPUT_DELAY_NS="${KVZAP_DC_OUTPUT_DELAY_NS:-0.20}"
 export KVZAP_DC_INPUT_TRANSITION_NS="${KVZAP_DC_INPUT_TRANSITION_NS:-0.05}"
 export KVZAP_DC_OUTPUT_LOAD_PF="${KVZAP_DC_OUTPUT_LOAD_PF:-0.005}"
-export KVZAP_DC_CONSTRAINT_MANIFEST="${KVZAP_DC_CONSTRAINT_MANIFEST:-$KVZAP_DC_SCRIPT_DIR/dc_feasibility_fair_v1.json}"
+export KVZAP_DC_CONSTRAINT_MANIFEST="${KVZAP_DC_CONSTRAINT_MANIFEST:-$KVZAP_DC_SCRIPT_DIR/dc_feasibility_fair_r5_descriptor_successor_v1.json}"
