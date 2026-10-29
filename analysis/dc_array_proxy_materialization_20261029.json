@@ -1,0 +1,70 @@
+{
+  "boundaries": [
+    {
+      "id": "full_kv_s2_payload",
+      "module": "full_kv_s2_payload_array_boundary",
+      "proxy_source_sha256": "b5aaca6430fdf1a45ad8a2e5af690215a4f004197700eadf27a2948ccbf07515",
+      "retained_parent_controls": [
+        "FullKVS2GqaSourceWrapper"
+      ],
+      "source_member": "full_kv_control_projection.sv",
+      "typed_header_sha256": "bae1be4ee9a15b33483a4b2185c4d782e6a052d023a132ff647f6941206282e7"
+    },
+    {
+      "id": "route_a_m2_entry",
+      "module": "route_a_m2_entry_array_boundary",
+      "proxy_source_sha256": "8048216302613945e8e456846242ab3a7d3296850403e614a0e31ff8bc8c8e59",
+      "retained_parent_controls": [
+        "route_a_m2_production_control_owner"
+      ],
+      "source_member": "route_a_control_projection_split/route_a_m2_entry_array_boundary.sv",
+      "typed_header_sha256": "668d34fcdbca345af5c33172989c79e45be225850a2cb21619a656b55d3b12da"
+    },
+    {
+      "id": "route_a_p3_stage",
+      "module": "route_a_p3_stage_array_boundary",
+      "proxy_source_sha256": "88c20c2fd05171f57fb0bd3dadcef13e5fdc81b9f3f7900b358d7af3bbff1d4c",
+      "retained_parent_controls": [
+        "route_a_m2_p3_wrapper"
+      ],
+      "source_member": "route_a_control_projection_split/route_a_p3_stage_array_boundary.sv",
+      "typed_header_sha256": "8cb45d40abbb2d9e5781a8c084c71654d382828883d20c25c8959f4d59894de9"
+    },
+    {
+      "id": "route_a_r5_availability",
+      "module": "route_a_r5_availability_array_boundary",
+      "proxy_source_sha256": "fd143e1e7c8bec0d8ac9c999edcd98e2d449b7ac390793dee40ee22fb59728eb",
+      "retained_parent_controls": [
+        "route_a_page_manager"
+      ],
+      "source_member": "route_a_control_projection_split/route_a_r5_availability_array_boundary.sv",
+      "typed_header_sha256": "2f713a5ecad2f2e22f99e7e67986b63fd0b232a76b073c72cce6bc407f5b8c48"
+    },
+    {
+      "id": "route_a_s2_payload_sidecar",
+      "module": "route_a_s2_payload_sidecar_array_boundary",
+      "proxy_source_sha256": "b9180c89f535eff40c6c6d1789c10183fdccb4d81f16ccbb2ba5dc2fead1e0f5",
+      "retained_parent_controls": [
+        "route_a_s2_gqa_source_wrapper"
+      ],
+      "source_member": "route_a_control_projection_split/route_a_s2_payload_sidecar_array_boundary.sv",
+      "typed_header_sha256": "dcc646d71c1185f760e8abdcae57f551ed794878c45e466167bba404f7316807"
+    }
+  ],
+  "filelists": {
+    "full_kv": {
+      "entries": 1,
+      "path": "full_kv_control_projection.f",
+      "sha256": "fc47b50b33cb69f6e198413db7d35ca30fa42605254d600f388d4863a77fe960"
+    },
+    "route_a": {
+      "entries": 182,
+      "path": "route_a_control_projection_split/route_a_control_projection.f",
+      "sha256": "8fee9ac356045d2d301bc02235605adb32a6868a7b1f431eef188e06823ababb"
+    }
+  },
+  "input_hdl_archive_sha256": "335942f0f01c24124b1fda56c6ebbd8b3425afdb2c31220cac04ff871aa94310",
+  "pass": true,
+  "proxy_manifest_sha256": "2ac08b50a4b18b766e332ead520cff2d40c241dac498053383f6eb9ad09f43dd",
+  "schema_version": "kvzap-dc-array-proxy-materialization-report-v1"
+}

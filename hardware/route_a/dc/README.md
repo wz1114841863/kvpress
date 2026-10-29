@@ -22,13 +22,15 @@ environment also supplies the server's existing license-server endpoint only
 when `LM_LICENSE_FILE` is otherwise unset; it stores no credential or license
 file and can be overridden with `KVZAP_DC_LICENSE_FILE`.
 
-It deliberately reports the following as `unselected`:
+The following remain deliberately unselected:
 
-- array-interior/black-box materialization for M2, P3, R5 and S2;
 - typed external-service stubs for memory, sidecar, partial and R4 services.
 
-Those remain required DC-feasibility inputs.  Each future DC top must use its
-own frozen `.f`; do not combine the two filelists because the
+M2/P3/R5/S2 array interiors are now materialized separately as same-header
+`syn_black_box` proxies by `materialize_dc_array_proxies.py`; see
+[`analysis/dc_array_proxy_materialization_20261029.md`](../../../analysis/dc_array_proxy_materialization_20261029.md).
+This preserves parent control and does not select a macro, latency, or physical
+cost. Each future DC top must use its own frozen `.f`; do not combine the two filelists because the
 independent generated units define common module names.  See
 [`analysis/paired_control_projection_hdl_freeze_20261028.md`](../../../analysis/paired_control_projection_hdl_freeze_20261028.md)
 for the HDL, source and evidence boundary.

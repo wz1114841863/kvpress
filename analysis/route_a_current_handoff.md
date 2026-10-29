@@ -897,12 +897,18 @@ have zero static unconstrained ports under the collection-based single-clock
 contract. DC-native ignored-constraint and unconstrained-path evidence is
 still deferred until an authorized run.
 
-The input package is not DC-ready yet: only M2/P3/R5/S2 typed array interiors
-may be generic black-box/proxy materialized, and that implementation has not
-yet been done. Synthesizing behavioral arrays as ordinary free logic, or
-black-boxing an entire boundary and losing parent control, is prohibited. The
-next bounded work is interior-only materialization plus successor filelist and
-regression closure; no DC/PPA run is authorized until it passes.
+The typed M2/P3/R5/S2 array-interior successor is now materialized and checked
+on the EDA server; see
+[`dc_array_proxy_materialization_20261029.md`](dc_array_proxy_materialization_20261029.md).
+It replaces only five same-header array bodies, retaining all parent controls
+and the independent `1`/`182` filelists. Behavioral arrays must still not be
+treated as free logic, and external services remain nonzero/unestimated. The
+package is ready only for a separately authorized DC-feasibility run; no
+DC/PPA result has been produced. The remote selected parent-control suite
+passes 33/33 actual tests. `RouteAMeasurementDutR3Spec` is explicitly still
+blocked before assertion execution by the known full-root ChiselSim C-DPI
+bridge defect for its deep B2c association port; this is a test-harness repair
+item, not a passing full-root result or a proxy semantic failure.
 
 ## New-conversation prompt seed
 

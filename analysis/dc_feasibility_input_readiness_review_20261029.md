@@ -1,6 +1,6 @@
 # DC feasibility input-readiness review — 2026-10-29
 
-**Status:** `blocked_only_by_array_interior_blackbox_materialization`.
+**Status:** `superseded_by_array_proxy_materialization_pass`.
 
 This bounded review does not reopen Route-A architecture or run DC. It asks
 whether the exact paired control-projection HDL can enter DC without silently
@@ -23,23 +23,24 @@ No DC tool has elaborated either top. Actual `check_timing`,
 reports are therefore `deferred_until_DC_check_timing_and_report_constraint`,
 not falsely reported as empty.
 
-## Blocking condition
+## Historical blocking condition (resolved)
 
 The generated HDL still contains behavioral M2/P3/R5/S2 array interiors. The
 frozen rule permits only those interiors to become generic typed
 black-box/proxy modules. Parent RMW, prepare/commit/abort, credit, READY,
 stale, reclaim, fault, adapters, muxes and fanout must remain in projected RTL.
 
-That generic black-box materialization has **not** been implemented. Synthesizing
-behavioral arrays as ordinary logic answers a different question; black-boxing
-a whole boundary incorrectly discards retained control cost. Thus external
-service treatment is consistent, but the paired package is not DC-admissible.
+That generic black-box materialization is now implemented as a deterministic
+successor.  See
+[`dc_array_proxy_materialization_20261029.md`](dc_array_proxy_materialization_20261029.md)
+and its machine-readable reports.  Synthesizing behavioral arrays as ordinary
+logic still answers a different question, and black-boxing a whole boundary
+still incorrectly discards retained control cost.
 
 ## Acceptance conclusion
 
-`dc_feasibility_fair_v1` and static coverage are accepted as frozen pre-DC
-constraints. **DC input readiness is BLOCKED solely by typed array-interior
-black-box/proxy materialization for M2, P3, R5 and S2.** The next work must
-preserve the parent access contracts and produce successor filelists plus
-structural/semantic non-regression. Only then may an authorized DC run emit the
-deferred native tool reports.
+`dc_feasibility_fair_v1`, static coverage and typed array-interior proxy
+materialization are accepted as frozen pre-DC inputs. **The package is ready
+only for a separately authorized DC-feasibility run.** That run remains the
+first evidence for DC parser/elaboration/link behavior and native timing or
+constraint reports; this review does not claim any of those results.
