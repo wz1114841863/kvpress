@@ -1,0 +1,36 @@
+{
+  "cost_boundary": "external descriptor service remains nonzero_unestimated",
+  "full_kv_filelist_sha256": "fc47b50b33cb69f6e198413db7d35ca30fa42605254d600f388d4863a77fe960",
+  "full_kv_source": "unchanged from paired_control_projection_hdl_freeze_20261028",
+  "full_kv_sv_sha256": "5e4d9918030e3d517d9913ff7c56e2325bd3c1f640e1a844d88a8a4473792256",
+  "profile_id": "qwen3_8b_32k_s1_control_projection_v1",
+  "route_a_externalization_commit": "ae24e2c",
+  "route_a_filelist": "route_a_control_projection_successor.f",
+  "route_a_source_commit": "f99ca9a",
+  "route_a_successor_check": {
+    "closure_sha256": "bd51c1aac832af2819189b7359a7adc7c12da767df2d36e2546f3fdc9487543b",
+    "excluded_functional_backing": [
+      "descriptorEntryImage",
+      "descriptorReadable",
+      "descriptorValidRecords"
+    ],
+    "file_count": 48,
+    "filelist": "route_a_control_projection_successor.f",
+    "pass": true,
+    "required_typed_ports": [
+      "functional_r5_descriptor_service_request_valid",
+      "functional_r5_descriptor_service_response_valid"
+    ],
+    "retained_parents": {
+      "route_a_m2_p3_wrapper": "route_a_m2_p3_wrapper.sv",
+      "route_a_page_manager": "route_a_page_manager.sv",
+      "route_a_s2_gqa_source_wrapper": "route_a_s2_gqa_source_wrapper.sv"
+    },
+    "schema_version": "kvzap-r5-descriptor-externalization-successor-v1",
+    "sv_bytes": 473720822,
+    "top": "route_a_control_projection",
+    "top_source": "route_a_control_projection_split/route_a_control_projection.sv"
+  },
+  "schema_version": "kvzap-paired-control-projection-r5-descriptor-successor-v1",
+  "typed_external_service": "functional_r5_descriptor_service"
+}
