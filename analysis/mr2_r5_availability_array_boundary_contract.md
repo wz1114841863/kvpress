@@ -32,11 +32,12 @@ facts come only from the typed reclaim ack. The boundary selects no SRAM
 macro, banking, physical port count, latency, controller, clock, timing, area,
 power, throughput, or PPA.
 
-The functional `descriptorEntryImage` remains in PageManager as the already
-declared external descriptor-service proxy.  It is explicitly not an R5 local
-SRAM-array proxy.  M2 is outside this batch: its current reference protocol
-provider must first be replaced by a production owner before any M2 storage
-interior can be isolated.
+The functional `descriptorEntryImage` remains only in the bounded measurement
+DUT as the already declared descriptor-service proxy.  The successor control
+projection externalizes it through `r5_descriptor_service_v1`; it is
+explicitly not an R5 local SRAM-array proxy.  M2 is outside this batch: its
+current reference protocol provider must first be replaced by a production
+owner before any M2 storage interior can be isolated.
 
 ## Required verification
 

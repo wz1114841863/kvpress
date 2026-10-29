@@ -56,6 +56,11 @@ class RouteAMeasurementDut(
     // Named outer functional direct-source transport boundary. It is neither
     // a test-only authorization source nor a physical payload buffer.
     val functional_direct_pending_payload_fragment_out = RouteAChannels.direct_pending_payload_fragment(p)
+    // The measurement DUT leaves this boundary inactive.  The control
+    // projection activates it and removes the functional descriptor image;
+    // R5 parent control still owns generation, liveness, stale checks, and
+    // release ordering.
+    val functional_r5_descriptor_service = new R5DescriptorServiceExternalPort(p)
     val external_core_mem_if_v1 = new CoreMemoryExternalPort(p)
   })
 
@@ -81,7 +86,7 @@ class RouteAMeasurementDut(
   // append-order state.  It is neither a second R3 publication owner nor an
   // R6/R2 source-selection or arbitration participant.
   val metadataAdmission = Module(new RouteAMetadataAdmissionBridge(p))
-  val pageManager = Module(new RouteAPageManager(p))
+  val pageManager = Module(new RouteAPageManager(p, externalizeDescriptorBacking = externalizeFunctionalReferences))
   val activationBinder = Module(new RouteAPackedReadActivationBinder(p))
   val associationOwner = Module(new RouteAPackedReadAssociationOwner(p))
   val planFork = Module(new RouteASourceCompletionPlanActivationFork(p))
@@ -125,6 +130,12 @@ class RouteAMeasurementDut(
   io.attention_terminal_rsp <> lifecycle.io.attention_terminal_rsp
   io.session_retire_ack <> lifecycle.io.session_retire_ack
   lifecycle.io.component_status_in <> statusCollector.io.component_status_out
+
+  if (externalizeFunctionalReferences) {
+    val descriptorService = io.functional_r5_descriptor_service
+    descriptorService.request <> pageManager.descriptorService.get.request
+    pageManager.descriptorService.get.response <> descriptorService.response
+  }
 
   // The hot owner opens only from the exact R6-accepted plan copy.  The
   // adapter cannot select a source or construct a second plan.

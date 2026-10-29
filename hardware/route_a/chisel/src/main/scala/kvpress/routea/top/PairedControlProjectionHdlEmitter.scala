@@ -67,6 +67,8 @@ object PairedControlProjectionHdlEmitter {
         "functional_sidecar_payload_release_out_valid",
         "functional_sidecar_registry_allocate_in_valid",
         "functional_sidecar_read_issue_in_valid",
+        "functional_r5_descriptor_service_request_valid",
+        "functional_r5_descriptor_service_response_valid",
         "functional_partial_hot_offer_in_valid",
         "functional_partial_pending_offer_in_valid",
         "functional_partial_packed_offer_in_valid",

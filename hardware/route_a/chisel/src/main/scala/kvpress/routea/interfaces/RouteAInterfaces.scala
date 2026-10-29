@@ -169,6 +169,68 @@ final class PageRef extends Bundle {
 }
 
 /**
+  * Operation classes for the external R5 descriptor backing.  They reuse the
+  * one typed service boundary and do not create a second R2/R1/HBM command
+  * path: append/reclaim maintenance still crosses R2/R1 before a CommitLine
+  * request may be emitted.
+  */
+object R5DescriptorServiceOperation {
+  final val Lookup = 0
+  final val ReadLine = 1
+  final val CommitLine = 2
+  final val Width = 2
+}
+
+/**
+  * One R5-owned descriptor-service request.  `line_data` is meaningful only
+  * for a post-R1-durable CommitLine.  The fixed 512-bit line preserves the
+  * frozen four-lane, 64-B descriptor layout without choosing a physical macro
+  * or transport width.
+  */
+final class R5DescriptorServiceRequest(p: RouteASkeletonParameters) extends Bundle {
+  val operation = UInt(R5DescriptorServiceOperation.Width.W)
+  val transaction_identity = new TransactionIdentity
+  val descriptor_line = UInt(p.coreMemoryAddressRefWidth.W)
+  val page_ref = new PageRef
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val line_data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
+}
+
+/**
+  * Exact response to a descriptor-service request.  Lookup returns the
+  * service-owned validated handles; ReadLine returns the extant 64-B image;
+  * CommitLine acknowledges the already durable R1 maintenance operation.
+  * A non-OK status is fail-closed and never grants descriptor visibility or
+  * allocator release.
+  */
+final class R5DescriptorServiceResponse(p: RouteASkeletonParameters) extends Bundle {
+  val operation = UInt(R5DescriptorServiceOperation.Width.W)
+  val transaction_identity = new TransactionIdentity
+  val descriptor_line = UInt(p.coreMemoryAddressRefWidth.W)
+  val page_ref = new PageRef
+  val valid_records = UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)
+  val status = UInt(RouteAAnchorWidths.TerminalStatusWidth.W)
+  val found = Bool()
+  // ReadLine returns the service-owned liveness of each descriptor lane.  R5
+  // uses it only to form a durable invalidate image; it never treats this as
+  // an allocator grant or a second residency authority.
+  val line_live_mask = UInt(4.W)
+  val line_data = UInt(RouteAAnchorWidths.CoreDataWidth.W)
+  val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+  val sidecar_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+}
+
+/**
+  * External descriptor backing port for the control projection.  It models
+  * only request/response ordering and identity. Capacity, latency, bandwidth,
+  * controller/PHY, and energy stay external and `nonzero_unestimated`.
+  */
+final class R5DescriptorServiceExternalPort(p: RouteASkeletonParameters) extends Bundle {
+  val request = Decoupled(new R5DescriptorServiceRequest(p))
+  val response = Flipped(Decoupled(new R5DescriptorServiceResponse(p)))
+}
+
+/**
   * R5-owned post-durability observation for one reclaimed allocator entry.
   *
   * The page reference is the *old* live generation.  This is not an allocator

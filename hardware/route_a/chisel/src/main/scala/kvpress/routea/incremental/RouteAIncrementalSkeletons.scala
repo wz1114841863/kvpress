@@ -3596,7 +3596,10 @@ final class RouteAR5AvailabilityArrayBoundary(p: RouteASkeletonParameters) exten
 }
 
 /** RTL1.3 R5 control state; descriptor payload/HBM traffic remains on R2/R1. */
-final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
+final class RouteAPageManager(
+  p: RouteASkeletonParameters,
+  externalizeDescriptorBacking: Boolean = false,
+) extends Module {
   override def desiredName: String = "route_a_page_manager"
 
   val io = IO(new Bundle {
@@ -3627,6 +3630,11 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     val descriptor_location_grant_out = RouteAChannels.descriptor_location_grant(p)
     val component_status_out = RouteAChannels.component_status(p)
   })
+  // This is a true projection-only top-level boundary.  Keeping it outside
+  // `io` prevents the bounded functional PageManager and legacy harnesses
+  // from acquiring an un-driven external input.
+  val descriptorService = if (externalizeDescriptorBacking)
+    Some(IO(new R5DescriptorServiceExternalPort(p))) else None
 
   private val streamSlots = p.r5StreamSlots
   private val streamIndexWidth = math.max(1, log2Ceil(streamSlots))
@@ -3635,11 +3643,15 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   private val descriptorLines = p.r5AllocatorEntries / 4
   private val descriptorLineWidth = math.max(1, log2Ceil(descriptorLines))
   private val allocatorIndexWidth = math.max(1, log2Ceil(p.r5AllocatorEntries))
-  private val ReclaimIdle = 0.U(3.W)
-  private val ReclaimRequest = 1.U(3.W)
-  private val ReclaimData = 2.U(3.W)
-  private val ReclaimAwaitTerminal = 3.U(3.W)
-  private val ReclaimAwaitAvailabilityAck = 4.U(3.W)
+  private val ReclaimIdle = 0.U(4.W)
+  private val ReclaimReadDescriptor = 1.U(4.W)
+  private val ReclaimAwaitDescriptorRead = 2.U(4.W)
+  private val ReclaimRequest = 3.U(4.W)
+  private val ReclaimData = 4.U(4.W)
+  private val ReclaimAwaitTerminal = 5.U(4.W)
+  private val ReclaimCommitDescriptor = 6.U(4.W)
+  private val ReclaimAwaitDescriptorCommit = 7.U(4.W)
+  private val ReclaimAwaitAvailabilityAck = 8.U(4.W)
   val initialized = RegInit(false.B)
   when(io.mem_init_done) { initialized := true.B }
   val initStatusReported = RegInit(false.B)
@@ -3695,12 +3707,21 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   // it after generation advance from internal allocator state.
   val releasePending = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))
   val releaseGeneration = Reg(Vec(p.r5AllocatorEntries, UInt(RouteAAnchorWidths.PageGenerationWidth.W)))
-  // Functional/reference descriptor-entry backing. This preserves all four
-  // 128-bit lanes when producing the frozen 64-B maintenance line; it is not
-  // an HBM macro/cache/controller implementation or a PPA claim.
-  val descriptorEntryImage = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(0.U(128.W))))
-  val descriptorReadable = RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))
-  val descriptorValidRecords = Reg(Vec(p.r5AllocatorEntries, UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)))
+  // The functional image is retained only in the bounded measurement DUT.
+  // The control projection replaces it with the typed external service below;
+  // no descriptor backing array is elaborated for that projection.
+  val descriptorEntryImage = if (!externalizeDescriptorBacking)
+    Some(RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(0.U(128.W))))) else None
+  val descriptorReadable = if (!externalizeDescriptorBacking)
+    Some(RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))) else None
+  val descriptorValidRecords = if (!externalizeDescriptorBacking)
+    Some(Reg(Vec(p.r5AllocatorEntries, UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)))) else None
+  // The projection retains this one-bit R5-owned publication/liveness fact.
+  // Unlike the removed 128-bit descriptor image it carries no payload,
+  // handles, or descriptor contents; it gates an external lookup until the
+  // existing metadata publication visibility acknowledgement has fired.
+  val descriptorPublished = if (externalizeDescriptorBacking)
+    Some(RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))) else None
   val descriptorGrantPending = RegInit(false.B)
   val descriptorGrant = Reg(new DescriptorLocationGrant(p))
   // One bit per descriptor line is parent-side control state used solely for
@@ -3714,15 +3735,34 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val freeHintIndex = Reg(UInt(allocatorIndexWidth.W))
   val freeHintGeneration = Reg(UInt(RouteAAnchorWidths.PageGenerationWidth.W))
   private def allocatorIndex(pageId: UInt): UInt = pageId(allocatorIndexWidth - 1, 0)
-  private val AppendIdle = 0.U(2.W)
-  private val AppendRequest = 1.U(2.W)
-  private val AppendData = 2.U(2.W)
-  private val AppendAwaitTerminal = 3.U(2.W)
+  private val AppendIdle = 0.U(4.W)
+  private val AppendReadDescriptor = 1.U(4.W)
+  private val AppendAwaitDescriptorRead = 2.U(4.W)
+  private val AppendRequest = 3.U(4.W)
+  private val AppendData = 4.U(4.W)
+  private val AppendAwaitTerminal = 5.U(4.W)
+  private val AppendCommitDescriptor = 6.U(4.W)
+  private val AppendAwaitDescriptorCommit = 7.U(4.W)
   val appendState = RegInit(AppendIdle)
   val appendSlot = Reg(UInt(streamIndexWidth.W))
   val appendKind = Reg(UInt(2.W))
   val appendIdentity = Reg(new TransactionIdentity)
   val appendSequence = RegInit(0.U((RouteAAnchorWidths.RequestIdWidth + RouteAAnchorWidths.IncarnationWidth).W))
+  val appendDescriptorLineData = Reg(UInt(RouteAAnchorWidths.CoreDataWidth.W))
+  val reclaimDescriptorLineData = Reg(UInt(RouteAAnchorWidths.CoreDataWidth.W))
+  val reclaimDescriptorLiveMask = Reg(UInt(4.W))
+
+  val lookupRequestOutstanding = RegInit(false.B)
+  val lookupResponsePending = RegInit(false.B)
+  val lookupFailed = RegInit(false.B)
+  val lookupRequest = Reg(new DescriptorLocationRequest(p))
+  val lookupResponse = Reg(new R5DescriptorServiceResponse(p))
+
+  if (externalizeDescriptorBacking) {
+    descriptorService.get.request.valid := false.B
+    descriptorService.get.request.bits := 0.U.asTypeOf(new R5DescriptorServiceRequest(p))
+    descriptorService.get.response.ready := false.B
+  }
 
   val anyAllocatedLine = allocatedLine.asUInt.orR
   val nextAllocatedLine = PriorityEncoder(allocatedLine)
@@ -3736,8 +3776,12 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   private def descriptorLaneImage(lane: Int): UInt = {
     val pageIndexWide = reclaimLine * 4.U + lane.U
     val pageIndex = pageIndexWide(log2Ceil(p.r5AllocatorEntries) - 1, 0)
-    val oldGeneration = descriptorEntryImage(pageIndex)(51, 44)
-    val nextGeneration = Mux(descriptorReadable(pageIndex), oldGeneration + 1.U, oldGeneration)
+    val oldGeneration = if (externalizeDescriptorBacking)
+      reclaimDescriptorLineData(128 * (lane + 1) - 77, 128 * lane + 44)
+    else descriptorEntryImage.get(pageIndex)(51, 44)
+    val laneLive = if (externalizeDescriptorBacking) reclaimDescriptorLiveMask(lane)
+      else descriptorReadable.get(pageIndex)
+    val nextGeneration = Mux(laneLive, oldGeneration + 1.U, oldGeneration)
     // [1:0]=FREE; [51:44]=page generation; all other descriptor fields zero.
     Cat(0.U(76.W), nextGeneration, 0.U(44.W))
   }
@@ -3755,17 +3799,62 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   val descriptorRequest = io.descriptor_location_request_in.bits
   val descriptorRequestIndex = allocatorIndex(descriptorRequest.page_ref.page_id)
   val descriptorPageInRange = descriptorRequest.page_ref.page_id < p.r5AllocatorEntries.U
-  val descriptorRequestMatches = descriptorPageInRange && descriptorReadable(descriptorRequestIndex) &&
-    descriptorEntryImage(descriptorRequestIndex)(51, 44) === descriptorRequest.page_ref.generation &&
-    descriptorValidRecords(descriptorRequestIndex) === descriptorRequest.valid_records &&
-    descriptorRequest.valid_records =/= 0.U && descriptorRequest.valid_records <= 64.U
+  val descriptorRequestMatches = if (externalizeDescriptorBacking)
+    descriptorPageInRange && descriptorPublished.get(descriptorRequestIndex) &&
+      descriptorRequest.valid_records =/= 0.U && descriptorRequest.valid_records <= 64.U
+  else
+    descriptorPageInRange && descriptorReadable.get(descriptorRequestIndex) &&
+      descriptorEntryImage.get(descriptorRequestIndex)(51, 44) === descriptorRequest.page_ref.generation &&
+      descriptorValidRecords.get(descriptorRequestIndex) === descriptorRequest.valid_records &&
+      descriptorRequest.valid_records =/= 0.U && descriptorRequest.valid_records <= 64.U
+  val descriptorServiceBusy = if (externalizeDescriptorBacking)
+    appendState =/= AppendIdle || reclaimState =/= ReclaimIdle || lookupRequestOutstanding || lookupResponsePending || lookupFailed
+  else false.B
+  val lookupStart = if (externalizeDescriptorBacking)
+    initialized && !io.drain_collection_enable && !reclaimPermitted && !descriptorGrantPending &&
+      !descriptorServiceBusy && io.descriptor_location_request_in.valid && descriptorRequestMatches
+  else false.B
+  if (externalizeDescriptorBacking) {
+    descriptorService.get.request.valid := lookupStart
+    descriptorService.get.request.bits.operation := R5DescriptorServiceOperation.Lookup.U
+    descriptorService.get.request.bits.transaction_identity := descriptorRequest.transaction_identity
+    descriptorService.get.request.bits.descriptor_line := descriptorRequest.page_ref.page_id >> 2
+    descriptorService.get.request.bits.page_ref := descriptorRequest.page_ref
+    descriptorService.get.request.bits.valid_records := descriptorRequest.valid_records
+    descriptorService.get.request.bits.line_data := 0.U
+    when(descriptorService.get.request.fire) {
+      lookupRequestOutstanding := true.B
+      lookupRequest := descriptorRequest
+    }
+    val lookupRsp = descriptorService.get.response.bits
+    val lookupRspMatches = lookupRequestOutstanding &&
+      lookupRsp.operation === R5DescriptorServiceOperation.Lookup.U &&
+      lookupRsp.transaction_identity.asUInt === lookupRequest.transaction_identity.asUInt &&
+      lookupRsp.descriptor_line === (lookupRequest.page_ref.page_id >> 2) &&
+      lookupRsp.page_ref.asUInt === lookupRequest.page_ref.asUInt &&
+      lookupRsp.valid_records === lookupRequest.valid_records
+    descriptorService.get.response.ready := lookupRequestOutstanding
+    when(descriptorService.get.response.fire) {
+      lookupRequestOutstanding := false.B
+      when(lookupRspMatches && lookupRsp.status === p.coreMemoryOkStatusCode.U && lookupRsp.found) {
+        lookupResponse := lookupRsp
+        lookupResponsePending := true.B
+      }.otherwise {
+        lookupFailed := true.B
+      }
+    }
+    when(lookupFailed && !io.descriptor_location_request_in.valid) { lookupFailed := false.B }
+  }
   io.descriptor_location_request_in.ready := initialized && !io.drain_collection_enable && !reclaimPermitted &&
-    !descriptorGrantPending && descriptorRequestMatches
+    !descriptorGrantPending && descriptorRequestMatches && (if (externalizeDescriptorBacking)
+      lookupResponsePending && descriptorRequest.asUInt === lookupRequest.asUInt else true.B)
   when(io.descriptor_location_request_in.fire) {
     val payloadHandle = Wire(UInt(p.coreMemoryAddressRefWidth.W))
     val sidecarHandle = Wire(UInt(p.coreMemoryAddressRefWidth.W))
-    payloadHandle := descriptorRequest.page_ref.page_id * 33280.U
-    sidecarHandle := descriptorRequest.page_ref.page_id * 33280.U + 32768.U
+    payloadHandle := (if (externalizeDescriptorBacking) lookupResponse.payload_handle_or_address
+      else descriptorRequest.page_ref.page_id * 33280.U)
+    sidecarHandle := (if (externalizeDescriptorBacking) lookupResponse.sidecar_handle_or_address
+      else descriptorRequest.page_ref.page_id * 33280.U + 32768.U)
     descriptorGrantPending := true.B
     descriptorGrant.transaction_identity := descriptorRequest.transaction_identity
     descriptorGrant.page_ref := descriptorRequest.page_ref
@@ -3774,6 +3863,7 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     descriptorGrant.valid_records := descriptorRequest.valid_records
     descriptorGrant.sidecar_records := descriptorRequest.valid_records
     descriptorGrant.live_reference_held := true.B
+    if (externalizeDescriptorBacking) { lookupResponsePending := false.B }
   }
 
   val releaseAny = releasePending.asUInt.orR
@@ -3795,7 +3885,38 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   }
   when(reclaimPermitted && reclaimState === ReclaimIdle && anyAllocatedLine && !reclaimFaulted) {
     reclaimLine := nextAllocatedLine
-    reclaimState := ReclaimRequest
+    reclaimState := (if (externalizeDescriptorBacking) ReclaimReadDescriptor else ReclaimRequest)
+  }
+
+  if (externalizeDescriptorBacking) {
+    when(reclaimState === ReclaimReadDescriptor) {
+      descriptorService.get.request.valid := true.B
+      descriptorService.get.request.bits.operation := R5DescriptorServiceOperation.ReadLine.U
+      descriptorService.get.request.bits.transaction_identity := reclaimIdentity
+      descriptorService.get.request.bits.descriptor_line := reclaimLine
+      descriptorService.get.request.bits.page_ref := 0.U.asTypeOf(new PageRef)
+      descriptorService.get.request.bits.valid_records := 0.U
+      descriptorService.get.request.bits.line_data := 0.U
+      when(descriptorService.get.request.fire) { reclaimState := ReclaimAwaitDescriptorRead }
+    }
+    val reclaimReadRsp = descriptorService.get.response.bits
+    val reclaimReadRspMatches = reclaimState === ReclaimAwaitDescriptorRead &&
+      reclaimReadRsp.operation === R5DescriptorServiceOperation.ReadLine.U &&
+      reclaimReadRsp.transaction_identity.asUInt === reclaimIdentity.asUInt &&
+      reclaimReadRsp.descriptor_line === reclaimLine
+    when(reclaimState === ReclaimAwaitDescriptorRead) {
+      descriptorService.get.response.ready := true.B
+      when(descriptorService.get.response.fire) {
+        when(reclaimReadRspMatches && reclaimReadRsp.status === p.coreMemoryOkStatusCode.U) {
+          reclaimDescriptorLineData := reclaimReadRsp.line_data
+          reclaimDescriptorLiveMask := reclaimReadRsp.line_live_mask
+          reclaimState := ReclaimRequest
+        }.otherwise {
+          reclaimFaulted := true.B
+          reclaimState := ReclaimIdle
+        }
+      }
+    }
   }
 
   val reclaimEligibility = (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.FifoPredecessor) |
@@ -3849,9 +3970,12 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     when(reclaimDelivery.r1_response.status === p.coreMemoryFaultStatusCode.U) {
       reclaimFaulted := true.B
     }.otherwise {
-      availabilityStorage.io.reclaim_generation_update.valid := true.B
-      availabilityStorage.io.reclaim_generation_update.bits := reclaimLine
-      reclaimState := ReclaimAwaitAvailabilityAck
+      if (externalizeDescriptorBacking) reclaimState := ReclaimCommitDescriptor
+      else {
+        availabilityStorage.io.reclaim_generation_update.valid := true.B
+        availabilityStorage.io.reclaim_generation_update.bits := reclaimLine
+        reclaimState := ReclaimAwaitAvailabilityAck
+      }
     }
   }
   // A fault intentionally leaves the matching line allocated and blocks final
@@ -3863,6 +3987,37 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     assert(reclaimDeliveryMatches)
     assert(reclaimPermitted)
     assert(allocatedLine(reclaimLine))
+  }
+
+  if (externalizeDescriptorBacking) {
+    when(reclaimState === ReclaimCommitDescriptor) {
+      descriptorService.get.request.valid := true.B
+      descriptorService.get.request.bits.operation := R5DescriptorServiceOperation.CommitLine.U
+      descriptorService.get.request.bits.transaction_identity := reclaimIdentity
+      descriptorService.get.request.bits.descriptor_line := reclaimLine
+      descriptorService.get.request.bits.page_ref := 0.U.asTypeOf(new PageRef)
+      descriptorService.get.request.bits.valid_records := 0.U
+      descriptorService.get.request.bits.line_data := reclaimDescriptorData
+      when(descriptorService.get.request.fire) { reclaimState := ReclaimAwaitDescriptorCommit }
+    }
+    val reclaimCommitRsp = descriptorService.get.response.bits
+    val reclaimCommitMatches = reclaimState === ReclaimAwaitDescriptorCommit &&
+      reclaimCommitRsp.operation === R5DescriptorServiceOperation.CommitLine.U &&
+      reclaimCommitRsp.transaction_identity.asUInt === reclaimIdentity.asUInt &&
+      reclaimCommitRsp.descriptor_line === reclaimLine
+    when(reclaimState === ReclaimAwaitDescriptorCommit) {
+      descriptorService.get.response.ready := true.B
+      when(descriptorService.get.response.fire) {
+        when(reclaimCommitMatches && reclaimCommitRsp.status === p.coreMemoryOkStatusCode.U) {
+          availabilityStorage.io.reclaim_generation_update.valid := true.B
+          availabilityStorage.io.reclaim_generation_update.bits := reclaimLine
+          reclaimState := ReclaimAwaitAvailabilityAck
+        }.otherwise {
+          reclaimFaulted := true.B
+          reclaimState := ReclaimIdle
+        }
+      }
+    }
   }
 
   when(availabilityStorage.io.reclaim_generation_update_ack.valid) {
@@ -3878,7 +4033,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
         releaseGeneration(page) := ack.old_generations(lane)
         releasePending(page) := true.B
         durableInvalidation(page) := true.B
-        descriptorReadable(page) := false.B
+        if (!externalizeDescriptorBacking) descriptorReadable.get(page) := false.B
+        if (externalizeDescriptorBacking) descriptorPublished.get(page) := false.B
       }
     }
     allocatedLine(ack.descriptor_line) := false.B
@@ -3889,9 +4045,9 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     scanComplete := false.B
     freeHintValid := false.B
   }
-  for (page <- 0 until p.r5AllocatorEntries) {
-    when(descriptorReadable(page)) {
-      assert(!durableInvalidation(page))
+  if (!externalizeDescriptorBacking) {
+    for (page <- 0 until p.r5AllocatorEntries) {
+      when(descriptorReadable.get(page)) { assert(!durableInvalidation(page)) }
     }
   }
   io.reclaim_complete := reclaimPermitted && !reclaimActive && !anyAllocatedLine && !reclaimFaulted
@@ -3974,12 +4130,15 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     buildNeedsTail(pendingStream) := visibleTailPresent(pendingStream)
     // ALLOCATED_UNPUBLISHED private descriptor image.  Publication remains
     // guarded by the existing R3 visibility acknowledgement.
-    descriptorEntryImage(ackIndex) := Cat(
-      0.U(76.W), ack.generation, 0.U(8.W), Fill(18, 1.U(1.W)),
-      pendingAllocation.valid_records, pendingAllocation.kv_head, pendingAllocation.layer, 1.U(2.W),
-    )
-    descriptorReadable(ackIndex) := false.B
-    descriptorValidRecords(ackIndex) := pendingAllocation.valid_records
+    if (!externalizeDescriptorBacking) {
+      descriptorEntryImage.get(ackIndex) := Cat(
+        0.U(76.W), ack.generation, 0.U(8.W), Fill(18, 1.U(1.W)),
+        pendingAllocation.valid_records, pendingAllocation.kv_head, pendingAllocation.layer, 1.U(2.W),
+      )
+      descriptorReadable.get(ackIndex) := false.B
+      descriptorValidRecords.get(ackIndex) := pendingAllocation.valid_records
+    }
+    if (externalizeDescriptorBacking) descriptorPublished.get(ackIndex) := false.B
     allocationRspValid := true.B
     allocationRsp.layer := pendingAllocation.layer
     allocationRsp.kv_head := pendingAllocation.kv_head
@@ -4020,26 +4179,68 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
       RouteADescriptorOperationKind.NewPage.U, RouteADescriptorOperationKind.TailLink.U)
     appendIdentity.request_id := appendSequence(RouteAAnchorWidths.RequestIdWidth - 1, 0)
     appendIdentity.incarnation := appendSequence(RouteAAnchorWidths.RequestIdWidth + RouteAAnchorWidths.IncarnationWidth - 1, RouteAAnchorWidths.RequestIdWidth)
-    appendState := AppendRequest
+    appendState := (if (externalizeDescriptorBacking) AppendReadDescriptor else AppendRequest)
   }
   val appendSubjectPage = Mux(appendKind === RouteADescriptorOperationKind.NewPage.U,
     buildPageId(appendSlot), visibleTailId(appendSlot))
   val appendSubjectGeneration = Mux(appendKind === RouteADescriptorOperationKind.NewPage.U,
     buildGeneration(appendSlot), visibleTailGeneration(appendSlot))
+  val appendLineWords = Wire(Vec(4, UInt(128.W)))
+  for (lane <- 0 until 4) {
+    appendLineWords(lane) := appendDescriptorLineData(128 * (lane + 1) - 1, 128 * lane)
+  }
+  val appendOldImage = if (externalizeDescriptorBacking)
+    appendLineWords(appendSubjectPage(1, 0))
+  else descriptorEntryImage.get(allocatorIndex(appendSubjectPage))
   val appendDescriptorImage = Mux(
     appendKind === RouteADescriptorOperationKind.NewPage.U,
-    descriptorEntryImage(allocatorIndex(buildPageId(appendSlot))),
+    Cat(0.U(76.W), buildGeneration(appendSlot), 0.U(8.W), Fill(18, 1.U(1.W)),
+      buildValidRecords(appendSlot), buildHead(appendSlot), buildLayer(appendSlot), 1.U(2.W)),
     Cat(
-      descriptorEntryImage(allocatorIndex(visibleTailId(appendSlot)))(127, 44), buildGeneration(appendSlot),
-      buildPageId(appendSlot), descriptorEntryImage(allocatorIndex(visibleTailId(appendSlot)))(17, 0),
+      appendOldImage(127, 44), buildGeneration(appendSlot),
+      buildPageId(appendSlot), appendOldImage(17, 0),
     ),
   )
   val appendLine = appendSubjectPage(RouteAAnchorWidths.PageIdWidth - 1, 2)
   def appendLineLaneImage(lane: Int): UInt = {
     val lanePage = Cat(appendLine, lane.U(2.W))
-    Mux(lanePage === appendSubjectPage, appendDescriptorImage, descriptorEntryImage(allocatorIndex(lanePage)))
+    if (externalizeDescriptorBacking) Mux(lanePage === appendSubjectPage, appendDescriptorImage,
+      appendDescriptorLineData(128 * (lane + 1) - 1, 128 * lane))
+    else Mux(lanePage === appendSubjectPage, appendDescriptorImage, descriptorEntryImage.get(allocatorIndex(lanePage)))
   }
   val appendLineData = Cat(appendLineLaneImage(3), appendLineLaneImage(2), appendLineLaneImage(1), appendLineLaneImage(0))
+  if (externalizeDescriptorBacking) {
+    when(appendState === AppendReadDescriptor) {
+      descriptorService.get.request.valid := true.B
+      descriptorService.get.request.bits.operation := R5DescriptorServiceOperation.ReadLine.U
+      descriptorService.get.request.bits.transaction_identity := appendIdentity
+      descriptorService.get.request.bits.descriptor_line := appendLine
+      descriptorService.get.request.bits.page_ref.page_id := appendSubjectPage
+      descriptorService.get.request.bits.page_ref.generation := appendSubjectGeneration
+      descriptorService.get.request.bits.valid_records := buildValidRecords(appendSlot)
+      descriptorService.get.request.bits.line_data := 0.U
+      when(descriptorService.get.request.fire) { appendState := AppendAwaitDescriptorRead }
+    }
+    val appendReadRsp = descriptorService.get.response.bits
+    val appendReadMatches = appendState === AppendAwaitDescriptorRead &&
+      appendReadRsp.operation === R5DescriptorServiceOperation.ReadLine.U &&
+      appendReadRsp.transaction_identity.asUInt === appendIdentity.asUInt &&
+      appendReadRsp.descriptor_line === appendLine
+    when(appendState === AppendAwaitDescriptorRead) {
+      descriptorService.get.response.ready := true.B
+      when(descriptorService.get.response.fire) {
+        when(appendReadMatches && appendReadRsp.status === p.coreMemoryOkStatusCode.U &&
+          (appendReadRsp.found || appendKind === RouteADescriptorOperationKind.NewPage.U)) {
+          appendDescriptorLineData := appendReadRsp.line_data
+          appendState := AppendRequest
+        }.otherwise {
+          buildFault(appendSlot) := true.B
+          appendState := AppendIdle
+          appendSequence := appendSequence + 1.U
+        }
+      }
+    }
+  }
   val appendEligibility = (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.FifoPredecessor) |
     (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.Ownership) |
     (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.SourceCredit)
@@ -4084,15 +4285,49 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
   when(io.append_delivery_in.fire) {
     when(appendDeliveryFault) {
       buildFault(appendSlot) := true.B
-    }.elsewhen(appendKind === RouteADescriptorOperationKind.NewPage.U) {
-      buildNewDurable(appendSlot) := true.B
-      descriptorEntryImage(allocatorIndex(appendSubjectPage)) := appendDescriptorImage
+      appendState := AppendIdle
+      appendSequence := appendSequence + 1.U
     }.otherwise {
-      buildTailDurable(appendSlot) := true.B
-      descriptorEntryImage(allocatorIndex(appendSubjectPage)) := appendDescriptorImage
+      if (externalizeDescriptorBacking) appendState := AppendCommitDescriptor
+      else {
+        when(appendKind === RouteADescriptorOperationKind.NewPage.U) { buildNewDurable(appendSlot) := true.B }
+          .otherwise { buildTailDurable(appendSlot) := true.B }
+        descriptorEntryImage.get(allocatorIndex(appendSubjectPage)) := appendDescriptorImage
+        appendState := AppendIdle
+        appendSequence := appendSequence + 1.U
+      }
     }
-    appendState := AppendIdle
-    appendSequence := appendSequence + 1.U
+  }
+  if (externalizeDescriptorBacking) {
+    when(appendState === AppendCommitDescriptor) {
+      descriptorService.get.request.valid := true.B
+      descriptorService.get.request.bits.operation := R5DescriptorServiceOperation.CommitLine.U
+      descriptorService.get.request.bits.transaction_identity := appendIdentity
+      descriptorService.get.request.bits.descriptor_line := appendLine
+      descriptorService.get.request.bits.page_ref.page_id := appendSubjectPage
+      descriptorService.get.request.bits.page_ref.generation := appendSubjectGeneration
+      descriptorService.get.request.bits.valid_records := buildValidRecords(appendSlot)
+      descriptorService.get.request.bits.line_data := appendLineData
+      when(descriptorService.get.request.fire) { appendState := AppendAwaitDescriptorCommit }
+    }
+    val appendCommitRsp = descriptorService.get.response.bits
+    val appendCommitMatches = appendState === AppendAwaitDescriptorCommit &&
+      appendCommitRsp.operation === R5DescriptorServiceOperation.CommitLine.U &&
+      appendCommitRsp.transaction_identity.asUInt === appendIdentity.asUInt &&
+      appendCommitRsp.descriptor_line === appendLine
+    when(appendState === AppendAwaitDescriptorCommit) {
+      descriptorService.get.response.ready := true.B
+      when(descriptorService.get.response.fire) {
+        when(appendCommitMatches && appendCommitRsp.status === p.coreMemoryOkStatusCode.U) {
+          when(appendKind === RouteADescriptorOperationKind.NewPage.U) { buildNewDurable(appendSlot) := true.B }
+            .otherwise { buildTailDurable(appendSlot) := true.B }
+        }.otherwise {
+          buildFault(appendSlot) := true.B
+        }
+        appendState := AppendIdle
+        appendSequence := appendSequence + 1.U
+      }
+    }
   }
 
   val descriptorPrerequisiteEligible = VecInit((0 until streamSlots).map { slot =>
@@ -4162,7 +4397,8 @@ final class RouteAPageManager(p: RouteASkeletonParameters) extends Module {
     visibleTailPresent(visibilityAckSlot) := true.B
     visibleTailId(visibilityAckSlot) := visibilityAckPageRef.page_id
     visibleTailGeneration(visibilityAckSlot) := visibilityAckPageRef.generation
-    descriptorReadable(allocatorIndex(visibilityAckPageRef.page_id)) := true.B
+    if (!externalizeDescriptorBacking) descriptorReadable.get(allocatorIndex(visibilityAckPageRef.page_id)) := true.B
+    if (externalizeDescriptorBacking) descriptorPublished.get(allocatorIndex(visibilityAckPageRef.page_id)) := true.B
     buildActive(visibilityAckSlot) := false.B
     visibilityAckPending := false.B
   }

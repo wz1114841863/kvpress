@@ -44,12 +44,16 @@ final class ControlProjectionElaborationSpec extends AnyFlatSpec with Matchers {
     routeA should not include "route_a_functional_sidecar_delivery_adapter"
     routeA should not include "route_a_functional_partial_provider_boundary"
     routeA should not include "route_a_functional_r4_reference_boundary"
+    routeA should not include "descriptorEntryImage"
+    routeA should not include "descriptorReadable"
+    routeA should not include "descriptorValidRecords"
     Seq(
       "functional_sidecar_work_out",
       "functional_sidecar_payload_release_out",
       "functional_sidecar_registry_allocate_in",
       "functional_sidecar_registry_allocation_ack_out",
       "functional_sidecar_read_issue_in",
+      "functional_r5_descriptor_service",
       "functional_r4_accepted_packet_out",
       "functional_r4_merge_work_out",
       "functional_r4_result_in",
