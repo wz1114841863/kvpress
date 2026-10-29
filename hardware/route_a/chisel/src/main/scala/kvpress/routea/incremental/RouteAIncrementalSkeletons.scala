@@ -3716,12 +3716,6 @@ final class RouteAPageManager(
     Some(RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))) else None
   val descriptorValidRecords = if (!externalizeDescriptorBacking)
     Some(Reg(Vec(p.r5AllocatorEntries, UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)))) else None
-  // The projection retains this one-bit R5-owned publication/liveness fact.
-  // Unlike the removed 128-bit descriptor image it carries no payload,
-  // handles, or descriptor contents; it gates an external lookup until the
-  // existing metadata publication visibility acknowledgement has fired.
-  val descriptorPublished = if (externalizeDescriptorBacking)
-    Some(RegInit(VecInit(Seq.fill(p.r5AllocatorEntries)(false.B)))) else None
   val descriptorGrantPending = RegInit(false.B)
   val descriptorGrant = Reg(new DescriptorLocationGrant(p))
   // One bit per descriptor line is parent-side control state used solely for
@@ -3800,8 +3794,7 @@ final class RouteAPageManager(
   val descriptorRequestIndex = allocatorIndex(descriptorRequest.page_ref.page_id)
   val descriptorPageInRange = descriptorRequest.page_ref.page_id < p.r5AllocatorEntries.U
   val descriptorRequestMatches = if (externalizeDescriptorBacking)
-    descriptorPageInRange && descriptorPublished.get(descriptorRequestIndex) &&
-      descriptorRequest.valid_records =/= 0.U && descriptorRequest.valid_records <= 64.U
+    descriptorPageInRange && descriptorRequest.valid_records =/= 0.U && descriptorRequest.valid_records <= 64.U
   else
     descriptorPageInRange && descriptorReadable.get(descriptorRequestIndex) &&
       descriptorEntryImage.get(descriptorRequestIndex)(51, 44) === descriptorRequest.page_ref.generation &&
@@ -4034,7 +4027,6 @@ final class RouteAPageManager(
         releasePending(page) := true.B
         durableInvalidation(page) := true.B
         if (!externalizeDescriptorBacking) descriptorReadable.get(page) := false.B
-        if (externalizeDescriptorBacking) descriptorPublished.get(page) := false.B
       }
     }
     allocatedLine(ack.descriptor_line) := false.B
@@ -4138,7 +4130,6 @@ final class RouteAPageManager(
       descriptorReadable.get(ackIndex) := false.B
       descriptorValidRecords.get(ackIndex) := pendingAllocation.valid_records
     }
-    if (externalizeDescriptorBacking) descriptorPublished.get(ackIndex) := false.B
     allocationRspValid := true.B
     allocationRsp.layer := pendingAllocation.layer
     allocationRsp.kv_head := pendingAllocation.kv_head
@@ -4398,7 +4389,6 @@ final class RouteAPageManager(
     visibleTailId(visibilityAckSlot) := visibilityAckPageRef.page_id
     visibleTailGeneration(visibilityAckSlot) := visibilityAckPageRef.generation
     if (!externalizeDescriptorBacking) descriptorReadable.get(allocatorIndex(visibilityAckPageRef.page_id)) := true.B
-    if (externalizeDescriptorBacking) descriptorPublished.get(allocatorIndex(visibilityAckPageRef.page_id)) := true.B
     buildActive(visibilityAckSlot) := false.B
     visibilityAckPending := false.B
   }

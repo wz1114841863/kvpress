@@ -12,10 +12,12 @@ successor replaces that backing with the typed
 descriptor macro, controller, bandwidth, latency, capacity, or energy model.
 Those remain external and `nonzero_unestimated`.
 
-R5 remains the owner of allocation selection, PageRef generation, publication
-liveness, stale rejection, append/tail ordering, invalidate-before-free,
-availability update, old-PageRef release, drain, and reset.  The service owns
-only 512-bit descriptor-line contents and returns checked service responses.
+R5 remains the owner of allocation selection, PageRef generation, stale
+rejection, append/tail ordering, invalidate-before-free, availability update,
+old-PageRef release, drain, and reset.  R3/R6 publication/authority remains
+the existing upstream precondition for an internal packed-read lookup; R5
+does not duplicate it in a per-page liveness table.  The service owns only
+512-bit descriptor-line contents and returns checked service responses.
 
 ## `r5_descriptor_service_v1`
 
@@ -24,7 +26,7 @@ second maintenance channel:
 
 | Operation | accepted request | required matching response | parent effect |
 | --- | --- | --- | --- |
-| `Lookup` | only for a parent-published PageRef and nonzero legal `valid_records` | exact identity, line, PageRef, count, `OK`, `found` | emits the existing R5 descriptor grant with returned payload/sidecar handles |
+| `Lookup` | only for the already internal-authorized packed-read request and nonzero legal `valid_records` | exact identity, line, PageRef, count, `OK`, `found` | emits the existing R5 descriptor grant with returned payload/sidecar handles |
 | `ReadLine` | append or reclaim state requires the original descriptor line | exact identity, line, `OK`; append new-page permits an empty line | holds the returned line privately to create one R2/R1 maintenance write |
 | `CommitLine` | only after the matching existing R2/R1 terminal reports durable `OK` | exact identity, line, `OK` | append marks descriptor durable; reclaim may then update availability/generation |
 
