@@ -1,6 +1,7 @@
 # R5 descriptor externalization — control-projection contract
 
-**Status:** `implementation_complete_dc_feasibility_running` (2026-10-29).
+**Status:** `implementation_complete_DC_tool_feasibility_pass_timing_open`
+(2026-10-30).
 
 ## Purpose and boundary
 
@@ -59,6 +60,7 @@ admission, pruning, GQA, nor scheduler behavior.  It is not a physical HBM
 controller, memory macro, PPA result, or descriptor-service cost measurement.
 
 The externalized successor source, typed array-proxy transformation and static
-constraint/input preflight have passed.  The first fair paired DC feasibility
-run is in progress; its eventual reports, exit markers and tool diagnostics
-remain required before making any feasibility conclusion.
+constraint/input preflight have passed. The first fair paired DC feasibility
+run completed its tool/link/proxy gate, while Route-A timing and structural
+lint closure remain open. See
+[`dc_feasibility_result_r5_descriptor_externalized_20261030.md`](dc_feasibility_result_r5_descriptor_externalized_20261030.md).

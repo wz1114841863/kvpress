@@ -89,12 +89,16 @@ deliberately distinct:
 | W0, MR-1A/B and MR-2 | completed within their approved bounded contours | paired DUT owners plus M2/P3/R5/S2 logical array boundaries | macro selection or whole-system inference |
 | Projection/wrapper realization | completed for the current successor | parent control retained; functional sidecar/partial/R4 and R5 descriptor backing are typed external boundaries | zero external cost or common-cost cancellation |
 | DC input/preflight | passed | exact Full-KV 1-file and Route-A 48-file source lists, typed array proxies and identical fair-v1 constraints | DC result |
-| Paired DC feasibility | **running** | tool/link/netlist/constraint diagnostics for the selected successor | final timing, area, power, PPA or net-benefit conclusion |
+| Paired DC feasibility | **completed: tool feasibility pass; timing/cleanliness blocked** | tool/link/netlist/constraint diagnostics for the selected successor | final timing, area, power, PPA or net-benefit conclusion |
 
-The active run is recorded in
-[`dc_feasibility_run_r5_descriptor_externalized_20261029.md`](dc_feasibility_run_r5_descriptor_externalized_20261029.md).
-It must finish with both per-top exit markers and native reports before this
-row can be promoted from `running` to any feasibility disposition.
+The completed run is recorded in
+[`dc_feasibility_run_r5_descriptor_externalized_20261029.md`](dc_feasibility_run_r5_descriptor_externalized_20261029.md)
+and analyzed in
+[`dc_feasibility_result_r5_descriptor_externalized_20261030.md`](dc_feasibility_result_r5_descriptor_externalized_20261030.md).
+Both per-top exit markers, source/proxy provenance and mapped netlists pass,
+but Route-A misses the frozen 2.0 ns setup target and the hierarchical lint
+surface remains open. No raw area or timing number is eligible for a PPA or
+net-benefit claim.
 
 The B3 witness is functional control/dataflow evidence only. It does **not**
 claim physical M2/SRAM/HBM, controller or CDC behavior, numeric datapath,
