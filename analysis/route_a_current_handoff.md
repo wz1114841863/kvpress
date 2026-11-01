@@ -941,6 +941,29 @@ still blocked before assertion execution by the known full-root ChiselSim
 C-DPI bridge defect for its deep B2c association port; this is a test-harness
 repair item, not a passing full-root result or a proxy semantic failure.
 
+### DC control-realization diagnosis and refinement P1 (2026-11-01)
+
+[`dc_control_realization_diagnosis_20261101.md`](dc_control_realization_diagnosis_20261101.md)
+localizes the first fair-v1 Route-A size diagnostic using the saved DDC and
+native reports, without rerunning DC.  The two dominant owners are
+`route_a_m2_p3_wrapper` and `route_a_metadata_admission_bridge`; the latter's
+662,404 mapped sequential cells are accounted exactly by a duplicated
+`36 x 64 x 281-bit` pending-binding ledger plus 14,980 other bits.  A DDC
+probe also proves that the reported 1,298,154-load
+`directPendingIssue/net188753` is the top clock's transient compiler alias,
+not a direct-pending data broadcast; reset reaches only 67,632 endpoints.
+
+The first bounded refinement removes only the duplicate full binding ledger
+from the metadata-admission bridge.  R3/P3 retains the full membership facts;
+the bridge retains the exact 64-bit member mask plus immutable mapping
+reference/owner and fails closed on later-member or preparation mismatch.  M2
+continues to validate every group-summary field it consumes.  The pre-DC state
+calculation predicts a 645,012-bit reduction, but this is not yet an observed
+mapped-area result.  The remote directed production suites pass 8/8 in
+`control_refine_p1_20261101.log`; cross-stage regression, successor HDL checks
+and an unchanged-fair-v1 DC comparison remain required before accepting an
+area, timing, fanout or lint improvement.
+
 ## New-conversation prompt seed
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

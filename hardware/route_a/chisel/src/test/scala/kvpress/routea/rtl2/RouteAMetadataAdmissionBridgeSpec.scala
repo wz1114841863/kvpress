@@ -42,6 +42,8 @@ final class RouteAMetadataAdmissionBridgeSpec extends AnyFunSpec with ChiselSim 
     ordinal: Int,
     records: Int,
     position: Int,
+    mappingRef: Int = 0,
+    mappingOwner: Int = 0,
   ): Unit = {
     val b = dut.io.member_in.bits.payload_binding
     b.transaction_identity.request_id.poke((position & 7).U)
@@ -51,7 +53,9 @@ final class RouteAMetadataAdmissionBridgeSpec extends AnyFunSpec with ChiselSim 
     b.logical_position.poke(position.U); b.payload_ref.poke((position + 10).U)
     b.transaction_group_tag.poke(tag.U); b.group_member_ordinal.poke(ordinal.U); b.group_valid_records.poke(records.U)
     b.payload_handle_or_address.poke((0x40 + position).U); b.source_generation.poke(1.U)
-    b.destination_endpoint.poke(0.U); b.m2_group_opaque_address_ref.poke(0.U); b.m2_group_owner.poke(0.U)
+    b.destination_endpoint.poke(0.U)
+    b.m2_group_opaque_address_ref.poke(mappingRef.U)
+    b.m2_group_owner.poke(mappingOwner.U)
   }
 
   private def offerMember(
@@ -128,6 +132,32 @@ final class RouteAMetadataAdmissionBridgeSpec extends AnyFunSpec with ChiselSim 
       dut.clock.step()
       dut.io.member_in.valid.poke(false.B)
       dut.io.shared_credit_in_use(32).expect(1.U)
+    }
+  }
+
+  it("fails closed when a later member or preparation changes immutable M2 mapping provenance") {
+    simulate(new RouteAMetadataAdmissionBridge(p)) { dut =>
+      init(dut)
+      offerMember(dut, layer = 0, head = 1, tag = 2, ordinal = 0, records = 2, position = 4)
+
+      driveMember(dut, layer = 0, head = 1, tag = 2, ordinal = 1, records = 2,
+        position = 9, mappingRef = 1)
+      dut.io.member_in.valid.poke(true.B)
+      dut.io.member_in.ready.expect(false.B)
+      dut.io.member_in.valid.poke(false.B)
+
+      offerMember(dut, layer = 0, head = 1, tag = 2, ordinal = 1, records = 2, position = 9)
+      val g = dut.io.group_prepare_in.bits
+      g.p3_layer.poke(0.U); g.kv_head.poke(1.U); g.p3_stage_generation.poke(1.U)
+      g.transaction_group_tag.poke(2.U); g.valid_records.poke(2.U)
+      g.opaque_address_ref.poke(1.U); g.owner.poke(0.U)
+      dut.io.group_prepare_in.valid.poke(true.B)
+      dut.io.group_prepare_in.ready.expect(false.B)
+      dut.io.group_prepare_in.valid.poke(false.B)
+
+      g.opaque_address_ref.poke(0.U)
+      dut.io.group_prepare_in.valid.poke(true.B)
+      dut.io.group_prepare_in.ready.expect(true.B)
     }
   }
 }

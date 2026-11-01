@@ -1223,9 +1223,11 @@ final class MetadataAppendMemberDeclaration(p: RouteASkeletonParameters) extends
 
 /**
   * One fully validated, group-scoped lowering operand for the minimal M2
-  * metadata runtime.  Its member bindings are copied only from the accepted
-  * admission ledger; `layer/head`, credit pool, and append order are explicit
-  * facts, rather than a reconstruction from a group tag or opaque reference.
+  * metadata runtime.  The full pending-payload bindings remain in the R3/P3
+  * membership owner; this carrier contains only the immutable group summary
+  * that M2 consumes.  `layer/head`, accepted-member mask, mapping provenance,
+  * credit pool, and append order are explicit facts, rather than a
+  * reconstruction from a group tag or opaque reference.
   *
   * This is deliberately not the historical A4 source/birth/count span ABI.
   * It contains no source-FIFO class, birth opportunity, dequeue amount, or
@@ -1245,7 +1247,6 @@ final class MetadataAppendOperand(p: RouteASkeletonParameters) extends Bundle {
   val append_sequence = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
   val predecessor_valid = Bool()
   val predecessor_sequence = UInt(RouteAAnchorWidths.ContextTokensWidth.W)
-  val members = Vec(64, new PendingPayloadReadBinding(p))
 }
 
 /**

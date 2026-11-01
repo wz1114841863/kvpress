@@ -63,10 +63,12 @@ final class RouteAMetadataAdmissionBridge(p: RouteASkeletonParameters) extends M
   val groupValidRecords = Reg(Vec(Stages, UInt(RouteAAnchorWidths.P3ValidRecordsWidth.W)))
   val groupStageGeneration = Reg(Vec(Stages, UInt(p.p3StageGenerationWidth.W)))
   val groupMemberMask = RegInit(VecInit(Seq.fill(Stages)(0.U(Members.W))))
-  // This is the actual bounded membership ledger.  It retains the exact
-  // pending binding supplied by the production payload/location owner; no
-  // group tag, ordinal, mapping reference, or fixture reconstructs it.
-  val groupMembers = Reg(Vec(Stages, Vec(Members, new PendingPayloadReadBinding(p))))
+  // R3/P3 remains the full pending-binding ledger.  M2 consumes only this
+  // immutable group mapping provenance plus the exact accepted-member mask.
+  // Keeping another 36 x 64 copy of every 281-bit payload binding here would
+  // duplicate ownership and synthesize a whole-vector dynamic read mux.
+  val groupMappingRef = Reg(Vec(Stages, UInt(p.coreMemoryAddressRefWidth.W)))
+  val groupMappingOwner = Reg(Vec(Stages, UInt(RouteAAnchorWidths.RequestIdWidth.W)))
   val groupCreditPool = Reg(Vec(Stages, UInt(MetadataAppendCreditPool.Width.W)))
   val groupAppendSequence = Reg(Vec(Stages, UInt(RouteAAnchorWidths.ContextTokensWidth.W)))
   val groupPredecessorValid = RegInit(VecInit(Seq.fill(Stages)(false.B)))
@@ -90,7 +92,9 @@ final class RouteAMetadataAdmissionBridge(p: RouteASkeletonParameters) extends M
   private def sameGroup(layer: UInt, binding: PendingPayloadReadBinding): Bool =
     groupHead(layer) === binding.kv_head &&
       groupTag(layer) === binding.transaction_group_tag &&
-      groupValidRecords(layer) === binding.group_valid_records
+      groupValidRecords(layer) === binding.group_valid_records &&
+      groupMappingRef(layer) === binding.m2_group_opaque_address_ref &&
+      groupMappingOwner(layer) === binding.m2_group_owner
 
   val declaration = io.member_in.bits.payload_binding
   val memberLayer = declaration.layer
@@ -135,7 +139,8 @@ final class RouteAMetadataAdmissionBridge(p: RouteASkeletonParameters) extends M
       groupTag(memberLayer) := declaration.transaction_group_tag
       groupValidRecords(memberLayer) := declaration.group_valid_records
       groupMemberMask(memberLayer) := memberBit
-      groupMembers(memberLayer)(declaration.group_member_ordinal(5, 0)) := declaration
+      groupMappingRef(memberLayer) := declaration.m2_group_opaque_address_ref
+      groupMappingOwner(memberLayer) := declaration.m2_group_owner
       groupCreditPool(memberLayer) := selectedCreditPool
       groupAppendSequence(memberLayer) := streamNextSequence(memberStream)
       groupPredecessorValid(memberLayer) := streamTailValid(memberStream)
@@ -152,7 +157,6 @@ final class RouteAMetadataAdmissionBridge(p: RouteASkeletonParameters) extends M
       }
     }.otherwise {
       groupMemberMask(memberLayer) := groupMemberMask(memberLayer) | memberBit
-      groupMembers(memberLayer)(declaration.group_member_ordinal(5, 0)) := declaration
     }
   }
 
@@ -164,6 +168,8 @@ final class RouteAMetadataAdmissionBridge(p: RouteASkeletonParameters) extends M
     !groupFaultedPending(preparationLayer) && groupHead(preparationLayer) === preparation.kv_head &&
     groupTag(preparationLayer) === preparation.transaction_group_tag &&
     groupValidRecords(preparationLayer) === preparation.valid_records &&
+    groupMappingRef(preparationLayer) === preparation.opaque_address_ref &&
+    groupMappingOwner(preparationLayer) === preparation.owner &&
     groupMemberMask(preparationLayer) === expectedMask(groupValidRecords(preparationLayer))
   val preparePending = RegInit(false.B)
   val prepareReg = Reg(new M2GroupPrepareDeclaration(p))
@@ -188,7 +194,6 @@ final class RouteAMetadataAdmissionBridge(p: RouteASkeletonParameters) extends M
   io.metadata_append_operand_out.bits.append_sequence := groupAppendSequence(prepareReg.p3_layer)
   io.metadata_append_operand_out.bits.predecessor_valid := groupPredecessorValid(prepareReg.p3_layer)
   io.metadata_append_operand_out.bits.predecessor_sequence := groupPredecessorSequence(prepareReg.p3_layer)
-  io.metadata_append_operand_out.bits.members := groupMembers(prepareReg.p3_layer)
   // M2 accepts preparation and its lowerer operand together.  Neither half
   // may become an independently consumable declaration.
   when(io.group_prepare_out.fire) {

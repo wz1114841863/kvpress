@@ -49,13 +49,6 @@ final class RouteAM2ProductionControlOwnerSpec extends AnyFunSpec with ChiselSim
     operand.transaction_group_tag.poke(tag.U); operand.opaque_mapping_ref.poke("h5a".U); operand.mapping_owner.poke(6.U)
     operand.valid_records.poke(1.U); operand.member_mask.poke(1.U); operand.credit_pool.poke(0.U)
     operand.append_sequence.poke(0.U); operand.predecessor_valid.poke(false.B); operand.predecessor_sequence.poke(0.U)
-    val member = operand.members(0)
-    member.transaction_identity.request_id.poke(1.U); member.transaction_identity.incarnation.poke(0.U)
-    member.entry_id.poke(17.U); member.layer.poke(0.U); member.kv_head.poke(3.U)
-    member.logical_position.poke(7.U); member.payload_ref.poke(11.U)
-    member.transaction_group_tag.poke(tag.U); member.group_member_ordinal.poke(0.U); member.group_valid_records.poke(1.U)
-    member.payload_handle_or_address.poke(0x40.U); member.source_generation.poke(1.U)
-    member.destination_endpoint.poke(0.U); member.m2_group_opaque_address_ref.poke("h5a".U); member.m2_group_owner.poke(6.U)
   }
 
   private def issuePrepare(dut: RouteAM2ProductionControlOwner, tag: Int = 2): Unit = {

@@ -2024,19 +2024,13 @@ final class RouteAM2ProductionControlOwner(p: RouteASkeletonParameters) extends 
     operand.transaction_group_tag === preparation.transaction_group_tag &&
     operand.opaque_mapping_ref === preparation.opaque_address_ref &&
     operand.mapping_owner === preparation.owner && operand.valid_records === preparation.valid_records
+  // The production admission bridge has already accepted every ordinal and
+  // checked the immutable mapping provenance before emitting this group
+  // summary.  M2 independently checks the complete accepted mask and all
+  // preparation fields it actually consumes; it does not duplicate the full
+  // pending-payload binding ledger owned by R3/P3.
   val operandMemberShapeLegal = operand.valid_records =/= 0.U && operand.valid_records <= 64.U &&
-    operand.member_mask === expectedMemberMask(operand.valid_records) &&
-    VecInit((0 until 64).map { index =>
-      val member = operand.members(index)
-      Mux(index.U < operand.valid_records,
-        member.layer === operand.p3_layer && member.kv_head === operand.kv_head &&
-          member.transaction_group_tag === operand.transaction_group_tag &&
-          member.group_valid_records === operand.valid_records &&
-          member.group_member_ordinal === index.U &&
-          member.m2_group_opaque_address_ref === operand.opaque_mapping_ref &&
-          member.m2_group_owner === operand.mapping_owner,
-        !operand.member_mask(index))
-    }).asUInt.andR
+    operand.member_mask === expectedMemberMask(operand.valid_records)
   val metadataFreeSlots = VecInit((0 until metadataSpanEntries).map(index => !metadataSlotOccupied(index)))
   val metadataFreeSlotExists = metadataFreeSlots.asUInt.orR
   val metadataFreeSlot = PriorityEncoder(metadataFreeSlots)
