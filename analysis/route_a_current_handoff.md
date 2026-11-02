@@ -964,6 +964,18 @@ mapped-area result.  The remote directed production suites pass 8/8 in
 and an unchanged-fair-v1 DC comparison remain required before accepting an
 area, timing, fanout or lint improvement.
 
+The initial cross-stage P2 run passed 37/41 tests and localized all four
+failures to the `RouteAMeasurementDutR3Spec` simulator root before behavioral
+execution.  The functional DUT now drives its projection-only R5 descriptor
+service dormant in non-projection mode.  A test-only
+`RouteAMeasurementDutR3Harness` also keeps the complete production DUT as its
+sole child while excluding unused deep sidecar ports from ChiselSim's broken
+long-name DPI ABI; it changes no production connection.  Remote P4 passes the
+four actual same-instance behavioral cases 4/4, including packed reclaim, hot
+terminal, stale response and direct-transition cancellation/fault.  The
+preserved log is `control_refine_p4_r3_harness_20261102.log`; complete P2
+cross-stage rerun remains pending.
+
 ## New-conversation prompt seed
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

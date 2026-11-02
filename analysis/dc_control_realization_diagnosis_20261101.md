@@ -110,3 +110,14 @@ scope.  The BOM parses as JSON and `git diff --check` passes.  These are
 directed/source checks only.  Cross-stage Chisel non-regression, regenerated
 HDL inspection and the same-constraint successor DC comparison remain required
 before the expected state reduction is treated as an observed mapped result.
+
+The first cross-stage P2 attempt passed 37/41 tests.  Its four
+`RouteAMeasurementDutR3Spec` cases first exposed an undriven dormant R5
+descriptor-service port in the non-projection measurement mode; after that
+was initialized fail-closed, Verilator exposed the already documented
+ChiselSim long-name mismatch for unused deep sidecar-root DPI fields.  The
+bounded repair keeps the complete, unchanged `RouteAMeasurementDut` as the
+only child of a simulator-facing root and hides only those unused outer ports
+from the DPI ABI.  Remote P4 then executed and passed all four behavioral
+cases in `control_refine_p4_r3_harness_20261102.log`.  A clean complete P2
+rerun is still required before cross-stage acceptance.

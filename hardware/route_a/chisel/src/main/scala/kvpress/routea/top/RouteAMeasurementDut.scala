@@ -135,6 +135,12 @@ class RouteAMeasurementDut(
     val descriptorService = io.functional_r5_descriptor_service
     descriptorService.request <> pageManager.descriptorService.get.request
     pageManager.descriptorService.get.response <> descriptorService.response
+  } else {
+    // The functional measurement contour uses R5's internal descriptor image.
+    // Keep the projection-only outer service explicitly dormant instead of
+    // leaving its request and response-ready outputs uninitialized.
+    inactive(io.functional_r5_descriptor_service.request)
+    io.functional_r5_descriptor_service.response.ready := false.B
   }
 
   // The hot owner opens only from the exact R6-accepted plan copy.  The

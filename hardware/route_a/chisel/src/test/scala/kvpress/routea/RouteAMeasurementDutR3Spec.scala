@@ -2,10 +2,86 @@ package kvpress.routea
 
 import chisel3._
 import chisel3.simulator.scalatest.ChiselSim
-import kvpress.routea.interfaces.RouteASourceKind
+import kvpress.routea.interfaces.{CoreMemoryExternalPort, RouteAChannels, RouteASourceKind}
 import kvpress.routea.params.{RouteAR6Encoding, RouteASkeletonParameters}
 import kvpress.routea.top.RouteAMeasurementDut
 import org.scalatest.funspec.AnyFunSpec
+
+/**
+  * Simulator-facing root for the unchanged full Route-A measurement DUT.
+  *
+  * Verilator hashes several unused, deeply nested sidecar-root DPI names while
+  * ChiselSim's C++ bridge still references their original spelling.  Keep the
+  * complete production DUT as the only child and expose exactly the outer
+  * environments exercised by this same-instance regression.  Projection-only
+  * sidecar/R5 service ports remain below the DPI root and are held dormant;
+  * no production owner, carrier, or connection is replaced.
+  */
+final class RouteAMeasurementDutR3Harness(p: RouteASkeletonParameters) extends Module {
+  val io = IO(new Bundle {
+    val frontend_lifecycle_req = Flipped(RouteAChannels.frontend_lifecycle_req(p))
+    val runtime_retire_req = Flipped(RouteAChannels.runtime_retire_req)
+    val attention_terminal_rsp = RouteAChannels.attention_terminal_rsp
+    val session_retire_ack = RouteAChannels.session_retire_ack
+    val source_plan_declaration_in = Flipped(RouteAChannels.source_plan_declaration(p))
+    val pending_source_descriptor_registration_in = Flipped(RouteAChannels.pending_source_descriptor_registration(p))
+    val hot_payload_fragment_in = Flipped(RouteAChannels.p3_pending_fragment(p))
+    val hot_position_sidecar_in = Flipped(RouteAChannels.p3_sidecar_bind(p))
+    val pending_payload_read_binding_in = Flipped(RouteAChannels.pending_payload_read_binding(p))
+    val functional_partial_hot_offer_in = Flipped(RouteAChannels.source_service_partial_offer(p))
+    val functional_partial_pending_offer_in = Flipped(RouteAChannels.source_service_partial_offer(p))
+    val functional_partial_packed_offer_in = Flipped(RouteAChannels.source_service_partial_offer(p))
+    val functional_partial_hot_fragment_in = Flipped(RouteAChannels.source_service_value_fragment(p))
+    val functional_partial_pending_fragment_in = Flipped(RouteAChannels.source_service_value_fragment(p))
+    val functional_partial_packed_fragment_in = Flipped(RouteAChannels.source_service_value_fragment(p))
+    val functional_r4_accepted_packet_out = RouteAChannels.r4_accepted_partial_packet(p)
+    val functional_r4_merge_work_out = RouteAChannels.merge_req
+    val functional_r4_result_in = Flipped(RouteAChannels.r4_result_stub)
+    val functional_r4_numeric_fault_in = Flipped(RouteAChannels.r4_numeric_fault)
+    val functional_direct_pending_payload_fragment_out = RouteAChannels.direct_pending_payload_fragment(p)
+    val external_core_mem_if_v1 = new CoreMemoryExternalPort(p)
+  })
+
+  val dut = Module(new RouteAMeasurementDut(p))
+  dut.io.frontend_lifecycle_req <> io.frontend_lifecycle_req
+  dut.io.runtime_retire_req <> io.runtime_retire_req
+  io.attention_terminal_rsp <> dut.io.attention_terminal_rsp
+  io.session_retire_ack <> dut.io.session_retire_ack
+  dut.io.source_plan_declaration_in <> io.source_plan_declaration_in
+  dut.io.pending_source_descriptor_registration_in <> io.pending_source_descriptor_registration_in
+  dut.io.hot_payload_fragment_in <> io.hot_payload_fragment_in
+  dut.io.hot_position_sidecar_in <> io.hot_position_sidecar_in
+  dut.io.pending_payload_read_binding_in <> io.pending_payload_read_binding_in
+  dut.io.functional_partial_hot_offer_in <> io.functional_partial_hot_offer_in
+  dut.io.functional_partial_pending_offer_in <> io.functional_partial_pending_offer_in
+  dut.io.functional_partial_packed_offer_in <> io.functional_partial_packed_offer_in
+  dut.io.functional_partial_hot_fragment_in <> io.functional_partial_hot_fragment_in
+  dut.io.functional_partial_pending_fragment_in <> io.functional_partial_pending_fragment_in
+  dut.io.functional_partial_packed_fragment_in <> io.functional_partial_packed_fragment_in
+  io.functional_r4_accepted_packet_out <> dut.io.functional_r4_accepted_packet_out
+  io.functional_r4_merge_work_out <> dut.io.functional_r4_merge_work_out
+  dut.io.functional_r4_result_in <> io.functional_r4_result_in
+  dut.io.functional_r4_numeric_fault_in <> io.functional_r4_numeric_fault_in
+  io.functional_direct_pending_payload_fragment_out <>
+    dut.io.functional_direct_pending_payload_fragment_out
+  dut.io.external_core_mem_if_v1 <> io.external_core_mem_if_v1
+
+  dut.io.functional_sidecar_work_out.ready := false.B
+  dut.io.functional_sidecar_payload_release_out.ready := false.B
+  dut.io.functional_sidecar_registry_allocate_in.valid := false.B
+  dut.io.functional_sidecar_registry_allocate_in.bits :=
+    0.U.asTypeOf(dut.io.functional_sidecar_registry_allocate_in.bits)
+  dut.io.functional_sidecar_registry_allocation_ordinal_in := 0.U
+  dut.io.functional_sidecar_registry_allocation_candidate_id_in := 0.U
+  dut.io.functional_sidecar_registry_allocation_ack_out.ready := false.B
+  dut.io.functional_sidecar_read_issue_in.valid := false.B
+  dut.io.functional_sidecar_read_issue_in.bits :=
+    0.U.asTypeOf(dut.io.functional_sidecar_read_issue_in.bits)
+  dut.io.functional_r5_descriptor_service.request.ready := false.B
+  dut.io.functional_r5_descriptor_service.response.valid := false.B
+  dut.io.functional_r5_descriptor_service.response.bits :=
+    0.U.asTypeOf(dut.io.functional_r5_descriptor_service.response.bits)
+}
 
 /**
   * W0-R3 same-instance Route-A closure witness.
@@ -31,7 +107,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     r5StreamSlots = 8, sourceGenerationWidth = 2, r6 = RouteAR6Encoding.testOnlyAnchor,
   )
 
-  private def inactive(d: RouteAMeasurementDut): Unit = {
+  private def inactive(d: RouteAMeasurementDutR3Harness): Unit = {
     d.io.frontend_lifecycle_req.valid.poke(false.B)
     d.io.runtime_retire_req.valid.poke(false.B)
     d.io.source_plan_declaration_in.valid.poke(false.B)
@@ -63,7 +139,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     require(waited < max, message)
   }
 
-  private def initialize(d: RouteAMeasurementDut): Unit = {
+  private def initialize(d: RouteAMeasurementDutR3Harness): Unit = {
     inactive(d)
     d.clock.step()
     d.io.external_core_mem_if_v1.init_ack.bits.adapter_epoch_ready.poke(true.B)
@@ -91,7 +167,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
   }
 
   private def lifecycle(
-    d: RouteAMeasurementDut,
+    d: RouteAMeasurementDutR3Harness,
     event: Int,
     requestId: Int,
     retain: Boolean,
@@ -115,7 +191,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     d.clock.step(); d.io.frontend_lifecycle_req.valid.poke(false.B)
   }
 
-  private def declarePackedPlan(d: RouteAMeasurementDut): Unit = {
+  private def declarePackedPlan(d: RouteAMeasurementDutR3Harness): Unit = {
     val plan = d.io.source_plan_declaration_in.bits
     plan.transaction_identity.request_id.poke(3.U); plan.transaction_identity.incarnation.poke(0.U)
     plan.source_presence.poke(4.U)
@@ -132,7 +208,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     d.clock.step(); d.io.source_plan_declaration_in.valid.poke(false.B)
   }
 
-  private def declareHotPlan(d: RouteAMeasurementDut): Unit = {
+  private def declareHotPlan(d: RouteAMeasurementDutR3Harness): Unit = {
     val plan = d.io.source_plan_declaration_in.bits
     plan.transaction_identity.request_id.poke(3.U); plan.transaction_identity.incarnation.poke(0.U)
     plan.source_presence.poke(1.U)
@@ -155,7 +231,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     * testbench-created direct read: the production binder must still query,
     * match, and wait for R6's accepted source plan.
     */
-  private def registerDirectPendingDescriptor(d: RouteAMeasurementDut): Unit = {
+  private def registerDirectPendingDescriptor(d: RouteAMeasurementDutR3Harness): Unit = {
     val registration = d.io.pending_source_descriptor_registration_in.bits
     registration.transaction_identity.request_id.poke(3.U); registration.transaction_identity.incarnation.poke(0.U)
     registration.pending_instance.source_kind.poke(RouteASourceKind.Pending.U)
@@ -175,7 +251,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     d.clock.step(); d.io.pending_source_descriptor_registration_in.valid.poke(false.B)
   }
 
-  private def declarePendingPlan(d: RouteAMeasurementDut): Unit = {
+  private def declarePendingPlan(d: RouteAMeasurementDutR3Harness): Unit = {
     val plan = d.io.source_plan_declaration_in.bits
     plan.transaction_identity.request_id.poke(3.U); plan.transaction_identity.incarnation.poke(0.U)
     plan.source_presence.poke(2.U)
@@ -194,7 +270,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     d.clock.step(); d.io.source_plan_declaration_in.valid.poke(false.B)
   }
 
-  private def bindAndMature(d: RouteAMeasurementDut): Unit = {
+  private def bindAndMature(d: RouteAMeasurementDutR3Harness): Unit = {
     lifecycle(d, p.r6.maturityDispositionEventCode, requestId = 0, retain = true,
       payloadRef = 55, groupTag = 1, ordinal = 0, validRecords = 1)
     val b = d.io.pending_payload_read_binding_in.bits
@@ -210,7 +286,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     d.clock.step(); d.io.pending_payload_read_binding_in.valid.poke(false.B)
   }
 
-  private def waitRequest(d: RouteAMeasurementDut, kind: Int, index: Int): (Int, Int) = {
+  private def waitRequest(d: RouteAMeasurementDutR3Harness, kind: Int, index: Int): (Int, Int) = {
     await(128, s"timed out waiting for request kind=$kind index=$index")(
       d.io.external_core_mem_if_v1.request.valid.peek().litToBoolean,
     )(d.clock.step())
@@ -223,7 +299,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     (id, incarnation)
   }
 
-  private def response(d: RouteAMeasurementDut, id: Int, index: Int, last: Boolean, fault: Boolean = false, incarnation: Int = 0): Unit = {
+  private def response(d: RouteAMeasurementDutR3Harness, id: Int, index: Int, last: Boolean, fault: Boolean = false, incarnation: Int = 0): Unit = {
     val r = d.io.external_core_mem_if_v1.response.bits
     r.transaction_identity.request_id.poke(id.U); r.transaction_identity.incarnation.poke(incarnation.U)
     r.fragment_index.poke(index.U); r.last.poke(last.B)
@@ -236,7 +312,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     d.clock.step(); d.io.external_core_mem_if_v1.response.valid.poke(false.B); d.clock.step(2)
   }
 
-  private def materializeAndPublish(d: RouteAMeasurementDut): Unit = {
+  private def materializeAndPublish(d: RouteAMeasurementDutR3Harness): Unit = {
     val (pendingId, pendingIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
     (0 until 8).foreach(index => response(d, pendingId, index, index == 7, incarnation = pendingIncarnation))
     val (writeId, writeIncarnation) = waitRequest(d, p.coreMemoryWriteRequestCode, 0)
@@ -254,7 +330,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     * direct candidate a legal pre-issue interval without fabricating a
     * transition or stalling any R3/R6 authority handshake.
     */
-  private def materializeThroughDescriptorWrite(d: RouteAMeasurementDut): (Int, Int) = {
+  private def materializeThroughDescriptorWrite(d: RouteAMeasurementDutR3Harness): (Int, Int) = {
     val (pendingId, pendingIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
     (0 until 8).foreach(index => response(d, pendingId, index, index == 7, incarnation = pendingIncarnation))
     val (writeId, writeIncarnation) = waitRequest(d, p.coreMemoryWriteRequestCode, 0)
@@ -264,7 +340,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     waitRequest(d, p.coreMemoryWriteDataCode, 0)
   }
 
-  private def sendPackedPartial(d: RouteAMeasurementDut, consumer: Int): Unit = {
+  private def sendPackedPartial(d: RouteAMeasurementDutR3Harness, consumer: Int): Unit = {
     val offer = d.io.functional_partial_packed_offer_in.bits
     offer.transaction_identity.request_id.poke(3.U); offer.transaction_identity.incarnation.poke(0.U)
     offer.source_instance.source_kind.poke(RouteASourceKind.Packed.U)
@@ -293,7 +369,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     }
   }
 
-  private def sendHotPartial(d: RouteAMeasurementDut, consumer: Int): Unit = {
+  private def sendHotPartial(d: RouteAMeasurementDutR3Harness, consumer: Int): Unit = {
     val offer = d.io.functional_partial_hot_offer_in.bits
     offer.transaction_identity.request_id.poke(3.U); offer.transaction_identity.incarnation.poke(0.U)
     offer.source_instance.source_kind.poke(RouteASourceKind.Hot.U)
@@ -322,7 +398,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     }
   }
 
-  private def returnR4Results(d: RouteAMeasurementDut): Unit = {
+  private def returnR4Results(d: RouteAMeasurementDutR3Harness): Unit = {
     (0 until 4).foreach { consumer =>
       await(64, s"timed out waiting for R4 work $consumer")(
         d.io.functional_r4_merge_work_out.valid.peek().litToBoolean,
@@ -342,7 +418,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     }
   }
 
-  private def retire(d: RouteAMeasurementDut): Unit = {
+  private def retire(d: RouteAMeasurementDutR3Harness): Unit = {
     val r = d.io.runtime_retire_req.bits
     r.session_id.poke(false.B); r.transaction_identity.request_id.poke(3.U); r.transaction_identity.incarnation.poke(0.U)
     d.io.runtime_retire_req.valid.poke(true.B)
@@ -352,7 +428,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
     d.clock.step(); d.io.runtime_retire_req.valid.poke(false.B)
   }
 
-  private def prepareThroughPublication(d: RouteAMeasurementDut): Unit = {
+  private def prepareThroughPublication(d: RouteAMeasurementDutR3Harness): Unit = {
     initialize(d)
     lifecycle(d, p.r6.attentionServiceEventCode, requestId = 3, retain = false)
     declarePackedPlan(d)
@@ -361,7 +437,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
   }
 
   it("closes one production R3/R5/R6 packed path through source terminal and reclaim") {
-    simulate(new RouteAMeasurementDut(p)) { d =>
+    simulate(new RouteAMeasurementDutR3Harness(p)) { d =>
       prepareThroughPublication(d)
       val (payloadId, payloadIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
       (0 until 8).foreach(index => response(d, payloadId, index, index == 7, incarnation = payloadIncarnation))
@@ -387,7 +463,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
   }
 
   it("opens hot only through the accepted plan and reaches the shared terminal after four commits") {
-    simulate(new RouteAMeasurementDut(p)) { d =>
+    simulate(new RouteAMeasurementDutR3Harness(p)) { d =>
       initialize(d)
       lifecycle(d, p.r6.attentionServiceEventCode, requestId = 3, retain = false)
       declareHotPlan(d)
@@ -402,7 +478,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
   }
 
   it("fails closed when a stale first packed-read response arrives after publication") {
-    simulate(new RouteAMeasurementDut(p)) { d =>
+    simulate(new RouteAMeasurementDutR3Harness(p)) { d =>
       prepareThroughPublication(d)
       val (payloadId, payloadIncarnation) = waitRequest(d, p.coreMemoryReadRequestCode, 0)
       response(d, payloadId + 1, 0, last = false, incarnation = payloadIncarnation)
@@ -415,7 +491,7 @@ final class RouteAMeasurementDutR3Spec extends AnyFunSpec with ChiselSim {
   }
 
   it("cancels a pre-issue direct candidate on the real accepted packed transition and lets R6 fault-terminal it") {
-    simulate(new RouteAMeasurementDut(p)) { d =>
+    simulate(new RouteAMeasurementDutR3Harness(p)) { d =>
       initialize(d)
       lifecycle(d, p.r6.attentionServiceEventCode, requestId = 3, retain = false)
       registerDirectPendingDescriptor(d)
