@@ -960,9 +960,9 @@ reference/owner and fails closed on later-member or preparation mismatch.  M2
 continues to validate every group-summary field it consumes.  The pre-DC state
 calculation predicts a 645,012-bit reduction, but this is not yet an observed
 mapped-area result.  The remote directed production suites pass 8/8 in
-`control_refine_p1_20261101.log`; cross-stage regression, successor HDL checks
-and an unchanged-fair-v1 DC comparison remain required before accepting an
-area, timing, fanout or lint improvement.
+`control_refine_p1_20261101.log`; successor HDL checks and an
+unchanged-fair-v1 DC comparison remain required before accepting an area,
+timing, fanout or lint improvement.
 
 The initial cross-stage P2 run passed 37/41 tests and localized all four
 failures to the `RouteAMeasurementDutR3Spec` simulator root before behavioral
@@ -973,8 +973,15 @@ sole child while excluding unused deep sidecar ports from ChiselSim's broken
 long-name DPI ABI; it changes no production connection.  Remote P4 passes the
 four actual same-instance behavioral cases 4/4, including packed reclaim, hot
 terminal, stale response and direct-transition cancellation/fault.  The
-preserved log is `control_refine_p4_r3_harness_20261102.log`; complete P2
-cross-stage rerun remains pending.
+preserved log is `control_refine_p4_r3_harness_20261102.log`.
+
+The clean P5 cross-stage rerun passes 10 suites / 41 actual tests with no
+failures, cancellations or ignored cases and
+`KVZAP_CONTROL_REFINE_P5_FULL_P2_EXIT=0`.  The authoritative log is
+`control_refine_p5_full_p2_20261102.log`.  This closes the functional
+non-regression gate for refinement P1; generated successor HDL, structural
+inspection and same-fair-v1 DC remain pending and no mapped cost or timing
+improvement follows yet.
 
 ## New-conversation prompt seed
 

@@ -91,9 +91,9 @@ Route-A total), before any DC optimization.  This is a control-realization
 refinement, not a zero-cost memory proxy or a change to admission,
 publication, authority, ordering, lifecycle, fault or reset semantics.
 
-The result must still pass directed and cross-stage Chisel regressions,
-generated-HDL structural checks, and a same-constraint successor DC run before
-any mapped-area, fanout, timing or lint improvement is claimed.
+The result must pass directed and cross-stage Chisel regressions before
+generated-HDL structural checks and a same-constraint successor DC run.  No
+mapped-area, fanout, timing or lint improvement is claimed before that run.
 
 ## First-sub-batch validation
 
@@ -106,10 +106,7 @@ mismatch) and five grouped M2 control-owner tests.
 
 The local executable structural checks passed 3/3 for this refinement, 2/2
 for the existing M2 array-only boundary, and 3/3 for synthesis-top candidate
-scope.  The BOM parses as JSON and `git diff --check` passes.  These are
-directed/source checks only.  Cross-stage Chisel non-regression, regenerated
-HDL inspection and the same-constraint successor DC comparison remain required
-before the expected state reduction is treated as an observed mapped result.
+scope.  The BOM parses as JSON and `git diff --check` passes.
 
 The first cross-stage P2 attempt passed 37/41 tests.  Its four
 `RouteAMeasurementDutR3Spec` cases first exposed an undriven dormant R5
@@ -119,5 +116,11 @@ ChiselSim long-name mismatch for unused deep sidecar-root DPI fields.  The
 bounded repair keeps the complete, unchanged `RouteAMeasurementDut` as the
 only child of a simulator-facing root and hides only those unused outer ports
 from the DPI ABI.  Remote P4 then executed and passed all four behavioral
-cases in `control_refine_p4_r3_harness_20261102.log`.  A clean complete P2
-rerun is still required before cross-stage acceptance.
+cases in `control_refine_p4_r3_harness_20261102.log`.
+
+The clean complete P2 rerun then passed all 10 suites and 41/41 actual tests
+with `KVZAP_CONTROL_REFINE_P5_FULL_P2_EXIT=0`; the preserved log is
+`control_refine_p5_full_p2_20261102.log`.  This accepts the functional
+cross-stage gate on the latest source.  Regenerated-HDL inspection and the
+same-constraint successor DC comparison remain required before the expected
+state reduction is treated as an observed mapped result.
