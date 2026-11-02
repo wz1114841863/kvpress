@@ -16,9 +16,9 @@ PACKAGE_ROOT=${OUTPUT_STEM}_paired_input
 ARCHIVE=${OUTPUT_STEM}_paired_input.tar.gz
 MANIFEST=${OUTPUT_STEM}_dc_array_proxy_manifest.json
 PROXY_ROOT=${OUTPUT_STEM}_dc_array_proxy_r1
-PROXY_REPORT=${OUTPUT_STEM}_dc_array_proxy_check.json
+PROXY_REPORT=$PROXY_ROOT/dc_array_proxy_check_report.json
 
-for target in "$PACKAGE_ROOT" "$ARCHIVE" "$MANIFEST" "$PROXY_ROOT" "$PROXY_REPORT"; do
+for target in "$PACKAGE_ROOT" "$ARCHIVE" "$MANIFEST" "$PROXY_ROOT"; do
   if [[ -e $target ]]; then
     echo "refusing to overwrite existing output: $target" >&2
     exit 3

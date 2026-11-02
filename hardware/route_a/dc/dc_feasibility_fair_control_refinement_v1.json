@@ -1,0 +1,68 @@
+{
+  "schema_version": "kvzap-dc-feasibility-constraint-profile-v2",
+  "profile_id": "dc_feasibility_fair_v1",
+  "status": "approved_control_refinement_successor_pending_DC_tool_coverage",
+  "source_successor": "control_refine_a6acd4a_p6",
+  "source_freeze": "analysis/dc_control_refinement_successor_20261102.md",
+  "constraints": {
+    "clock_period_ns": "2.0",
+    "setup_uncertainty_ns": "0.10",
+    "hold_uncertainty_ns": "0.02",
+    "input_delay_ns": "0.20",
+    "output_delay_ns": "0.20",
+    "input_transition_ns": "0.05",
+    "output_load_pf": "0.005",
+    "output_load_interpretation": "lightweight top-level feasibility load; not HBM, package, PHY, or system-interconnect load"
+  },
+  "integrity": {
+    "hdl_archive_sha256": "1b5ac01cd35c77c37c6d7a08843c8554ec2458eb25cc9d7d6cafbefc873ec33d",
+    "constraint_tcl_sha256": "3bc9d0e4b3caf9244f38e265ad1222f2ea36d89bed0a31d27a4d3cba19fe5007",
+    "target_library_sha256": "5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d"
+  },
+  "tops": {
+    "full_kv": {
+      "top_module": "full_kv_control_projection",
+      "top_sv": "full_kv_control_projection.sv",
+      "filelist": "full_kv_control_projection.f",
+      "filelist_root": "",
+      "expected_file_count": 1
+    },
+    "route_a": {
+      "top_module": "route_a_control_projection",
+      "top_sv": "route_a_control_projection_split/route_a_control_projection.sv",
+      "filelist": "route_a_control_projection_successor.f",
+      "filelist_root": "",
+      "expected_file_count": 48
+    }
+  },
+  "constraint_coverage_rule": {
+    "clock": "exactly one port named clock; excluded from input delay and transition",
+    "reset": "exactly one port named reset; treated as an ordinary synchronous input",
+    "inputs": "all top inputs other than clock receive input delay and transition",
+    "outputs": "all top outputs receive output delay and load",
+    "forbidden_path_exceptions": [
+      "set_false_path",
+      "set_multicycle_path"
+    ],
+    "DC_tool_coverage_required_later": [
+      "check_timing",
+      "report_constraint -all_violators",
+      "unconstrained path report",
+      "ignored-constraint diagnostics"
+    ]
+  },
+  "array_and_external_boundary_rule": {
+    "array_interiors": "only M2/P3/R5/S2 typed child interiors may be black-boxed; all parent control remains in HDL",
+    "external_services": "typed top-level boundaries without an internal HDL stub; nonzero_unestimated",
+    "cost_rule": "no array or external service is zero-cost and S2 remains non-cancellable"
+  },
+  "prohibited_conclusions": [
+    "target operating frequency",
+    "HBM/package/system I/O model",
+    "macro selection",
+    "DC feasibility pass",
+    "area/timing/power/PPA",
+    "common-cost cancellation",
+    "system speedup or net benefit"
+  ]
+}
