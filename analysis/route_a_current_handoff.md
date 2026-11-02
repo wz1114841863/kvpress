@@ -992,7 +992,25 @@ successor, a source-level reduction of 645,012 bits.  The paired archive SHA is
 This closes the refinement's pre-DC source/proxy gate; same-fair-v1 DC remains
 pending, so no mapped cost, fanout, lint or timing improvement follows yet.
 
-## New-conversation prompt seed
+### Active paired successor DC (2026-11-02)
+
+The bounded same-constraint comparison is now active; see
+[`dc_control_refinement_active_run_handoff_20261102.md`](dc_control_refinement_active_run_handoff_20261102.md)
+for the exact remote paths, current stage, inspection commands and acceptance
+rules.  Its immutable run ID is
+`dc_feasibility_fair_control_refinement_20261102_r1` in tmux
+`kvzap-control-refine:p7-dc`.  At the handoff snapshot Full-KV has completed
+with exit 0 and exactly reproduces its old 23,091.432498 cell area and zero
+setup violations; Route-A is still running.  No paired `RUN_PASS`, Route-A
+result, or successor area/timing/cleanliness conclusion exists yet.
+
+## Current new-conversation prompt
+
+Use the ready-to-paste prompt in
+[`dc_control_refinement_active_run_handoff_20261102.md`](dc_control_refinement_active_run_handoff_20261102.md).
+It supersedes the historical prompt below for the active DC task.
+
+## Superseded pre-DC prompt seed (historical)
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read
 > `AGENTS.md`, `analysis/architecture_spec.md`,
