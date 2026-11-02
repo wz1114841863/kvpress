@@ -85,10 +85,11 @@ ledger with one immutable mapping reference, one mapping owner and the existing
 owner; M2 still checks the exact mask and all preparation fields it consumes.
 Later members and preparation with mismatched mapping provenance fail closed.
 
-The new metadata bridge state is 17,392 bits.  The deterministic reduction is
-645,012 sequential bits (97.4% inside this module and 49.7% of the prior
-Route-A total), before any DC optimization.  This is a control-realization
-refinement, not a zero-cost memory proxy or a change to admission,
+Using the prior DDC count, the predicted mapped metadata-bridge state is
+17,392 bits.  The deterministic representation reduction is 645,012 bits
+(97.4% inside this module and 49.7% of the prior Route-A total), before a new
+DC run.  This is a control-realization refinement, not a zero-cost memory
+proxy or a change to admission,
 publication, authority, ordering, lifecycle, fault or reset semantics.
 
 The result must pass directed and cross-stage Chisel regressions before
@@ -121,6 +122,13 @@ cases in `control_refine_p4_r3_harness_20261102.log`.
 The clean complete P2 rerun then passed all 10 suites and 41/41 actual tests
 with `KVZAP_CONTROL_REFINE_P5_FULL_P2_EXIT=0`; the preserved log is
 `control_refine_p5_full_p2_20261102.log`.  This accepts the functional
-cross-stage gate on the latest source.  Regenerated-HDL inspection and the
-same-constraint successor DC comparison remain required before the expected
-state reduction is treated as an observed mapped result.
+cross-stage gate on the latest source.
+
+The regenerated 48-file successor subsequently passed the source closure,
+owner/port/control and typed-array checks recorded in
+[`dc_control_refinement_successor_20261102.md`](dc_control_refinement_successor_20261102.md).
+Its raw generated metadata bridge contains 17,492 logical state bits versus
+662,504 in the old raw successor, an observed source-level reduction of
+645,012 bits.  The 100-bit difference from the DDC-based 17,392 estimate is
+kept explicit; the same-constraint successor DC comparison remains required
+before any mapped-state, area, fanout, lint or timing improvement is claimed.

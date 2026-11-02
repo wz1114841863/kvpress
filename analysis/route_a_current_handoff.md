@@ -979,9 +979,18 @@ The clean P5 cross-stage rerun passes 10 suites / 41 actual tests with no
 failures, cancellations or ignored cases and
 `KVZAP_CONTROL_REFINE_P5_FULL_P2_EXIT=0`.  The authoritative log is
 `control_refine_p5_full_p2_20261102.log`.  This closes the functional
-non-regression gate for refinement P1; generated successor HDL, structural
-inspection and same-fair-v1 DC remain pending and no mapped cost or timing
-improvement follows yet.
+non-regression gate for refinement P1.
+
+The 48-file refined Route-A successor and paired typed-array proxy then pass
+the generated-source gate recorded in
+[`dc_control_refinement_successor_20261102.md`](dc_control_refinement_successor_20261102.md).
+All 16 required typed port families, 12 production control owners, four raw
+Route-A array interiors and five paired proxy boundaries pass.  The generated
+metadata bridge has 17,492 logical state bits versus 662,504 in the old raw
+successor, a source-level reduction of 645,012 bits.  The paired archive SHA is
+`1b5ac01cd35c77c37c6d7a08843c8554ec2458eb25cc9d7d6cafbefc873ec33d`.
+This closes the refinement's pre-DC source/proxy gate; same-fair-v1 DC remains
+pending, so no mapped cost, fanout, lint or timing improvement follows yet.
 
 ## New-conversation prompt seed
 
