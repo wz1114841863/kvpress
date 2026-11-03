@@ -1,8 +1,9 @@
 # Route-A current handoff — RTL3 closure and measurement RTL status
 
-**Status date:** 2026-10-25
-**Repository state:** `research/kvzap-latest`, RTL3 functional-subsystem
-closure reviewed at `cf9f055 docs: complete C4-D functional subsystem review`.
+**Status date:** 2026-11-03
+**Repository state:** `research/kvzap-latest`; RTL3 functional-subsystem
+closure remains frozen, and the first compact-control paired DC refinement is
+now accepted at logic-only feasibility scope.
 
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
@@ -992,23 +993,36 @@ successor, a source-level reduction of 645,012 bits.  The paired archive SHA is
 This closes the refinement's pre-DC source/proxy gate; same-fair-v1 DC remains
 pending, so no mapped cost, fanout, lint or timing improvement follows yet.
 
-### Active paired successor DC (2026-11-02)
+### Paired successor DC result (2026-11-03)
 
-The bounded same-constraint comparison is now active; see
-[`dc_control_refinement_active_run_handoff_20261102.md`](dc_control_refinement_active_run_handoff_20261102.md)
-for the exact remote paths, current stage, inspection commands and acceptance
-rules.  Its immutable run ID is
-`dc_feasibility_fair_control_refinement_20261102_r1` in tmux
-`kvzap-control-refine:p7-dc`.  At the handoff snapshot Full-KV has completed
-with exit 0 and exactly reproduces its old 23,091.432498 cell area and zero
-setup violations; Route-A is still running.  No paired `RUN_PASS`, Route-A
-result, or successor area/timing/cleanliness conclusion exists yet.
+The bounded same-constraint comparison is complete; the authoritative result
+is
+[`dc_control_refinement_result_20261103.md`](dc_control_refinement_result_20261103.md).
+Both per-top exits, paired `RUN_PASS`, outer exit, hashes, typed proxies, DDCs,
+mapped HDL and native reports close.  Full-KV exactly reproduces the baseline.
+
+Route-A mapped cell area falls from 6,716,537.642416 to 3,952,935.893452
+(-41.146%).  Sequential cells and the transient clock-alias load both fall by
+exactly 645,012, while the metadata-admission bridge hierarchy falls 96.973%.
+This accepts the intended mapped-area and clock-load improvement at the fixed
+logic-only DC-feasibility scope.
+
+Timing and cleanliness remain blocked.  Setup WNS changes from -0.31 to
+-0.33 ns and TNS from -7,318.06 to -7,891.18 ns, although violating paths
+fall from 34,814 to 31,458.  Post-compile warning records fall from 56,677 to
+44,513, dominated by the removed M2 full-binding `LINT-28` surface, but the
+remaining typed-carrier/feedthrough/shorted-output warnings and two high-
+fanout nets are not structurally clean.  The disposition is therefore
+`tool_input_pass + mapped_area_improved + timing_blocked +
+structural_cleanliness_blocked`, never PPA or net-benefit evidence.
 
 ## Current new-conversation prompt
 
-Use the ready-to-paste prompt in
-[`dc_control_refinement_active_run_handoff_20261102.md`](dc_control_refinement_active_run_handoff_20261102.md).
-It supersedes the historical prompt below for the active DC task.
+The active-run prompt in
+[`dc_control_refinement_active_run_handoff_20261102.md`](dc_control_refinement_active_run_handoff_20261102.md)
+is retained as a historical snapshot.  Use the accepted result above for any
+successor discussion; no additional refinement or DC run is automatically
+authorized.
 
 ## Superseded pre-DC prompt seed (historical)
 
