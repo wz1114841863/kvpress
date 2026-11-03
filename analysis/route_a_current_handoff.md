@@ -1045,6 +1045,23 @@ No P1 RTL, generated successor or new DC run has started.  Each candidate must
 close its own functional/generation gates and commit before any separately
 authorized same-fair-v1 tmux run.
 
+### M2/P3 compact-membership functional batch (2026-11-03)
+
+The first P0 candidate is now implemented and functionally accepted in
+[`dc_m2_p3_wrapper_compact_membership_implementation_20261103.md`](dc_m2_p3_wrapper_compact_membership_implementation_20261103.md).
+The wrapper retains only the 79-bit member record and 80-bit pending suffix;
+stage/index-owned coordinates and headers reconstruct the public observation,
+while the reconciliation journal remains intact.
+
+The final remote clean regression is 57/57 across 14 suites, with outer
+`KVZAP_COMPACT_MEMBERSHIP_P1_FULL_REGRESSION_EXIT=0` and no aborted suite.
+The stale integration witness found during the first run was repaired without
+changing production control: it now follows the real admission/P3 handshakes
+and R3-owned M2 request/response ordering.  This closes only the functional
+batch.  A new immutable 48-file successor, source/port/owner/state checks and
+five paired proxies are still required before any separately authorized DC
+comparison.
+
 ## Current new-conversation prompt
 
 The active-run prompt in

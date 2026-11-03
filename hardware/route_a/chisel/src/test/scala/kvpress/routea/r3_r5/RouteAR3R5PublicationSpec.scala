@@ -245,17 +245,21 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     }
   }
 
-  private def acceptPublicationCandidate(dut: RouteAR3PublicationHarness): Unit = {
+  private def acceptPublicationCandidate(dut: RouteAR3PublicationHarness, layer: Int = 0): Unit = {
     dut.io.m2_publish_candidate_out.valid.expect(true.B)
     dut.io.m2_publish_candidate_out.bits.transaction_group_tag.expect(1.U)
-    dut.io.m2_publish_candidate_out.bits.p3_layer.expect(0.U)
+    dut.io.m2_publish_candidate_out.bits.p3_layer.expect(layer.U)
     dut.io.m2_publish_candidate_out.bits.p3_stage_generation.expect(1.U)
     dut.io.m2_publish_candidate_out.ready.poke(true.B); dut.clock.step(); dut.io.m2_publish_candidate_out.ready.poke(false.B)
   }
 
-  private def offerDescriptorPrerequisite(dut: RouteAR3PublicationHarness): Unit = {
+  private def offerDescriptorPrerequisite(
+    dut: RouteAR3PublicationHarness,
+    layer: Int = 0,
+    head: Int = 0,
+  ): Unit = {
     val prerequisite = dut.io.descriptor_durability_prerequisite_in.bits
-    prerequisite.layer.poke(0.U); prerequisite.kv_head.poke(0.U)
+    prerequisite.layer.poke(layer.U); prerequisite.kv_head.poke(head.U)
     prerequisite.page_ref.page_id.poke(0.U); prerequisite.page_ref.generation.poke(0.U)
     prerequisite.transaction_group_tag.poke(1.U)
     prerequisite.required_descriptor_operation_mask.poke(1.U)
@@ -266,22 +270,36 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     dut.clock.step(); dut.io.descriptor_durability_prerequisite_in.valid.poke(false.B)
   }
 
-  private def admitMember(dut: RouteAR3PublicationHarness, ordinal: Int, position: Int, groupRecords: Int = 3): Unit = {
+  private def admitMember(
+    dut: RouteAR3PublicationHarness,
+    ordinal: Int,
+    position: Int,
+    groupRecords: Int = 3,
+    layer: Int = 0,
+    head: Int = 0,
+  ): Unit = {
     val context = dut.io.admission_context_in.bits
-    context.entry_id.poke((position * 288).U); context.layer.poke(0.U); context.kv_head.poke(0.U)
+    context.entry_id.poke((position * 288 + layer * 8 + head).U)
+    context.layer.poke(layer.U); context.kv_head.poke(head.U)
     context.logical_position.poke(position.U); context.payload_ref.poke((100 + position).U)
     context.transaction_group_tag.poke(1.U); context.group_member_ordinal.poke(ordinal.U); context.group_valid_records.poke(groupRecords.U)
     val authority = dut.io.admission_authority_in.bits
-    authority.entry_id.poke((position * 288).U); authority.from_authority.poke(1.U); authority.to_authority.poke(2.U)
+    authority.entry_id.poke((position * 288 + layer * 8 + head).U)
+    authority.from_authority.poke(1.U); authority.to_authority.poke(2.U)
     authority.transaction_group_tag.poke(1.U)
     dut.io.admission_context_in.valid.poke(true.B); dut.io.admission_authority_in.valid.poke(true.B)
     dut.io.admission_context_in.ready.expect(true.B); dut.io.admission_authority_in.ready.expect(true.B)
     dut.clock.step(); dut.io.admission_context_in.valid.poke(false.B); dut.io.admission_authority_in.valid.poke(false.B)
   }
 
-  private def finishGroupP3AndM2(dut: RouteAR3PublicationHarness, records: Int): Unit = {
+  private def finishGroupP3AndM2(
+    dut: RouteAR3PublicationHarness,
+    records: Int,
+    layer: Int = 0,
+    head: Int = 0,
+  ): Unit = {
     val fragment = dut.io.p3_pending_fragment_in.bits
-    fragment.layer.poke(0.U); fragment.stage_generation.poke(1.U); fragment.status.poke(p.coreMemoryOkStatusCode.U)
+    fragment.layer.poke(layer.U); fragment.stage_generation.poke(1.U); fragment.status.poke(p.coreMemoryOkStatusCode.U)
     for (fragmentIndex <- 0 until records * 8) {
       fragment.fragment_index.poke(fragmentIndex.U); fragment.last.poke((fragmentIndex == records * 8 - 1).B)
       fragment.payload_ref.poke(Seq(103, 107, 111)(fragmentIndex / 8).U); fragment.data.poke(fragmentIndex.U)
@@ -292,7 +310,7 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
     }
     dut.io.p3_pending_fragment_in.valid.poke(false.B)
     val sidecar = dut.io.p3_sidecar_bind_in.bits
-    sidecar.layer.poke(0.U); sidecar.stage_generation.poke(1.U)
+    sidecar.layer.poke(layer.U); sidecar.stage_generation.poke(1.U)
     for (ordinal <- 0 until records) {
       sidecar.record_ordinal.poke(ordinal.U); sidecar.payload_ref.poke(Seq(103, 107, 111)(ordinal).U)
       sidecar.logical_position.poke(Seq(3, 7, 11)(ordinal).U); dut.io.p3_sidecar_bind_in.valid.poke(true.B)
@@ -301,24 +319,24 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
       dut.clock.step(); dut.io.p3_sidecar_bind_in.valid.poke(false.B); dut.clock.step()
     }
     dut.io.p3_sidecar_bind_in.valid.poke(false.B)
-    dut.io.p3_packed_write_issue_in.bits.layer.poke(0.U); dut.io.p3_packed_write_issue_in.bits.stage_generation.poke(1.U)
+    dut.io.p3_packed_write_issue_in.bits.layer.poke(layer.U); dut.io.p3_packed_write_issue_in.bits.stage_generation.poke(1.U)
     dut.io.p3_packed_write_issue_in.bits.transaction_group_tag.poke(1.U); dut.io.p3_packed_write_issue_in.valid.poke(true.B)
     dut.io.p3_packed_write_issue_in.ready.expect(true.B); dut.clock.step(); dut.io.p3_packed_write_issue_in.valid.poke(false.B)
-    dut.io.p3_packed_write_terminal_in.bits.layer.poke(0.U); dut.io.p3_packed_write_terminal_in.bits.stage_generation.poke(1.U)
+    dut.io.p3_packed_write_terminal_in.bits.layer.poke(layer.U); dut.io.p3_packed_write_terminal_in.bits.stage_generation.poke(1.U)
     dut.io.p3_packed_write_terminal_in.bits.transaction_group_tag.poke(1.U); dut.io.p3_packed_write_terminal_in.bits.status.poke(p.coreMemoryOkStatusCode.U)
     dut.io.p3_packed_write_terminal_in.bits.r1_payload_durable.poke(true.B); dut.io.p3_packed_write_terminal_in.valid.poke(true.B)
     dut.io.p3_packed_write_terminal_in.ready.expect(true.B); dut.clock.step(); dut.io.p3_packed_write_terminal_in.valid.poke(false.B)
-    offerDescriptorPrerequisite(dut)
+    offerDescriptorPrerequisite(dut, layer = layer, head = head)
     for (member <- Seq(RouteAM2GroupMember.HeadControlRmw, RouteAM2GroupMember.SpanOwnerRmw)) {
       dut.io.m2_group_member_req_out.valid.expect(true.B)
       dut.io.m2_group_member_req_out.bits.member.expect(member.U)
-      dut.io.m2_group_member_req_out.bits.kv_head.expect(0.U)
+      dut.io.m2_group_member_req_out.bits.kv_head.expect(head.U)
       dut.io.m2_group_member_req_out.bits.opaque_address_ref.expect(0.U)
       dut.io.m2_group_member_req_out.bits.owner.expect(0.U)
       dut.io.m2_group_member_req_out.ready.poke(true.B); dut.clock.step(); dut.io.m2_group_member_req_out.ready.poke(false.B)
       val response = dut.io.m2_group_member_rsp_in.bits
-      response.layer.poke(0.U); response.stage_generation.poke(1.U); response.transaction_group_tag.poke(1.U)
-      response.member.poke(member.U); response.kv_head.poke(0.U)
+      response.layer.poke(layer.U); response.stage_generation.poke(1.U); response.transaction_group_tag.poke(1.U)
+      response.member.poke(member.U); response.kv_head.poke(head.U)
       response.opaque_address_ref.poke(0.U); response.owner.poke(0.U); response.status.poke(p.coreMemoryOkStatusCode.U)
       dut.io.m2_group_member_rsp_in.valid.poke(true.B); dut.io.m2_group_member_rsp_in.ready.expect(true.B); dut.clock.step(); dut.io.m2_group_member_rsp_in.valid.poke(false.B)
     }
@@ -393,23 +411,29 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
   it("records non-contiguous retained members and reports them only after the one atomic publish") {
     simulate(new RouteAR3PublicationHarness(p)) { dut =>
       initR3(dut)
+      val layer = 5
+      val head = 3
       val claim = dut.io.p3_claim_in.bits
-      claim.layer.poke(0.U); claim.kv_head.poke(0.U); claim.owner.poke(0.U)
+      claim.layer.poke(layer.U); claim.kv_head.poke(head.U); claim.owner.poke(0.U)
       claim.page_ref.page_id.poke(0.U); claim.page_ref.generation.poke(0.U); claim.valid_records.poke(3.U); claim.requires_tail_link.poke(false.B); claim.transaction_group_tag.poke(1.U)
       dut.io.p3_claim_in.valid.poke(true.B); dut.io.p3_claim_in.ready.expect(true.B); dut.clock.step(); dut.io.p3_claim_in.valid.poke(false.B); dut.clock.step()
       // Ordinal order and logical positions are deliberately different: no span inference is legal.
-      admitMember(dut, ordinal = 2, position = 11); admitMember(dut, ordinal = 0, position = 3); admitMember(dut, ordinal = 1, position = 7)
+      admitMember(dut, ordinal = 2, position = 11, layer = layer, head = head)
+      admitMember(dut, ordinal = 0, position = 3, layer = layer, head = head)
+      admitMember(dut, ordinal = 1, position = 7, layer = layer, head = head)
       // A duplicate ordinal is rejected before durability/publication.
       val duplicate = dut.io.admission_context_in.bits
-      duplicate.entry_id.poke((19 * 288).U); duplicate.layer.poke(0.U); duplicate.kv_head.poke(0.U); duplicate.logical_position.poke(19.U)
+      duplicate.entry_id.poke((19 * 288 + layer * 8 + head).U)
+      duplicate.layer.poke(layer.U); duplicate.kv_head.poke(head.U); duplicate.logical_position.poke(19.U)
       duplicate.payload_ref.poke(119.U); duplicate.transaction_group_tag.poke(1.U); duplicate.group_member_ordinal.poke(1.U); duplicate.group_valid_records.poke(3.U)
-      dut.io.admission_authority_in.bits.entry_id.poke((19 * 288).U); dut.io.admission_authority_in.bits.from_authority.poke(1.U); dut.io.admission_authority_in.bits.to_authority.poke(2.U); dut.io.admission_authority_in.bits.transaction_group_tag.poke(1.U)
+      dut.io.admission_authority_in.bits.entry_id.poke((19 * 288 + layer * 8 + head).U)
+      dut.io.admission_authority_in.bits.from_authority.poke(1.U); dut.io.admission_authority_in.bits.to_authority.poke(2.U); dut.io.admission_authority_in.bits.transaction_group_tag.poke(1.U)
       dut.io.admission_context_in.valid.poke(true.B); dut.io.admission_authority_in.valid.poke(true.B); dut.io.admission_context_in.ready.expect(false.B); dut.io.admission_authority_in.ready.expect(false.B)
       dut.io.admission_context_in.valid.poke(false.B); dut.io.admission_authority_in.valid.poke(false.B)
-      finishGroupP3AndM2(dut, 3)
-      acceptPublicationCandidate(dut)
+      finishGroupP3AndM2(dut, 3, layer = layer, head = head)
+      acceptPublicationCandidate(dut, layer = layer)
       val publish = dut.io.m2_publish_req_in.bits
-      publish.transaction_group_tag.poke(1.U); publish.p3_layer.poke(0.U); publish.p3_stage_generation.poke(1.U)
+      publish.transaction_group_tag.poke(1.U); publish.p3_layer.poke(layer.U); publish.p3_stage_generation.poke(1.U)
       dut.io.m2_publish_req_in.valid.poke(true.B); dut.io.m2_publish_req_in.ready.expect(true.B); dut.clock.step(); dut.io.m2_publish_req_in.valid.poke(false.B)
       dut.io.metadata_publish_visibility_ack_in.bits.page_ref.page_id.poke(0.U); dut.io.metadata_publish_visibility_ack_in.bits.page_ref.generation.poke(0.U); dut.io.metadata_publish_visibility_ack_in.bits.status.poke(RouteAPublicationStatus.Published.U)
       dut.io.metadata_publish_visibility_ack_in.valid.poke(true.B); dut.io.metadata_publish_visibility_ack_in.ready.expect(false.B)
@@ -421,14 +445,29 @@ final class RouteAR3R5PublicationSpec extends AnyFunSpec with ChiselSim {
       dut.io.publication_commit_observation.ready.poke(true.B); dut.clock.step()
       Seq(3, 7, 11).zipWithIndex.foreach { case (position, ordinal) =>
         dut.io.publication_member_observation.valid.expect(true.B); dut.io.authority_transition_out.valid.expect(true.B)
+        val entryId = position * 288 + layer * 8 + head
+        dut.io.publication_member_observation.bits.entry_id.expect(entryId.U)
+        dut.io.publication_member_observation.bits.layer.expect(layer.U)
+        dut.io.publication_member_observation.bits.kv_head.expect(head.U)
         dut.io.publication_member_observation.bits.logical_position.expect(position.U)
         dut.io.publication_member_observation.bits.group_member_ordinal.expect(ordinal.U)
-        dut.io.authority_transition_out.bits.entry_id.expect((position * 288).U)
+        dut.io.authority_transition_out.bits.entry_id.expect(entryId.U)
         dut.io.authority_transition_out.bits.from_authority.expect(2.U); dut.io.authority_transition_out.bits.to_authority.expect(3.U)
         // These retained members carry no accepted pending-payload binding:
         // their authority transition remains legal, but cannot withdraw a
         // nonexistent direct-pending association.
         dut.io.pending_to_packed_withdrawal_valid.expect(false.B)
+        if (ordinal == 0) {
+          dut.io.publication_member_observation.ready.poke(false.B)
+          dut.io.authority_transition_out.ready.poke(false.B)
+          dut.clock.step()
+          dut.io.publication_member_observation.bits.entry_id.expect(entryId.U)
+          dut.io.publication_member_observation.bits.layer.expect(layer.U)
+          dut.io.publication_member_observation.bits.kv_head.expect(head.U)
+          dut.io.authority_transition_out.bits.entry_id.expect(entryId.U)
+          dut.io.publication_member_observation.ready.poke(true.B)
+          dut.io.authority_transition_out.ready.poke(true.B)
+        }
         dut.clock.step()
       }
       dut.io.publication_member_observation.valid.expect(false.B); dut.io.authority_transition_out.valid.expect(false.B)

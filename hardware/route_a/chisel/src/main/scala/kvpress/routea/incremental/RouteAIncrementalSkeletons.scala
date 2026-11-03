@@ -2415,6 +2415,29 @@ final class RouteAP3StageArrayBoundary(p: RouteASkeletonParameters) extends Modu
   when(io.payload_read_rsp.fire) { payloadReadRspValid := false.B }
 }
 
+/**
+  * R3-internal retained-member state after the admission join has validated
+  * the bank, head, group header, ordinal, and entry-coordinate equation.
+  * Those facts remain owned by the stage header and table indices; keeping a
+  * second copy per record would add no independent authority.
+  */
+final class RouteAM2P3MembershipRecord extends Bundle {
+  val logical_position = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)
+  val payload_ref = UInt(RouteAAnchorWidths.PayloadRefWidth.W)
+}
+
+/**
+  * R3-internal pending-read suffix.  The common membership fields are checked
+  * against AdmissionContext before this suffix is written and are recovered
+  * from the compact member record plus the existing stage/index coordinates.
+  */
+final class RouteAM2P3PendingReadSuffix(p: RouteASkeletonParameters) extends Bundle {
+  val transaction_identity = new TransactionIdentity
+  val payload_handle_or_address = UInt(p.coreMemoryAddressRefWidth.W)
+  val source_generation = UInt(p.sourceGenerationWidth.W)
+  val destination_endpoint = UInt(p.coreMemoryDestinationWidth.W)
+}
+
 /** RTL1.3 R3 control state: no P3 payload macro, M2 macro, or HBM controller. */
 final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   override def desiredName: String = "route_a_m2_p3_wrapper"
@@ -2530,9 +2553,9 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   // The following is a logical, per-record association ledger.  It contains
   // sidecar/payload references only, never K/V data or authoritative residency.
   val membershipPresent = RegInit(VecInit(Seq.fill(stages)(0.U(64.W))))
-  val membershipEntries = Reg(Vec(stages, Vec(64, new AdmissionContext(p))))
+  val membershipEntries = Reg(Vec(stages, Vec(64, new RouteAM2P3MembershipRecord)))
   val membershipPayloadBindingPresent = RegInit(VecInit(Seq.fill(stages)(0.U(64.W))))
-  val membershipPayloadBindings = Reg(Vec(stages, Vec(64, new PendingPayloadReadBinding(p))))
+  val membershipPayloadBindings = Reg(Vec(stages, Vec(64, new RouteAM2P3PendingReadSuffix(p))))
   // B2c: the current production ingress admits exactly one <=64-member group
   // per reset.  This journal retains only the already accepted binding and
   // its observed pending->packed outcome for late descriptor registration.
@@ -2673,11 +2696,18 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   when(io.admission_context_in.fire) {
     assert(io.admission_authority_in.fire)
     membershipPresent(admissionLayer) := membershipPresent(admissionLayer) | admissionOrdinalMask
-    membershipEntries(admissionLayer)(admission.group_member_ordinal(5, 0)) := admission
+    membershipEntries(admissionLayer)(admission.group_member_ordinal(5, 0)).logical_position :=
+      admission.logical_position
+    membershipEntries(admissionLayer)(admission.group_member_ordinal(5, 0)).payload_ref :=
+      admission.payload_ref
     when(pendingBindingOffered) {
       assert(io.pending_payload_binding_in.fire)
       membershipPayloadBindingPresent(admissionLayer) := membershipPayloadBindingPresent(admissionLayer) | admissionOrdinalMask
-      membershipPayloadBindings(admissionLayer)(admission.group_member_ordinal(5, 0)) := pendingPayloadBinding
+      val storedBinding = membershipPayloadBindings(admissionLayer)(admission.group_member_ordinal(5, 0))
+      storedBinding.transaction_identity := pendingPayloadBinding.transaction_identity
+      storedBinding.payload_handle_or_address := pendingPayloadBinding.payload_handle_or_address
+      storedBinding.source_generation := pendingPayloadBinding.source_generation
+      storedBinding.destination_endpoint := pendingPayloadBinding.destination_endpoint
       assert(!reconciliationPresent(admission.group_member_ordinal(5, 0)))
       reconciliationPresent(admission.group_member_ordinal(5, 0)) := true.B
       reconciliationBindings(admission.group_member_ordinal(5, 0)) := pendingPayloadBinding
@@ -3276,6 +3306,8 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val anyObservationActive = observationActive.asUInt.orR
   val observationLayer = PriorityEncoder(observationActive)
   val observationEntry = membershipEntries(observationLayer)(observationMemberOrdinal(observationLayer)(5, 0))
+  val observationEntryId = observationEntry.logical_position * 288.U +
+    observationLayer * 8.U + stageHead(observationLayer)
   io.publication_commit_observation.valid := anyObservationActive && !observationCommitSent(observationLayer)
   io.publication_commit_observation.bits.p3_layer := observationLayer
   io.publication_commit_observation.bits.p3_stage_generation := stageGeneration(observationLayer)
@@ -3289,15 +3321,15 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val memberObservationValid = anyObservationActive && observationCommitSent(observationLayer) &&
     observationMemberOrdinal(observationLayer) < stageValidRecords(observationLayer)
   io.publication_member_observation.valid := memberObservationValid && !observationMemberSent(observationLayer)
-  io.publication_member_observation.bits.entry_id := observationEntry.entry_id
-  io.publication_member_observation.bits.layer := observationEntry.layer
-  io.publication_member_observation.bits.kv_head := observationEntry.kv_head
+  io.publication_member_observation.bits.entry_id := observationEntryId
+  io.publication_member_observation.bits.layer := observationLayer
+  io.publication_member_observation.bits.kv_head := stageHead(observationLayer)
   io.publication_member_observation.bits.logical_position := observationEntry.logical_position
   io.publication_member_observation.bits.payload_ref := observationEntry.payload_ref
   io.publication_member_observation.bits.transaction_group_tag := stageTag(observationLayer)
   io.publication_member_observation.bits.group_member_ordinal := observationMemberOrdinal(observationLayer)
   io.authority_transition_out.valid := memberObservationValid && !observationAuthoritySent(observationLayer)
-  io.authority_transition_out.bits.entry_id := observationEntry.entry_id
+  io.authority_transition_out.bits.entry_id := observationEntryId
   io.authority_transition_out.bits.from_authority := RouteAAuthorityStateCode.Pending.U
   io.authority_transition_out.bits.to_authority := RouteAAuthorityStateCode.Packed.U
   io.authority_transition_out.bits.transaction_group_tag := stageTag(observationLayer)

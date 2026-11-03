@@ -23,7 +23,9 @@ private final class RouteAAdmissionPublicationHarness(p: RouteASkeletonParameter
     val p3_write_issue = Flipped(RouteAChannels.p3_packed_write_issue(p))
     val p3_write_terminal = Flipped(RouteAChannels.p3_packed_write_terminal(p))
     val descriptor_prerequisite = Flipped(RouteAChannels.descriptor_durability_prerequisite(p))
+    val m2_member_request = RouteAChannels.m2_group_member_req(p)
     val m2_member = Flipped(RouteAChannels.m2_group_member_rsp(p))
+    val m2_publish_candidate = RouteAChannels.metadata_publish_req(p)
     val m2_publish = Flipped(RouteAChannels.metadata_publish_req(p))
     val visibility_ack = Flipped(RouteAChannels.metadata_publish_visibility_ack)
     val visibility_apply_ready = Input(Bool())
@@ -46,6 +48,10 @@ private final class RouteAAdmissionPublicationHarness(p: RouteASkeletonParameter
   StructuralTieOff.source(lifecycle.io.hot_source_release_in)
   StructuralTieOff.source(lifecycle.io.pending_source_release_in)
   StructuralTieOff.source(lifecycle.io.packed_source_release_in)
+  // This legacy I2 composition does not exercise the later direct-pending
+  // fault carrier.  Keep it explicitly dormant rather than leaving the
+  // production lifecycle input partially initialized at elaboration.
+  StructuralTieOff.source(lifecycle.io.pending_source_failure_in)
   StructuralTieOff.sink(lifecycle.io.s2_service_req)
   StructuralTieOff.sink(lifecycle.io.direct_pending_open)
   StructuralTieOff.sink(lifecycle.io.merge_req)
@@ -58,6 +64,13 @@ private final class RouteAAdmissionPublicationHarness(p: RouteASkeletonParameter
   StructuralTieOff.sink(r3.io.p3_claim_ack)
   r3.io.p3_pending_fragment_in <> io.p3_fragment
   r3.io.p3_sidecar_bind_in <> io.p3_sidecar
+  // Later B2c/materialization interfaces are outside this historical I2
+  // witness.  Tie off only the test-harness endpoints; the production R3
+  // owner and all of its ports remain unchanged.
+  StructuralTieOff.source(r3.io.pending_packing_reconciliation_lookup_in)
+  StructuralTieOff.sink(r3.io.pending_packing_reconciliation_result_out)
+  StructuralTieOff.sink(r3.io.p3_pack_read_materialized_work_out)
+  StructuralTieOff.sink(r3.io.p3_materialized_sidecar_out)
   StructuralTieOff.source(r3.io.p3_pack_read_work_in)
   StructuralTieOff.sink(r3.io.p3_pack_read_issue_out)
   r3.io.p3_packed_write_issue_in <> io.p3_write_issue
@@ -66,10 +79,10 @@ private final class RouteAAdmissionPublicationHarness(p: RouteASkeletonParameter
   StructuralTieOff.source(r3.io.p3_packed_write_delivery_in)
   StructuralTieOff.sink(r3.io.p3_payload_durable_out)
   r3.io.descriptor_durability_prerequisite_in <> io.descriptor_prerequisite
-  StructuralTieOff.sink(r3.io.m2_group_member_req_out)
+  io.m2_member_request <> r3.io.m2_group_member_req_out
   r3.io.m2_group_member_rsp_in <> io.m2_member
   r3.io.p3_observe_layer := 0.U
-  StructuralTieOff.sink(r3.io.m2_publish_candidate_out)
+  io.m2_publish_candidate <> r3.io.m2_publish_candidate_out
   r3.io.m2_publish_req_in <> io.m2_publish
   r3.io.metadata_publish_visibility_apply.ready := io.visibility_apply_ready
   r3.io.metadata_publish_visibility_ack_in <> io.visibility_ack
@@ -113,6 +126,7 @@ final class RouteAAdmissionPublicationIntegrationSpec extends AnyFunSpec with Ch
     dut.io.p3_claim.valid.poke(false.B); dut.io.p3_fragment.valid.poke(false.B); dut.io.p3_sidecar.valid.poke(false.B)
     dut.io.p3_write_issue.valid.poke(false.B); dut.io.p3_write_terminal.valid.poke(false.B); dut.io.m2_member.valid.poke(false.B)
     dut.io.descriptor_prerequisite.valid.poke(false.B)
+    dut.io.m2_member_request.ready.poke(false.B); dut.io.m2_publish_candidate.ready.poke(false.B)
     dut.io.m2_publish.valid.poke(false.B); dut.io.visibility_ack.valid.poke(false.B)
     dut.io.visibility_apply_ready.poke(true.B); dut.io.commit_observation.ready.poke(true.B); dut.io.member_observation.ready.poke(true.B)
   }
@@ -138,13 +152,41 @@ final class RouteAAdmissionPublicationIntegrationSpec extends AnyFunSpec with Ch
       frontend(dut, p.r6.sessionStartEventCode)
       val claim = dut.io.p3_claim.bits
       claim.layer.poke(0.U); claim.kv_head.poke(0.U); claim.owner.poke(0.U); claim.page_ref.page_id.poke(0.U); claim.page_ref.generation.poke(0.U)
-      claim.valid_records.poke(1.U); claim.requires_tail_link.poke(false.B); claim.transaction_group_tag.poke(1.U); dut.io.p3_claim.valid.poke(true.B); dut.io.p3_claim.ready.expect(true.B); dut.clock.step(); dut.io.p3_claim.valid.poke(false.B); dut.clock.step()
+      claim.valid_records.poke(1.U); claim.requires_tail_link.poke(false.B); claim.transaction_group_tag.poke(1.U)
+      claim.m2_group_opaque_address_ref.poke(0.U); claim.m2_group_owner.poke(0.U)
+      dut.io.p3_claim.valid.poke(true.B); dut.io.p3_claim.ready.expect(true.B); dut.clock.step(); dut.io.p3_claim.valid.poke(false.B); dut.clock.step()
       frontend(dut, p.r6.maturityDispositionEventCode, retain = true)
+      // The frontend acceptance stages the maturity fact in R6.  The exact
+      // admission-context + hot-to-pending join commits into R3 on the next
+      // edge; payload fragments are legal only after that owner-to-owner
+      // handoff has completed.
+      dut.clock.step()
       val fragment = dut.io.p3_fragment.bits
       fragment.layer.poke(0.U); fragment.stage_generation.poke(1.U); fragment.status.poke(p.coreMemoryOkStatusCode.U); fragment.payload_ref.poke(55.U)
-      for (index <- 0 until 8) { fragment.fragment_index.poke(index.U); fragment.last.poke((index == 7).B); fragment.data.poke(index.U); dut.io.p3_fragment.valid.poke(true.B); dut.io.p3_fragment.ready.expect(true.B); dut.clock.step() }
-      dut.io.p3_fragment.valid.poke(false.B)
-      dut.io.p3_sidecar.bits.layer.poke(0.U); dut.io.p3_sidecar.bits.stage_generation.poke(1.U); dut.io.p3_sidecar.bits.record_ordinal.poke(0.U); dut.io.p3_sidecar.bits.payload_ref.poke(55.U); dut.io.p3_sidecar.bits.logical_position.poke(0.U); dut.io.p3_sidecar.valid.poke(true.B); dut.io.p3_sidecar.ready.expect(true.B); dut.clock.step(); dut.io.p3_sidecar.valid.poke(false.B)
+      for (index <- 0 until 8) {
+        fragment.fragment_index.poke(index.U)
+        fragment.last.poke((index == 7).B)
+        fragment.data.poke(index.U)
+        dut.io.p3_fragment.valid.poke(true.B)
+        var fragmentWait = 0
+        while (!dut.io.p3_fragment.ready.peek().litToBoolean && fragmentWait < 8) {
+          dut.clock.step()
+          fragmentWait += 1
+        }
+        require(fragmentWait < 8, s"timed out waiting for P3 fragment $index acceptance")
+        dut.clock.step()
+        dut.io.p3_fragment.valid.poke(false.B)
+        dut.clock.step()
+      }
+      dut.io.p3_sidecar.bits.layer.poke(0.U); dut.io.p3_sidecar.bits.stage_generation.poke(1.U); dut.io.p3_sidecar.bits.record_ordinal.poke(0.U); dut.io.p3_sidecar.bits.payload_ref.poke(55.U); dut.io.p3_sidecar.bits.logical_position.poke(0.U)
+      dut.io.p3_sidecar.valid.poke(true.B)
+      var sidecarWait = 0
+      while (!dut.io.p3_sidecar.ready.peek().litToBoolean && sidecarWait < 8) {
+        dut.clock.step()
+        sidecarWait += 1
+      }
+      require(sidecarWait < 8, "timed out waiting for P3 sidecar acceptance")
+      dut.clock.step(); dut.io.p3_sidecar.valid.poke(false.B); dut.clock.step()
       dut.io.p3_write_issue.bits.layer.poke(0.U); dut.io.p3_write_issue.bits.stage_generation.poke(1.U); dut.io.p3_write_issue.bits.transaction_group_tag.poke(1.U); dut.io.p3_write_issue.valid.poke(true.B); dut.io.p3_write_issue.ready.expect(true.B); dut.clock.step(); dut.io.p3_write_issue.valid.poke(false.B)
       dut.io.p3_write_terminal.bits.layer.poke(0.U); dut.io.p3_write_terminal.bits.stage_generation.poke(1.U); dut.io.p3_write_terminal.bits.transaction_group_tag.poke(1.U); dut.io.p3_write_terminal.bits.status.poke(p.coreMemoryOkStatusCode.U); dut.io.p3_write_terminal.bits.r1_payload_durable.poke(true.B); dut.io.p3_write_terminal.valid.poke(true.B); dut.io.p3_write_terminal.ready.expect(true.B); dut.clock.step(); dut.io.p3_write_terminal.valid.poke(false.B)
       val descriptor = dut.io.descriptor_prerequisite.bits
@@ -152,7 +194,24 @@ final class RouteAAdmissionPublicationIntegrationSpec extends AnyFunSpec with Ch
       descriptor.transaction_group_tag.poke(1.U); descriptor.required_descriptor_operation_mask.poke(1.U); descriptor.durable_descriptor_operation_mask.poke(1.U)
       descriptor.descriptor_prepared.poke(true.B); descriptor.status.poke(p.coreMemoryOkStatusCode.U)
       dut.io.descriptor_prerequisite.valid.poke(true.B); dut.io.descriptor_prerequisite.ready.expect(true.B); dut.clock.step(); dut.io.descriptor_prerequisite.valid.poke(false.B)
-      for (member <- Seq(RouteAM2GroupMember.HeadControlRmw, RouteAM2GroupMember.SpanOwnerRmw)) { dut.io.m2_member.bits.layer.poke(0.U); dut.io.m2_member.bits.stage_generation.poke(1.U); dut.io.m2_member.bits.transaction_group_tag.poke(1.U); dut.io.m2_member.bits.member.poke(member.U); dut.io.m2_member.bits.status.poke(p.coreMemoryOkStatusCode.U); dut.io.m2_member.valid.poke(true.B); dut.io.m2_member.ready.expect(true.B); dut.clock.step(); dut.io.m2_member.valid.poke(false.B) }
+      for (member <- Seq(RouteAM2GroupMember.HeadControlRmw, RouteAM2GroupMember.SpanOwnerRmw)) {
+        dut.io.m2_member_request.valid.expect(true.B)
+        dut.io.m2_member_request.bits.layer.expect(0.U); dut.io.m2_member_request.bits.kv_head.expect(0.U)
+        dut.io.m2_member_request.bits.stage_generation.expect(1.U); dut.io.m2_member_request.bits.transaction_group_tag.expect(1.U)
+        dut.io.m2_member_request.bits.member.expect(member.U); dut.io.m2_member_request.bits.opaque_address_ref.expect(0.U)
+        dut.io.m2_member_request.bits.owner.expect(0.U)
+        dut.io.m2_member_request.ready.poke(true.B); dut.clock.step(); dut.io.m2_member_request.ready.poke(false.B)
+        dut.io.m2_member.bits.layer.poke(0.U); dut.io.m2_member.bits.kv_head.poke(0.U)
+        dut.io.m2_member.bits.stage_generation.poke(1.U); dut.io.m2_member.bits.transaction_group_tag.poke(1.U)
+        dut.io.m2_member.bits.member.poke(member.U); dut.io.m2_member.bits.opaque_address_ref.poke(0.U)
+        dut.io.m2_member.bits.owner.poke(0.U); dut.io.m2_member.bits.status.poke(p.coreMemoryOkStatusCode.U)
+        dut.io.m2_member.valid.poke(true.B); dut.io.m2_member.ready.expect(true.B); dut.clock.step()
+        dut.io.m2_member.valid.poke(false.B)
+      }
+      dut.io.m2_publish_candidate.valid.expect(true.B)
+      dut.io.m2_publish_candidate.bits.transaction_group_tag.expect(1.U)
+      dut.io.m2_publish_candidate.bits.p3_layer.expect(0.U); dut.io.m2_publish_candidate.bits.p3_stage_generation.expect(1.U)
+      dut.io.m2_publish_candidate.ready.poke(true.B); dut.clock.step(); dut.io.m2_publish_candidate.ready.poke(false.B)
       dut.io.m2_publish.bits.transaction_group_tag.poke(1.U); dut.io.m2_publish.bits.p3_layer.poke(0.U); dut.io.m2_publish.bits.p3_stage_generation.poke(1.U); dut.io.m2_publish.valid.poke(true.B); dut.io.m2_publish.ready.expect(true.B); dut.clock.step(); dut.io.m2_publish.valid.poke(false.B)
       dut.io.visibility_ack.bits.page_ref.page_id.poke(0.U); dut.io.visibility_ack.bits.page_ref.generation.poke(0.U); dut.io.visibility_ack.bits.status.poke(RouteAPublicationStatus.Published.U)
       dut.io.visibility_ack.valid.poke(true.B); dut.clock.step(); dut.io.visibility_ack.ready.expect(true.B); dut.clock.step(); dut.io.visibility_ack.valid.poke(false.B)
