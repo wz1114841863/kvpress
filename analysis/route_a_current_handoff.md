@@ -1062,6 +1062,17 @@ batch.  A new immutable 48-file successor, source/port/owner/state checks and
 five paired proxies are still required before any separately authorized DC
 comparison.
 
+The successor/proxy gate is now closed by
+[`dc_m2_p3_wrapper_compact_membership_successor_20261103.md`](dc_m2_p3_wrapper_compact_membership_successor_20261103.md).
+The immutable 48-file root is `m2p3_compact_7bcd652_p9`; 16/16 typed ports,
+12/12 production owners, four raw Route-A array interiors and five paired
+same-header proxies pass.  The wrapper raw generated state is exactly 400,498
+bits versus 990,322 in the prior accepted successor, a 589,824-bit reduction.
+The paired archive SHA-256 is
+`61d4e51cafea3c96167f371c41b31af051ca5844fd93f58ccba127b681cf7008`.
+This is source/proxy evidence only.  No mapped area, clock load, lint or timing
+result follows, and no same-fair-v1 DC run has been launched.
+
 ## Current new-conversation prompt
 
 The active-run prompt in
