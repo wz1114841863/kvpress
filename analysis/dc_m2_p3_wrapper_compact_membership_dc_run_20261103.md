@@ -35,8 +35,28 @@ successor/archive identity changes.
 
 ## Run state
 
-The new immutable run ID, tmux/log paths, static preflight result and completion
-markers will be recorded here after launch.  No result is accepted from a
-launch or partial phase alone; both side exits, paired `RUN_PASS`, outer exit,
-copied hashes, DDC/mapped HDL and native QoR/timing/lint/fanout reports are
-required.
+The static fair-v1 checker passed before launch with no unconstrained top-level
+input or output.  The observed archive, proxy manifest, proxy materialization,
+proxy check, constraint Tcl and library hashes match the frozen input above.
+
+The active immutable run is:
+
+```text
+tmux:   kvzap-control-refine:p10-compact-dc
+run ID: dc_feasibility_fair_m2p3_compact_20261103_r1
+log:    /home/yaz80/wz_project/chisel_projects/kvpress/logs/
+          m2p3_compact_p10_dc_20261103.log
+root:   /home/yaz80/wz_project/dc_project/kvzap_control_projection/runs/
+          dc_feasibility_fair_m2p3_compact_20261103_r1/
+```
+
+The tmux window has `remain-on-exit on`.  At launch, proxy evidence and static
+fair-v1 coverage passed, the run entered the Full-KV native `dc_shell` phase,
+and no side exit, paired `RUN_PASS`, or outer marker existed yet.  This is a
+healthy launch only, not a synthesis result.
+
+Completion requires both `KVZAP_DC_FEASIBILITY_FULL_KV_EXIT=0` and
+`KVZAP_DC_FEASIBILITY_ROUTE_A_EXIT=0`, paired `RUN_PASS`, outer
+`KVZAP_M2P3_COMPACT_P10_DC_EXIT=0`, copied hashes, DDC/mapped HDL and native
+QoR/timing/lint/fanout reports.  Do not restart or duplicate the run while it
+is active; inspect it read-only after user notification.

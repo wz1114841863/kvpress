@@ -1073,6 +1073,15 @@ The paired archive SHA-256 is
 This is source/proxy evidence only.  No mapped area, clock load, lint or timing
 result follows, and no same-fair-v1 DC run has been launched.
 
+The user subsequently authorized the separately frozen paired run recorded in
+[`dc_m2_p3_wrapper_compact_membership_dc_run_20261103.md`](dc_m2_p3_wrapper_compact_membership_dc_run_20261103.md).
+Static fair-v1 coverage passed and
+`dc_feasibility_fair_m2p3_compact_20261103_r1` is active in tmux
+`kvzap-control-refine:p10-compact-dc`.  It uses the unchanged 2.0-ns profile,
+the same Full-KV input, library, constraints and five proxy boundaries.  No
+result marker exists at launch; await user notification and then inspect both
+side exits, paired/outer markers, copied hashes and all native reports.
+
 ## Current new-conversation prompt
 
 The active-run prompt in
