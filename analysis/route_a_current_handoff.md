@@ -1016,6 +1016,35 @@ fanout nets are not structurally clean.  The disposition is therefore
 `tool_input_pass + mapped_area_improved + timing_blocked +
 structural_cleanliness_blocked`, never PPA or net-benefit evidence.
 
+### M2/P3 wrapper P0 control-realization diagnosis (2026-11-03)
+
+The read-only successor diagnosis is recorded in
+[`dc_m2_p3_wrapper_p0_diagnosis_20261103.md`](dc_m2_p3_wrapper_p0_diagnosis_20261103.md).
+It queries only the accepted refined DDC/native reports and current generated
+HDL/source; it changes no RTL and launches no synthesis.
+
+The wrapper owns 2,968,610.1130 cell area, 75.1% of the refined Route-A total.
+Its two `36 x 64` membership record tables account for 956,160 of 990,322 raw
+state bits and 442,368 of 476,140 mapped sequential cells.  DC has already
+pruned most duplicated source fields, so merging full bundles alone is not a
+mapped-area result.
+
+The first bounded candidate is an internal 79-bit member record plus 80-bit
+pending-read suffix.  Bank/index and already validated stage headers recover
+layer, head, group fields and ordinal; `entry_id` is recovered from the frozen
+coordinate equation only at its consumers.  Pre-DC accounting predicts a
+589,824-bit raw reduction but only a 76,032-cell mapped-sequential ceiling,
+which is the meaningful next native-DC question.  The persistent
+reconciliation journal remains intact.
+
+The later independent candidates are an equivalent hierarchical materializer
+selector and an ordinal-indexed full-equality reconciliation lookup.  Eighteen
+of the 20 native setup paths explicitly start or end in `m2P3`, principally at
+`materializedMembers` or `stageState`, so selection logic is timing-relevant.
+No P1 RTL, generated successor or new DC run has started.  Each candidate must
+close its own functional/generation gates and commit before any separately
+authorized same-fair-v1 tmux run.
+
 ## Current new-conversation prompt
 
 The active-run prompt in
