@@ -1088,8 +1088,11 @@ RD1 is implemented as a bounded candidate; see
 [`dc_rd1_member_read_sharing_implementation_20261104.md`](dc_rd1_member_read_sharing_implementation_20261104.md).
 The per-bank M/S/O member-record helper passes the 6,912-address local
 equivalence miter and compiles. Existing wrapper materialization/publication
-tests are running locally; isolated original/shared read-network synthesis
-inputs are generated. Screening and integration acceptance remain pending.
+tests are running locally. Isolated original/shared read-network synthesis
+is active in `kvzap-control-refine:p12-rd1-screen`, run
+`rd1_read_network_screen_20261104_r1`; its 13 input/script/source hashes match
+the local bundle. Await user completion notification before result inspection.
+Screening and integration acceptance remain pending.
 No new complete DC run is launched, and the active entry_id repair inputs
 and process are untouched.
 

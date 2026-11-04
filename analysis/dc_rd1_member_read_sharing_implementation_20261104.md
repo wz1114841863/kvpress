@@ -57,8 +57,34 @@ hierarchy area, timing, constraints and design checks. All scripts are copied
 into an isolated screen root. They never overwrite the active full-DC scripts,
 input archive, proxy tree or run directory.
 
-At this batch boundary screening is prepared but not yet launched. It may
-establish a bounded combinational read-network area/delay change only. It
+Screening is launched from implementation commit `e5d3107` in remote tmux
+`kvzap-control-refine:p12-rd1-screen`. Run ID:
+`rd1_read_network_screen_20261104_r1`. The root is
+`/home/yaz80/wz_project/dc_project/kvzap_control_projection/runs/rd1_read_network_screen_20261104_r1/`;
+the total log is `dc_shell.log` within it. Completion requires both
+`KVZAP_RD1_SCREEN_SIDE_PASS` markers, `KVZAP_RD1_READ_NETWORK_SCREEN_PASS`,
+outer `KVZAP_RD1_READ_SCREEN_EXIT=0`, and complete native artifacts.
+
+Initial acceptance is **input closure only**, not a synthesis result:
+
+- `KVZAP_RD1_SCREEN_INPUT_PASS`; all 13 remotely recorded input/script/source
+  hashes match the local prepared bundle.
+- Manifest SHA-256:
+  `961866b818e5af2bd4285285cc509964114bfb9ee194655095b5b63b95f09f67`.
+- Original SV SHA-256:
+  `200872b0f1735b18f0b33163d0779ca41b5820f19e4324c07a8b5a756935791f`.
+- Shared SV SHA-256:
+  `94c86e0726bc3413faa586f59504a6e41054aa62d5e60e19a0876e8a051ef17b`.
+- The launcher verified the library and constraint Tcl against the frozen
+  fair-v1 profile, including all seven numerical timing/load values.
+- Initial native log shows the original reader completing Presto compilation.
+  Both the screen process and pre-existing driver-repair dc_shell are active;
+  no completion, area or timing result is accepted yet.
+
+After notifying the user, leave the remote experiment running and await their
+completion notification. Inspect native reports, hashes, both exits and the
+outer marker before concluding. It may establish a bounded combinational
+read-network area/delay change only. It
 cannot establish whole-wrapper savings, complete setup closure, storage cost,
 clock-load reduction, PPA, external-service cost or system net benefit. RD1
 does not reduce the 366,336 bits stored by the two compact tables. The full
