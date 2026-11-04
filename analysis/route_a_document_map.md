@@ -72,6 +72,12 @@ Read only when the question needs the corresponding history or object:
 
 ## Artifact role rules
 
+For the specific cause of the residual M2/P3 area, read
+`dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped
+reference counts, separates membership sequential cells from overlapping
+primitive cones, and routes the next candidate toward record-read/decode
+implementation rather than assuming the priority selector explains all area.
+
 For the approved entry_id driver repair, read
 `dc_entry_id_driver_repair_20261104.md`.  It describes a synthesis-only,
 explicit result-net preservation policy and a fail-closed 48-bit driver gate.

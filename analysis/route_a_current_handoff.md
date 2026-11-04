@@ -1084,6 +1084,17 @@ side exits, paired/outer markers, copied hashes and all native reports.
 
 ## Current new-conversation prompt
 
+A read-only mapped attribution of the completed compact wrapper is recorded in
+[`dc_compact_wrapper_hotspot_attribution_20261104.md`](dc_compact_wrapper_hotspot_attribution_20261104.md).
+The two membership tables retain exactly 366,336 sequential cells and about
+1,292,433 area (49.0% of the whole wrapper).  Direct primitive read/association
+cones have a deduplicated lower-bound area of 774,659 (64.4% of direct
+combinational area).  Materialized work alone is only an 11.8%-of-wrapper
+lower-bound cone, not the complete area explanation.  This supports targeted
+record-read/decode optimization and a separately accounted storage study,
+without changing capacity, concurrency or semantics.  The ongoing driver
+repair run and its inputs remain untouched; no new optimization was implemented.
+
 The entry_id structural regression is now isolated and a synthesis-only repair
 is implemented; see
 [`dc_entry_id_driver_repair_20261104.md`](dc_entry_id_driver_repair_20261104.md).
