@@ -1094,6 +1094,14 @@ constraint changes were made.  Production paired-DC verification is still
 required before this repair can be declared fully closed; no further control
 optimization is in progress.
 
+The production repair verification is active as
+`dc_feasibility_fair_m2p3_entryid_repair_20261104_r1` in tmux
+`kvzap-control-refine:p11-entryid-dc`; total log is
+`entryid_repair_p11_dc_20261104.log`.  The implementation commit is `2c40d80`.
+Static preflight passed and Full-KV entered native DC.  Await user notification,
+then inspect the new driver gate plus all paired completion/provenance/native
+reports.  No production repair completion is claimed at launch.
+
 The compact-membership DC run has completed.  The current result authority is
 [`dc_m2_p3_wrapper_compact_membership_result_20261104.md`](dc_m2_p3_wrapper_compact_membership_result_20261104.md).
 Both side exits, paired/outer markers, hashes and native artifacts pass.

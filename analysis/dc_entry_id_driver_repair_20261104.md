@@ -93,3 +93,29 @@ and numerical fair-v1 inputs.  Full production validation remains pending
 until that run emits both side exits, paired/outer pass markers, the new 48-bit
 driver report, native check-design, mapped HDL and QoR/timing reports.  The
 small fixture does not establish production timing closure or area benefit.
+
+The repair implementation is committed as `2c40d80`.  Its policy Tcl hash is
+`a936bd9453002fc3de7f7388aa78c3e74cf31e45a0461773105935ae0157438d`.
+Static fair-v1 coverage passed before launch and no older run was overwritten.
+The final r2 fixture's mapped netlist was also independently simulated with
+the same 5,536-vector pass after the negative driver-gate check was added.
+
+The fresh production paired run is active:
+
+```text
+run ID: dc_feasibility_fair_m2p3_entryid_repair_20261104_r1
+tmux:   kvzap-control-refine:p11-entryid-dc
+log:    /home/yaz80/wz_project/chisel_projects/kvpress/logs/
+          entryid_repair_p11_dc_20261104.log
+root:   /home/yaz80/wz_project/dc_project/kvzap_control_projection/runs/
+          dc_feasibility_fair_m2p3_entryid_repair_20261104_r1/
+outer:  KVZAP_ENTRYID_REPAIR_P11_DC_EXIT
+```
+
+At launch, the copied Tcl hash and synthesis policy match, the Full-KV native
+DC process is active, and no completion marker exists yet.  The window has
+remain-on-exit enabled.  Await user notification rather than polling or
+starting another run.  Completion inspection must require the 48-bit driver
+gate, zero entry_id LINT-3/LINT-5, both side exits, paired/outer markers and
+native outputs before accepting the production repair.  Do not start further
+structural optimization until this verification closes.
