@@ -1084,6 +1084,20 @@ side exits, paired/outer markers, copied hashes and all native reports.
 
 ## Current new-conversation prompt
 
+The compact-membership DC run has completed.  The current result authority is
+[`dc_m2_p3_wrapper_compact_membership_result_20261104.md`](dc_m2_p3_wrapper_compact_membership_result_20261104.md).
+Both side exits, paired/outer markers, hashes and native artifacts pass.
+Observed Route-A area falls a further 8.313% to 3,624,318.814461 and sequential
+cells fall exactly 76,032 to 577,106.  Full-KV reproduces the prior result.
+Setup remains blocked: WNS -0.31 ns, TNS -8,564.11 ns and 35,671 violating
+paths.  New LINT-3/LINT-5 warnings identify 24 undriven entry_id nets and 48
+undriven wrapper output bits after synthesis deletes the reconstruction cone.
+Raw HDL still drives the fields; current production consumers do not use
+entry_id.  This is a structural regression requiring bounded diagnosis before
+accepting a fully closed successor or launching another optimization/rerun.
+The warning total is 44,585.  Preserve the run and all constraints; no PPA or
+system-benefit claim follows.
+
 The active-run prompt in
 [`dc_control_refinement_active_run_handoff_20261102.md`](dc_control_refinement_active_run_handoff_20261102.md)
 is retained as a historical snapshot.  Use the accepted result above for any

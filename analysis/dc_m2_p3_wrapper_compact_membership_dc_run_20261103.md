@@ -35,6 +35,13 @@ successor/archive identity changes.
 
 ## Run state
 
+**Completed, inspected 2026-11-04.** Both per-top exits, paired RUN_PASS and
+outer exit are zero.  The authoritative analysis is
+`dc_m2_p3_wrapper_compact_membership_result_20261104.md`.  Observed area drops
+8.313% versus the first refinement, but setup remains violated and new undriven
+entry_id output warnings block structural acceptance.  The launch snapshot
+below is retained as history.
+
 The static fair-v1 checker passed before launch with no unconstrained top-level
 input or output.  The observed archive, proxy manifest, proxy materialization,
 proxy check, constraint Tcl and library hashes match the frozen input above.

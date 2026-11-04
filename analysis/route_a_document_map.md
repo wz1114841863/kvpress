@@ -72,6 +72,13 @@ Read only when the question needs the corresponding history or object:
 
 ## Artifact role rules
 
+The completed compact-membership native-DC result supersedes its active-run
+snapshot: read `dc_m2_p3_wrapper_compact_membership_result_20261104.md` after
+the P1 successor record.  It observes a further 8.313% mapped-area reduction
+and the expected 76,032 sequential-cell reduction, but setup still fails and
+new LINT-3/LINT-5 entry_id outputs block structural acceptance.  Diagnose that
+driver/observability regression before another optimization or rerun.
+
 - `*_contract.md` explains scope, owner, evidence, validation, and non-claims.
 - `*_manifest.json` or audit JSON is machine-readable evidence for its named
   stage, not a living status dashboard; preserve its original stage snapshot.
