@@ -1,0 +1,25 @@
+family,logical_geometry,mapped_sequential_cells,mapped_sequential_area,role,disposition
+allocatedLine,36720x1,36720,92555.232000,parent-owned descriptor-line allocation bitmap,retain capacity; candidate exact-first selector realization
+buildActive,288x1,288,728.952000,per-stream active flag,retain
+buildFault,288x1,288,736.848000,per-stream fail-closed flag,retain
+buildPayloadDurable,288x1,288,727.944000,per-stream payload terminal state,retain
+buildPrerequisiteReported,288x1,288,769.104000,per-stream prerequisite handshake state,retain
+buildLayer,288x6,1728,5951.232000,stored stream layer,derive from slot candidate
+buildHead,288x3,864,2177.280000,stored stream KV-head,derive from slot candidate
+buildValidRecords,288x7,2016,7112.448000,per-stream valid-record count,retain
+buildPageId,288x18,5184,18289.152000,per-stream allocated page id,retain
+buildGeneration,288x8,2304,8128.512000,per-stream page generation,retain
+buildTag,288x8,2304,8128.512000,per-stream transaction group tag,retain
+buildNewDurable,288x1,288,725.760000,per-stream new-descriptor terminal state,retain
+buildTailDurable,288x1,288,725.760000,per-stream tail-link terminal state,retain
+buildNeedsTail,288x1,288,1072.848000,per-stream tail-link requirement,retain
+visibleTailPresent,288x1,288,1064.448000,per-stream visible-tail presence,retain
+visibleTailId,288x18,5184,18289.152000,per-stream visible-tail page id,retain
+visibleTailGeneration,288x8,2304,8128.512000,per-stream visible-tail generation,retain
+appendDescriptorLineData,1x512,512,1835.232000,held external descriptor-service line,retain
+reclaimDescriptorLineData,source 1x512 mapped 32,32,118.272000,only live generation fields survive mapping,retain semantic fields; no source-width claim
+other_control,scalar and narrow registers,544,1852.536000,scan append reclaim lookup response and handshake state,retain
+releasePending,146880x1 source only,0,0.000000,post-durable test-observation release queue,not mapped because measurement top discards observation; not an optimization credit
+releaseGeneration,146880x8 source only,0,0.000000,old-generation test-observation payload,not mapped because measurement top discards observation; not an optimization credit
+allocationSeen,146880x1 verification only,0,0.000000,assertion shadow,verification layer excluded
+durableInvalidation,146880x1 verification only,0,0.000000,assertion shadow,verification layer excluded

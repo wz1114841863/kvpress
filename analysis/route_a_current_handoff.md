@@ -1099,6 +1099,17 @@ integration acceptance remains pending.
 No new complete DC run is launched, and the active entry_id repair inputs
 and process are untouched.
 
+The next independent read-only P0 is complete for Page Manager; see
+[`dc_page_manager_p0_diagnosis_20261104.md`](dc_page_manager_p0_diagnosis_20261104.md)
+and its state CSV. Page Manager is 407,440.9906 area (11.242% of Route-A).
+The 36,720-bit `allocatedLine` state plus its `reclaimLine` selection cone is
+the dominant target: 92,555.232 sequential area and an 85,193.304 directed
+combinational cone; the native path is a global-WNS path at -0.31 ns. PM1
+selects an exact-lowest, same-cycle balanced/banked selector screen while
+retaining all bits and parent control. PM2 separately derives stored
+layer/head from the 288-slot coordinate and directly indexes payload-durable
+validation. P0 changes no RTL and launches no compile or complete DC.
+
 The compact-table read-port inventory and selected RD1 plan are recorded in
 [`dc_compact_membership_read_sharing_plan_20261104.md`](dc_compact_membership_read_sharing_plan_20261104.md)
 and its CSV companion.  Six member readers and two suffix readers are

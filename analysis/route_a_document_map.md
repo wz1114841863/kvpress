@@ -86,6 +86,13 @@ for the M/S/O reader with a 0.056220-ns local path-delay increase; production
 wrapper integration, storage/clock cost and complete Route-A timing remain
 separate gates.
 
+For the next independent Page Manager hotspot diagnosis, read
+`dc_page_manager_p0_diagnosis_20261104.md` and
+`dc_page_manager_p0_state_audit_20261104.csv`. The read-only saved-DDC query
+finds the 36,720-bit allocated-line selector as the largest measured state/cone
+and a global-WNS path, then selects an exact-priority realization screen as
+PM1. It changes no RTL, proxy boundary, constraint or synthesis input.
+
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped
 reference counts, separates membership sequential cells from overlapping
