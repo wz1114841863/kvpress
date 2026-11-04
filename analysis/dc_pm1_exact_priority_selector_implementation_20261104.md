@@ -59,7 +59,7 @@ same 36,720-bit input and 16-bit selected index:
 The screen launcher verifies the immutable fair-v1 profile, all seven
 constraint numbers, target-library hash and constraint-Tcl hash. DC maps each
 side independently with the same command and writes native DDC, mapped HDL,
-QoR, area, timing, constraint, fanout and design-check reports. The screen
+QoR, area, timing, constraint and design-check reports. The screen
 contains no registers, Page Manager state machine, descriptor service or
 other Route-A logic.
 

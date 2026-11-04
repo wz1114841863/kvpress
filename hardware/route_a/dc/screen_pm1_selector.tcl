@@ -26,7 +26,6 @@ if {[catch {
     report_area -hierarchy -nosplit > $out/area.rpt
     report_timing -delay_type max -max_paths 10 -nets -significant_digits 6 > $out/timing.rpt
     report_constraint -all_violators > $out/constraints.rpt
-    report_net_fanout -threshold 20 > $out/fanout.rpt
     write -format ddc -hierarchy -output $out/$top.ddc
     write -format verilog -hierarchy -output $out/${top}_mapped.v
     puts "KVZAP_PM1_SCREEN_SIDE_PASS side=$side"
