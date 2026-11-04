@@ -46,10 +46,13 @@ export KVZAP_DC_CONSTRAINT_COVERAGE_REPORT="$base/static_constraint_coverage.jso
 
 cp "$KVZAP_DC_CONSTRAINT_MANIFEST" "$base/dc_feasibility_fair_v1.json"
 cp "$script_dir/constraints_control_projection.tcl" "$base/constraints_control_projection.tcl"
+cp "$script_dir/preserve_r3_entry_id_driver.tcl" "$base/preserve_r3_entry_id_driver.tcl"
+printf 'entry_id_driver_policy=%s\n' "${KVZAP_DC_ENTRY_ID_DRIVER_POLICY:-none}" > "$base/synthesis_interface_policy.txt"
 cp "$KVZAP_DC_ARRAY_PROXY_MANIFEST" "$base/array_proxy_manifest.json"
 cp "$KVZAP_DC_PROXY_ROOT/dc_array_proxy_materialization_report.json" "$base/array_proxy_materialization.json"
 cp "$KVZAP_DC_PROXY_ROOT/dc_array_proxy_check_report.json" "$base/array_proxy_check.json"
 sha256sum "$KVZAP_DC_TARGET_LIBRARY" "$KVZAP_DC_HDL_ARCHIVE" \
+  "$script_dir/preserve_r3_entry_id_driver.tcl" \
   "$KVZAP_DC_PROXY_ROOT/dc_array_proxy_materialization_report.json" \
   "$KVZAP_DC_PROXY_ROOT/dc_array_proxy_check_report.json" > "$base/input_sha256.txt"
 

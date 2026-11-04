@@ -37,6 +37,15 @@ for the HDL, source and evidence boundary.
 
 ## Constraint contract
 
+The reconstructed R3 entry-id repair uses the explicit
+`run_m2p3_compact_entry_id_repair_dc.sh IMMUTABLE_RUN_ID` launcher.  See
+[`dc_entry_id_driver_repair_20261104.md`](../../../analysis/dc_entry_id_driver_repair_20261104.md)
+for the opt-in `r3_entry_id_driver_v1` policy, focused mapped regression and
+production acceptance gate.  It preserves only 24 internal result nets and
+requires a real driver on both 24-bit outputs after mapping.  No RTL or timing
+constraint changes are made, but the preservation may affect QoR and is
+recorded in each new run.  The general runner retains policy `none` by default.
+
 `constraints_control_projection.tcl` is a parameterized, single-clock
 constraint procedure for either selected top.  The approved
 `dc_feasibility_fair_v1` manifest supplies a 2.0 ns period, 0.10/0.02 ns

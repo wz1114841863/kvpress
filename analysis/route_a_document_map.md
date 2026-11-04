@@ -72,6 +72,12 @@ Read only when the question needs the corresponding history or object:
 
 ## Artifact role rules
 
+For the approved entry_id driver repair, read
+`dc_entry_id_driver_repair_20261104.md`.  It describes a synthesis-only,
+explicit result-net preservation policy and a fail-closed 48-bit driver gate.
+The focused DC regression and mapped simulation pass; full production
+verification remains a separate completion condition.
+
 The completed compact-membership native-DC result supersedes its active-run
 snapshot: read `dc_m2_p3_wrapper_compact_membership_result_20261104.md` after
 the P1 successor record.  It observes a further 8.313% mapped-area reduction

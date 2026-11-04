@@ -89,6 +89,8 @@ proc kvzap_dc_main {} {
 
   source [file join $::env(KVZAP_DC_SCRIPT_DIR) constraints_control_projection.tcl]
   kvzap_apply_control_projection_constraints
+  source [file join $::env(KVZAP_DC_SCRIPT_DIR) preserve_r3_entry_id_driver.tcl]
+  kvzap_preserve_r3_entry_id_driver $top $report_dir
   check_design > [file join $report_dir check_design_precompile.rpt]
   check_timing > [file join $report_dir check_timing_precompile.rpt]
   report_constraint -all_violators > [file join $report_dir constraints_precompile.rpt]
@@ -98,6 +100,7 @@ proc kvzap_dc_main {} {
   # does not infer or select a macro implementation.
   compile -map_effort medium
   kvzap_dc_require_array_proxies $proxy_modules "post-compile"
+  kvzap_check_r3_entry_id_driver $top $report_dir
 
   check_design > [file join $report_dir check_design_postcompile.rpt]
   check_timing > [file join $report_dir check_timing_postcompile.rpt]

@@ -1084,6 +1084,16 @@ side exits, paired/outer markers, copied hashes and all native reports.
 
 ## Current new-conversation prompt
 
+The entry_id structural regression is now isolated and a synthesis-only repair
+is implemented; see
+[`dc_entry_id_driver_repair_20261104.md`](dc_entry_id_driver_repair_20261104.md).
+Focused DC positive/negative controls and 5,536 mapped functional vectors pass.
+The explicit policy preserves only the shared 24-bit result and rejects any
+of its 48 output bits without a driver.  No RTL, interface or numerical fair-v1
+constraint changes were made.  Production paired-DC verification is still
+required before this repair can be declared fully closed; no further control
+optimization is in progress.
+
 The compact-membership DC run has completed.  The current result authority is
 [`dc_m2_p3_wrapper_compact_membership_result_20261104.md`](dc_m2_p3_wrapper_compact_membership_result_20261104.md).
 Both side exits, paired/outer markers, hashes and native artifacts pass.
