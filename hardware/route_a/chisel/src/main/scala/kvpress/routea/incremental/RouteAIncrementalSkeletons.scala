@@ -2735,7 +2735,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val materializerCandidateAny = materializerCandidateStages.asUInt.orR
   val materializerCandidateLayer = PriorityEncoder(materializerCandidateStages)
   val materializerCandidateOrdinal = PriorityEncoder(materializerCandidateMasks(materializerCandidateLayer))(5, 0)
-  val materializerCandidateMember = membershipEntries(materializerCandidateLayer)(materializerCandidateOrdinal)
+  val materializerCandidateMember = Wire(new RouteAM2P3MembershipRecord)
   val materializerCandidateBinding = membershipPayloadBindings(materializerCandidateLayer)(materializerCandidateOrdinal)
   val packReadEligibility = (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.FifoPredecessor) |
     (1.U(p.candidatePredicateWidth.W) << RouteAR2PredicateBits.Ownership) |
@@ -2773,7 +2773,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   val materializerSidecarAny = materializerSidecarEligible.asUInt.orR
   val materializerSidecarLayer = PriorityEncoder(materializerSidecarEligible)
   val materializerSidecarOrdinal = materializerOrdinal(materializerSidecarLayer)(5, 0)
-  val materializerSidecarMember = membershipEntries(materializerSidecarLayer)(materializerSidecarOrdinal)
+  val materializerSidecarMember = Wire(new RouteAM2P3MembershipRecord)
   io.p3_materialized_sidecar_out.valid := materializerSidecarAny
   io.p3_materialized_sidecar_out.bits.layer := materializerSidecarLayer
   io.p3_materialized_sidecar_out.bits.stage_generation := stageGeneration(materializerSidecarLayer)
@@ -3305,7 +3305,7 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   // changing membership, page visibility, or authority linearization.
   val anyObservationActive = observationActive.asUInt.orR
   val observationLayer = PriorityEncoder(observationActive)
-  val observationEntry = membershipEntries(observationLayer)(observationMemberOrdinal(observationLayer)(5, 0))
+  val observationEntry = Wire(new RouteAM2P3MembershipRecord)
   val observationEntryId = observationEntry.logical_position * 288.U +
     observationLayer * 8.U + stageHead(observationLayer)
   io.publication_commit_observation.valid := anyObservationActive && !observationCommitSent(observationLayer)
@@ -3320,6 +3320,22 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
 
   val memberObservationValid = anyObservationActive && observationCommitSent(observationLayer) &&
     observationMemberOrdinal(observationLayer) < stageValidRecords(observationLayer)
+  // RD1 shares the member-record lookup by bank, not the consumers or their
+  // global selectors. The request remains live under ready-low. C/F/B and
+  // both pending-suffix reads above deliberately retain independent lookup.
+  val sharedMemberRecords = RouteAMemberRecordReadSharing(membershipEntries, Seq(
+    (materializerCandidateAny, materializerCandidateLayer, materializerCandidateOrdinal),
+    (materializerSidecarAny, materializerSidecarLayer, materializerSidecarOrdinal),
+    (memberObservationValid, observationLayer, observationMemberOrdinal(observationLayer)(5, 0)),
+  ))
+  materializerCandidateMember := sharedMemberRecords(0)
+  materializerSidecarMember := sharedMemberRecords(1)
+  observationEntry := sharedMemberRecords(2)
+  for (layer <- 0 until stages) {
+    when(observationActive(layer)) {
+      assert(stageState(layer) === StateEmpty, "RD1 observation must retain its empty bank until handoff")
+    }
+  }
   io.publication_member_observation.valid := memberObservationValid && !observationMemberSent(observationLayer)
   io.publication_member_observation.bits.entry_id := observationEntryId
   io.publication_member_observation.bits.layer := observationLayer

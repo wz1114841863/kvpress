@@ -77,6 +77,10 @@ change, read `dc_compact_membership_read_sharing_plan_20261104.md` and
 `dc_compact_membership_read_port_audit_20261104.csv`.  The plan selects per-bank
 M/S/O member-read sharing and explicitly preserves independently checked
 C/F/B inputs, cross-bank capability, cycle behavior and suffix reads.
+The authorized candidate implementation, local equivalence evidence and
+isolated read-network screening status are tracked in
+`dc_rd1_member_read_sharing_implementation_20261104.md`. It does not replace
+the pending full-driver-repair result or establish complete DC/PPA closure.
 
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped

@@ -1,6 +1,6 @@
 # Route-A current handoff — RTL3 closure and measurement RTL status
 
-**Status date:** 2026-11-03
+**Status date:** 2026-11-04
 **Repository state:** `research/kvzap-latest`; RTL3 functional-subsystem
 closure remains frozen, and the first compact-control paired DC refinement is
 now accepted at logic-only feasibility scope.
@@ -1084,6 +1084,15 @@ side exits, paired/outer markers, copied hashes and all native reports.
 
 ## Current new-conversation prompt
 
+RD1 is implemented as a bounded candidate; see
+[`dc_rd1_member_read_sharing_implementation_20261104.md`](dc_rd1_member_read_sharing_implementation_20261104.md).
+The per-bank M/S/O member-record helper passes the 6,912-address local
+equivalence miter and compiles. Existing wrapper materialization/publication
+tests are running locally; isolated original/shared read-network synthesis
+inputs are generated. Screening and integration acceptance remain pending.
+No new complete DC run is launched, and the active entry_id repair inputs
+and process are untouched.
+
 The compact-table read-port inventory and selected RD1 plan are recorded in
 [`dc_compact_membership_read_sharing_plan_20261104.md`](dc_compact_membership_read_sharing_plan_20261104.md)
 and its CSV companion.  Six member readers and two suffix readers are
@@ -1091,8 +1100,8 @@ identified.  M/S/O requests are mutually exclusive within one bank, while
 global serialization is not assumed.  RD1 selects per-bank sharing of only
 their 79-bit member read; C/F/B validation and 80-bit suffix reads remain
 independent.  Production M->C equality and S->B exclusive wiring do not justify
-removing generic wrapper checks.  This batch is audit/plan only; no RTL or
-running synthesis input was changed.
+removing generic wrapper checks. That earlier batch was audit/plan only;
+the RD1 candidate implementation is tracked separately above.
 
 A read-only mapped attribution of the completed compact wrapper is recorded in
 [`dc_compact_wrapper_hotspot_attribution_20261104.md`](dc_compact_wrapper_hotspot_attribution_20261104.md).
