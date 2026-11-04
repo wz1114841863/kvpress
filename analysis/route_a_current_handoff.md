@@ -1135,7 +1135,12 @@ state and 17-bit D result registers to both sides, and runs each side in a
 separate DC process. A bounded registered miter passes 1/1 across 1,344 shift
 cycles and both full-width wrapped inputs pass Verilator lint. The matched
 sequential boundary is not PM1 savings. No remote r2 result exists at this
-checkpoint.
+checkpoint. The versioned r2 run was subsequently launched from commit
+`9e6632b` in `kvzap-control-refine:p14-pm1-reg-r2` with run ID
+`pm1_registered_selector_screen_20261104_r2`. Input closure passes and the
+original-side independent DC process is live; no side/total PASS or mapped
+result exists at launch. Await user notification before inspection and do not
+restart or poll the run.
 
 The compact-table read-port inventory and selected RD1 plan are recorded in
 [`dc_compact_membership_read_sharing_plan_20261104.md`](dc_compact_membership_read_sharing_plan_20261104.md)

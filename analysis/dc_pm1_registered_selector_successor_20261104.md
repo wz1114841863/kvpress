@@ -68,9 +68,28 @@ acceptance additionally requires the combined PASS/outer-zero markers and
 native DDC, mapped HDL, design checks, QoR, hierarchy area, precise timing and
 constraint reports for both sides.
 
-At this checkpoint the successor is prepared but not launched. Generated
+## Active remote screen
+
+The successor was launched from commit
+`9e6632ba3082e01728e098ff7133ad9cd20b461b` in remote tmux
+`kvzap-control-refine:p14-pm1-reg-r2`:
+
+- run ID: `pm1_registered_selector_screen_20261104_r2`;
+- root:
+  `/home/yaz80/wz_project/dc_project/kvzap_control_projection/runs/pm1_registered_selector_screen_20261104_r2/`;
+- total log: `dc_shell.log` in that root, with independent
+  `original_dc_shell.log` and `banked_dc_shell.log`;
+- manifest SHA-256:
+  `64d147117826fe2c2571aca2d1d19a317231f012d5ce5816f51e9b8b427da4b9`;
+- frozen target-library SHA-256:
+  `5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d`.
+
+Initial `KVZAP_PM1_REGISTERED_SCREEN_INPUT_PASS` is present. The pane and
+original-side DC process are live and original analysis has begun. There is no
+side PASS, total PASS, outer exit, area or timing result at launch. Generated
 source size, Verilator behavior and local equivalence are not mapped-area or
-timing evidence.
+timing evidence. Do not poll or restart; await user notification before
+completion inspection.
 
 ## Boundaries
 
