@@ -63,10 +63,28 @@ QoR, area, timing, constraint and design-check reports. The screen
 contains no registers, Page Manager state machine, descriptor service or
 other Route-A logic.
 
-At this implementation checkpoint, no remote DC result exists. Generated SV
-size is not area evidence. Acceptance requires both side PASS markers, the
-overall PASS, `KVZAP_PM1_SELECTOR_SCREEN_OUTER_EXIT=0`, immutable
-manifest/hashes and the native reports.
+## Active isolated synthesis run
+
+The prepared package was launched from source commit
+`8aa203145373f02dda878795924b521f54d42f58` in remote tmux
+`kvzap-control-refine:p14-pm1-screen`:
+
+- run ID: `pm1_selector_screen_20261104_r1`;
+- root:
+  `/home/yaz80/wz_project/dc_project/kvzap_control_projection/runs/pm1_selector_screen_20261104_r1/`;
+- total log: `dc_shell.log` in that root;
+- manifest SHA-256:
+  `8de6194fca739bef2026e9f92a5fe23973a701ecaf4c0003283c0e74f3ebf983`;
+- frozen target-library SHA-256:
+  `5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d`.
+
+The initial `KVZAP_PM1_SCREEN_INPUT_PASS` marker is present, the pane and
+native DC process are live, and original-selector analysis has begun. No side
+PASS, overall PASS, outer exit or mapped result is claimed at launch.
+Generated SV size is not area evidence. Acceptance requires both side PASS
+markers, the overall PASS, `KVZAP_PM1_SELECTOR_SCREEN_OUTER_EXIT=0`, immutable
+manifest/hashes and the native reports. Per the long-run handoff rule, do not
+poll or restart; await user notification before result inspection.
 
 ## Boundaries
 
