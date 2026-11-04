@@ -1084,6 +1084,16 @@ side exits, paired/outer markers, copied hashes and all native reports.
 
 ## Current new-conversation prompt
 
+The compact-table read-port inventory and selected RD1 plan are recorded in
+[`dc_compact_membership_read_sharing_plan_20261104.md`](dc_compact_membership_read_sharing_plan_20261104.md)
+and its CSV companion.  Six member readers and two suffix readers are
+identified.  M/S/O requests are mutually exclusive within one bank, while
+global serialization is not assumed.  RD1 selects per-bank sharing of only
+their 79-bit member read; C/F/B validation and 80-bit suffix reads remain
+independent.  Production M->C equality and S->B exclusive wiring do not justify
+removing generic wrapper checks.  This batch is audit/plan only; no RTL or
+running synthesis input was changed.
+
 A read-only mapped attribution of the completed compact wrapper is recorded in
 [`dc_compact_wrapper_hotspot_attribution_20261104.md`](dc_compact_wrapper_hotspot_attribution_20261104.md).
 The two membership tables retain exactly 366,336 sequential cells and about
