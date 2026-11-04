@@ -93,6 +93,14 @@ finds the 36,720-bit allocated-line selector as the largest measured state/cone
 and a global-WNS path, then selects an exact-priority realization screen as
 PM1. It changes no RTL, proxy boundary, constraint or synthesis input.
 
+For the authorized PM1 implementation and isolated selector screen, continue
+with `dc_pm1_exact_priority_selector_implementation_20261104.md`. The candidate
+retains all 36,720 bits and exact same-cycle lowest-index semantics, and passes
+bounded exhaustive plus full-geometry directed/random checks. It is not wired
+into production Page Manager. The two generated combinational selector tops
+are only small-synthesis inputs; source size is not mapped area and a launch
+is not a result.
+
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped
 reference counts, separates membership sequential cells from overlapping

@@ -1110,6 +1110,17 @@ retaining all bits and parent control. PM2 separately derives stored
 layer/head from the 288-slot coordinate and directly indexes payload-durable
 validation. P0 changes no RTL and launches no compile or complete DC.
 
+The user-authorized PM1 isolated candidate is implemented and locally
+verified; see
+[`dc_pm1_exact_priority_selector_implementation_20261104.md`](dc_pm1_exact_priority_selector_implementation_20261104.md).
+It retains all 36,720 line bits and exact lowest-index/current-cycle behavior,
+using 574 fixed 64-entry banks with a zero-padded final bank. A 13-bit
+partial-bank miter passes all 8,192 vectors; full geometry passes zero/all-one,
+all 36,720 one-hot choices, selected bank/tail boundaries and 1,024 random
+dense/sparse patterns. Production Page Manager is unchanged. Two isolated SV
+tops are frozen for same-fair-v1 small synthesis, but generated source size is
+not mapped-area evidence and no remote result is claimed at this checkpoint.
+
 The compact-table read-port inventory and selected RD1 plan are recorded in
 [`dc_compact_membership_read_sharing_plan_20261104.md`](dc_compact_membership_read_sharing_plan_20261104.md)
 and its CSV companion.  Six member readers and two suffix readers are
