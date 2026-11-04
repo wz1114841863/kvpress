@@ -81,6 +81,10 @@ The authorized candidate implementation, local equivalence evidence and
 isolated read-network screening status are tracked in
 `dc_rd1_member_read_sharing_implementation_20261104.md`. It does not replace
 the pending full-driver-repair result or establish complete DC/PPA closure.
+The completed isolated screen records a 62.943% combinational-area reduction
+for the M/S/O reader with a 0.056220-ns local path-delay increase; production
+wrapper integration, storage/clock cost and complete Route-A timing remain
+separate gates.
 
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped

@@ -1087,12 +1087,15 @@ side exits, paired/outer markers, copied hashes and all native reports.
 RD1 is implemented as a bounded candidate; see
 [`dc_rd1_member_read_sharing_implementation_20261104.md`](dc_rd1_member_read_sharing_implementation_20261104.md).
 The per-bank M/S/O member-record helper passes the 6,912-address local
-equivalence miter and compiles. Existing wrapper materialization/publication
-tests are running locally. Isolated original/shared read-network synthesis
-is active in `kvzap-control-refine:p12-rd1-screen`, run
-`rd1_read_network_screen_20261104_r1`; its 13 input/script/source hashes match
-the local bundle. Await user completion notification before result inspection.
-Screening and integration acceptance remain pending.
+equivalence miter, compiles, and passes the existing 9/9 focused wrapper
+materialization/publication tests. Isolated original/shared read-network
+synthesis run `rd1_read_network_screen_20261104_r1` completed with all exit/PASS
+markers and native artifacts. Under identical fair-v1 screen constraints,
+combinational area falls 342,379.460369 -> 126,874.772938 (-62.943%), while
+worst path arrival rises 0.578519 -> 0.634739 ns (+0.056220 ns); both retain
+positive slack, zero TNS and zero violating paths. This accepts RD1 as an
+isolated area-positive candidate with a small local delay cost. Whole-wrapper
+integration acceptance remains pending.
 No new complete DC run is launched, and the active entry_id repair inputs
 and process are untouched.
 
