@@ -1128,6 +1128,15 @@ timing report exists, and the banked candidate was never attempted. The failed
 root is preserved and the tmux window/process are gone. Do not repeat the
 identical harness; first prepare a matched, mapping-robust successor screen.
 
+That mapping-robust successor is now locally prepared; see
+[`dc_pm1_registered_selector_successor_20261104.md`](dc_pm1_registered_selector_successor_20261104.md).
+It leaves both r1 selector bodies byte-identical, adds the same 36,720-bit Q
+state and 17-bit D result registers to both sides, and runs each side in a
+separate DC process. A bounded registered miter passes 1/1 across 1,344 shift
+cycles and both full-width wrapped inputs pass Verilator lint. The matched
+sequential boundary is not PM1 savings. No remote r2 result exists at this
+checkpoint.
+
 The compact-table read-port inventory and selected RD1 plan are recorded in
 [`dc_compact_membership_read_sharing_plan_20261104.md`](dc_compact_membership_read_sharing_plan_20261104.md)
 and its CSV companion.  Six member readers and two suffix readers are

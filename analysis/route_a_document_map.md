@@ -102,6 +102,11 @@ are only small-synthesis inputs; source size is not mapped area and a launch
 is not a result. The first screen `pm1_selector_screen_20261104_r1` later
 failed with a native DC `SIGSEGV` during Pass-1 mapping of the original side;
 the candidate side was never attempted and no area/timing result exists.
+The bounded successor is
+`dc_pm1_registered_selector_successor_20261104.md`: it preserves both child
+selector bodies, gives both the same Q/D register boundaries, isolates the two
+DC processes and requires identical sequential counts. It is still an
+isolated selector experiment, not production Page Manager integration.
 
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped
