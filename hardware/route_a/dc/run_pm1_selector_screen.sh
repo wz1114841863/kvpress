@@ -53,4 +53,9 @@ with (root / 'manifest.json').open('x') as f:
 print('KVZAP_PM1_SCREEN_INPUT_PASS', flush=True)
 PY
 cd "$root"
-exec "$KVZAP_DC_SHELL" -f "$root/scripts/screen_pm1_selector.tcl"
+set +e
+"$KVZAP_DC_SHELL" -f "$root/scripts/screen_pm1_selector.tcl"
+code=$?
+set -e
+echo "KVZAP_PM1_SELECTOR_SCREEN_OUTER_EXIT=$code"
+exit "$code"

@@ -65,8 +65,8 @@ other Route-A logic.
 
 At this implementation checkpoint, no remote DC result exists. Generated SV
 size is not area evidence. Acceptance requires both side PASS markers, the
-overall PASS and outer exit zero, immutable manifest/hashes and the native
-reports.
+overall PASS, `KVZAP_PM1_SELECTOR_SCREEN_OUTER_EXIT=0`, immutable
+manifest/hashes and the native reports.
 
 ## Boundaries
 
