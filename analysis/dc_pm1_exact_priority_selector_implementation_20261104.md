@@ -63,7 +63,7 @@ QoR, area, timing, constraint and design-check reports. The screen
 contains no registers, Page Manager state machine, descriptor service or
 other Route-A logic.
 
-## Active isolated synthesis run
+## Failed isolated synthesis run
 
 The prepared package was launched from source commit
 `8aa203145373f02dda878795924b521f54d42f58` in remote tmux
@@ -78,13 +78,32 @@ The prepared package was launched from source commit
 - frozen target-library SHA-256:
   `5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d`.
 
-The initial `KVZAP_PM1_SCREEN_INPUT_PASS` marker is present, the pane and
-native DC process are live, and original-selector analysis has begun. No side
-PASS, overall PASS, outer exit or mapped result is claimed at launch.
-Generated SV size is not area evidence. Acceptance requires both side PASS
-markers, the overall PASS, `KVZAP_PM1_SELECTOR_SCREEN_OUTER_EXIT=0`, immutable
-manifest/hashes and the native reports. Per the long-run handoff rule, do not
-poll or restart; await user notification before result inspection.
+The run failed before producing a mapped side. Input closure passed and the
+recorded manifest, input, script and library hashes recheck exactly. DC
+successfully analyzed, elaborated and linked `pm1_original_selector`, loaded
+the frozen library, and applied the unchanged fair-v1 constraints. It then
+entered `Beginning Pass 1 Mapping` and the native DC process terminated with
+`SIGSEGV` while processing the original side. The outer marker is
+`KVZAP_PM1_SELECTOR_SCREEN_OUTER_EXIT=139`.
+
+There is no original-side PASS, banked-side PASS, overall PASS, DDC, mapped
+HDL, area, QoR or timing report. The banked candidate was never attempted, so
+this run says nothing about PM1 area or delay. The tmux window and synthesis
+process are gone; the failed root and log are preserved.
+
+This is a native mapping-process failure, not a Tcl catch, input-hash failure,
+analyze/link error or reported constraint error. Inspection found no core file
+or kernel OOM record; the server had about 45 GiB available memory and 589 GiB
+free storage after failure. These post-failure observations do not establish
+peak usage. The most likely trigger is the old DC release mapping the isolated
+36,720-primary-input flat priority cascade: the original generated input has
+36,718 ternary operators and reaches mapping as one combinational top. This is
+a bounded diagnosis, not a proved Synopsys root cause.
+
+Do not repeat this identical run. A successor screen must first change only
+the measurement harness representation so DC can map both semantics under
+matched constraints; it must not change the original lowest-index function or
+claim the existing Page Manager cone as a new PM1 result.
 
 ## Boundaries
 

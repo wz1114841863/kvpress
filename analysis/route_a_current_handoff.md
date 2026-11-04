@@ -1120,11 +1120,13 @@ all 36,720 one-hot choices, selected bank/tail boundaries and 1,024 random
 dense/sparse patterns. Production Page Manager is unchanged. Two isolated SV
 tops are frozen for same-fair-v1 small synthesis, but generated source size is
 not mapped-area evidence. The isolated run
-`pm1_selector_screen_20261104_r1` is active in
-`kvzap-control-refine:p14-pm1-screen` from source commit `8aa2031`; its initial
-input-closure marker passes and original-selector analysis has begun. There is
-no side/overall PASS or result at launch. Await user notification before
-inspecting completion; do not restart or poll this run.
+`pm1_selector_screen_20261104_r1` from source commit `8aa2031` failed in native
+DC Pass-1 mapping of the original side with `SIGSEGV` and outer exit 139.
+Analyze, elaborate, link, library loading, fair-v1 constraint application and
+all input/hash checks passed first. No side PASS, DDC, mapped HDL, area or
+timing report exists, and the banked candidate was never attempted. The failed
+root is preserved and the tmux window/process are gone. Do not repeat the
+identical harness; first prepare a matched, mapping-robust successor screen.
 
 The compact-table read-port inventory and selected RD1 plan are recorded in
 [`dc_compact_membership_read_sharing_plan_20261104.md`](dc_compact_membership_read_sharing_plan_20261104.md)
