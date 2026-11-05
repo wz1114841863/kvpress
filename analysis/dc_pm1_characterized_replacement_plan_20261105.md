@@ -24,10 +24,12 @@ No `-force` or pin map is allowed: any port mismatch must fail.
 
 ## Input generation
 
-`EmitPM1PageManagerChirrtl` emits only the candidate child CHIRRTL from the
-frozen full control-projection parameters.  Its desired name differs only to
-allow both old mapped and new unmapped designs to coexist in one DC session.
-It does not select PM1 in the production Route-A top.
+After the rejected standalone p18 attempt, `EmitPM1PageManagerChirrtl` emits
+the complete real-parent control-projection CHIRRTL with only the candidate
+Page Manager selector enabled.  The contextually lowered child has exact
+144-to-144 port identity with the frozen child.  Its desired child name differs
+only to allow both old mapped and new unmapped designs to coexist in one DC
+session.  Production/default construction does not select PM1.
 
 `run_pm1_page_manager_successor_generation.sh` performs CHIRRTL emission,
 split firtool lowering, exact normalized port-header comparison and immutable
@@ -36,6 +38,9 @@ hash capture.  It performs no DC action.
 The preparation revision passes Java 21 `Test / compile` and the PM1-enabled
 real Page Manager reclaim suite 5/5 after the distinct candidate module name
 was introduced.
+
+The executable screen is now implemented and statically checked; see
+[`dc_pm1_characterized_replacement_implementation_20261105.md`](dc_pm1_characterized_replacement_implementation_20261105.md).
 
 ## Evidence boundary
 

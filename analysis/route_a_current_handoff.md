@@ -1269,6 +1269,14 @@ characterized saved-DDC replacement screen.  No DC ran and no mapped-area or
 timing conclusion follows.  RD1 DC remained independently active in
 `p16-rd1-dc` at inspection time.
 
+The characterized replacement runner and Tcl are now implemented and
+statically checked; see
+[`dc_pm1_characterized_replacement_implementation_20261105.md`](dc_pm1_characterized_replacement_implementation_20261105.md).
+They pin the accepted DDC and p19 child hashes, use fail-closed compatible
+relinking, characterize timing/constraints/connections, compile only the PM1
+child, and require 62,000 registers plus the R5 proxy before and after mapping.
+The accepted top is not recompiled.
+
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
 in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,
