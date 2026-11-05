@@ -1223,6 +1223,14 @@ enabled passes 5/5 reclaim tests.  No mapped comparison is claimed; the next
 gate is a read-only saved-DDC replacement-readiness probe rather than another
 flat-selector synthesis rerun.
 
+The read-only saved-DDC readiness gate now passes; see
+[`dc_pm1_saved_ddc_replacement_readiness_20261105.md`](dc_pm1_saved_ddc_replacement_readiness_20261105.md).
+The accepted mapped top retains exactly one hierarchical
+`route_a_page_manager` design/instance with 4,289 boundary pins, all 36,720
+allocated-line registers and the 135,331-cell selector fanin boundary.  This
+authorizes preparation of a characterized bottom-up PM1 child-replacement
+screen, not a mapped-benefit claim or full-top acceptance.
+
 The compact-membership DC run has completed.  The current result authority is
 [`dc_m2_p3_wrapper_compact_membership_result_20261104.md`](dc_m2_p3_wrapper_compact_membership_result_20261104.md).
 Both side exits, paired/outer markers, hashes and native artifacts pass.

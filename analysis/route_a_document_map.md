@@ -130,6 +130,13 @@ and passes 5/5 real reclaim tests.  It deliberately defers mapped claims until
 a saved-DDC replacement-readiness probe or later complete paired successor can
 preserve a fair comparison context.
 
+The saved-DDC prerequisite is closed by
+`dc_pm1_saved_ddc_replacement_readiness_20261105.md`.  Its read-only probe
+finds one independently addressable, unique, hierarchical mapped Page Manager
+and recovers the exact allocated-line and reclaim-line boundary.  It permits a
+future characterized bottom-up replacement screen but is not mapped candidate
+evidence or a substitute for a complete top compile.
+
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped
 reference counts, separates membership sequential cells from overlapping
