@@ -1239,6 +1239,16 @@ only the candidate child.  Preparation compile and PM1 reclaim tests pass
 5/5.  This remains a provisional bottom-up screen pending candidate input
 generation and later full-top confirmation.
 
+Candidate-child generation is now active in
+`kvzap-control-refine:p18-pm1-child-freeze`; see
+[`dc_pm1_page_manager_successor_generation_20261105.md`](dc_pm1_page_manager_successor_generation_20261105.md).
+The frozen inputs were verified byte-identical before launch, and the task is
+currently in the CHIRRTL emitter.  This task invokes no DC.  Do not begin the
+saved-DDC characterized replacement screen until p18 exits zero and its port,
+artifact and hash closure is independently checked.  The separate RD1 paired
+DC remains active in `kvzap-control-refine:p16-rd1-dc` and must not be
+disturbed.
+
 The compact-membership DC run has completed.  The current result authority is
 [`dc_m2_p3_wrapper_compact_membership_result_20261104.md`](dc_m2_p3_wrapper_compact_membership_result_20261104.md).
 Both side exits, paired/outer markers, hashes and native artifacts pass.
