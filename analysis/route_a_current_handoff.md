@@ -1138,9 +1138,14 @@ sequential boundary is not PM1 savings. No remote r2 result exists at this
 checkpoint. The versioned r2 run was subsequently launched from commit
 `9e6632b` in `kvzap-control-refine:p14-pm1-reg-r2` with run ID
 `pm1_registered_selector_screen_20261104_r2`. Input closure passes and the
-original-side independent DC process is live; no side/total PASS or mapped
-result exists at launch. Await user notification before inspection and do not
-restart or poll the run.
+original side again segfaulted in Pass-1 mapping of the unchanged flat child
+after analyze/link/constraint and the 36,737-register precompile gate; side
+exit is 139. The isolated banked process completed with side PASS/exit zero and
+native artifacts, but the combined run correctly ended FAIL/outer exit 1.
+There is no matched area/timing comparison. Banked-only partial evidence is
+66,640.727301 combinational area with precise setup slack +0.000505 ns; its 28
+hold violations are on the artificial shift-state path. Preserve r2 and do not
+repeat or relabel it as PM1 acceptance.
 
 The compact-table read-port inventory and selected RD1 plan are recorded in
 [`dc_compact_membership_read_sharing_plan_20261104.md`](dc_compact_membership_read_sharing_plan_20261104.md)

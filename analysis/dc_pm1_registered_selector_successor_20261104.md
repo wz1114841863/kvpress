@@ -68,7 +68,7 @@ acceptance additionally requires the combined PASS/outer-zero markers and
 native DDC, mapped HDL, design checks, QoR, hierarchy area, precise timing and
 constraint reports for both sides.
 
-## Active remote screen
+## Completed remote screen disposition
 
 The successor was launched from commit
 `9e6632ba3082e01728e098ff7133ad9cd20b461b` in remote tmux
@@ -84,12 +84,44 @@ The successor was launched from commit
 - frozen target-library SHA-256:
   `5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d`.
 
-Initial `KVZAP_PM1_REGISTERED_SCREEN_INPUT_PASS` is present. The pane and
-original-side DC process are live and original analysis has begun. There is no
-side PASS, total PASS, outer exit, area or timing result at launch. Generated
-source size, Verilator behavior and local equivalence are not mapped-area or
-timing evidence. Do not poll or restart; await user notification before
-completion inspection.
+Input closure passed, but the paired screen did **not** complete normally:
+
+- original analyzed, elaborated, linked, applied fair-v1 constraints and
+  passed the exact 36,737-register precompile gate, then native DC again
+  segfaulted in Pass-1 mapping while processing child
+  `pm1_original_selector`; side outer exit is 139 and no original mapped
+  artifact/report exists;
+- because the runner uses independent processes, banked continued and emitted
+  side PASS, side outer exit zero, DDC, mapped HDL and all native reports;
+- combined markers are `KVZAP_PM1_REGISTERED_SELECTOR_SCREEN_FAIL` and
+  `KVZAP_PM1_REGISTERED_SELECTOR_SCREEN_OUTER_EXIT=1`;
+- the tmux window and run processes are gone.
+
+Thus r2 confirms that adding matched Q/D boundaries does not avoid the DC 2018
+mapping crash for the original flat child. It also confirms the banked child
+is independently mappable. The run is not a matched PM1 comparison and cannot
+establish an area or timing improvement.
+
+The banked-only native result is retained as partial diagnostic evidence:
+
+- 36,737 sequential cells / 98,999.710669 sequential area, matching the
+  harness contract;
+- 96,132 combinational cells / 66,640.727301 combinational area;
+- selector-child area 64,849.6793;
+- precise worst setup slack +0.000505 ns, zero setup TNS/violating paths;
+- 28 hold violations, hold WNS about -0.01 ns and hold TNS -0.14 ns, all
+  reported at artificial shift-state endpoints rather than selector result
+  registers.
+
+Banked artifact identities include DDC SHA-256
+`f3dc759e6d80a3807626434366ddc7308e396f24bd26819ff1e25a9a5792f739`,
+mapped-HDL SHA-256
+`195cc6230d3f3eb1003b0eac04daf657cb15bd5835779289269e267b1f62d347`,
+and area/QoR/timing report SHA-256 values
+`0c2ed31dfd47d7c40c7bd35a302c0c3dee79639e70081b15e68ff5b138cf5412`,
+`2ad7f3f70b2135c14e8359c0136f79a86b7f2adcf688df7744294e0118beace7`,
+and `604c4c8720cf9eda4632b45a20921f1ff9fcad1b50f105479474d6c7b9201e19`.
+Do not restart or relabel this failed paired run.
 
 ## Boundaries
 

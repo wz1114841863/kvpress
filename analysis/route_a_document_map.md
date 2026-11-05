@@ -107,6 +107,10 @@ The bounded successor is
 selector bodies, gives both the same Q/D register boundaries, isolates the two
 DC processes and requires identical sequential counts. It is still an
 isolated selector experiment, not production Page Manager integration.
+Its completed r2 run is partial only: the unchanged original child again
+segfaults in DC Pass-1 mapping, while the independently launched banked side
+maps and emits native reports. The combined run fails and provides no matched
+PM1 area/timing comparison.
 
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped
