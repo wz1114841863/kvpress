@@ -3643,7 +3643,8 @@ final class RouteAPageManager(
   externalizeDescriptorBacking: Boolean = false,
   bankAllocatedLineSelector: Boolean = false,
 ) extends Module {
-  override def desiredName: String = "route_a_page_manager"
+  override def desiredName: String =
+    if (bankAllocatedLineSelector) "route_a_page_manager_pm1" else "route_a_page_manager"
 
   val io = IO(new Bundle {
     val mem_init_done = Input(Bool())

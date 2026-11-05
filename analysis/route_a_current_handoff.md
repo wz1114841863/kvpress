@@ -1231,6 +1231,14 @@ allocated-line registers and the 135,331-cell selector fanin boundary.  This
 authorizes preparation of a characterized bottom-up PM1 child-replacement
 screen, not a mapped-benefit claim or full-top acceptance.
 
+The selected controlled screen is specified in
+[`dc_pm1_characterized_replacement_plan_20261105.md`](dc_pm1_characterized_replacement_plan_20261105.md).
+It emits a port-identical full-profile `route_a_page_manager_pm1`, relinks only
+the unique saved-DDC child, characterizes the real top environment and maps
+only the candidate child.  Preparation compile and PM1 reclaim tests pass
+5/5.  This remains a provisional bottom-up screen pending candidate input
+generation and later full-top confirmation.
+
 The compact-membership DC run has completed.  The current result authority is
 [`dc_m2_p3_wrapper_compact_membership_result_20261104.md`](dc_m2_p3_wrapper_compact_membership_result_20261104.md).
 Both side exits, paired/outer markers, hashes and native artifacts pass.
