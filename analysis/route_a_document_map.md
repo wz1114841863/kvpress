@@ -169,6 +169,9 @@ The bounded no-remap closure is implemented in
 accepted and r3 mapped DDCs, relinks without `-force`, regenerates reports and
 requires clean scalar summary/area/timing/lint evidence.  It performs no
 analyze, characterize or compile.
+Its authorized remote execution is tracked in
+`dc_pm1_saved_ddc_validation_launch_20261106.md`; input/stack markers are only
+launch evidence until native and postcheck PASS plus both exits are verified.
 
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped
