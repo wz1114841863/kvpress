@@ -172,6 +172,11 @@ analyze, characterize or compile.
 Its authorized remote execution is tracked in
 `dc_pm1_saved_ddc_validation_launch_20261106.md`; input/stack markers are only
 launch evidence until native and postcheck PASS plus both exits are verified.
+The completed disposition is
+`dc_pm1_saved_ddc_validation_result_20261106.md`: all clean-summary and
+artifact gates pass in about 9.7 CPU minutes and reproduce r3 exactly.  PM1 is
+accepted as a small positive bottom-up area screen, not integrated successor
+or timing-closure evidence.
 
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped

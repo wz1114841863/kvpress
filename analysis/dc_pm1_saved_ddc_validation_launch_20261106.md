@@ -57,3 +57,11 @@ This is launch evidence only.  Completion requires native PASS, postcheck PASS,
 both outer exits zero, no native Error/Fatal line, exact non-empty summary,
 complete reports and a matching `evidence.json`.  It remains bottom-up
 logic-synthesis evidence, not integrated successor DC, PPA or system benefit.
+
+## Completion update
+
+The short validation completes in about 9.7 CPU minutes with native PASS,
+postcheck PASS, both exits zero, an error-free native log, complete scalar
+summary and matching structured evidence.  It exactly reproduces the r3
+area/timing/lint values without remapping.  See
+[`dc_pm1_saved_ddc_validation_result_20261106.md`](dc_pm1_saved_ddc_validation_result_20261106.md).

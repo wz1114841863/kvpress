@@ -1361,14 +1361,16 @@ relink and reporting, and validates scalar counts, area, timing and lint.  It
 cannot analyze, characterize, compile or overwrite mapped artifacts.  Launch
 it in a fresh result root before considering any 3.3-hour clean replay.
 
-The saved-DDC-only validation is now active; see
-[`dc_pm1_saved_ddc_validation_launch_20261106.md`](dc_pm1_saved_ddc_validation_launch_20261106.md).
-Run `pm1_saved_ddc_validation_20261106_r1` is in independent tmux window
-`kvzap-control-refine:p24-pm1-saved-ddc`.  Immutable input hashes, input PASS
-and unlimited-stack PASS are present, and native DC is reading the accepted
-DDC.  The repaired full-screen postcheck rejects the old r3 root as expected.
-RD1 remains live and untouched in `p16-rd1-dc`.  Wait for user-reported
-completion before checking native/postcheck PASS, both exits and evidence.
+The saved-DDC-only validation has completed successfully; see
+[`dc_pm1_saved_ddc_validation_result_20261106.md`](dc_pm1_saved_ddc_validation_result_20261106.md).
+Native PASS, postcheck PASS and both exit-zero markers close with no native
+error, complete scalar summary and exact r3 area/timing/lint reproduction in
+about 9.7 CPU minutes.  This closes PM1 at its bottom-up diagnostic tier:
+4.201% Page Manager area and 0.473% relinked-top area reduction, unchanged
+setup WNS, one small hold regression and four additional lint warnings.  No
+repeat 3.3-hour screen is needed solely for the stale summary.  Complete
+integrated same-fair-v1 successor DC remains a later production-acceptance
+gate.  RD1 remained live and untouched in `p16-rd1-dc`.
 
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
