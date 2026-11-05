@@ -52,3 +52,16 @@ This implementation does not alter RTL, constraints, clock period, state,
 parent control, array-proxy boundaries or accepted DDC content.  A successful
 run will remain a bottom-up diagnostic screen, not final full-top or PPA
 evidence.
+
+## Stack-guard successor
+
+The first execution exposed one runner omission: unlike the accepted full DC
+runner, it entered DC with an 8,192 KiB stack and failed with explicit
+`VER-30` stack overflow while analyzing the 146,880-bit release reduction.
+The successor now raises the stack limit to unlimited, fails before DC if that
+cannot be established, and emits
+`KVZAP_PM1_CHARACTERIZED_STACK_PASS stack_kb=unlimited`.  No synthesis input,
+Tcl command, constraint or acceptance gate changes with this correction.
+The r2 runner SHA-256 is
+`adb68b432b465019018ac00809f2ece6503a2cdffa30616064e7105bd2c66b5e`;
+the Tcl SHA-256 remains unchanged.

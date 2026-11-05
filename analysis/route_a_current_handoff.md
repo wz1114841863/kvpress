@@ -1288,6 +1288,11 @@ timing result exists.  Preserve r1; the bounded successor is a new-root rerun
 with only the established unlimited-stack guard added.  RD1 DC remained active
 in `p16-rd1-dc` at inspection time.
 
+The bounded r2 correction now adds a fail-closed unlimited-stack guard before
+`dc_shell`.  All RTL, DDC, candidate, library, constraint, relink,
+characterization, 62,000-register and proxy gates remain unchanged.  r1 is
+preserved and must not be overwritten.
+
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
 in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,

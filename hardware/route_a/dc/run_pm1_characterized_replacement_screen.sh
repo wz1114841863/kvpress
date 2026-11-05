@@ -89,6 +89,16 @@ with (root / "input_manifest.json").open("x") as handle:
 print("KVZAP_PM1_CHARACTERIZED_INPUT_PASS", flush=True)
 PY
 
+if ! ulimit -s unlimited 2>/dev/null; then
+  echo "unable to raise DC stack limit to unlimited" >&2
+  exit 7
+fi
+[[ $(ulimit -s) == unlimited ]] || {
+  echo "DC stack limit is not unlimited" >&2
+  exit 7
+}
+echo "KVZAP_PM1_CHARACTERIZED_STACK_PASS stack_kb=unlimited"
+
 set +e
 "$KVZAP_DC_SHELL" -f "$script_dir/screen_pm1_characterized_replacement.tcl" \
   2>&1 | tee "$output_root/dc_shell.log"
