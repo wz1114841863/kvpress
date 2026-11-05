@@ -53,3 +53,11 @@ the input/source hashes, paired port-header identity and output hashes in
 No DC invocation is part of this job.  A functional/emission pass supplies
 inputs for the separately checked RD2 small-synthesis screen.  It does not
 establish RD2 area/timing or authorize production integration.
+
+## Completed result
+
+The two tests, paired emission and postcheck pass with both exits zero.  All
+133 input hashes and both SV hashes independently recheck; paired port headers
+are identical.  See
+[`dc_rd2_remote_validation_result_20261106.md`](dc_rd2_remote_validation_result_20261106.md).
+No RD2 synthesis was run by this functional/emission job.

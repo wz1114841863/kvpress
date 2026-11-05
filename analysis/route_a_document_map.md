@@ -94,6 +94,10 @@ and one C++ compiler job while retaining the complete tests and geometry.
 The corrected Java-11 remote launch is tracked in
 `dc_rd2_remote_validation_launch_20261106.md`; preflight and sbt startup are
 only liveness evidence until the full test/emitter/postcheck gates pass.
+Finish with `dc_rd2_remote_validation_result_20261106.md`: both tests, paired
+emission and postcheck pass, with independently verified source/output hashes
+and paired ports.  This supplies isolated RD2 small-synthesis inputs; it is
+not an RD2 mapped-area or production-integration result.
 
 For compact-table read consumers, legal concurrency and the selected RD1
 change, read `dc_compact_membership_read_sharing_plan_20261104.md` and

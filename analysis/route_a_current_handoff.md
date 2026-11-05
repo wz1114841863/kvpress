@@ -1439,14 +1439,16 @@ The first remote p25 attempt stopped before JVM startup because the installed
 Java 21 binary requires a newer glibc.  Its artifacts/log remain preserved.
 Use the proven native Java 11 runtime, as in accepted p19, and a new root for
 the retry.  This environment failure provides no RD2 test or synthesis result.
-The corrected remote run is now active; see
-[`dc_rd2_remote_validation_launch_20261106.md`](dc_rd2_remote_validation_launch_20261106.md).
-It runs in `kvzap-control-refine:p26-rd2-test-emit-r2`, with immutable source
-archive `48f8cf3` extracted under a new root.  Native Java 11 startup,
-preflight/input/stack markers and isolated sbt project loading succeed.
-Wait for user-reported completion and require both exits zero, the two-case
-test PASS, paired-emitter PASS, postcheck PASS and output hash/port closure.
-The job does not start DC; RD1 remains independently active.
+The corrected remote run has completed successfully; see
+[`dc_rd2_remote_validation_result_20261106.md`](dc_rd2_remote_validation_result_20261106.md).
+The two-case suite passes at 4 x 8 and 36 x 64, paired RTL emission and
+postcheck pass, and both exits are zero.  All 133 source hashes, both emitted
+SV hashes and exact paired port headers independently recheck.  The accepted
+inputs remain under `artifacts/rd2_remote_validation_48f8cf3_p26_r2` on the EDA
+server.  RD2 has no mapped result yet; freeze these inputs for an independent
+small-synthesis comparison before production integration.  RD1 has also
+completed and is recorded separately above.  No KVZap test/DC process remains
+active at this snapshot; no new synthesis is launched by the inspection.
 
 ## Superseded pre-DC prompt seed (historical)
 
