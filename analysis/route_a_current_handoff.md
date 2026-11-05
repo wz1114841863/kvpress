@@ -1249,6 +1249,12 @@ artifact and hash closure is independently checked.  The separate RD1 paired
 DC remains active in `kvzap-control-refine:p16-rd1-dc` and must not be
 disturbed.
 
+The two failed standalone PM1 screens were removed from the formal remote
+`runs/` namespace and retained under the recoverable failure archive described
+in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,
+accepted or older successful output was moved.  This was namespace cleanup
+only and did not reclaim disk capacity.
+
 The compact-membership DC run has completed.  The current result authority is
 [`dc_m2_p3_wrapper_compact_membership_result_20261104.md`](dc_m2_p3_wrapper_compact_membership_result_20261104.md).
 Both side exits, paired/outer markers, hashes and native artifacts pass.
