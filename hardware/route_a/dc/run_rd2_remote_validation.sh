@@ -12,10 +12,11 @@ expected_sha=$3
 platform=${KVZAP_CHISEL_PLATFORM:-/home/yaz80/wz_project/chisel_platform}
 [[ ! -e $root ]] || { echo "refusing to overwrite $root" >&2; exit 3; }
 [[ -f $archive && -x $platform/bin/chisel-sbt ]]
-export JAVA_HOME="$platform/toolchains/java-21-openjdk-amd64"
+export JAVA_HOME="${KVZAP_RD2_JAVA_HOME:-/usr/lib/jvm/java-11-openjdk-amd64}"
 export CHISEL_FIRTOOL_PATH=/home/yaz80/.cache/llvm-firtool/1.158.0/bin
 export _JAVA_OPTIONS="-Xmx4g -XX:ActiveProcessorCount=2"
 [[ -x $JAVA_HOME/bin/java && -x $CHISEL_FIRTOOL_PATH/firtool ]]
+"$JAVA_HOME/bin/java" -version
 python3 - "$archive" "$expected_sha" <<'PY'
 import hashlib
 from pathlib import Path

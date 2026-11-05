@@ -1431,6 +1431,10 @@ snapshot; see
 C++ build jobs are limited to one with two Verilation jobs; the helper,
 stimulus and full geometry are unchanged.  Source hashing, two-case XML test
 acceptance and exact paired-port/output-hash checks precede any RD2 DC.
+The first remote p25 attempt stopped before JVM startup because the installed
+Java 21 binary requires a newer glibc.  Its artifacts/log remain preserved.
+Use the proven native Java 11 runtime, as in accepted p19, and a new root for
+the retry.  This environment failure provides no RD2 test or synthesis result.
 
 ## Superseded pre-DC prompt seed (historical)
 
