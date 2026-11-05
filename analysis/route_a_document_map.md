@@ -92,6 +92,11 @@ unchanged Full-KV source and raw state, 5/5 proxy closure, archive hash and the
 retained entry_id policy.  The freeze authorizes one same-fair-v1 paired run;
 it is not a mapped-area or timing result.
 
+The separately authorized complete paired-DC launch is recorded in
+`dc_rd1_full_paired_dc_launch_20261105.md`.  Its active-run markers and final
+native reports must be checked after user-reported completion; launch
+liveness is not a result.
+
 For the next independent Page Manager hotspot diagnosis, read
 `dc_page_manager_p0_diagnosis_20261104.md` and
 `dc_page_manager_p0_state_audit_20261104.csv`. The read-only saved-DDC query

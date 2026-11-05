@@ -1206,6 +1206,14 @@ raw state and 5/5 proxy closure.  Its paired archive SHA-256 is
 The accepted entry_id preservation policy remains enabled.  This is an input
 freeze only; no complete RD1 mapped-area or timing result exists yet.
 
+The authorized complete RD1 paired DC is now active; see
+[`dc_rd1_full_paired_dc_launch_20261105.md`](dc_rd1_full_paired_dc_launch_20261105.md).
+Run `dc_feasibility_fair_rd1_shared_20261105_r1` is in tmux
+`kvzap-control-refine:p16-rd1-dc` with total log
+`rd1_shared_p16_dc_20261105.log`.  Launch preflight, 5-boundary proxy evidence,
+Full-KV link and fair-v1 constraint application pass.  This is not yet a
+mapped result; wait for user notification before inspecting completion.
+
 The compact-membership DC run has completed.  The current result authority is
 [`dc_m2_p3_wrapper_compact_membership_result_20261104.md`](dc_m2_p3_wrapper_compact_membership_result_20261104.md).
 Both side exits, paired/outer markers, hashes and native artifacts pass.
