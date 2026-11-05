@@ -1304,6 +1304,15 @@ realization stages.  Do not relax the gate before measuring the legacy raw
 child under the same precompile path or identifying the exact two optimized
 bits.  RD1 DC remained active in `p16-rd1-dc` at inspection time.
 
+Source-level state extraction now proves the frozen legacy and PM1 children
+have identical register declarations, widths and nonblocking targets: 628,917
+objects and 1,678,810 raw bits on both sides, with no additions, removals or
+width changes.  The bounded same-layer DC diagnosis is specified in
+[`dc_pm1_legacy_precompile_count_probe_20261105.md`](dc_pm1_legacy_precompile_count_probe_20261105.md).
+It uniquely renames the frozen legacy module, performs only unlimited-stack
+analyze/elaborate/link, and requires 62,002 precompile registers plus one R5
+proxy.  Do not change the replacement gate until this probe passes.
+
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
 in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,
