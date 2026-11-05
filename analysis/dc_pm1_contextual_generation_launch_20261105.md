@@ -53,3 +53,12 @@ Acceptance requires all of the following after completion:
 This launch is not mapped-area, timing, PPA or hardware-benefit evidence.  A
 passing freeze would only authorize the separately controlled characterized
 saved-DDC replacement screen.
+
+## Completion update
+
+The run completed with outer exit zero, exact 144-to-144 child-port identity,
+48 split SystemVerilog files, both identity/success markers and fully
+rechecked hashes.  See
+[`dc_pm1_contextual_generation_result_20261105.md`](dc_pm1_contextual_generation_result_20261105.md).
+The generated child is accepted as replacement-screen input; no DC was started
+by this generation run.

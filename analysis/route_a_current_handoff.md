@@ -1260,14 +1260,14 @@ flag explicitly enabled.  Compile, contextual elaboration 1/1, PM1 reclaim
 5/5, script syntax and diff checks pass.  A new remote generation must still
 prove exact post-firtool child-port identity before replacement DC is allowed.
 
-That remote contextual generation is now active in
-`kvzap-control-refine:p19-pm1-context-freeze`; see
-[`dc_pm1_contextual_generation_launch_20261105.md`](dc_pm1_contextual_generation_launch_20261105.md).
-Inputs are frozen at `6dc1671` and were verified byte-identical before launch.
-The run is in full-parent CHIRRTL elaboration and invokes no DC.  Wait for exit
-zero, both identity/success markers, 144-port contextual identity and hash
-closure before starting any replacement screen.  RD1 DC remains independently
-active in `p16-rd1-dc`.
+The remote contextual generation has completed successfully; see
+[`dc_pm1_contextual_generation_result_20261105.md`](dc_pm1_contextual_generation_result_20261105.md).
+Inputs are frozen at `6dc1671`; p19 exits zero with both identity/success
+markers, 48 split files, exact 144-to-144 child-port identity and fully
+rechecked hashes.  The PM1 child is now an accepted input for the planned
+characterized saved-DDC replacement screen.  No DC ran and no mapped-area or
+timing conclusion follows.  RD1 DC remained independently active in
+`p16-rd1-dc` at inspection time.
 
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
