@@ -13,6 +13,13 @@ The accepted synthesis-only `r3_entry_id_driver_v1` policy remains required.
 No pruning, admission, R3 publication, R6 authority, R2 arbitration, storage
 capacity, Full-KV scope, clock or numerical fair-v1 constraint changes.
 
+Functional authority is the compact-membership 57/57 regression plus RD1's
+completed local equivalence miter and focused integration tests recorded in
+`dc_rd1_member_read_sharing_implementation_20261104.md`.  This freeze batch
+did not rerun the 57-test aggregate.  The new generated-source/proxy checks
+below do not substitute for functional simulation, and the paired DC run does
+not prove functional correctness.
+
 ## Generated successor and checks
 
 The immutable remote successor is:
