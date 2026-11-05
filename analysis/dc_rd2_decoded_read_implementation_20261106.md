@@ -107,3 +107,14 @@ markers, compare both generated port headers and hashes, then freeze a new
 isolated remote RD2 screen root.  No RD2 remote DC is active yet.  Do not
 start DC on partial emission or treat the current state as functional or
 mapped acceptance.
+
+## R4 completion inspection
+
+The active snapshot above is superseded by
+[`dc_rd2_local_validation_r4_result_20261106.md`](dc_rd2_local_validation_r4_result_20261106.md).
+R4 ends with outer exit 143 and a new kernel-confirmed `cc1plus` OOM event
+during full-size simulator construction.  Verilator regrouped the split
+outputs into two fast C++ translation units compiled with `-Os`; splitting
+files and limiting parallelism alone were insufficient.  Full-size simulation
+and paired emission did not occur.  Repair grouping/build settings before a
+new local successor; no remote RD2 synthesis is authorized by this failure.

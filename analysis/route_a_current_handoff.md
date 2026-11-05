@@ -1415,13 +1415,16 @@ Production wrapper, lifecycle, storage and frozen RD1 input remain unchanged.
 Local differential verification and immutable screen-input emission precede
 any remote small-synthesis launch; integration requires separate closure of
 out-of-range/ready behavior and complete functional/source checks.
-The current final-source verification/emission run is local tmux
-`kvzap-rd2-local:rd2-test`, log `/tmp/kvzap_rd2_local_20261106_r4.log`.
-Source compilation passes; the 36 x 64 simulator C++ build remains active.
-Require the two-test PASS, paired-emitter PASS and
-`KVZAP_RD2_LOCAL_TEST_EMIT_EXIT=0` before any remote RD2 DC launch.  Earlier
-local attempts expose compiler-memory pressure and are preserved as
-diagnostics; they are not functional failures or acceptance evidence.
+The local r4 verification/emission run has failed its completion gate; see
+[`dc_rd2_local_validation_r4_result_20261106.md`](dc_rd2_local_validation_r4_result_20261106.md).
+The log `/tmp/kvzap_rd2_local_20261106_r4.log` ends with outer exit 143;
+the kernel records a new `cc1plus` OOM kill during 36 x 64 simulator build.
+Verilator merged split sources into two fast C++ translation units, so the
+split-output/two-job settings did not sufficiently bound optimizer memory.
+No complete two-test PASS, paired emitter or RD2 DC input exists.  The local
+tmux shell remains available; no validation process or remote RD2 DC is live.
+Repair simulator grouping/build settings, preserve geometry and stimulus,
+then require a new full functional/emitter closure before small synthesis.
 
 ## Superseded pre-DC prompt seed (historical)
 

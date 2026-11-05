@@ -83,6 +83,11 @@ The independently scoped RD2 candidate is described by
 RD1; only the remaining C/F/B and M/C suffix read realization changes.  The
 production wrapper remains unchanged until equivalence and mapped evidence
 support integration.
+Its first completion inspection is
+`dc_rd2_local_validation_r4_result_20261106.md`: source compilation succeeds,
+but full-size simulator C++ compilation is OOM-killed after split outputs are
+regrouped into large translation units.  No full test/emission or RD2 area
+result exists; simulator-build repair precedes any small synthesis.
 
 For compact-table read consumers, legal concurrency and the selected RD1
 change, read `dc_compact_membership_read_sharing_plan_20261104.md` and
