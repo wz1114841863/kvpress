@@ -1206,13 +1206,17 @@ raw state and 5/5 proxy closure.  Its paired archive SHA-256 is
 The accepted entry_id preservation policy remains enabled.  This is an input
 freeze only; no complete RD1 mapped-area or timing result exists yet.
 
-The authorized complete RD1 paired DC is now active; see
-[`dc_rd1_full_paired_dc_launch_20261105.md`](dc_rd1_full_paired_dc_launch_20261105.md).
-Run `dc_feasibility_fair_rd1_shared_20261105_r1` is in tmux
-`kvzap-control-refine:p16-rd1-dc` with total log
-`rd1_shared_p16_dc_20261105.log`.  Launch preflight, 5-boundary proxy evidence,
-Full-KV link and fair-v1 constraint application pass.  This is not yet a
-mapped result; wait for user notification before inspecting completion.
+The complete RD1 paired DC has finished and been inspected; see
+[`dc_rd1_full_paired_dc_result_20261106.md`](dc_rd1_full_paired_dc_result_20261106.md).
+Both native exits, RUN_PASS, outer exit, hashes and required artifacts pass.
+Full-KV reproduces its immutable metrics.  Route-A area is 3,388,597.345862,
+6.454% below accepted compact/entry-id and 146.747x Full-KV; wrapper area falls
+9.502%.  Setup worsens to WNS -0.36 ns, TNS -9,774.02 ns and 35,959 violating
+paths.  Sequential cells remain 577,106; clock load remains unchanged.
+All 48 entry-id bits have real drivers, with zero LINT-3/LINT-5, but total
+warnings rise three to 44,536.  Tool/input and mapped-area gates pass; timing
+and broad cleanliness do not.  The old p16 pane is absent and no RD1 process
+remains; reports/logs are authoritative.  PM1 and RD2 are not in this run.
 
 PM1 has a new production-module integration candidate, isolated from the
 frozen RD1 run; see

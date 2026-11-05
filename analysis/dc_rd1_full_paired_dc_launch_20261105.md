@@ -63,3 +63,12 @@ the run.  Acceptance requires:
 
 No PPA, external-service-zero-cost, system acceleration or hardware net
 benefit conclusion follows from this launch or later logic-only DC result.
+
+## Completed result
+
+Both exits, RUN_PASS and the outer exit close.  RD1 reduces full Route-A area
+6.454% and wrapper area 9.502% versus accepted compact/entry-id, but setup WNS
+worsens to -0.36 ns, TNS to -9,774.02 ns, and warning lines increase three.
+Sequential cells and clock-alias load are unchanged; all 48 entry-id bits
+retain real drivers.  Complete evidence is in
+[`dc_rd1_full_paired_dc_result_20261106.md`](dc_rd1_full_paired_dc_result_20261106.md).

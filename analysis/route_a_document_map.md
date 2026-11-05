@@ -119,6 +119,10 @@ The separately authorized complete paired-DC launch is recorded in
 `dc_rd1_full_paired_dc_launch_20261105.md`.  Its active-run markers and final
 native reports must be checked after user-reported completion; launch
 liveness is not a result.
+The completed authority is `dc_rd1_full_paired_dc_result_20261106.md`: full
+Route-A area falls 6.454%, wrapper area falls 9.502%, but setup WNS/TNS worsen
+and lint increases three.  State/clock load are unchanged and entry-id drivers
+remain closed.  This is a confirmed area/timing tradeoff, not PPA closure.
 
 For the next independent Page Manager hotspot diagnosis, read
 `dc_page_manager_p0_diagnosis_20261104.md` and
