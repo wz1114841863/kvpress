@@ -17,6 +17,9 @@ object FullKVControlProjectionGenerator {
 }
 
 object RouteAControlProjectionGenerator {
-  def construct(p: RouteASkeletonParameters): RouteAControlProjection =
-    new RouteAControlProjection(p)
+  def construct(
+    p: RouteASkeletonParameters,
+    bankPageManagerAllocatedLineSelector: Boolean = false,
+  ): RouteAControlProjection =
+    new RouteAControlProjection(p, bankPageManagerAllocatedLineSelector)
 }

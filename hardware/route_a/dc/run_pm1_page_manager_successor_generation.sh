@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Generate a versioned full-profile PM1 Page Manager child for a controlled
-# saved-DDC replacement screen. This script performs no DC invocation.
+# Generate a versioned full-profile PM1 Page Manager under the real Route-A
+# measurement parent for a controlled saved-DDC replacement screen. This
+# script performs no DC invocation.
 set -euo pipefail
 
 if [[ $# -ne 2 ]]; then
@@ -32,8 +33,8 @@ ulimit -s unlimited
 CHISEL_PROJECT_ROOT=$workspace "$platform/bin/chisel-sbt" \
   "runMain kvpress.routea.top.EmitPM1PageManagerChirrtl $chirrtl_root"
 
-fir=$chirrtl_root/route_a_page_manager_pm1.fir
-[[ -s $fir ]] || { echo "missing PM1 Page Manager CHIRRTL" >&2; exit 6; }
+fir=$chirrtl_root/route_a_control_projection_pm1.fir
+[[ -s $fir ]] || { echo "missing contextual PM1 control-projection CHIRRTL" >&2; exit 6; }
 "$firtool" "$fir" \
   --format=fir \
   -O=debug \

@@ -19,6 +19,7 @@ import kvpress.routea.params.RouteASkeletonParameters
 class RouteAMeasurementDut(
   p: RouteASkeletonParameters,
   externalizeFunctionalReferences: Boolean = false,
+  bankPageManagerAllocatedLineSelector: Boolean = false,
 ) extends Module {
   val io = IO(new Bundle {
     val frontend_lifecycle_req = Flipped(RouteAChannels.frontend_lifecycle_req(p))
@@ -86,7 +87,11 @@ class RouteAMeasurementDut(
   // append-order state.  It is neither a second R3 publication owner nor an
   // R6/R2 source-selection or arbitration participant.
   val metadataAdmission = Module(new RouteAMetadataAdmissionBridge(p))
-  val pageManager = Module(new RouteAPageManager(p, externalizeDescriptorBacking = externalizeFunctionalReferences))
+  val pageManager = Module(new RouteAPageManager(
+    p,
+    externalizeDescriptorBacking = externalizeFunctionalReferences,
+    bankAllocatedLineSelector = bankPageManagerAllocatedLineSelector,
+  ))
   val activationBinder = Module(new RouteAPackedReadActivationBinder(p))
   val associationOwner = Module(new RouteAPackedReadAssociationOwner(p))
   val planFork = Module(new RouteASourceCompletionPlanActivationFork(p))
@@ -439,7 +444,13 @@ class RouteAMeasurementDut(
   * owner and parent array peripheral while externalizing only the named
   * functional sidecar/partial/numeric reference contracts.
   */
-final class RouteAControlProjection(p: RouteASkeletonParameters)
-    extends RouteAMeasurementDut(p, externalizeFunctionalReferences = true) {
+final class RouteAControlProjection(
+  p: RouteASkeletonParameters,
+  bankPageManagerAllocatedLineSelector: Boolean = false,
+) extends RouteAMeasurementDut(
+      p,
+      externalizeFunctionalReferences = true,
+      bankPageManagerAllocatedLineSelector = bankPageManagerAllocatedLineSelector,
+    ) {
   override def desiredName: String = "route_a_control_projection"
 }

@@ -37,6 +37,12 @@ final class ControlProjectionElaborationSpec extends AnyFlatSpec with Matchers {
     val routeA = ChiselStage.emitCHIRRTL(
       RouteAControlProjectionGenerator.construct(pairedFunctionalParameters),
     )
+    val routeAPm1 = ChiselStage.emitCHIRRTL(
+      RouteAControlProjectionGenerator.construct(
+        pairedFunctionalParameters,
+        bankPageManagerAllocatedLineSelector = true,
+      ),
+    )
 
     fullKv should include("module full_kv_control_projection")
     routeA should include("module route_a_control_projection")
@@ -47,6 +53,11 @@ final class ControlProjectionElaborationSpec extends AnyFlatSpec with Matchers {
     routeA should not include "descriptorEntryImage"
     routeA should not include "descriptorReadable"
     routeA should not include "descriptorValidRecords"
+    routeA should include("module route_a_page_manager")
+    routeA should not include "module route_a_page_manager_pm1"
+    routeAPm1 should include("module route_a_control_projection")
+    routeAPm1 should include("module route_a_page_manager_pm1")
+    routeAPm1 should not include "module route_a_page_manager :"
     Seq(
       "functional_sidecar_work_out",
       "functional_sidecar_payload_release_out",

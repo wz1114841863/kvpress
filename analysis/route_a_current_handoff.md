@@ -1252,6 +1252,14 @@ parent and compare the contextually lowered child; do not force relinking or
 invent a pin map.  The separate RD1 paired DC remains active in
 `kvzap-control-refine:p16-rd1-dc` and must not be disturbed.
 
+The contextual-generation repair is implemented and locally closed; see
+[`dc_pm1_contextual_generation_fix_20261105.md`](dc_pm1_contextual_generation_fix_20261105.md).
+The Page Manager selector flag remains default-off in the real measurement
+parent, while the PM1-only emitter now elaborates the complete parent with the
+flag explicitly enabled.  Compile, contextual elaboration 1/1, PM1 reclaim
+5/5, script syntax and diff checks pass.  A new remote generation must still
+prove exact post-firtool child-port identity before replacement DC is allowed.
+
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
 in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,
