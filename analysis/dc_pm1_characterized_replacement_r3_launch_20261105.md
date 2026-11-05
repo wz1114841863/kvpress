@@ -61,3 +61,12 @@ DDC and mapped HDL, and complete baseline/candidate/relinked-top native
 reports.  Even a pass is a bottom-up characterized diagnostic, not a complete
 same-fair-v1 successor result, PPA, external-service-cost, system acceleration
 or hardware net-benefit claim.
+
+## Completion update
+
+Mapping, DDC/mapped-HDL generation and all native reports completed, and the
+PASS plus both exit-zero markers are present.  Two terminal `SEL-001` errors
+from stale collection handles leave two summary cells blank, so clean screen
+acceptance is withheld.  The mapped diagnostic shows a 4.201% Page Manager
+area reduction but a new -0.005321-ns hold violation.  See
+[`dc_pm1_characterized_replacement_r3_result_20261106.md`](dc_pm1_characterized_replacement_r3_result_20261106.md).

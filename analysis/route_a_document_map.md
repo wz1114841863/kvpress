@@ -155,6 +155,11 @@ changing the candidate or replacement method.
 Its separately authorized remote run is tracked in
 `dc_pm1_characterized_replacement_r3_launch_20261105.md`; launch markers are
 not a mapped result.
+Finish with `dc_pm1_characterized_replacement_r3_result_20261106.md`.  R3 maps
+and shows a provisional 4.201% Page Manager area reduction, but two stale
+collection `SEL-001` errors corrupt summary completeness, setup still fails,
+one hold path regresses and lint increases slightly.  Treat it as a positive
+area-direction diagnostic, not clean screen closure or integrated DC proof.
 
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped

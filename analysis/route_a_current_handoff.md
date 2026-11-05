@@ -1332,14 +1332,19 @@ both accepted and candidate postcompile checks.  No RTL, candidate input,
 port/relink policy, characterization, clock, constraint, proxy or compile
 effort changes.  This repair alone is not a synthesis result.
 
-The repaired characterized replacement r3 run is now active; see
-[`dc_pm1_characterized_replacement_r3_launch_20261105.md`](dc_pm1_characterized_replacement_r3_launch_20261105.md).
-Run `pm1_characterized_replacement_20261105_r3` is in the independent tmux
-window `kvzap-control-refine:p23-pm1-characterized-r3`.  Frozen input hashes,
-the distinct 62,002/62,000 gates, input PASS and unlimited-stack PASS are
-present, and native DC is live.  RD1 remains independently live in
-`p16-rd1-dc`.  Wait for user-reported completion before checking the native
-replacement PASS, both outer exits, mapped artifacts and reports.
+The repaired characterized replacement r3 run has completed with qualified
+diagnostic evidence; see
+[`dc_pm1_characterized_replacement_r3_result_20261106.md`](dc_pm1_characterized_replacement_r3_result_20261106.md).
+Inputs, stack, 62,002/62,000 stage counts, DDC, mapped HDL and all native
+reports close.  PM1 reduces child cell area 4.201% and relinked-top area 0.473%,
+with unchanged setup WNS -0.31 ns and modest TNS/path-count improvement.
+However, it introduces one -0.005321-ns hold path, four net lint warnings and
+one additional top high-fanout net.  Two stale collection handles produce
+terminal `SEL-001` errors and blank baseline-register/proxy summary cells even
+though the script prints PASS/exit zero.  Clean screen acceptance is withheld;
+snapshot scalar counts and add explicit error/summary completeness closure
+before deciding on a short saved-DDC validation or clean replay.  RD1 remained
+live and advancing in `p16-rd1-dc` at the 2026-11-06 inspection snapshot.
 
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
