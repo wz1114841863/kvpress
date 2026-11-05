@@ -1186,6 +1186,17 @@ Static preflight passed and Full-KV entered native DC.  Await user notification,
 then inspect the new driver gate plus all paired completion/provenance/native
 reports.  No production repair completion is claimed at launch.
 
+The production repair run has now completed and supersedes that launch-only
+status; see
+[`dc_m2p3_entry_id_repair_result_20261105.md`](dc_m2p3_entry_id_repair_result_20261105.md).
+Both tops exit zero, RUN_PASS/outer exit pass, and the 48-bit gate reports
+real startpoints for every entry_id output with zero LINT-3/LINT-5. Relative
+to the first refinement, accepted compact membership reduces Route-A cell area
+8.362% and sequential cells exactly 76,032; total area is 3,622,375.558791,
+or 156.871x Full-KV. Timing remains blocked at WNS -0.31 ns, TNS -8,577.41 ns
+and 35,897 violating paths. The specific driver regression is closed, but
+44,533 warnings and high fanout keep broad cleanliness blocked.
+
 The compact-membership DC run has completed.  The current result authority is
 [`dc_m2_p3_wrapper_compact_membership_result_20261104.md`](dc_m2_p3_wrapper_compact_membership_result_20261104.md).
 Both side exits, paired/outer markers, hashes and native artifacts pass.

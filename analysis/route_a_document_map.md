@@ -121,8 +121,11 @@ implementation rather than assuming the priority selector explains all area.
 For the approved entry_id driver repair, read
 `dc_entry_id_driver_repair_20261104.md`.  It describes a synthesis-only,
 explicit result-net preservation policy and a fail-closed 48-bit driver gate.
-The focused DC regression and mapped simulation pass; full production
-verification remains a separate completion condition.
+The focused DC regression and mapped simulation pass. Finish with
+`dc_m2p3_entry_id_repair_result_20261105.md`: production paired DC closes both
+side/outer markers and all 48 drivers while retaining the second optimization's
+8.362% area reduction versus the first refinement. Timing and broad structural
+cleanliness remain blocked.
 
 The completed compact-membership native-DC result supersedes its active-run
 snapshot: read `dc_m2_p3_wrapper_compact_membership_result_20261104.md` after

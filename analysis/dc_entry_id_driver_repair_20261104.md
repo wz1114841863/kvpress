@@ -119,3 +119,13 @@ starting another run.  Completion inspection must require the 48-bit driver
 gate, zero entry_id LINT-3/LINT-5, both side exits, paired/outer markers and
 native outputs before accepting the production repair.  Do not start further
 structural optimization until this verification closes.
+
+## Production verification result
+
+The paired run later completed normally and is accepted in
+`dc_m2p3_entry_id_repair_result_20261105.md`. Both side exits, paired/outer
+markers and native artifacts pass. The 48-bit gate reports zero undriven bits,
+and LINT-3/LINT-5 are zero. The compact optimization retains an 8.362% mapped
+cell-area reduction versus the first refinement, while timing remains blocked
+at WNS -0.31 ns. This supersedes the launch-only status above without changing
+the frozen functional or claim boundaries.
