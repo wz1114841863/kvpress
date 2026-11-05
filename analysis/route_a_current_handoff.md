@@ -1313,6 +1313,13 @@ It uniquely renames the frozen legacy module, performs only unlimited-stack
 analyze/elaborate/link, and requires 62,002 precompile registers plus one R5
 proxy.  Do not change the replacement gate until this probe passes.
 
+The same-layer legacy count probe is now active; see
+[`dc_pm1_legacy_precompile_count_launch_20261105.md`](dc_pm1_legacy_precompile_count_launch_20261105.md).
+Run `pm1_legacy_precompile_count_20261105_r1` is in
+`kvzap-control-refine:p22-pm1-legacy-count`.  Input/state-equivalence PASS and
+unlimited-stack PASS are present, and DC is reading the accepted DDC.  Wait for
+the exact 62,002 count and proxy closure before repairing the main screen.
+
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
 in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,
