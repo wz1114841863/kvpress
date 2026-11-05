@@ -1293,6 +1293,14 @@ The bounded r2 correction now adds a fail-closed unlimited-stack guard before
 characterization, 62,000-register and proxy gates remain unchanged.  r1 is
 preserved and must not be overwritten.
 
+The unchanged-input r2 screen is now active; see
+[`dc_pm1_characterized_replacement_r2_launch_20261105.md`](dc_pm1_characterized_replacement_r2_launch_20261105.md).
+Run `pm1_characterized_replacement_20261105_r2` is in
+`kvzap-control-refine:p21-pm1-characterized-r2`.  Both immutable-input PASS and
+explicit unlimited-stack PASS are present, and DC is live.  Do not infer a
+mapped result from launch.  RD1 DC remains independently active in
+`p16-rd1-dc`.
+
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
 in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,
