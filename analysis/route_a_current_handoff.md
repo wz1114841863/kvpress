@@ -1313,12 +1313,17 @@ It uniquely renames the frozen legacy module, performs only unlimited-stack
 analyze/elaborate/link, and requires 62,002 precompile registers plus one R5
 proxy.  Do not change the replacement gate until this probe passes.
 
-The same-layer legacy count probe is now active; see
-[`dc_pm1_legacy_precompile_count_launch_20261105.md`](dc_pm1_legacy_precompile_count_launch_20261105.md).
-Run `pm1_legacy_precompile_count_20261105_r1` is in
-`kvzap-control-refine:p22-pm1-legacy-count`.  Input/state-equivalence PASS and
-unlimited-stack PASS are present, and DC is reading the accepted DDC.  Wait for
-the exact 62,002 count and proxy closure before repairing the main screen.
+The same-layer legacy count probe has completed successfully; see
+[`dc_pm1_legacy_precompile_count_result_20261105.md`](dc_pm1_legacy_precompile_count_result_20261105.md).
+Run `pm1_legacy_precompile_count_20261105_r1` reports exactly 62,002 legacy
+precompile registers, one R5 proxy, native PASS and both outer exits zero.
+All frozen input hashes recompute exactly.  Together with the PM1 r2 candidate
+count, this proves that both raw children have 62,002 precompile registers;
+the accepted 62,000 figure is postcompile.  The r2 failure was therefore a
+mixed-stage gate rather than PM1-added state.  Repair the main screen with
+separate 62,002 precompile and 62,000 postcompile expectations before rerun.
+The joined PM1 pane closed cleanly; the surviving RD1 pane remained live and
+was relabeled back to `p16-rd1-dc` without interrupting DC.
 
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described

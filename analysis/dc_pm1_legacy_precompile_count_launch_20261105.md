@@ -43,3 +43,10 @@ After launch:
 Completion requires native count PASS with exactly 62,002 legacy precompile
 registers, one R5 proxy and both outer exits zero.  This is a gate diagnosis,
 not an area, timing or mapped-result run.
+
+## Completed result
+
+The probe completed with exactly 62,002 precompile registers, one R5 proxy,
+native PASS and both outer exits zero.  All recorded input hashes were
+recomputed and match.  The accepted result and mixed-stage diagnosis are in
+[`dc_pm1_legacy_precompile_count_result_20261105.md`](dc_pm1_legacy_precompile_count_result_20261105.md).

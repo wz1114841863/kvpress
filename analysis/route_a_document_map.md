@@ -142,6 +142,12 @@ The concrete successor procedure is
 port-identical PM1 Page Manager child, use fail-closed `change_link`, project
 the real saved-top environment with `characterize`, and map only that child.
 Any positive screen remains provisional until complete same-fair-v1 top DC.
+The stage-count diagnosis is closed by
+`dc_pm1_legacy_precompile_count_result_20261105.md`: both the frozen legacy and
+PM1 raw children have 62,002 registers before compile, while the accepted
+mapped Page Manager has 62,000 sequential cells.  The earlier r2 failure was
+a mixed-stage gate, not PM1-added state.  This is count closure only, not an
+area or timing result.
 
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped
