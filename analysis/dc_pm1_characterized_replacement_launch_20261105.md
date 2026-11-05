@@ -47,3 +47,12 @@ candidate and relinked-top native reports.
 This launch is not a result.  Even a passing screen is a bottom-up diagnostic
 comparison and remains provisional until a complete same-fair-v1 integrated
 Route-A successor run.
+
+## Completion update
+
+The run failed during candidate RTL analysis with DC `VER-30` stack overflow
+and both outer exits 139.  Baseline DDC loading and baseline reports completed,
+but relinking, characterization and candidate mapping did not begin.  See
+[`dc_pm1_characterized_replacement_result_20261105.md`](dc_pm1_characterized_replacement_result_20261105.md).
+The missing unlimited-stack guard is the first bounded correction; r1 contains
+no PM1 mapped result.

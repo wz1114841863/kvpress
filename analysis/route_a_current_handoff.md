@@ -1277,12 +1277,16 @@ relinking, characterize timing/constraints/connections, compile only the PM1
 child, and require 62,000 registers plus the R5 proxy before and after mapping.
 The accepted top is not recompiled.
 
-The characterized replacement screen is now active; see
-[`dc_pm1_characterized_replacement_launch_20261105.md`](dc_pm1_characterized_replacement_launch_20261105.md).
-Run `pm1_characterized_replacement_20261105_r1` is in
-`kvzap-control-refine:p20-pm1-characterized-dc`; its immutable input gate passes
-and DC is reading the accepted baseline DDC.  Do not infer an area or timing
-result from launch.  The independent RD1 DC remains active in `p16-rd1-dc`.
+The first characterized replacement screen has failed before candidate
+elaboration completed; see
+[`dc_pm1_characterized_replacement_result_20261105.md`](dc_pm1_characterized_replacement_result_20261105.md).
+Its immutable input gate and baseline DDC/report stages pass, then DC reports
+`VER-30` stack overflow at the 146,880-bit release reduction and exits 139.
+The runner inherited an 8,192 KiB stack, unlike the accepted full DC runner's
+unlimited-stack guard.  No relink, characterization, candidate compile, area or
+timing result exists.  Preserve r1; the bounded successor is a new-root rerun
+with only the established unlimited-stack guard added.  RD1 DC remained active
+in `p16-rd1-dc` at inspection time.
 
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
