@@ -164,6 +164,11 @@ The stale-collection and false-PASS mechanism is repaired in
 `dc_pm1_stale_collection_gate_repair_20261106.md`: collection sizes are
 snapshotted before relink and a native-error/artifact/summary postcheck is now
 mandatory.  The repair changes no RTL or synthesis method.
+The bounded no-remap closure is implemented in
+`dc_pm1_saved_ddc_validation_implementation_20261106.md`.  It reads the
+accepted and r3 mapped DDCs, relinks without `-force`, regenerates reports and
+requires clean scalar summary/area/timing/lint evidence.  It performs no
+analyze, characterize or compile.
 
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped

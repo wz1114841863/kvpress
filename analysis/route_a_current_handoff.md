@@ -1354,6 +1354,13 @@ zero.  No RTL or synthesis method changes.  This repair has static closure
 only; validate the existing r3 mapped DDC through the separately bounded short
 saved-DDC path before considering a clean full replacement replay.
 
+The saved-DDC-only short validator is implemented and statically closed; see
+[`dc_pm1_saved_ddc_validation_implementation_20261106.md`](dc_pm1_saved_ddc_validation_implementation_20261106.md).
+It reuses the accepted top DDC and r3 mapped PM1 DDC, performs fail-closed
+relink and reporting, and validates scalar counts, area, timing and lint.  It
+cannot analyze, characterize, compile or overwrite mapped artifacts.  Launch
+it in a fresh result root before considering any 3.3-hour clean replay.
+
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
 in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,
