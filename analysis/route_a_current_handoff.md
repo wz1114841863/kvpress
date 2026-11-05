@@ -1277,6 +1277,13 @@ relinking, characterize timing/constraints/connections, compile only the PM1
 child, and require 62,000 registers plus the R5 proxy before and after mapping.
 The accepted top is not recompiled.
 
+The characterized replacement screen is now active; see
+[`dc_pm1_characterized_replacement_launch_20261105.md`](dc_pm1_characterized_replacement_launch_20261105.md).
+Run `pm1_characterized_replacement_20261105_r1` is in
+`kvzap-control-refine:p20-pm1-characterized-dc`; its immutable input gate passes
+and DC is reading the accepted baseline DDC.  Do not infer an area or timing
+result from launch.  The independent RD1 DC remains active in `p16-rd1-dc`.
+
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
 in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,
