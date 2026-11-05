@@ -54,8 +54,9 @@ if {[catch {
   set boundary_pins [sizeof_collection [get_pins -quiet -of_objects $instance]]
   set baseline_registers [get_cells -quiet -hierarchical * -filter \
     "full_name =~ pageManager/* && is_sequential == true"]
-  if {[sizeof_collection $baseline_registers] != $expected_postcompile_registers} {
-    error "expected $expected_postcompile_registers baseline mapped Page Manager registers, found [sizeof_collection $baseline_registers]"
+  set baseline_register_count [sizeof_collection $baseline_registers]
+  if {$baseline_register_count != $expected_postcompile_registers} {
+    error "expected $expected_postcompile_registers baseline mapped Page Manager registers, found $baseline_register_count"
   }
   redirect [file join $baseline_out top_qor.rpt] { report_qor }
   redirect [file join $baseline_out top_area_hierarchy.rpt] { report_area -hierarchy -nosplit }
@@ -80,7 +81,8 @@ if {[catch {
     error "expected $expected_precompile_registers candidate precompile registers, found $candidate_pre_registers"
   }
   set proxy_cells [get_cells -quiet -hierarchical * -filter "ref_name == $proxy_ref"]
-  if {[sizeof_collection $proxy_cells] != 1} {
+  set candidate_pre_proxy_instances [sizeof_collection $proxy_cells]
+  if {$candidate_pre_proxy_instances != 1} {
     error "expected one retained R5 availability proxy in candidate child"
   }
   set_dont_touch $proxy_cells true
@@ -119,7 +121,8 @@ if {[catch {
     error "expected $expected_postcompile_registers candidate postcompile registers, found $candidate_post_registers"
   }
   set proxy_cells [get_cells -quiet -hierarchical * -filter "ref_name == $proxy_ref"]
-  if {[sizeof_collection $proxy_cells] != 1} {
+  set candidate_proxy_instances [sizeof_collection $proxy_cells]
+  if {$candidate_proxy_instances != 1} {
     error "candidate compile did not retain exactly one R5 availability proxy"
   }
   redirect [file join $candidate_out check_design_postcompile.rpt] { check_design }
@@ -161,11 +164,12 @@ if {[catch {
   puts $summary "page_manager_boundary_pins\t$boundary_pins"
   puts $summary "expected_precompile_registers\t$expected_precompile_registers"
   puts $summary "expected_postcompile_registers\t$expected_postcompile_registers"
-  puts $summary "baseline_registers\t[sizeof_collection $baseline_registers]"
+  puts $summary "baseline_registers\t$baseline_register_count"
   puts $summary "candidate_precompile_registers\t$candidate_pre_registers"
   puts $summary "candidate_postcompile_registers\t$candidate_post_registers"
   puts $summary "candidate_characterized_clocks\t$characterized_clocks"
-  puts $summary "candidate_proxy_instances\t[sizeof_collection $proxy_cells]"
+  puts $summary "candidate_precompile_proxy_instances\t$candidate_pre_proxy_instances"
+  puts $summary "candidate_proxy_instances\t$candidate_proxy_instances"
   close $summary
 
   puts "KVZAP_PM1_CHARACTERIZED_REPLACEMENT_PASS candidate=$candidate_ref"

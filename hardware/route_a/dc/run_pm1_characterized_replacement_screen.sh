@@ -105,5 +105,88 @@ set +e
   2>&1 | tee "$output_root/dc_shell.log"
 code=${PIPESTATUS[0]}
 set -e
+
+if (( code == 0 )); then
+  set +e
+  python3 - "$output_root" <<'PY' 2>&1 | tee -a "$output_root/dc_shell.log"
+from pathlib import Path
+import re
+import sys
+
+root = Path(sys.argv[1])
+log = root / "dc_shell.log"
+summary = root / "summary.tsv"
+required = [
+    summary,
+    root / "baseline/top_qor.rpt",
+    root / "baseline/top_area_hierarchy.rpt",
+    root / "baseline/top_timing_setup.rpt",
+    root / "baseline/child_qor.rpt",
+    root / "baseline/child_area.rpt",
+    root / "baseline/child_timing_setup.rpt",
+    root / "candidate/check_design_precompile.rpt",
+    root / "candidate/check_timing_precharacterize.rpt",
+    root / "candidate/resources_precompile.rpt",
+    root / "candidate/clocks_characterized.rpt",
+    root / "candidate/constraints_characterized.rpt",
+    root / "candidate/timing_precompile.rpt",
+    root / "candidate/check_design_postcompile.rpt",
+    root / "candidate/check_timing_postcompile.rpt",
+    root / "candidate/constraints_postcompile.rpt",
+    root / "candidate/qor.rpt",
+    root / "candidate/area_hierarchy.rpt",
+    root / "candidate/references.rpt",
+    root / "candidate/timing_setup.rpt",
+    root / "candidate/timing_hold.rpt",
+    root / "candidate/route_a_page_manager_pm1.ddc",
+    root / "candidate/route_a_page_manager_pm1_mapped.v",
+    root / "relinked_top/check_design.rpt",
+    root / "relinked_top/check_timing.rpt",
+    root / "relinked_top/qor.rpt",
+    root / "relinked_top/area_hierarchy.rpt",
+    root / "relinked_top/timing_setup.rpt",
+]
+missing = [str(path) for path in required if not path.is_file() or path.stat().st_size == 0]
+if missing:
+    raise SystemExit("missing or empty PM1 artifacts: " + ", ".join(missing))
+
+native_errors = [
+    line for line in log.read_text(errors="replace").splitlines()
+    if re.match(r"^(?:Error|Fatal):", line)
+]
+if native_errors:
+    raise SystemExit("native PM1 errors present: " + " | ".join(native_errors[-8:]))
+
+rows = {}
+for line in summary.read_text().splitlines()[1:]:
+    key, sep, value = line.partition("\t")
+    if not sep or not value:
+        raise SystemExit(f"incomplete PM1 summary row: {line!r}")
+    rows[key] = value
+expected = {
+    "top_design": "route_a_control_projection",
+    "baseline_ref": "route_a_page_manager",
+    "candidate_ref": "route_a_page_manager_pm1",
+    "page_manager_boundary_pins": "4289",
+    "expected_precompile_registers": "62002",
+    "expected_postcompile_registers": "62000",
+    "baseline_registers": "62000",
+    "candidate_precompile_registers": "62002",
+    "candidate_postcompile_registers": "62000",
+    "candidate_characterized_clocks": "1",
+    "candidate_precompile_proxy_instances": "1",
+    "candidate_proxy_instances": "1",
+}
+if rows != expected:
+    raise SystemExit(f"unexpected PM1 summary: {rows!r}")
+print("KVZAP_PM1_CHARACTERIZED_POSTCHECK_PASS")
+PY
+  post_code=${PIPESTATUS[0]}
+  set -e
+  if (( post_code != 0 )); then
+    code=8
+  fi
+fi
+
 echo "KVZAP_PM1_CHARACTERIZED_REPLACEMENT_OUTER_EXIT=$code" | tee -a "$output_root/dc_shell.log"
 exit "$code"

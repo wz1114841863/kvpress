@@ -160,6 +160,10 @@ and shows a provisional 4.201% Page Manager area reduction, but two stale
 collection `SEL-001` errors corrupt summary completeness, setup still fails,
 one hold path regresses and lint increases slightly.  Treat it as a positive
 area-direction diagnostic, not clean screen closure or integrated DC proof.
+The stale-collection and false-PASS mechanism is repaired in
+`dc_pm1_stale_collection_gate_repair_20261106.md`: collection sizes are
+snapshotted before relink and a native-error/artifact/summary postcheck is now
+mandatory.  The repair changes no RTL or synthesis method.
 
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped

@@ -1346,6 +1346,14 @@ snapshot scalar counts and add explicit error/summary completeness closure
 before deciding on a short saved-DDC validation or clean replay.  RD1 remained
 live and advancing in `p16-rd1-dc` at the 2026-11-06 inspection snapshot.
 
+The stale-collection and false-PASS mechanism is now repaired in source; see
+[`dc_pm1_stale_collection_gate_repair_20261106.md`](dc_pm1_stale_collection_gate_repair_20261106.md).
+The Tcl snapshots scalar counts before relink, and the runner now requires all
+artifacts, an error-free native log and an exact non-empty summary before exit
+zero.  No RTL or synthesis method changes.  This repair has static closure
+only; validate the existing r3 mapped DDC through the separately bounded short
+saved-DDC path before considering a clean full replacement replay.
+
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
 in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,
