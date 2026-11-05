@@ -46,7 +46,8 @@ final class RouteARD2ReadDecodeSpec extends AnyFunSpec with ChiselSim {
       verilatorSettings = svsim.verilator.Backend.CompilationSettings.default
         .withOutputSplit(Some(2000))
         .withOutputSplitCFuncs(Some(200))
-        .withParallelism(Some(svsim.verilator.Backend.CompilationSettings.Parallelism.Uniform.default.withNum(2))),
+        .withParallelism(Some(svsim.verilator.Backend.CompilationSettings.Parallelism.Different.default
+          .withBuild(Some(1)).withVerilate(Some(2)))),
     )
   for ((banks, records) <- Seq((4, 8), (36, 64))) {
     it(s"preserves independent raw reads and pre-edge writes at $banks x $records") {

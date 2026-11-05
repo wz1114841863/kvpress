@@ -88,6 +88,9 @@ Its first completion inspection is
 but full-size simulator C++ compilation is OOM-killed after split outputs are
 regrouped into large translation units.  No full test/emission or RD2 area
 result exists; simulator-build repair precedes any small synthesis.
+Use `dc_rd2_remote_validation_migration_20261106.md` for the next remote-only
+functional/emission successor.  It uses an immutable isolated source archive
+and one C++ compiler job while retaining the complete tests and geometry.
 
 For compact-table read consumers, legal concurrency and the selected RD1
 change, read `dc_compact_membership_read_sharing_plan_20261104.md` and

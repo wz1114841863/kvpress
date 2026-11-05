@@ -1425,6 +1425,12 @@ No complete two-test PASS, paired emitter or RD2 DC input exists.  The local
 tmux shell remains available; no validation process or remote RD2 DC is live.
 Repair simulator grouping/build settings, preserve geometry and stimulus,
 then require a new full functional/emitter closure before small synthesis.
+The next successor moves those checks to an isolated EDA-server source
+snapshot; see
+[`dc_rd2_remote_validation_migration_20261106.md`](dc_rd2_remote_validation_migration_20261106.md).
+C++ build jobs are limited to one with two Verilation jobs; the helper,
+stimulus and full geometry are unchanged.  Source hashing, two-case XML test
+acceptance and exact paired-port/output-hash checks precede any RD2 DC.
 
 ## Superseded pre-DC prompt seed (historical)
 
