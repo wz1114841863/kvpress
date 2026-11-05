@@ -44,3 +44,12 @@ This is a launch record, not a mapped result.  Completion still requires the
 native replacement PASS, both outer exits zero, 62,000-register and R5-proxy
 closure, candidate DDC/mapped HDL and all baseline/candidate/relinked-top
 reports.
+
+## Completion update
+
+The unlimited-stack correction succeeds: candidate Presto analysis,
+elaboration and link complete without a tool crash.  The run then stops at the
+precompile state gate because the unmapped candidate has 62,002 registers
+against the 62,000 mapped-baseline expectation.  Both outer exits are 1.  See
+[`dc_pm1_characterized_replacement_r2_result_20261105.md`](dc_pm1_characterized_replacement_r2_result_20261105.md).
+No relink, characterization, compile or mapped comparison occurred.

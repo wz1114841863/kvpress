@@ -1293,13 +1293,16 @@ The bounded r2 correction now adds a fail-closed unlimited-stack guard before
 characterization, 62,000-register and proxy gates remain unchanged.  r1 is
 preserved and must not be overwritten.
 
-The unchanged-input r2 screen is now active; see
-[`dc_pm1_characterized_replacement_r2_launch_20261105.md`](dc_pm1_characterized_replacement_r2_launch_20261105.md).
-Run `pm1_characterized_replacement_20261105_r2` is in
-`kvzap-control-refine:p21-pm1-characterized-r2`.  Both immutable-input PASS and
-explicit unlimited-stack PASS are present, and DC is live.  Do not infer a
-mapped result from launch.  RD1 DC remains independently active in
-`p16-rd1-dc`.
+The unchanged-input r2 screen has completed with a new fail-closed gate; see
+[`dc_pm1_characterized_replacement_r2_result_20261105.md`](dc_pm1_characterized_replacement_r2_result_20261105.md).
+Unlimited stack resolves r1: candidate Presto analysis, elaboration and link
+all complete.  The unmapped candidate then reports 62,002 registers against
+the 62,000 mapped-baseline expectation, so r2 exits 1 before relinking,
+characterization or compile.  This is not proof of added PM1 state because the
+selector helper is combinational and the two counts are from different
+realization stages.  Do not relax the gate before measuring the legacy raw
+child under the same precompile path or identifying the exact two optimized
+bits.  RD1 DC remained active in `p16-rd1-dc` at inspection time.
 
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
