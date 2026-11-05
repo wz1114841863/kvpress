@@ -46,6 +46,13 @@ requires a real driver on both 24-bit outputs after mapping.  No RTL or timing
 constraint changes are made, but the preservation may affect QoR and is
 recorded in each new run.  The general runner retains policy `none` by default.
 
+The RD1 complete successor uses
+`run_rd1_shared_entry_id_repair_dc.sh IMMUTABLE_RUN_ID`.  It selects only the
+immutable `rd1_shared_e5d3107_p15` archive/proxy tree and retains the same
+`r3_entry_id_driver_v1` policy.  Its archive hash and unchanged fair-v1
+contract are frozen in `dc_feasibility_fair_rd1_shared_v1.json`; see
+[`dc_rd1_full_input_freeze_20261105.md`](../../../analysis/dc_rd1_full_input_freeze_20261105.md).
+
 `constraints_control_projection.tcl` is a parameterized, single-clock
 constraint procedure for either selected top.  The approved
 `dc_feasibility_fair_v1` manifest supplies a 2.0 ns period, 0.10/0.02 ns

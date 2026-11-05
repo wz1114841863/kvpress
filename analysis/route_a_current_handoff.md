@@ -1197,6 +1197,15 @@ or 156.871x Full-KV. Timing remains blocked at WNS -0.31 ns, TNS -8,577.41 ns
 and 35,897 violating paths. The specific driver regression is closed, but
 44,533 warnings and high fanout keep broad cleanliness blocked.
 
+RD1 now has a complete immutable generated-input freeze; see
+[`dc_rd1_full_input_freeze_20261105.md`](dc_rd1_full_input_freeze_20261105.md).
+The remote root `rd1_shared_e5d3107_p15` records source commit `e5d3107`, 48
+unique Route-A filelist entries, byte-identical Full-KV HDL, unchanged compact
+raw state and 5/5 proxy closure.  Its paired archive SHA-256 is
+`9494f1dc4b47f1bfbcffe655b75e20a0d4c9cd75fb9802b5d454f870ae02dc5b`.
+The accepted entry_id preservation policy remains enabled.  This is an input
+freeze only; no complete RD1 mapped-area or timing result exists yet.
+
 The compact-membership DC run has completed.  The current result authority is
 [`dc_m2_p3_wrapper_compact_membership_result_20261104.md`](dc_m2_p3_wrapper_compact_membership_result_20261104.md).
 Both side exits, paired/outer markers, hashes and native artifacts pass.
