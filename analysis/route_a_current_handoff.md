@@ -1239,15 +1239,18 @@ only the candidate child.  Preparation compile and PM1 reclaim tests pass
 5/5.  This remains a provisional bottom-up screen pending candidate input
 generation and later full-top confirmation.
 
-Candidate-child generation is now active in
-`kvzap-control-refine:p18-pm1-child-freeze`; see
-[`dc_pm1_page_manager_successor_generation_20261105.md`](dc_pm1_page_manager_successor_generation_20261105.md).
-The frozen inputs were verified byte-identical before launch, and the task is
-currently in the CHIRRTL emitter.  This task invokes no DC.  Do not begin the
-saved-DDC characterized replacement screen until p18 exits zero and its port,
-artifact and hash closure is independently checked.  The separate RD1 paired
-DC remains active in `kvzap-control-refine:p16-rd1-dc` and must not be
-disturbed.
+Candidate-child generation was launched with byte-identical inputs in
+`kvzap-control-refine:p18-pm1-child-freeze` and has ended at the intended
+port-identity gate; see
+[`dc_pm1_page_manager_successor_generation_result_20261105.md`](dc_pm1_page_manager_successor_generation_result_20261105.md).
+CHIRRTL and split RTL generation succeeded, but the standalone emitter exposed
+74 fields that the real parent context removes: 218 candidate ports versus 144
+frozen child ports, with no frozen port missing.  The outer exit is 1, hash and
+success markers were not produced, and no DC ran.  Reject p18 as a replacement
+input.  The next attempt must generate PM1 under the same real measurement
+parent and compare the contextually lowered child; do not force relinking or
+invent a pin map.  The separate RD1 paired DC remains active in
+`kvzap-control-refine:p16-rd1-dc` and must not be disturbed.
 
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described

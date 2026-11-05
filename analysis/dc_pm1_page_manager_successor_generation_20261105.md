@@ -46,3 +46,12 @@ This is a launch/liveness record only.  Completion requires exit zero, the
 outer exit marker, the exact port-identity pass marker, the successor pass
 marker, non-empty CHIRRTL and split SystemVerilog, and recorded hashes.  No
 mapped-area or timing conclusion follows from this launch.
+
+## Completion update
+
+The run later ended with outer exit 1 at the exact port-identity gate.  The
+standalone emitter retained 74 ports that were contextually removed when the
+frozen child was lowered below its real parent.  See
+[`dc_pm1_page_manager_successor_generation_result_20261105.md`](dc_pm1_page_manager_successor_generation_result_20261105.md)
+for the completed disposition and required contextual successor.  This input
+is rejected and no saved-DDC replacement DC is authorized from it.
