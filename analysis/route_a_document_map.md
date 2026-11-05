@@ -102,6 +102,9 @@ The subsequent authorized small-synthesis freeze is
 `dc_rd2_read_screen_input_freeze_20261106.md`, with copied immutable inputs,
 matched RD1 context and unchanged fair-v1 constraints.  It also records the
 later cumulative integration decision gate for RD1/PM1/RD2.
+The corresponding active run is
+`dc_rd2_read_screen_launch_20261106.md`; input and baseline-analysis markers
+are launch evidence only until both native sides and postcheck pass.
 
 For compact-table read consumers, legal concurrency and the selected RD1
 change, read `dc_compact_membership_read_sharing_plan_20261104.md` and

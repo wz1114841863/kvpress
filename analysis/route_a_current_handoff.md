@@ -1456,6 +1456,13 @@ fair-v1 scripts pass preflight under a new remote run root.  Both sides retain
 RD1 and measure only the RD2 increment.  RD1+PM1 full paired DC remains
 required for eventual integrated acceptance; defer the cumulative-input
 choice until RD2's small-screen disposition.  No full-top DC is started here.
+The RD2 isolated small-synthesis screen is now active; see
+[`dc_rd2_read_screen_launch_20261106.md`](dc_rd2_read_screen_launch_20261106.md).
+Run `rd2_read_network_screen_20261106_r1` is in independent tmux window
+`kvzap-control-refine:p27-rd2-read-dc`.  Input/stack gates pass, baseline
+Presto analyze completes, and its native DC process is live.  Wait for user
+notification before checking both side exits/PASS, postcheck/total PASS,
+outer exit, hashes and reports.  RD1+PM1 full paired DC is not active.
 
 ## Superseded pre-DC prompt seed (historical)
 
