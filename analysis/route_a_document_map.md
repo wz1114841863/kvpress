@@ -78,6 +78,12 @@ readers, selection and write decode, ordinal-indexed reconciliation, M2 slot
 searches and Page Manager stream-coordinate candidates.  It starts no RTL or
 experiment and assigns no unmeasured saving.
 
+The independently scoped RD2 candidate is described by
+`dc_rd2_decoded_read_implementation_20261106.md`.  Both isolated sides retain
+RD1; only the remaining C/F/B and M/C suffix read realization changes.  The
+production wrapper remains unchanged until equivalence and mapped evidence
+support integration.
+
 For compact-table read consumers, legal concurrency and the selected RD1
 change, read `dc_compact_membership_read_sharing_plan_20261104.md` and
 `dc_compact_membership_read_port_audit_20261104.csv`.  The plan selects per-bank

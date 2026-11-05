@@ -1407,6 +1407,22 @@ identifies the retained 366,336-bit compact-table storage as a major cost
 requiring separate realization study for larger state savings.  No RTL or
 experiment is started by this documentation-only review.
 
+RD2 has an isolated candidate while frozen RD1 DC continues; see
+[`dc_rd2_decoded_read_implementation_20261106.md`](dc_rd2_decoded_read_implementation_20261106.md).
+It keeps the RD1 reader on both screen sides and compares explicit decode
+against nested indexing for the remaining C/F/B and M/C suffix readers.
+Production wrapper, lifecycle, storage and frozen RD1 input remain unchanged.
+Local differential verification and immutable screen-input emission precede
+any remote small-synthesis launch; integration requires separate closure of
+out-of-range/ready behavior and complete functional/source checks.
+The current final-source verification/emission run is local tmux
+`kvzap-rd2-local:rd2-test`, log `/tmp/kvzap_rd2_local_20261106_r4.log`.
+Source compilation passes; the 36 x 64 simulator C++ build remains active.
+Require the two-test PASS, paired-emitter PASS and
+`KVZAP_RD2_LOCAL_TEST_EMIT_EXIT=0` before any remote RD2 DC launch.  Earlier
+local attempts expose compiler-memory pressure and are preserved as
+diagnostics; they are not functional failures or acceptance evidence.
+
 ## Superseded pre-DC prompt seed (historical)
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read
