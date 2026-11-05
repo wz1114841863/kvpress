@@ -72,6 +72,12 @@ Read only when the question needs the corresponding history or object:
 
 ## Artifact role rules
 
+For the post-RD1/PM1 optimization inventory, read
+`dc_next_structure_opportunities_20261106.md`.  It covers remaining wrapper
+readers, selection and write decode, ordinal-indexed reconciliation, M2 slot
+searches and Page Manager stream-coordinate candidates.  It starts no RTL or
+experiment and assigns no unmeasured saving.
+
 For compact-table read consumers, legal concurrency and the selected RD1
 change, read `dc_compact_membership_read_sharing_plan_20261104.md` and
 `dc_compact_membership_read_port_audit_20261104.csv`.  The plan selects per-bank

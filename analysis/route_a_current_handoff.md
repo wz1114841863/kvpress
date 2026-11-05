@@ -1398,6 +1398,15 @@ is retained as a historical snapshot.  Use the accepted result above for any
 successor discussion; no additional refinement or DC run is automatically
 authorized.
 
+The next structure-opportunity review is
+[`dc_next_structure_opportunities_20261106.md`](dc_next_structure_opportunities_20261106.md).
+It prioritizes remaining wrapper record readers and materializer selection,
+with independent ordinal-indexed reconciliation and M2 slot-search P0 work.
+It distinguishes measured predecessor costs from unmeasured candidates and
+identifies the retained 366,336-bit compact-table storage as a major cost
+requiring separate realization study for larger state savings.  No RTL or
+experiment is started by this documentation-only review.
+
 ## Superseded pre-DC prompt seed (historical)
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read
