@@ -1435,6 +1435,14 @@ The first remote p25 attempt stopped before JVM startup because the installed
 Java 21 binary requires a newer glibc.  Its artifacts/log remain preserved.
 Use the proven native Java 11 runtime, as in accepted p19, and a new root for
 the retry.  This environment failure provides no RD2 test or synthesis result.
+The corrected remote run is now active; see
+[`dc_rd2_remote_validation_launch_20261106.md`](dc_rd2_remote_validation_launch_20261106.md).
+It runs in `kvzap-control-refine:p26-rd2-test-emit-r2`, with immutable source
+archive `48f8cf3` extracted under a new root.  Native Java 11 startup,
+preflight/input/stack markers and isolated sbt project loading succeed.
+Wait for user-reported completion and require both exits zero, the two-case
+test PASS, paired-emitter PASS, postcheck PASS and output hash/port closure.
+The job does not start DC; RD1 remains independently active.
 
 ## Superseded pre-DC prompt seed (historical)
 

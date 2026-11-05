@@ -91,6 +91,9 @@ result exists; simulator-build repair precedes any small synthesis.
 Use `dc_rd2_remote_validation_migration_20261106.md` for the next remote-only
 functional/emission successor.  It uses an immutable isolated source archive
 and one C++ compiler job while retaining the complete tests and geometry.
+The corrected Java-11 remote launch is tracked in
+`dc_rd2_remote_validation_launch_20261106.md`; preflight and sbt startup are
+only liveness evidence until the full test/emitter/postcheck gates pass.
 
 For compact-table read consumers, legal concurrency and the selected RD1
 change, read `dc_compact_membership_read_sharing_plan_20261104.md` and
