@@ -98,6 +98,10 @@ Finish with `dc_rd2_remote_validation_result_20261106.md`: both tests, paired
 emission and postcheck pass, with independently verified source/output hashes
 and paired ports.  This supplies isolated RD2 small-synthesis inputs; it is
 not an RD2 mapped-area or production-integration result.
+The subsequent authorized small-synthesis freeze is
+`dc_rd2_read_screen_input_freeze_20261106.md`, with copied immutable inputs,
+matched RD1 context and unchanged fair-v1 constraints.  It also records the
+later cumulative integration decision gate for RD1/PM1/RD2.
 
 For compact-table read consumers, legal concurrency and the selected RD1
 change, read `dc_compact_membership_read_sharing_plan_20261104.md` and

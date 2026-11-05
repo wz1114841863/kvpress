@@ -1449,6 +1449,13 @@ server.  RD2 has no mapped result yet; freeze these inputs for an independent
 small-synthesis comparison before production integration.  RD1 has also
 completed and is recorded separately above.  No KVZap test/DC process remains
 active at this snapshot; no new synthesis is launched by the inspection.
+The next authorized RD2 isolated screen input is frozen; see
+[`dc_rd2_read_screen_input_freeze_20261106.md`](dc_rd2_read_screen_input_freeze_20261106.md).
+Its two RTL hashes, paired ports, test XML, five source snapshots and copied
+fair-v1 scripts pass preflight under a new remote run root.  Both sides retain
+RD1 and measure only the RD2 increment.  RD1+PM1 full paired DC remains
+required for eventual integrated acceptance; defer the cumulative-input
+choice until RD2's small-screen disposition.  No full-top DC is started here.
 
 ## Superseded pre-DC prompt seed (historical)
 
