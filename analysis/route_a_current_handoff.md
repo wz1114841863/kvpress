@@ -1325,6 +1325,13 @@ separate 62,002 precompile and 62,000 postcompile expectations before rerun.
 The joined PM1 pane closed cleanly; the surviving RD1 pane remained live and
 was relabeled back to `p16-rd1-dc` without interrupting DC.
 
+The replacement screen's mixed-stage gate is repaired for r3; see
+[`dc_pm1_characterized_replacement_r3_repair_20261105.md`](dc_pm1_characterized_replacement_r3_repair_20261105.md).
+It now requires 62,002 registers before candidate compile and 62,000 cells for
+both accepted and candidate postcompile checks.  No RTL, candidate input,
+port/relink policy, characterization, clock, constraint, proxy or compile
+effort changes.  This repair alone is not a synthesis result.
+
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
 in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,

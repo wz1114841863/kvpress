@@ -148,6 +148,10 @@ PM1 raw children have 62,002 registers before compile, while the accepted
 mapped Page Manager has 62,000 sequential cells.  The earlier r2 failure was
 a mixed-stage gate, not PM1-added state.  This is count closure only, not an
 area or timing result.
+The bounded correction is recorded in
+`dc_pm1_characterized_replacement_r3_repair_20261105.md`; it separates the
+62,002 precompile and 62,000 postcompile fail-closed expectations without
+changing the candidate or replacement method.
 
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped

@@ -77,7 +77,8 @@ manifest = {
         "relink": "unique top-level pageManager instance; no force and no pin map",
         "characterize": "timing plus constraints plus connections",
         "compile": "candidate child only; map_effort medium",
-        "expected_page_manager_registers": 62000,
+        "expected_precompile_registers": 62002,
+        "expected_postcompile_registers": 62000,
     },
     "exclusions": [
         "top recompilation", "clock relaxation", "state deletion", "PPA",

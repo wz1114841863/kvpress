@@ -12,7 +12,8 @@ if {[catch {
   set baseline_ref route_a_page_manager
   set candidate_ref route_a_page_manager_pm1
   set proxy_ref route_a_r5_availability_array_boundary
-  set expected_registers 62000
+  set expected_precompile_registers 62002
+  set expected_postcompile_registers 62000
 
   foreach required [list $ddc $candidate_sv] {
     if {![file isfile $required]} { error "missing input: $required" }
@@ -53,8 +54,8 @@ if {[catch {
   set boundary_pins [sizeof_collection [get_pins -quiet -of_objects $instance]]
   set baseline_registers [get_cells -quiet -hierarchical * -filter \
     "full_name =~ pageManager/* && is_sequential == true"]
-  if {[sizeof_collection $baseline_registers] != $expected_registers} {
-    error "expected $expected_registers baseline Page Manager registers, found [sizeof_collection $baseline_registers]"
+  if {[sizeof_collection $baseline_registers] != $expected_postcompile_registers} {
+    error "expected $expected_postcompile_registers baseline mapped Page Manager registers, found [sizeof_collection $baseline_registers]"
   }
   redirect [file join $baseline_out top_qor.rpt] { report_qor }
   redirect [file join $baseline_out top_area_hierarchy.rpt] { report_area -hierarchy -nosplit }
@@ -75,8 +76,8 @@ if {[catch {
   current_design $candidate_ref
   if {![link]} { error "candidate child link failed" }
   set candidate_pre_registers [sizeof_collection [all_registers]]
-  if {$candidate_pre_registers != $expected_registers} {
-    error "expected $expected_registers candidate precompile registers, found $candidate_pre_registers"
+  if {$candidate_pre_registers != $expected_precompile_registers} {
+    error "expected $expected_precompile_registers candidate precompile registers, found $candidate_pre_registers"
   }
   set proxy_cells [get_cells -quiet -hierarchical * -filter "ref_name == $proxy_ref"]
   if {[sizeof_collection $proxy_cells] != 1} {
@@ -114,8 +115,8 @@ if {[catch {
   }
   if {![compile -map_effort medium]} { error "candidate child compile failed" }
   set candidate_post_registers [sizeof_collection [all_registers]]
-  if {$candidate_post_registers != $expected_registers} {
-    error "expected $expected_registers candidate postcompile registers, found $candidate_post_registers"
+  if {$candidate_post_registers != $expected_postcompile_registers} {
+    error "expected $expected_postcompile_registers candidate postcompile registers, found $candidate_post_registers"
   }
   set proxy_cells [get_cells -quiet -hierarchical * -filter "ref_name == $proxy_ref"]
   if {[sizeof_collection $proxy_cells] != 1} {
@@ -158,6 +159,8 @@ if {[catch {
   puts $summary "baseline_ref\t$baseline_ref"
   puts $summary "candidate_ref\t$candidate_ref"
   puts $summary "page_manager_boundary_pins\t$boundary_pins"
+  puts $summary "expected_precompile_registers\t$expected_precompile_registers"
+  puts $summary "expected_postcompile_registers\t$expected_postcompile_registers"
   puts $summary "baseline_registers\t[sizeof_collection $baseline_registers]"
   puts $summary "candidate_precompile_registers\t$candidate_pre_registers"
   puts $summary "candidate_postcompile_registers\t$candidate_post_registers"
