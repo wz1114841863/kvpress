@@ -152,6 +152,9 @@ The bounded correction is recorded in
 `dc_pm1_characterized_replacement_r3_repair_20261105.md`; it separates the
 62,002 precompile and 62,000 postcompile fail-closed expectations without
 changing the candidate or replacement method.
+Its separately authorized remote run is tracked in
+`dc_pm1_characterized_replacement_r3_launch_20261105.md`; launch markers are
+not a mapped result.
 
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped

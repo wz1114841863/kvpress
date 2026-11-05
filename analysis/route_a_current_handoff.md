@@ -1332,6 +1332,15 @@ both accepted and candidate postcompile checks.  No RTL, candidate input,
 port/relink policy, characterization, clock, constraint, proxy or compile
 effort changes.  This repair alone is not a synthesis result.
 
+The repaired characterized replacement r3 run is now active; see
+[`dc_pm1_characterized_replacement_r3_launch_20261105.md`](dc_pm1_characterized_replacement_r3_launch_20261105.md).
+Run `pm1_characterized_replacement_20261105_r3` is in the independent tmux
+window `kvzap-control-refine:p23-pm1-characterized-r3`.  Frozen input hashes,
+the distinct 62,002/62,000 gates, input PASS and unlimited-stack PASS are
+present, and native DC is live.  RD1 remains independently live in
+`p16-rd1-dc`.  Wait for user-reported completion before checking the native
+replacement PASS, both outer exits, mapped artifacts and reports.
+
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
 in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,
