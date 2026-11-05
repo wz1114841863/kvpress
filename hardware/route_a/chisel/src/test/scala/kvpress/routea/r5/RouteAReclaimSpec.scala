@@ -15,7 +15,10 @@ import org.scalatest.funspec.AnyFunSpec
   * bridge-generation defect.  This harness leaves the production PageManager
   * unchanged and exposes exactly the reclaim fields checked below.
   */
-final class RouteAReclaimHarness(p: RouteASkeletonParameters) extends Module {
+final class RouteAReclaimHarness(
+  p: RouteASkeletonParameters,
+  bankAllocatedLineSelector: Boolean = false,
+) extends Module {
   val io = IO(new Bundle {
     val mem_init_done = Input(Bool())
     val drain_collection_enable = Input(Bool())
@@ -43,7 +46,10 @@ final class RouteAReclaimHarness(p: RouteASkeletonParameters) extends Module {
     val component_status_out = RouteAChannels.component_status(p)
   })
 
-  val pageManager = Module(new RouteAPageManager(p))
+  val pageManager = Module(new RouteAPageManager(
+    p,
+    bankAllocatedLineSelector = bankAllocatedLineSelector,
+  ))
   pageManager.io.mem_init_done := io.mem_init_done
   pageManager.io.drain_collection_enable := io.drain_collection_enable
   pageManager.io.reclaim_permit_in <> io.reclaim_permit_in
@@ -155,7 +161,7 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("writes a complete 64-B invalidation line and frees only after its terminal") {
-    simulate(new RouteAReclaimHarness(p)) { dut =>
+    simulate(new RouteAReclaimHarness(p, bankAllocatedLineSelector = true)) { dut =>
       init(dut); publishOne(dut); issueLine(dut)
       dut.io.reclaim_complete.expect(false.B)
       terminalLine(dut, fault = false)
@@ -172,7 +178,7 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("keeps page ownership on a faulted reclaim terminal") {
-    simulate(new RouteAReclaimHarness(p)) { dut =>
+    simulate(new RouteAReclaimHarness(p, bankAllocatedLineSelector = true)) { dut =>
       init(dut); publishOne(dut); issueLine(dut); terminalLine(dut, fault = true)
       dut.io.reclaim_complete.expect(false.B)
       dut.io.component_status_out.valid.expect(false.B)
@@ -180,7 +186,7 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("updates every allocated lane of one 64-B descriptor line at one terminal") {
-    simulate(new RouteAReclaimHarness(p)) { dut =>
+    simulate(new RouteAReclaimHarness(p, bankAllocatedLineSelector = true)) { dut =>
       init(dut)
       publishOne(dut, head = 0, tag = 1, page = 0)
       publishOne(dut, head = 1, tag = 0, page = 1)
@@ -191,7 +197,7 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("rejects a stale reclaim terminal and leaves the allocated line live") {
-    simulate(new RouteAReclaimHarness(p)) { dut =>
+    simulate(new RouteAReclaimHarness(p, bankAllocatedLineSelector = true)) { dut =>
       init(dut); publishOne(dut); issueLine(dut)
       val rsp = dut.io.reclaim_delivery_in.bits
       rsp.candidate_id.poke(1.U); rsp.candidate_class.poke(p.r2DescriptorMaintenanceClassCode.U)
@@ -208,7 +214,7 @@ final class RouteAReclaimSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("does not let an old durable terminal free the next descriptor line or report R5 drained early") {
-    simulate(new RouteAReclaimHarness(p)) { dut =>
+    simulate(new RouteAReclaimHarness(p, bankAllocatedLineSelector = true)) { dut =>
       init(dut)
       // Pages 0..3 share descriptor line 0; page 4 starts descriptor line 1.
       // Each stream is distinct, so this constructs five independent already-

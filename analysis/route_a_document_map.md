@@ -123,6 +123,13 @@ segfaults in DC Pass-1 mapping, while the independently launched banked side
 maps and emits native reports. The combined run fails and provides no matched
 PM1 area/timing comparison.
 
+The bounded production-module successor is
+`dc_pm1_page_manager_integration_20261105.md`.  It adds a default-off Page
+Manager realization parameter, enables PM1 only in the candidate test instance
+and passes 5/5 real reclaim tests.  It deliberately defers mapped claims until
+a saved-DDC replacement-readiness probe or later complete paired successor can
+preserve a fair comparison context.
+
 For the specific cause of the residual M2/P3 area, read
 `dc_compact_wrapper_hotspot_attribution_20261104.md`.  It cross-checks mapped
 reference counts, separates membership sequential cells from overlapping

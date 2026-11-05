@@ -1214,6 +1214,15 @@ Run `dc_feasibility_fair_rd1_shared_20261105_r1` is in tmux
 Full-KV link and fair-v1 constraint application pass.  This is not yet a
 mapped result; wait for user notification before inspecting completion.
 
+PM1 has a new production-module integration candidate, isolated from the
+frozen RD1 run; see
+[`dc_pm1_page_manager_integration_20261105.md`](dc_pm1_page_manager_integration_20261105.md).
+`RouteAPageManager` retains the legacy selector by default and exposes one
+explicit candidate-only realization flag.  The real Page Manager with PM1
+enabled passes 5/5 reclaim tests.  No mapped comparison is claimed; the next
+gate is a read-only saved-DDC replacement-readiness probe rather than another
+flat-selector synthesis rerun.
+
 The compact-membership DC run has completed.  The current result authority is
 [`dc_m2_p3_wrapper_compact_membership_result_20261104.md`](dc_m2_p3_wrapper_compact_membership_result_20261104.md).
 Both side exits, paired/outer markers, hashes and native artifacts pass.

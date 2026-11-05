@@ -3641,6 +3641,7 @@ final class RouteAR5AvailabilityArrayBoundary(p: RouteASkeletonParameters) exten
 final class RouteAPageManager(
   p: RouteASkeletonParameters,
   externalizeDescriptorBacking: Boolean = false,
+  bankAllocatedLineSelector: Boolean = false,
 ) extends Module {
   override def desiredName: String = "route_a_page_manager"
 
@@ -3801,7 +3802,13 @@ final class RouteAPageManager(
   }
 
   val anyAllocatedLine = allocatedLine.asUInt.orR
-  val nextAllocatedLine = PriorityEncoder(allocatedLine)
+  // PM1 changes only the exact same-cycle realization of the reclaim-line
+  // selector. The state, lowest-index ordering and valid guard remain owned
+  // by Page Manager. Keep the legacy lowering as the default until the
+  // production mapped comparison is accepted.
+  val nextAllocatedLine = if (bankAllocatedLineSelector)
+    RouteAExactLowestPrioritySelector.banked(allocatedLine.asUInt, descriptorLines, bankSize = 64)._2
+  else PriorityEncoder(allocatedLine)
 
   private def reclaimIdentity: TransactionIdentity = {
     val identity = Wire(new TransactionIdentity)
