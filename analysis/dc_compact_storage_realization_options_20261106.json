@@ -1,0 +1,52 @@
+{
+  "schema_version": "route-a-compact-storage-options-1",
+  "source_commit": "a3a46039fd4c22b662d36e1053efc006edac20a6",
+  "evidence_class": "read_only_source_library_and_completed_report_analysis_not_candidate_result",
+  "rtl_modified": false,
+  "rd2_inspected_or_modified": false,
+  "remote_access": "read only library models and completed RD1/predecessor reports",
+  "eda_tool_launched": false,
+  "remote_root": "/home/yaz80/wz_project/dc_project/pdk/TSMC28",
+  "remote_sha256": {
+    "tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db": "5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d",
+    "tcbn28hpcplusbwp12t30p140lvt.v": "4aac97c4efda0665cdc8af807a1f5f6706f69a2359453b244562cd8158f27cbf",
+    "tem5n28hpcplvta64x64m4swso_110a_ssg0p81v125c.v": "42f7fecc7a2a5c327691afedca53bb70ac9c103cff938f12d599c20cbb64c78a"
+  },
+  "completed_rd1_references": {
+    "path": "/home/yaz80/wz_project/dc_project/kvzap_control_projection/runs/dc_feasibility_fair_rd1_shared_20261105_r1/route_a/references.rpt",
+    "sha256": "a3f7235b88a9db49e87e114d8902026c6f56d022333156066f2d91a62e365278"
+  },
+  "prior_mapped_attribution": {
+    "path": "/home/yaz80/wz_project/chisel_projects/kvpress/logs/wrapper_hotspot_audit_20261104_r4.json",
+    "sha256": "604289049ed66899121e9de08f66969ea34ba7b980889add54e2a9ae3f2225e6",
+    "table_immediate_data_driver_area_lower_bound": 8692.824
+  },
+  "functional_module_inventory": {
+    "count": 1186,
+    "multiple_distinct_tsmc_dff_state_node_modules_found": 0,
+    "qualification": "companion model scan only; not exhaustive DB capability or mapping eligibility proof"
+  },
+  "native_unit_areas": {
+    "EDFQD2BWP12T30P140LVT": 3.528,
+    "DFQD2BWP12T30P140LVT": 2.52
+  },
+  "functional_cells_present_not_priced": ["CKLNQD1BWP12T30P140LVT", "LHQD1BWP12T30P140LVT"],
+  "payload_only_arithmetic_not_mapped_saving": {
+    "bits": 366336,
+    "enabled_cell_sum": 1292433.408,
+    "plain_cell_sum": 923166.72,
+    "gross_difference_before_gate_and_peripheral_cost": 369266.688,
+    "gross_percent_of_rd1_top": 10.897331559647581,
+    "naive_two_enable_groups_word_gate_count": 4608,
+    "reverse_journal_suffix_bit_ceiling": 5120,
+    "reverse_journal_suffix_gross_area_before_extra_reads": 18063.36
+  },
+  "logical_reads_per_bank_conservative": {"member_payload_64": 4, "member_position_15": 2, "pending_suffix_80": 2},
+  "reverse_storage_equation_abstract_check": {
+    "banks": 2, "ordinals": 2, "values": 2,
+    "states": 196, "transitions": 1960, "crossbank_overwrite_transitions": 448,
+    "nonreuse_assumption": false,
+    "qualification": "reduced data-write equations only; not wrapper RTL or legal post-assertion coverage"
+  },
+  "next_candidate": "WCG1 feasibility and cost P0 only; no implementation or screen launched"
+}

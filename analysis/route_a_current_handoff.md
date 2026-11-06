@@ -1509,6 +1509,21 @@ and testbench RTL, frozen inputs and RD2 are unchanged; no remote access or
 synthesis occurred. Conditional production reuse remains an unimplemented,
 separately scoped choice rather than a generic pass.
 
+The generic wrapper remains unchanged while storage alternatives are analyzed;
+see [`dc_compact_storage_realization_options_20261106.md`](dc_compact_storage_realization_options_20261106.md)
+and its evidence JSON. Read-only library/native-report inspection confirms
+sampled table bits use integrated-enable EDF cells. The concrete next
+per-bit-cost candidate is WCG1: ordinary DFFs with shared, characterized word
+clock gates and separate 79/80-bit enables. Its 369,267-area gross scalar-cell
+difference excludes every new gate/peripheral/timing cost and is NOT a mapped
+saving. An asynchronous multi-read RF is the separately scoped larger
+realization direction; the inspected 64 x 64 synchronous one-port SRAM is not
+drop-in compatible. Reverse journal reuse retains generic data but can remove
+only 5,120 suffix-copy bits before extra-read costs. No usable multi-bit DFF
+is established by the companion-model scan. This batch changes documents
+only, launches no EDA tool and reads no RD2 state; no candidate RTL or new
+clock/constraint/macro selection is made.
+
 ## Superseded pre-DC prompt seed (historical)
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

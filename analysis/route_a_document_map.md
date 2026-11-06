@@ -102,6 +102,15 @@ the simple journal-only replacement is not eligible for generic integration.
 The source replay and four checker regressions are not actual-wrapper RTL
 equivalence. Existing generic storage and RD2 remain unchanged; no DC ran.
 
+For storage options after keeping the generic wrapper unchanged, read
+`dc_compact_storage_realization_options_20261106.md` and its evidence JSON.
+Native cell/model inspection motivates WCG1 word clock gating plus ordinary
+DFFs as a per-bit-cost feasibility study, with all 366,336 bits retained and
+all new gate costs still unknown. It separates WR1/read-network work,
+asynchronous multi-read RFs, incompatible synchronous SRAM substitution,
+small reverse-journal reuse and unestablished multi-bit-cell availability.
+Scalar-cell arithmetic is not mapped saving; no RTL or EDA execution follows.
+
 The independently scoped RD2 candidate is described by
 `dc_rd2_decoded_read_implementation_20261106.md`.  Both isolated sides retain
 RD1; only the remaining C/F/B and M/C suffix read realization changes.  The
