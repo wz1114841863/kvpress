@@ -1658,6 +1658,16 @@ equivalence or production integration is accepted. Next is isolated generated
 input/native-binding closure and matched wrapper mapping/STA; no job is started.
 RD1+PM1's running full synthesis is not accessed or changed in this audit.
 
+The user separately authorizes the next isolated mapping/STA tier. Preparation
+is in
+[`dc_wcg1_wrapper_mapping_plan_20261106.md`](dc_wcg1_wrapper_mapping_plan_20261106.md):
+actual same-profile wrapper export, exact inline-resource closure and native
+4,608-gate binding preflight before matched 2-ns propagated-clock mapping.
+Both raw and equally hold-repaired areas/timing must be retained. Local 34
+input/postcheck regressions pass. Preparation is not a launch/result; the
+separate frozen launch record is authoritative for later execution. Neither
+production RTL nor the independent RD1+PM1 run is changed.
+
 ## Incremental storage/service cost P0 (2026-11-06)
 
 The read-only ledger is

@@ -354,6 +354,14 @@ This accepts directed wrapper functional validation only; native wrapper
 mapping/2-ns STA, universal equivalence and production integration stay open.
 No new job or RD1+PM1 inspection is performed.
 
+For the authorized WCG1 real-wrapper mapping/STA successor, read
+`dc_wcg1_wrapper_mapping_plan_20261106.md`. It preserves all full-profile
+ports/table bits and real parent control, explicitly closes inline/native
+binding before mapping, proxies only P3 bytes and applies matched raw/hold-
+repaired propagated-clock 2-ns policy. Preparation/local checks are not a
+native result; consult the later separate launch record for actual execution.
+RD1+PM1 and production defaults remain untouched.
+
 For the read-only incremental storage/service cost ledger, read
 `route_a_incremental_storage_cost_ledger_p0_20261106.md` and its CSV/evidence
 JSON. It separates accepted RD1 mapped parents/compact tables from excluded
