@@ -20,6 +20,14 @@ initial begin
    @(posedge clock); #1; compare;
    #200; enable=~enable; #1; compare;
  end
+ // The source can change through NBA on the same root edge. The low latch
+ // must keep the pre-edge enable throughout HIGH, including its full pulse.
+ for(index=0;index<32;index=index+1) begin
+   @(negedge clock); #800; enable=index[0]; #1; compare;
+   @(posedge clock); enable <= ~enable; #1; compare;
+   #200; enable=~enable; #1; compare;
+   @(negedge clock); #1; compare;
+ end
  $display("WCG1_WRAPPER_GATE_NATIVE_EQUIVALENCE_PASS checks=%0d",checks);
  $finish;
 end

@@ -1626,6 +1626,15 @@ and preflight the simulation model/native-edge equivalence, then use a new
 immutable functional retry. This inspection makes no code change or restart
 and does not access the independent RD1+PM1 run. The earlier single-bank WCG1
 mapped result remains separate; full wrapper timing/functional closure is open.
+The authorized repair is now prepared in
+[`dc_wcg1_wrapper_model_repair_20261106.md`](dc_wcg1_wrapper_model_repair_20261106.md)
+and JSON. Only the simulation latch assignment changes; native binding,
+wrapper protocol and eight tests are unchanged. Matching Verilator 5.041
+reproduces old COMBDLY, builds the fixed executable without suppressions,
+passes 6,156 capture/edge checkpoints and both negative controls. Two native
+Icarus modes each pass 368 gate comparisons including root-edge NBA changes.
+The runner now requires this preflight before any long retry. A new remote
+eight-test run is pending; RD1+PM1 is not accessed or modified by this repair.
 
 ## Superseded pre-DC prompt seed (historical)
 

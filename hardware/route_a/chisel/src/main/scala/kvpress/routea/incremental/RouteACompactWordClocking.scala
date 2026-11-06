@@ -21,7 +21,7 @@ private final class RouteACompactWordClockGate extends BlackBox with HasBlackBox
 `else
   reg enable_low;
   always_latch begin
-    if (!clock) enable_low <= enable;
+    if (!clock) enable_low = enable;
   end
   assign gated_clock = clock & enable_low;
 `endif

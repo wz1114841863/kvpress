@@ -1,0 +1,59 @@
+{
+  "schema": "wcg1-wrapper-model-repair-1",
+  "status": "MINIMAL_GATES_PASS_FUNCTIONAL_RETRY_PENDING",
+  "hardware_source_delta": "simulation-only nonblocking to blocking latch assignment; native binding and wrapper/protocol/test sources unchanged",
+  "preflight": {
+    "schema": "wcg1-wrapper-gate-preflight-1",
+    "result": "PASS",
+    "evidence_scope": "unsdf model/scheduler/native-cell unit checks, not wrapper equivalence or timing",
+    "verilator": "Verilator 5.041 devel rev v5.040-350-g6ec5c85be",
+    "old_combdly": "REPRODUCED",
+    "fixed_build": "PASS_NO_WARNING_SUPPRESSION",
+    "checks": 6156,
+    "edge_checks": 1634,
+    "negatives": {
+      "BARE_AND": {
+        "result": "EXPECTED_DIFFERENCE",
+        "failure": "unexpected_positive_edge"
+      },
+      "MERGED_ENABLE": {
+        "result": "EXPECTED_DIFFERENCE",
+        "failure": "suffix_capture_mismatch"
+      }
+    },
+    "native_comparisons": {
+      "behavioral": {
+        "result": "PASS",
+        "checks": 368
+      },
+      "synthesis_binding": {
+        "result": "PASS",
+        "checks": 368
+      }
+    },
+    "native_model_sha256": "4aac97c4efda0665cdc8af807a1f5f6706f69a2359453b244562cd8158f27cbf",
+    "source_sha256": {
+      "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteACompactWordClocking.scala": "4bea447a12560a2430b798267447ee3028293f3769b82aedfa191a10985cf394",
+      "hardware/route_a/dc/tests/wcg1_gate_minimal.sv": "ab28c87d19b94baeca775905df59a3d6ddac9ae47c71bf4c739a8975ae6b8fa0",
+      "hardware/route_a/dc/tests/wcg1_gate_minimal.cpp": "e61f9116891bba0a25ce5e8e44d586243921d1ce01bef20195666a549724b66c",
+      "hardware/route_a/dc/tests/wcg1_wrapper_gate_tb.sv": "e0dd13c268f5c11b644bc96a795699f6b0f2902fd35b6ea24bed76b02de69144",
+      "tools/check_wcg1_wrapper_gate.py": "00619e50160a303e5d0076eb65fa1130f40548597023cbfdccb421be91b7bcc2"
+    },
+    "output_log_sha256": {
+      "behavioral.log": "f928a200dcc4974ee15a8348d40893bc9b84778222fa40f6aa066af13f819242",
+      "verilator_version.log": "a5944f961aa9550323268c9538d3d32513e8be107b760c46d7ce485ea62e34c8",
+      "old_lint.log": "aa8e63671111e0f4a2564d13f7e496e32d1ad974c60ef136204ceccc759366cf",
+      "synthesis_binding.log": "f928a200dcc4974ee15a8348d40893bc9b84778222fa40f6aa066af13f819242",
+      "synthesis_binding_build.log": "18a67e7e5e23e664533cc3aeb1fa03639aa2f6cac34f85d4b3dc87196c970350",
+      "fixed_build.log": "6913425e97e29f7ad995e7a6976897546f30c8e85154f2e1b6c6aa7551d4abe6",
+      "positive.log": "cd05fd61b45f27a09a3ac9ce4d9c989b628da1cb593c66635fbc058a8b04d6af",
+      "merged_enable.log": "2736690830528bc878fb055efd50798d82788fe1a4273188fe9a3aacd1ad22b1",
+      "behavioral_build.log": "18a67e7e5e23e664533cc3aeb1fa03639aa2f6cac34f85d4b3dc87196c970350",
+      "bare_and.log": "5c82651253f6ad1a2476eec97d64570f58e3af85e44ab95fa26a7fa6359b18c6"
+    }
+  },
+  "preflight_result_sha256": "d0b31e0aefbb46e86e55f87af3993059d0664450f61df0453a1e2772e190f7d0",
+  "native_clock_ns": 2,
+  "rd1_pm1": "not accessed or modified",
+  "synthesis_or_sta_invoked": false
+}

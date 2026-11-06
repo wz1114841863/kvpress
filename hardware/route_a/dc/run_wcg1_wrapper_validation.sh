@@ -26,9 +26,16 @@ memory=dict(line.split(':',1) for line in Path('/proc/meminfo').read_text().spli
 assert int(memory['MemAvailable'].split()[0]) >= 16*1024*1024, 'less than 16 GiB available for serial validation'
 files={str(p.relative_to(project)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(project.rglob('*')) if p.is_file()}
 assert not any('RD2' in p or 'RecordReadDecode' in p for p in files), 'RD2 must be excluded'
-(root/'input_manifest.json').write_text(json.dumps(dict(schema='wcg1-wrapper-functional-input-1',archive=sys.argv[2],archive_sha256=sys.argv[3],workspace=str(project),source_sha256=files,scope='baseline regression plus candidate actual-wrapper differential assertions; no DC or STA',candidate_geometry=[36,64,79,80],build_jobs=1),indent=2)+'\n')
+auxiliary={str(p.relative_to(root/'workspace')):hashlib.sha256(p.read_bytes()).hexdigest() for parent in ('tools','hardware/route_a/dc/tests') for p in sorted((root/'workspace'/parent).glob('*')) if p.is_file()}
+assert len(auxiliary)==4, 'missing minimal gate preflight sources'
+(root/'input_manifest.json').write_text(json.dumps(dict(schema='wcg1-wrapper-functional-input-1',archive=sys.argv[2],archive_sha256=sys.argv[3],workspace=str(project),source_sha256=files,preflight_sources_sha256=auxiliary,scope='baseline regression plus candidate actual-wrapper differential assertions; no DC or STA',candidate_geometry=[36,64,79,80],build_jobs=1),indent=2)+'\n')
 print('KVZAP_WCG1_WRAPPER_INPUT_PASS',flush=True)
 PY
+# Reproduce the old failure and require a real, warning-free Verilator binary
+# plus edge/capture/negative controls before any long wrapper compilation.
+python3 "$root/workspace/tools/check_wcg1_wrapper_gate.py" \
+  --output-dir "$root/gate_preflight" \
+  --verilator /home/yaz80/wz_project/chisel_platform/toolchains/verilator/bin/verilator
 ulimit -s unlimited
 /home/yaz80/wz_project/chisel_platform/bin/chisel-sbt \
   'Test / compile' \
@@ -38,7 +45,11 @@ python3 - "$root" <<'PY'
 from pathlib import Path
 import hashlib,json,sys,xml.etree.ElementTree as ET
 root=Path(sys.argv[1]);manifest=json.loads((root/'input_manifest.json').read_text());project=Path(manifest['workspace'])
+preflight=json.loads((root/'gate_preflight/result.json').read_text())
+assert preflight['result']=='PASS' and preflight['checks']==6156
 for name,expected in manifest['source_sha256'].items():assert hashlib.sha256((project/name).read_bytes()).hexdigest()==expected,name
+for name,expected in manifest['preflight_sources_sha256'].items():assert hashlib.sha256((root/'workspace'/name).read_bytes()).hexdigest()==expected,name
+for name,expected in preflight['source_sha256'].items():assert hashlib.sha256((root/'workspace'/name).read_bytes()).hexdigest()==expected,name
 assert hashlib.sha256(Path(manifest['archive']).read_bytes()).hexdigest()==manifest['archive_sha256']
 results={}
 for suite in ('RouteARTL39AMaterializationSpec','RouteAWCG1WrapperSpec'):
@@ -47,7 +58,7 @@ for suite in ('RouteARTL39AMaterializationSpec','RouteAWCG1WrapperSpec'):
  assert int(report.attrib['tests'])==4 and all(int(report.attrib.get(k,'0'))==0 for k in ('failures','errors','skipped')),suite
  results[suite]=dict(tests=4,xml_sha256=hashlib.sha256(p.read_bytes()).hexdigest())
 assert 'All tests passed.' in (root/'test.log').read_text()
-(root/'result.json').write_text(json.dumps(dict(schema='wcg1-wrapper-functional-result-1',suites=results,scope='eight directed tests, candidate reference miter, not formal universal equivalence or STA',source_sha256=manifest['source_sha256']),indent=2)+'\n')
+(root/'result.json').write_text(json.dumps(dict(schema='wcg1-wrapper-functional-result-1',suites=results,scope='eight directed tests, candidate reference miter, not formal universal equivalence or STA',source_sha256=manifest['source_sha256'],gate_preflight=preflight),indent=2)+'\n')
 print('KVZAP_WCG1_WRAPPER_POSTCHECK_PASS tests=8')
 PY
 echo KVZAP_WCG1_WRAPPER_FUNCTIONAL_RUN_PASS

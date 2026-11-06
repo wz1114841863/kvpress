@@ -335,6 +335,10 @@ model), outer exit 1. No candidate functional stimulus ran. Inputs recheck;
 repair the model and minimally preflight Verilator/native-gate edges before
 a new retry. This is not WCG1 functional/mapped acceptance and does not alter
 or re-audit the independent RD1+PM1 full run.
+Follow `dc_wcg1_wrapper_model_repair_20261106.md` and JSON for the minimal
+simulation-only assignment repair: matching-tool build, native edge checks
+and negative controls pass before a new immutable eight-test retry. This
+does not supersede r1's failure with a functional PASS.
 
 ## Retrieval discipline
 
