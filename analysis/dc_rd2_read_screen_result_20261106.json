@@ -1,0 +1,450 @@
+{
+  "schema": "rd2-isolated-read-screen-result-1",
+  "run_id": "rd2_read_network_screen_20261106_r1",
+  "tool_input_closure": "PASS",
+  "mapped_area_improvement": "FAIL_OBSERVED_0P3038_PERCENT_INCREASE",
+  "candidate_disposition": "DO_NOT_INTEGRATE_CURRENT_RD2_AS_AREA_OPTIMIZATION",
+  "comparison": "RD1 retained on both sides, only remaining C/F/B member and M/C suffix readers changed",
+  "constraints": {
+    "clock_period_ns": "2.0",
+    "setup_uncertainty_ns": "0.10",
+    "hold_uncertainty_ns": "0.02",
+    "input_delay_ns": "0.20",
+    "output_delay_ns": "0.20",
+    "input_transition_ns": "0.05",
+    "output_load_pf": "0.005",
+    "output_load_interpretation": "lightweight top-level feasibility load; not HBM, package, PHY, or system-interconnect load"
+  },
+  "geometry": [
+    36,
+    64,
+    79,
+    80
+  ],
+  "functional_domain": "accepted two-case in-range tests; out-of-range/continuous-ready production gate remains open",
+  "paired_ports_identical": true,
+  "remote_closure": {
+    "schema": "rd2-remote-closure-audit-1",
+    "closure": "PASS",
+    "run_id": "rd2_read_network_screen_20261106_r1",
+    "manifest_sha256": "effe14ba00e1083379da70b6a8d4e79a1ea69023d5fbb2578b63baef7767e543",
+    "library_sha256": "5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d",
+    "input_files_verified": 15,
+    "source_files_verified": 5,
+    "test_xml_tests": 2,
+    "source_archive_sha256": "582c87b96a4ae68e687e94f059cf5fd95404bd76739e5768733eb51b3ee6a8d0",
+    "total_log_sha256": "c5e133d1275fa3890421bef98c0a248dcd6dd878c0789f7c7bea27da928c205b",
+    "artifact_inventory": {
+      "rd1/constraints.rpt": {
+        "sha256": "327fd92faa230096975c7f8ef4fd43ab70286c7f1a898f1f7bf6bba2c40d2a91",
+        "bytes": 259
+      },
+      "rd1/rd2_rd1_read_network_mapped.v": {
+        "sha256": "0adf6f6dcdadc365307a538eff64b0f00ff1ca592262a030bbc32e401ea27aec",
+        "bytes": 128975496
+      },
+      "rd1/rd2_rd1_read_network.ddc": {
+        "sha256": "a7e93a466b20eb7cb3f02c0803fa9b57d5afc99d12ae3bdb3e2f36db3ee6e739",
+        "bytes": 48258304
+      },
+      "rd1/check_timing.rpt": {
+        "sha256": "140c69dff6cec1ed459bdf788d0ed445769e732d5923e7835b8a26db42dc158d",
+        "bytes": 357
+      },
+      "rd1/area.rpt": {
+        "sha256": "231c7f51266c2a51e01f99f94c7e80fd29a66d7a0928c1c4ae8b61ffe6a9d82a",
+        "bytes": 1862
+      },
+      "rd1/qor.rpt": {
+        "sha256": "a9193fe178ef8a6d2ce56e762301597bdc6f8d62d6c78eda3f6a88f2552d7687",
+        "bytes": 2425
+      },
+      "rd1/summary.tsv": {
+        "sha256": "ef2074f2611a251da312cd559d51fadaa5a524990135d460e9c085d572b6414b",
+        "bytes": 34
+      },
+      "rd1/timing_setup.rpt": {
+        "sha256": "116c783ac295051b755018b1ac1a6524212b25825155e4c74d703592c320748f",
+        "bytes": 104024
+      },
+      "rd1/clocks.rpt": {
+        "sha256": "cc68b04f6d7ba9803803923be855b20f043cde0b8b913f37a0f7d644835f6e56",
+        "bytes": 628
+      },
+      "rd1/resources_precompile.rpt": {
+        "sha256": "f45daa5605734f22ba79447677c43e83d26e0ea92d1d3633a0b486d6d42ade71",
+        "bytes": 7915
+      },
+      "rd1/check_design.rpt": {
+        "sha256": "3234c00002cb97b2b6321f71c7c36954daaf5d4d5c964766f33a16fddd57f32b",
+        "bytes": 5145
+      },
+      "rd1/timing_hold.rpt": {
+        "sha256": "0cd426c2b22f23c8f2b24c46017f74605886bf052ca743438b6f87b8108e925a",
+        "bytes": 33562
+      },
+      "rd1_dc_shell.log": {
+        "sha256": "e4ea4432096d08cb259daefcc25bb45ef65cf2cb61c07093bffb699ca73e7fa9",
+        "bytes": 16282
+      },
+      "decoded/rd2_decoded_read_network.ddc": {
+        "sha256": "58611a89f25969572b47d622278c6e2dc924c7f9b1d62979e6391d765d95ea89",
+        "bytes": 47553024
+      },
+      "decoded/constraints.rpt": {
+        "sha256": "5cfe2ffea32393a82dee48ec6ebd355b462120122fd9799f0b1213e5e93d116e",
+        "bytes": 263
+      },
+      "decoded/check_timing.rpt": {
+        "sha256": "140c69dff6cec1ed459bdf788d0ed445769e732d5923e7835b8a26db42dc158d",
+        "bytes": 357
+      },
+      "decoded/area.rpt": {
+        "sha256": "d2c539353afc8d27dd71c6da596718398ef19f876f189a4bd33c1efda36d9796",
+        "bytes": 1870
+      },
+      "decoded/qor.rpt": {
+        "sha256": "62db46420f97304c6a1eea9c023f6d2b90c0456180d64890f8f5c60a49ad3daa",
+        "bytes": 2429
+      },
+      "decoded/summary.tsv": {
+        "sha256": "fd41d08fdc728395fe73800e145a1292c2579b1309483f9f8ac8e51733c98457",
+        "bytes": 38
+      },
+      "decoded/timing_setup.rpt": {
+        "sha256": "f5d30c6d20f131b2fe798dc4407f21f9fda90efaa5fdd2d471a54145948bea32",
+        "bytes": 110528
+      },
+      "decoded/rd2_decoded_read_network_mapped.v": {
+        "sha256": "e92d9111c116d74c0ef37fa01e91283f500ae953936ee15b19a5fe51ed2d97f8",
+        "bytes": 125749475
+      },
+      "decoded/clocks.rpt": {
+        "sha256": "6b870d1a2642ad0b9dc3df7b8ca9e3baa23ea85f4ba2e60cd94825c0a09be157",
+        "bytes": 632
+      },
+      "decoded/resources_precompile.rpt": {
+        "sha256": "9fb3245b53c8dd754ebdeaf1271459b98a4ad8525e983d732e4d8ab0d3039ba3",
+        "bytes": 6947
+      },
+      "decoded/check_design.rpt": {
+        "sha256": "de88cf5c1173b3963b9733dc015bc8868c84ac66cd81357d06e53cf612033548",
+        "bytes": 5281
+      },
+      "decoded/timing_hold.rpt": {
+        "sha256": "f50dad2e8a6722bf9b6ff857d02d9ad626ce931c3915352cebecebdf4192c36b",
+        "bytes": 33646
+      },
+      "decoded_dc_shell.log": {
+        "sha256": "35669b7defef1cefdcd916cce6a1cff04e6f452bbad713dfe2a06fdc92e6939c",
+        "bytes": 17040
+      },
+      "manifest.json": {
+        "sha256": "effe14ba00e1083379da70b6a8d4e79a1ea69023d5fbb2578b63baef7767e543",
+        "bytes": 2915
+      }
+    }
+  },
+  "sides": {
+    "rd1": {
+      "total_cell_area": "689972.294920",
+      "combinational_area": "689972.294920",
+      "sequential_area": "0",
+      "buffer_inverter_area": "63545.161020",
+      "other_logic_area": "626427.133900",
+      "setup_tns_ns": "0",
+      "hold_tns_ns": "0",
+      "setup_violating_paths": 0,
+      "hold_violating_paths": 0,
+      "lint": {
+        "LINT-28": 2,
+        "LINT-29": 3,
+        "LINT-31": 14,
+        "LINT-52": 15
+      },
+      "logic_levels": "22.00",
+      "setup_worst_slack_ns": "1.046292",
+      "setup_first_path": {
+        "start": "io_valid_0",
+        "end": "io_payload_0[29]"
+      },
+      "setup_first_path_arrival_ns": "0.653708",
+      "setup_first_path_logic_delay_ns": "0.453708",
+      "reported_setup_endpoints": [
+        "io_payload_0[10]",
+        "io_payload_0[11]",
+        "io_payload_0[12]",
+        "io_payload_0[13]",
+        "io_payload_0[14]",
+        "io_payload_0[15]",
+        "io_payload_0[16]",
+        "io_payload_0[17]",
+        "io_payload_0[18]",
+        "io_payload_0[19]",
+        "io_payload_0[20]",
+        "io_payload_0[21]",
+        "io_payload_0[22]",
+        "io_payload_0[23]",
+        "io_payload_0[24]",
+        "io_payload_0[25]",
+        "io_payload_0[26]",
+        "io_payload_0[27]",
+        "io_payload_0[28]",
+        "io_payload_0[29]"
+      ],
+      "hold_worst_slack_ns": "0.380000",
+      "hold_first_path": {
+        "start": "io_valid_0",
+        "end": "io_out_valid_0"
+      },
+      "mapped_cells": {
+        "cell_counts": {
+          "AN2D0BWP12T30P140LVT": 234,
+          "AN2D1BWP12T30P140LVT": 960,
+          "AN4D1BWP12T30P140LVT": 3,
+          "AO22D0BWP12T30P140LVT": 94208,
+          "AOI221D0BWP12T30P140LVT": 94208,
+          "AOI222D0BWP12T30P140LVT": 158,
+          "AOI22D0BWP12T30P140LVT": 364510,
+          "BUFFD1BWP12T30P140LVT": 125945,
+          "CKND2D0BWP12T30P140LVT": 6,
+          "INR2D0BWP12T30P140LVT": 6,
+          "INR2D1BWP12T30P140LVT": 3,
+          "INVD1BWP12T30P140LVT": 205,
+          "ND2D1BWP12T30P140LVT": 108,
+          "ND4D0BWP12T30P140LVT": 123897,
+          "NR2D0BWP12T30P140LVT": 378,
+          "NR2D1BWP12T30P140LVT": 18,
+          "OAI21D0BWP12T30P140LVT": 36712,
+          "OAI222D1BWP12T30P140LVT": 216,
+          "TIELBWP12T30P140LVT": 1
+        },
+        "total_cells": 841776,
+        "inverter_input_sources": {
+          "internal_net": 193,
+          "other_input": 12
+        },
+        "buffer_input_sources": {
+          "internal_net": 125945
+        },
+        "fanout_policy": "syntactic input-pin counts; excludes port loads and assign alias resolution; not STA fanout",
+        "largest_syntactic_fanouts": [
+          {
+            "net": "io_out_valid_2",
+            "input_pins": 81,
+            "driver": "top_input_or_assign"
+          },
+          {
+            "net": "io_out_valid_1",
+            "input_pins": 81,
+            "driver": "top_input_or_assign"
+          },
+          {
+            "net": "n786970",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n786981",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n791272",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n791283",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n795574",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n795585",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n799876",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n799887",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          }
+        ]
+      }
+    },
+    "decoded": {
+      "total_cell_area": "692068.096534",
+      "combinational_area": "692068.096534",
+      "sequential_area": "0",
+      "buffer_inverter_area": "125808.648317",
+      "other_logic_area": "566259.448217",
+      "setup_tns_ns": "0",
+      "hold_tns_ns": "0",
+      "setup_violating_paths": 0,
+      "hold_violating_paths": 0,
+      "lint": {
+        "LINT-28": 2,
+        "LINT-29": 3,
+        "LINT-31": 14,
+        "LINT-52": 15
+      },
+      "logic_levels": "24.00",
+      "setup_worst_slack_ns": "1.026872",
+      "setup_first_path": {
+        "start": "io_layer_0[4]",
+        "end": "io_payload_0[29]"
+      },
+      "setup_first_path_arrival_ns": "0.673128",
+      "setup_first_path_logic_delay_ns": "0.473128",
+      "reported_setup_endpoints": [
+        "io_payload_0[10]",
+        "io_payload_0[11]",
+        "io_payload_0[12]",
+        "io_payload_0[13]",
+        "io_payload_0[14]",
+        "io_payload_0[15]",
+        "io_payload_0[16]",
+        "io_payload_0[17]",
+        "io_payload_0[18]",
+        "io_payload_0[19]",
+        "io_payload_0[20]",
+        "io_payload_0[21]",
+        "io_payload_0[22]",
+        "io_payload_0[23]",
+        "io_payload_0[24]",
+        "io_payload_0[25]",
+        "io_payload_0[26]",
+        "io_payload_0[27]",
+        "io_payload_0[28]",
+        "io_payload_0[29]"
+      ],
+      "hold_worst_slack_ns": "0.380000",
+      "hold_first_path": {
+        "start": "io_valid_0",
+        "end": "io_out_valid_0"
+      },
+      "mapped_cells": {
+        "cell_counts": {
+          "AN2D0BWP12T30P140LVT": 126,
+          "AN2D1BWP12T30P140LVT": 1134,
+          "AN3D1BWP12T30P140LVT": 4,
+          "AOI21D1BWP12T30P140LVT": 540,
+          "AOI221D1BWP12T30P140LVT": 202752,
+          "AOI222D0BWP12T30P140LVT": 222,
+          "AOI22D0BWP12T30P140LVT": 94782,
+          "AOI22D1BWP12T30P140LVT": 17280,
+          "BUFFD1BWP12T30P140LVT": 135113,
+          "CKAN2D0BWP12T30P140LVT": 3,
+          "CKND2D0BWP12T30P140LVT": 3,
+          "IND2D1BWP12T30P140LVT": 36,
+          "IND4D1BWP12T30P140LVT": 2,
+          "INR2D0BWP12T30P140LVT": 3,
+          "INR2D1BWP12T30P140LVT": 4,
+          "INVD1BWP12T30P140LVT": 171761,
+          "ND2D1BWP12T30P140LVT": 344,
+          "ND4D0BWP12T30P140LVT": 26706,
+          "ND4D1BWP12T30P140LVT": 55375,
+          "NR2D0BWP12T30P140LVT": 312,
+          "NR2D1BWP12T30P140LVT": 94,
+          "NR4D0BWP12T30P140LVT": 15220,
+          "OAI21D0BWP12T30P140LVT": 11820,
+          "OAI222D1BWP12T30P140LVT": 1624,
+          "OAI22D1BWP12T30P140LVT": 206976,
+          "OR3D1BWP12T30P140LVT": 60,
+          "OR4D1BWP12T30P140LVT": 60,
+          "TIELBWP12T30P140LVT": 1
+        },
+        "total_cells": 942357,
+        "inverter_input_sources": {
+          "internal_net": 5825,
+          "other_input": 48,
+          "member_input": 73728,
+          "suffix_input": 92160
+        },
+        "buffer_input_sources": {
+          "internal_net": 135113
+        },
+        "fanout_policy": "syntactic input-pin counts; excludes port loads and assign alias resolution; not STA fanout",
+        "largest_syntactic_fanouts": [
+          {
+            "net": "io_out_valid_0",
+            "input_pins": 100,
+            "driver": "top_input_or_assign"
+          },
+          {
+            "net": "io_out_valid_2",
+            "input_pins": 81,
+            "driver": "top_input_or_assign"
+          },
+          {
+            "net": "io_out_valid_1",
+            "input_pins": 81,
+            "driver": "top_input_or_assign"
+          },
+          {
+            "net": "n677964",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n677975",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n682266",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n682277",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n686568",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n686579",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          },
+          {
+            "net": "n690870",
+            "input_pins": 79,
+            "driver": "AN2D1BWP12T30P140LVT"
+          }
+        ]
+      }
+    }
+  },
+  "mapped_cell_auditor_sha256": "82b0f69194e774fba2e67e4ee4face9767c757f10b4e29a7f4e2be2be176d326",
+  "comparison_metrics": {
+    "cell_area_increase": "2095.801614",
+    "cell_area_increase_percent": "0.303751560668533980561469800",
+    "buffer_inverter_area_increase": "62263.487297",
+    "other_logic_area_saved": "60167.685683",
+    "logic_delay_increase_ns": "0.019420",
+    "inverter_increase": 171556,
+    "buffer_increase": 9168
+  },
+  "nonclaims": [
+    "no storage cost or full-top area update",
+    "no proof of individual remaining-reader timing from common M/S/O critical endpoints",
+    "no physical STA or PPA",
+    "no external-service zero-cost or system/hardware net benefit"
+  ],
+  "actions": "read-only remote inspection, checksums and mapped-HDL parsing; no native EDA invocation or rerun, no RTL integration"
+}

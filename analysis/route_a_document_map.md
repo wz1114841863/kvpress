@@ -144,9 +144,15 @@ The subsequent authorized small-synthesis freeze is
 `dc_rd2_read_screen_input_freeze_20261106.md`, with copied immutable inputs,
 matched RD1 context and unchanged fair-v1 constraints.  It also records the
 later cumulative integration decision gate for RD1/PM1/RD2.
-The corresponding active run is
+The corresponding launch snapshot is
 `dc_rd2_read_screen_launch_20261106.md`; input and baseline-analysis markers
-are launch evidence only until both native sides and postcheck pass.
+are launch evidence only. Finish with `dc_rd2_read_screen_result_20261106.md`
+and JSON: both native sides, postcheck and outer exit 0 pass, and frozen
+inputs/outputs independently recheck. The decoded candidate has no incremental
+area benefit (+0.30375%), with more data-input inverters and slightly worse
+overall worst path. Preserve the negative screen; do not integrate it as an
+accepted optimization. The pure-combinational result does not close storage,
+production out-of-range/ready semantics, or full Route-A timing.
 
 For compact-table read consumers, legal concurrency and the selected RD1
 change, read `dc_compact_membership_read_sharing_plan_20261104.md` and

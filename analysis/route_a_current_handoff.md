@@ -1456,13 +1456,23 @@ fair-v1 scripts pass preflight under a new remote run root.  Both sides retain
 RD1 and measure only the RD2 increment.  RD1+PM1 full paired DC remains
 required for eventual integrated acceptance; defer the cumulative-input
 choice until RD2's small-screen disposition.  No full-top DC is started here.
-The RD2 isolated small-synthesis screen is now active; see
+The RD2 isolated small-synthesis launch snapshot is recorded in
 [`dc_rd2_read_screen_launch_20261106.md`](dc_rd2_read_screen_launch_20261106.md).
-Run `rd2_read_network_screen_20261106_r1` is in independent tmux window
-`kvzap-control-refine:p27-rd2-read-dc`.  Input/stack gates pass, baseline
-Presto analyze completes, and its native DC process is live.  Wait for user
-notification before checking both side exits/PASS, postcheck/total PASS,
-outer exit, hashes and reports.  RD1+PM1 full paired DC is not active.
+Run `rd2_read_network_screen_20261106_r1` has now completed in independent
+tmux `kvzap-control-refine:p27-rd2-read-dc`; see
+[`dc_rd2_read_screen_result_20261106.md`](dc_rd2_read_screen_result_20261106.md)
+and JSON. Both native exits/PASS, postcheck/total PASS and outer exit 0 close;
+15 frozen files, five source snapshots, accepted archive/library, test XML
+and paired ports independently recheck. The valid screen is a negative area
+result: 689,972.294920 -> 692,068.096534 (+0.30375%). Non-buffer/inverter
+area saves 60,167.685683, but buffer/inverter area adds 62,263.487297;
+inverters rise from 205 to 171,761, mostly on table input bits. Precision
+setup slack is +1.046292 -> +1.026872 ns; hold +0.38 ns and TNS/counts 0
+on both. Critical setup endpoints are common RD1 M/S/O outputs, not a
+per-modified-reader timing diagnosis. Zero registers and identical 34 harness
+lint warnings remain. Do not integrate current RD2 as an accepted area
+optimization or update full-top results. Production out-of-range/ready
+equivalence remains open; RD1+PM1 full paired DC is not started here.
 
 The compact-table STORE P0 source/contract audit is complete; see
 [`dc_compact_store_p0_audit_20261106.md`](dc_compact_store_p0_audit_20261106.md),
