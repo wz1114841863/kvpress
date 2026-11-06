@@ -78,6 +78,14 @@ readers, selection and write decode, ordinal-indexed reconciliation, M2 slot
 searches and Page Manager stream-coordinate candidates.  It starts no RTL or
 experiment and assigns no unmeasured saving.
 
+For compact-table information width, field lifetime and live-capacity questions,
+read `dc_compact_store_p0_audit_20261106.md`, its field CSV and source-evidence
+JSON. The audit finds no valid 64-bit truncation, but identifies existing R3
+journal suffix copies as a canonical-backing candidate. It separates hardware-
+enforced one-group production occupancy from generic 36 x 64 unbound-member
+capacity and assertion-conditional journal ordinal nonreuse. No RTL change,
+remote access, synthesis or candidate benefit is established by this P0.
+
 The independently scoped RD2 candidate is described by
 `dc_rd2_decoded_read_implementation_20261106.md`.  Both isolated sides retain
 RD1; only the remaining C/F/B and M/C suffix read realization changes.  The

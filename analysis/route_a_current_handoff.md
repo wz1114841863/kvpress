@@ -1464,6 +1464,21 @@ Presto analyze completes, and its native DC process is live.  Wait for user
 notification before checking both side exits/PASS, postcheck/total PASS,
 outer exit, hashes and reports.  RD1+PM1 full paired DC is not active.
 
+The compact-table STORE P0 source/contract audit is complete; see
+[`dc_compact_store_p0_audit_20261106.md`](dc_compact_store_p0_audit_20261106.md),
+its field CSV and source-evidence JSON. Neither opaque 64-bit field has a
+proven shorter value encoding. A concrete next candidate is reuse of the
+existing R3 journal's immutable suffix fields, avoiding duplicate storage
+rather than discarding information. Production enforces one <=64-member,
+single-layer group per reset; generic unbound packing still supports the
+36 x 64 member capacity. The journal's global ordinal nonreuse is an assertion,
+not an admission ready gate, so a 64-slot replacement is not automatically
+equivalent at the generic boundary. Member values survive publication until
+post-commit observations; journal values persist until reset. ST1 needs a
+separately scoped equivalence-domain/proof plan before implementation. This
+documentation-only batch changes no RTL and performs no remote access, test
+build or synthesis; RD2 remains untouched and no completion check is made.
+
 ## Superseded pre-DC prompt seed (historical)
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

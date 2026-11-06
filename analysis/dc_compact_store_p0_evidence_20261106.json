@@ -1,0 +1,60 @@
+{
+  "schema_version": "route-a-compact-store-p0-1",
+  "source_commit": "4b64d2d44e877e4bac45c2449fbad16065fe6f8e",
+  "evidence_class": "source_contract_static_audit_not_rtl_equivalence_or_mapped_result",
+  "remote_access_performed": false,
+  "rtl_modified": false,
+  "static_source_checks_passed": 15,
+  "checks": {
+    "stage_banks_36": true,
+    "member_and_suffix_64": true,
+    "adapter_one_collect_initialization": true,
+    "adapter_done_after_last_relay": true,
+    "adapter_ordinal_unique_guard": true,
+    "adapter_group_layer_locked": true,
+    "journal_single_write": true,
+    "journal_presence_never_cleared_by_assignment": true,
+    "journal_duplicate_is_assertion": true,
+    "journal_not_in_admission_guard": true,
+    "suffix_only_two_readers": true,
+    "suffix_four_field_assignments": true,
+    "member_clear_after_both_observers": true,
+    "suffix_not_cleared_at_materialization": true,
+    "checked_work_not_gated_by_materialized": true
+  },
+  "counts": {
+    "physical_records_each_table": 2304,
+    "member_bits": 182016,
+    "suffix_bits": 184320,
+    "both_table_bits": 366336,
+    "both_table_KiB": 44.71875,
+    "two_64bit_fields_bits": 294912,
+    "two_64bit_fields_fraction": 0.8050314465408805,
+    "journal_bits": 17984,
+    "production_records_per_reset_upper_bound": 64,
+    "production_active_banks_upper_bound": 1,
+    "generic_assertion_valid_bound_suffix_admissions_per_reset": 64,
+    "separate_suffix_pool_64_bits": 5120,
+    "separate_suffix_pool_payload_bit_delta": 179200,
+    "journal_suffix_view_payload_bit_delta": 184320
+  },
+  "qualification": {
+    "generic_suffix_64_bound": "conditional on no duplicate journal ordinal assertion violation; not enforced by admission ready",
+    "production_64_bound": "one immutable group per reset enforced by actual ingress FSM and wiring; not generic wrapper capacity",
+    "payload_bit_deltas": "alternative declaration accounting only; exclude added tags reads fanout and peripheral costs; not additive or mapped savings",
+    "no_bitwidth_reduction_proven": ["payload_ref", "payload_handle_or_address"]
+  },
+  "sha256": {
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "41f4e19d6d9ebe064d50b8056ac3c50ace9ebddfd0625595b6834365b572a0b2",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMemberRecordReadSharing.scala": "3c549945718a39c700b95ec76616aa1e84d020f9b5114158598b58aee4b05c45",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": "308f089b77df9f72fea68f0e320604cfab3b9e450f08826929ca9aa804675968",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala": "d48acae09041a6a9643d8309920b33c85ac24c11802c3ce1d162ad8e2682b8d8",
+    "analysis/rtl3_9_a0_pending_payload_read_association_contract.md": "a3e3d7625bb3d21345c533485de431b66cb3740da46522caca2fffe08bd9fc21",
+    "analysis/mr1b_direct_pending_cross_owner_contract_proposal.md": "6d540e7ef1e2683d85dec1fcb7fc9002bfc1d19b773f90a9d710eba616781aa9",
+    "analysis/dc_compact_wrapper_hotspot_attribution_20261104.md": "ceb1dc7c8e461587635bc2496d52fd13827e48964b6a2a85ca56dbd007f6519f",
+    "analysis/dc_compact_membership_read_sharing_plan_20261104.md": "e91301bb7614945fd36a636727dbd76fd92cd6fc497d6aca0fa895b1e008ca25",
+    "analysis/dc_rd1_full_paired_dc_result_20261106.md": "ed7885aeea7ec6d380a129d9575c82798692debc7cd7d6b921480d36156dd0c3"
+  }
+}
