@@ -1668,6 +1668,16 @@ input/postcheck regressions pass. Preparation is not a launch/result; the
 separate frozen launch record is authoritative for later execution. Neither
 production RTL nor the independent RD1+PM1 run is changed.
 
+The guarded chain is now launched in a new immutable root; see
+[`dc_wcg1_wrapper_mapping_launch_20261106.md`](dc_wcg1_wrapper_mapping_launch_20261106.md)
+and JSON. Run `wcg1_wrapper_mapping_sta_d860732_20261106_r1` uses independent
+`kvzap-wcg1-wrapper-map:paired-sta`, archive `5531bc6a...` and exact versioned
+runner. Initial hashes/resource/DB/profile gates, private Scala compile,
+both RTL exports and static field/header/state/inline closure pass. Actual
+native-binding preflight is active; mapping/STA results remain pending.
+A fail-closed native-binding gate precedes both mappings.
+The user is notified to await completion. RD1+PM1 is not accessed or changed.
+
 ## Incremental storage/service cost P0 (2026-11-06)
 
 The read-only ledger is

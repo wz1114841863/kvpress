@@ -362,6 +362,13 @@ repaired propagated-clock 2-ns policy. Preparation/local checks are not a
 native result; consult the later separate launch record for actual execution.
 RD1+PM1 and production defaults remain untouched.
 
+Actual guarded execution is recorded in
+`dc_wcg1_wrapper_mapping_launch_20261106.md` and JSON. Its new independent
+session runs source generation, fail-closed inline/native-binding gates and
+then paired wrapper mapping/STA, not full paired DC. Compile/export and static
+input closure pass; actual native binding and mapped results remain pending. Await
+the user's completion notice; RD1+PM1 is not queried or changed.
+
 For the read-only incremental storage/service cost ledger, read
 `route_a_incremental_storage_cost_ledger_p0_20261106.md` and its CSV/evidence
 JSON. It separates accepted RD1 mapped parents/compact tables from excluded
