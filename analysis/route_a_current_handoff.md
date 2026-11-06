@@ -1565,12 +1565,22 @@ repair, with setup +1.06405 ns unchanged. These are audited native observations,
 not a completed postcheck acceptance or a top-level result. No restart or
 tooling/RTL change was performed. Next is a versioned short postcheck repair
 using existing native reports, preserving r1's failed marker and frozen inputs.
-That short validator is now prepared in
+The short validator preparation is recorded in
 [`dc_wcg1_saved_validation_preparation_20261106.md`](dc_wcg1_saved_validation_preparation_20261106.md):
 native area/precision reports are authoritative, explicit pinned recovery
 leaves source metrics unchanged, and 26 regressions plus ordinary-Tcl reader
-checks cover the failure. No DC tool is invoked. Remote short validation and
-its separate final acceptance receipt remain pending in this snapshot.
+checks cover the failure. The completed remote result is
+[`dc_wcg1_saved_artifact_validation_result_20261106.md`](dc_wcg1_saved_artifact_validation_result_20261106.md)
+and JSON: **ACCEPTED_MATCHED_BANK_SCREEN**, postcheck/run PASS and new outer
+exit 0 in `kvzap-wcg1-map:saved-check`. No DC tool ran; all 78 original files
+retain identical hashes and original r1 outer exit stays 1. Accepted repaired
+one-bank cell area is 56,919.576720 versus 47,512.919348, saving 16.5262%.
+Precision setup slack is +1.064047 ns for both, gated hold +0.003529 ns,
+enable setup/hold +1.649341/+0.066130 ns, and repaired TNS/path counts are 0.
+Raw gated hold failure is retained. The same 12 LINT-28 warnings remain on
+each side. This accepts only the matched bank mapping/STA screen; production
+wrapper integration, whole-top area/timing and physical hold signoff are open.
+Do not update the full Route-A/Full-KV ratio or infer PPA/system/net benefit.
 
 ## Superseded pre-DC prompt seed (historical)
 

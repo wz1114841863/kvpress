@@ -304,7 +304,12 @@ postcheck repair; no full remapping or production integration has occurred.
 The repair/preparation contract is
 `dc_wcg1_saved_validation_preparation_20261106.md`: pinned recovery in a new
 sidecar, native area and precision timing authority, unchanged original r1
-and no EDA invocation. Follow its subsequent result for final acceptance.
+and no EDA invocation. Final acceptance is
+`dc_wcg1_saved_artifact_validation_result_20261106.md` and JSON: separate
+postcheck/run PASS and outer exit 0; all original file hashes unchanged.
+The repaired one-bank screen saves 16.5262% cell area and closes its 2-ns
+setup/hold/gating checks, with 12 matched LINT-28 warnings. This does not
+integrate WCG1 or update full Route-A paired-DC results.
 
 ## Retrieval discipline
 
