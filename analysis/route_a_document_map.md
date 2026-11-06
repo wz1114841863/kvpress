@@ -345,6 +345,15 @@ capture/negative gates pass; eight-test job runs in its own r2 session.
 Functional completion remains pending until the new XMLs and final markers
 are audited. Original r1 and the independent RD1+PM1 synthesis are untouched.
 
+The completed r2 authority is `dc_wcg1_wrapper_retry_result_20261106.md`
+and JSON: eight directed tests pass (baseline 4, candidate/reference-miter 4),
+all frozen input/preflight/XML hashes recheck, and run/outer/persisted exits
+close. Four candidate builds contain the repaired gate and enabled assertion
+layer. Retain four nonfatal annotation warnings and r1's original failure.
+This accepts directed wrapper functional validation only; native wrapper
+mapping/2-ns STA, universal equivalence and production integration stay open.
+No new job or RD1+PM1 inspection is performed.
+
 For the read-only incremental storage/service cost ledger, read
 `route_a_incremental_storage_cost_ledger_p0_20261106.md` and its CSV/evidence
 JSON. It separates accepted RD1 mapped parents/compact tables from excluded

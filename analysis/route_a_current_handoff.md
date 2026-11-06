@@ -1644,6 +1644,20 @@ functional completion is pending; await user notice. r1 remains failed and
 unchanged, RD2 excluded, RD1+PM1 not accessed or modified. Do not infer
 wrapper functional/timing acceptance from preflight or start a combined DC.
 
+The r2 run is now independently accepted at **directed wrapper functional**
+scope; see
+[`dc_wcg1_wrapper_retry_result_20261106.md`](dc_wcg1_wrapper_retry_result_20261106.md)
+and JSON. Baseline 4/4 and candidate/reference-miter 4/4 pass, all source/archive/
+runner/preflight/XML hashes match, and postcheck/RUN_PASS/outer exit 0 plus
+persisted exit_status=0 close completion. Four actual candidate binaries include
+the repaired gate and the assertion layer (72 differential message sites per
+case, --assert enabled). Four nonfatal VerbatimBlackBoxAnno warnings remain.
+This supersedes r2's pending functional state only, preserving r1 failure and
+all launch snapshots. No full-wrapper mapped area, native 2-ns STA, universal
+equivalence or production integration is accepted. Next is isolated generated
+input/native-binding closure and matched wrapper mapping/STA; no job is started.
+RD1+PM1's running full synthesis is not accessed or changed in this audit.
+
 ## Incremental storage/service cost P0 (2026-11-06)
 
 The read-only ledger is
