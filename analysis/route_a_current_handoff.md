@@ -1565,6 +1565,12 @@ repair, with setup +1.06405 ns unchanged. These are audited native observations,
 not a completed postcheck acceptance or a top-level result. No restart or
 tooling/RTL change was performed. Next is a versioned short postcheck repair
 using existing native reports, preserving r1's failed marker and frozen inputs.
+That short validator is now prepared in
+[`dc_wcg1_saved_validation_preparation_20261106.md`](dc_wcg1_saved_validation_preparation_20261106.md):
+native area/precision reports are authoritative, explicit pinned recovery
+leaves source metrics unchanged, and 26 regressions plus ordinary-Tcl reader
+checks cover the failure. No DC tool is invoked. Remote short validation and
+its separate final acceptance receipt remain pending in this snapshot.
 
 ## Superseded pre-DC prompt seed (historical)
 

@@ -1,4 +1,26 @@
 # Matched bank-only WCG1 experiment. No production RTL or full paired DC.
+proc wcg1_native_area_values {path} {
+  set f [open $path r]
+  set text [read $f]
+  close $f
+  set values {}
+  foreach label {{Total cell area} {Combinational area} {Noncombinational area}} {
+    set matches {}
+    foreach line [split $text \n] {
+      if {[regexp "^${label}:\\s+(\\S+)\\s*$" $line all value]} {lappend matches $value}
+    }
+    if {[llength $matches] != 1} {error "missing/duplicate native area field: $label"}
+    set value [lindex $matches 0]
+    if {![regexp {^[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?$} $value] || ![string is double -strict $value]} {
+      error "invalid native area field: $label"
+    }
+    lappend values $value
+  }
+  lassign $values total comb seq
+  if {$total <= 0 || abs($total - $comb - $seq) > 0.000002} {error "inconsistent native area components"}
+  return $values
+}
+# End native area reader (also tested using ordinary Tcl, without DC).
 if {[catch {
   set out $::env(KVZAP_WCG1_SIDE_OUT)
   set side $::env(KVZAP_WCG1_SIDE)
@@ -81,7 +103,11 @@ if {[catch {
     puts $f "clock_gates\t[sizeof_collection $gates]"
     puts $f "period_ns\t[get_attribute [get_clocks kvzap_control_clk] period]"
     puts $f "propagated\t[get_attribute [get_clocks kvzap_control_clk] propagated_clock]"
-    puts $f "total_area\t[get_attribute [current_design] area]"
+    lassign [wcg1_native_area_values [file join $dest area.rpt]] total_area comb_area seq_area
+    puts $f "total_area\t$total_area"
+    puts $f "combinational_area\t$comb_area"
+    puts $f "sequential_area\t$seq_area"
+    puts $f "area_basis\tnative_report_total_cell_area"
     foreach delay {max min} {
       set paths [get_timing_paths -delay_type $delay -max_paths 1]
       puts $f "${delay}_slack_ns\t[wcg1_worst_slack $paths]"

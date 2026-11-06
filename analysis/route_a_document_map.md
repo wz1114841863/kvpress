@@ -301,6 +301,10 @@ authorized run's exact inputs and independent tmux location. Follow
 native sides but failed summary: the design-level area attribute is absent
 in DC 2018. Audited native areas/timing remain pending a versioned short
 postcheck repair; no full remapping or production integration has occurred.
+The repair/preparation contract is
+`dc_wcg1_saved_validation_preparation_20261106.md`: pinned recovery in a new
+sidecar, native area and precision timing authority, unchanged original r1
+and no EDA invocation. Follow its subsequent result for final acceptance.
 
 ## Retrieval discipline
 
