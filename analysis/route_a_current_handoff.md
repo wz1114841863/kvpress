@@ -1644,6 +1644,23 @@ functional completion is pending; await user notice. r1 remains failed and
 unchanged, RD2 excluded, RD1+PM1 not accessed or modified. Do not infer
 wrapper functional/timing acceptance from preflight or start a combined DC.
 
+## Incremental storage/service cost P0 (2026-11-06)
+
+The read-only ledger is
+[`route_a_incremental_storage_cost_ledger_p0_20261106.md`](route_a_incremental_storage_cost_ledger_p0_20261106.md),
+with CSV and source/hash evidence JSON. P3's 1,179,648-B payload and 18,432-B
+local sidecar, current M2's 19,040-B nominal entry arrays, and their child
+protocol/access logic are excluded from accepted RD1 DC area; real parent
+control and compact tables remain included. M2's existing 0.52857872-mm²
+public-CACTI proxy has different modeled words/provision/access assumptions
+and cannot price the current lookup plus two Valid write lanes directly.
+P3 cross-layer read/write overlap also needs an explicit physical mapping.
+Old 312-KiB analytical M2 provision is separate from current entries and
+logical credit/group state; do not add them blindly or infer a new runtime
+FIFO requirement. The audit changes documentation only, runs four source
+guards, and neither accesses nor changes RD1+PM1/WCG1 remote work. No new
+area/physical-timing/PPA or net-benefit acceptance is established.
+
 ## Superseded pre-DC prompt seed (historical)
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

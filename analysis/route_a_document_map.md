@@ -345,6 +345,16 @@ capture/negative gates pass; eight-test job runs in its own r2 session.
 Functional completion remains pending until the new XMLs and final markers
 are audited. Original r1 and the independent RD1+PM1 synthesis are untouched.
 
+For the read-only incremental storage/service cost ledger, read
+`route_a_incremental_storage_cost_ledger_p0_20261106.md` and its CSV/evidence
+JSON. It separates accepted RD1 mapped parents/compact tables from excluded
+P3/M2/R5/S2 child bodies and external services. P3 capacity/three-lane
+concurrency, M2 nominal 128-bit entries/lookup plus two Valid write lanes,
+omitted child adapters, and the old 0.52857872-mm² CACTI proxy's different
+312-KiB modeled provision are distinguished. It adds no macro choice, RTL,
+experiment, remote inspection or net-benefit claim; RD1+PM1 and WCG1 status
+remain at their independent, unrefreshed handoffs.
+
 ## Retrieval discipline
 
 For a new question, identify its stage first, read the five core documents,
