@@ -355,6 +355,16 @@ omitted child adapters, and the old 0.52857872-mm² CACTI proxy's different
 experiment, remote inspection or net-benefit claim; RD1+PM1 and WCG1 status
 remain at their independent, unrefreshed handoffs.
 
+For P3's next storage-mapping assessment, read
+`p3_staging_storage_mapping_feasibility_20261106.md` plus
+`p3_staging_storage_mapping_model_20261106.json` and the source/hash evidence
+JSON. It retains the whole stage/sidecar capacity and exact no-replace
+handshake. A finite payload model supports one logical 1RW resource with a
+one-entry deferred write, reset-safe drain and held read output; unbuffered
+1RW and unqualified layer banking do not provide the same replacement scope.
+The result is not RTL equivalence, macro availability/cost, 2-ns timing or
+integrated hardware benefit. No ongoing remote task is touched.
+
 ## Retrieval discipline
 
 For a new question, identify its stage first, read the five core documents,

@@ -1661,6 +1661,23 @@ FIFO requirement. The audit changes documentation only, runs four source
 guards, and neither accesses nor changes RD1+PM1/WCG1 remote work. No new
 area/physical-timing/PPA or net-benefit acceptance is established.
 
+## P3 storage-mapping feasibility (2026-11-06)
+
+Read
+[`p3_staging_storage_mapping_feasibility_20261106.md`](p3_staging_storage_mapping_feasibility_20261106.md)
+after the incremental ledger. Capacity remains 1,179,648-B payload plus
+18,432-B local sidecar. Independent payload read/write and sidecar write,
+unchanged response latency/holding and reset-retained bytes are required.
+The new finite payload model supports a 1RW-plus-one-write-buffer hypothesis:
+the no-consume/replace rule guarantees a drain edge after a conflict. The
+principal two-address/binary-data check passes 160 states / 37,888 transitions;
+three negative controls catch lost conflict writes, reset loss and live-Q
+response corruption. This is abstract feasibility, not RTL or macro closure.
+Unbuffered shared 1RW is insufficient; per-layer 1RW banking needs its parent
+phase restriction proved. No RTL, macro selection, DC/STA/CACTI or remote
+inspection occurs. Exact RTL equivalence, collision semantics, complete cost
+and native 2-ns setup/hold remain open. RD1+PM1/WCG1 handoffs are unchanged.
+
 ## Superseded pre-DC prompt seed (historical)
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

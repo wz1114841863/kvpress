@@ -1,0 +1,139 @@
+{
+  "schema_version": "kvzap-p3-storage-mapping-finite-model-1.0",
+  "status": "abstract_model_pass_not_RTL_or_macro_closure",
+  "model_source_sha256": "804aecbb4aaa9a09bcaec7d27ca1e8d0d068b25113bd579313111eae1fc51095",
+  "counterexample_action_fields": [
+    "write_or_null",
+    "read_or_null",
+    "write_ack_ready",
+    "read_rsp_ready",
+    "synchronous_reset",
+    "arbitrary_write_q"
+  ],
+  "model_domain": {
+    "payload_words": 2,
+    "data_values": 2,
+    "macro_operations_per_edge": 1,
+    "reset": "synchronous_protocol_clear_memory_persists",
+    "compare": "ready_valid_valid_tags_data_and_overlay_memory",
+    "sidecar": "separate_independent_write_lane_not_enumerated"
+  },
+  "checks": [
+    {
+      "pass_check": true,
+      "variant": "safe",
+      "collision_mode": "nonalias",
+      "states": 160,
+      "transitions": 37888,
+      "reset_transitions": 18944,
+      "simultaneous_read_write_transitions": 512,
+      "deferred_drain_transitions": 3840
+    },
+    {
+      "pass_check": true,
+      "variant": "safe",
+      "collision_mode": "old_data_extension",
+      "states": 176,
+      "transitions": 42240,
+      "reset_transitions": 21120,
+      "simultaneous_read_write_transitions": 1024,
+      "deferred_drain_transitions": 7680
+    }
+  ],
+  "negative_controls": [
+    {
+      "pass_check": false,
+      "variant": "drop_conflict",
+      "collision_mode": "nonalias",
+      "states": 13,
+      "transitions": 97,
+      "initial_memory": [
+        0,
+        0
+      ],
+      "counterexample": [
+        [
+          [
+            0,
+            1
+          ],
+          1,
+          false,
+          false,
+          false,
+          0
+        ]
+      ]
+    },
+    {
+      "pass_check": false,
+      "variant": "drop_on_reset",
+      "collision_mode": "nonalias",
+      "states": 71,
+      "transitions": 2739,
+      "initial_memory": [
+        0,
+        0
+      ],
+      "counterexample": [
+        [
+          [
+            0,
+            1
+          ],
+          1,
+          false,
+          false,
+          false,
+          0
+        ],
+        [
+          null,
+          null,
+          false,
+          false,
+          true,
+          0
+        ]
+      ]
+    },
+    {
+      "pass_check": false,
+      "variant": "live_q",
+      "collision_mode": "nonalias",
+      "states": 50,
+      "transitions": 754,
+      "initial_memory": [
+        0,
+        0
+      ],
+      "counterexample": [
+        [
+          null,
+          0,
+          false,
+          false,
+          false,
+          0
+        ],
+        [
+          [
+            0,
+            0
+          ],
+          null,
+          false,
+          false,
+          false,
+          1
+        ]
+      ]
+    }
+  ],
+  "limits": [
+    "not_RTL_equivalence",
+    "not_general_state_space_proof",
+    "old_data_extension_not_source_Mem_collision_contract",
+    "no_physical_macro_latency_timing_area_or_energy_evidence"
+  ]
+}

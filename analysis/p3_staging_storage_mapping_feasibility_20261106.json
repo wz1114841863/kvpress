@@ -1,0 +1,291 @@
+{
+  "schema_version": "kvzap-p3-storage-mapping-assessment-1.0",
+  "status": "protocol_feasibility_supported_RTL_and_physical_closure_pending",
+  "source_commit": "3c5d4ed6b8610b92f486270488a0b9957ba81cca",
+  "scope": {
+    "rtl_changed": false,
+    "remote_access": false,
+    "ongoing_run_status_refreshed": false,
+    "eda_invoked": false,
+    "macro_selected": false
+  },
+  "fixed_boundary": {
+    "layers": 36,
+    "payload_words_per_layer": 512,
+    "payload_word_bits": 512,
+    "payload_bytes": 1179648,
+    "sidecar_words_per_layer": 64,
+    "sidecar_word_bits": 64,
+    "sidecar_bytes": 18432,
+    "clock_ns": 2.0,
+    "logical_request_lanes": 3,
+    "protocol_holding_bits_excluded_from_DC": 558,
+    "accepted_RD1_control_area_includes_P3_child": false
+  },
+  "primary_candidate": {
+    "logical_macro_ports": "one_read_or_write_action_per_edge",
+    "deferred_write_slots": 1,
+    "external_ready_unchanged": true,
+    "external_response_latency_unchanged": true,
+    "requires_no_consume_replace": true,
+    "reset_drains_preexisting_buffer": true,
+    "reset_edge_new_write_direct": true,
+    "logical_memory_abstraction": "macro_array_overlaid_by_deferred_word",
+    "read_output": "first_cycle_macro_Q_then_explicit_hold",
+    "extra_sketch_bits": 529,
+    "total_sketch_protocol_buffer_bits": 1087,
+    "all_macro_and_adapter_costs": "unestimated",
+    "capacity_reduction": false,
+    "represents_second_KV_residency": false
+  },
+  "alternatives": [
+    {
+      "name": "1R1W_payload",
+      "scope": "independent_read_write_reference",
+      "physical_mapping": "unselected"
+    },
+    {
+      "name": "36_layer_1RW_banks",
+      "scope": "conditional_on_parent_phase_exclusion_not_generic_child",
+      "physical_mapping": "unselected"
+    },
+    {
+      "name": "shared_unbuffered_1RW",
+      "scope": "fails_exact_interface_on_conflict"
+    },
+    {
+      "name": "merged_unbuffered_payload_sidecar_port",
+      "scope": "fails_independent_writes"
+    }
+  ],
+  "checks": [
+    {
+      "name": "payload_shape",
+      "pass_check": true
+    },
+    {
+      "name": "sidecar_shape",
+      "pass_check": true
+    },
+    {
+      "name": "stage_count",
+      "pass_check": true
+    },
+    {
+      "name": "payload_no_replace",
+      "pass_check": true
+    },
+    {
+      "name": "read_no_replace",
+      "pass_check": true
+    },
+    {
+      "name": "sidecar_no_replace",
+      "pass_check": true
+    },
+    {
+      "name": "read_tag_and_data_capture",
+      "pass_check": true
+    },
+    {
+      "name": "sidecar_full_index",
+      "pass_check": true
+    },
+    {
+      "name": "no_reset_qualified_mem_enable",
+      "pass_check": true
+    },
+    {
+      "name": "arrays_are_unreset_Mem",
+      "pass_check": true
+    },
+    {
+      "name": "no_sidecar_read_port",
+      "pass_check": true
+    },
+    {
+      "name": "parent_fill_requires_reserved_or_filling",
+      "pass_check": true
+    },
+    {
+      "name": "parent_read_is_explicit_packed_write_state",
+      "pass_check": true
+    },
+    {
+      "name": "parent_direct_compatibility_port_exclusion",
+      "pass_check": true
+    },
+    {
+      "name": "parent_keeps_held_read_response_path",
+      "pass_check": true
+    },
+    {
+      "name": "parent_ordinal_guard",
+      "pass_check": true
+    },
+    {
+      "name": "capacity_calculation",
+      "pass_check": true
+    },
+    {
+      "name": "adapter_bit_calculation",
+      "pass_check": true
+    },
+    {
+      "name": "model_pinned_to_tool",
+      "pass_check": true
+    },
+    {
+      "name": "principal_model_graph",
+      "pass_check": true
+    },
+    {
+      "name": "separate_collision_extension",
+      "pass_check": true
+    },
+    {
+      "name": "negative_controls_detected",
+      "pass_check": true
+    },
+    {
+      "name": "all_previous_ledger_inputs_unchanged",
+      "pass_check": true
+    },
+    {
+      "name": "fair_profile_unchanged",
+      "pass_check": true
+    }
+  ],
+  "static_check_count": 24,
+  "prior_ledger_inputs_rehashed": 32,
+  "local_existing_guard": {
+    "passed": 2,
+    "failures": 0,
+    "command": ".venv/bin/python -m pytest -q -p no:cacheprovider tests/test_mr2_p3_array_boundary.py",
+    "functional_simulation": false
+  },
+  "model_summary": [
+    {
+      "pass_check": true,
+      "variant": "safe",
+      "collision_mode": "nonalias",
+      "states": 160,
+      "transitions": 37888,
+      "reset_transitions": 18944,
+      "simultaneous_read_write_transitions": 512,
+      "deferred_drain_transitions": 3840
+    },
+    {
+      "pass_check": true,
+      "variant": "safe",
+      "collision_mode": "old_data_extension",
+      "states": 176,
+      "transitions": 42240,
+      "reset_transitions": 21120,
+      "simultaneous_read_write_transitions": 1024,
+      "deferred_drain_transitions": 7680
+    }
+  ],
+  "cost_terms": [
+    "all_payload_and_sidecar_macros_and_padding",
+    "child_ack_tags_and_response_holding",
+    "deferred_write_address_data_valid_and_phase",
+    "macro_internal_Q_state",
+    "port_steering_bank_width_and_hold_muxes",
+    "clock_buffers_timing_resizing_and_wires",
+    "access_energy_and_leakage",
+    "already_mapped_parent_control_do_not_double_count",
+    "separate_external_backing_remains_nonzero_unestimated"
+  ],
+  "source_artifacts": [
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "sha256": "428c73752850f2da02666a0951d8b614f0d7463131869825f58e4fef8af7a354"
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+      "sha256": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887"
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+      "sha256": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493"
+    },
+    {
+      "path": "analysis/architecture_spec.md",
+      "sha256": "2b319b854cfad59d0d43a0f347288d6a9ec8ad7cd3ea473f5e1c5d2a9e60ca4b"
+    },
+    {
+      "path": "analysis/mr2_p3_array_boundary_contract.md",
+      "sha256": "d8f8fc91e872519bcdcb730ea69fd86a30de8439475d5d79c5d0788e07a17aa3"
+    },
+    {
+      "path": "analysis/dc_feasibility_fair_v1_constraint_freeze_20261029.md",
+      "sha256": "b3ce0b6904505bec1869e6b766c1fca9893ac093c3b5f2c3ab16e2d35077905c"
+    },
+    {
+      "path": "hardware/route_a/dc/dc_feasibility_fair_v1.json",
+      "sha256": "f0dfdbe287d5ae381a34c05da776a5f5ac86a7cd70d8895ce03a3e66d6847b52"
+    },
+    {
+      "path": "hardware/route_a/dc/dc_array_proxy_r5_descriptor_externalized_v1.json",
+      "sha256": "b8e23cef5893f80cd2b020511b79476699487dcb15e30a1b57e111cd89ce568e"
+    },
+    {
+      "path": "hardware/route_a/dc/materialize_dc_array_proxies.py",
+      "sha256": "8c7555eac8a4b89e439c2d8e9a44a79497736c7b3724778a348d643e1d798c4f"
+    },
+    {
+      "path": "hardware/route_a/mem/README.md",
+      "sha256": "1846113d5d0ce7b5156c4b4908f9585df02f749bf076cad5b2fc7b0aadefec98"
+    },
+    {
+      "path": "hardware/route_a/mem/cacti_runner.py",
+      "sha256": "bbf1fa66c09e1512b9a4d0ec03796cc40e0a77b78941be43f7914a192cf17385"
+    },
+    {
+      "path": "analysis/route_a_incremental_storage_cost_ledger_p0_20261106.md",
+      "sha256": "8085bfdc0b3b3aaecbda76122ecbf519183df82db5a93f7fc5e1b5a64a3c8515"
+    },
+    {
+      "path": "analysis/route_a_incremental_storage_cost_ledger_p0_evidence_20261106.json",
+      "sha256": "83f1150d45323d5dcd7c73300ad1ef760e6c12ed0f03bfc9e5d9de0fdc8301b3"
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAP3StageArrayBoundarySpec.scala",
+      "sha256": "d569fa2913c4339f32912dad2eb193afff7fbab6ec58f9d13d6662192e635cb4"
+    },
+    {
+      "path": "tests/test_mr2_p3_array_boundary.py",
+      "sha256": "6f34f591508b3bd06ac9b4ce0e5c0a83f5f3e04d8af7bd544712546d17f41899"
+    },
+    {
+      "path": "tools/check_p3_staging_storage_mapping_model.py",
+      "sha256": "804aecbb4aaa9a09bcaec7d27ca1e8d0d068b25113bd579313111eae1fc51095"
+    },
+    {
+      "path": "analysis/p3_staging_storage_mapping_model_20261106.json",
+      "sha256": "191ec4264a3f81ee31c01c6f34e5f5829118d5e0d203299a479d000652bb4ec4"
+    },
+    {
+      "path": "analysis/p3_staging_storage_mapping_feasibility_20261106.md",
+      "sha256": "14b04846c4bd06ee363d551ee1d6ff64442a6a844962500599ecad6fa04b18aa"
+    }
+  ],
+  "remaining_gates": [
+    "actual_RTL_miter_full_width_boundary_and_reset_cases",
+    "source_and_macro_read_write_collision_correspondence_or_legal_exclusion",
+    "sidecar_full_index_and_value_equivalence",
+    "declared_macro_read_latency_and_Q_hold_behavior",
+    "native_2ns_setup_hold_no_exceptions",
+    "all_inclusive_macro_adapter_area_and_energy",
+    "parent_materialization_publication_fault_reset_nonregression"
+  ],
+  "nonconclusions": [
+    "no_RTL_equivalence",
+    "no_parameter_general_formal_proof",
+    "no_macro_availability_or_cost_closure",
+    "no_mapped_area_improvement",
+    "no_2ns_physical_closure",
+    "no_PPA_speedup_or_net_hardware_benefit"
+  ]
+}
