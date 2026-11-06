@@ -1,0 +1,53 @@
+{
+  "schema_version": "route-a-st1-equivalence-plan-1",
+  "baseline_commit": "27c4beb9bd1f03809571f79bbd8667f9619d9d1c",
+  "evidence_class": "source_induction_and_reduced_abstract_check_not_rtl_equivalence",
+  "rtl_modified": false,
+  "remote_access_performed": false,
+  "candidate_rtl_exists": false,
+  "generic_unqualified_compatibility_gate": "OPEN",
+  "conditional_generic_domain": "reset reachable histories satisfying original protocol obligations and no accepted bound journal ordinal reuse per reset",
+  "raw_arbitrary_input_domain": "simple replacement has a counterexample after reference duplicate ordinal assertion failure",
+  "static_source_checks_passed": 16,
+  "checks": {
+    "suffix_only_M_and_C_reads": true,
+    "suffix_full_four_fields": true,
+    "journal_same_admission_write": true,
+    "no_journal_data_write_elsewhere": true,
+    "no_journal_valid_runtime_clear": true,
+    "global_duplicate_assertion": true,
+    "admission_ready_independent_of_journal": true,
+    "M_valid_independent_of_suffix": true,
+    "C_full_ordinal_guard": true,
+    "C_ready_independent_of_input_valid": true,
+    "C_valid_retains_input_valid": true,
+    "lookup_transition_first": true,
+    "lookup_admission_bypass": true,
+    "lookup_ready_not_journal_port_busy": true,
+    "claim_clears_bank_binding_mask": true,
+    "journal_withdrawal_not_layer_qualified": true
+  },
+  "abstract_check": {
+    "scope": "storage equations only with fresh ordinal writes bank presence clears and reset; excludes real wrapper FSM",
+    "banks": 2,
+    "ordinals": 2,
+    "abstract_values": 2,
+    "states": 81,
+    "transitions": 315,
+    "ready_comparisons": 20736,
+    "conditional_relation_check": "PASS",
+    "raw_alias_counterexample": "CONFIRMED",
+    "reproduction": "Python appendix of dc_st1_journal_suffix_equivalence_plan_20261106.md"
+  },
+  "planned_cases": 30,
+  "planned_case_status": "NOT_RUN",
+  "source_sha256_authority": "dc_compact_store_p0_evidence_20261106.json",
+  "additional_sha256": {
+    "analysis/dc_compact_store_p0_audit_20261106.md": "36bb0b3d3bb4699581b9cefade03089e4d7068da9f8c789ca4858ff5cea6e220",
+    "analysis/dc_compact_store_p0_fields_20261106.csv": "c48f8c2199fbbe5fe7655cbf107050058c034e8ea4aeb9b25106df9e1a71e7e0",
+    "analysis/dc_compact_store_p0_evidence_20261106.json": "ebd973777ea0cbebf0676f35039779b9886c1f831191fce03e3e66fbaa67331e",
+    "analysis/rtl3_9_a1_r3_materialization_ingress_exclusion_contract.md": "4b26f9701301247d3bdae1feb3ccc6335189bc578acaa26f5c4e9f27f8c90aca",
+    "analysis/architecture_gate_a_r3_m2_p3_wrapper_contract.md": "51d8ac6534f66742cf8f7b87a559b3b9fd31e1d82d35f22b95dd7ce5f6d68258",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteARecordReadDecode.scala": "e662fcff2db1e0fbc3bd70dbcbb2d20eeb2d66dc977577892eb11bb2ffe9e7e0"
+  }
+}

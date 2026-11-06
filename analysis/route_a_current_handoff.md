@@ -1479,6 +1479,20 @@ separately scoped equivalence-domain/proof plan before implementation. This
 documentation-only batch changes no RTL and performs no remote access, test
 build or synthesis; RD2 remains untouched and no completion check is made.
 
+ST1's equivalence-domain and verification plan is now recorded in
+[`dc_st1_journal_suffix_equivalence_plan_20261106.md`](dc_st1_journal_suffix_equivalence_plan_20261106.md),
+with 30 planned cases and source/abstract-check evidence. Reusing journal
+suffix fields has a conditional generic storage relation under global bound-
+ordinal nonreuse, while preserving two independent combinational M/C readers,
+all continuous ready/valid behavior and the full unbound member capacity.
+The original wrapper does not ready-gate cross-bank journal collisions; a
+raw-history counterexample prevents unconditional generic equivalence. Do
+not turn that DUT assertion into an unproved environment assumption. The
+unqualified generic scope gate remains open before implementation. Sixteen
+source checks and a reduced storage-equation enumeration pass; neither is
+RTL equivalence. No candidate RTL or test harness is added, no remote access
+is performed and all planned RTL/DC cases remain NOT_RUN. RD2 is untouched.
+
 ## Superseded pre-DC prompt seed (historical)
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

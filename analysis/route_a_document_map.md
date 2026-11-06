@@ -86,6 +86,14 @@ enforced one-group production occupancy from generic 36 x 64 unbound-member
 capacity and assertion-conditional journal ordinal nonreuse. No RTL change,
 remote access, synthesis or candidate benefit is established by this P0.
 
+For ST1's exact comparison domain, read
+`dc_st1_journal_suffix_equivalence_plan_20261106.md`, its 30-case validation
+matrix and plan-evidence JSON. The source argument is conditional on bound
+journal ordinal nonreuse; raw cross-bank collisions are not ready-gated by
+the reference. Two independent M/C reads and continuous ready must remain.
+The generic scope gate is open; abstract checks are not RTL equivalence and
+all proposed RTL/DC cases remain NOT_RUN. This is documentation-only work.
+
 The independently scoped RD2 candidate is described by
 `dc_rd2_decoded_read_implementation_20261106.md`.  Both isolated sides retain
 RD1; only the remaining C/F/B and M/C suffix read realization changes.  The

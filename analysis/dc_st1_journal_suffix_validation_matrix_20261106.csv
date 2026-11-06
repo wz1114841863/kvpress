@@ -1,0 +1,31 @@
+id,stage,scenario,required_comparison,domain,status
+ST1-01,scope,global ordinal nonreuse obligation,identify contract authority without assuming a DUT guarantee,D-G,NOT_RUN
+ST1-02,storage_relation,reset and uninitialized data,presence resets without assuming suffix data equality,D-G,NOT_RUN
+ST1-03,storage_relation,all 36 banks and 64 ordinals,matching bound suffix and journal record at valid addresses,D-G,NOT_RUN
+ST1-04,storage_relation,full 64 member group and tail counts 1 2 63 64,no journal truncation or count off by one,D-G,NOT_RUN
+ST1-05,data,handle bit 63 and all suffix walking bits,full width values preserved with independent payload reference,D-G,NOT_RUN
+ST1-06,data,identity incarnation generation endpoint vary within group,no group constant or reconstruction assumption,D-G,NOT_RUN
+ST1-07,concurrency,M and C same bank different ordinals,both selections and C ready available in same cycle,D-G,NOT_RUN
+ST1-08,concurrency,M and C different banks distinct bound ordinals,no global bank serialization or added arbitration,D-G,NOT_RUN
+ST1-09,negative_data,C probes another bank with same ordinal but no binding,per bank presence rejects despite journal data elsewhere,D-G,NOT_RUN
+ST1-10,handshake,C valid low with matching mismatching and absent records,ready compared continuously not masked by valid,D-G,NOT_RUN
+ST1-11,handshake,M held valid and C issue sink stalled,valid payload and ready sequence match reference every cycle,D-G,NOT_RUN
+ST1-12,write_order,fresh admission concurrent with old M C reads,pre edge old data and post edge new presence with no new bypass,D-G,NOT_RUN
+ST1-13,concurrency,M C plus independent late lookup,lookup does not borrow read ports or backpressure other consumers,D-G,NOT_RUN
+ST1-14,concurrency,M C plus withdrawal and R6 transition,exact original full binding and same fire timing,D-G,NOT_RUN
+ST1-15,lookup,lookup before after and same cycle as admission,unseen pending and admission bypass precedence unchanged,D-G,NOT_RUN
+ST1-16,lookup,lookup at transition with concurrent admission,transition before admission before stored journal before unseen,D-G,NOT_RUN
+ST1-17,lifetime,publication and retirement before late lookup,journal remains available and immutable until reset,D-G,NOT_RUN
+ST1-18,capacity,unbound members across 36 banks with full per bank capacity,no member capacity reduction or pending work without binding,D-G,NOT_RUN
+ST1-19,capacity,mixed bound and unbound across banks,all original reads and reference withdrawal behavior recorded,D-G,NOT_RUN
+ST1-20,negative_protocol,wrong identity handle generation endpoint and stale stage,C F B fail closed exactly as reference,D-G,NOT_RUN
+ST1-21,range,C ordinal full seven bit range 0 through 127,upper ordinals retain full width rejection before low bit alias,D-G,NOT_RUN
+ST1-22,range,layer encodings 36 through 63,establish definedness and preserve every defined reference control,reference_definedness_review,NOT_RUN
+ST1-23,reset,reset with held work lookup result and late response,same epoch invalidation and stale exclusion,D-G,NOT_RUN
+ST1-24,claim,reclaim bank through claim with old journal retained,cleared bank presence cannot reuse stale suffix implicitly,D-G,NOT_RUN
+ST1-25,negative_control,two banks accept same bound ordinal,old assertion and accepted prefix retained no new ready gate,D-R_expected_counterexample,NOT_RUN
+ST1-26,generic_wrapper,publication materialization pack read and independent validation suites,all generic wrapper IO and existing assertions match,D-G,NOT_RUN
+ST1-27,composition,actual ingress to R3 and measurement DUT,prove A NR from real wiring and FSM then compare complete path,D-P,NOT_RUN
+ST1-28,parameters,full fair v1 and existing focused suffix widths,no hardcoded 80 bit assumption outside selected profile,D-G,NOT_RUN
+ST1-29,synthesis,matched full journal plus suffix backing screen,complete priced storage and same independent read observability,after_scope_and_functional_closure,NOT_RUN
+ST1-30,integration,ST1 with eventual selected RD2 successor,new combined functional input closure no additive savings claim,separately_authorized_future,NOT_RUN
