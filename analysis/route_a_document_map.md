@@ -111,6 +111,15 @@ asynchronous multi-read RFs, incompatible synchronous SRAM substitution,
 small reverse-journal reuse and unestablished multi-bit-cell availability.
 Scalar-cell arithmetic is not mapped saving; no RTL or EDA execution follows.
 
+The next completed WCG1 feasibility tier is
+`dc_wcg1_cost_edge_feasibility_20261106.md` and its JSON: native library-only
+pricing/load checks, actual cell-model edge tests and negative controls.
+The gate-inclusive cell sum is positive in direction, but buffering/hold/
+timing costs are unpriced; it is not mapped-area evidence. Full generic RTL
+integration and propagated-clock/gate-enable timing remain open. Production
+and RD2 stay unchanged. Captured-report errors invalidate probe r2; clean r3
+and postcheck regressions are the accepted metadata authority.
+
 The independently scoped RD2 candidate is described by
 `dc_rd2_decoded_read_implementation_20261106.md`.  Both isolated sides retain
 RD1; only the remaining C/F/B and M/C suffix read realization changes.  The

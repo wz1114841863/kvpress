@@ -1524,6 +1524,23 @@ is established by the companion-model scan. This batch changes documents
 only, launches no EDA tool and reads no RD2 state; no candidate RTL or new
 clock/constraint/macro selection is made.
 
+WCG1's cost/edge feasibility assessment is complete; see
+[`dc_wcg1_cost_edge_feasibility_20261106.md`](dc_wcg1_cost_edge_feasibility_20261106.md)
+and its JSON. Native library-only probe r3 closes all markers/hashes and
+prices the positive-clock gate at 2.520 area; bare 79/80 ordinary-DFF clock
+pin loads fit its output cap limit without wire. The uniform-cell arithmetic
+after 4,608 gates leaves 357,654.528 area before buffering/hold/resizing costs,
+NOT mapped savings. Actual functional cell models pass 978 unit comparisons
+and 552 logical gate-edge checks; three negative/diagnostic variants differ
+as expected. Synthetic 50-ps gated capture demonstrates why native hold and
+clock-propagation closure remain necessary, not a measured timing failure.
+WCG1 needs no ST1 ordinal-nonreuse/capacity concession, but full generic RTL
+integration and gated STA remain open. Probe r2's captured Library Compiler
+report error is retained/rejected; r3 and four postcheck regressions close
+that false-PASS mechanism. Production RTL/RD2 are unchanged; no design
+synthesis or full paired DC ran. Next is a separately scoped matched mapping
+and gated-clock timing screen, not immediate wrapper replacement.
+
 ## Superseded pre-DC prompt seed (historical)
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read
