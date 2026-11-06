@@ -1549,10 +1549,15 @@ The scope is one complete 64-record bank, native EDFQD versus DFQD plus
 raw as well as identical-policy hold-repaired snapshots. The 64-row cell
 simulation passes 768 output comparisons; eight focused regressions pass.
 Native preflight r2 verifies storage/gate/E-pin inventories and actual library
-gating checks; preflight r1's pin-filter error is retained. Preparation has
-not produced mapped-area or mapped timing evidence. Production RTL and RD2
-remain untouched. Remote mapping needs its independently frozen input and
-launch record; do not mistake the preflight's generic-logic timing for results.
+gating checks; preflight r1's pin-filter error is retained. Preparation itself
+produces no mapped-area or mapped timing evidence. Production RTL and RD2
+remain untouched. The frozen run `wcg1_bank_mapping_sta_20261106_r1` is now
+launched in independent `kvzap-wcg1-map:paired-sta`, reference Pass 1 Mapping
+at the launch snapshot; see
+[`dc_wcg1_bank_mapping_launch_20261106.md`](dc_wcg1_bank_mapping_launch_20261106.md)
+and its JSON for exact hashes, paths and markers. Await the user's completion
+notification; no result or timing/area improvement is yet accepted. Do not
+mistake the preflight's generic-logic timing for mapped results.
 
 ## Superseded pre-DC prompt seed (historical)
 
