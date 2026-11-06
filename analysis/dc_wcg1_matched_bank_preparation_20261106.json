@@ -1,0 +1,28 @@
+{
+  "schema": "wcg1-matched-bank-preparation-1",
+  "scope": "preparation_only_no_mapped_result",
+  "simulation": {
+    "rows": 64,
+    "data_bits": 10176,
+    "output_checks": 768,
+    "result": "PASS"
+  },
+  "postcheck_regressions": "8 passed",
+  "native_preflight": "r2 PASS; outer exit=0 observed in tmux; r1 rejected pin filter preserved",
+  "library_model_sha256": "4aac97c4efda0665cdc8af807a1f5f6706f69a2359453b244562cd8158f27cbf",
+  "evidence_sha256": {
+    "analysis/experiments/wcg1_map_prepare_20261106_r1/compile.log": "9aaef7854800459f391215331dac27271a2a5ec58ac1aa60fc10e8fca22d42b8",
+    "analysis/experiments/wcg1_map_prepare_20261106_r1/simulation.log": "2c8e112c55a1c948050922000689fd32d0e9a855c8df15675a0d044e5fc043a8",
+    "analysis/experiments/wcg1_map_prepare_20261106_r1/native_preflight_r2/native.log": "fa855ea49b51ee9598ce3b598c39d3eabd451a3374807ec1ee1e4eaa2557a933",
+    "analysis/experiments/wcg1_map_prepare_20261106_r1/preflight_inputs_r2/reference.v": "df3486061a004001b14b9d7d802d05cf880ee676e03e278a7fb89e03a1e19554",
+    "analysis/experiments/wcg1_map_prepare_20261106_r1/preflight_inputs_r2/gated.v": "bacb6f0e3342c1c4ad205d0bb1f871764e819e11fdde8af517c8dab049056659",
+    "analysis/experiments/wcg1_map_prepare_20261106_r1/preflight_inputs/reference.v": "df3486061a004001b14b9d7d802d05cf880ee676e03e278a7fb89e03a1e19554",
+    "analysis/experiments/wcg1_map_prepare_20261106_r1/preflight_inputs/gated.v": "bacb6f0e3342c1c4ad205d0bb1f871764e819e11fdde8af517c8dab049056659",
+    "analysis/experiments/wcg1_map_prepare_20261106_r1/generated/reference.v": "df3486061a004001b14b9d7d802d05cf880ee676e03e278a7fb89e03a1e19554",
+    "analysis/experiments/wcg1_map_prepare_20261106_r1/generated/gated.v": "bacb6f0e3342c1c4ad205d0bb1f871764e819e11fdde8af517c8dab049056659",
+    "analysis/experiments/wcg1_map_prepare_20261106_r1/native_preflight_r2/reports/gate_setup.rpt": "4fe272941be8c48340eca1fa38bb523fb13d15c8c3e007f866288fd1119f8029",
+    "analysis/experiments/wcg1_map_prepare_20261106_r1/native_preflight_r2/reports/gating.rpt": "d631a67e7d12d7ac890be399d24cf61c959409708392546dfbf97aee89eb399f",
+    "analysis/experiments/wcg1_map_prepare_20261106_r1/native_preflight_r2/reports/gate_hold.rpt": "77e16000ae7f2a19035762a9823719390bb416c63ae092ac2083aa507cdcd39f"
+  },
+  "rd2": "not queried or modified"
+}

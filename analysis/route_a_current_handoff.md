@@ -1541,6 +1541,19 @@ that false-PASS mechanism. Production RTL/RD2 are unchanged; no design
 synthesis or full paired DC ran. Next is a separately scoped matched mapping
 and gated-clock timing screen, not immediate wrapper replacement.
 
+WCG1 matched bank mapping/STA preparation is now verified; see
+[`dc_wcg1_matched_bank_mapping_plan_20261106.md`](dc_wcg1_matched_bank_mapping_plan_20261106.md).
+The scope is one complete 64-record bank, native EDFQD versus DFQD plus
+128 CKLNQ gates, with identical registered launch boundaries, readers and
+2-ns numerical constraints. Both sides propagate cell clocks and retain
+raw as well as identical-policy hold-repaired snapshots. The 64-row cell
+simulation passes 768 output comparisons; eight focused regressions pass.
+Native preflight r2 verifies storage/gate/E-pin inventories and actual library
+gating checks; preflight r1's pin-filter error is retained. Preparation has
+not produced mapped-area or mapped timing evidence. Production RTL and RD2
+remain untouched. Remote mapping needs its independently frozen input and
+launch record; do not mistake the preflight's generic-logic timing for results.
+
 ## Superseded pre-DC prompt seed (historical)
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

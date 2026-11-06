@@ -290,6 +290,13 @@ driver/observability regression before another optimization or rerun.
   living navigation/status documents. Update those rather than rewriting a
   historical manifest when a later phase changes current disposition.
 
+For WCG1's authorized matched isolation mapping and gated-clock STA, use
+`dc_wcg1_matched_bank_mapping_plan_20261106.md` after the cost/edge assessment.
+It fixes the one-bank boundary, identical 2-ns profile, propagated cell clocks,
+native storage/gate inventories, and raw versus hold-repaired area policy.
+Preparation/preflight closure is not mapped-area or timing closure; follow
+the subsequent versioned launch/result record for actual execution state.
+
 ## Retrieval discipline
 
 For a new question, identify its stage first, read the five core documents,
