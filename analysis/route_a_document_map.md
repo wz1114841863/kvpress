@@ -94,6 +94,14 @@ the reference. Two independent M/C reads and continuous ready must remain.
 The generic scope gate is open; abstract checks are not RTL equivalence and
 all proposed RTL/DC cases remain NOT_RUN. This is documentation-only work.
 
+Continue with `dc_st1_scope_key_validation_result_20261106.md` and its JSON
+for the completed contract/predicate batch. Actual admission and C-ready
+expressions confirm the cross-bank duplicate assertion boundary. The reviewed
+authority does not establish global ordinal nonreuse for all generic callers;
+the simple journal-only replacement is not eligible for generic integration.
+The source replay and four checker regressions are not actual-wrapper RTL
+equivalence. Existing generic storage and RD2 remain unchanged; no DC ran.
+
 The independently scoped RD2 candidate is described by
 `dc_rd2_decoded_read_implementation_20261106.md`.  Both isolated sides retain
 RD1; only the remaining C/F/B and M/C suffix read realization changes.  The

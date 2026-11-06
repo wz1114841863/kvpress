@@ -1493,6 +1493,22 @@ source checks and a reduced storage-equation enumeration pass; neither is
 RTL equivalence. No candidate RTL or test harness is added, no remote access
 is performed and all planned RTL/DC cases remain NOT_RUN. RD2 is untouched.
 
+ST1's next scope/key-validation batch is complete; see
+[`dc_st1_scope_key_validation_result_20261106.md`](dc_st1_scope_key_validation_result_20261106.md)
+and its result JSON. The reviewed contracts establish ordinal identity within
+a group and the production ingress's one-group-per-reset journal bound, but
+not a global ordinal-nonreuse obligation for every generic caller. Nineteen
+actual source expressions were replayed over 14 check groups, including the
+expected cross-bank assertion violation and a separately marked overwrite
+diagnostic. Four checker/mutation regressions pass. This is source-predicate
+evidence, not HDL simulation or wrapper equivalence. Keep the existing generic
+suffix backing: the simple journal-only variant is not eligible under the
+current unqualified compatibility requirement. No new input assumption or
+ready gate is approved. Full-wrapper RTL/DC cases remain NOT_RUN. Production
+and testbench RTL, frozen inputs and RD2 are unchanged; no remote access or
+synthesis occurred. Conditional production reuse remains an unimplemented,
+separately scoped choice rather than a generic pass.
+
 ## Superseded pre-DC prompt seed (historical)
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

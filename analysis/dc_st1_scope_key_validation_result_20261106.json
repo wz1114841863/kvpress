@@ -1,0 +1,40 @@
+{
+  "schema_version": "route-a-st1-scope-key-result-1",
+  "source_commit": "0aa850df0a0774ca937564d596828e49fa13ee6b",
+  "evidence_class": "contract_review_and_source_predicate_replay_not_hdl_equivalence",
+  "scope_review": "COMPLETED_WITH_QUALIFICATION",
+  "generic_replacement_disposition": "NOT_ELIGIBLE_WITHOUT_NEW_SCOPE_AUTHORITY",
+  "production_conditional_candidate": "RETAINED_NOT_IMPLEMENTED",
+  "production_rtl_modified": false,
+  "testbench_rtl_modified": false,
+  "hdl_simulation_or_formal_run": false,
+  "remote_access": false,
+  "synthesis_run": false,
+  "checker_tests": {"passed": 4, "failed": 0},
+  "replay": {
+    "source_expressions": 19,
+    "check_groups": 14,
+    "source_predicate_groups": 13,
+    "recorded_source_probes": 11820,
+    "counterfactual_diagnostic_groups": 1,
+    "negative_assertion_violation_counted_as_legal_trace": false,
+    "raw_report": "analysis/experiments/st1_scope_key_validation_20261106_r2/report.json",
+    "raw_report_sha256": "b794be38269dad9b4877802d4353953a878b21949963ca5edf64f0e400f76acf"
+  },
+  "matrix_status": {
+    "ST1-01": "CONTRACT_REVIEW_COMPLETED_GENERIC_SCOPE_NOT_CLOSED",
+    "ST1-25": "SOURCE_PREDICATE_EXPECTED_ASSERTION_AND_COUNTERFACTUAL_DIVERGENCE_CONFIRMED",
+    "full_wrapper_rtl_cases": "NOT_RUN",
+    "ST1-29": "NOT_RUN",
+    "ST1-30": "NOT_RUN"
+  },
+  "prior_source_hash_authority": "dc_compact_store_p0_evidence_20261106.json",
+  "sha256": {
+    "tools/check_st1_journal_suffix_scope.py": "fa1b9ce16119e1829a61a02a3a1be740ff9fb73fce7608081f8ba9f666927d36",
+    "tests/test_st1_journal_suffix_scope.py": "1e921c9a6cb55c0249b9b7a25c6d68a2403a76c653218fa0fd3cc734e924acbf",
+    "analysis/rtl1_i2_admission_publication_contract.md": "1dab315147788137a851cea349997094cc3dd8314181c40a0c82600fc65568e9",
+    "analysis/rtl_entry_interface_manifest.json": "7085a9e39d41c78b83bea3d1e2548c93699d0b5a2fec0f1a41116441948b6f2f",
+    "analysis/rtl_entry_assertion_matrix.json": "0bcc9263c0c5e8c80af90b28872653d587e35f2f04256bbdcf4139aff47bcfc2",
+    "analysis/rtl_entry_assertion_verification_contract.md": "a65bd24658f53d8607128316470209be30c60b7eb194b1fec828807566b7868c"
+  }
+}
