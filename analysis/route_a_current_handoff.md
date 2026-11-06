@@ -1610,7 +1610,14 @@ The WCG1 default-off implementation and real-wrapper differential validation
 preparation are separate in
 [`dc_wcg1_wrapper_isolation_20261106.md`](dc_wcg1_wrapper_isolation_20261106.md).
 Bounded Scala compile and two 240-check native-gate comparisons pass, but
-the planned eight real-wrapper functional tests are not yet accepted.
+the planned eight real-wrapper functional tests are not yet accepted. They
+are now launched independently; see
+[`dc_wcg1_wrapper_functional_launch_20261106.md`](dc_wcg1_wrapper_functional_launch_20261106.md)
+and JSON. `kvzap-wcg1-wrapper:functional` uses frozen commit `82bd953`,
+122 sources excluding RD2, native Java 11 and serial C++ build. Remote Test
+compile passes; candidate/reference functional completion is pending. Both
+long jobs remain independent. Await user completion notices; no new full
+WCG1 DC or relaxed timing policy is authorized by this launch.
 
 ## Superseded pre-DC prompt seed (historical)
 

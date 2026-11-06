@@ -326,6 +326,11 @@ launch/result. The actual input/launch snapshot is
 paired DC is launched and not accepted. WCG1 implementation and pending
 real-wrapper differential test gates are in `dc_wcg1_wrapper_isolation_20261106.md`.
 Do not alter the frozen RD1+PM1 input to include ongoing WCG1 source changes.
+The WCG1 independent source/test launch is
+`dc_wcg1_wrapper_functional_launch_20261106.md` and JSON: source compile
+passes, eight real-wrapper directed/differential cases are pending. It is
+not a WCG1 mapped result or functional acceptance. Use both distinct tmux
+and immutable roots when the user reports the corresponding completion.
 
 ## Retrieval discipline
 
