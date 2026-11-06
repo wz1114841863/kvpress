@@ -339,6 +339,11 @@ Follow `dc_wcg1_wrapper_model_repair_20261106.md` and JSON for the minimal
 simulation-only assignment repair: matching-tool build, native edge checks
 and negative controls pass before a new immutable eight-test retry. This
 does not supersede r1's failure with a functional PASS.
+The subsequent immutable retry is
+`dc_wcg1_wrapper_retry_launch_20261106.md` and JSON: remote minimal build and
+capture/negative gates pass; eight-test job runs in its own r2 session.
+Functional completion remains pending until the new XMLs and final markers
+are audited. Original r1 and the independent RD1+PM1 synthesis are untouched.
 
 ## Retrieval discipline
 

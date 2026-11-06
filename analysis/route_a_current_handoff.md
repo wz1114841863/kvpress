@@ -1634,7 +1634,15 @@ reproduces old COMBDLY, builds the fixed executable without suppressions,
 passes 6,156 capture/edge checkpoints and both negative controls. Two native
 Icarus modes each pass 368 gate comparisons including root-edge NBA changes.
 The runner now requires this preflight before any long retry. A new remote
-eight-test run is pending; RD1+PM1 is not accessed or modified by this repair.
+eight-test run is now launched; see
+[`dc_wcg1_wrapper_retry_launch_20261106.md`](dc_wcg1_wrapper_retry_launch_20261106.md)
+and JSON. Frozen `844e586` retry uses `kvzap-wcg1-wrapper-r2:functional`,
+archive `6565f23e...`, unchanged 122 project files except the model assignment,
+and four pinned auxiliary preflight sources. Remote matching-Verilator
+minimal build/capture/negative gates pass before sbt startup. Eight-test
+functional completion is pending; await user notice. r1 remains failed and
+unchanged, RD2 excluded, RD1+PM1 not accessed or modified. Do not infer
+wrapper functional/timing acceptance from preflight or start a combined DC.
 
 ## Superseded pre-DC prompt seed (historical)
 
