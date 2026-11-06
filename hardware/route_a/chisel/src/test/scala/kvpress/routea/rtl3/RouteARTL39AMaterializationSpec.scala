@@ -10,14 +10,25 @@ import org.scalatest.funspec.AnyFunSpec
   * materialization. This isolates functional protocol behavior only; R2/R1,
   * a memory controller, numeric logic, timing, and PPA are not evaluated.
   */
-final class RouteARTL39AMaterializationSpec extends AnyFunSpec with ChiselSim {
+class RouteARTL39AMaterializationSpec extends AnyFunSpec with ChiselSim {
+  protected def gateCompactMembershipWords: Boolean = false
+  private implicit val boundedSimulator: chisel3.simulator.HasSimulator =
+    chisel3.simulator.HasSimulator.simulators.verilator(
+      verilatorSettings = svsim.verilator.Backend.CompilationSettings.default
+        .withOutputSplit(Some(2000)).withOutputSplitCFuncs(Some(200))
+        .withParallelism(Some(svsim.verilator.Backend.CompilationSettings.Parallelism.Different.default
+          .withBuild(Some(1)).withVerilate(Some(2)))))
+  private def harness = new RouteARTL39AMaterializationHarness(p,
+    gateCompactMembershipWords, compareReference = gateCompactMembershipWords)
+  private def boundHandle: BigInt = if (gateCompactMembershipWords)
+    BigInt("8000000000000055", 16) else BigInt(0x55)
   private val p = RouteASkeletonParameters(
     frontendEventKindWidth=3, componentStatusNameWidth=4, hotControlKindWidth=2, pendingDescriptorRefWidth=1, pendingValidityWidth=1,
     candidateClassWidth=3, candidateOrdinalWidth=4, candidateIdWidth=4, candidatePredicateWidth=10,
     r2S2FullClassCode=0, r2S2PackedClassCode=1, r2DirectPendingClassCode=2, r2PackReadClassCode=3, r2PackWriteClassCode=4, r2DescriptorMaintenanceClassCode=5, r2CandidateSlotsPerClass=2,
-    coreMemoryRequestKindWidth=3, coreMemoryDestinationWidth=2, coreMemoryAddressRefWidth=16, coreMemoryFragmentCountWidth=10, coreMemoryFragmentIndexWidth=9,
+    coreMemoryRequestKindWidth=3, coreMemoryDestinationWidth=if (gateCompactMembershipWords) 3 else 2, coreMemoryAddressRefWidth=if (gateCompactMembershipWords) 64 else 16, coreMemoryFragmentCountWidth=10, coreMemoryFragmentIndexWidth=9,
     coreMemoryReadRequestCode=0, coreMemoryWriteRequestCode=1, coreMemoryWriteDataCode=2, coreMemoryOkStatusCode=0, coreMemoryFaultStatusCode=1,
-    sourceDeliveryOpaqueWidth=2, transactionGroupTagWidth=2, p3StageGenerationWidth=2, r5AllocatorEntries=8, r5StreamSlots=8, sourceGenerationWidth=2, r6=RouteAR6Encoding.testOnlyAnchor)
+    sourceDeliveryOpaqueWidth=2, transactionGroupTagWidth=2, p3StageGenerationWidth=2, r5AllocatorEntries=8, r5StreamSlots=8, sourceGenerationWidth=if (gateCompactMembershipWords) 8 else 2, r6=RouteAR6Encoding.testOnlyAnchor)
 
   private def init(d: RouteARTL39AMaterializationHarness): Unit = {
     d.io.mem_init_done.poke(false.B); d.io.drain_collection_enable.poke(false.B); d.io.p3_observe_layer.poke(0.U)
@@ -49,20 +60,20 @@ final class RouteARTL39AMaterializationSpec extends AnyFunSpec with ChiselSim {
     binding.transaction_identity.request_id.poke(5.U); binding.transaction_identity.incarnation.poke(1.U)
     binding.entry_id.poke((7 * 288).U); binding.layer.poke(0.U); binding.kv_head.poke(0.U); binding.logical_position.poke(7.U)
     binding.payload_ref.poke(99.U); binding.transaction_group_tag.poke(1.U); binding.group_member_ordinal.poke(0.U); binding.group_valid_records.poke(1.U)
-    binding.payload_handle_or_address.poke("h55".U); binding.source_generation.poke(2.U); binding.destination_endpoint.poke(1.U)
+    binding.payload_handle_or_address.poke(boundHandle.U); binding.source_generation.poke(2.U); binding.destination_endpoint.poke(1.U)
     d.io.admission_context_in.valid.poke(true.B); d.io.admission_authority_in.valid.poke(true.B); d.io.pending_payload_binding_in.valid.poke(true.B)
     d.io.admission_context_in.ready.expect(true.B); d.io.admission_authority_in.ready.expect(true.B); d.io.pending_payload_binding_in.ready.expect(true.B)
     d.clock.step(); d.io.admission_context_in.valid.poke(false.B); d.io.admission_authority_in.valid.poke(false.B); d.io.pending_payload_binding_in.valid.poke(false.B)
   }
 
   it("materializes exact A0-bound work and sidecar, then releases its reservation only after the complete record") {
-    simulate(new RouteARTL39AMaterializationHarness(p)) { d =>
+    simulate(harness) { d =>
       init(d); claimAndAdmitBoundMember(d)
       d.io.materialized_work_valid.expect(true.B)
       d.io.materialized_work_layer.expect(0.U); d.io.materialized_work_stage_generation.expect(1.U)
       d.io.materialized_work_member_ordinal.expect(0.U); d.io.materialized_work_payload_ref.expect(99.U)
       d.io.materialized_work_request_id.expect(5.U); d.io.materialized_work_incarnation.expect(1.U)
-      d.io.materialized_work_payload_handle.expect("h55".U); d.io.materialized_work_source_generation.expect(2.U)
+      d.io.materialized_work_payload_handle.expect(boundHandle.U); d.io.materialized_work_source_generation.expect(2.U)
       d.io.materialized_work_destination_endpoint.expect(1.U)
       d.io.materialized_work_eligibility.expect(((1 << 0) | (1 << 1) | (1 << 2) | (1 << 3) | (1 << 5) | (1 << 6)).U)
       d.clock.step(); d.io.materialized_work_payload_ref.expect(99.U)
@@ -95,7 +106,7 @@ final class RouteARTL39AMaterializationSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("releases the materializer reservation on a matching fault without producing another member work") {
-    simulate(new RouteARTL39AMaterializationHarness(p)) { d =>
+    simulate(harness) { d =>
       init(d); claimAndAdmitBoundMember(d)
       d.io.materialized_work_ready.poke(true.B); d.clock.step(); d.io.materialized_work_ready.poke(false.B)
       d.io.p3_pack_fill_reservation_out.expect(true.B)
@@ -110,7 +121,7 @@ final class RouteARTL39AMaterializationSpec extends AnyFunSpec with ChiselSim {
   }
 
   it("automatically emits the exact packed-write sequence after a complete materialized P3 record and accepts only its matching terminal") {
-    simulate(new RouteARTL39AMaterializationHarness(p)) { d =>
+    simulate(harness) { d =>
       init(d); claimAndAdmitBoundMember(d)
 
       // Complete the RTL3.9-A materialized member, but hold the next R3-owned
@@ -187,6 +198,43 @@ final class RouteARTL39AMaterializationSpec extends AnyFunSpec with ChiselSim {
       d.io.p3_payload_durable_page_id.expect(1.U)
       d.io.p3_payload_durable_stage_generation.expect(1.U)
       d.io.p3_payload_durable_group_tag.expect(1.U)
+    }
+  }
+  it("preserves unbound joins, absent-authority stalls, duplicate exclusion and independent bank ordinal 63") {
+    simulate(harness) { d =>
+      init(d)
+      for ((layer, position) <- Seq((35, 9), (0, 10))) {
+        val claim = d.io.p3_claim_in.bits
+        claim.layer.poke(layer.U); claim.kv_head.poke(0.U); claim.owner.poke(0.U)
+        claim.page_ref.page_id.poke(1.U); claim.page_ref.generation.poke(0.U)
+        claim.valid_records.poke(64.U); claim.requires_tail_link.poke(false.B)
+        claim.transaction_group_tag.poke(1.U)
+        d.io.p3_claim_in.valid.poke(true.B); d.io.p3_claim_in.ready.expect(true.B)
+        d.clock.step(); d.io.p3_claim_in.valid.poke(false.B)
+        val context = d.io.admission_context_in.bits
+        val entry = position * 288 + layer * 8
+        context.entry_id.poke(entry.U); context.layer.poke(layer.U); context.kv_head.poke(0.U)
+        context.logical_position.poke(position.U); context.payload_ref.poke("hfedcba9876543210".U)
+        context.transaction_group_tag.poke(1.U); context.group_member_ordinal.poke(63.U)
+        context.group_valid_records.poke(64.U)
+        val authority = d.io.admission_authority_in.bits
+        authority.entry_id.poke(entry.U); authority.from_authority.poke(1.U)
+        authority.to_authority.poke(2.U); authority.transaction_group_tag.poke(1.U)
+        d.io.admission_context_in.valid.poke(true.B)
+        d.io.admission_authority_in.valid.poke(false.B)
+        d.io.pending_payload_binding_in.valid.poke(false.B)
+        d.io.admission_context_in.ready.expect(false.B); d.clock.step(2)
+        d.io.admission_authority_in.valid.poke(true.B)
+        d.io.admission_context_in.ready.expect(true.B); d.clock.step()
+        // The second bank may use the same ordinal without a journal binding.
+        d.io.admission_context_in.ready.expect(false.B)
+        context.payload_ref.poke("hffffffffffffffff".U); d.clock.step()
+        d.io.admission_context_in.valid.poke(false.B); d.io.admission_authority_in.valid.poke(false.B)
+        d.io.materialized_work_valid.expect(false.B)
+      }
+      d.reset.poke(true.B); d.clock.step(2); d.reset.poke(false.B)
+      d.io.mem_init_done.poke(true.B); d.clock.step()
+      d.io.materialized_work_valid.expect(false.B)
     }
   }
 }

@@ -1,6 +1,7 @@
 package kvpress.routea.rtl3
 
 import chisel3._
+import chisel3.reflect.DataMirror
 import kvpress.routea.incremental.RouteAM2P3Wrapper
 import kvpress.routea.interfaces.{RouteAChannels, RouteAWriteDeliveryEndpoint, StructuralTieOff}
 import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
@@ -16,7 +17,8 @@ import kvpress.routea.params.{RouteAAnchorWidths, RouteASkeletonParameters}
   * harness is therefore a test-observation adapter, not a production tie-off
   * or a replacement for the R2/R1 delivery path.
   */
-final class RouteARTL39AMaterializationHarness(p: RouteASkeletonParameters) extends Module {
+final class RouteARTL39AMaterializationHarness(p: RouteASkeletonParameters,
+    gateCompactMembershipWords: Boolean = false, compareReference: Boolean = false) extends Module {
   val io = IO(new Bundle {
     val mem_init_done = Input(Bool())
     val drain_collection_enable = Input(Bool())
@@ -87,7 +89,31 @@ final class RouteARTL39AMaterializationHarness(p: RouteASkeletonParameters) exte
     val p3_observe_state = Output(UInt(RouteAAnchorWidths.P3StateWidth.W))
   })
 
-  val r3 = Module(new RouteAM2P3Wrapper(p))
+  val r3 = Module(new RouteAM2P3Wrapper(p, gateCompactMembershipWords))
+  if (compareReference) {
+    require(gateCompactMembershipWords, "WCG1 miter requires candidate selected")
+    val reference = Module(new RouteAM2P3Wrapper(p))
+    def compare(ref: Data, candidate: Data, live: Bool): Unit = (ref, candidate) match {
+      case (a: Record, b: Record) =>
+        for ((name, field) <- a.elements) {
+          val guard = if (name == "bits" && b.elements.contains("valid"))
+            live && b.elements("valid").asUInt.asBool else live
+          compare(field, b.elements(name), guard)
+        }
+      case (a: Vec[_], b: Vec[_]) => a.zip(b).foreach { case (x, y) => compare(x, y, live) }
+      case _ => DataMirror.directionOf(candidate) match {
+        case ActualDirection.Input => ref := candidate
+        case ActualDirection.Output => when(live) {
+          assert(ref.asUInt === candidate.asUInt, "WCG1 full-wrapper output differs from reference")
+        }
+        case other => throw new IllegalArgumentException(s"unexpected WCG1 leaf direction $other")
+      }
+    }
+    // Input bits and output-ready backpressure are shared at every leaf.
+    // Every output valid/ready is compared continuously, including valid-low;
+    // payload bits are compared when the owning Valid/Decoupled is live.
+    compare(reference.io, r3.io, true.B)
+  }
   r3.io.mem_init_done := io.mem_init_done
   r3.io.drain_collection_enable := io.drain_collection_enable
   r3.io.p3_observe_layer := io.p3_observe_layer

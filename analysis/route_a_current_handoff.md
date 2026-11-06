@@ -1601,7 +1601,16 @@ the accepted same-header PM1 contextual child replaces RD1's Page Manager;
 47 other Route-A units and Full-KV remain identical. The new fail-closed
 freeze/launch must finish source/state/proxy/hash gates before DC. WCG1 must
 remain outside this frozen input and pass real-wrapper functional/edge gates
-before any later cumulative WCG1 full DC.
+before any later cumulative WCG1 full DC. The completed freeze and actual
+RD1+PM1 launch are now recorded in
+[`dc_rd1_pm1_full_paired_launch_20261106.md`](dc_rd1_pm1_full_paired_launch_20261106.md)
+and JSON: archive `0f21d81d...`, all static/state/proxy gates pass, Full-KV
+mapping started in `kvzap-rd1-pm1:paired-dc`; await user completion notice.
+The WCG1 default-off implementation and real-wrapper differential validation
+preparation are separate in
+[`dc_wcg1_wrapper_isolation_20261106.md`](dc_wcg1_wrapper_isolation_20261106.md).
+Bounded Scala compile and two 240-check native-gate comparisons pass, but
+the planned eight real-wrapper functional tests are not yet accepted.
 
 ## Superseded pre-DC prompt seed (historical)
 

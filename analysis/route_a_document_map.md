@@ -321,7 +321,11 @@ For the authorized parallel successor, read
 `dc_rd1_pm1_parallel_launch_20261106.md`: accepted-component RD1+PM1 raw RTL
 composition, unchanged fair-v1 full paired DC, and separate default-off WCG1
 wrapper work. RD2 remains rejected for integration. Preparation is not a
-launch/result; follow later exact artifact hashes and native markers.
+launch/result. The actual input/launch snapshot is
+`dc_rd1_pm1_full_paired_launch_20261106.md` and JSON; the independent full
+paired DC is launched and not accepted. WCG1 implementation and pending
+real-wrapper differential test gates are in `dc_wcg1_wrapper_isolation_20261106.md`.
+Do not alter the frozen RD1+PM1 input to include ongoing WCG1 source changes.
 
 ## Retrieval discipline
 

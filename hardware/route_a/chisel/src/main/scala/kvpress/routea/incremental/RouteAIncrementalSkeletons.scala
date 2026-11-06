@@ -2439,7 +2439,7 @@ final class RouteAM2P3PendingReadSuffix(p: RouteASkeletonParameters) extends Bun
 }
 
 /** RTL1.3 R3 control state: no P3 payload macro, M2 macro, or HBM controller. */
-final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
+final class RouteAM2P3Wrapper(p: RouteASkeletonParameters, gateCompactMembershipWords: Boolean = false) extends Module {
   override def desiredName: String = "route_a_m2_p3_wrapper"
 
   val io = IO(new Bundle {
@@ -2553,9 +2553,27 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   // The following is a logical, per-record association ledger.  It contains
   // sidecar/payload references only, never K/V data or authoritative residency.
   val membershipPresent = RegInit(VecInit(Seq.fill(stages)(0.U(64.W))))
-  val membershipEntries = Reg(Vec(stages, Vec(64, new RouteAM2P3MembershipRecord)))
+  val membershipEntries = if (gateCompactMembershipWords)
+    Wire(Vec(stages, Vec(64, new RouteAM2P3MembershipRecord)))
+  else Reg(Vec(stages, Vec(64, new RouteAM2P3MembershipRecord)))
   val membershipPayloadBindingPresent = RegInit(VecInit(Seq.fill(stages)(0.U(64.W))))
-  val membershipPayloadBindings = Reg(Vec(stages, Vec(64, new RouteAM2P3PendingReadSuffix(p))))
+  val membershipPayloadBindings = if (gateCompactMembershipWords)
+    Wire(Vec(stages, Vec(64, new RouteAM2P3PendingReadSuffix(p))))
+  else Reg(Vec(stages, Vec(64, new RouteAM2P3PendingReadSuffix(p))))
+  if (gateCompactMembershipWords) {
+    val memberValue = Wire(new RouteAM2P3MembershipRecord)
+    memberValue.logical_position := io.admission_context_in.bits.logical_position
+    memberValue.payload_ref := io.admission_context_in.bits.payload_ref
+    val suffixValue = Wire(new RouteAM2P3PendingReadSuffix(p))
+    suffixValue.transaction_identity := io.pending_payload_binding_in.bits.transaction_identity
+    suffixValue.payload_handle_or_address := io.pending_payload_binding_in.bits.payload_handle_or_address
+    suffixValue.source_generation := io.pending_payload_binding_in.bits.source_generation
+    suffixValue.destination_endpoint := io.pending_payload_binding_in.bits.destination_endpoint
+    RouteACompactWordClocking.attach(p, clock, io.admission_context_in.fire,
+      io.admission_context_in.fire && io.pending_payload_binding_in.valid,
+      io.admission_context_in.bits.layer, io.admission_context_in.bits.group_member_ordinal,
+      memberValue, suffixValue, membershipEntries, membershipPayloadBindings)
+  }
   // B2c: the current production ingress admits exactly one <=64-member group
   // per reset.  This journal retains only the already accepted binding and
   // its observed pending->packed outcome for late descriptor registration.
@@ -2696,18 +2714,22 @@ final class RouteAM2P3Wrapper(p: RouteASkeletonParameters) extends Module {
   when(io.admission_context_in.fire) {
     assert(io.admission_authority_in.fire)
     membershipPresent(admissionLayer) := membershipPresent(admissionLayer) | admissionOrdinalMask
-    membershipEntries(admissionLayer)(admission.group_member_ordinal(5, 0)).logical_position :=
-      admission.logical_position
-    membershipEntries(admissionLayer)(admission.group_member_ordinal(5, 0)).payload_ref :=
-      admission.payload_ref
+    if (!gateCompactMembershipWords) {
+      membershipEntries(admissionLayer)(admission.group_member_ordinal(5, 0)).logical_position :=
+        admission.logical_position
+      membershipEntries(admissionLayer)(admission.group_member_ordinal(5, 0)).payload_ref :=
+        admission.payload_ref
+    }
     when(pendingBindingOffered) {
       assert(io.pending_payload_binding_in.fire)
       membershipPayloadBindingPresent(admissionLayer) := membershipPayloadBindingPresent(admissionLayer) | admissionOrdinalMask
-      val storedBinding = membershipPayloadBindings(admissionLayer)(admission.group_member_ordinal(5, 0))
-      storedBinding.transaction_identity := pendingPayloadBinding.transaction_identity
-      storedBinding.payload_handle_or_address := pendingPayloadBinding.payload_handle_or_address
-      storedBinding.source_generation := pendingPayloadBinding.source_generation
-      storedBinding.destination_endpoint := pendingPayloadBinding.destination_endpoint
+      if (!gateCompactMembershipWords) {
+        val storedBinding = membershipPayloadBindings(admissionLayer)(admission.group_member_ordinal(5, 0))
+        storedBinding.transaction_identity := pendingPayloadBinding.transaction_identity
+        storedBinding.payload_handle_or_address := pendingPayloadBinding.payload_handle_or_address
+        storedBinding.source_generation := pendingPayloadBinding.source_generation
+        storedBinding.destination_endpoint := pendingPayloadBinding.destination_endpoint
+      }
       assert(!reconciliationPresent(admission.group_member_ordinal(5, 0)))
       reconciliationPresent(admission.group_member_ordinal(5, 0)) := true.B
       reconciliationBindings(admission.group_member_ordinal(5, 0)) := pendingPayloadBinding
