@@ -296,8 +296,11 @@ It fixes the one-bank boundary, identical 2-ns profile, propagated cell clocks,
 native storage/gate inventories, and raw versus hold-repaired area policy.
 Preparation/preflight closure is not mapped-area or timing closure. The
 separate `dc_wcg1_bank_mapping_launch_20261106.md` and JSON freeze the
-authorized run's exact inputs and independent tmux location. It is launched,
-not accepted; await user completion notice before auditing native results.
+authorized run's exact inputs and independent tmux location. Follow
+`dc_wcg1_bank_mapping_error_diagnosis_20261106.md` and JSON for the completed
+native sides but failed summary: the design-level area attribute is absent
+in DC 2018. Audited native areas/timing remain pending a versioned short
+postcheck repair; no full remapping or production integration has occurred.
 
 ## Retrieval discipline
 

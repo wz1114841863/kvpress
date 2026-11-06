@@ -1552,12 +1552,19 @@ Native preflight r2 verifies storage/gate/E-pin inventories and actual library
 gating checks; preflight r1's pin-filter error is retained. Preparation itself
 produces no mapped-area or mapped timing evidence. Production RTL and RD2
 remain untouched. The frozen run `wcg1_bank_mapping_sta_20261106_r1` is now
-launched in independent `kvzap-wcg1-map:paired-sta`, reference Pass 1 Mapping
-at the launch snapshot; see
+completed both native sides in independent `kvzap-wcg1-map:paired-sta`, but
+its Python summary failed and outer exit is 1; see
 [`dc_wcg1_bank_mapping_launch_20261106.md`](dc_wcg1_bank_mapping_launch_20261106.md)
-and its JSON for exact hashes, paths and markers. Await the user's completion
-notification; no result or timing/area improvement is yet accepted. Do not
-mistake the preflight's generic-logic timing for mapped results.
+and its JSON for exact input hashes and launch paths. Current diagnosis is
+[`dc_wcg1_bank_mapping_error_diagnosis_20261106.md`](dc_wcg1_bank_mapping_error_diagnosis_20261106.md)
+and JSON: DC 2018's missing design `area` attribute produces empty scalar
+metrics; native Total cell area is present. Both sides have native exit 0,
+raw/repaired DDC and reports. Native repaired area reduction is 16.5262% in
+the one-bank fixture; gated raw hold -17.9208 ps becomes +3.52895 ps after
+repair, with setup +1.06405 ns unchanged. These are audited native observations,
+not a completed postcheck acceptance or a top-level result. No restart or
+tooling/RTL change was performed. Next is a versioned short postcheck repair
+using existing native reports, preserving r1's failed marker and frozen inputs.
 
 ## Superseded pre-DC prompt seed (historical)
 
