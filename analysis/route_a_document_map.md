@@ -376,6 +376,13 @@ return-status checking. r1 exit 7 is preserved and neither formal mapping ran.
 Use the separate successor launch record; do not infer mapping/timing failure
 from this flow error or change an ongoing RD1+PM1 input.
 
+The immutable r2 launch is
+`dc_wcg1_wrapper_mapping_retry_launch_20261106.md` and JSON. It changes only
+the native-sizing Tcl/status check in the archived input, uses a separate r2
+session/root, retains all original 2-ns controls and source geometry, and
+still fails closed before formal mapping on any native preflight Error.
+It is a launched experiment, not a mapped/timing result; preserve r1.
+
 For the read-only incremental storage/service cost ledger, read
 `route_a_incremental_storage_cost_ledger_p0_20261106.md` and its CSV/evidence
 JSON. It separates accepted RD1 mapped parents/compact tables from excluded

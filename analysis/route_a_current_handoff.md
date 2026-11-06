@@ -1688,6 +1688,18 @@ binding marker. The corrected command also checks return status. Installed
 command-reference review and 36 local checks pass; a new immutable r2 launch
 is required, leaving r1 and RD1+PM1 untouched. This is not an RTL/timing fault.
 
+The corrected immutable r2 chain is now launched; see
+[`dc_wcg1_wrapper_mapping_retry_launch_20261106.md`](dc_wcg1_wrapper_mapping_retry_launch_20261106.md)
+and JSON. Run `wcg1_wrapper_mapping_sta_211f1e2_20261106_r2` uses
+`kvzap-wcg1-wrapper-map-r2:paired-sta`, archive `aebd5a07...`; the package
+differs from r1 only in the native-sizing Tcl command/status check. All old
+Chisel/constraint/runner/postcheck files remain identical, and 36 local tests
+pass. Paired export/static input closure now pass and native preflight is
+active without observed native errors; its success is still pending and
+must precede both formal mappings. Await
+user completion notice; no native area/timing result or production integration
+is accepted at launch. r1 and the running RD1+PM1 synthesis are untouched.
+
 ## Incremental storage/service cost P0 (2026-11-06)
 
 The read-only ledger is
