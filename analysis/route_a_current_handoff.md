@@ -1592,6 +1592,17 @@ each side. This accepts only the matched bank mapping/STA screen; production
 wrapper integration, whole-top area/timing and physical hold signoff are open.
 Do not update the full Route-A/Full-KV ratio or infer PPA/system/net benefit.
 
+The user now authorizes parallel work: RD1+PM1 complete paired DC and WCG1
+wrapper isolation, excluding RD2. Preparation and frozen-component composition
+are recorded in
+[`dc_rd1_pm1_parallel_launch_20261106.md`](dc_rd1_pm1_parallel_launch_20261106.md).
+The 2-ns profile and accepted entry_id/proxy policy remain unchanged. Only
+the accepted same-header PM1 contextual child replaces RD1's Page Manager;
+47 other Route-A units and Full-KV remain identical. The new fail-closed
+freeze/launch must finish source/state/proxy/hash gates before DC. WCG1 must
+remain outside this frozen input and pass real-wrapper functional/edge gates
+before any later cumulative WCG1 full DC.
+
 ## Superseded pre-DC prompt seed (historical)
 
 > Work in `/home/wz/AI/kvpress` on branch `research/kvzap-latest`. Read

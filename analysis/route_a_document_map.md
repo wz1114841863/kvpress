@@ -317,6 +317,12 @@ The repaired one-bank screen saves 16.5262% cell area and closes its 2-ns
 setup/hold/gating checks, with 12 matched LINT-28 warnings. This does not
 integrate WCG1 or update full Route-A paired-DC results.
 
+For the authorized parallel successor, read
+`dc_rd1_pm1_parallel_launch_20261106.md`: accepted-component RD1+PM1 raw RTL
+composition, unchanged fair-v1 full paired DC, and separate default-off WCG1
+wrapper work. RD2 remains rejected for integration. Preparation is not a
+launch/result; follow later exact artifact hashes and native markers.
+
 ## Retrieval discipline
 
 For a new question, identify its stage first, read the five core documents,
