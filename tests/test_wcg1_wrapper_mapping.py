@@ -1,5 +1,6 @@
 """Fail-closed input/STA accounting checks; no simulator or EDA invocation."""
 import sys
+import subprocess
 from pathlib import Path
 import pytest
 
@@ -7,6 +8,21 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools'))
 import prepare_wcg1_wrapper_mapping as PREP
 import check_wcg1_wrapper_mapping as CHECK
+
+
+@pytest.mark.parametrize('status', [0, 1])
+def test_shared_native_gate_command_checks_all_instances_and_return_status(status):
+    text = (ROOT / 'hardware/route_a/dc/screen_wcg1_wrapper_sta.tcl').read_text()
+    line = next(x.strip() for x in text.splitlines() if 'if {![set_size_only' in x)
+    script = '''proc set_size_only {args} {
+      if {[lindex $args 0] ne "-all_instances"} {error UID-192}
+      return %d
+    }
+    set gates native_shared_leaf
+    ''' % status
+    script += '\nif {[catch {' + line + '} message]} {puts stderr $message; exit 1}\n'
+    result = subprocess.run(['tclsh'], input=script, text=True, capture_output=True)
+    assert (result.returncode == 0) == bool(status)
 
 
 def test_inline_resource_can_be_explicitly_closed_but_not_silently_changed(tmp_path):

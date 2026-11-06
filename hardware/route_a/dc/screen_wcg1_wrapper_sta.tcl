@@ -110,7 +110,9 @@ if {[catch {
   if {$side eq "gated"} {set count 4608}
   if {[sizeof_collection $gates] != $count} {error "native gate link incomplete"}
   if {$count > 0} {
-    set_size_only $gates true
+    # The inline module is multiply instantiated. DC 2018 requires explicit
+    # all-instance application to its shared native leaf definition.
+    if {![set_size_only -all_instances $gates true]} {error "native gate size-only application failed"}
     set enables [filter_collection [get_pins -of_objects $gates] {full_name =~ */E}]
     if {[sizeof_collection $enables] != 4608} {error "native enable pins missing"}
     set libgate [get_lib_cells */CKLNQD1BWP12T30P140LVT]

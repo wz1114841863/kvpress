@@ -369,6 +369,13 @@ then paired wrapper mapping/STA, not full paired DC. Compile/export and static
 input closure pass; actual native binding and mapped results remain pending. Await
 the user's completion notice; RD1+PM1 is not queried or changed.
 
+The initial wrapper mapping preflight failure and exact correction are in
+`dc_wcg1_wrapper_mapping_preflight_repair_20261106.md`: multiply instantiated
+native leaf sizing requires DC's documented `-all_instances`, with explicit
+return-status checking. r1 exit 7 is preserved and neither formal mapping ran.
+Use the separate successor launch record; do not infer mapping/timing failure
+from this flow error or change an ongoing RD1+PM1 input.
+
 For the read-only incremental storage/service cost ledger, read
 `route_a_incremental_storage_cost_ledger_p0_20261106.md` and its CSV/evidence
 JSON. It separates accepted RD1 mapped parents/compact tables from excluded

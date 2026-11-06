@@ -1678,6 +1678,16 @@ native-binding preflight is active; mapping/STA results remain pending.
 A fail-closed native-binding gate precedes both mappings.
 The user is notified to await completion. RD1+PM1 is not accessed or changed.
 
+The initial mapping chain stopped fail-closed at native preflight, outer exit
+7, before either formal side mapped. See
+[`dc_wcg1_wrapper_mapping_preflight_repair_20261106.md`](dc_wcg1_wrapper_mapping_preflight_repair_20261106.md):
+DC 2018 requires `set_size_only -all_instances` on the shared inline module's
+native leaf. Its false command status produced UID-192/UID-457 even though
+native gates linked; the independent Error scan rejected the misleading
+binding marker. The corrected command also checks return status. Installed
+command-reference review and 36 local checks pass; a new immutable r2 launch
+is required, leaving r1 and RD1+PM1 untouched. This is not an RTL/timing fault.
+
 ## Incremental storage/service cost P0 (2026-11-06)
 
 The read-only ledger is
