@@ -328,9 +328,13 @@ real-wrapper differential test gates are in `dc_wcg1_wrapper_isolation_20261106.
 Do not alter the frozen RD1+PM1 input to include ongoing WCG1 source changes.
 The WCG1 independent source/test launch is
 `dc_wcg1_wrapper_functional_launch_20261106.md` and JSON: source compile
-passes, eight real-wrapper directed/differential cases are pending. It is
-not a WCG1 mapped result or functional acceptance. Use both distinct tmux
-and immutable roots when the user reports the corresponding completion.
+passes. Its completed failed disposition is
+`dc_wcg1_wrapper_functional_result_20261106.md` and JSON: baseline 4/4 pass,
+candidate 4/4 simulator-build failures (fatal COMBDLY in the simulation gate
+model), outer exit 1. No candidate functional stimulus ran. Inputs recheck;
+repair the model and minimally preflight Verilator/native-gate edges before
+a new retry. This is not WCG1 functional/mapped acceptance and does not alter
+or re-audit the independent RD1+PM1 full run.
 
 ## Retrieval discipline
 

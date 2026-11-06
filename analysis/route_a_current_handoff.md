@@ -1615,9 +1615,17 @@ are now launched independently; see
 [`dc_wcg1_wrapper_functional_launch_20261106.md`](dc_wcg1_wrapper_functional_launch_20261106.md)
 and JSON. `kvzap-wcg1-wrapper:functional` uses frozen commit `82bd953`,
 122 sources excluding RD2, native Java 11 and serial C++ build. Remote Test
-compile passes; candidate/reference functional completion is pending. Both
-long jobs remain independent. Await user completion notices; no new full
-WCG1 DC or relaxed timing policy is authorized by this launch.
+compile passes. The WCG1 job has now ended with outer exit 1; see
+[`dc_wcg1_wrapper_functional_result_20261106.md`](dc_wcg1_wrapper_functional_result_20261106.md)
+and JSON. Baseline passes 4/4; candidate fails 4/4 during Verilator simulator
+construction because the simulation gate's nonblocking latch assignment
+triggers fatal COMBDLY. Candidate stimulus/equivalence assertions did not run;
+all 122 source hashes, archive/runner pins and XML reports recheck. This is
+not eight-test acceptance or a new DC/timing result. Preserve r1; first repair
+and preflight the simulation model/native-edge equivalence, then use a new
+immutable functional retry. This inspection makes no code change or restart
+and does not access the independent RD1+PM1 run. The earlier single-bank WCG1
+mapped result remains separate; full wrapper timing/functional closure is open.
 
 ## Superseded pre-DC prompt seed (historical)
 

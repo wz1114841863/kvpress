@@ -1,0 +1,143 @@
+{
+  "schema": "wcg1-real-wrapper-functional-result-1",
+  "run_id": "wcg1_wrapper_82bd953_20261106_r1",
+  "disposition": "FAILED_CANDIDATE_SIMULATOR_BUILD_NOT_ACCEPTED",
+  "input_closure": "PASS",
+  "test_totals": {
+    "registered": 8,
+    "succeeded": 4,
+    "failed": 4,
+    "cancelled": 0,
+    "ignored": 0,
+    "pending": 0
+  },
+  "outer_exit": 1,
+  "root_cause": {
+    "stage": "Verilator simulation executable construction, before candidate functional stimulus",
+    "diagnostic": "COMBDLY: nonblocking enable_low <= enable in always_latch; warning treated as fatal",
+    "introduced_in": "WCG1 simulation-only inline clock-gate model",
+    "synthesis_binding": "native CKLNQD1 branch unchanged; no new synthesis result"
+  },
+  "audit": {
+    "schema": "wcg1-wrapper-failed-build-audit-1",
+    "run_id": "wcg1_wrapper_82bd953_20261106_r1",
+    "source_files_verified": 122,
+    "archive_sha256": "acae22189e4b254c95316101f262d0f6e122dac5290de43981ce35f47ddb1f15",
+    "runner_sha256": "5f84e073d1f850006745c1b84dd51d38f450cca6b8e4573bb40027b00dc14a0f",
+    "input_manifest_sha256": "14ae1f055f7fab831ae7135a7f2063225a9b5707cb1e725f81f75deeec1d7c98",
+    "outer_exit": 1,
+    "suites": {
+      "RouteARTL39AMaterializationSpec": {
+        "attributes": {
+          "hostname": "ercesi413",
+          "name": "kvpress.routea.rtl3.RouteARTL39AMaterializationSpec",
+          "tests": "4",
+          "errors": "0",
+          "failures": "0",
+          "skipped": "0",
+          "time": "736.121",
+          "timestamp": "2026-11-06T15:35:01"
+        },
+        "cases": [
+          {
+            "name": "materializes exact A0-bound work and sidecar, then releases its reservation only after the complete record",
+            "seconds": "189.781",
+            "result": "PASS"
+          },
+          {
+            "name": "releases the materializer reservation on a matching fault without producing another member work",
+            "seconds": "185.814",
+            "result": "PASS"
+          },
+          {
+            "name": "automatically emits the exact packed-write sequence after a complete materialized P3 record and accepts only its matching terminal",
+            "seconds": "181.538",
+            "result": "PASS"
+          },
+          {
+            "name": "preserves unbound joins, absent-authority stalls, duplicate exclusion and independent bank ordinal 63",
+            "seconds": "178.988",
+            "result": "PASS"
+          }
+        ],
+        "xml_sha256": "314c1347764af2a8643cf09f5b54cf8201882a7794ad366b6b09814710b5ac92"
+      },
+      "RouteAWCG1WrapperSpec": {
+        "attributes": {
+          "hostname": "ercesi413",
+          "name": "kvpress.routea.rtl3.RouteAWCG1WrapperSpec",
+          "tests": "4",
+          "errors": "0",
+          "failures": "4",
+          "skipped": "0",
+          "time": "269.924",
+          "timestamp": "2026-11-06T15:47:17"
+        },
+        "cases": [
+          {
+            "name": "materializes exact A0-bound work and sidecar, then releases its reservation only after the complete record",
+            "seconds": "68.266",
+            "result": "BUILD_FAILED_COMBDLY"
+          },
+          {
+            "name": "releases the materializer reservation on a matching fault without producing another member work",
+            "seconds": "67.687",
+            "result": "BUILD_FAILED_COMBDLY"
+          },
+          {
+            "name": "automatically emits the exact packed-write sequence after a complete materialized P3 record and accepts only its matching terminal",
+            "seconds": "67.001",
+            "result": "BUILD_FAILED_COMBDLY"
+          },
+          {
+            "name": "preserves unbound joins, absent-authority stalls, duplicate exclusion and independent bank ordinal 63",
+            "seconds": "66.97",
+            "result": "BUILD_FAILED_COMBDLY"
+          }
+        ],
+        "xml_sha256": "c94aeb290b5d0d7781de283d5c8c474d2a691f76b8054f355e5548d215fe59c0"
+      }
+    },
+    "candidate_gate_artifacts": [
+      {
+        "gate": "build/chiselsim/RouteAWCG1WrapperSpec/materializes-exact-A0-bound-work-and-sidecar--then-releases-its-reservation-only-after-the-complete-record/primary-sources/route_a_compact_word_clock_gate.sv",
+        "sha256": "3d51e73f84f557e278b3aaa545b1f3885eb3eef8cb70f1f2819732775ce40f0a",
+        "simulation_executable_exists": false
+      },
+      {
+        "gate": "build/chiselsim/RouteAWCG1WrapperSpec/automatically-emits-the-exact-packed-write-sequence-after-a-complete-materialized-P3-record-and-accepts-only-its-matching-terminal/primary-sources/route_a_compact_word_clock_gate.sv",
+        "sha256": "3d51e73f84f557e278b3aaa545b1f3885eb3eef8cb70f1f2819732775ce40f0a",
+        "simulation_executable_exists": false
+      },
+      {
+        "gate": "build/chiselsim/RouteAWCG1WrapperSpec/preserves-unbound-joins--absent-authority-stalls--duplicate-exclusion-and-independent-bank-ordinal-63/primary-sources/route_a_compact_word_clock_gate.sv",
+        "sha256": "3d51e73f84f557e278b3aaa545b1f3885eb3eef8cb70f1f2819732775ce40f0a",
+        "simulation_executable_exists": false
+      },
+      {
+        "gate": "build/chiselsim/RouteAWCG1WrapperSpec/releases-the-materializer-reservation-on-a-matching-fault-without-producing-another-member-work/primary-sources/route_a_compact_word_clock_gate.sv",
+        "sha256": "3d51e73f84f557e278b3aaa545b1f3885eb3eef8cb70f1f2819732775ce40f0a",
+        "simulation_executable_exists": false
+      }
+    ],
+    "hashes": {
+      "input_manifest.json": "14ae1f055f7fab831ae7135a7f2063225a9b5707cb1e725f81f75deeec1d7c98",
+      "test.log": "efe00254d15e3404134078e438a24c86ec2cbc8cbc1414f7160373c7b55feb7d",
+      "exit_status": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    "total_log_sha256": "f70d6a19f5becef01b80010dacb42e8f55e7ce5c3389bf04a42be449faf6e4a1",
+    "actions": "read-only WCG1 inspection only; RD1+PM1 not accessed; no edits, rerun, DC or STA"
+  },
+  "local_copy_sha256": {
+    "exit_status": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+    "input_manifest.json": "14ae1f055f7fab831ae7135a7f2063225a9b5707cb1e725f81f75deeec1d7c98",
+    "remote_audit_r2.json": "4fa713c71e7e9962e27d37ce67c6213ca0e9426d7a98ab23f0be5716d5e48cbe",
+    "test.log": "efe00254d15e3404134078e438a24c86ec2cbc8cbc1414f7160373c7b55feb7d",
+    "wcg1_wrapper_functional_20261106_r1.log": "f70d6a19f5becef01b80010dacb42e8f55e7ce5c3389bf04a42be449faf6e4a1",
+    "xml/TEST-kvpress.routea.rtl3.RouteARTL39AMaterializationSpec.xml": "314c1347764af2a8643cf09f5b54cf8201882a7794ad366b6b09814710b5ac92",
+    "xml/TEST-kvpress.routea.rtl3.RouteAWCG1WrapperSpec.xml": "c94aeb290b5d0d7781de283d5c8c474d2a691f76b8054f355e5548d215fe59c0"
+  },
+  "next_step": "reproduce/fix simulation model in minimal matching-Verilator build; native edge equivalence before new versioned eight-test retry; no DC rerun required",
+  "rd1_pm1": "not queried or modified; no window/process/input access",
+  "actions": "read-only remote WCG1 inspection and local result documentation; no source/tool edits or restart"
+}
