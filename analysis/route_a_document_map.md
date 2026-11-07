@@ -439,3 +439,9 @@ then add only the table row's primary record. If an exact field, hash, test,
 or owner claim is challenged, follow the primary record's links to its paired
 manifest/provenance file. This keeps a conversation evidence-bounded while
 retaining the complete experiment history.
+
+The saved-DDC diagnostic `rd1_pm1_setup_diagnosis_20261107_r1` is now launched
+in `kvzap-rd1-pm1-setup:saved-sta`; its immutable paths/source pins are in
+`dc_rd1_pm1_setup_diagnosis_20261107.json`. It is read-only STA, not synthesis.
+Await user completion notice before auditing endpoint/TNS coverage and making
+the PM1 repair/WCG1 baseline decision. No automatic retry or full DC is queued.

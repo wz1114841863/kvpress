@@ -92,3 +92,17 @@ excluded. A full run needs a new frozen closure and separate launch; none
 is authorized or launched merely by starting this read-only diagnosis.
 
 No PPA, service-zero-cost, speedup or net hardware-benefit claim follows.
+
+## Actual launch snapshot
+
+The prepared native diagnostic is launched as
+`rd1_pm1_setup_diagnosis_20261107_r1` in independent tmux
+**`kvzap-rd1-pm1-setup:saved-sta`**. Launch/source pins are in the JSON.
+Private result root:
+`/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_pm1_setup_diagnosis_20261107_r1/`.
+Aggregate log:
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/rd1_pm1_setup_diagnosis_20261107_r1.log`.
+The transferred scripts rehash against the local preparation. This is a
+launch record, not a completed STA, repaired selector or integration decision.
+The user has been notified to wait and report completion. No automatic rerun
+or full paired DC is scheduled.

@@ -1839,3 +1839,9 @@ and native 2-ns setup/hold remain open. RD1+PM1/WCG1 handoffs are unchanged.
 > claims. Preserve frozen artifacts, run no-model preflight/tests first, update
 > live navigation, and commit each completed modification batch with its
 > source/scope.
+
+The saved-DDC diagnostic `rd1_pm1_setup_diagnosis_20261107_r1` is now launched
+in `kvzap-rd1-pm1-setup:saved-sta`; its immutable paths/source pins are in
+`dc_rd1_pm1_setup_diagnosis_20261107.json`. It is read-only STA, not synthesis.
+Await user completion notice before auditing endpoint/TNS coverage and making
+the PM1 repair/WCG1 baseline decision. No automatic retry or full DC is queued.
