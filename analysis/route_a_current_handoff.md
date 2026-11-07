@@ -1861,3 +1861,22 @@ The corrected immutable diagnostic r2 is now launched in
 and log pins. It retains both original DDCs and all saved constraints; only
 the ideal-clock checker changes. Eight parser regressions pass. Await user
 completion notice; the PM1/WCG1 decision remains pending native results.
+
+The saved-DDC setup diagnostic r2 is now accepted; read
+`dc_rd1_pm1_setup_diagnosis_result_20261107.md`/JSON. Both native sides and
+outer exit 0 close; unchanged DDC/library/script hashes recheck. Unique
+negative endpoints exactly reproduce QoR counts (35,959/35,976), with summed
+TNS matching rounding. PM selector worst slack degrades -0.348932 ->
+-0.439257 ns; all 16 reclaim bits now fail (12 before), with low six bits
+on the bank-priority/indexed-offset bottleneck. PM endpoint TNS accounts for
+4.119904% of added absolute TNS; 95.880096% lands at other endpoints, an
+accounting partition rather than causal proof. Common ready/request paths
+outside PM worsen under complete-top remapping of unchanged RTL.
+Decision: PM1 needs same-cycle selector improvement before later cumulative
+integration, but does not block WCG1-only full validation. The next full
+paired baseline is **RD1 + WCG1, PM1 off, RD2 excluded**; read
+`dc_wcg1_full_paired_integration_baseline_20261107.md` for source/native-gate
+closure and separate original-policy versus matched propagated-clock/hold
+measurement tiers. RD1 is not timing-closed. No RTL repair or new tool/full-DC
+job is performed by this audit. Preserve prior failed diagnostic and all
+area/timing tradeoff records; do not infer whole-top WCG1 benefit or PPA.

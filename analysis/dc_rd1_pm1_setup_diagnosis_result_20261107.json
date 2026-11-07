@@ -1,0 +1,801 @@
+{
+  "root": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_pm1_setup_diagnosis_20261107_r2",
+  "outer_exit": "0",
+  "launcher": "KVZAP_RD1_PM1_SETUP_START side=rd1\n/home/yaz80/wz_project/dc_project/kvzap_control_projection/runs/dc_feasibility_fair_rd1_shared_20261105_r1/route_a/route_a_control_projection.ddc: OK\n/home/yaz80/wz_project/dc_project/pdk/TSMC28/tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db: OK\n/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_pm1_setup_diagnosis_20261107_r2/diagnose_rd1_pm1_saved_setup.tcl: OK\nKVZAP_RD1_PM1_SETUP_SIDE_EXIT side=rd1 exit=0\nKVZAP_RD1_PM1_SETUP_START side=rd1_pm1\n/home/yaz80/wz_project/dc_project/kvzap_control_projection/runs/dc_feasibility_fair_rd1_pm1_20261106_r1/route_a/route_a_control_projection.ddc: OK\n/home/yaz80/wz_project/dc_project/pdk/TSMC28/tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db: OK\n/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_pm1_setup_diagnosis_20261107_r2/diagnose_rd1_pm1_saved_setup.tcl: OK\nKVZAP_RD1_PM1_SETUP_SIDE_EXIT side=rd1_pm1 exit=0\nKVZAP_RD1_PM1_SETUP_RUN_PASS_TOOL_ARTIFACT_ONLY\nKVZAP_RD1_PM1_SETUP_OUTER_EXIT=0\n",
+  "schema": "rd1-pm1-saved-setup-accepted-result-1",
+  "status": "ACCEPTED_NATIVE_DIAGNOSIS_COVERAGE_DECISION",
+  "source_commit": "00c9e679866d35ed1ecd17cda1e7ba5d61f701f7",
+  "scope": {
+    "remote_read_only": true,
+    "RTL_changes": false,
+    "new_tool_jobs": false,
+    "setup_closure": false,
+    "structural_cleanliness": false,
+    "PPA_net_benefit": false
+  },
+  "script_sha256": {
+    "diagnose_rd1_pm1_saved_setup.tcl": "4c25180b4e1a699b7d471d4e1099a2dc12a308543182501b0dd4d6f361df089f",
+    "run_rd1_pm1_saved_setup.sh": "ac60bad85668457a0363c0b6bc07dddbc862874aa44fd04382daa27ef932e9d6"
+  },
+  "sides": {
+    "rd1": {
+      "pins": {
+        "/home/yaz80/wz_project/dc_project/kvzap_control_projection/runs/dc_feasibility_fair_rd1_shared_20261105_r1/route_a/route_a_control_projection.ddc": "86993ae45bd58463ba4a18b67f12bc2fac864cd146004fd3c9a3c5a8481b5673",
+        "/home/yaz80/wz_project/dc_project/pdk/TSMC28/tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db": "5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d",
+        "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_pm1_setup_diagnosis_20261107_r2/diagnose_rd1_pm1_saved_setup.tcl": "4c25180b4e1a699b7d471d4e1099a2dc12a308543182501b0dd4d6f361df089f"
+      },
+      "hashes": {
+        "reclaim_setup.rpt": "095f1b0e0e7a0ff0a737700a579f63b17f9b992253e28c55254222c8568785b1",
+        "io_functional_sidecar_read_issue_in_ready.rpt": "a44183c839e5ea9a1f4db59e3aa5505f445b05a498f801ecb2dc0d797fe03855",
+        "endpoints.tsv": "69235ce47c79ad404afe997944d8b88d9d9ba414f10b980eb192331a836a3865",
+        "check_timing.rpt": "94bf7675a38cf2f7e109edbc8dc51e1112bf6d2b3427362c2e14197d434eaf38",
+        "exit_status": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "native.log": "d772d4183099249d7b8af9e7686046fc06ba706626cd6f5530f9210803abad04",
+        "area.rpt": "cfc73c618d6318e81e6a483d163220d367f302fec3a10c98ca00cec78291afda",
+        "input_sha256.txt": "3ee4d7eb2a954be356c82178416c0d60404effdf58999b84b34aa1ab800fd707",
+        "io_external_core_mem_if_v1_request_valid.rpt": "2866e28b322853f1c516f94db1c6c0a0d9f18726c743e9ecb712c0cf0928d1ae",
+        "setup_top.rpt": "2f0a85a85f4f175aadaf5b196da0a548df6c3041395b7059919a4b0c128ae7b8",
+        "qor.rpt": "4739d7f1fb390fdd6877adc0c33ca284981bf1322877e6ffc817e1f860a46f86",
+        "io_functional_sidecar_registry_allocate_in_ready.rpt": "6ea5d62f8c2796e13185181c6583728ab39ebcf41685aff048649b20249c47e5",
+        "clocks.rpt": "963da75f06e9d3041eb9802482734673c62b7f1c3956125f398aa2c4f9fab143",
+        "io_functional_sidecar_registry_allocation_ack_out_valid.rpt": "25832a71dae10dfdae9aa3967fe8b245485a401ed65e532d7250fc856a900089"
+      },
+      "qor": " \n****************************************\nReport : qor\nDesign : route_a_control_projection\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 10:41:26 2026\n****************************************\n\n\n  Timing Path Group 'kvzap_control_clk'\n  -----------------------------------\n  Levels of Logic:             131.00\n  Critical Path Length:          2.06\n  Critical Path Slack:          -0.36\n  Critical Path Clk Period:      2.00\n  Total Negative Slack:      -9774.02\n  No. of Violating Paths:    35959.00\n  Worst Hold Violation:          0.00\n  Total Hold Violation:          0.00\n  No. of Hold Violations:        0.00\n  -----------------------------------\n\n\n  Cell Count\n  -----------------------------------\n  Hierarchical Cell Count:        400\n  Hierarchical Port Count:     143911\n  Leaf Cell Count:            2540638\n  Buf/Inv Cell Count:          356739\n  Buf Cell Count:              270803\n  Inv Cell Count:               85936\n  CT Buf/Inv Cell Count:            0\n  Combinational Cell Count:   1963532\n  Sequential Cell Count:       577106\n  Macro Count:                      0\n  -----------------------------------\n\n\n  Area\n  -----------------------------------\n  Combinational Area:  1392283.363726\n  Noncombinational Area:\n                       1996313.982136\n  Buf/Inv Area:         173891.425671\n  Total Buffer Area:        141799.73\n  Total Inverter Area:       32091.70\n  Macro/Black Box Area:      0.000000\n  Net Area:                  0.000000\n  -----------------------------------\n  Cell Area:           3388597.345862\n  Design Area:         3388597.345862\n\n\n  Design Rules\n  -----------------------------------\n  Total Number of Nets:       2568712\n  Nets With Violations:             0\n  Max Trans Violations:             0\n  Max Cap Violations:               0\n  -----------------------------------\n\n\n  Hostname: ercesi413\n\n  Compile CPU Statistics\n  -----------------------------------------\n  Resource Sharing:                 8951.62\n  Logic Optimization:              13158.88\n  Mapping Optimization:            21532.73\n  -----------------------------------------\n  Overall Compile Time:            51010.86\n  Overall Compile Wall Clock Time: 51024.25\n\n  --------------------------------------------------------------------\n\n  Design  WNS: 0.36  TNS: 9774.02  Number of Violating Paths: 35959\n\n\n  Design (Hold)  WNS: 0.00  TNS: 0.00  Number of Violating Paths: 0\n\n  --------------------------------------------------------------------\n\n\n1\n",
+      "clocks": "Information: Updating design information... (UID-85)\nWarning: Design 'route_a_control_projection' contains 2 high-fanout nets. A fanout number of 1000 will be used for delay calculations involving these nets. (TIM-134)\n \n****************************************\nReport : clocks\nDesign : route_a_control_projection\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 10:39:49 2026\n****************************************\n\nAttributes:\n    d - dont_touch_network\n    f - fix_hold\n    p - propagated_clock\n    G - generated_clock\n    g - lib_generated_clock\n\nClock          Period   Waveform            Attrs     Sources\n--------------------------------------------------------------------------------\nkvzap_control_clk    2.00 {0 1}                       {clock}\n--------------------------------------------------------------------------------\n \n****************************************\nReport : clock_skew\nDesign : route_a_control_projection\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 10:39:49 2026\n****************************************\n\n                 Rise      Fall  Min Rise  Min fall        Uncertainty\nObject          Delay     Delay     Delay     Delay     Plus      Minus\n--------------------------------------------------------------------------------\nkvzap_control_clk       -       -       -         -      0.02      0.10\n1\n",
+      "check_timing": "\nInformation: Checking generated_clocks...\n\nInformation: Checking loops...\n\nInformation: Checking no_input_delay...\n\nInformation: Checking unconstrained_endpoints...\n\nInformation: Checking pulse_clock_cell_type...\n\nInformation: Checking no_driving_cell...\n\nInformation: Checking partial_input_delay...\n1\n",
+      "counts": 35959,
+      "tns": -9774.018711364,
+      "parts": {
+        "other": {
+          "count": 35362,
+          "tns": -9648.616006614375,
+          "wns": -0.362484
+        },
+        "page_manager": {
+          "count": 597,
+          "tns": -125.40270474999996,
+          "wns": -0.348932
+        }
+      },
+      "families": {
+        "top_ports": {
+          "count": 611,
+          "tns": -132.20250500000077,
+          "wns": -0.362484
+        },
+        "directAssociationMaterializer": {
+          "count": 11,
+          "tns": -2.9950740000000002,
+          "wns": -0.36145
+        },
+        "m2P3": {
+          "count": 2826,
+          "tns": -930.7130205000029,
+          "wns": -0.360522
+        },
+        "m2Control": {
+          "count": 10685,
+          "tns": -3100.347140860233,
+          "wns": -0.357814
+        },
+        "registry": {
+          "count": 8289,
+          "tns": -2044.0469523000097,
+          "wns": -0.353117
+        },
+        "pageManager": {
+          "count": 597,
+          "tns": -125.40270474999996,
+          "wns": -0.348932
+        },
+        "arbiter": {
+          "count": 8908,
+          "tns": -2645.162707620033,
+          "wns": -0.331091
+        },
+        "delivery": {
+          "count": 3169,
+          "tns": -617.6373054940011,
+          "wns": -0.307835
+        },
+        "associationOwner": {
+          "count": 1,
+          "tns": -0.295152,
+          "wns": -0.295152
+        },
+        "allocationMux": {
+          "count": 320,
+          "tns": -87.87310100000002,
+          "wns": -0.290128
+        },
+        "coreMemory": {
+          "count": 521,
+          "tns": -84.50253543999989,
+          "wns": -0.253071
+        },
+        "packedReadProducer": {
+          "count": 2,
+          "tns": -0.45376700000000003,
+          "wns": -0.22836
+        },
+        "statusCollector": {
+          "count": 17,
+          "tns": -2.1245883,
+          "wns": -0.196301
+        },
+        "pendingDescriptorOwner": {
+          "count": 1,
+          "tns": -0.187287,
+          "wns": -0.187287
+        },
+        "router": {
+          "count": 1,
+          "tns": -0.0748701,
+          "wns": -0.0748701
+        }
+      },
+      "coverage": {
+        "unique_negative_endpoints": 35959,
+        "native_qor_violating_paths": 35959,
+        "native_qor_tns": -9774.02,
+        "sum_slack_ns": -9774.018711364,
+        "rounding_difference_ns": 0.0012886360000265995,
+        "pass_check": true
+      },
+      "area_components": {
+        "Total cell area": 3388597.345862,
+        "Combinational area": 1392283.363726,
+        "Noncombinational area": 1996313.982136
+      },
+      "paths": {
+        "reclaim_setup.rpt": [
+          {
+            "start": "pageManager/allocatedLine_29680_reg",
+            "endpoint": "pageManager/reclaimLine_reg[3]",
+            "slack": -0.348932
+          },
+          {
+            "start": "pageManager/allocatedLine_35055_reg",
+            "endpoint": "pageManager/reclaimLine_reg[5]",
+            "slack": -0.325141
+          },
+          {
+            "start": "pageManager/allocatedLine_32882_reg",
+            "endpoint": "pageManager/reclaimLine_reg[8]",
+            "slack": -0.304407
+          },
+          {
+            "start": "pageManager/allocatedLine_24048_reg",
+            "endpoint": "pageManager/reclaimLine_reg[6]",
+            "slack": -0.297635
+          },
+          {
+            "start": "pageManager/allocatedLine_28400_reg",
+            "endpoint": "pageManager/reclaimLine_reg[2]",
+            "slack": -0.29553
+          },
+          {
+            "start": "pageManager/allocatedLine_29680_reg",
+            "endpoint": "pageManager/reclaimLine_reg[1]",
+            "slack": -0.282829
+          },
+          {
+            "start": "pageManager/allocatedLine_28271_reg",
+            "endpoint": "pageManager/reclaimLine_reg[4]",
+            "slack": -0.205479
+          },
+          {
+            "start": "pageManager/allocatedLine_28400_reg",
+            "endpoint": "pageManager/reclaimLine_reg[9]",
+            "slack": -0.17783
+          },
+          {
+            "start": "pageManager/allocatedLine_28784_reg",
+            "endpoint": "pageManager/reclaimLine_reg[0]",
+            "slack": -0.152618
+          },
+          {
+            "start": "pageManager/allocatedLine_12143_reg",
+            "endpoint": "pageManager/reclaimLine_reg[11]",
+            "slack": -0.128959
+          },
+          {
+            "start": "pageManager/allocatedLine_32882_reg",
+            "endpoint": "pageManager/reclaimLine_reg[7]",
+            "slack": -0.126376
+          },
+          {
+            "start": "pageManager/allocatedLine_12143_reg",
+            "endpoint": "pageManager/reclaimLine_reg[10]",
+            "slack": -0.090073
+          },
+          {
+            "start": "pageManager/allocatedLine_12143_reg",
+            "endpoint": "pageManager/reclaimLine_reg[12]",
+            "slack": 0.052281
+          },
+          {
+            "start": "pageManager/allocatedLine_12143_reg",
+            "endpoint": "pageManager/reclaimLine_reg[15]",
+            "slack": 0.098874
+          },
+          {
+            "start": "pageManager/allocatedLine_12143_reg",
+            "endpoint": "pageManager/reclaimLine_reg[13]",
+            "slack": 0.101496
+          },
+          {
+            "start": "pageManager/allocatedLine_12143_reg",
+            "endpoint": "pageManager/reclaimLine_reg[14]",
+            "slack": 0.105549
+          }
+        ],
+        "io_functional_sidecar_read_issue_in_ready.rpt": [
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "io_functional_sidecar_read_issue_in_ready",
+            "slack": -0.36247
+          }
+        ],
+        "io_external_core_mem_if_v1_request_valid.rpt": [
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "io_external_core_mem_if_v1_request_valid",
+            "slack": -0.362484
+          }
+        ],
+        "setup_top.rpt": [
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "io_external_core_mem_if_v1_request_valid",
+            "slack": -0.362484
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "io_functional_sidecar_read_issue_in_ready",
+            "slack": -0.36247
+          },
+          {
+            "start": "m2P3/stageValidRecords_22_reg[2]",
+            "endpoint": "io_functional_sidecar_registry_allocate_in_ready",
+            "slack": -0.362409
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "directAssociationMaterializer/state_reg[0]",
+            "slack": -0.36145
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_33_reg[0]",
+            "slack": -0.360522
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_33_reg[1]",
+            "slack": -0.360052
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_7_reg[1]",
+            "slack": -0.359894
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_15_reg[1]",
+            "slack": -0.359352
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_35_reg[1]",
+            "slack": -0.359351
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_28_reg[1]",
+            "slack": -0.359349
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_13_reg[1]",
+            "slack": -0.359344
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_0_reg[1]",
+            "slack": -0.359341
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_31_reg[0]",
+            "slack": -0.359189
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_16_reg[1]",
+            "slack": -0.358965
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_1_reg[0]",
+            "slack": -0.358754
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_31_reg[1]",
+            "slack": -0.358707
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_19_reg[0]",
+            "slack": -0.358707
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_4_reg[1]",
+            "slack": -0.358688
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_9_reg[1]",
+            "slack": -0.358685
+          },
+          {
+            "start": "arbiter/outstanding_3_r1_request_transaction_identity_incarnation_reg[1]",
+            "endpoint": "m2P3/stageState_8_reg[1]",
+            "slack": -0.358685
+          }
+        ],
+        "io_functional_sidecar_registry_allocate_in_ready.rpt": [
+          {
+            "start": "m2P3/stageValidRecords_22_reg[2]",
+            "endpoint": "io_functional_sidecar_registry_allocate_in_ready",
+            "slack": -0.362409
+          }
+        ],
+        "io_functional_sidecar_registry_allocation_ack_out_valid.rpt": [
+          {
+            "start": "registry/ack_allocation_target_descriptor_pending_explicit_empty_reg",
+            "endpoint": "io_functional_sidecar_registry_allocation_ack_out_valid",
+            "slack": -0.100951
+          }
+        ]
+      },
+      "worst_reclaim_path_metrics": {
+        "start": "pageManager/allocatedLine_29680_reg",
+        "endpoint": "pageManager/reclaimLine_reg[3]",
+        "slack_ns": -0.348932,
+        "positive_delay_combinational_output_arcs": 107,
+        "sum_printed_arc_delays_ns": 2.191624,
+        "arrival_ns": 2.236238,
+        "required_ns": 1.887306,
+        "worst_path_timing_tail": [
+          "  pageManager/U280479/ZN (ND4D1BWP12T30P140LVT)       0.012568   2.126128 r",
+          "  pageManager/U280480/ZN (ND4D1BWP12T30P140LVT)       0.021328   2.147456 f",
+          "  pageManager/U280567/ZN (OAI31D1BWP12T30P140LVT)     0.019979   2.167435 r",
+          "  pageManager/U280568/ZN (ND4D1BWP12T30P140LVT)       0.021962   2.189397 f",
+          "  pageManager/U280569/ZN (AOI32D1BWP12T30P140LVT)     0.018533   2.207931 r",
+          "  pageManager/U280674/ZN (AOI31D1BWP12T30P140LVT)     0.014749   2.222680 f",
+          "  pageManager/U280700/ZN (OAI221D1BWP12T30P140LVT)    0.013559   2.236238 r",
+          "  pageManager/reclaimLine_reg[3]/D (DFD1BWP12T30P140LVT) 0.000000 2.236238 r",
+          "  data arrival time                                              2.236238",
+          "",
+          "  clock kvzap_control_clk (rise edge)                 2.000000   2.000000",
+          "  clock network delay (ideal)                         0.000000   2.000000",
+          "  clock uncertainty                                   -0.100000  1.900000",
+          "  pageManager/reclaimLine_reg[3]/CP (DFD1BWP12T30P140LVT) 0.000000 1.900000 r",
+          "  library setup time                                  -0.012694  1.887306",
+          "  data required time                                             1.887306",
+          "  --------------------------------------------------------------------------",
+          "  data required time                                             1.887306",
+          "  data arrival time                                              -2.236238",
+          "  --------------------------------------------------------------------------",
+          "  slack (VIOLATED)                                               -0.348932",
+          "",
+          "",
+          "  "
+        ]
+      }
+    },
+    "rd1_pm1": {
+      "pins": {
+        "/home/yaz80/wz_project/dc_project/kvzap_control_projection/runs/dc_feasibility_fair_rd1_pm1_20261106_r1/route_a/route_a_control_projection.ddc": "cb160cfb13219c6cca2c8b99ebe498214d5048556c4113b7746944884ef8e73a",
+        "/home/yaz80/wz_project/dc_project/pdk/TSMC28/tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db": "5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d",
+        "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_pm1_setup_diagnosis_20261107_r2/diagnose_rd1_pm1_saved_setup.tcl": "4c25180b4e1a699b7d471d4e1099a2dc12a308543182501b0dd4d6f361df089f"
+      },
+      "hashes": {
+        "reclaim_setup.rpt": "df764820ea3785febc0261c05dba605c6f689980c801930a63dadd13a17fff02",
+        "io_functional_sidecar_read_issue_in_ready.rpt": "e828af3a664da53a0d6644599358c96ee0c112c9de6a97947961a13d7b253f90",
+        "endpoints.tsv": "20b09ae4441c1e9707734e275902c88fe643df2b7b2dc957436cd5ec3eea79d5",
+        "check_timing.rpt": "94bf7675a38cf2f7e109edbc8dc51e1112bf6d2b3427362c2e14197d434eaf38",
+        "exit_status": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "native.log": "4c04b671a107fb9e043635943a74c4a9e22088a2d6f3aed4ba1766fc412cee2b",
+        "area.rpt": "82359b2b2b13673950ccfa5f46135b1b4f4d5222d2e70d7944ce084706a8755d",
+        "input_sha256.txt": "bb415f882b377ede12018b579d720328a8e563e3d87dee4f737cef63705344b3",
+        "io_external_core_mem_if_v1_request_valid.rpt": "cef22eb5af25251b68b596f3556439a48240f91788cfffe3128fb296855999ff",
+        "setup_top.rpt": "4f33aa8b111d809406183703a4a0b5fdc305ad4ac51c7eec5cb3f4b5d94b256a",
+        "qor.rpt": "dda140ca84455debdfa57f72b3ada4bc50b8d92008b62064240da9fadf7412e2",
+        "io_functional_sidecar_registry_allocate_in_ready.rpt": "ef03caeb6795424f55b65d76ed5822a4dda6b3a8d248718db38e86d80362412a",
+        "clocks.rpt": "959b20dfd58bc8acbdaaf08cb4c69e4a5c4c934a6c150537955a6269420a9085",
+        "io_functional_sidecar_registry_allocation_ack_out_valid.rpt": "0be263277d532e7e0ec5ee32839110589844fc3b5dc5b27197ca4b9b666a9784"
+      },
+      "qor": " \n****************************************\nReport : qor\nDesign : route_a_control_projection\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 10:48:20 2026\n****************************************\n\n\n  Timing Path Group 'kvzap_control_clk'\n  -----------------------------------\n  Levels of Logic:             133.00\n  Critical Path Length:          2.14\n  Critical Path Slack:          -0.44\n  Critical Path Clk Period:      2.00\n  Total Negative Slack:     -12096.60\n  No. of Violating Paths:    35976.00\n  Worst Hold Violation:          0.00\n  Total Hold Violation:          0.00\n  No. of Hold Violations:        0.00\n  -----------------------------------\n\n\n  Cell Count\n  -----------------------------------\n  Hierarchical Cell Count:        400\n  Hierarchical Port Count:     143911\n  Leaf Cell Count:            2526425\n  Buf/Inv Cell Count:          352020\n  Buf Cell Count:              286030\n  Inv Cell Count:               65990\n  CT Buf/Inv Cell Count:            0\n  Combinational Cell Count:   1949319\n  Sequential Cell Count:       577106\n  Macro Count:                      0\n  -----------------------------------\n\n\n  Area\n  -----------------------------------\n  Combinational Area:  1379881.942139\n  Noncombinational Area:\n                       1978163.934940\n  Buf/Inv Area:         170607.529934\n  Total Buffer Area:        147402.03\n  Total Inverter Area:       23205.50\n  Macro/Black Box Area:      0.000000\n  Net Area:                  0.000000\n  -----------------------------------\n  Cell Area:           3358045.877079\n  Design Area:         3358045.877079\n\n\n  Design Rules\n  -----------------------------------\n  Total Number of Nets:       2555546\n  Nets With Violations:             0\n  Max Trans Violations:             0\n  Max Cap Violations:               0\n  -----------------------------------\n\n\n  Hostname: ercesi413\n\n  Compile CPU Statistics\n  -----------------------------------------\n  Resource Sharing:                 6071.16\n  Logic Optimization:              14228.09\n  Mapping Optimization:            16343.72\n  -----------------------------------------\n  Overall Compile Time:            43148.10\n  Overall Compile Wall Clock Time: 43158.84\n\n  --------------------------------------------------------------------\n\n  Design  WNS: 0.44  TNS: 12096.60  Number of Violating Paths: 35976\n\n\n  Design (Hold)  WNS: 0.00  TNS: 0.00  Number of Violating Paths: 0\n\n  --------------------------------------------------------------------\n\n\n1\n",
+      "clocks": "Information: Updating design information... (UID-85)\nWarning: Design 'route_a_control_projection' contains 2 high-fanout nets. A fanout number of 1000 will be used for delay calculations involving these nets. (TIM-134)\n \n****************************************\nReport : clocks\nDesign : route_a_control_projection\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 10:46:44 2026\n****************************************\n\nAttributes:\n    d - dont_touch_network\n    f - fix_hold\n    p - propagated_clock\n    G - generated_clock\n    g - lib_generated_clock\n\nClock          Period   Waveform            Attrs     Sources\n--------------------------------------------------------------------------------\nkvzap_control_clk    2.00 {0 1}                       {clock}\n--------------------------------------------------------------------------------\n \n****************************************\nReport : clock_skew\nDesign : route_a_control_projection\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 10:46:44 2026\n****************************************\n\n                 Rise      Fall  Min Rise  Min fall        Uncertainty\nObject          Delay     Delay     Delay     Delay     Plus      Minus\n--------------------------------------------------------------------------------\nkvzap_control_clk       -       -       -         -      0.02      0.10\n1\n",
+      "check_timing": "\nInformation: Checking generated_clocks...\n\nInformation: Checking loops...\n\nInformation: Checking no_input_delay...\n\nInformation: Checking unconstrained_endpoints...\n\nInformation: Checking pulse_clock_cell_type...\n\nInformation: Checking no_driving_cell...\n\nInformation: Checking partial_input_delay...\n1\n",
+      "counts": 35976,
+      "tns": -12096.597493466,
+      "parts": {
+        "other": {
+          "count": 35361,
+          "tns": -11875.506768170286,
+          "wns": -0.439984
+        },
+        "page_manager": {
+          "count": 615,
+          "tns": -221.0907252959993,
+          "wns": -0.439257
+        }
+      },
+      "families": {
+        "top_ports": {
+          "count": 611,
+          "tns": -148.9521039999998,
+          "wns": -0.439984
+        },
+        "m2P3": {
+          "count": 2789,
+          "tns": -1176.444100999982,
+          "wns": -0.439599
+        },
+        "pageManager": {
+          "count": 615,
+          "tns": -221.0907252959993,
+          "wns": -0.439257
+        },
+        "directAssociationMaterializer": {
+          "count": 11,
+          "tns": -3.9528529999999993,
+          "wns": -0.437508
+        },
+        "registry": {
+          "count": 8289,
+          "tns": -2636.98067699982,
+          "wns": -0.405492
+        },
+        "m2Control": {
+          "count": 10703,
+          "tns": -3612.458809699938,
+          "wns": -0.400159
+        },
+        "delivery": {
+          "count": 3177,
+          "tns": -895.9478420699962,
+          "wns": -0.391278
+        },
+        "arbiter": {
+          "count": 8904,
+          "tns": -3155.3233695999998,
+          "wns": -0.387354
+        },
+        "associationOwner": {
+          "count": 1,
+          "tns": -0.35699,
+          "wns": -0.35699
+        },
+        "allocationMux": {
+          "count": 320,
+          "tns": -111.56204899999999,
+          "wns": -0.355347
+        },
+        "coreMemory": {
+          "count": 552,
+          "tns": -132.5900362,
+          "wns": -0.342356
+        },
+        "packedReadProducer": {
+          "count": 2,
+          "tns": -0.60849,
+          "wns": -0.305343
+        },
+        "pendingDescriptorOwner": {
+          "count": 1,
+          "tns": -0.254836,
+          "wns": -0.254836
+        },
+        "router": {
+          "count": 1,
+          "tns": -0.0746106,
+          "wns": -0.0746106
+        }
+      },
+      "coverage": {
+        "unique_negative_endpoints": 35976,
+        "native_qor_violating_paths": 35976,
+        "native_qor_tns": -12096.6,
+        "sum_slack_ns": -12096.597493466,
+        "rounding_difference_ns": 0.0025065339996217517,
+        "pass_check": true
+      },
+      "area_components": {
+        "Total cell area": 3358045.877079,
+        "Combinational area": 1379881.942139,
+        "Noncombinational area": 1978163.93494
+      },
+      "paths": {
+        "reclaim_setup.rpt": [
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[3]",
+            "slack": -0.439257
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[1]",
+            "slack": -0.439247
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[0]",
+            "slack": -0.439121
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[2]",
+            "slack": -0.439081
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[5]",
+            "slack": -0.439071
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[4]",
+            "slack": -0.438167
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[10]",
+            "slack": -0.225376
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[11]",
+            "slack": -0.209548
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[12]",
+            "slack": -0.197631
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[7]",
+            "slack": -0.182395
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[9]",
+            "slack": -0.180303
+          },
+          {
+            "start": "pageManager/allocatedLine_20352_reg",
+            "endpoint": "pageManager/reclaimLine_reg[14]",
+            "slack": -0.178278
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[6]",
+            "slack": -0.165938
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[8]",
+            "slack": -0.165149
+          },
+          {
+            "start": "pageManager/allocatedLine_20352_reg",
+            "endpoint": "pageManager/reclaimLine_reg[13]",
+            "slack": -0.16413
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[15]",
+            "slack": -0.146123
+          }
+        ],
+        "io_functional_sidecar_read_issue_in_ready.rpt": [
+          {
+            "start": "directAssociationMaterializer/association_key_pending_descriptor_ref_reg[2]",
+            "endpoint": "io_functional_sidecar_read_issue_in_ready",
+            "slack": -0.439984
+          }
+        ],
+        "io_external_core_mem_if_v1_request_valid.rpt": [
+          {
+            "start": "arbiter/slots_7_delivery_target_descriptor_direct_pending_association_pending_instance_generation_reg[3]",
+            "endpoint": "io_external_core_mem_if_v1_request_valid",
+            "slack": -0.417399
+          }
+        ],
+        "setup_top.rpt": [
+          {
+            "start": "directAssociationMaterializer/association_key_pending_descriptor_ref_reg[2]",
+            "endpoint": "io_functional_sidecar_read_issue_in_ready",
+            "slack": -0.439984
+          },
+          {
+            "start": "m2P3/stageValidRecords_5_reg[1]",
+            "endpoint": "io_functional_sidecar_registry_allocate_in_ready",
+            "slack": -0.439728
+          },
+          {
+            "start": "directAssociationMaterializer/association_key_pending_descriptor_ref_reg[2]",
+            "endpoint": "m2P3/materializedMembers_27_reg[8]",
+            "slack": -0.439599
+          },
+          {
+            "start": "directAssociationMaterializer/association_key_pending_descriptor_ref_reg[2]",
+            "endpoint": "m2P3/materializedMembers_27_reg[16]",
+            "slack": -0.439599
+          },
+          {
+            "start": "directAssociationMaterializer/association_key_pending_descriptor_ref_reg[2]",
+            "endpoint": "m2P3/materializedMembers_27_reg[17]",
+            "slack": -0.439599
+          },
+          {
+            "start": "directAssociationMaterializer/association_key_pending_descriptor_ref_reg[2]",
+            "endpoint": "m2P3/materializedMembers_27_reg[9]",
+            "slack": -0.439599
+          },
+          {
+            "start": "directAssociationMaterializer/association_key_pending_descriptor_ref_reg[2]",
+            "endpoint": "m2P3/materializedMembers_31_reg[21]",
+            "slack": -0.439543
+          },
+          {
+            "start": "directAssociationMaterializer/association_key_pending_descriptor_ref_reg[2]",
+            "endpoint": "m2P3/materializedMembers_31_reg[20]",
+            "slack": -0.439543
+          },
+          {
+            "start": "directAssociationMaterializer/association_key_pending_descriptor_ref_reg[2]",
+            "endpoint": "m2P3/materializedMembers_31_reg[19]",
+            "slack": -0.439543
+          },
+          {
+            "start": "directAssociationMaterializer/association_key_pending_descriptor_ref_reg[2]",
+            "endpoint": "m2P3/materializedMembers_31_reg[18]",
+            "slack": -0.439543
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[3]",
+            "slack": -0.439257
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[1]",
+            "slack": -0.439247
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[0]",
+            "slack": -0.439121
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[2]",
+            "slack": -0.439081
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[5]",
+            "slack": -0.439071
+          },
+          {
+            "start": "arbiter/slots_7_delivery_target_descriptor_direct_pending_association_pending_instance_generation_reg[3]",
+            "endpoint": "m2P3/stageState_5_reg[2]",
+            "slack": -0.438636
+          },
+          {
+            "start": "arbiter/slots_7_delivery_target_descriptor_direct_pending_association_pending_instance_generation_reg[3]",
+            "endpoint": "m2P3/stageState_7_reg[0]",
+            "slack": -0.438619
+          },
+          {
+            "start": "pageManager/allocatedLine_12609_reg",
+            "endpoint": "pageManager/reclaimLine_reg[4]",
+            "slack": -0.438167
+          },
+          {
+            "start": "directAssociationMaterializer/association_key_pending_descriptor_ref_reg[2]",
+            "endpoint": "m2P3/materializedMembers_20_reg[34]",
+            "slack": -0.437779
+          },
+          {
+            "start": "arbiter/slots_7_delivery_target_descriptor_direct_pending_association_pending_instance_generation_reg[3]",
+            "endpoint": "m2P3/stageState_2_reg[0]",
+            "slack": -0.437691
+          }
+        ],
+        "io_functional_sidecar_registry_allocate_in_ready.rpt": [
+          {
+            "start": "m2P3/stageValidRecords_5_reg[1]",
+            "endpoint": "io_functional_sidecar_registry_allocate_in_ready",
+            "slack": -0.439728
+          }
+        ],
+        "io_functional_sidecar_registry_allocation_ack_out_valid.rpt": [
+          {
+            "start": "registry/ack_allocation_target_descriptor_pending_explicit_empty_reg",
+            "endpoint": "io_functional_sidecar_registry_allocation_ack_out_valid",
+            "slack": -0.10096
+          }
+        ]
+      },
+      "worst_reclaim_path_metrics": {
+        "start": "pageManager/allocatedLine_12609_reg",
+        "endpoint": "pageManager/reclaimLine_reg[3]",
+        "slack_ns": -0.439257,
+        "positive_delay_combinational_output_arcs": 147,
+        "sum_printed_arc_delays_ns": 2.277765,
+        "arrival_ns": 2.333142,
+        "required_ns": 1.893885,
+        "worst_path_timing_tail": [
+          "  pageManager/U201562/ZN (AOI221D1BWP12T30P140LVT)    0.022233   2.177752 r",
+          "  pageManager/U201560/Z (AN4D1BWP12T30P140LVT)        0.031278   2.209030 r",
+          "  pageManager/U201559/ZN (OAI22D1BWP12T30P140LVT)     0.014519   2.223549 f",
+          "  pageManager/U201558/ZN (AOI221D1BWP12T30P140LVT)    0.024040   2.247589 r",
+          "  pageManager/U201557/ZN (OAI22D1BWP12T30P140LVT)     0.016339   2.263927 f",
+          "  pageManager/U201556/Z (AO221D1BWP12T30P140LVT)      0.037294   2.301221 f",
+          "  pageManager/U256454/Z (AO221D1BWP12T30P140LVT)      0.031921   2.333142 f",
+          "  pageManager/reclaimLine_reg[3]/D (DFD1BWP12T30P140LVT) 0.000000 2.333142 f",
+          "  data arrival time                                              2.333142",
+          "",
+          "  clock kvzap_control_clk (rise edge)                 2.000000   2.000000",
+          "  clock network delay (ideal)                         0.000000   2.000000",
+          "  clock uncertainty                                   -0.100000  1.900000",
+          "  pageManager/reclaimLine_reg[3]/CP (DFD1BWP12T30P140LVT) 0.000000 1.900000 r",
+          "  library setup time                                  -0.006115  1.893885",
+          "  data required time                                             1.893885",
+          "  --------------------------------------------------------------------------",
+          "  data required time                                             1.893885",
+          "  data arrival time                                              -2.333142",
+          "  --------------------------------------------------------------------------",
+          "  slack (VIOLATED)                                               -0.439257",
+          "",
+          "",
+          "  "
+        ]
+      }
+    }
+  },
+  "decision": {
+    "next_full_paired_baseline": "RD1_plus_WCG1",
+    "reference_run": "dc_feasibility_fair_rd1_shared_20261105_r1",
+    "PM1": false,
+    "RD2": false,
+    "PM1_repair": "required_before_future_PM1_integration_not_prerequisite_for_WCG1_only",
+    "new_full_DC_launched": false
+  },
+  "TNS_worsening": {
+    "total_ns": 2322.5787821020003,
+    "page_manager_endpoints_ns": 95.68802054599935,
+    "other_endpoints_ns": 2226.890761556001,
+    "page_manager_percent": 4.119904189402736,
+    "other_percent": 95.88009581059727,
+    "causal_note": "endpoint accounting shares, not causal hierarchy attribution"
+  },
+  "source_sha256": {
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAExactLowestPrioritySelector.scala": "e996a010466b98d2e2eb70e721da9cb258a8f6a56529c3fd1b34c9dc71f96a0a",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala": "428c73752850f2da02666a0951d8b614f0d7463131869825f58e4fef8af7a354",
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala": "9d12d28663aa62bd2e775af91e52d5b320ca239bc01ee9e4a7e7519441cd750d"
+  },
+  "local_validation": {
+    "clock_report_regressions": 8,
+    "coverage_arithmetic_pins_checked": true,
+    "git_diff_check": "PASS"
+  }
+}
