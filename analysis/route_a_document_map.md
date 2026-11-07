@@ -7,6 +7,15 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Latest full-paired inspection (2026-11-07)
+
+[`dc_rd1_wcg1_full_paired_inspection_20261107.md`](dc_rd1_wcg1_full_paired_inspection_20261107.md)
+and JSON supersede the launch-only execution snapshot: contextual export r2
+passed, but the pipeline stopped at a raw-versus-canonical inline hash check
+before input composition/native binding/DC. There is no new mapped result.
+The record preserves actual markers, source/input hashes and the verified
+cause; no repair or retry is performed by the inspection.
+
 ## Deep research review (2026-11-07)
 
 Use [`route_a_deep_review_20261107.md`](route_a_deep_review_20261107.md)

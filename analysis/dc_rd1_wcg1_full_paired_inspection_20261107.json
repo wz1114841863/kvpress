@@ -1,0 +1,1230 @@
+{
+  "schema": "rd1-wcg1-full-paired-failed-input-inspection-1",
+  "date": "2026-11-07",
+  "timezone": "Asia/Shanghai",
+  "source_commit": "fdb4dff",
+  "run_id": "dc_feasibility_fair_rd1_wcg1_20261107_r1",
+  "status": "FAILED_PRE_DC_INPUT_FREEZE_HASH_REPRESENTATION_MISMATCH",
+  "scope": {
+    "remote_read_only": true,
+    "remote_files_changed": false,
+    "RTL_changed": false,
+    "freeze_main_rerun": false,
+    "new_simulation_or_DC_STA": false,
+    "restart_kill_or_retry": false,
+    "unrelated_runs_untouched": true
+  },
+  "verdicts": {
+    "contextual_export": "PASS",
+    "tool_input_closure": "FAIL_AT_PRE_DC_FREEZE",
+    "mapped_area_improvement": "NOT_MEASURED",
+    "timing_closure": "NOT_MEASURED",
+    "structural_cleanliness": "NOT_EVALUATED_NEW_MAP",
+    "PPA_or_speedup_or_hardware_net_benefit": false
+  },
+  "cause": {
+    "script": "tools/freeze_rd1_wcg1_input.py",
+    "line": 99,
+    "classification": "canonical helper materialization compared against raw emitted file hash",
+    "canonical_prepared_hash": "fbc839539af641e061f13ecb9311288b86bae53afa1639093b8e546040aa4556",
+    "raw_emitted_hash": "aeb38a91977e96c1ea8a7b686d712c39bcd902a4489aedfcb0bb4810b2c1fc28",
+    "helper_source_hash": "4bea447a12560a2430b798267447ee3028293f3769b82aedfa191a10985cf394",
+    "accepted_prepared_authority": "analysis/dc_wcg1_wrapper_mapping_retry_result_20261107.json#/input_side_summary/gated/file_sha256/route_a_compact_word_clock_gate.sv",
+    "body_unchanged": true,
+    "causal_stage_order": "Assertion is before copytree, composed input/proxy/profile preparation, native binding and both full-top compile sides."
+  },
+  "remote_snapshot": {
+    "accepted_functional_sources": [
+      {
+        "bytes": 122,
+        "expected_sha256": "0b3e1c9d4294271f47a401829db6c9fefc8388939226be79adca500b5295d43a",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/.gitignore",
+        "sha256": "0b3e1c9d4294271f47a401829db6c9fefc8388939226be79adca500b5295d43a"
+      },
+      {
+        "bytes": 27026,
+        "expected_sha256": "ab44f23e32d91b90159f4ea8523ff428e96cfe343573b9329473c37c4d4e970a",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/README.md",
+        "sha256": "ab44f23e32d91b90159f4ea8523ff428e96cfe343573b9329473c37c4d4e970a"
+      },
+      {
+        "bytes": 602,
+        "expected_sha256": "db34502c68dee1c9b0ecedddf5789f0ec3924b67c5b40d9a275b3a49121a3b2f",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/build.sbt",
+        "sha256": "db34502c68dee1c9b0ecedddf5789f0ec3924b67c5b40d9a275b3a49121a3b2f"
+      },
+      {
+        "bytes": 91,
+        "expected_sha256": "9493717b960e0cba33d57187d0a1a047c074a15a22722ad10a9bc745ccba1244",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/docs/.gitkeep",
+        "sha256": "9493717b960e0cba33d57187d0a1a047c074a15a22722ad10a9bc745ccba1244"
+      },
+      {
+        "bytes": 1585,
+        "expected_sha256": "2d4907f7a9d968d2bb008ae1e320ffbf61a494dd92b5e00a3f26ea7f8cb875cf",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/platform/README.md",
+        "sha256": "2d4907f7a9d968d2bb008ae1e320ffbf61a494dd92b5e00a3f26ea7f8cb875cf"
+      },
+      {
+        "bytes": 1434,
+        "expected_sha256": "4cc2b26d59d3f7318d94d4cef4ce1a15c9f8073e6a1707ce358ccc580ca4dcba",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/platform/chisel-sbt",
+        "sha256": "4cc2b26d59d3f7318d94d4cef4ce1a15c9f8073e6a1707ce358ccc580ca4dcba"
+      },
+      {
+        "bytes": 19,
+        "expected_sha256": "c78258dca59e72a7d2ff00a59398affb462c886c1e4f8242865e716e66d3f747",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/project/build.properties",
+        "sha256": "c78258dca59e72a7d2ff00a59398affb462c886c1e4f8242865e716e66d3f747"
+      },
+      {
+        "bytes": 3552,
+        "expected_sha256": "839fce10bce65d04d0cd586d467d494c04e43e28c4a5dff9aa01e03332481a96",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVMeasurementInterfaces.scala",
+        "sha256": "839fce10bce65d04d0cd586d467d494c04e43e28c4a5dff9aa01e03332481a96"
+      },
+      {
+        "bytes": 7314,
+        "expected_sha256": "e82a577221ea775170c89755f8967c2246a36202300a3ca3b1f012c35d5f816a",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVReadPath.scala",
+        "sha256": "e82a577221ea775170c89755f8967c2246a36202300a3ca3b1f012c35d5f816a"
+      },
+      {
+        "bytes": 18993,
+        "expected_sha256": "ed28226bff0d973fe8b8a17f0059f121c1dc6f96d79f263d66d94dd3e521e24c",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVS2Completion.scala",
+        "sha256": "ed28226bff0d973fe8b8a17f0059f121c1dc6f96d79f263d66d94dd3e521e24c"
+      },
+      {
+        "bytes": 154996,
+        "expected_sha256": "9d12d28663aa62bd2e775af91e52d5b320ca239bc01ee9e4a7e7519441cd750d",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+        "sha256": "9d12d28663aa62bd2e775af91e52d5b320ca239bc01ee9e4a7e7519441cd750d"
+      },
+      {
+        "bytes": 2536,
+        "expected_sha256": "4bea447a12560a2430b798267447ee3028293f3769b82aedfa191a10985cf394",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteACompactWordClocking.scala",
+        "sha256": "4bea447a12560a2430b798267447ee3028293f3769b82aedfa191a10985cf394"
+      },
+      {
+        "bytes": 2022,
+        "expected_sha256": "e996a010466b98d2e2eb70e721da9cb258a8f6a56529c3fd1b34c9dc71f96a0a",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAExactLowestPrioritySelector.scala",
+        "sha256": "e996a010466b98d2e2eb70e721da9cb258a8f6a56529c3fd1b34c9dc71f96a0a"
+      },
+      {
+        "bytes": 271688,
+        "expected_sha256": "428c73752850f2da02666a0951d8b614f0d7463131869825f58e4fef8af7a354",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+        "sha256": "428c73752850f2da02666a0951d8b614f0d7463131869825f58e4fef8af7a354"
+      },
+      {
+        "bytes": 13932,
+        "expected_sha256": "fe1f65bd79417aeb4d62d2e846939022155631b82c66515e8feea887f422688a",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAM2EntryStorage.scala",
+        "sha256": "fe1f65bd79417aeb4d62d2e846939022155631b82c66515e8feea887f422688a"
+      },
+      {
+        "bytes": 1167,
+        "expected_sha256": "3c549945718a39c700b95ec76616aa1e84d020f9b5114158598b58aee4b05c45",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMemberRecordReadSharing.scala",
+        "sha256": "3c549945718a39c700b95ec76616aa1e84d020f9b5114158598b58aee4b05c45"
+      },
+      {
+        "bytes": 16919,
+        "expected_sha256": "45d413f5ceb53e17e923c489782b88632074c3098f481f58e864a527199879d4",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+        "sha256": "45d413f5ceb53e17e923c489782b88632074c3098f481f58e864a527199879d4"
+      },
+      {
+        "bytes": 36172,
+        "expected_sha256": "c38ec16eb79c180293b932ea5c5889240bf22a7b12520df3b636412cebea2bee",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala",
+        "sha256": "c38ec16eb79c180293b932ea5c5889240bf22a7b12520df3b636412cebea2bee"
+      },
+      {
+        "bytes": 78685,
+        "expected_sha256": "308f089b77df9f72fea68f0e320604cfab3b9e450f08826929ca9aa804675968",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+        "sha256": "308f089b77df9f72fea68f0e320604cfab3b9e450f08826929ca9aa804675968"
+      },
+      {
+        "bytes": 9048,
+        "expected_sha256": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+        "sha256": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493"
+      },
+      {
+        "bytes": 4098,
+        "expected_sha256": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+        "sha256": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887"
+      },
+      {
+        "bytes": 6042,
+        "expected_sha256": "cebc0577929aed960ed29cb0b95c674ed68479aafb71c18cf16e55775fa1389b",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/FullKVMeasurementDut.scala",
+        "sha256": "cebc0577929aed960ed29cb0b95c674ed68479aafb71c18cf16e55775fa1389b"
+      },
+      {
+        "bytes": 1364,
+        "expected_sha256": "7a9fc95edb17ddbbc6c7422322d4cd948ad96d52936e0ee4f9f36f03978f0ffe",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PM1PageManagerHdlEmitter.scala",
+        "sha256": "7a9fc95edb17ddbbc6c7422322d4cd948ad96d52936e0ee4f9f36f03978f0ffe"
+      },
+      {
+        "bytes": 8023,
+        "expected_sha256": "8a589a6c74c02ebb78f7e1d3ee0080550bb9ee82da4bb6cd85255b7bf7405292",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PairedControlProjectionHdlEmitter.scala",
+        "sha256": "8a589a6c74c02ebb78f7e1d3ee0080550bb9ee82da4bb6cd85255b7bf7405292"
+      },
+      {
+        "bytes": 4982,
+        "expected_sha256": "6b83963f747ad3f32c379df0bed30a84468fe891d9493cd9f0b3aea3f47ee329",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAComponentStatusCollector.scala",
+        "sha256": "6b83963f747ad3f32c379df0bed30a84468fe891d9493cd9f0b3aea3f47ee329"
+      },
+      {
+        "bytes": 35177,
+        "expected_sha256": "f4d7fba2658731590a2abea3a52d3402ac32d24bab700d012735393a65c4e4a6",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",
+        "sha256": "f4d7fba2658731590a2abea3a52d3402ac32d24bab700d012735393a65c4e4a6"
+      },
+      {
+        "bytes": 1139,
+        "expected_sha256": "ad0f9bb5ddb915907792042983b0a76ffc6ea0e380643ecce55ce707af1886ef",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1WrapperHdlEmitter.scala",
+        "sha256": "ad0f9bb5ddb915907792042983b0a76ffc6ea0e380643ecce55ce707af1886ef"
+      },
+      {
+        "bytes": 87,
+        "expected_sha256": "3ee4f022eb3f3b40be0890233fa405f8d57cf53a953c33453386452b88d09edc",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/resources/.gitkeep",
+        "sha256": "3ee4f022eb3f3b40be0890233fa405f8d57cf53a953c33453386452b88d09edc"
+      },
+      {
+        "bytes": 6147,
+        "expected_sha256": "fbcca99898330c0f89985a30c5ed4e1bc3b191bb6aa61a4c74423a344f519237",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/resources/rtl1_0_verification_binding.json",
+        "sha256": "fbcca99898330c0f89985a30c5ed4e1bc3b191bb6aa61a4c74423a344f519237"
+      },
+      {
+        "bytes": 1590,
+        "expected_sha256": "6eda31a69c998a61fc0850df1faabe709073131706883785478b00360667da81",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/resources/rtl3_5c_functional_partial_packet.fixture",
+        "sha256": "6eda31a69c998a61fc0850df1faabe709073131706883785478b00360667da81"
+      },
+      {
+        "bytes": 1935,
+        "expected_sha256": "3a31b7946876de8cb2f4e8599025fcd621071f3a3f53f50a67d3db86ab1ba3fe",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/resources/rtl3_6b_functional_provider_terminal.fixture",
+        "sha256": "3a31b7946876de8cb2f4e8599025fcd621071f3a3f53f50a67d3db86ab1ba3fe"
+      },
+      {
+        "bytes": 2264,
+        "expected_sha256": "a77b91b1efece0492600199ef2740a69d6f637c5dfcb1ee9da7d4c7a0d329476",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/resources/sva/route_a_rtl1_0_assertion_binding_registry.sv",
+        "sha256": "a77b91b1efece0492600199ef2740a69d6f637c5dfcb1ee9da7d4c7a0d329476"
+      },
+      {
+        "bytes": 6784,
+        "expected_sha256": "48877adbbae812ba196f280d0a6e37aba26c86c8f5298fee003ad37c19794c42",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/DualMeasurementDutStructuralSpec.scala",
+        "sha256": "48877adbbae812ba196f280d0a6e37aba26c86c8f5298fee003ad37c19794c42"
+      },
+      {
+        "bytes": 13268,
+        "expected_sha256": "0a136b6f43c21e594fb2066bc85c3b5d9ab851efe5bc8804acf5e1f9eacaadf6",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/FullKVMeasurementDutSpec.scala",
+        "sha256": "0a136b6f43c21e594fb2066bc85c3b5d9ab851efe5bc8804acf5e1f9eacaadf6"
+      },
+      {
+        "bytes": 31440,
+        "expected_sha256": "3dce3e46295ada5cdc8246084b66131df00524acac1a3d5ed08568d2af0d05f6",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAMeasurementDutR3Spec.scala",
+        "sha256": "3dce3e46295ada5cdc8246084b66131df00524acac1a3d5ed08568d2af0d05f6"
+      },
+      {
+        "bytes": 15960,
+        "expected_sha256": "c7ca883530355fa7f8f17026d21998a07ea31d68268db258dcaa65e8b0de7f0e",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAAdmissionPublicationIntegrationSpec.scala",
+        "sha256": "c7ca883530355fa7f8f17026d21998a07ea31d68268db258dcaa65e8b0de7f0e"
+      },
+      {
+        "bytes": 12602,
+        "expected_sha256": "31fb9a096d27361821773d83c9d60d078e5202e239b631ce886f0f2878a5637f",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAFairReclaimIntegrationSpec.scala",
+        "sha256": "31fb9a096d27361821773d83c9d60d078e5202e239b631ce886f0f2878a5637f"
+      },
+      {
+        "bytes": 12470,
+        "expected_sha256": "0d7351b74caa11bec989e42ef8418c4d48212cd3f9f18fd962cc99db292c385c",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAInitDrainIntegrationSpec.scala",
+        "sha256": "0d7351b74caa11bec989e42ef8418c4d48212cd3f9f18fd962cc99db292c385c"
+      },
+      {
+        "bytes": 17725,
+        "expected_sha256": "0c8c6568b2169e98539b882f96ff05900be5a6bb3d413e4a190bbabde1dd7133",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAResetEpochIntegrationSpec.scala",
+        "sha256": "0c8c6568b2169e98539b882f96ff05900be5a6bb3d413e4a190bbabde1dd7133"
+      },
+      {
+        "bytes": 13356,
+        "expected_sha256": "3f217c96e33c78d56418262b884c2a976fc7826aebe2e81f3d8f66fccff188ec",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteARetirementDrainClosureSpec.scala",
+        "sha256": "3f217c96e33c78d56418262b884c2a976fc7826aebe2e81f3d8f66fccff188ec"
+      },
+      {
+        "bytes": 78,
+        "expected_sha256": "4da551f9eea496c8112a4c07feeb86fc4e8f134211bc5046e572aaff844fd1ba",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/merge/.gitkeep",
+        "sha256": "4da551f9eea496c8112a4c07feeb86fc4e8f134211bc5046e572aaff844fd1ba"
+      },
+      {
+        "bytes": 10429,
+        "expected_sha256": "62767d6040567c94ab7a439398ff062d5444a2f84bcd63e1bb59af9186923cc3",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r1/RouteACoreMemIfV1Spec.scala",
+        "sha256": "62767d6040567c94ab7a439398ff062d5444a2f84bcd63e1bb59af9186923cc3"
+      },
+      {
+        "bytes": 53,
+        "expected_sha256": "a4cd45998ca8928ad05cdb833de227d18fc3661b6e0d02a9349fb667bc299c7b",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/.gitkeep",
+        "sha256": "a4cd45998ca8928ad05cdb833de227d18fc3661b6e0d02a9349fb667bc299c7b"
+      },
+      {
+        "bytes": 10631,
+        "expected_sha256": "e31691226cbd36c2c4d736092443dee84d90a9351a4191ddd621b203d4a05e35",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteACoreSideArbiterSpec.scala",
+        "sha256": "e31691226cbd36c2c4d736092443dee84d90a9351a4191ddd621b203d4a05e35"
+      },
+      {
+        "bytes": 8237,
+        "expected_sha256": "878ef381aeea27c13d9597a6182b04c532b7c6867ef1088d11bf3c6275d86f99",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteADeliveryContextAllocationBridgeSpec.scala",
+        "sha256": "878ef381aeea27c13d9597a6182b04c532b7c6867ef1088d11bf3c6275d86f99"
+      },
+      {
+        "bytes": 9355,
+        "expected_sha256": "baf365dae2be3b4a9261bad17e33dcbb27c7be5dcaa98508e9deb9220a5a1893",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteADeliveryContextRegistrySpec.scala",
+        "sha256": "baf365dae2be3b4a9261bad17e33dcbb27c7be5dcaa98508e9deb9220a5a1893"
+      },
+      {
+        "bytes": 9358,
+        "expected_sha256": "45e157b8bb9d7ef16158f56e2ca6aca743b707042c5e9de6a4a230bedbfff3b5",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteATypedDeliveryRouterSpec.scala",
+        "sha256": "45e157b8bb9d7ef16158f56e2ca6aca743b707042c5e9de6a4a230bedbfff3b5"
+      },
+      {
+        "bytes": 64,
+        "expected_sha256": "51589231ee65128c76e585ef12c6f470665c917db1b584b33eab10153e38edb3",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r3_r5/.gitkeep",
+        "sha256": "51589231ee65128c76e585ef12c6f470665c917db1b584b33eab10153e38edb3"
+      },
+      {
+        "bytes": 40561,
+        "expected_sha256": "8c31a6ccf633e1776eb6e683bcf47ded2fbdcb003568d87a84ccce29da8080bb",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r3_r5/RouteAR3R5PublicationSpec.scala",
+        "sha256": "8c31a6ccf633e1776eb6e683bcf47ded2fbdcb003568d87a84ccce29da8080bb"
+      },
+      {
+        "bytes": 18258,
+        "expected_sha256": "63448508ec6815a57bd999dd8ca32bfefa17b088f6e73611789b8d92b9ae8044",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r4/RouteAMergeBoundarySpec.scala",
+        "sha256": "63448508ec6815a57bd999dd8ca32bfefa17b088f6e73611789b8d92b9ae8044"
+      },
+      {
+        "bytes": 3842,
+        "expected_sha256": "a00353c9e3977d1c59135f128a1ac1a85c287dca9b518e11e621b4674747829f",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1ExactPrioritySelectorSpec.scala",
+        "sha256": "a00353c9e3977d1c59135f128a1ac1a85c287dca9b518e11e621b4674747829f"
+      },
+      {
+        "bytes": 1464,
+        "expected_sha256": "587402dbe857f8e954c37d9bea8cd5e37175c6f0cde5ab9d12c9c2c6388f4917",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1RegisteredSelectorEmitter.scala",
+        "sha256": "587402dbe857f8e954c37d9bea8cd5e37175c6f0cde5ab9d12c9c2c6388f4917"
+      },
+      {
+        "bytes": 1455,
+        "expected_sha256": "319aaf7d9ea26e70bb3145bd7cdf1f74e1734d3b71e702bbbf4f434d7aafa617",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1RegisteredSelectorSpec.scala",
+        "sha256": "319aaf7d9ea26e70bb3145bd7cdf1f74e1734d3b71e702bbbf4f434d7aafa617"
+      },
+      {
+        "bytes": 1793,
+        "expected_sha256": "980c5d912597b96e1fd24fcff146fdd38fb9db1890da28f37ea6275e761fa802",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1SelectorEmitter.scala",
+        "sha256": "980c5d912597b96e1fd24fcff146fdd38fb9db1890da28f37ea6275e761fa802"
+      },
+      {
+        "bytes": 4494,
+        "expected_sha256": "6b42e3e98c0a83066e9e50f7831148f635c4fcc3aa7dacb997affae68ea707ff",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAR5AvailabilityArrayBoundarySpec.scala",
+        "sha256": "6b42e3e98c0a83066e9e50f7831148f635c4fcc3aa7dacb997affae68ea707ff"
+      },
+      {
+        "bytes": 16047,
+        "expected_sha256": "d06e9b35cc414ec8738fa294150c0af2eae1511d052d7577247d978276bf31f4",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAReclaimSpec.scala",
+        "sha256": "d06e9b35cc414ec8738fa294150c0af2eae1511d052d7577247d978276bf31f4"
+      },
+      {
+        "bytes": 53,
+        "expected_sha256": "31b47a8835f2260c9e535f27fd8f04200c45c38742a6c4e034104ff6ed90a9ed",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/.gitkeep",
+        "sha256": "31b47a8835f2260c9e535f27fd8f04200c45c38742a6c4e034104ff6ed90a9ed"
+      },
+      {
+        "bytes": 17345,
+        "expected_sha256": "7a50a38a9c5e5d32de729ed5593923a35fd542d046044f7a662841341d02cbf0",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/RouteALifecycleAdapterSpec.scala",
+        "sha256": "7a50a38a9c5e5d32de729ed5593923a35fd542d046044f7a662841341d02cbf0"
+      },
+      {
+        "bytes": 14857,
+        "expected_sha256": "d864372a5d76c7eb70ea5d0e1a94641be58d3402d4b9c78a9ef9372e051d1db0",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/RouteASourceCompletionPlanSpec.scala",
+        "sha256": "d864372a5d76c7eb70ea5d0e1a94641be58d3402d4b9c78a9ef9372e051d1db0"
+      },
+      {
+        "bytes": 5594,
+        "expected_sha256": "f2958a58093c403fbb7380d2de7e28a2f926e0fd0f48e61343400dfed185d60d",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1bWritePathHarness.scala",
+        "sha256": "f2958a58093c403fbb7380d2de7e28a2f926e0fd0f48e61343400dfed185d60d"
+      },
+      {
+        "bytes": 5872,
+        "expected_sha256": "9e35e0c990ffa520e580ab9982d1d10a5d2187147329da40a8ac6b3d2d1c9287",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1bWritePathHarnessSpec.scala",
+        "sha256": "9e35e0c990ffa520e580ab9982d1d10a5d2187147329da40a8ac6b3d2d1c9287"
+      },
+      {
+        "bytes": 5774,
+        "expected_sha256": "5893c14a6c563da1087682e21b4d4465cf237d20517fd3b08487bad95b726ebf",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1cAtomicPublicationHarness.scala",
+        "sha256": "5893c14a6c563da1087682e21b4d4465cf237d20517fd3b08487bad95b726ebf"
+      },
+      {
+        "bytes": 12357,
+        "expected_sha256": "5ef940044b74f4194ad16d56c52e59d16d2487c81d3ecd3c803aaf2266cf8ce8",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1cAtomicPublicationHarnessSpec.scala",
+        "sha256": "5ef940044b74f4194ad16d56c52e59d16d2487c81d3ecd3c803aaf2266cf8ce8"
+      },
+      {
+        "bytes": 12957,
+        "expected_sha256": "026976543a88b7b64b07de35e2250e6fae6f38ef6861605088376799a5b800b3",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAActiveStateScoreboardIntegrationSpec.scala",
+        "sha256": "026976543a88b7b64b07de35e2250e6fae6f38ef6861605088376799a5b800b3"
+      },
+      {
+        "bytes": 15515,
+        "expected_sha256": "41a1a064293aa971b4b5d429ebfed6f19fb4f76570120d2ee5165a367a1324f8",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAdmissionPublicationIngressAdapterSpec.scala",
+        "sha256": "41a1a064293aa971b4b5d429ebfed6f19fb4f76570120d2ee5165a367a1324f8"
+      },
+      {
+        "bytes": 6969,
+        "expected_sha256": "a4bd500e1331b094b02ba25ef9c8cd763a65988e7f2d6464af4248213c7aa8cc",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAttentionTerminalScoreboardAdapterSpec.scala",
+        "sha256": "a4bd500e1331b094b02ba25ef9c8cd763a65988e7f2d6464af4248213c7aa8cc"
+      },
+      {
+        "bytes": 5958,
+        "expected_sha256": "083a78461cd00f27a8e02f2ac781b24d3ebb2800f148c8cfec798f3cf936d9dd",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC3bEventProvenanceObserver.scala",
+        "sha256": "083a78461cd00f27a8e02f2ac781b24d3ebb2800f148c8cfec798f3cf936d9dd"
+      },
+      {
+        "bytes": 2734,
+        "expected_sha256": "7cb61c16d4001490bdc8bbe6fd2a5eaef1bab274c8bf7e591ef74bcffa1924a9",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC4BEventReplayOracle.scala",
+        "sha256": "7cb61c16d4001490bdc8bbe6fd2a5eaef1bab274c8bf7e591ef74bcffa1924a9"
+      },
+      {
+        "bytes": 1118,
+        "expected_sha256": "c0648d6c34bbbaa946b806d4e1a551a19e7c582a0beff53970b92dc39a209988",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC4CNegativeReplayOracle.scala",
+        "sha256": "c0648d6c34bbbaa946b806d4e1a551a19e7c582a0beff53970b92dc39a209988"
+      },
+      {
+        "bytes": 21835,
+        "expected_sha256": "31d811f57e8df205f7a6897a24e549e9e932d58ac21fd0686de37b12db1a9d5a",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteADirectPendingReadPathSpec.scala",
+        "sha256": "31d811f57e8df205f7a6897a24e549e9e932d58ac21fd0686de37b12db1a9d5a"
+      },
+      {
+        "bytes": 8653,
+        "expected_sha256": "7228897b22c399d8cf01b81dc7ba3b80640d39f34f1e36b4a4b69ea3a2ada40b",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAFaultTerminalClosureSpec.scala",
+        "sha256": "7228897b22c399d8cf01b81dc7ba3b80640d39f34f1e36b4a4b69ea3a2ada40b"
+      },
+      {
+        "bytes": 19326,
+        "expected_sha256": "83fb7895a032b1e48eb70f46104e718f357d7340fe344b495910b9dd4713b3f2",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAFourConsumerCompletionSpec.scala",
+        "sha256": "83fb7895a032b1e48eb70f46104e718f357d7340fe344b495910b9dd4713b3f2"
+      },
+      {
+        "bytes": 9508,
+        "expected_sha256": "6092da44d9f5dd11e51a4b102e416be7381a700dcf83e5de69551023b9742b4e",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAM2EntryStorageSpec.scala",
+        "sha256": "6092da44d9f5dd11e51a4b102e416be7381a700dcf83e5de69551023b9742b4e"
+      },
+      {
+        "bytes": 21638,
+        "expected_sha256": "f4d7753a44b1ee8927a16ce1237dfcba80b2df3043d5536bdf4b9a40e277a965",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAM2ProductionControlOwnerSpec.scala",
+        "sha256": "f4d7753a44b1ee8927a16ce1237dfcba80b2df3043d5536bdf4b9a40e277a965"
+      },
+      {
+        "bytes": 7744,
+        "expected_sha256": "03b4c191512217879cd6331ba5172cb13ec26b1c2daa7e30054f1637bfd59a6b",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAMetadataAdmissionBridgeSpec.scala",
+        "sha256": "03b4c191512217879cd6331ba5172cb13ec26b1c2daa7e30054f1637bfd59a6b"
+      },
+      {
+        "bytes": 18824,
+        "expected_sha256": "aa93b5edc659f0d69e8a813f6b83d24b7b453cd6166ef6891d8d5e8ac4c9fb4d",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAPackedS2ReadPathSpec.scala",
+        "sha256": "aa93b5edc659f0d69e8a813f6b83d24b7b453cd6166ef6891d8d5e8ac4c9fb4d"
+      },
+      {
+        "bytes": 23561,
+        "expected_sha256": "eb16c9991bd25bade8a4ee1339b9863571dd3dab900aeeab772f7208e14b13a5",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR3PackReadPathSpec.scala",
+        "sha256": "eb16c9991bd25bade8a4ee1339b9863571dd3dab900aeeab772f7208e14b13a5"
+      },
+      {
+        "bytes": 12047,
+        "expected_sha256": "0f1bb67835b32fcf72deab8c838358f9d8253dcd2f2f492f41d14061eced4e47",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4R6StubTerminalIntegrationSpec.scala",
+        "sha256": "0f1bb67835b32fcf72deab8c838358f9d8253dcd2f2f492f41d14061eced4e47"
+      },
+      {
+        "bytes": 11962,
+        "expected_sha256": "012503078f82d43d2bab8a664e76a6c9b6d1165e7ed2ab08b084ddbc941157c4",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4ResultStubProviderSpec.scala",
+        "sha256": "012503078f82d43d2bab8a664e76a6c9b6d1165e7ed2ab08b084ddbc941157c4"
+      },
+      {
+        "bytes": 97459,
+        "expected_sha256": "7549833a9f0616d400cacd71dbf9929caa679da34afa2f1d01abbbadb051b6d4",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala",
+        "sha256": "7549833a9f0616d400cacd71dbf9929caa679da34afa2f1d01abbbadb051b6d4"
+      },
+      {
+        "bytes": 13484,
+        "expected_sha256": "4c8fb52419b4e9589ea40a5d8decf6652f0d873b3533ebb23fe93be353d49b55",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265aPackedReadTerminalHarnessSpec.scala",
+        "sha256": "4c8fb52419b4e9589ea40a5d8decf6652f0d873b3533ebb23fe93be353d49b55"
+      },
+      {
+        "bytes": 23237,
+        "expected_sha256": "d8a8340a78f73a4a21b54189f592a0306a744c71772afde335a86195d8e61725",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265bTerminalReclaimSpec.scala",
+        "sha256": "d8a8340a78f73a4a21b54189f592a0306a744c71772afde335a86195d8e61725"
+      },
+      {
+        "bytes": 60423,
+        "expected_sha256": "af301788f91f9d44732448764b33bf7706c29751e6e5473706716d8f332edce7",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala",
+        "sha256": "af301788f91f9d44732448764b33bf7706c29751e6e5473706716d8f332edce7"
+      },
+      {
+        "bytes": 13209,
+        "expected_sha256": "1ead762a15e69cddf3c2f2ef8b6ff1de05f11fc8bc4a6ff1017129a5e601f504",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26ComposedPackedSourceHarnessSpec.scala",
+        "sha256": "1ead762a15e69cddf3c2f2ef8b6ff1de05f11fc8bc4a6ff1017129a5e601f504"
+      },
+      {
+        "bytes": 8227,
+        "expected_sha256": "e4f587f84f9242048e7246c72283c63364f35d94d09de609d9de5c705c664c7e",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26PublicationS2AssociationSpec.scala",
+        "sha256": "e4f587f84f9242048e7246c72283c63364f35d94d09de609d9de5c705c664c7e"
+      },
+      {
+        "bytes": 16759,
+        "expected_sha256": "a0934d674fcbb44b764b2a123ba319e2a5f2898f66d40a3ef17da53a4db19af1",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26PublicationToTerminalHarnessSpec.scala",
+        "sha256": "a0934d674fcbb44b764b2a123ba319e2a5f2898f66d40a3ef17da53a4db19af1"
+      },
+      {
+        "bytes": 10159,
+        "expected_sha256": "640e082ad06d9b3a93c78030ad9b7afd24e81df2b6ee1ec34fa5ce85cce41113",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReadIngressSpec.scala",
+        "sha256": "640e082ad06d9b3a93c78030ad9b7afd24e81df2b6ee1ec34fa5ce85cce41113"
+      },
+      {
+        "bytes": 8661,
+        "expected_sha256": "aae70a9f7b9f217eeede3989536896e45669d993c5107eaa31857717b725f378",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReadIssueDescriptorSpec.scala",
+        "sha256": "aae70a9f7b9f217eeede3989536896e45669d993c5107eaa31857717b725f378"
+      },
+      {
+        "bytes": 7772,
+        "expected_sha256": "301e07f3e1db9c7557403e70847e804bf115ba5dfd545bd2854e6f3882003f01",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReclaimScoreboardAdapterSpec.scala",
+        "sha256": "301e07f3e1db9c7557403e70847e804bf115ba5dfd545bd2854e6f3882003f01"
+      },
+      {
+        "bytes": 6901,
+        "expected_sha256": "94ee8b1043d9ddf082a16de7ac575f00f3a7762c7c9ff4ccd045582b4475dea4",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteASourcePlanBinderSpec.scala",
+        "sha256": "94ee8b1043d9ddf082a16de7ac575f00f3a7762c7c9ff4ccd045582b4475dea4"
+      },
+      {
+        "bytes": 17902,
+        "expected_sha256": "66c561e3046e7fead5be5ac7e57fd81c5e89e06edcb657ae1f7763be6433cac4",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteASourceServicePacketAdapterSpec.scala",
+        "sha256": "66c561e3046e7fead5be5ac7e57fd81c5e89e06edcb657ae1f7763be6433cac4"
+      },
+      {
+        "bytes": 12684,
+        "expected_sha256": "69e9f470163427ce739e60ec4a5cbe4027ad6d1767abd653a9410ee810f285cc",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironment.scala",
+        "sha256": "69e9f470163427ce739e60ec4a5cbe4027ad6d1767abd653a9410ee810f285cc"
+      },
+      {
+        "bytes": 8850,
+        "expected_sha256": "345e12f766bd8907c1ab06435684f175141a5b3af0b09fa210e6ee66f522c3a4",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironmentSpec.scala",
+        "sha256": "345e12f766bd8907c1ab06435684f175141a5b3af0b09fa210e6ee66f522c3a4"
+      },
+      {
+        "bytes": 4537,
+        "expected_sha256": "ea6ff535f960a047827a08a85512a512520486b2ba8311eddbc13beb51a324eb",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalPartialProviderBoundarySpec.scala",
+        "sha256": "ea6ff535f960a047827a08a85512a512520486b2ba8311eddbc13beb51a324eb"
+      },
+      {
+        "bytes": 9346,
+        "expected_sha256": "a2ba9c54d43a3e87e1cce96703db8d0d6b9e3bd8d7a35f22b70395177e6ae6b3",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalR4ReferenceBoundarySpec.scala",
+        "sha256": "a2ba9c54d43a3e87e1cce96703db8d0d6b9e3bd8d7a35f22b70395177e6ae6b3"
+      },
+      {
+        "bytes": 9769,
+        "expected_sha256": "eae915c45c1c5aa2e617f2906f87e3709de799aab46b6d342ed62994e6c231bb",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalSidecarDeliverySpec.scala",
+        "sha256": "eae915c45c1c5aa2e617f2906f87e3709de799aab46b6d342ed62994e6c231bb"
+      },
+      {
+        "bytes": 3804,
+        "expected_sha256": "d569fa2913c4339f32912dad2eb193afff7fbab6ec58f9d13d6662192e635cb4",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAP3StageArrayBoundarySpec.scala",
+        "sha256": "d569fa2913c4339f32912dad2eb193afff7fbab6ec58f9d13d6662192e635cb4"
+      },
+      {
+        "bytes": 8357,
+        "expected_sha256": "a62392e0af65b18d40ab5e0ab9fea742489bd7e6250ae2cfea89e2faa4ac5bda",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedActivationCompositionSpec.scala",
+        "sha256": "a62392e0af65b18d40ab5e0ab9fea742489bd7e6250ae2cfea89e2faa4ac5bda"
+      },
+      {
+        "bytes": 12195,
+        "expected_sha256": "e7ee45ab393fed7c463b06a17ffbd5dfac7ada546c02dfdf9f8b0646827a4719",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedActivationOwnerFactIntegrationSpec.scala",
+        "sha256": "e7ee45ab393fed7c463b06a17ffbd5dfac7ada546c02dfdf9f8b0646827a4719"
+      },
+      {
+        "bytes": 6235,
+        "expected_sha256": "088fce9049ff857ce789eab6c64ab6ea54e29c9b64ac3461be92a40597e4eaf3",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedAssociationAllocationBridgeSpec.scala",
+        "sha256": "088fce9049ff857ce789eab6c64ab6ea54e29c9b64ac3461be92a40597e4eaf3"
+      },
+      {
+        "bytes": 10522,
+        "expected_sha256": "406781a2e643573aa1a503f92dab3a9117320c035fcdbf3d2d378708aae846d5",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadActivationBinderSpec.scala",
+        "sha256": "406781a2e643573aa1a503f92dab3a9117320c035fcdbf3d2d378708aae846d5"
+      },
+      {
+        "bytes": 26153,
+        "expected_sha256": "d307b1577d26edaa6c7d893ae15faba4a887141385c84a9393e863e64fe3162b",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadAssociationOwnerSpec.scala",
+        "sha256": "d307b1577d26edaa6c7d893ae15faba4a887141385c84a9393e863e64fe3162b"
+      },
+      {
+        "bytes": 2191,
+        "expected_sha256": "8bd063acc7ebbd1f2ed95162f91c204910a82f94b22dc352bae33b67248f4e45",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARD1ReadNetworkEmitter.scala",
+        "sha256": "8bd063acc7ebbd1f2ed95162f91c204910a82f94b22dc352bae33b67248f4e45"
+      },
+      {
+        "bytes": 5349,
+        "expected_sha256": "8e66fbdbf5976530f17f12366b10e0547abad108d53e302f00f13f82018630b9",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARD1ReadSharingSpec.scala",
+        "sha256": "8e66fbdbf5976530f17f12366b10e0547abad108d53e302f00f13f82018630b9"
+      },
+      {
+        "bytes": 9547,
+        "expected_sha256": "381d08d29d689622cb0caa8c73b97fe1e6d4ffe76369cae1d365c4e2cb2e8766",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL36bFunctionalFixtureBridge.scala",
+        "sha256": "381d08d29d689622cb0caa8c73b97fe1e6d4ffe76369cae1d365c4e2cb2e8766"
+      },
+      {
+        "bytes": 12266,
+        "expected_sha256": "612bf7081e96a4a69e3446a283c44b744d15f1039102c8fd3fd9c0c8d167ed7c",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL36cSidecarFixtureTransport.scala",
+        "sha256": "612bf7081e96a4a69e3446a283c44b744d15f1039102c8fd3fd9c0c8d167ed7c"
+      },
+      {
+        "bytes": 6478,
+        "expected_sha256": "a2e8cc5b6b993173b1ce5e1dd5ad6b5d525902c2117550794346372212be098f",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37bTerminalReleaseBridge.scala",
+        "sha256": "a2e8cc5b6b993173b1ce5e1dd5ad6b5d525902c2117550794346372212be098f"
+      },
+      {
+        "bytes": 3011,
+        "expected_sha256": "3654fedbd68dee941947ed289d40c5ce0d85831c95906c6dee7e72188ae90719",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cDrainMembershipJoin.scala",
+        "sha256": "3654fedbd68dee941947ed289d40c5ce0d85831c95906c6dee7e72188ae90719"
+      },
+      {
+        "bytes": 810,
+        "expected_sha256": "6682d08f5cc22f9a499c6227ab4c0a3fbac33ff91dc0ad96bf98bfcb5691d86f",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cEventScoreboard.scala",
+        "sha256": "6682d08f5cc22f9a499c6227ab4c0a3fbac33ff91dc0ad96bf98bfcb5691d86f"
+      },
+      {
+        "bytes": 19208,
+        "expected_sha256": "8c7f9bf0b25e4014c7915f40b5ba3609140d1c44c15b94ed8796bf45e6cd64ed",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL385FullPathClosureSpec.scala",
+        "sha256": "8c7f9bf0b25e4014c7915f40b5ba3609140d1c44c15b94ed8796bf45e6cd64ed"
+      },
+      {
+        "bytes": 13749,
+        "expected_sha256": "ae87823b5c83fbea091e6ba80de27e3212265bc530b572afdc1ec730ed5aee02",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL39AMaterializationHarness.scala",
+        "sha256": "ae87823b5c83fbea091e6ba80de27e3212265bc530b572afdc1ec730ed5aee02"
+      },
+      {
+        "bytes": 16191,
+        "expected_sha256": "25290ea2fb7afa8d2bebf2450eccc80640a43df7b1e50f144e1fc257635603e8",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL39AMaterializationSpec.scala",
+        "sha256": "25290ea2fb7afa8d2bebf2450eccc80640a43df7b1e50f144e1fc257635603e8"
+      },
+      {
+        "bytes": 408,
+        "expected_sha256": "5d22f11a9af983e8549b4da537705a522504cb0483aeea61416cdace0805cf01",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAWCG1WrapperSpec.scala",
+        "sha256": "5d22f11a9af983e8549b4da537705a522504cb0483aeea61416cdace0805cf01"
+      },
+      {
+        "bytes": 72,
+        "expected_sha256": "d266db789e706ef61977279361e038df892e8c662afb060911ef41b8303de565",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/s2/.gitkeep",
+        "sha256": "d266db789e706ef61977279361e038df892e8c662afb060911ef41b8303de565"
+      },
+      {
+        "bytes": 3855,
+        "expected_sha256": "322a6a4199026d0d3bb3d4cdaa0ccf62e37fd9cd505a09bc2ee0dab08f12654c",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/s2/RouteAHotSourcePathSpec.scala",
+        "sha256": "322a6a4199026d0d3bb3d4cdaa0ccf62e37fd9cd505a09bc2ee0dab08f12654c"
+      },
+      {
+        "bytes": 15242,
+        "expected_sha256": "699345da67485567960b1982735547ff93e68109ddda0d838258472c7e28e0d6",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/s2/RouteAS2DirectPendingSpec.scala",
+        "sha256": "699345da67485567960b1982735547ff93e68109ddda0d838258472c7e28e0d6"
+      },
+      {
+        "bytes": 3696,
+        "expected_sha256": "dbacb4b0e3b05716f7a2e01135d816ed63b2b3868d7b4f561f01bb66889607bb",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/ControlProjectionElaborationSpec.scala",
+        "sha256": "dbacb4b0e3b05716f7a2e01135d816ed63b2b3868d7b4f561f01bb66889607bb"
+      },
+      {
+        "bytes": 6688,
+        "expected_sha256": "aace7dec8b4f5480e26dc16d015812bb54e2002c1a9aab2690ad6d1e9937a405",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala",
+        "sha256": "aace7dec8b4f5480e26dc16d015812bb54e2002c1a9aab2690ad6d1e9937a405"
+      },
+      {
+        "bytes": 1326,
+        "expected_sha256": "b0c52b6e24202de11517b2dae6f935acb6864ceba23a0e48041af6775ac9c793",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteASynthesisControlProjectionProfileSpec.scala",
+        "sha256": "b0c52b6e24202de11517b2dae6f935acb6864ceba23a0e48041af6775ac9c793"
+      },
+      {
+        "bytes": 7512,
+        "expected_sha256": "bd35f833ec0cee69bcf06d4b889b0936a90a3697be47061b0d7c384e8524718a",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/testbench/route_a_scoreboard_event_adapter.py",
+        "sha256": "bd35f833ec0cee69bcf06d4b889b0936a90a3697be47061b0d7c384e8524718a"
+      },
+      {
+        "bytes": 2438,
+        "expected_sha256": "507b545b72754401d4674cfb7ee3224d97f514e3f03d66fd1acc260cfe118d3e",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/testbench/route_a_scoreboard_oracle_binding.py",
+        "sha256": "507b545b72754401d4674cfb7ee3224d97f514e3f03d66fd1acc260cfe118d3e"
+      }
+    ],
+    "baseline_archive": {
+      "bytes": 27230062,
+      "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_shared_e5d3107_p15_paired_input.tar.gz",
+      "sha256": "9494f1dc4b47f1bfbcffe655b75e20a0d4c9cd75fb9802b5d454f870ae02dc5b"
+    },
+    "bundle_archive": {
+      "bytes": 40441,
+      "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1_scripts.tar.gz",
+      "sha256": "64bb25f65b38e69042f9e587aa4b6779f0e633d8df6e1c8a3ab7c89cec2d4e3b"
+    },
+    "context_source_archives": [
+      {
+        "bytes": 14359654,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_contextual_20261107_r2.tar.gz",
+        "sha256": "fcf677b698d582c47080a865d4a75d690188cb0f6f90a8210e8752f2dfe6ddf1"
+      },
+      {
+        "bytes": 1633,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/run_rd1_wcg1_contextual_20261107_r2.sh",
+        "sha256": "4471ea6136be1612562522eb8686022fe5d153a357db9114d7f05a8ca8055fd0"
+      }
+    ],
+    "frozen_bundle_checks": [
+      {
+        "bytes": 24622,
+        "expected_sha256": "ada3843d894b76f611919602c664b77bcaa6a5c037dfe04819df77c35fcb9a5e",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/accepted_wcg1_launch.json",
+        "sha256": "ada3843d894b76f611919602c664b77bcaa6a5c037dfe04819df77c35fcb9a5e"
+      },
+      {
+        "bytes": 12327,
+        "expected_sha256": "aedf409702bc6e6026642d644c36b3e22e6e579184e4d968b213f9722864180c",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/check_control_refinement_successor.py",
+        "sha256": "aedf409702bc6e6026642d644c36b3e22e6e579184e4d968b213f9722864180c"
+      },
+      {
+        "bytes": 3121,
+        "expected_sha256": "1b428d95bf083284492e2716002ac8456fdbdd5ca9e7a622233967f08d7fae78",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/check_dc_array_proxy_materialization.py",
+        "sha256": "1b428d95bf083284492e2716002ac8456fdbdd5ca9e7a622233967f08d7fae78"
+      },
+      {
+        "bytes": 6400,
+        "expected_sha256": "44ef88438a300017653a5eda9b028708118b1d272b4bcb96d21ab5e06472f627",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/check_kvzap_control_projection_constraint_coverage.py",
+        "sha256": "44ef88438a300017653a5eda9b028708118b1d272b4bcb96d21ab5e06472f627"
+      },
+      {
+        "bytes": 2303,
+        "expected_sha256": "e38dadaa68434426879ff1851805853134ecc371db7599fec3fe349a5a975dab",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/check_kvzap_control_projection_dc_feasibility_fair_v1.sh",
+        "sha256": "e38dadaa68434426879ff1851805853134ecc371db7599fec3fe349a5a975dab"
+      },
+      {
+        "bytes": 4766,
+        "expected_sha256": "5c0fe92790a06c20b47e92bddab933826d02e6b0c937d8a268583e3a741cf582",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/check_r5_descriptor_externalization_successor.py",
+        "sha256": "5c0fe92790a06c20b47e92bddab933826d02e6b0c937d8a268583e3a741cf582"
+      },
+      {
+        "bytes": 5770,
+        "expected_sha256": "70b63f7622d8131dbe439bc9f61ad89bd7c4f50853ea3ec6717e07aefc920fc3",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/check_rd1_wcg1_full_paired.py",
+        "sha256": "70b63f7622d8131dbe439bc9f61ad89bd7c4f50853ea3ec6717e07aefc920fc3"
+      },
+      {
+        "bytes": 14333,
+        "expected_sha256": "69ef21f29247a44931431b4a84f98c6ec2c2c3ee630a361eead65b6a334b16bc",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/check_wcg1_bank_mapping.py",
+        "sha256": "69ef21f29247a44931431b4a84f98c6ec2c2c3ee630a361eead65b6a334b16bc"
+      },
+      {
+        "bytes": 2669,
+        "expected_sha256": "3bc9d0e4b3caf9244f38e265ad1222f2ea36d89bed0a31d27a4d3cba19fe5007",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/constraints_control_projection.tcl",
+        "sha256": "3bc9d0e4b3caf9244f38e265ad1222f2ea36d89bed0a31d27a4d3cba19fe5007"
+      },
+      {
+        "bytes": 2763,
+        "expected_sha256": "d968a8bc178af3f223c7f49ab8f1c5270f73fdd4ac60197e4e13b11cefd6aec4",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/dc_feasibility_fair_rd1_shared_v1.json",
+        "sha256": "d968a8bc178af3f223c7f49ab8f1c5270f73fdd4ac60197e4e13b11cefd6aec4"
+      },
+      {
+        "bytes": 4605,
+        "expected_sha256": "5439a78c063480bb9be1a4583929da3d2bf147101a884242f62dbad27c3fb8e4",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/env_kvzap_control_projection_dc.sh",
+        "sha256": "5439a78c063480bb9be1a4583929da3d2bf147101a884242f62dbad27c3fb8e4"
+      },
+      {
+        "bytes": 6090,
+        "expected_sha256": "a32b02e26160a367b961bc3e28638e41b878b833917c78e0acc7538b51adeb88",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/freeze_rd1_wcg1_input.py",
+        "sha256": "a32b02e26160a367b961bc3e28638e41b878b833917c78e0acc7538b51adeb88"
+      },
+      {
+        "bytes": 3076,
+        "expected_sha256": "53b3c1829a216d720da3635563cf77fd0203c720ec6b10a1d79188094eefc8a6",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/materialize_control_refinement_proxy.sh",
+        "sha256": "53b3c1829a216d720da3635563cf77fd0203c720ec6b10a1d79188094eefc8a6"
+      },
+      {
+        "bytes": 6956,
+        "expected_sha256": "8c7555eac8a4b89e439c2d8e9a44a79497736c7b3724778a348d643e1d798c4f",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/materialize_dc_array_proxies.py",
+        "sha256": "8c7555eac8a4b89e439c2d8e9a44a79497736c7b3724778a348d643e1d798c4f"
+      },
+      {
+        "bytes": 7564,
+        "expected_sha256": "be85d8e7b5901b3e989f4e971f41cb1fa094a057e5e53cf7de7773c033df00aa",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/prepare_wcg1_wrapper_mapping.py",
+        "sha256": "be85d8e7b5901b3e989f4e971f41cb1fa094a057e5e53cf7de7773c033df00aa"
+      },
+      {
+        "bytes": 2578,
+        "expected_sha256": "a936bd9453002fc3de7f7388aa78c3e74cf31e45a0461773105935ae0157438d",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/preserve_r3_entry_id_driver.tcl",
+        "sha256": "a936bd9453002fc3de7f7388aa78c3e74cf31e45a0461773105935ae0157438d"
+      },
+      {
+        "bytes": 5948,
+        "expected_sha256": "9027bfde757823c23485f25931a462854226c3d3ae7f369e7a9704ec532dd282",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/run_kvzap_control_projection_dc_feasibility.tcl",
+        "sha256": "9027bfde757823c23485f25931a462854226c3d3ae7f369e7a9704ec532dd282"
+      },
+      {
+        "bytes": 6326,
+        "expected_sha256": "1d039f92a998d062a184cc2f72729296e5d520df2fb2aecfec36ef0b9417c574",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/run_rd1_wcg1_full_paired.sh",
+        "sha256": "1d039f92a998d062a184cc2f72729296e5d520df2fb2aecfec36ef0b9417c574"
+      },
+      {
+        "bytes": 6213,
+        "expected_sha256": "acbe913abdd35e3615f509d14151218769e0fca0f4e58302472d3ee36fb3e497",
+        "matches": true,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/run_rd1_wcg1_full_paired.tcl",
+        "sha256": "acbe913abdd35e3615f509d14151218769e0fca0f4e58302472d3ee36fb3e497"
+      }
+    ],
+    "guard": {
+      "bytes": 1423,
+      "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/guard_rd1_wcg1_full_dc_20261107_r1.sh",
+      "sha256": "5787e3831aff36654b82d4b2fc179c5517ee41b60358705f00e9f8757e1a1013"
+    },
+    "inline_diagnosis": {
+      "canonical_hash_matches_script_expected": false,
+      "canonical_materialized_bytes": 342,
+      "canonical_materialized_sha256": "fbc839539af641e061f13ecb9311288b86bae53afa1639093b8e546040aa4556",
+      "canonical_text": "module route_a_compact_word_clock_gate(input clock, input enable, output gated_clock);\n`ifdef SYNTHESIS\n  CKLNQD1BWP12T30P140LVT native_gate(.CP(clock), .E(enable), .TE(1'b0), .Q(gated_clock));\n`else\n  reg enable_low;\n  always_latch begin\n    if (!clock) enable_low = enable;\n  end\n  assign gated_clock = clock & enable_low;\n`endif\nendmodule\n",
+      "emitted": {
+        "bytes": 381,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/split/gated/route_a_compact_word_clock_gate.sv",
+        "sha256": "aeb38a91977e96c1ea8a7b686d712c39bcd902a4489aedfcb0bb4810b2c1fc28",
+        "text": "// Generated by CIRCT firtool-1.158.0\nmodule route_a_compact_word_clock_gate(input clock, input enable, output gated_clock);\n`ifdef SYNTHESIS\n  CKLNQD1BWP12T30P140LVT native_gate(.CP(clock), .E(enable), .TE(1'b0), .Q(gated_clock));\n`else\n  reg enable_low;\n  always_latch begin\n    if (!clock) enable_low = enable;\n  end\n  assign gated_clock = clock & enable_low;\n`endif\nendmodule\n\n"
+      },
+      "emitted_module_body_equals_helper": true,
+      "emitted_prefix": "// Generated by CIRCT firtool-1.158.0\n",
+      "frozen_script_expected_hash": "aeb38a91977e96c1ea8a7b686d712c39bcd902a4489aedfcb0bb4810b2c1fc28",
+      "helper": {
+        "bytes": 2536,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteACompactWordClocking.scala",
+        "sha256": "4bea447a12560a2430b798267447ee3028293f3769b82aedfa191a10985cf394"
+      },
+      "helper_matches_accepted": true,
+      "raw_emitted_hash_matches_script_expected": true,
+      "synthesis_native_gate": true,
+      "accepted_prepared_pin": "fbc839539af641e061f13ecb9311288b86bae53afa1639093b8e546040aa4556"
+    },
+    "input_stem_exists": false,
+    "logs": [
+      {
+        "bytes": 2188,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/logs/rd1_wcg1_full_dc_20261107_r1.log",
+        "sha256": "de8dfe539fbefd88d8f2b4b0a4321a9ecb9a903bf90aac5c67d16dc2b874ac53",
+        "text": "accepted_wcg1_launch.json: OK\ncheck_control_refinement_successor.py: OK\ncheck_dc_array_proxy_materialization.py: OK\ncheck_kvzap_control_projection_constraint_coverage.py: OK\ncheck_kvzap_control_projection_dc_feasibility_fair_v1.sh: OK\ncheck_r5_descriptor_externalization_successor.py: OK\ncheck_rd1_wcg1_full_paired.py: OK\ncheck_wcg1_bank_mapping.py: OK\nconstraints_control_projection.tcl: OK\ndc_feasibility_fair_rd1_shared_v1.json: OK\nenv_kvzap_control_projection_dc.sh: OK\nfreeze_rd1_wcg1_input.py: OK\nmaterialize_control_refinement_proxy.sh: OK\nmaterialize_dc_array_proxies.py: OK\nprepare_wcg1_wrapper_mapping.py: OK\npreserve_r3_entry_id_driver.tcl: OK\nrun_kvzap_control_projection_dc_feasibility.tcl: OK\nrun_rd1_wcg1_full_paired.sh: OK\nrun_rd1_wcg1_full_paired.tcl: OK\nKVZAP_RD1_WCG1_PIPELINE_WAITING_FOR_CONTEXTUAL_EXPORT\nKVZAP_RD1_WCG1_CONTEXTUAL_EXPORT_COMPLETED_STARTING_FREEZE\naccepted_wcg1_launch.json: OK\ncheck_control_refinement_successor.py: OK\ncheck_dc_array_proxy_materialization.py: OK\ncheck_kvzap_control_projection_constraint_coverage.py: OK\ncheck_kvzap_control_projection_dc_feasibility_fair_v1.sh: OK\ncheck_r5_descriptor_externalization_successor.py: OK\ncheck_rd1_wcg1_full_paired.py: OK\ncheck_wcg1_bank_mapping.py: OK\nconstraints_control_projection.tcl: OK\ndc_feasibility_fair_rd1_shared_v1.json: OK\nenv_kvzap_control_projection_dc.sh: OK\nfreeze_rd1_wcg1_input.py: OK\nmaterialize_control_refinement_proxy.sh: OK\nmaterialize_dc_array_proxies.py: OK\nprepare_wcg1_wrapper_mapping.py: OK\npreserve_r3_entry_id_driver.tcl: OK\nrun_kvzap_control_projection_dc_feasibility.tcl: OK\nrun_rd1_wcg1_full_paired.sh: OK\nrun_rd1_wcg1_full_paired.tcl: OK\nTraceback (most recent call last):\n  File \"/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/freeze_rd1_wcg1_input.py\", line 124, in <module>\n    main()\n  File \"/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1/freeze_rd1_wcg1_input.py\", line 99, in main\n    assert hashlib.sha256(gate_text.encode()).hexdigest() == 'aeb38a91977e96c1ea8a7b686d712c39bcd902a4489aedfcb0bb4810b2c1fc28'\nAssertionError\nKVZAP_RD1_WCG1_OUTER_EXIT=1\nKVZAP_RD1_WCG1_PIPELINE_OUTER_EXIT=1\n"
+      },
+      {
+        "bytes": 2183,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/logs/rd1_wcg1_contextual_20261107_r2.log",
+        "sha256": "27b4e8a84f5f117823a1f8c1e680c246b38ffc3ff97c186c6bae578ebf7d41a2",
+        "tail": "WCG1_CONTEXTUAL_INPUT_PASS\nPicked up _JAVA_OPTIONS: -Xmx6g -XX:ActiveProcessorCount=2\n[info] welcome to sbt 1.11.5 (Ubuntu Java 11.0.19)\n[info] loading project definition from /home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/project\n[info] loading settings for project root from build.sbt...\n[info] set current project to kvpress-route-a-chisel (in build file:/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/)\n[info] compiling 24 Scala sources to /home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/target/scala-2.13/classes ...\n[warn] 2 deprecations (since 7.5.0); re-run with -deprecation for details\n[warn] 3824 feature warnings; re-run with -feature for details\n[warn] two warnings found\n[info] done compiling\n[info] running kvpress.routea.top.EmitWCG1ContextualChirrtl /home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/chirrtl reference\nWCG1_CONTEXTUAL_CHIRRTL_PASS side=reference PM1=false RD2=false\n[success] Total time: 47 s, completed Nov 7, 2026, 11:10:27 AM\nWCG1_CONTEXTUAL_SPLIT_PASS side=reference\nPicked up _JAVA_OPTIONS: -Xmx6g -XX:ActiveProcessorCount=2\n[info] welcome to sbt 1.11.5 (Ubuntu Java 11.0.19)\n[info] loading project definition from /home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/project\n[info] loading settings for project root from build.sbt...\n[info] set current project to kvpress-route-a-chisel (in build file:/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/workspace/hardware/route_a/chisel/)\n[info] running kvpress.routea.top.EmitWCG1ContextualChirrtl /home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/chirrtl gated\nWCG1_CONTEXTUAL_CHIRRTL_PASS side=gated PM1=false RD2=false\n[success] Total time: 27 s, completed Nov 7, 2026, 11:51:34 AM\nWCG1_CONTEXTUAL_SPLIT_PASS side=gated\nWCG1_CONTEXTUAL_EXPORT_PASS\nWCG1_CONTEXTUAL_OUTER_EXIT=0"
+      }
+    ],
+    "markers": {
+      "context_exit": "0",
+      "export_outer_zero": true,
+      "export_pass": true,
+      "freeze_pass": false,
+      "full_pair_pass": false,
+      "native_binding_start": false,
+      "outer_failure": true,
+      "pipeline_exit": "1",
+      "pipeline_outer_failure": true,
+      "result_exit": "1"
+    },
+    "observed_utc": "2026-11-07T11:05:16.779422+00:00",
+    "read_only": true,
+    "run_id": "dc_feasibility_fair_rd1_wcg1_20261107_r1",
+    "run_root_entries": [
+      "exit_status"
+    ],
+    "split_outputs": {
+      "gated": {
+        "file_count": 49,
+        "sv_bytes": 453168786
+      },
+      "reference": {
+        "file_count": 48,
+        "sv_bytes": 451321280
+      }
+    },
+    "tmux": {
+      "exit": 0,
+      "stderr": "",
+      "stdout": "j7_2_checkpoint_diagnostic:raw_keep.0 bash 26597 dead=0\nj7_2_checkpoint_diagnostic:logs.0 tail 26602 dead=0\nkvzap-rd1-wcg1:export.0 bash 336 dead=0\nkvzap-rd1-wcg1:export-r2.0 bash 1003 dead=0\nkvzap-rd1-wcg1:paired-dc.0 bash 2258 dead=0\n"
+    },
+    "wrapper_checks": {
+      "baseline": {
+        "bytes": 8892576,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_shared_e5d3107_p15_paired_input/route_a_control_projection_split/route_a_m2_p3_wrapper.sv",
+        "sha256": "9ea8c57ad4db4170601a20b33bf54b08b2d10457ee55a739f671896010fe8135"
+      },
+      "candidate_header_equals_RD1": true,
+      "candidate_non_table_state_equals_RD1": true,
+      "context_candidate": {
+        "bytes": 10739701,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/split/gated/route_a_m2_p3_wrapper.sv",
+        "sha256": "72266ee3e4773e8801d36af6f5574f1004dbbd7ca15748252287ad856a4d2901"
+      },
+      "context_reference": {
+        "bytes": 8892576,
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2/split/reference/route_a_m2_p3_wrapper.sv",
+        "sha256": "9ea8c57ad4db4170601a20b33bf54b08b2d10457ee55a739f671896010fe8135"
+      },
+      "data_bits": 366336,
+      "member_bits": 182016,
+      "reference_normalized_equals_RD1": true,
+      "source_gate_instances": 4608,
+      "suffix_bits": 184320
+    },
+    "unrelated_eda_process_count": 1,
+    "rd1_wcg1_active_processes": []
+  },
+  "additional_rehashes": {
+    "library": {
+      "path": "/home/yaz80/wz_project/dc_project/pdk/TSMC28/tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db",
+      "bytes": 24813568,
+      "sha256": "5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d"
+    },
+    "accepted_prepared_candidates": [
+      {
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/wcg1_wrapper_mapping_sta_211f1e2_20261106_r2/raw/gated/route_a_compact_word_clock_gate.sv",
+        "bytes": 381,
+        "sha256": "aeb38a91977e96c1ea8a7b686d712c39bcd902a4489aedfcb0bb4810b2c1fc28"
+      },
+      {
+        "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/wcg1_wrapper_mapping_sta_211f1e2_20261106_r2/inputs/gated/route_a_compact_word_clock_gate.sv",
+        "bytes": 342,
+        "sha256": "fbc839539af641e061f13ecb9311288b86bae53afa1639093b8e546040aa4556"
+      }
+    ]
+  },
+  "independent_checks": {
+    "bundle_files_19_match": true,
+    "script_archive_matches_launch": true,
+    "guard_matches_launch": true,
+    "context_archive_matches_launch": true,
+    "RD1_baseline_archive_matches": true,
+    "library_matches": true,
+    "functional_sources_121_match": true,
+    "reference_byte_identical_to_RD1": true,
+    "candidate_header_shape_non_table_checked": true,
+    "source_gate_count_4608": true,
+    "canonical_materialization_matches_accepted_input": true,
+    "canonical_materialization_sha_reproduces": true,
+    "emitted_sha_reproduces": true,
+    "current_raw_and_accepted_raw_match": true,
+    "current_canonical_and_accepted_prepared_match": true,
+    "helper_and_module_body_unchanged": true,
+    "hash_domain_failure_reproduced": true,
+    "no_completed_DC_artifacts": true,
+    "export_success_outer_failure_recorded": true
+  },
+  "next_step": "Repair source/raw/canonical pin separation with direct regression, then reuse immutable completed export for a new output/run/bundle; no repair or new run in this inspection.",
+  "constraints": {
+    "period_ns": 2,
+    "setup_uncertainty_ns": 0.1,
+    "hold_uncertainty_ns": 0.02,
+    "IO_delay_ns": 0.2,
+    "input_transition_ns": 0.05,
+    "output_load_pf": 0.005
+  },
+  "PM1": false,
+  "RD2": false,
+  "measurement_tiers_not_reached": [
+    "primary_raw",
+    "propagated_raw",
+    "propagated_hold_repaired"
+  ],
+  "historical_RD1_reference": {
+    "run_id": "dc_feasibility_fair_rd1_shared_20261105_r1",
+    "route_a_cell_area": 3388597.345862,
+    "full_kv_cell_area": 23091.432498,
+    "setup_closed": false
+  },
+  "local_source_pins": {
+    "tools/freeze_rd1_wcg1_input.py": "a32b02e26160a367b961bc3e28638e41b878b833917c78e0acc7538b51adeb88",
+    "tools/prepare_wcg1_wrapper_mapping.py": "be85d8e7b5901b3e989f4e971f41cb1fa094a057e5e53cf7de7773c033df00aa",
+    "tests/test_rd1_wcg1_full_paired.py": "da61c9aec9b7b9036f2843689f22b36115c851df3af2a8d0cf034ba41889b648",
+    "hardware/route_a/dc/run_rd1_wcg1_full_paired.sh": "1d039f92a998d062a184cc2f72729296e5d520df2fb2aecfec36ef0b9417c574",
+    "analysis/dc_rd1_wcg1_full_paired_launch_20261107.json": "6810840f31e5c213085d11573b1febdc4d479008abaee8b09cef59fdedc73d9d",
+    "analysis/dc_wcg1_wrapper_mapping_retry_result_20261107.json": "865f2ba9fa5b8dbfca67160a5523fc24a52a03d0e3956c69fed3cdd0d95e8471"
+  },
+  "local_documentation_validation": {
+    "JSON_and_19_independent_checks": "PASS",
+    "all_19_remote_bundle_files_match_local_launch_pins": true,
+    "local_source_pins_rehashed": 6,
+    "raw_minus_canonical_byte_difference": 39,
+    "difference_only_generator_comment_and_one_extra_newline": true,
+    "new_Markdown_links_checked": 7,
+    "new_RTL_tests_run": false,
+    "new_EDA_jobs_run": false,
+    "documentation_only_diff": true,
+    "git_diff_check": "PASS",
+    "report_sha256": "3ebcb8a23f41d48fddd52872779eef13ff026d3b705dfaf0dedf34166c5564a7"
+  }
+}

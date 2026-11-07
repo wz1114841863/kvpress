@@ -2,13 +2,35 @@
 
 **Status date:** 2026-11-07
 **Repository state:** `research/kvzap-latest`; bounded RTL3 functional closure
-and accepted control-mapping results remain preserved. The deep review below
-separates those results from unresolved sustained-service, complete-cost and
-2-ns timing claims. This update does not refresh remote execution status.
+and accepted control-mapping results remain preserved. The latest RD1+WCG1
+inspection below records a pre-DC input-freeze failure, with no new mapped
+result. Sustained-service, complete-cost and full-top 2-ns timing claims
+remain unresolved.
 
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
+
+## Latest RD1+WCG1 inspection (2026-11-07)
+
+Read [`dc_rd1_wcg1_full_paired_inspection_20261107.md`](dc_rd1_wcg1_full_paired_inspection_20261107.md)
+and its JSON. Contextual export r2 passed with exit 0 (48 reference / 49 gated
+SV units), but input freeze failed before native binding and either compile.
+The pipeline and full-run outer statuses are both 1; the result root contains
+only `exit_status`. No new area, setup/hold, gating or structural result exists.
+The tmux panes are idle bash. This inspection runs no DC or simulation and
+changes no RTL, frozen script, remote input or process.
+
+The failure is an exact hash-domain mismatch: the freeze script materializes
+the 342-byte accepted helper module (`fbc839...`) but compares it with the
+381-byte raw emitted-file pin (`aeb38a...`). Current source/raw/prepared
+identities and the module body match accepted WCG1 evidence. The reference
+wrapper is independently byte-identical to RD1; candidate header, data-field
+shape, non-table state and 4,608 source gates pass. These do not replace the
+unreached final proxy/profile/native gates. Preserve the failed run and reuse
+the completed export only after a separately repaired/tested freeze in a new
+bundle/output/run. No automatic retry is started or queued; PM1 remains off,
+RD2 excluded, and the original 2-ns numerical constraints unchanged.
 
 ## Deep review entry (2026-11-07)
 

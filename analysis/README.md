@@ -7,6 +7,17 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Latest RD1+WCG1 result inspection (2026-11-07)
+
+The [full-paired inspection](dc_rd1_wcg1_full_paired_inspection_20261107.md)
+and [evidence JSON](dc_rd1_wcg1_full_paired_inspection_20261107.json) confirm
+contextual export r2 completed, but the pipeline failed at input freeze
+before native binding or either DC side. The script compared canonical helper
+bytes with the raw emitted-file hash; both actual representations and the
+helper body match accepted WCG1 inputs. No new full-top area/timing result
+exists. The read-only inspection preserves all failed artifacts and starts no
+repair/retry. The earlier launch and deep-review snapshots remain historical.
+
 ## Current research review (2026-11-07)
 
 The [`deep review`](route_a_deep_review_20261107.md) reconnects original
