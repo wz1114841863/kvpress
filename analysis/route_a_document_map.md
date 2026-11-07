@@ -354,6 +354,15 @@ This accepts directed wrapper functional validation only; native wrapper
 mapping/2-ns STA, universal equivalence and production integration stay open.
 No new job or RD1+PM1 inspection is performed.
 
+The separately completed RD1+PM1 full run is now audited in
+`dc_rd1_pm1_full_paired_result_20261107.md` and JSON: both native/outer exits,
+input/proxy/library closure and exact Full-KV reproduction pass. Whole-top
+Route-A area is 3,358,045.877079 (0.901596% below RD1), ratio 145.424x.
+Setup regresses to -0.44-ns WNS, -12,096.60-ns TNS and 35,976 violations;
+hold has zero reported violations. State/clock load is unchanged and lint
+remains open. This measured area/timing tradeoff supersedes its pending
+launch status, and contains neither WCG1 nor RD2. No new run is launched.
+
 For the authorized WCG1 real-wrapper mapping/STA successor, read
 `dc_wcg1_wrapper_mapping_plan_20261106.md`. It preserves all full-profile
 ports/table bits and real parent control, explicitly closes inline/native

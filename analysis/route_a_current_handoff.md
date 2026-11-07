@@ -1724,6 +1724,21 @@ production defaults and RD2 exclusion. Do not update RD1's whole-top area
 or ratio by subtracting this isolated saving. A cumulative freeze/full paired
 DC remains a separately authorized next stage.
 
+RD1+PM1 full paired DC has now been independently inspected after the user's
+completion request; see
+[`dc_rd1_pm1_full_paired_result_20261107.md`](dc_rd1_pm1_full_paired_result_20261107.md)
+and JSON. This supersedes its launch-only state above. Both native exits,
+RUN_PASS and outer exit 0 pass, frozen source/proxy/library/constraint hashes
+recheck, Full-KV reproduces 23,091.432498, and all 48 entry_id bits are driven.
+Route-A area is **3,358,045.877079**, down **0.901596%** from RD1, ratio
+**145.424x**. Page Manager area drops 4.243364%, but complete-top setup
+regresses to WNS **-0.44 ns**, TNS **-12,096.60 ns**, 35,976 violating paths.
+Hold TNS/path counts remain zero; 577,106 sequential cells and 577,110 clock
+loads remain. Lint warning lines increase five to 44,541 and cleanliness
+stays open. Accept tool/input closure and the small area benefit only, with
+the setup tradeoff retained. No new DC, RTL change or WCG1/RD2 composition
+is performed; WCG1's isolated saving is not an additive whole-top result.
+
 ## Incremental storage/service cost P0 (2026-11-06)
 
 The read-only ledger is
