@@ -7,6 +7,17 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## RD1+WCG1 retry pipeline active (2026-11-08)
+
+The [r2 launch](dc_rd1_wcg1_full_paired_retry_launch_20261108.md) and
+[JSON](dc_rd1_wcg1_full_paired_retry_launch_20261108.json) record the repaired
+hash gate, 48 passing preparation regressions and successful real input
+closure. Reuse the old contextual export; PM1 stays off and RD2 excluded.
+The new independent tmux is `kvzap-rd1-wcg1-r2q1:paired-dc`. Native preflight
+is active after resource admission; a clean preflight automatically starts
+the complete pair with all three original/propagated/hold tiers preserved.
+No area/timing result is inferred. Wait for the user's completion notice.
+
 ## Latest RD1+WCG1 result inspection (2026-11-07)
 
 The [full-paired inspection](dc_rd1_wcg1_full_paired_inspection_20261107.md)

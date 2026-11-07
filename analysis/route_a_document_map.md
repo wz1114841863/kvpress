@@ -7,6 +7,16 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Active full paired r2 (2026-11-08)
+
+[`dc_rd1_wcg1_full_paired_retry_launch_20261108.md`](dc_rd1_wcg1_full_paired_retry_launch_20261108.md)
+and JSON record successful reuse/freeze, 49-unit source closure, five array
+proxies, fair-v1 coverage and the new independent guarded pipeline. Resource
+admission automatically defers native commands while other DC work is live;
+the current startup snapshot records this run's native binding active. Full
+compile and all result tiers remain guarded downstream stages, not inferred
+PASS states. Use the JSON's exact marker snapshot when resuming.
+
 ## Freeze repair and retry preparation (2026-11-08)
 
 [`dc_rd1_wcg1_freeze_repair_20261108.md`](dc_rd1_wcg1_freeze_repair_20261108.md)

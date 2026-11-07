@@ -2,14 +2,34 @@
 
 **Status date:** 2026-11-08
 **Repository state:** `research/kvzap-latest`; bounded RTL3 functional closure
-and accepted control-mapping results remain preserved. The latest RD1+WCG1
-inspection below records a pre-DC input-freeze failure, with no new mapped
-result. Sustained-service, complete-cost and full-top 2-ns timing claims
-remain unresolved.
+and accepted control-mapping results remain preserved. RD1+WCG1 r2 now has
+accepted source/proxy/profile inputs and an active guarded native-preflight /
+full-pair pipeline. No completed mapped result is inferred from this launch.
+Sustained-service, complete-cost and full-top 2-ns timing claims remain open.
 
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
+
+## RD1+WCG1 full paired r2 active (2026-11-08)
+
+Read [`dc_rd1_wcg1_full_paired_retry_launch_20261108.md`](dc_rd1_wcg1_full_paired_retry_launch_20261108.md)
+and JSON. Repair `d680550` passes 48 preparation tests. The successful old
+contextual export is reused without RTL regeneration; all real source,
+16-port-family/12-owner, R5, 5-proxy and 2-ns static coverage gates pass.
+New paired archive SHA is `59306981d8a7fbda704170b48cc69799b6c2424fcb545805032c93d845c4642e`.
+
+Run `dc_feasibility_fair_rd1_wcg1_20261108_r2` is active through the guarded
+pipeline in **`kvzap-rd1-wcg1-r2q1:paired-dc`**. After an initial resource-only
+admission exit 9 (no native work), the separate q1 dispatcher waits safely at
+native admission and then execs the unchanged DC command. Other tasks exited,
+and the recorded startup snapshot has active native binding. Formal Full-KV
+then Route-A execute automatically only after clean binding. Source freezing
+is accepted; native binding/formal completion and area/timing results must
+still be verified from markers. Keep primary and both propagated/hold tiers
+separate, PM1 off and RD2 excluded. Wait for the user's completion notice;
+no automatic retry on failure. The failed r1 and admission-attempt artifacts
+are preserved; no other process or input is modified.
 
 ## RD1+WCG1 freeze repair (2026-11-08)
 
