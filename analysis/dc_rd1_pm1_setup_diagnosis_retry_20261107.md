@@ -38,3 +38,18 @@ immutable output/session/log identifiers and observed startup. The retry is
 read-only saved-DDC STA in an independent tmux, with unlimited stack and at
 most two cores; it is not a new synthesis. Notify the user on launch and
 await their completion notice, preserving all earlier results.
+
+## Corrected r2 launch
+
+Run `rd1_pm1_setup_diagnosis_20261107_r2` is launched, not accepted, in
+**`kvzap-rd1-pm1-setup-r2:saved-sta`**. Frozen Tcl SHA-256:
+`4c25180b4e1a699b7d471d4e1099a2dc12a308543182501b0dd4d6f361df089f`.
+Runner SHA-256 remains
+`ac60bad85668457a0363c0b6bc07dddbc862874aa44fd04382daa27ef932e9d6`.
+Both transferred files rehash before launch. Private result root:
+`/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_pm1_setup_diagnosis_20261107_r2/`.
+Total log:
+`/home/yaz80/wz_project/chisel_projects/kvpress/logs/rd1_pm1_setup_diagnosis_20261107_r2.log`.
+The user has been notified to wait and report completion. No STA completion,
+endpoint coverage, PM1 repair choice or WCG1 baseline decision is inferred
+from launch. Original r1 remains failed and preserved.

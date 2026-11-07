@@ -1,6 +1,6 @@
 {
   "schema": "rd1-pm1-setup-retry-1",
-  "status": "PREPARED_NOT_LAUNCHED",
+  "status": "LAUNCHED_NOT_ACCEPTED",
   "run_id": "rd1_pm1_setup_diagnosis_20261107_r2",
   "r1_failure": {
     "outer_exit": "1",
@@ -26,5 +26,16 @@
   },
   "decision": "PM1 repair and WCG1 baseline pending successful STA",
   "no_RTL_change": true,
-  "no_synthesis": true
+  "no_synthesis": true,
+  "launched_utc": "2026-11-07T02:37:39.051239Z",
+  "tmux": "kvzap-rd1-pm1-setup-r2:saved-sta",
+  "bundle": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_pm1_setup_diagnosis_20261107_r2",
+  "root": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_pm1_setup_diagnosis_20261107_r2",
+  "log": "/home/yaz80/wz_project/chisel_projects/kvpress/logs/rd1_pm1_setup_diagnosis_20261107_r2.log",
+  "pins": {
+    "diagnose_rd1_pm1_saved_setup.tcl": "4c25180b4e1a699b7d471d4e1099a2dc12a308543182501b0dd4d6f361df089f",
+    "run_rd1_pm1_saved_setup.sh": "ac60bad85668457a0363c0b6bc07dddbc862874aa44fd04382daa27ef932e9d6"
+  },
+  "repair_commit": "5ab6182",
+  "completion_policy": "wait for user completion notice; no automatic restart"
 }

@@ -454,3 +454,10 @@ hashes/exit 1 and the corrected native-clock-report gate (8 Tcl regressions).
 This is a tooling failure, not new RTL evidence. PM1 repair priority and
 WCG1 baseline remain pending the new immutable read-only r2 STA; no synthesis
 or RTL repair is performed.
+
+The corrected immutable diagnostic r2 is now launched in
+`kvzap-rd1-pm1-setup-r2:saved-sta`; use
+`dc_rd1_pm1_setup_diagnosis_retry_20261107.md`/JSON for exact source, output
+and log pins. It retains both original DDCs and all saved constraints; only
+the ideal-clock checker changes. Eight parser regressions pass. Await user
+completion notice; the PM1/WCG1 decision remains pending native results.
