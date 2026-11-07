@@ -108,3 +108,19 @@ native exits and all tier markers, postcheck, full RUN_PASS and persisted
 outer exit 0. Full-KV primary area must reproduce 23,091.432498. Area, timing,
 structural cleanliness and tool/input closure are separate verdicts. PPA,
 external-service zero cost, speedup and hardware net benefit are not claimed.
+
+## Actual guarded launch snapshot
+
+The guarded pipeline is now launched in `kvzap-rd1-wcg1:paired-dc`.
+Its versioned guard SHA is
+`5787e3831aff36654b82d4b2fc179c5517ee41b60358705f00e9f8757e1a1013`.
+The 19-file script bundle and transferred guard rehash correctly; all bundle
+checksum gates pass. Latest observation: contextual export r2 has no exit
+marker yet, the pipeline reports `WAITING_FOR_CONTEXTUAL_EXPORT`, and the
+native result root does not yet exist. Thus **RTL input freeze and formal DC
+have not yet completed/started**, respectively. Source/script freezing is
+complete; those later gates are explicit automated dependencies, not implied
+PASS states. No other run is restarted, and the confirmed-failed r1 remains
+preserved. The user is notified to wait for the entire pipeline; after export
+and all checks pass, native binding and formal pair execute without another
+permission request. Any failure stops the chain with a persisted exit marker.

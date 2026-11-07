@@ -24,7 +24,7 @@
   "archive_sha256": "64bb25f65b38e69042f9e587aa4b6779f0e633d8df6e1c8a3ab7c89cec2d4e3b",
   "file_count": 19,
   "schema": "rd1-wcg1-full-paired-launch-1",
-  "status": "PREPARED_CONTEXT_EXPORT_ACTIVE_NOT_FROZEN",
+  "status": "GUARDED_PIPELINE_LAUNCHED_WAITING_FOR_CONTEXT_EXPORT",
   "run_id": "dc_feasibility_fair_rd1_wcg1_20261107_r1",
   "PM1": false,
   "RD2": false,
@@ -63,5 +63,25 @@
   "input_archive_sha256": null,
   "source_freeze_pass": false,
   "native_binding_pass": false,
-  "formal_pair_started": false
+  "formal_pair_started": false,
+  "archive": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1_scripts.tar.gz",
+  "bundle": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_wcg1_full_dc_20261107_r1",
+  "guard": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/guard_rd1_wcg1_full_dc_20261107_r1.sh",
+  "guard_sha256": "5787e3831aff36654b82d4b2fc179c5517ee41b60358705f00e9f8757e1a1013",
+  "launched_utc": "2026-11-07T03:19:45.721665Z",
+  "preparation_commit": "36f11fa",
+  "pipeline_root": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_full_pipeline_20261107_r1",
+  "startup_observation": {
+    "export_exit": null,
+    "pipeline_exit": null,
+    "contextual_split_files": {
+      "reference": 0,
+      "gated": 0
+    },
+    "script_bundle_hashes_pass": true,
+    "waiting_for_contextual_export": true,
+    "native_result_root_exists": false,
+    "formal_pair_started": false
+  },
+  "completion_policy": "wait for user completion notice; no automatic retry"
 }

@@ -495,3 +495,14 @@ pass. The guarded full pipeline must wait for export, source/state/proxy/
 profile and full native-binding gates before formal compilation. Until
 those markers appear this is preparation/queued execution, not input freeze
 or a mapped result. Do not infer any new area/timing/cleanliness or PPA claim.
+
+The RD1+WCG1 guarded full pipeline is now launched in
+`kvzap-rd1-wcg1:paired-dc`, with its independent contextual export active in
+`export-r2`. All 19 frozen script checksums pass. The last snapshot has no
+export/outer completion status and no native result root: RTL freeze and
+formal DC are still pending, not accepted. Export -> input/proxy/profile
+checks -> full native binding -> both complete tops/three result tiers is
+an automatic fail-closed chain under the user's authorization. Await user
+completion notice; do not poll/restart or claim mapped results from launch.
+Exact guard/bundle/log/status pins are in
+`dc_rd1_wcg1_full_paired_launch_20261107.md`/JSON.
