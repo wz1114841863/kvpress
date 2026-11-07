@@ -1,13 +1,41 @@
 # Route-A current handoff — RTL3 closure and measurement RTL status
 
-**Status date:** 2026-11-04
-**Repository state:** `research/kvzap-latest`; RTL3 functional-subsystem
-closure remains frozen, and the first compact-control paired DC refinement is
-now accepted at logic-only feasibility scope.
+**Status date:** 2026-11-07
+**Repository state:** `research/kvzap-latest`; bounded RTL3 functional closure
+and accepted control-mapping results remain preserved. The deep review below
+separates those results from unresolved sustained-service, complete-cost and
+2-ns timing claims. This update does not refresh remote execution status.
 
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
+
+## Deep review entry (2026-11-07)
+
+For the research history, evidence chain and current implementation limits,
+read [`route_a_deep_review_20261107.md`](route_a_deep_review_20261107.md) and
+its [`evidence ledger`](route_a_deep_review_evidence_20261107.json). The
+local-only review preserves the original mask/model facts, conditional A4
+accounting, bounded first-use/retire PASS, and measured control-area savings.
+It does not establish sustained decode, complete incremental affordability,
+full-top setup closure, PPA or hardware net benefit. Current RTL has several
+Qwen-anchor constants; the generic semantic interface is not evidence of
+parameter-only hardware portability.
+
+The paper execution envelope, field lifetime/maximum-live/port contracts,
+whole incremental BOM and global combinational timing need explicit closure
+before broadening hardware claims or spreading further local optimizations.
+A new R2 class-kind compatibility finding is a static candidate requiring
+separate directed validation; no failure is reproduced or RTL changed here.
+The review includes historical negative results and source-availability limits.
+
+RD1+WCG1 remains the separately authorized pipeline, PM1 off and RD2 excluded.
+The last local launch snapshot still has contextual freeze/formal mapping
+pending; this review makes no live remote observation. Use
+[`dc_rd1_wcg1_full_paired_launch_20261107.md`](dc_rd1_wcg1_full_paired_launch_20261107.md)
+and its JSON, and wait for the user's completion notice before inspection.
+No new experiment, contract change, input freeze or retry is authorized by
+this documentation review.
 
 ## Read first
 
@@ -77,7 +105,7 @@ Use these only when the question needs the extra detail:
 | RTL3.9-B0/B1/B2/B3 | The same immutable member reaches payload durability, R5 descriptor durability, two required M2 member round trips, R5 visibility acknowledgement, exactly one R3 publication acknowledgement, and R6 acceptance of the exact `pending -> packed` authority transition. |
 | RTL3.9-C0--C4-D | First owner-correct packed read, S2 READY/source service, terminal/reclaim, accepted-event replay, negative-event coverage, and bounded functional-subsystem review complete. |
 
-### Current hardware-realization position (2026-10-29)
+### Historical hardware-realization snapshot (2026-10-29)
 
 The project has moved beyond functional RTL closure and measurement-boundary
 work into the **first paired DC feasibility execution**.  The stages are

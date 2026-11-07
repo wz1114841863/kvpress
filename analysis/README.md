@@ -7,7 +7,26 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
-## Current disposition (2026-10-17)
+## Current research review (2026-11-07)
+
+The [`deep review`](route_a_deep_review_20261107.md) reconnects original
+KVzap evidence, Route-A model/architecture choices, actual RTL execution
+scope, complete incremental costs and all major control-refinement results.
+Its [`evidence ledger`](route_a_deep_review_evidence_20261107.json) records
+source pins, current local hash/arithmetic checks, missing provenance and
+finite closure conditions. Read it for a research retrospective or a decision
+about the next implementation stage; use the living
+[`handoff`](route_a_current_handoff.md) for individual experiments.
+
+Conditional algorithm/model opportunities, bounded functional closure and
+mapped control-area improvements remain valid within their stated scope.
+Sustained service, complete incremental affordability and full-top 2-ns setup
+closure remain unresolved. RD1+WCG1 has a separately authorized guarded
+pipeline; its last local launch snapshot is not a completed result, and this
+review does not poll or affect it. No RTL or new experiment is performed.
+The dated detailed status below is preserved as historical context.
+
+## Historical disposition (2026-10-17)
 
 A4.11--A4.14.1 research DSE, architecture Reviewer-02, Gate-RTL0, RTL1,
 RTL2, and RTL3 functional-subsystem closure have each completed at their

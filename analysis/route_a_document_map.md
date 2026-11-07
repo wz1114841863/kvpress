@@ -7,6 +7,20 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Deep research review (2026-11-07)
+
+Use [`route_a_deep_review_20261107.md`](route_a_deep_review_20261107.md)
+when revisiting the original research goals, the August-to-November evidence
+chain, current RTL scope, or complete incremental costs. Its
+[`JSON ledger`](route_a_deep_review_evidence_20261107.json) preserves 20
+algorithm conclusions, 18 contract-ownership rows, 10 architecture issues,
+32 cost-responsibility rows, source pins and current local hash/arithmetic
+checks. The review distinguishes historical acceptance from this round's
+local revalidation and unrefreshed remote launch state. It is an assessment
+and navigation entry, not a replacement architecture contract or a new
+RTL/experiment authorization. Routine module work still uses the smaller
+core set and named stage evidence below.
+
 ## Default core read set for a new Route-A discussion
 
 Read these in order before proposing a new change or successor-stage plan:
