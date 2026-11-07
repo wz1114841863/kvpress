@@ -1739,6 +1739,16 @@ stays open. Accept tool/input closure and the small area benefit only, with
 the setup tradeoff retained. No new DC, RTL change or WCG1/RD2 composition
 is performed; WCG1's isolated saving is not an additive whole-top result.
 
+The authorized setup-regression diagnosis is prepared in
+[`dc_rd1_pm1_setup_diagnosis_20261107.md`](dc_rd1_pm1_setup_diagnosis_20261107.md)
+and JSON. Existing native top-20 reports show both external ready/request
+remapping and six direct Page Manager allocatedLine-to-reclaimLine paths at
+-0.44 ns. A purely external-remapping explanation is insufficient. Saved-DDC
+read-only STA is prepared to compare all reclaim bits/common endpoints and
+partition negative endpoint slacks before choosing a same-cycle PM1 repair
+or an RD1-only WCG1 attribution baseline. No RTL repair, synthesis or final
+WCG1 integration choice follows from these preliminary reports.
+
 ## Incremental storage/service cost P0 (2026-11-06)
 
 The read-only ledger is

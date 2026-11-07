@@ -363,6 +363,14 @@ hold has zero reported violations. State/clock load is unchanged and lint
 remains open. This measured area/timing tradeoff supersedes its pending
 launch status, and contains neither WCG1 nor RD2. No new run is launched.
 
+For the subsequent setup-regression diagnosis and WCG1 integration decision,
+read `dc_rd1_pm1_setup_diagnosis_20261107.md` and its launch JSON. Native
+top-20 evidence contains six direct PM1 selector capture paths as well as
+external ready/request remapping. The prepared saved-DDC read-only STA
+compares common endpoints and negative endpoint-slack partitions; it does
+not compile, alter timing constraints or authorize an unverified PM1 repair
+inside a new WCG1 full run. The integration decision remains pending evidence.
+
 For the authorized WCG1 real-wrapper mapping/STA successor, read
 `dc_wcg1_wrapper_mapping_plan_20261106.md`. It preserves all full-profile
 ports/table bits and real parent control, explicitly closes inline/native
