@@ -7,6 +7,13 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Freeze repair and retry preparation (2026-11-08)
+
+[`dc_rd1_wcg1_freeze_repair_20261108.md`](dc_rd1_wcg1_freeze_repair_20261108.md)
+and JSON record the pinned canonical/raw hash fix and 48 direct preparation
+regressions. The user authorizes reusing contextual r2 for a new paired DC;
+this repair record does not claim launch or mapping completion.
+
 ## Latest full-paired inspection (2026-11-07)
 
 [`dc_rd1_wcg1_full_paired_inspection_20261107.md`](dc_rd1_wcg1_full_paired_inspection_20261107.md)

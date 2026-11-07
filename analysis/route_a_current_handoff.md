@@ -1,6 +1,6 @@
 # Route-A current handoff — RTL3 closure and measurement RTL status
 
-**Status date:** 2026-11-07
+**Status date:** 2026-11-08
 **Repository state:** `research/kvzap-latest`; bounded RTL3 functional closure
 and accepted control-mapping results remain preserved. The latest RD1+WCG1
 inspection below records a pre-DC input-freeze failure, with no new mapped
@@ -10,6 +10,18 @@ remain unresolved.
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
+
+## RD1+WCG1 freeze repair (2026-11-08)
+
+The user authorizes the repair and a new full paired run reusing contextual
+export r2. Read [`dc_rd1_wcg1_freeze_repair_20261108.md`](dc_rd1_wcg1_freeze_repair_20261108.md)
+and JSON: canonical/raw/source hash identities are separated and pinned,
+reference equality is byte-exact, and 48 Python preparation regressions pass
+including the previously untested freeze-main digest path. No RTL or fair
+constraint changed. New immutable run ID is
+`dc_feasibility_fair_rd1_wcg1_20261108_r2`; launch and actual execution stage
+must be recorded separately. PM1 stays off, RD2 excluded; all three native
+policies remain paired. This repair alone is not a new mapped result.
 
 ## Latest RD1+WCG1 inspection (2026-11-07)
 

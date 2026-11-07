@@ -1,0 +1,41 @@
+{
+  "schema": "rd1-wcg1-freeze-repair-1",
+  "date": "2026-11-08",
+  "status": "LOCAL_REPAIR_AND_48_PREPARATION_REGRESSIONS_PASS",
+  "cause": "raw emitted-file SHA was compared with canonical helper materialization",
+  "pins": {
+    "helper_source": "4bea447a12560a2430b798267447ee3028293f3769b82aedfa191a10985cf394",
+    "canonical_inline": "fbc839539af641e061f13ecb9311288b86bae53afa1639093b8e546040aa4556",
+    "raw_emitted_inline": "aeb38a91977e96c1ea8a7b686d712c39bcd902a4489aedfcb0bb4810b2c1fc28"
+  },
+  "tests": {
+    "passed": 48,
+    "new_freeze_cases": 20,
+    "command": ".venv/bin/pytest -q tests/test_rd1_wcg1_freeze.py tests/test_rd1_wcg1_full_paired.py tests/test_wcg1_wrapper_mapping.py",
+    "shell_syntax": true,
+    "Tcl_complete": true,
+    "CLI_help": true
+  },
+  "scope": {
+    "RTL_changed": false,
+    "constraints_changed": false,
+    "new_RTL_functional_test": false,
+    "EDA_run_in_this_batch": false,
+    "reference_byte_equality_required": true,
+    "unchanged_RouteA_units": 47,
+    "replaced_units": 1,
+    "added_units": 1,
+    "PM1": false,
+    "RD2": false
+  },
+  "next_run": "dc_feasibility_fair_rd1_wcg1_20261108_r2",
+  "reuse_context": "rd1_wcg1_contextual_20261107_r2",
+  "source_hashes": {
+    "tools/freeze_rd1_wcg1_input.py": "43d7bcc49875f09fce6af54c4fe897092f3f7018d0db97290aa61a9672e980be",
+    "tests/test_rd1_wcg1_freeze.py": "7ae9bf40d570689ce6505d224d4b822173366d42e5c33970bf9b562a0de8fcac",
+    "tools/prepare_wcg1_wrapper_mapping.py": "be85d8e7b5901b3e989f4e971f41cb1fa094a057e5e53cf7de7773c033df00aa",
+    "hardware/route_a/dc/run_rd1_wcg1_full_paired.sh": "1d039f92a998d062a184cc2f72729296e5d520df2fb2aecfec36ef0b9417c574",
+    "hardware/route_a/dc/run_rd1_wcg1_full_paired.tcl": "acbe913abdd35e3615f509d14151218769e0fca0f4e58302472d3ee36fb3e497",
+    "hardware/route_a/dc/constraints_control_projection.tcl": "3bc9d0e4b3caf9244f38e265ad1222f2ea36d89bed0a31d27a4d3cba19fe5007"
+  }
+}
