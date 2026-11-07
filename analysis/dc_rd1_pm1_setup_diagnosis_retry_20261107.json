@@ -1,0 +1,30 @@
+{
+  "schema": "rd1-pm1-setup-retry-1",
+  "status": "PREPARED_NOT_LAUNCHED",
+  "run_id": "rd1_pm1_setup_diagnosis_20261107_r2",
+  "r1_failure": {
+    "outer_exit": "1",
+    "rd1_exit": "1",
+    "rd1_pm1_started": false,
+    "pins": {
+      "/home/yaz80/wz_project/dc_project/kvzap_control_projection/runs/dc_feasibility_fair_rd1_shared_20261105_r1/route_a/route_a_control_projection.ddc": "86993ae45bd58463ba4a18b67f12bc2fac864cd146004fd3c9a3c5a8481b5673",
+      "/home/yaz80/wz_project/dc_project/pdk/TSMC28/tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db": "5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d",
+      "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/rd1_pm1_setup_diagnosis_20261107_r1/diagnose_rd1_pm1_saved_setup.tcl": "781494014b74d4bec81b8085bf6f9289dd9db72594284e376a58fa1b0dbe2912"
+    },
+    "native_log_sha256": "50a97f854f841d1744a15d9a45bccc3618e695ec4f3d60e157902b8e1dc50eae",
+    "frozen_tcl_sha256": "781494014b74d4bec81b8085bf6f9289dd9db72594284e376a58fa1b0dbe2912"
+  },
+  "repair": "native saved-clock report gate replaces missing propagated_clock attribute boolean",
+  "checks": {
+    "tcl_regressions_passed": 8,
+    "shell_syntax": true,
+    "read_only_scope": true
+  },
+  "source_files_sha256": {
+    "hardware/route_a/dc/diagnose_rd1_pm1_saved_setup.tcl": "4c25180b4e1a699b7d471d4e1099a2dc12a308543182501b0dd4d6f361df089f",
+    "hardware/route_a/dc/run_rd1_pm1_saved_setup.sh": "ac60bad85668457a0363c0b6bc07dddbc862874aa44fd04382daa27ef932e9d6"
+  },
+  "decision": "PM1 repair and WCG1 baseline pending successful STA",
+  "no_RTL_change": true,
+  "no_synthesis": true
+}

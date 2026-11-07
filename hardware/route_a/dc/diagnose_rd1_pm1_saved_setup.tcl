@@ -1,4 +1,13 @@
 # Read-only STA of immutable mapped designs. Never compile or rewrite a DDC.
+proc kvzap_require_saved_ideal_clock_report {text} {
+  # DC 2018 may omit propagated_clock entirely on a saved ideal clock.
+  # report_clock attributes provide positive evidence of the saved policy.
+  if {![regexp {kvzap_control_clk[ \t\r\n]+2\.00[ \t]+\{0 1\}[ \t]+([a-zA-Z \t]*)\{clock\}} $text all flags]} {
+    error "missing saved clock row/waveform/source"
+  }
+  if {[string first p $flags] >= 0} {error "unexpected propagated-clock policy"}
+  if {[string trim $flags] ne ""} {error "unexpected saved clock attributes: $flags"}
+}
 if {[catch {
   set_host_options -max_cores 2
   set_app_var target_library [list $::env(KVZAP_DIAG_LIBRARY)]
@@ -10,10 +19,12 @@ if {[catch {
   set clocks [get_clocks *]
   if {[sizeof_collection $clocks] != 1} {error "saved clock count changed"}
   if {[get_attribute $clocks period] != 2.0} {error "saved 2-ns period missing"}
-  if {[get_attribute $clocks propagated_clock]} {error "unexpected propagated-clock policy"}
+  redirect [file join $out clocks.rpt] {report_clock -attributes -skew -nosplit}
+  set handle [open [file join $out clocks.rpt] r]
+  set clock_report [read $handle]; close $handle
+  kvzap_require_saved_ideal_clock_report $clock_report
   update_timing
   redirect [file join $out qor.rpt] {report_qor}
-  redirect [file join $out clocks.rpt] {report_clock -attributes -skew -nosplit}
   redirect [file join $out check_timing.rpt] {check_timing}
   redirect [file join $out area.rpt] {report_area -hierarchy -nosplit}
   redirect [file join $out setup_top.rpt] {

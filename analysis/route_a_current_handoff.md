@@ -1845,3 +1845,12 @@ in `kvzap-rd1-pm1-setup:saved-sta`; its immutable paths/source pins are in
 `dc_rd1_pm1_setup_diagnosis_20261107.json`. It is read-only STA, not synthesis.
 Await user completion notice before auditing endpoint/TNS coverage and making
 the PM1 repair/WCG1 baseline decision. No automatic retry or full DC is queued.
+
+The saved-DDC setup diagnostic r1 has now failed before reporting timing:
+DC 2018 omits propagated_clock on a saved ideal clock, and an empty-value
+boolean check aborts after RD1 link. RD1+PM1 never starts. See
+`dc_rd1_pm1_setup_diagnosis_retry_20261107.md` and JSON for preserved r1
+hashes/exit 1 and the corrected native-clock-report gate (8 Tcl regressions).
+This is a tooling failure, not new RTL evidence. PM1 repair priority and
+WCG1 baseline remain pending the new immutable read-only r2 STA; no synthesis
+or RTL repair is performed.
