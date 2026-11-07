@@ -1700,6 +1700,30 @@ must precede both formal mappings. Await
 user completion notice; no native area/timing result or production integration
 is accepted at launch. r1 and the running RD1+PM1 synthesis are untouched.
 
+The WCG1 wrapper mapping r2 result is now independently audited; see
+[`dc_wcg1_wrapper_mapping_retry_result_20261107.md`](dc_wcg1_wrapper_mapping_retry_result_20261107.md)
+and JSON. Both native sides, four snapshots, postcheck/run markers and outer
+exit/status close at zero; source/archive/library/prepared-input and all 73
+native artifact hashes recheck. Exact inline and native binding close with
+4,608 CKLNQ gates, TIEL-driven TE=0, characterized gating checks and actual
+positive clock-gate capture arcs. All 366,336 table bits and 48 entry_id
+drivers remain. Matched hold-pass area is 2,295,026.201759 reference versus
+1,936,432.671921 candidate, a **15.624812% isolated-wrapper reduction**.
+Both sides report setup/hold TNS 0 and zero violating paths at the unchanged
+2 ns; candidate setup slack is **0.000000 ns**, global hold +0.029539 ns,
+gate-enable setup/hold +0.740547/+0.211413 ns. Accept only the isolated DC
+screen, with no positive setup-margin or physical hold claim. Native root
+fanout falls 400,110 -> 38,382, but TIM-134 and downstream clocks remain.
+Structural cleanliness stays open: both sides retain 5,729 lint warnings,
+one P3 proxy information entry and 554 min-capacitance violations. No lint
+or complete constraint-cleanliness benefit is claimed. The frozen summary's
+LINT token counts include category headings; the new audit uses native
+summary/detail counts without rewriting old reports. All 36 local checks
+pass. No new tool job, RTL integration or RD1+PM1 inspection occurs; preserve
+production defaults and RD2 exclusion. Do not update RD1's whole-top area
+or ratio by subtracting this isolated saving. A cumulative freeze/full paired
+DC remains a separately authorized next stage.
+
 ## Incremental storage/service cost P0 (2026-11-06)
 
 The read-only ledger is

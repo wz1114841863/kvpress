@@ -1,0 +1,2875 @@
+{
+  "schema": "wcg1-wrapper-mapping-r2-independent-audit-1",
+  "run_id": "wcg1_wrapper_mapping_sta_211f1e2_20261106_r2",
+  "audited_at_utc": "2026-11-07T02:16:13.363917Z",
+  "source_commit": "211f1e2d8212c5583a465e074d09c696dd0e16cd",
+  "checks": [
+    {
+      "name": "pinned_archive",
+      "passed": true
+    },
+    {
+      "name": "pinned_runner",
+      "passed": true
+    },
+    {
+      "name": "pinned_freeze",
+      "passed": true
+    },
+    {
+      "name": "pinned_source_checksums",
+      "passed": true
+    },
+    {
+      "name": "pinned_library",
+      "passed": true
+    },
+    {
+      "name": "freeze_object",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/.gitignore",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/README.md",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/build.sbt",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/docs/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/platform/README.md",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/platform/chisel-sbt",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/project/build.properties",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVMeasurementInterfaces.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVReadPath.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVS2Completion.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteACompactWordClocking.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAExactLowestPrioritySelector.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAM2EntryStorage.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMemberRecordReadSharing.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/top/FullKVMeasurementDut.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PM1PageManagerHdlEmitter.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PairedControlProjectionHdlEmitter.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAComponentStatusCollector.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/top/SynthesisControlProjectionGenerators.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/resources/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/resources/rtl1_0_verification_binding.json",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/resources/rtl3_5c_functional_partial_packet.fixture",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/resources/rtl3_6b_functional_provider_terminal.fixture",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/resources/sva/route_a_rtl1_0_assertion_binding_registry.sv",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/DualMeasurementDutStructuralSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/FullKVMeasurementDutSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAMeasurementDutR3Spec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAAdmissionPublicationIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAFairReclaimIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAInitDrainIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAResetEpochIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteARetirementDrainClosureSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/merge/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r1/RouteACoreMemIfV1Spec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteACoreSideArbiterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteADeliveryContextAllocationBridgeSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteADeliveryContextRegistrySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteATypedDeliveryRouterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r3_r5/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r3_r5/RouteAR3R5PublicationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r4/RouteAMergeBoundarySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1ExactPrioritySelectorSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1RegisteredSelectorEmitter.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1RegisteredSelectorSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1SelectorEmitter.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAR5AvailabilityArrayBoundarySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAReclaimSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/RouteALifecycleAdapterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/RouteASourceCompletionPlanSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1bWritePathHarness.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1bWritePathHarnessSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1cAtomicPublicationHarness.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1cAtomicPublicationHarnessSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAActiveStateScoreboardIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAdmissionPublicationIngressAdapterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAttentionTerminalScoreboardAdapterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC3bEventProvenanceObserver.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC4BEventReplayOracle.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC4CNegativeReplayOracle.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteADirectPendingReadPathSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAFaultTerminalClosureSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAFourConsumerCompletionSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAM2EntryStorageSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAM2ProductionControlOwnerSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAMetadataAdmissionBridgeSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAPackedS2ReadPathSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR3PackReadPathSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4R6StubTerminalIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4ResultStubProviderSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265aPackedReadTerminalHarnessSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265bTerminalReclaimSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26ComposedPackedSourceHarnessSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26PublicationS2AssociationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26PublicationToTerminalHarnessSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReadIngressSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReadIssueDescriptorSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReclaimScoreboardAdapterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteASourcePlanBinderSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteASourceServicePacketAdapterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironment.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironmentSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalPartialProviderBoundarySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalR4ReferenceBoundarySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalSidecarDeliverySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAP3StageArrayBoundarySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedActivationCompositionSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedActivationOwnerFactIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedAssociationAllocationBridgeSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadActivationBinderSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadAssociationOwnerSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARD1ReadNetworkEmitter.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARD1ReadSharingSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL36bFunctionalFixtureBridge.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL36cSidecarFixtureTransport.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37bTerminalReleaseBridge.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cDrainMembershipJoin.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cEventScoreboard.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL385FullPathClosureSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL39AMaterializationHarness.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL39AMaterializationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAWCG1WrapperSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/s2/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/s2/RouteAHotSourcePathSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/s2/RouteAS2DirectPendingSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/ControlProjectionElaborationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteASynthesisControlProjectionProfileSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/testbench/route_a_scoreboard_event_adapter.py",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/testbench/route_a_scoreboard_oracle_binding.py",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1WrapperHdlEmitter.scala",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/dc/run_wcg1_wrapper_mapping.sh",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/dc/screen_wcg1_wrapper_sta.tcl",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/dc/env_kvzap_control_projection_dc.sh",
+      "passed": true
+    },
+    {
+      "name": "source_hardware/route_a/dc/constraints_control_projection.tcl",
+      "passed": true
+    },
+    {
+      "name": "source_tools/prepare_wcg1_wrapper_mapping.py",
+      "passed": true
+    },
+    {
+      "name": "source_tools/check_wcg1_wrapper_mapping.py",
+      "passed": true
+    },
+    {
+      "name": "source_tools/check_wcg1_bank_mapping.py",
+      "passed": true
+    },
+    {
+      "name": "external_runner_equals_frozen",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/freeze.json",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/.gitignore",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/README.md",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/build.sbt",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/docs/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/platform/README.md",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/platform/chisel-sbt",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/project/build.properties",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVMeasurementInterfaces.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVReadPath.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVS2Completion.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteACompactWordClocking.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAExactLowestPrioritySelector.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAM2EntryStorage.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMemberRecordReadSharing.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/FullKVMeasurementDut.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PM1PageManagerHdlEmitter.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PairedControlProjectionHdlEmitter.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAComponentStatusCollector.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/SynthesisControlProjectionGenerators.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1WrapperHdlEmitter.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/resources/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/resources/rtl1_0_verification_binding.json",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/resources/rtl3_5c_functional_partial_packet.fixture",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/resources/rtl3_6b_functional_provider_terminal.fixture",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/resources/sva/route_a_rtl1_0_assertion_binding_registry.sv",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/DualMeasurementDutStructuralSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/FullKVMeasurementDutSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAMeasurementDutR3Spec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAAdmissionPublicationIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAFairReclaimIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAInitDrainIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAResetEpochIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteARetirementDrainClosureSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/merge/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r1/RouteACoreMemIfV1Spec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteACoreSideArbiterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteADeliveryContextAllocationBridgeSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteADeliveryContextRegistrySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteATypedDeliveryRouterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r3_r5/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r3_r5/RouteAR3R5PublicationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r4/RouteAMergeBoundarySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1ExactPrioritySelectorSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1RegisteredSelectorEmitter.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1RegisteredSelectorSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1SelectorEmitter.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAR5AvailabilityArrayBoundarySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAReclaimSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/RouteALifecycleAdapterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/RouteASourceCompletionPlanSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1bWritePathHarness.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1bWritePathHarnessSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1cAtomicPublicationHarness.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1cAtomicPublicationHarnessSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAActiveStateScoreboardIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAdmissionPublicationIngressAdapterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAttentionTerminalScoreboardAdapterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC3bEventProvenanceObserver.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC4BEventReplayOracle.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC4CNegativeReplayOracle.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteADirectPendingReadPathSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAFaultTerminalClosureSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAFourConsumerCompletionSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAM2EntryStorageSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAM2ProductionControlOwnerSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAMetadataAdmissionBridgeSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAPackedS2ReadPathSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR3PackReadPathSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4R6StubTerminalIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4ResultStubProviderSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265aPackedReadTerminalHarnessSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265bTerminalReclaimSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26ComposedPackedSourceHarnessSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26PublicationS2AssociationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26PublicationToTerminalHarnessSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReadIngressSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReadIssueDescriptorSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReclaimScoreboardAdapterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteASourcePlanBinderSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteASourceServicePacketAdapterSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironment.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironmentSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalPartialProviderBoundarySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalR4ReferenceBoundarySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalSidecarDeliverySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAP3StageArrayBoundarySpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedActivationCompositionSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedActivationOwnerFactIntegrationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedAssociationAllocationBridgeSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadActivationBinderSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadAssociationOwnerSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARD1ReadNetworkEmitter.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARD1ReadSharingSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL36bFunctionalFixtureBridge.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL36cSidecarFixtureTransport.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37bTerminalReleaseBridge.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cDrainMembershipJoin.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cEventScoreboard.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL385FullPathClosureSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL39AMaterializationHarness.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL39AMaterializationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAWCG1WrapperSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/s2/.gitkeep",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/s2/RouteAHotSourcePathSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/s2/RouteAS2DirectPendingSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/ControlProjectionElaborationSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteASynthesisControlProjectionProfileSpec.scala",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/testbench/route_a_scoreboard_event_adapter.py",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/chisel/testbench/route_a_scoreboard_oracle_binding.py",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/dc/constraints_control_projection.tcl",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/dc/env_kvzap_control_projection_dc.sh",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/dc/run_wcg1_wrapper_mapping.sh",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/hardware/route_a/dc/screen_wcg1_wrapper_sta.tcl",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/tools/check_wcg1_bank_mapping.py",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/tools/check_wcg1_wrapper_mapping.py",
+      "passed": true
+    },
+    {
+      "name": "checksum_workspace/tools/prepare_wcg1_wrapper_mapping.py",
+      "passed": true
+    },
+    {
+      "name": "checksum_inputs/./gated/route_a_compact_word_clock_gate.sv",
+      "passed": true
+    },
+    {
+      "name": "checksum_inputs/./gated/route_a_m2_p3_wrapper.sv",
+      "passed": true
+    },
+    {
+      "name": "checksum_inputs/./gated/route_a_p3_stage_array_boundary.sv",
+      "passed": true
+    },
+    {
+      "name": "checksum_inputs/./gated/sources.f",
+      "passed": true
+    },
+    {
+      "name": "checksum_inputs/./manifest.json",
+      "passed": true
+    },
+    {
+      "name": "checksum_inputs/./reference/route_a_m2_p3_wrapper.sv",
+      "passed": true
+    },
+    {
+      "name": "checksum_inputs/./reference/route_a_p3_stage_array_boundary.sv",
+      "passed": true
+    },
+    {
+      "name": "checksum_inputs/./reference/sources.f",
+      "passed": true
+    },
+    {
+      "name": "independent_readonly_checker_matches_result",
+      "passed": true
+    },
+    {
+      "name": "no_native_errors_outer",
+      "passed": true
+    },
+    {
+      "name": "no_native_errors_launcher",
+      "passed": true
+    },
+    {
+      "name": "no_native_errors_binding",
+      "passed": true
+    },
+    {
+      "name": "no_native_errors_reference",
+      "passed": true
+    },
+    {
+      "name": "no_native_errors_gated",
+      "passed": true
+    },
+    {
+      "name": "KVZAP_WCG1_WRAPPER_MAPPING_NATIVE_EXIT side=reference exit=0",
+      "passed": true
+    },
+    {
+      "name": "KVZAP_WCG1_WRAPPER_MAPPING_NATIVE_EXIT side=gated exit=0",
+      "passed": true
+    },
+    {
+      "name": "KVZAP_WCG1_WRAPPER_POSTCHECK_PASS_TOOL_INPUT_ARTIFACT_ONLY",
+      "passed": true
+    },
+    {
+      "name": "KVZAP_WCG1_WRAPPER_MAPPING_RUN_PASS_TOOL_INPUT_ARTIFACT_ONLY",
+      "passed": true
+    },
+    {
+      "name": "KVZAP_WCG1_WRAPPER_MAPPING_OUTER_EXIT=0",
+      "passed": true
+    },
+    {
+      "name": "outer_exit_status_0",
+      "passed": true
+    },
+    {
+      "name": "binding_native_marker",
+      "passed": true
+    },
+    {
+      "name": "binding_no_redirected_errors",
+      "passed": true
+    },
+    {
+      "name": "stage_marker_reference_raw",
+      "passed": true
+    },
+    {
+      "name": "stage_marker_reference_repaired",
+      "passed": true
+    },
+    {
+      "name": "stage_marker_gated_raw",
+      "passed": true
+    },
+    {
+      "name": "stage_marker_gated_repaired",
+      "passed": true
+    },
+    {
+      "name": "inline_exact_canonical",
+      "passed": true
+    },
+    {
+      "name": "inline_native_binding_TE0",
+      "passed": true
+    },
+    {
+      "name": "raw_top_unchanged_reference",
+      "passed": true
+    },
+    {
+      "name": "data_bits_reference_member",
+      "passed": true
+    },
+    {
+      "name": "data_bits_reference_suffix",
+      "passed": true
+    },
+    {
+      "name": "other_state_manifest_reference",
+      "passed": true
+    },
+    {
+      "name": "top_header_hash_reference",
+      "passed": true
+    },
+    {
+      "name": "prepared_file_reference/route_a_p3_stage_array_boundary.sv",
+      "passed": true
+    },
+    {
+      "name": "prepared_file_reference/route_a_m2_p3_wrapper.sv",
+      "passed": true
+    },
+    {
+      "name": "raw_top_unchanged_gated",
+      "passed": true
+    },
+    {
+      "name": "data_bits_gated_member",
+      "passed": true
+    },
+    {
+      "name": "data_bits_gated_suffix",
+      "passed": true
+    },
+    {
+      "name": "other_state_manifest_gated",
+      "passed": true
+    },
+    {
+      "name": "top_header_hash_gated",
+      "passed": true
+    },
+    {
+      "name": "prepared_file_gated/route_a_compact_word_clock_gate.sv",
+      "passed": true
+    },
+    {
+      "name": "prepared_file_gated/route_a_p3_stage_array_boundary.sv",
+      "passed": true
+    },
+    {
+      "name": "prepared_file_gated/route_a_m2_p3_wrapper.sv",
+      "passed": true
+    },
+    {
+      "name": "identical_non_table_state",
+      "passed": true
+    },
+    {
+      "name": "identical_top_header",
+      "passed": true
+    },
+    {
+      "name": "identical_P3_proxy",
+      "passed": true
+    },
+    {
+      "name": "mapped_hdl_data_inventory_reference_raw",
+      "passed": true
+    },
+    {
+      "name": "mapped_hdl_data_inventory_reference_repaired",
+      "passed": true
+    },
+    {
+      "name": "mapped_hdl_data_inventory_gated_raw",
+      "passed": true
+    },
+    {
+      "name": "mapped_hdl_data_inventory_gated_repaired",
+      "passed": true
+    }
+  ],
+  "pins": {
+    "archive": {
+      "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/wcg1_wrapper_mapping_sta_211f1e2_20261106_r2.tar",
+      "sha256": "aebd5a0716e1899fef5ec56ad82cacd92367b4704d4cb4b63e799babe9cdfdd4"
+    },
+    "runner": {
+      "path": "/home/yaz80/wz_project/chisel_projects/kvpress/bundles/run_wcg1_wrapper_mapping_211f1e2_20261106_r2.sh",
+      "sha256": "430a928183415656cf81d51bb27da557c61cf28d60c71681657720229ee23022"
+    },
+    "freeze": {
+      "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/wcg1_wrapper_mapping_sta_211f1e2_20261106_r2/workspace/freeze.json",
+      "sha256": "d3091216c9a783187eb6835a0bce555c66d6986424b5d053362edb66dc9794e1"
+    },
+    "source_checksums": {
+      "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/wcg1_wrapper_mapping_sta_211f1e2_20261106_r2/workspace/SHA256SUMS",
+      "sha256": "f86e6492b6dfe9792b7acb1a3872454e39d756d06577fc7f4c88b578bfa6f011"
+    },
+    "library": {
+      "path": "/home/yaz80/wz_project/dc_project/pdk/TSMC28/tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db",
+      "sha256": "5167726cbe6bd25db79549fe12b2a3acaea3b96d8b1b72207620ee7196989a6d"
+    }
+  },
+  "logs": {
+    "outer": {
+      "path": "/home/yaz80/wz_project/chisel_projects/kvpress/logs/wcg1_wrapper_mapping_sta_20261106_r2.log",
+      "sha256": "ff6f04f951641c3216606d77df92cb2fccf7dac4ca9df8273357ff6394a18aae",
+      "bytes": 26455,
+      "markers": [
+        "KVZAP_WCG1_WRAPPER_GENERATION_START",
+        "WCG1_WRAPPER_CHIRRTL_PASS side=reference",
+        "WCG1_WRAPPER_CHIRRTL_PASS side=gated",
+        "WCG1_WRAPPER_STATIC_INPUT_PASS bits=366336 gates=4608",
+        "KVZAP_WCG1_WRAPPER_NATIVE_BINDING_START",
+        "KVZAP_WCG1_WRAPPER_BINDING_CLOSED_STARTING_MATCHED_MAPPING",
+        "KVZAP_WCG1_WRAPPER_MAPPING_NATIVE_EXIT side=reference exit=0",
+        "KVZAP_WCG1_WRAPPER_MAPPING_NATIVE_EXIT side=gated exit=0",
+        "KVZAP_WCG1_WRAPPER_POSTCHECK_PASS_TOOL_INPUT_ARTIFACT_ONLY",
+        "KVZAP_WCG1_WRAPPER_MAPPING_RUN_PASS_TOOL_INPUT_ARTIFACT_ONLY",
+        "KVZAP_WCG1_WRAPPER_MAPPING_OUTER_EXIT=0"
+      ],
+      "warning_counts": {}
+    },
+    "launcher": {
+      "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/wcg1_wrapper_mapping_sta_211f1e2_20261106_r2/launcher.log",
+      "sha256": "ff6f04f951641c3216606d77df92cb2fccf7dac4ca9df8273357ff6394a18aae",
+      "bytes": 26455,
+      "markers": [
+        "KVZAP_WCG1_WRAPPER_GENERATION_START",
+        "WCG1_WRAPPER_CHIRRTL_PASS side=reference",
+        "WCG1_WRAPPER_CHIRRTL_PASS side=gated",
+        "WCG1_WRAPPER_STATIC_INPUT_PASS bits=366336 gates=4608",
+        "KVZAP_WCG1_WRAPPER_NATIVE_BINDING_START",
+        "KVZAP_WCG1_WRAPPER_BINDING_CLOSED_STARTING_MATCHED_MAPPING",
+        "KVZAP_WCG1_WRAPPER_MAPPING_NATIVE_EXIT side=reference exit=0",
+        "KVZAP_WCG1_WRAPPER_MAPPING_NATIVE_EXIT side=gated exit=0",
+        "KVZAP_WCG1_WRAPPER_POSTCHECK_PASS_TOOL_INPUT_ARTIFACT_ONLY",
+        "KVZAP_WCG1_WRAPPER_MAPPING_RUN_PASS_TOOL_INPUT_ARTIFACT_ONLY",
+        "KVZAP_WCG1_WRAPPER_MAPPING_OUTER_EXIT=0"
+      ],
+      "warning_counts": {}
+    },
+    "binding": {
+      "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/wcg1_wrapper_mapping_sta_211f1e2_20261106_r2/native_binding/native.log",
+      "sha256": "2d67f5d1f1f2973cc427ef58067512207bd89d58cf6b54548322480bd998c392",
+      "bytes": 5089645,
+      "markers": [
+        "KVZAP_WCG1_WRAPPER_NATIVE_BINDING_PASS side=gated gates=4608 P3_proxies=1"
+      ],
+      "warning_counts": {}
+    },
+    "reference": {
+      "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/wcg1_wrapper_mapping_sta_211f1e2_20261106_r2/reference/native.log",
+      "sha256": "4ef74c8046d947a15522b8d9360265af0ca070abc7474cc8b4f835ed16331fc0",
+      "bytes": 2702291,
+      "markers": [
+        "KVZAP_WCG1_WRAPPER_NATIVE_BINDING_PASS side=reference gates=0 P3_proxies=1",
+        "KVZAP_WCG1_WRAPPER_STAGE_PASS side=reference stage=raw",
+        "KVZAP_WCG1_WRAPPER_STAGE_PASS side=reference stage=repaired",
+        "KVZAP_WCG1_WRAPPER_SIDE_RUN_PASS side=reference"
+      ],
+      "warning_counts": {
+        "OPT-154": 48,
+        "TIM-134": 4,
+        "VO-4": 2,
+        "VO-11": 2
+      }
+    },
+    "gated": {
+      "path": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/wcg1_wrapper_mapping_sta_211f1e2_20261106_r2/gated/native.log",
+      "sha256": "7c2985f4a345702ba2459e0671968e51cc5270ab775e734a022d7201e5085212",
+      "bytes": 5272234,
+      "markers": [
+        "KVZAP_WCG1_WRAPPER_NATIVE_BINDING_PASS side=gated gates=4608 P3_proxies=1",
+        "KVZAP_WCG1_WRAPPER_STAGE_PASS side=gated stage=raw",
+        "KVZAP_WCG1_WRAPPER_STAGE_PASS side=gated stage=repaired",
+        "KVZAP_WCG1_WRAPPER_SIDE_RUN_PASS side=gated"
+      ],
+      "warning_counts": {
+        "OPT-154": 48,
+        "TIM-134": 4,
+        "VO-4": 2,
+        "VO-11": 2
+      }
+    }
+  },
+  "tmux": {
+    "exit": 0,
+    "stdout": "kvzap-wcg1-wrapper-map-r2:paired-sta.0 pid=21700 cmd=bash dead=0\n",
+    "stderr": ""
+  },
+  "manifest_summary": {
+    "schema": "wcg1-real-wrapper-input-1",
+    "status": "STATIC_INPUT_CLOSURE_PASS",
+    "top": "route_a_m2_p3_wrapper",
+    "data_bits": 366336,
+    "expected_native_gates": 4608,
+    "proxy": "route_a_p3_stage_array_boundary",
+    "proxy_cost": "nonzero_unestimated",
+    "native_gate": "CKLNQD1BWP12T30P140LVT",
+    "native_binding": "SYNTHESIS branch TE tied zero; DC link gate still mandatory",
+    "scope": "real same-profile wrapper; no numeric datapath or full-top claim"
+  },
+  "input_side_summary": {
+    "reference": {
+      "files": [
+        "route_a_p3_stage_array_boundary.sv",
+        "route_a_m2_p3_wrapper.sv"
+      ],
+      "file_sha256": {
+        "route_a_p3_stage_array_boundary.sv": "fdc616440e74202b5f20ccddecf89709e2aab45c0e1c62714dd8235a4ea846c4",
+        "route_a_m2_p3_wrapper.sv": "10bfba16aa9eae854c7e05bd8c5f2f37770dc61583ec101d1e50dfba4cf3aee1"
+      },
+      "member_bits": 182016,
+      "suffix_bits": 184320,
+      "parent_declared_reg_bits": 400499,
+      "header_sha256": "26ca2dc57e8601df28eb3a6e61e1a21b4aa4ca8b4c80a65f1d0342165d586dd9"
+    },
+    "gated": {
+      "files": [
+        "route_a_compact_word_clock_gate.sv",
+        "route_a_p3_stage_array_boundary.sv",
+        "route_a_m2_p3_wrapper.sv"
+      ],
+      "file_sha256": {
+        "route_a_compact_word_clock_gate.sv": "fbc839539af641e061f13ecb9311288b86bae53afa1639093b8e546040aa4556",
+        "route_a_p3_stage_array_boundary.sv": "fdc616440e74202b5f20ccddecf89709e2aab45c0e1c62714dd8235a4ea846c4",
+        "route_a_m2_p3_wrapper.sv": "25edf360329a91365d31c193a891d0ed28569cb6ffcfa455555284f811e8eba8"
+      },
+      "member_bits": 182016,
+      "suffix_bits": 184320,
+      "parent_declared_reg_bits": 400499,
+      "header_sha256": "26ca2dc57e8601df28eb3a6e61e1a21b4aa4ca8b4c80a65f1d0342165d586dd9",
+      "inline_source": "exact_frozen_helper_string_materialized_explicitly",
+      "raw_inline_emitted": true
+    }
+  },
+  "native_result": {
+    "scope": "isolated_actual_wrapper_logic_mapping_not_full_top_or_physical_signoff",
+    "sides": {
+      "reference": {
+        "raw": {
+          "data_flops": "366336",
+          "clock_gates": "0",
+          "period_ns": "2.000000",
+          "propagated": "true",
+          "total_area": 2294423.081761,
+          "combinational_area": 890383.364443,
+          "sequential_area": 1404039.717318,
+          "max_slack_ns": 3.7e-05,
+          "min_slack_ns": 0.029539,
+          "setup_qor": {
+            "wns": 0.0,
+            "tns": 0.0,
+            "paths": 0
+          },
+          "hold_qor": {
+            "wns": 0.0,
+            "tns": 0.0,
+            "paths": 0
+          },
+          "timing_closed": true,
+          "lint_counts": {
+            "LINT-52": 561,
+            "LINT-31": 668,
+            "LINT-33": 81,
+            "LINT-55": 2,
+            "LINT-29": 408,
+            "LINT-28": 4201
+          }
+        },
+        "repaired": {
+          "data_flops": "366336",
+          "clock_gates": "0",
+          "period_ns": "2.000000",
+          "propagated": "true",
+          "total_area": 2295026.201759,
+          "combinational_area": 890986.484441,
+          "sequential_area": 1404039.717318,
+          "max_slack_ns": 3.7e-05,
+          "min_slack_ns": 0.029539,
+          "setup_qor": {
+            "wns": 0.0,
+            "tns": 0.0,
+            "paths": 0
+          },
+          "hold_qor": {
+            "wns": 0.0,
+            "tns": 0.0,
+            "paths": 0
+          },
+          "timing_closed": true,
+          "lint_counts": {
+            "LINT-52": 561,
+            "LINT-31": 668,
+            "LINT-33": 44,
+            "LINT-55": 2,
+            "LINT-29": 408,
+            "LINT-28": 4053
+          }
+        }
+      },
+      "gated": {
+        "raw": {
+          "data_flops": "366336",
+          "clock_gates": "4608",
+          "period_ns": "2.000000",
+          "propagated": "true",
+          "total_area": 1933940.727897,
+          "combinational_area": 887562.308277,
+          "sequential_area": 1046378.41962,
+          "max_slack_ns": 0.0,
+          "min_slack_ns": 0.029539,
+          "gate_max_slack_ns": 0.740547,
+          "gate_min_slack_ns": 0.211413,
+          "setup_qor": {
+            "wns": 0.0,
+            "tns": 0.0,
+            "paths": 0
+          },
+          "hold_qor": {
+            "wns": 0.0,
+            "tns": 0.0,
+            "paths": 0
+          },
+          "timing_closed": true,
+          "lint_counts": {
+            "LINT-52": 561,
+            "LINT-31": 668,
+            "LINT-33": 81,
+            "LINT-55": 2,
+            "LINT-29": 408,
+            "LINT-28": 4201
+          }
+        },
+        "repaired": {
+          "data_flops": "366336",
+          "clock_gates": "4608",
+          "period_ns": "2.000000",
+          "propagated": "true",
+          "total_area": 1936432.671921,
+          "combinational_area": 890054.252301,
+          "sequential_area": 1046378.41962,
+          "max_slack_ns": 0.0,
+          "min_slack_ns": 0.029539,
+          "gate_max_slack_ns": 0.740547,
+          "gate_min_slack_ns": 0.211413,
+          "setup_qor": {
+            "wns": 0.0,
+            "tns": 0.0,
+            "paths": 0
+          },
+          "hold_qor": {
+            "wns": 0.0,
+            "tns": 0.0,
+            "paths": 0
+          },
+          "timing_closed": true,
+          "lint_counts": {
+            "LINT-52": 561,
+            "LINT-31": 668,
+            "LINT-33": 44,
+            "LINT-55": 2,
+            "LINT-29": 408,
+            "LINT-28": 4053
+          }
+        }
+      }
+    },
+    "comparison": {
+      "raw": {
+        "saved_area": 360482.3538640002,
+        "reduction_percent": 15.711241607076454,
+        "both_timing_closed": true
+      },
+      "repaired": {
+        "saved_area": 358593.52983799996,
+        "reduction_percent": 15.624812020148592,
+        "both_timing_closed": true
+      }
+    },
+    "artifact_closure": "PASS",
+    "artifact_sha256": {
+      "gated/preflight_link.rpt": "a9801122586ec5626439c4d687a512fd5002a8981dc548945b463cc24ceb6759",
+      "gated/raw/metrics.tsv": "95faf6031159642a2d05c0469a8fddb00eee700e32cc3f516f972f13182f5528",
+      "gated/raw/setup.rpt": "6fb353310bc88db01ef40de596dbf5a942d361f2684f3fd36b4601aeebe222a5",
+      "gated/raw/gating.rpt": "5aa6dfe1cee462e81a34429b5585f6ab2673adb12edb4e0ee2135a3f8d84d6e8",
+      "gated/raw/constraints.rpt": "3ef9781eeeaf5bd9815b3784efb4ee639fc379122464a1535de3409cdc3c064c",
+      "gated/raw/mapped.sdc": "b5bffcba1405fec6f094c41b0259cb9530cd4d845c903c655cee2676faf71ef4",
+      "gated/raw/check_timing.rpt": "94bf7675a38cf2f7e109edbc8dc51e1112bf6d2b3427362c2e14197d434eaf38",
+      "gated/raw/area.rpt": "d1ea6386991406d8e4edddd141bdd5145a8be2947faf140040da18b01cd24d90",
+      "gated/raw/entry_id.rpt": "9f4707869e7154f0a22f83d048f1be2b8708df4c922ae7d84538d2e8280e3d40",
+      "gated/raw/clock_net.rpt": "c79fc8b3a78453a173ce0e5f7f699b06785762a4091a681dd7b19807380f0365",
+      "gated/raw/qor.rpt": "7bb263f7a1959ed00d4bf5841544903e6e0e7acaf691f51dfdffc4a029dc0ab7",
+      "gated/raw/gated_data_hold.rpt": "f2dadd10683fd8cfabfd268652612eaf7c4b1b7bddf7985764db62bda7c3f436",
+      "gated/raw/hold.rpt": "71f86ee4962fefa2440a174f96f6ece5cbb0db4f937925df121a4aac5712ddea",
+      "gated/raw/references.rpt": "9b1a4e2e2bac32842d26a9597e560387e560f652669b2e5cf2cce05065772169",
+      "gated/raw/clocks.rpt": "4ea1e31bfc2cffaf1ec3183cbb46be22c47e8c15191385bd5e49137f4626d5f8",
+      "gated/raw/mapped.v": "c595e20129361e008a39340b1e9a4bfc3f6b326e5ca34c7a14d5a19151ea6209",
+      "gated/raw/mapped.ddc": "ddedc912ceb4ec4d454cb90cccddb1923373d38b5ceff6aa9900d0c40411cc70",
+      "gated/raw/gate_hold.rpt": "51275c5365e59cb89727b202d25991efcd4372977ed630c45745ed0dd6d83590",
+      "gated/raw/gate_setup.rpt": "8ca7d2b2ad8203089fa1e02d1932c515e0c2d4cf88092c24af57aeb93015bde2",
+      "gated/raw/check_design.rpt": "1f5efc713e09a1bbe8fb1cbaecf27d84cf6f4aa0e4d3210a4633515b10619025",
+      "gated/repaired/metrics.tsv": "4a16de1fb25580485d7fce0619ebbd0b79a539117441060c599aa09843fc4fd5",
+      "gated/repaired/setup.rpt": "9b19de33434a7fe9ffab39be7463a713b8efcc30bf94897718b268313cfcdded",
+      "gated/repaired/gating.rpt": "daea45a9986a0fac3913a826c8ff59aa73e574903970521c1b470e02886d4718",
+      "gated/repaired/constraints.rpt": "9ba6f8257e571f3f702b6b59af0358f666eddae4814691b7e14d8e234159a6e5",
+      "gated/repaired/mapped.sdc": "4c08734924d394afacd3c72a3edab89bd4475ff20672ecc202aae8e8c13b7093",
+      "gated/repaired/check_timing.rpt": "94bf7675a38cf2f7e109edbc8dc51e1112bf6d2b3427362c2e14197d434eaf38",
+      "gated/repaired/area.rpt": "49c04dbf569b17f9802c5f41e48e86fed09a1738cb829c9f3df251411718500e",
+      "gated/repaired/entry_id.rpt": "9f4707869e7154f0a22f83d048f1be2b8708df4c922ae7d84538d2e8280e3d40",
+      "gated/repaired/clock_net.rpt": "e10e924f24130c378734e9979c855432c200d6bc1173456d7c1352cd84d0f7b5",
+      "gated/repaired/qor.rpt": "29f4c736715c5b9466331fa610e15d3fc9f718819510068c0bd66e870ae0f91c",
+      "gated/repaired/gated_data_hold.rpt": "b5086c01d9dfa041cdde06cbbf29fc7eaddefea55b584048e263100cdf8455b0",
+      "gated/repaired/hold.rpt": "56558bbe8ba9c9f572c83fa22d7e12b49d3db9eaaeca14b38ab400cb1acbd686",
+      "gated/repaired/references.rpt": "e946e03c4b55144d982445c9e110db93bf6e8fcd9029b84a9530fabdc301b333",
+      "gated/repaired/clocks.rpt": "df120cbc7ce3c3669a63381238a82e5bc98daf2ff82eb25f53f850c60ae2985d",
+      "gated/repaired/mapped.v": "3017c20fa0c56ea57a2e80e87e9d95d80ee58f57ab334999b930cca8663ab37a",
+      "gated/repaired/mapped.ddc": "e58034a0847d0afbee9931647f1b0505c7eab33c8d1fa3b1520062a52b355248",
+      "gated/repaired/gate_hold.rpt": "3b518a70cdf1afa200ee236c461bdfa40d6054de34bd4d78848e7dbd156d789b",
+      "gated/repaired/gate_setup.rpt": "15299b59d21631886a55938dd1354a68ee19b0ee16ed98be5305a640ff6573db",
+      "gated/repaired/check_design.rpt": "83c00df1b7eadf6978021667edb76b62c0c088da1ea4e3163fa474bf66b207e9",
+      "reference/preflight_link.rpt": "dcb4f03e6f5000ce727a94970d55e1245e65c7c040c3501b31b668edcf74b384",
+      "reference/raw/metrics.tsv": "d1adf9d63a672cec9534cc6c4fe303dbda81c5200bba6a7ed147e245609f310d",
+      "reference/raw/setup.rpt": "c991637a23d61def299aafbc92a84fb5d03b4244ca525477fb5a8b009ed91d67",
+      "reference/raw/gating.rpt": "4d6bc1e8284a54aecafbb01b8abc5277fb810f23d387df03a26e2d529dcfc390",
+      "reference/raw/constraints.rpt": "b4704a92f93faa7dd84a8a114cd0e9bc2b2d3bd15b00f297eddb83ca0fff4c4b",
+      "reference/raw/mapped.sdc": "872ae8e30d8f5c0fbcbfa3c8c575cb141065a7a1b17244989870d4922b51b637",
+      "reference/raw/check_timing.rpt": "94bf7675a38cf2f7e109edbc8dc51e1112bf6d2b3427362c2e14197d434eaf38",
+      "reference/raw/area.rpt": "6c02d6a8c8d0f070285fc38a2a0cdb9c4b71800a10e04a945db324a7c3dac7d9",
+      "reference/raw/entry_id.rpt": "9f4707869e7154f0a22f83d048f1be2b8708df4c922ae7d84538d2e8280e3d40",
+      "reference/raw/clock_net.rpt": "8fe137188e6063b9a55d10d64a7ec39627d86b65c82442b7f815d8d12c821843",
+      "reference/raw/qor.rpt": "d54d867cee6948b02a80d3b0c90de0cbd1c53a64841c5d96b1d158eb3fa8014e",
+      "reference/raw/hold.rpt": "afacb745c1f930aa8ed3df6c0ad957101f8e6bcfa8504d6af5fb5ebb2ae7d6d1",
+      "reference/raw/references.rpt": "ec411cc012cfaa88b0dbca91e3d615cf3dc81a6237c2a0f732ae6473357a4ceb",
+      "reference/raw/clocks.rpt": "1c64bb5be009bd893a2e477ef20deebce716a2ac75829cfaf2e24f1ced801691",
+      "reference/raw/mapped.v": "5d44cbb4062b22695d05aa2019cfb58b9ccfcb6a597a51834b22bdeb6d5d1d2f",
+      "reference/raw/mapped.ddc": "57409651877042fe53495f6ab489208dd77e36bcd8bcaaca86b1bc98ca056f1d",
+      "reference/raw/check_design.rpt": "4de0939b5bf31450d82de7b5e6c2cefe7983bd1b9d11dfee8504b09358a90245",
+      "reference/repaired/metrics.tsv": "8b1c9a05619d0c6367f32ab911af665ebeae774935ef7fc9844f9707d72bfc93",
+      "reference/repaired/setup.rpt": "1dc8589060a609500c56d3a3f9302abd048efd4042254306d5b10813c6de18f2",
+      "reference/repaired/gating.rpt": "f7e10168dd6d3c0aa639440e8786c7fd235a7e347fe932b715b7af0a04f60641",
+      "reference/repaired/constraints.rpt": "6a50f46bf11ed0f72abfe80660550e1ca911135f3b2e6877965177cc1e997e05",
+      "reference/repaired/mapped.sdc": "143c036b61c9b8655d32db37f78a9320d0ca03384e9babd2ba780a8dafeace5a",
+      "reference/repaired/check_timing.rpt": "94bf7675a38cf2f7e109edbc8dc51e1112bf6d2b3427362c2e14197d434eaf38",
+      "reference/repaired/area.rpt": "c37d666ec6d098a1013db5df54bebbc8d6fad5f58a78593c67e733faa1ec0425",
+      "reference/repaired/entry_id.rpt": "9f4707869e7154f0a22f83d048f1be2b8708df4c922ae7d84538d2e8280e3d40",
+      "reference/repaired/clock_net.rpt": "fbf739ff718fe981c8de709f971dc36db94ab65a095968bb91972ce9320c71c3",
+      "reference/repaired/qor.rpt": "475bd182b66de8a6cc4b9811f6394e87e1e61e0acbe6addb249f2d0d1280f623",
+      "reference/repaired/hold.rpt": "2fa7faf5077eebc9e800ca8e1da56a4552e443654e867260d4a15bad17f94c02",
+      "reference/repaired/references.rpt": "83db7f8a40ee3f4624b9813c8e9786a5b73c5ee66b83ad12580d3cfc73a733d8",
+      "reference/repaired/clocks.rpt": "30562bc7c02ac3318c37b6718b71ef6cff606871fdbc9931b266dbad2294ff12",
+      "reference/repaired/mapped.v": "ba9e74b92a450a91abb76c7abaf06b2cda44fceec03bbd4512f9b8ea38ade0fb",
+      "reference/repaired/mapped.ddc": "b28b894417f5f5041118658c839b02bc6ec213b8a60336ab57bce2076dcdf6b1",
+      "reference/repaired/check_design.rpt": "c41a74c1b401efe75ac7e79d0892f8bda62c4afa5d599b176d2e6b740aa5b8b3",
+      "native_binding/preflight_link.rpt": "8578ee30fa1d7e19b647079a7276b9d5d2168b79a9fdf699e63fea84f3e7e1bc"
+    }
+  },
+  "native_result_sha256": "f13bb121c136ee643d0ce1c564096fd55cf87a0ac55dedc6373c12606e3f0f56",
+  "manifest_sha256": "2e5101daa20fed6a1b134e5ed7a29a013a0f07778eea37484cbb64cef560e2e1",
+  "prepared_checksums_sha256": "28c86aaad0fb38f97b6af0e0e219735844c6988dbdbb8acdc95f1f0df58285c3",
+  "generation_toolchain": "LLVM (http://llvm.org/):\n  LLVM version 24.0.0git\n  Optimized build.\nCIRCT firtool-1.158.0\n0768a90a57af806ea6da9eca8949d7e3b07cc0c08648d6b2c870bb9aec3b2fd4  /home/yaz80/.cache/llvm-firtool/1.158.0/bin/firtool\n",
+  "details": {
+    "reference": {
+      "raw": {
+        "paths": {
+          "setup": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              3.7e-05,
+              3.7e-05,
+              0.000172,
+              0.000172,
+              0.00022,
+              0.00022,
+              0.0003,
+              0.0003,
+              0.00037,
+              0.00037,
+              0.000703,
+              0.000703,
+              0.002037,
+              0.002037,
+              0.003983,
+              0.003983,
+              0.006275,
+              0.006275,
+              0.009742,
+              0.009742
+            ],
+            "capture_gate_arcs": [],
+            "worst_path_header": [
+              "Startpoint: stageValidRecords_15_reg[1]",
+              "              (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Endpoint: io_authority_transition_out_bits_entry_id[17]",
+              "            (output port clocked by kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: max",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  add_0_root_add_0_root_add_55112_2/U7/A1 (NR2D1BWP12T30P140LVT) 0.024948 0.000000   1.648665 f",
+              "  add_0_root_add_0_root_add_55112_2/U7/ZN (NR2D1BWP12T30P140LVT) 0.013615 0.012150   1.660815 r",
+              "  add_0_root_add_0_root_add_55112_2/C[1][4][1] (net)     1 0.000790       0.000000   1.660815 r",
+              "  add_0_root_add_0_root_add_55112_2/U3_C_0_4_1/A2 (XOR2D2BWP12T30P140LVT) 0.013615 0.000000 1.660815 r",
+              "  add_0_root_add_0_root_add_55112_2/U3_C_0_4_1/Z (XOR2D2BWP12T30P140LVT) 0.021845 0.039148 1.699963 f",
+              "  add_0_root_add_0_root_add_55112_2/SUM[17] (net)     2 0.010000          0.000000   1.699963 f",
+              "  add_0_root_add_0_root_add_55112_2/SUM[17] (route_a_m2_p3_wrapper_DW01_add_654) 0.000000 1.699963 f",
+              "  io_authority_transition_out_bits_entry_id[17] (net) 0.010000            0.000000   1.699963 f",
+              "  io_authority_transition_out_bits_entry_id[17] (out)           0.021845  0.000000   1.699963 f",
+              "  data arrival time                                                                  1.699963",
+              "",
+              "  clock kvzap_control_clk (rise edge)                                     2.000000   2.000000",
+              "  clock network delay (propagated)                                        0.000000   2.000000",
+              "  clock uncertainty                                                       -0.100000  1.900000",
+              "  output external delay                                                   -0.200000  1.700000",
+              "  data required time                                                                 1.700000",
+              "  ----------------------------------------------------------------------------------------------",
+              "  data required time                                                                 1.700000",
+              "  data arrival time                                                                  -1.699963",
+              "  ----------------------------------------------------------------------------------------------",
+              "  slack (MET)                                                                        0.000037",
+              "",
+              "",
+              "  "
+            ]
+          },
+          "hold": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              0.029539,
+              0.032719,
+              0.032719,
+              0.032719,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.034193,
+              0.035274,
+              0.035274,
+              0.035274,
+              0.035274,
+              0.035274,
+              0.035274
+            ],
+            "capture_gate_arcs": [],
+            "worst_path_header": [
+              "Startpoint: materializerPayloadDone_0_reg",
+              "              (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Endpoint: materializerActive_0_reg",
+              "            (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: min",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  U1848837/ZN (OAI32D1BWP12T30P140LVT)                          0.009581  0.007857   0.048372 f",
+              "  n1803926 (net)                                1     0.000521            0.000000   0.048372 f",
+              "  U1848839/A1 (CKAN2D1BWP12T30P140LVT)                          0.009581  0.000000   0.048372 f",
+              "  U1848839/Z (CKAN2D1BWP12T30P140LVT)                           0.006902  0.013772   0.062144 f",
+              "  N42036 (net)                                  1     0.000649            0.000000   0.062144 f",
+              "  materializerActive_0_reg/D (DFQD2BWP12T30P140LVT)             0.006902  0.000000   0.062144 f",
+              "  data arrival time                                                                  0.062144",
+              "",
+              "  clock kvzap_control_clk (rise edge)                                     0.000000   0.000000",
+              "  clock (in)                                                    0.050000  0.000000 # 0.000000 r",
+              "  clock (net)                               400110    1001.000000         0.000000   0.000000 r",
+              "  materializerActive_0_reg/CP (DFQD2BWP12T30P140LVT)            0.050000  0.000000 # 0.000000 r",
+              "  clock uncertainty                                                       0.020000   0.020000",
+              "  materializerActive_0_reg/CP (DFQD2BWP12T30P140LVT)                      0.000000   0.020000 r",
+              "  library hold time                                                       0.012605   0.032605",
+              "  data required time                                                                 0.032605",
+              "  ----------------------------------------------------------------------------------------------",
+              "  data required time                                                                 0.032605",
+              "  data arrival time                                                                  -0.062144",
+              "  ----------------------------------------------------------------------------------------------",
+              "  slack (MET)                                                                        0.029539",
+              "",
+              "",
+              "  "
+            ]
+          }
+        },
+        "area_header": " \n****************************************\nReport : area\nDesign : route_a_m2_p3_wrapper\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 04:10:31 2026\n****************************************\n\nLibrary(s) Used:\n\n    tcbn28hpcplusbwp12t30p140lvtssg0p81v125c (File: /home/yaz80/wz_project/dc_project/pdk/TSMC28/tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db)\n\nNumber of ports:                        35625\nNumber of nets:                       1611964\nNumber of cells:                      1577466\nNumber of combinational cells:        1177095\nNumber of sequential cells:            400110\nNumber of macros/black boxes:               0\nNumber of buf/inv:                     219002\nNumber of references:                     493\n\nCombinational area:             890383.364443\nBuf/Inv area:                   107463.217533\nNoncombinational area:         1404039.717318\nMacro/Black Box area:                0.000000\nNet Interconnect area:      undefined  (Wire load has zero net area)\n\nTotal cell area:               2294423.081761\nTotal area:                 undefined\n\n",
+        "qor_report": " \n****************************************\nReport : qor\nDesign : route_a_m2_p3_wrapper\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 04:10:50 2026\n****************************************\n\n\n  Timing Path Group 'kvzap_control_clk'\n  -----------------------------------\n  Levels of Logic:              95.00\n  Critical Path Length:          1.70\n  Critical Path Slack:           0.00\n  Critical Path Clk Period:      2.00\n  Total Negative Slack:          0.00\n  No. of Violating Paths:        0.00\n  Worst Hold Violation:          0.00\n  Total Hold Violation:          0.00\n  No. of Hold Violations:        0.00\n  -----------------------------------\n\n\n  Cell Count\n  -----------------------------------\n  Hierarchical Cell Count:        261\n  Hierarchical Port Count:      29960\n  Leaf Cell Count:            1577205\n  Buf/Inv Cell Count:          219002\n  Buf Cell Count:              200147\n  Inv Cell Count:               18855\n  CT Buf/Inv Cell Count:            0\n  Combinational Cell Count:   1177096\n  Sequential Cell Count:       400109\n  Macro Count:                      0\n  -----------------------------------\n\n\n  Area\n  -----------------------------------\n  Combinational Area:   890383.364443\n  Noncombinational Area:\n                       1404039.717318\n  Buf/Inv Area:         107463.217533\n  Total Buffer Area:        101030.50\n  Total Inverter Area:        6432.72\n  Macro/Black Box Area:      0.000000\n  Net Area:                  0.000000\n  -----------------------------------\n  Cell Area:           2294423.081761\n  Design Area:         2294423.081761\n\n\n  Design Rules\n  -----------------------------------\n  Total Number of Nets:       1585673\n  Nets With Violations:             0\n  Max Trans Violations:             0\n  Max Cap Violations:               0\n  -----------------------------------\n\n\n  Hostname: ercesi413\n\n  Compile CPU Statistics\n  -----------------------------------------\n  Resource Sharing:                 5714.21\n  Logic Optimization:               5330.65\n  Mapping Optimization:             7021.74\n  -----------------------------------------\n  Overall Compile Time:            24207.27\n  Overall Compile Wall Clock Time: 20632.45\n\n  --------------------------------------------------------------------\n\n  Design  WNS: 0.00  TNS: 0.00  Number of Violating Paths: 0\n\n\n  Design (Hold)  WNS: 0.00  TNS: 0.00  Number of Violating Paths: 0\n\n  --------------------------------------------------------------------\n\n\n1\n",
+        "root_clock_net_tail": "Attributes:\n    h - high fanout\n\nNet                 Fanout     Fanin      Load   Resistance    Pins   Attributes\n--------------------------------------------------------------------------------\nclock               400110         1   1001.00         0.00  400111   h\n--------------------------------------------------------------------------------\nTotal 1 nets        400110         1   1001.00         0.00  400111\nMaximum             400110         1   1001.00         0.00  400111\nAverage             400110.00   1.00   1001.00         0.00  400111.00\n1",
+        "table_cell_references": {
+          "EDFQD2BWP12T30P140LVT": 366336
+        },
+        "mapped_native_leaf_definition_counts": {},
+        "lint_examples": {
+          "LINT-28": "    Unconnected ports (LINT-28)                                  4200",
+          "LINT-29": "    Feedthrough (LINT-29)                                         407",
+          "LINT-31": "    Shorted outputs (LINT-31)                                     667",
+          "LINT-33": "    Nets connected to multiple pins on same cell (LINT-33)         80",
+          "LINT-52": "    Constant outputs (LINT-52)                                    560",
+          "LINT-55": "    Black box (LINT-55)                                             1"
+        },
+        "metrics_native_precision": "metric\tvalue\ndata_flops\t366336\nclock_gates\t0\nperiod_ns\t2.000000\npropagated\ttrue\ntotal_area\t2294423.081761\ncombinational_area\t890383.364443\nsequential_area\t1404039.717318\nmax_slack_ns\t3.65973e-05\nmin_slack_ns\t0.0295387\n",
+        "constraints_summary": {
+          "lint_warning_counts": {
+            "LINT-28": 4200,
+            "LINT-29": 407,
+            "LINT-31": 667,
+            "LINT-33": 80,
+            "LINT-52": 560
+          },
+          "lint_warning_total": 5914,
+          "lint_warning_examples": {
+            "LINT-28": "Warning: In design 'route_a_m2_p3_wrapper', port 'io_p3_claim_in_bits_owner[2]' is not connected to any nets. (LINT-28)",
+            "LINT-29": "Warning: In design 'route_a_m2_p3_wrapper', input port 'io_pending_payload_binding_in_bits_transaction_identity_request_id[2]' is connected directly to output port 'io_accepted_pending_payload_binding_observation_bits_payload_binding_transaction_identity_request_id[2]'. (LINT-29)",
+            "LINT-31": "Warning: In design 'route_a_m2_p3_wrapper', output port 'io_p3_pack_read_materialized_work_out_bits_member_ordinal[6]' is connected directly to output port 'io_p3_packed_write_candidate_out_bits_r1_request_address_ref[1]'. (LINT-31)",
+            "LINT-33": "Warning: In design 'route_a_m2_p3_wrapper', the same net is connected to more than one pin on submodule 'srl_46842'. (LINT-33)",
+            "LINT-52": "Warning: In design 'route_a_m2_p3_wrapper', output port 'io_p3_pack_read_materialized_work_out_bits_member_ordinal[6]' is connected directly to 'logic 0'. (LINT-52)"
+          },
+          "constraint_sections": [
+            "min_capacitance"
+          ],
+          "constraint_violations": 554,
+          "constraint_example": [
+            "   _0_net_[0]               0.000410       0.000000       -0.000410 (VIOLATED)",
+            "   _0_net_[1]               0.000410       0.000000       -0.000410 (VIOLATED)"
+          ],
+          "constraint_totals": [
+            [
+              "554",
+              "-0.227141"
+            ]
+          ],
+          "reference_cell_samples": {
+            "EDFQD2": "EDFQD2BWP12T30P140LVT tcbn28hpcplusbwp12t30p140lvtssg0p81v125c     3.528000  391113 1379846.709505 n",
+            "DFQD2": "DFQD2BWP12T30P140LVT tcbn28hpcplusbwp12t30p140lvtssg0p81v125c     2.520000    3599  9069.479931 n",
+            "CKLNQD1": null
+          }
+        },
+        "native_lint_summary_counts": {
+          "LINT-28": 4200,
+          "LINT-29": 407,
+          "LINT-31": 667,
+          "LINT-33": 80,
+          "LINT-52": 560,
+          "LINT-55": 1
+        },
+        "lint_count_note": "frozen checker counts each category header plus detail; native summary separates 5729 warnings plus 1 proxy Information entry after hold pass"
+      },
+      "repaired": {
+        "paths": {
+          "setup": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              3.7e-05,
+              3.7e-05,
+              0.000172,
+              0.000172,
+              0.00022,
+              0.00022,
+              0.0003,
+              0.0003,
+              0.00037,
+              0.00037,
+              0.000703,
+              0.000703,
+              0.002037,
+              0.002037,
+              0.003983,
+              0.003983,
+              0.006275,
+              0.006275,
+              0.009742,
+              0.009742
+            ],
+            "capture_gate_arcs": [],
+            "worst_path_header": [
+              "Startpoint: stageValidRecords_15_reg[1]",
+              "              (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Endpoint: io_authority_transition_out_bits_entry_id[17]",
+              "            (output port clocked by kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: max",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  add_0_root_add_0_root_add_55112_2/U7/A1 (NR2D1BWP12T30P140LVT) 0.024948 0.000000   1.648665 f",
+              "  add_0_root_add_0_root_add_55112_2/U7/ZN (NR2D1BWP12T30P140LVT) 0.013615 0.012150   1.660815 r",
+              "  add_0_root_add_0_root_add_55112_2/C[1][4][1] (net)     1 0.000790       0.000000   1.660815 r",
+              "  add_0_root_add_0_root_add_55112_2/U3_C_0_4_1/A2 (XOR2D2BWP12T30P140LVT) 0.013615 0.000000 1.660815 r",
+              "  add_0_root_add_0_root_add_55112_2/U3_C_0_4_1/Z (XOR2D2BWP12T30P140LVT) 0.021845 0.039148 1.699963 f",
+              "  add_0_root_add_0_root_add_55112_2/SUM[17] (net)     2 0.010000          0.000000   1.699963 f",
+              "  add_0_root_add_0_root_add_55112_2/SUM[17] (route_a_m2_p3_wrapper_DW01_add_654) 0.000000 1.699963 f",
+              "  io_authority_transition_out_bits_entry_id[17] (net) 0.010000            0.000000   1.699963 f",
+              "  io_authority_transition_out_bits_entry_id[17] (out)           0.021845  0.000000   1.699963 f",
+              "  data arrival time                                                                  1.699963",
+              "",
+              "  clock kvzap_control_clk (rise edge)                                     2.000000   2.000000",
+              "  clock network delay (propagated)                                        0.000000   2.000000",
+              "  clock uncertainty                                                       -0.100000  1.900000",
+              "  output external delay                                                   -0.200000  1.700000",
+              "  data required time                                                                 1.700000",
+              "  ----------------------------------------------------------------------------------------------",
+              "  data required time                                                                 1.700000",
+              "  data arrival time                                                                  -1.699963",
+              "  ----------------------------------------------------------------------------------------------",
+              "  slack (MET)                                                                        0.000037",
+              "",
+              "",
+              "  "
+            ]
+          },
+          "hold": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              0.029539,
+              0.032719,
+              0.032719,
+              0.032719,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.034193,
+              0.035274,
+              0.035274,
+              0.035274,
+              0.035274,
+              0.035274,
+              0.035274
+            ],
+            "capture_gate_arcs": [],
+            "worst_path_header": [
+              "Startpoint: materializerPayloadDone_0_reg",
+              "              (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Endpoint: materializerActive_0_reg",
+              "            (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: min",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  U1848837/ZN (OAI32D1BWP12T30P140LVT)                          0.009581  0.007857   0.048372 f",
+              "  n1803926 (net)                                1     0.000521            0.000000   0.048372 f",
+              "  U1848839/A1 (CKAN2D1BWP12T30P140LVT)                          0.009581  0.000000   0.048372 f",
+              "  U1848839/Z (CKAN2D1BWP12T30P140LVT)                           0.006902  0.013772   0.062144 f",
+              "  N42036 (net)                                  1     0.000649            0.000000   0.062144 f",
+              "  materializerActive_0_reg/D (DFQD2BWP12T30P140LVT)             0.006902  0.000000   0.062144 f",
+              "  data arrival time                                                                  0.062144",
+              "",
+              "  clock kvzap_control_clk (rise edge)                                     0.000000   0.000000",
+              "  clock (in)                                                    0.050000  0.000000 # 0.000000 r",
+              "  clock (net)                               400110    1001.000000         0.000000   0.000000 r",
+              "  materializerActive_0_reg/CP (DFQD2BWP12T30P140LVT)            0.050000  0.000000 # 0.000000 r",
+              "  clock uncertainty                                                       0.020000   0.020000",
+              "  materializerActive_0_reg/CP (DFQD2BWP12T30P140LVT)                      0.000000   0.020000 r",
+              "  library hold time                                                       0.012605   0.032605",
+              "  data required time                                                                 0.032605",
+              "  ----------------------------------------------------------------------------------------------",
+              "  data required time                                                                 0.032605",
+              "  data arrival time                                                                  -0.062144",
+              "  ----------------------------------------------------------------------------------------------",
+              "  slack (MET)                                                                        0.029539",
+              "",
+              "",
+              "  "
+            ]
+          }
+        },
+        "area_header": " \n****************************************\nReport : area\nDesign : route_a_m2_p3_wrapper\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 04:26:00 2026\n****************************************\n\nLibrary(s) Used:\n\n    tcbn28hpcplusbwp12t30p140lvtssg0p81v125c (File: /home/yaz80/wz_project/dc_project/pdk/TSMC28/tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db)\n\nNumber of ports:                        34774\nNumber of nets:                       1611423\nNumber of cells:                      1577591\nNumber of combinational cells:        1177257\nNumber of sequential cells:            400110\nNumber of macros/black boxes:               0\nNumber of buf/inv:                     219164\nNumber of references:                     460\n\nCombinational area:             890986.484441\nBuf/Inv area:                   108066.337531\nNoncombinational area:         1404039.717318\nMacro/Black Box area:                0.000000\nNet Interconnect area:      undefined  (Wire load has zero net area)\n\nTotal cell area:               2295026.201759\nTotal area:                 undefined\n\n",
+        "qor_report": " \n****************************************\nReport : qor\nDesign : route_a_m2_p3_wrapper\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 04:26:19 2026\n****************************************\n\n\n  Timing Path Group 'kvzap_control_clk'\n  -----------------------------------\n  Levels of Logic:              95.00\n  Critical Path Length:          1.70\n  Critical Path Slack:           0.00\n  Critical Path Clk Period:      2.00\n  Total Negative Slack:          0.00\n  No. of Violating Paths:        0.00\n  Worst Hold Violation:          0.00\n  Total Hold Violation:          0.00\n  No. of Hold Violations:        0.00\n  -----------------------------------\n\n\n  Cell Count\n  -----------------------------------\n  Hierarchical Cell Count:        224\n  Hierarchical Port Count:      29109\n  Leaf Cell Count:            1577367\n  Buf/Inv Cell Count:          219164\n  Buf Cell Count:              200250\n  Inv Cell Count:               18914\n  CT Buf/Inv Cell Count:            0\n  Combinational Cell Count:   1177258\n  Sequential Cell Count:       400109\n  Macro Count:                      0\n  -----------------------------------\n\n\n  Area\n  -----------------------------------\n  Combinational Area:   890986.484441\n  Noncombinational Area:\n                       1404039.717318\n  Buf/Inv Area:         108066.337531\n  Total Buffer Area:        101429.16\n  Total Inverter Area:        6637.18\n  Macro/Black Box Area:      0.000000\n  Net Area:                  0.000000\n  -----------------------------------\n  Cell Area:           2295026.201759\n  Design Area:         2295026.201759\n\n\n  Design Rules\n  -----------------------------------\n  Total Number of Nets:       1585835\n  Nets With Violations:             0\n  Max Trans Violations:             0\n  Max Cap Violations:               0\n  -----------------------------------\n\n\n  Hostname: ercesi413\n\n  Compile CPU Statistics\n  -----------------------------------------\n  Resource Sharing:                  142.73\n  Logic Optimization:                 63.04\n  Mapping Optimization:              315.24\n  -----------------------------------------\n  Overall Compile Time:              765.75\n  Overall Compile Wall Clock Time:   685.11\n\n  --------------------------------------------------------------------\n\n  Design  WNS: 0.00  TNS: 0.00  Number of Violating Paths: 0\n\n\n  Design (Hold)  WNS: 0.00  TNS: 0.00  Number of Violating Paths: 0\n\n  --------------------------------------------------------------------\n\n\n1\n",
+        "root_clock_net_tail": "Attributes:\n    h - high fanout\n\nNet                 Fanout     Fanin      Load   Resistance    Pins   Attributes\n--------------------------------------------------------------------------------\nclock               400110         1   1001.00         0.00  400111   h\n--------------------------------------------------------------------------------\nTotal 1 nets        400110         1   1001.00         0.00  400111\nMaximum             400110         1   1001.00         0.00  400111\nAverage             400110.00   1.00   1001.00         0.00  400111.00\n1",
+        "table_cell_references": {
+          "EDFQD2BWP12T30P140LVT": 366336
+        },
+        "mapped_native_leaf_definition_counts": {},
+        "lint_examples": {
+          "LINT-28": "    Unconnected ports (LINT-28)                                  4052",
+          "LINT-29": "    Feedthrough (LINT-29)                                         407",
+          "LINT-31": "    Shorted outputs (LINT-31)                                     667",
+          "LINT-33": "    Nets connected to multiple pins on same cell (LINT-33)         43",
+          "LINT-52": "    Constant outputs (LINT-52)                                    560",
+          "LINT-55": "    Black box (LINT-55)                                             1"
+        },
+        "metrics_native_precision": "metric\tvalue\ndata_flops\t366336\nclock_gates\t0\nperiod_ns\t2.000000\npropagated\ttrue\ntotal_area\t2295026.201759\ncombinational_area\t890986.484441\nsequential_area\t1404039.717318\nmax_slack_ns\t3.65973e-05\nmin_slack_ns\t0.0295387\n",
+        "constraints_summary": {
+          "lint_warning_counts": {
+            "LINT-28": 4052,
+            "LINT-29": 407,
+            "LINT-31": 667,
+            "LINT-33": 43,
+            "LINT-52": 560
+          },
+          "lint_warning_total": 5729,
+          "lint_warning_examples": {
+            "LINT-28": "Warning: In design 'route_a_m2_p3_wrapper', port 'io_p3_claim_in_bits_owner[2]' is not connected to any nets. (LINT-28)",
+            "LINT-29": "Warning: In design 'route_a_m2_p3_wrapper', input port 'io_pending_payload_binding_in_bits_transaction_identity_request_id[2]' is connected directly to output port 'io_accepted_pending_payload_binding_observation_bits_payload_binding_transaction_identity_request_id[2]'. (LINT-29)",
+            "LINT-31": "Warning: In design 'route_a_m2_p3_wrapper', output port 'io_p3_pack_read_materialized_work_out_bits_member_ordinal[6]' is connected directly to output port 'io_component_status_out_bits_acknowledgement_name[3]'. (LINT-31)",
+            "LINT-33": "Warning: In design 'route_a_m2_p3_wrapper', the same net is connected to more than one pin on submodule 'srl_46842'. (LINT-33)",
+            "LINT-52": "Warning: In design 'route_a_m2_p3_wrapper', output port 'io_p3_pack_read_materialized_work_out_bits_member_ordinal[6]' is connected directly to 'logic 0'. (LINT-52)"
+          },
+          "constraint_sections": [
+            "min_capacitance"
+          ],
+          "constraint_violations": 554,
+          "constraint_example": [
+            "   _0_net_[0]               0.000410       0.000000       -0.000410 (VIOLATED)",
+            "   _0_net_[1]               0.000410       0.000000       -0.000410 (VIOLATED)"
+          ],
+          "constraint_totals": [
+            [
+              "554",
+              "-0.227141"
+            ]
+          ],
+          "reference_cell_samples": {
+            "EDFQD2": "EDFQD2BWP12T30P140LVT tcbn28hpcplusbwp12t30p140lvtssg0p81v125c     3.528000  391113 1379846.709505 n",
+            "DFQD2": "DFQD2BWP12T30P140LVT tcbn28hpcplusbwp12t30p140lvtssg0p81v125c     2.520000    3599  9069.479931 n",
+            "CKLNQD1": null
+          }
+        },
+        "native_lint_summary_counts": {
+          "LINT-28": 4052,
+          "LINT-29": 407,
+          "LINT-31": 667,
+          "LINT-33": 43,
+          "LINT-52": 560,
+          "LINT-55": 1
+        },
+        "lint_count_note": "frozen checker counts each category header plus detail; native summary separates 5729 warnings plus 1 proxy Information entry after hold pass"
+      }
+    },
+    "gated": {
+      "raw": {
+        "paths": {
+          "setup": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              0.0,
+              0.0,
+              0.00033,
+              0.00033,
+              0.000497,
+              0.000497,
+              0.001818,
+              0.001818,
+              0.001842,
+              0.001842,
+              0.001917,
+              0.001917,
+              0.002647,
+              0.002647,
+              0.009497,
+              0.009497,
+              0.010974,
+              0.010974,
+              0.015247,
+              0.015247
+            ],
+            "capture_gate_arcs": [],
+            "worst_path_header": [
+              "Startpoint: stageValidRecords_2_reg[0]",
+              "              (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Endpoint: io_authority_transition_out_bits_entry_id[20]",
+              "            (output port clocked by kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: max",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  add_0_root_add_0_root_add_78197_2/U26/A1 (NR2OPTPAD1BWP12T30P140LVT) 0.006120 0.000000 1.658539 f",
+              "  add_0_root_add_0_root_add_78197_2/U26/ZN (NR2OPTPAD1BWP12T30P140LVT) 0.017130 0.012356 1.670895 r",
+              "  add_0_root_add_0_root_add_78197_2/C[1][5][0] (net)     1 0.002906       0.000000   1.670895 r",
+              "  add_0_root_add_0_root_add_78197_2/U3_C_0_5_0/A2 (XOR2OPTND4BWP12T30P140LVT) 0.017130 0.000000 1.670895 r",
+              "  add_0_root_add_0_root_add_78197_2/U3_C_0_5_0/Z (XOR2OPTND4BWP12T30P140LVT) 0.013302 0.029105 1.700000 f",
+              "  add_0_root_add_0_root_add_78197_2/SUM[20] (net)     2 0.010000          0.000000   1.700000 f",
+              "  add_0_root_add_0_root_add_78197_2/SUM[20] (route_a_m2_p3_wrapper_DW01_add_655) 0.000000 1.700000 f",
+              "  io_authority_transition_out_bits_entry_id[20] (net) 0.010000            0.000000   1.700000 f",
+              "  io_authority_transition_out_bits_entry_id[20] (out)           0.013302  0.000000   1.700000 f",
+              "  data arrival time                                                                  1.700000",
+              "",
+              "  clock kvzap_control_clk (rise edge)                                     2.000000   2.000000",
+              "  clock network delay (propagated)                                        0.000000   2.000000",
+              "  clock uncertainty                                                       -0.100000  1.900000",
+              "  output external delay                                                   -0.200000  1.700000",
+              "  data required time                                                                 1.700000",
+              "  ----------------------------------------------------------------------------------------------",
+              "  data required time                                                                 1.700000",
+              "  data arrival time                                                                  -1.700000",
+              "  ----------------------------------------------------------------------------------------------",
+              "  slack (MET)                                                                        0.000000",
+              "",
+              "",
+              "  "
+            ]
+          },
+          "hold": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              0.029539,
+              0.03133,
+              0.03133,
+              0.03133,
+              0.03133,
+              0.03133,
+              0.03133,
+              0.032719,
+              0.032719,
+              0.032719,
+              0.033546,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.034193,
+              0.034268
+            ],
+            "capture_gate_arcs": [],
+            "worst_path_header": [
+              "Startpoint: materializerPayloadDone_4_reg",
+              "              (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Endpoint: materializerActive_4_reg",
+              "            (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: min",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  U1846352/ZN (OAI32D1BWP12T30P140LVT)                          0.009581  0.007857   0.048372 f",
+              "  n1803386 (net)                                1     0.000521            0.000000   0.048372 f",
+              "  U1846354/A1 (CKAN2D1BWP12T30P140LVT)                          0.009581  0.000000   0.048372 f",
+              "  U1846354/Z (CKAN2D1BWP12T30P140LVT)                           0.006902  0.013772   0.062144 f",
+              "  N39735 (net)                                  1     0.000649            0.000000   0.062144 f",
+              "  materializerActive_4_reg/D (DFQD2BWP12T30P140LVT)             0.006902  0.000000   0.062144 f",
+              "  data arrival time                                                                  0.062144",
+              "",
+              "  clock kvzap_control_clk (rise edge)                                     0.000000   0.000000",
+              "  clock (in)                                                    0.050000  0.000000 # 0.000000 r",
+              "  clock (net)                               38382     1001.000000         0.000000   0.000000 r",
+              "  materializerActive_4_reg/CP (DFQD2BWP12T30P140LVT)            0.050000  0.000000 # 0.000000 r",
+              "  clock uncertainty                                                       0.020000   0.020000",
+              "  materializerActive_4_reg/CP (DFQD2BWP12T30P140LVT)                      0.000000   0.020000 r",
+              "  library hold time                                                       0.012605   0.032605",
+              "  data required time                                                                 0.032605",
+              "  ----------------------------------------------------------------------------------------------",
+              "  data required time                                                                 0.032605",
+              "  data arrival time                                                                  -0.062144",
+              "  ----------------------------------------------------------------------------------------------",
+              "  slack (MET)                                                                        0.029539",
+              "",
+              "",
+              "  "
+            ]
+          },
+          "gate_setup": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547
+            ],
+            "capture_gate_arcs": [],
+            "worst_path_header": [
+              "Startpoint: io_admission_context_in_bits_logical_position[1]",
+              "              (input port clocked by kvzap_control_clk)",
+              "  Endpoint: suffixGate_2187/native_gate",
+              "            (gating element for clock kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: max",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  U882367/ZN (NR2D1BWP12T30P140LVT)                   0.020682   1.055801 r",
+              "  U876874/ZN (INVD1BWP12T30P140LVT)                   0.011556   1.067357 f",
+              "  U870220/Z (BUFFD1BWP12T30P140LVT)                   0.043833   1.111190 f",
+              "  U877308/ZN (NR2D1BWP12T30P140LVT)                   0.017086   1.128276 r",
+              "  suffixGate_2187/enable (route_a_compact_word_clock_gate_233) 0.000000 1.128276 r",
+              "  suffixGate_2187/native_gate/E (CKLNQD1BWP12T30P140LVT) 0.000000 1.128276 r",
+              "  data arrival time                                              1.128276",
+              "",
+              "  clock kvzap_control_clk (rise edge)                 2.000000   2.000000",
+              "  clock (in)                                          0.000000 # 2.000000 r",
+              "  suffixGate_2187/clock (route_a_compact_word_clock_gate_233) 0.000000 # 2.000000 r",
+              "  suffixGate_2187/native_gate/CP (CKLNQD1BWP12T30P140LVT) 0.000000 # 2.000000 r",
+              "  clock uncertainty                                   -0.100000  1.900000",
+              "  suffixGate_2187/native_gate/CP (CKLNQD1BWP12T30P140LVT) 0.000000 1.900000 r",
+              "  clock gating setup time                             -0.031177  1.868823",
+              "  data required time                                             1.868823",
+              "  --------------------------------------------------------------------------",
+              "  data required time                                             1.868823",
+              "  data arrival time                                              -1.128276",
+              "  --------------------------------------------------------------------------",
+              "  slack (MET)                                                    0.740547",
+              "",
+              "",
+              "  "
+            ]
+          },
+          "gate_hold": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.212539,
+              0.212539,
+              0.212539,
+              0.212539
+            ],
+            "capture_gate_arcs": [],
+            "worst_path_header": [
+              "Startpoint: initialized_reg",
+              "              (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Endpoint: memberGate_1096/native_gate",
+              "            (gating element for clock kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: min",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  U877669/Z (BUFFD1BWP12T30P140LVT)                   0.015550   0.171600 f",
+              "  U870233/Z (BUFFD1BWP12T30P140LVT)                   0.013175   0.184775 f",
+              "  U859763/ZN (INVD1BWP12T30P140LVT)                   0.033630   0.218405 r",
+              "  U871003/ZN (NR2D1BWP12T30P140LVT)                   0.008402   0.226807 f",
+              "  memberGate_1096/enable (route_a_compact_word_clock_gate_2416) 0.000000 0.226807 f",
+              "  memberGate_1096/native_gate/E (CKLNQD1BWP12T30P140LVT) 0.000000 0.226807 f",
+              "  data arrival time                                              0.226807",
+              "",
+              "  clock kvzap_control_clk (rise edge)                 0.000000   0.000000",
+              "  clock (in)                                          0.000000 # 0.000000 r",
+              "  memberGate_1096/clock (route_a_compact_word_clock_gate_2416) 0.000000 # 0.000000 r",
+              "  memberGate_1096/native_gate/CP (CKLNQD1BWP12T30P140LVT) 0.000000 # 0.000000 r",
+              "  clock uncertainty                                   0.020000   0.020000",
+              "  memberGate_1096/native_gate/CP (CKLNQD1BWP12T30P140LVT) 0.000000 0.020000 r",
+              "  clock gating hold time                              -0.004606  0.015394",
+              "  data required time                                             0.015394",
+              "  --------------------------------------------------------------------------",
+              "  data required time                                             0.015394",
+              "  data arrival time                                              -0.226807",
+              "  --------------------------------------------------------------------------",
+              "  slack (MET)                                                    0.211413",
+              "",
+              "",
+              "  "
+            ]
+          },
+          "gated_data_hold": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801
+            ],
+            "capture_gate_arcs": [
+              "  memberGate_1322/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_1326/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_350/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367  0.023367 r",
+              "  memberGate_2086/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_1323/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_1327/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_351/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367  0.023367 r",
+              "  memberGate_2087/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_66/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_70/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_74/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_78/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_82/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_86/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_90/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_94/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_98/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_102/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367  0.023367 r",
+              "  memberGate_106/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367  0.023367 r",
+              "  memberGate_110/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367  0.023367 r"
+            ],
+            "worst_path_header": [
+              "Startpoint: io_admission_context_in_bits_logical_position[0]",
+              "              (input port clocked by kvzap_control_clk)",
+              "  Endpoint: memberWord_1322_logical_position_reg[0]",
+              "            (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: min",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  memberGate_1322/native_gate/CP (CKLNQD1BWP12T30P140LVT) 0.050000 0.000000 # 0.000000 r",
+              "  memberGate_1322/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_1322/gated_clock (net)             4               0.000000   0.023367 r",
+              "  memberGate_1322/gated_clock (route_a_compact_word_clock_gate_1964) 0.000000 0.023367 r",
+              "  _memberGate_1322_gated_clock (net)                            0.000000   0.023367 r",
+              "  U922173/I (BUFFD1BWP12T30P140LVT)                   0.016727  0.000000   0.023367 r",
+              "  U922173/Z (BUFFD1BWP12T30P140LVT)                   0.008779  0.014352   0.037720 r",
+              "  n1764537 (net)                                2               0.000000   0.037720 r",
+              "  U896061/I (BUFFD1BWP12T30P140LVT)                   0.008779  0.000000   0.037720 r",
+              "  U896061/Z (BUFFD1BWP12T30P140LVT)                   0.023994  0.021810   0.059530 r",
+              "  n1764530 (net)                               13               0.000000   0.059530 r",
+              "  memberWord_1322_logical_position_reg[0]/CP (DFQD2BWP12T30P140LVT) 0.023994 0.000000 0.059530 r",
+              "  clock uncertainty                                             0.020000   0.079530",
+              "  memberWord_1322_logical_position_reg[0]/CP (DFQD2BWP12T30P140LVT) 0.000000 0.079530 r",
+              "  library hold time                                             0.005669   0.085199",
+              "  data required time                                                       0.085199",
+              "  ------------------------------------------------------------------------------------",
+              "  data required time                                                       0.085199",
+              "  data arrival time                                                        -0.200000",
+              "  ------------------------------------------------------------------------------------",
+              "  slack (MET)                                                              0.114801",
+              "",
+              "",
+              "  "
+            ]
+          }
+        },
+        "area_header": " \n****************************************\nReport : area\nDesign : route_a_m2_p3_wrapper\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 08:37:39 2026\n****************************************\n\nLibrary(s) Used:\n\n    tcbn28hpcplusbwp12t30p140lvtssg0p81v125c (File: /home/yaz80/wz_project/dc_project/pdk/TSMC28/tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db)\n\nNumber of ports:                        49449\nNumber of nets:                       1628947\nNumber of cells:                      1585227\nNumber of combinational cells:        1175640\nNumber of sequential cells:            404718\nNumber of macros/black boxes:               0\nNumber of buf/inv:                     211344\nNumber of references:                    5112\n\nCombinational area:             887562.308277\nBuf/Inv area:                   102453.457372\nNoncombinational area:         1046378.419620\nMacro/Black Box area:                0.000000\nNet Interconnect area:      undefined  (Wire load has zero net area)\n\nTotal cell area:               1933940.727897\nTotal area:                 undefined\n\n",
+        "qor_report": " \n****************************************\nReport : qor\nDesign : route_a_m2_p3_wrapper\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 08:37:56 2026\n****************************************\n\n\n  Timing Path Group 'kvzap_control_clk'\n  -----------------------------------\n  Levels of Logic:             114.00\n  Critical Path Length:          1.70\n  Critical Path Slack:           0.00\n  Critical Path Clk Period:      2.00\n  Total Negative Slack:          0.00\n  No. of Violating Paths:        0.00\n  Worst Hold Violation:          0.00\n  Total Hold Violation:          0.00\n  No. of Hold Violations:        0.00\n  -----------------------------------\n\n\n  Cell Count\n  -----------------------------------\n  Hierarchical Cell Count:       4869\n  Hierarchical Port Count:      43784\n  Leaf Cell Count:            1580358\n  Buf/Inv Cell Count:          211344\n  Buf Cell Count:              184882\n  Inv Cell Count:               26462\n  CT Buf/Inv Cell Count:        48384\n  Combinational Cell Count:   1175641\n  Sequential Cell Count:       404717\n  Macro Count:                      0\n  -----------------------------------\n\n\n  Area\n  -----------------------------------\n  Combinational Area:   887562.308277\n  Noncombinational Area:\n                       1046378.419620\n  Buf/Inv Area:         102453.457372\n  Total Buffer Area:         93374.23\n  Total Inverter Area:        9079.22\n  Macro/Black Box Area:      0.000000\n  Net Area:                  0.000000\n  -----------------------------------\n  Cell Area:           1933940.727897\n  Design Area:         1933940.727897\n\n\n  Design Rules\n  -----------------------------------\n  Total Number of Nets:       1588832\n  Nets With Violations:             0\n  Max Trans Violations:             0\n  Max Cap Violations:               0\n  -----------------------------------\n\n\n  Hostname: ercesi413\n\n  Compile CPU Statistics\n  -----------------------------------------\n  Resource Sharing:                 1218.11\n  Logic Optimization:               5826.08\n  Mapping Optimization:             4556.14\n  -----------------------------------------\n  Overall Compile Time:            17627.49\n  Overall Compile Wall Clock Time: 14737.39\n\n  --------------------------------------------------------------------\n\n  Design  WNS: 0.00  TNS: 0.00  Number of Violating Paths: 0\n\n\n  Design (Hold)  WNS: 0.00  TNS: 0.00  Number of Violating Paths: 0\n\n  --------------------------------------------------------------------\n\n\n1\n",
+        "root_clock_net_tail": "Attributes:\n    h - high fanout\n\nNet                 Fanout     Fanin      Load   Resistance    Pins   Attributes\n--------------------------------------------------------------------------------\nclock                38382         1   1001.00         0.00   38383   h\n--------------------------------------------------------------------------------\nTotal 1 nets         38382         1   1001.00         0.00   38383\nMaximum              38382         1   1001.00         0.00   38383\nAverage             38382.00    1.00   1001.00         0.00  38383.00\n1",
+        "table_cell_references": {
+          "DFQD2BWP12T30P140LVT": 366336
+        },
+        "mapped_native_leaf_definition_counts": {
+          "CKLNQD1BWP12T30P140LVT": 4608
+        },
+        "lint_examples": {
+          "LINT-28": "    Unconnected ports (LINT-28)                                  4200",
+          "LINT-29": "    Feedthrough (LINT-29)                                         407",
+          "LINT-31": "    Shorted outputs (LINT-31)                                     667",
+          "LINT-33": "    Nets connected to multiple pins on same cell (LINT-33)         80",
+          "LINT-52": "    Constant outputs (LINT-52)                                    560",
+          "LINT-55": "    Black box (LINT-55)                                             1"
+        },
+        "metrics_native_precision": "metric\tvalue\ndata_flops\t366336\nclock_gates\t4608\nperiod_ns\t2.000000\npropagated\ttrue\ntotal_area\t1933940.727897\ncombinational_area\t887562.308277\nsequential_area\t1046378.419620\nmax_slack_ns\t0\nmin_slack_ns\t0.0295387\ngate_max_slack_ns\t0.740547\ngate_min_slack_ns\t0.211413\n",
+        "constraints_summary": {
+          "lint_warning_counts": {
+            "LINT-28": 4200,
+            "LINT-29": 407,
+            "LINT-31": 667,
+            "LINT-33": 80,
+            "LINT-52": 560
+          },
+          "lint_warning_total": 5914,
+          "lint_warning_examples": {
+            "LINT-28": "Warning: In design 'route_a_m2_p3_wrapper', port 'io_p3_claim_in_bits_owner[2]' is not connected to any nets. (LINT-28)",
+            "LINT-29": "Warning: In design 'route_a_m2_p3_wrapper', input port 'io_pending_payload_binding_in_bits_transaction_identity_request_id[2]' is connected directly to output port 'io_accepted_pending_payload_binding_observation_bits_payload_binding_transaction_identity_request_id[2]'. (LINT-29)",
+            "LINT-31": "Warning: In design 'route_a_m2_p3_wrapper', output port 'io_p3_pack_read_materialized_work_out_bits_member_ordinal[6]' is connected directly to output port 'io_p3_packed_write_candidate_out_bits_r1_request_address_ref[1]'. (LINT-31)",
+            "LINT-33": "Warning: In design 'route_a_m2_p3_wrapper', the same net is connected to more than one pin on submodule 'srl_69927'. (LINT-33)",
+            "LINT-52": "Warning: In design 'route_a_m2_p3_wrapper', output port 'io_p3_pack_read_materialized_work_out_bits_member_ordinal[6]' is connected directly to 'logic 0'. (LINT-52)"
+          },
+          "constraint_sections": [
+            "min_capacitance"
+          ],
+          "constraint_violations": 554,
+          "constraint_example": [
+            "   _0_net_[0]               0.000410       0.000000       -0.000410 (VIOLATED)",
+            "   _0_net_[1]               0.000410       0.000000       -0.000410 (VIOLATED)"
+          ],
+          "constraint_totals": [
+            [
+              "554",
+              "-0.227141"
+            ]
+          ],
+          "reference_cell_samples": {
+            "EDFQD2": "EDFQD2BWP12T30P140LVT tcbn28hpcplusbwp12t30p140lvtssg0p81v125c     3.528000   24773 87399.146882 n",
+            "DFQD2": "DFQD2BWP12T30P140LVT tcbn28hpcplusbwp12t30p140lvtssg0p81v125c     2.520000  369945 932261.392944 n",
+            "CKLNQD1": "CKLNQD1BWP12T30P140LVT tcbn28hpcplusbwp12t30p140lvtssg0p81v125c     2.520000       1     2.520000 b"
+          }
+        },
+        "native_lint_summary_counts": {
+          "LINT-28": 4200,
+          "LINT-29": 407,
+          "LINT-31": 667,
+          "LINT-33": 80,
+          "LINT-52": 560,
+          "LINT-55": 1
+        },
+        "lint_count_note": "frozen checker counts each category header plus detail; native summary separates 5729 warnings plus 1 proxy Information entry after hold pass"
+      },
+      "repaired": {
+        "paths": {
+          "setup": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              0.0,
+              0.0,
+              0.00033,
+              0.00033,
+              0.000497,
+              0.000497,
+              0.001818,
+              0.001818,
+              0.001842,
+              0.001842,
+              0.001917,
+              0.001917,
+              0.002647,
+              0.002647,
+              0.009497,
+              0.009497,
+              0.010974,
+              0.010974,
+              0.015247,
+              0.015247
+            ],
+            "capture_gate_arcs": [],
+            "worst_path_header": [
+              "Startpoint: stageValidRecords_2_reg[0]",
+              "              (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Endpoint: io_authority_transition_out_bits_entry_id[20]",
+              "            (output port clocked by kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: max",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  add_0_root_add_0_root_add_78197_2/U26/A1 (NR2OPTPAD1BWP12T30P140LVT) 0.006120 0.000000 1.658539 f",
+              "  add_0_root_add_0_root_add_78197_2/U26/ZN (NR2OPTPAD1BWP12T30P140LVT) 0.017130 0.012356 1.670895 r",
+              "  add_0_root_add_0_root_add_78197_2/C[1][5][0] (net)     1 0.002906       0.000000   1.670895 r",
+              "  add_0_root_add_0_root_add_78197_2/U3_C_0_5_0/A2 (XOR2OPTND4BWP12T30P140LVT) 0.017130 0.000000 1.670895 r",
+              "  add_0_root_add_0_root_add_78197_2/U3_C_0_5_0/Z (XOR2OPTND4BWP12T30P140LVT) 0.013302 0.029105 1.700000 f",
+              "  add_0_root_add_0_root_add_78197_2/SUM[20] (net)     2 0.010000          0.000000   1.700000 f",
+              "  add_0_root_add_0_root_add_78197_2/SUM[20] (route_a_m2_p3_wrapper_DW01_add_655) 0.000000 1.700000 f",
+              "  io_authority_transition_out_bits_entry_id[20] (net) 0.010000            0.000000   1.700000 f",
+              "  io_authority_transition_out_bits_entry_id[20] (out)           0.013302  0.000000   1.700000 f",
+              "  data arrival time                                                                  1.700000",
+              "",
+              "  clock kvzap_control_clk (rise edge)                                     2.000000   2.000000",
+              "  clock network delay (propagated)                                        0.000000   2.000000",
+              "  clock uncertainty                                                       -0.100000  1.900000",
+              "  output external delay                                                   -0.200000  1.700000",
+              "  data required time                                                                 1.700000",
+              "  ----------------------------------------------------------------------------------------------",
+              "  data required time                                                                 1.700000",
+              "  data arrival time                                                                  -1.700000",
+              "  ----------------------------------------------------------------------------------------------",
+              "  slack (MET)                                                                        0.000000",
+              "",
+              "",
+              "  "
+            ]
+          },
+          "hold": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              0.029539,
+              0.03133,
+              0.03133,
+              0.03133,
+              0.03133,
+              0.03133,
+              0.03133,
+              0.032719,
+              0.032719,
+              0.032719,
+              0.03341,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.033784,
+              0.034193,
+              0.034268
+            ],
+            "capture_gate_arcs": [],
+            "worst_path_header": [
+              "Startpoint: materializerPayloadDone_4_reg",
+              "              (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Endpoint: materializerActive_4_reg",
+              "            (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: min",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  U1846352/ZN (OAI32D1BWP12T30P140LVT)                          0.009581  0.007857   0.048372 f",
+              "  n1803386 (net)                                1     0.000521            0.000000   0.048372 f",
+              "  U1846354/A1 (CKAN2D1BWP12T30P140LVT)                          0.009581  0.000000   0.048372 f",
+              "  U1846354/Z (CKAN2D1BWP12T30P140LVT)                           0.006902  0.013772   0.062144 f",
+              "  N39735 (net)                                  1     0.000649            0.000000   0.062144 f",
+              "  materializerActive_4_reg/D (DFQD2BWP12T30P140LVT)             0.006902  0.000000   0.062144 f",
+              "  data arrival time                                                                  0.062144",
+              "",
+              "  clock kvzap_control_clk (rise edge)                                     0.000000   0.000000",
+              "  clock (in)                                                    0.050000  0.000000 # 0.000000 r",
+              "  clock (net)                               38382     1001.000000         0.000000   0.000000 r",
+              "  materializerActive_4_reg/CP (DFQD2BWP12T30P140LVT)            0.050000  0.000000 # 0.000000 r",
+              "  clock uncertainty                                                       0.020000   0.020000",
+              "  materializerActive_4_reg/CP (DFQD2BWP12T30P140LVT)                      0.000000   0.020000 r",
+              "  library hold time                                                       0.012605   0.032605",
+              "  data required time                                                                 0.032605",
+              "  ----------------------------------------------------------------------------------------------",
+              "  data required time                                                                 0.032605",
+              "  data arrival time                                                                  -0.062144",
+              "  ----------------------------------------------------------------------------------------------",
+              "  slack (MET)                                                                        0.029539",
+              "",
+              "",
+              "  "
+            ]
+          },
+          "gate_setup": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547,
+              0.740547
+            ],
+            "capture_gate_arcs": [],
+            "worst_path_header": [
+              "Startpoint: io_admission_context_in_bits_logical_position[1]",
+              "              (input port clocked by kvzap_control_clk)",
+              "  Endpoint: suffixGate_2187/native_gate",
+              "            (gating element for clock kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: max",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  U882367/ZN (NR2D1BWP12T30P140LVT)                   0.020682   1.055801 r",
+              "  U876874/ZN (INVD1BWP12T30P140LVT)                   0.011556   1.067357 f",
+              "  U870220/Z (BUFFD1BWP12T30P140LVT)                   0.043833   1.111190 f",
+              "  U877308/ZN (NR2D1BWP12T30P140LVT)                   0.017086   1.128276 r",
+              "  suffixGate_2187/enable (route_a_compact_word_clock_gate_233) 0.000000 1.128276 r",
+              "  suffixGate_2187/native_gate/E (CKLNQD1BWP12T30P140LVT) 0.000000 1.128276 r",
+              "  data arrival time                                              1.128276",
+              "",
+              "  clock kvzap_control_clk (rise edge)                 2.000000   2.000000",
+              "  clock (in)                                          0.000000 # 2.000000 r",
+              "  suffixGate_2187/clock (route_a_compact_word_clock_gate_233) 0.000000 # 2.000000 r",
+              "  suffixGate_2187/native_gate/CP (CKLNQD1BWP12T30P140LVT) 0.000000 # 2.000000 r",
+              "  clock uncertainty                                   -0.100000  1.900000",
+              "  suffixGate_2187/native_gate/CP (CKLNQD1BWP12T30P140LVT) 0.000000 1.900000 r",
+              "  clock gating setup time                             -0.031177  1.868823",
+              "  data required time                                             1.868823",
+              "  --------------------------------------------------------------------------",
+              "  data required time                                             1.868823",
+              "  data arrival time                                              -1.128276",
+              "  --------------------------------------------------------------------------",
+              "  slack (MET)                                                    0.740547",
+              "",
+              "",
+              "  "
+            ]
+          },
+          "gate_hold": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.211413,
+              0.212539,
+              0.212539,
+              0.212539,
+              0.212539
+            ],
+            "capture_gate_arcs": [],
+            "worst_path_header": [
+              "Startpoint: initialized_reg",
+              "              (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Endpoint: memberGate_1096/native_gate",
+              "            (gating element for clock kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: min",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  U877669/Z (BUFFD1BWP12T30P140LVT)                   0.015550   0.171600 f",
+              "  U870233/Z (BUFFD1BWP12T30P140LVT)                   0.013175   0.184775 f",
+              "  U859763/ZN (INVD1BWP12T30P140LVT)                   0.033630   0.218405 r",
+              "  U871003/ZN (NR2D1BWP12T30P140LVT)                   0.008402   0.226807 f",
+              "  memberGate_1096/enable (route_a_compact_word_clock_gate_2416) 0.000000 0.226807 f",
+              "  memberGate_1096/native_gate/E (CKLNQD1BWP12T30P140LVT) 0.000000 0.226807 f",
+              "  data arrival time                                              0.226807",
+              "",
+              "  clock kvzap_control_clk (rise edge)                 0.000000   0.000000",
+              "  clock (in)                                          0.000000 # 0.000000 r",
+              "  memberGate_1096/clock (route_a_compact_word_clock_gate_2416) 0.000000 # 0.000000 r",
+              "  memberGate_1096/native_gate/CP (CKLNQD1BWP12T30P140LVT) 0.000000 # 0.000000 r",
+              "  clock uncertainty                                   0.020000   0.020000",
+              "  memberGate_1096/native_gate/CP (CKLNQD1BWP12T30P140LVT) 0.000000 0.020000 r",
+              "  clock gating hold time                              -0.004606  0.015394",
+              "  data required time                                             0.015394",
+              "  --------------------------------------------------------------------------",
+              "  data required time                                             0.015394",
+              "  data arrival time                                              -0.226807",
+              "  --------------------------------------------------------------------------",
+              "  slack (MET)                                                    0.211413",
+              "",
+              "",
+              "  "
+            ]
+          },
+          "gated_data_hold": {
+            "reported_paths": 20,
+            "slacks_ns": [
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801,
+              0.114801
+            ],
+            "capture_gate_arcs": [
+              "  memberGate_1322/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_1326/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_350/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367  0.023367 r",
+              "  memberGate_2086/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_1323/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_1327/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_351/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367  0.023367 r",
+              "  memberGate_2087/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_66/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_70/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_74/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_78/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_82/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_86/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_90/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_94/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_98/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367   0.023367 r",
+              "  memberGate_102/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367  0.023367 r",
+              "  memberGate_106/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367  0.023367 r",
+              "  memberGate_110/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367  0.023367 r"
+            ],
+            "worst_path_header": [
+              "Startpoint: io_admission_context_in_bits_logical_position[0]",
+              "              (input port clocked by kvzap_control_clk)",
+              "  Endpoint: memberWord_1322_logical_position_reg[0]",
+              "            (rising edge-triggered flip-flop clocked by kvzap_control_clk)",
+              "  Path Group: kvzap_control_clk",
+              "  Path Type: min",
+              ""
+            ],
+            "worst_path_final_timing_lines": [
+              "  memberGate_1322/native_gate/CP (CKLNQD1BWP12T30P140LVT) 0.050000 0.000000 # 0.000000 r",
+              "  memberGate_1322/native_gate/Q (CKLNQD1BWP12T30P140LVT) 0.016727 0.023367 0.023367 r",
+              "  memberGate_1322/gated_clock (net)             4               0.000000   0.023367 r",
+              "  memberGate_1322/gated_clock (route_a_compact_word_clock_gate_1964) 0.000000 0.023367 r",
+              "  _memberGate_1322_gated_clock (net)                            0.000000   0.023367 r",
+              "  U922173/I (BUFFD1BWP12T30P140LVT)                   0.016727  0.000000   0.023367 r",
+              "  U922173/Z (BUFFD1BWP12T30P140LVT)                   0.008779  0.014352   0.037720 r",
+              "  n1764537 (net)                                2               0.000000   0.037720 r",
+              "  U896061/I (BUFFD1BWP12T30P140LVT)                   0.008779  0.000000   0.037720 r",
+              "  U896061/Z (BUFFD1BWP12T30P140LVT)                   0.023994  0.021810   0.059530 r",
+              "  n1764530 (net)                               13               0.000000   0.059530 r",
+              "  memberWord_1322_logical_position_reg[0]/CP (DFQD2BWP12T30P140LVT) 0.023994 0.000000 0.059530 r",
+              "  clock uncertainty                                             0.020000   0.079530",
+              "  memberWord_1322_logical_position_reg[0]/CP (DFQD2BWP12T30P140LVT) 0.000000 0.079530 r",
+              "  library hold time                                             0.005669   0.085199",
+              "  data required time                                                       0.085199",
+              "  ------------------------------------------------------------------------------------",
+              "  data required time                                                       0.085199",
+              "  data arrival time                                                        -0.200000",
+              "  ------------------------------------------------------------------------------------",
+              "  slack (MET)                                                              0.114801",
+              "",
+              "",
+              "  "
+            ]
+          }
+        },
+        "area_header": " \n****************************************\nReport : area\nDesign : route_a_m2_p3_wrapper\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 08:51:43 2026\n****************************************\n\nLibrary(s) Used:\n\n    tcbn28hpcplusbwp12t30p140lvtssg0p81v125c (File: /home/yaz80/wz_project/dc_project/pdk/TSMC28/tcbn28hpcplusbwp12t30p140lvtssg0p81v125c.db)\n\nNumber of ports:                        48598\nNumber of nets:                       1628905\nNumber of cells:                      1585851\nNumber of combinational cells:        1176301\nNumber of sequential cells:            404718\nNumber of macros/black boxes:               0\nNumber of buf/inv:                     212005\nNumber of references:                    5077\n\nCombinational area:             890054.252301\nBuf/Inv area:                   104945.401397\nNoncombinational area:         1046378.419620\nMacro/Black Box area:                0.000000\nNet Interconnect area:      undefined  (Wire load has zero net area)\n\nTotal cell area:               1936432.671921\nTotal area:                 undefined\n\n",
+        "qor_report": " \n****************************************\nReport : qor\nDesign : route_a_m2_p3_wrapper\nVersion: O-2018.06-SP1\nDate   : Sat Nov  7 08:51:59 2026\n****************************************\n\n\n  Timing Path Group 'kvzap_control_clk'\n  -----------------------------------\n  Levels of Logic:             114.00\n  Critical Path Length:          1.70\n  Critical Path Slack:           0.00\n  Critical Path Clk Period:      2.00\n  Total Negative Slack:          0.00\n  No. of Violating Paths:        0.00\n  Worst Hold Violation:          0.00\n  Total Hold Violation:          0.00\n  No. of Hold Violations:        0.00\n  -----------------------------------\n\n\n  Cell Count\n  -----------------------------------\n  Hierarchical Cell Count:       4832\n  Hierarchical Port Count:      42933\n  Leaf Cell Count:            1581019\n  Buf/Inv Cell Count:          212005\n  Buf Cell Count:              185486\n  Inv Cell Count:               26519\n  CT Buf/Inv Cell Count:        48384\n  Combinational Cell Count:   1176302\n  Sequential Cell Count:       404717\n  Macro Count:                      0\n  -----------------------------------\n\n\n  Area\n  -----------------------------------\n  Combinational Area:   890054.252301\n  Noncombinational Area:\n                       1046378.419620\n  Buf/Inv Area:         104945.401397\n  Total Buffer Area:         95664.91\n  Total Inverter Area:        9280.49\n  Macro/Black Box Area:      0.000000\n  Net Area:                  0.000000\n  -----------------------------------\n  Cell Area:           1936432.671921\n  Design Area:         1936432.671921\n\n\n  Design Rules\n  -----------------------------------\n  Total Number of Nets:       1589493\n  Nets With Violations:             0\n  Max Trans Violations:             0\n  Max Cap Violations:               0\n  -----------------------------------\n\n\n  Hostname: ercesi413\n\n  Compile CPU Statistics\n  -----------------------------------------\n  Resource Sharing:                  119.36\n  Logic Optimization:                 53.12\n  Mapping Optimization:              256.63\n  -----------------------------------------\n  Overall Compile Time:              660.88\n  Overall Compile Wall Clock Time:   594.97\n\n  --------------------------------------------------------------------\n\n  Design  WNS: 0.00  TNS: 0.00  Number of Violating Paths: 0\n\n\n  Design (Hold)  WNS: 0.00  TNS: 0.00  Number of Violating Paths: 0\n\n  --------------------------------------------------------------------\n\n\n1\n",
+        "root_clock_net_tail": "Attributes:\n    h - high fanout\n\nNet                 Fanout     Fanin      Load   Resistance    Pins   Attributes\n--------------------------------------------------------------------------------\nclock                38382         1   1001.00         0.00   38383   h\n--------------------------------------------------------------------------------\nTotal 1 nets         38382         1   1001.00         0.00   38383\nMaximum              38382         1   1001.00         0.00   38383\nAverage             38382.00    1.00   1001.00         0.00  38383.00\n1",
+        "table_cell_references": {
+          "DFQD2BWP12T30P140LVT": 366336
+        },
+        "mapped_native_leaf_definition_counts": {
+          "CKLNQD1BWP12T30P140LVT": 4608
+        },
+        "lint_examples": {
+          "LINT-28": "    Unconnected ports (LINT-28)                                  4052",
+          "LINT-29": "    Feedthrough (LINT-29)                                         407",
+          "LINT-31": "    Shorted outputs (LINT-31)                                     667",
+          "LINT-33": "    Nets connected to multiple pins on same cell (LINT-33)         43",
+          "LINT-52": "    Constant outputs (LINT-52)                                    560",
+          "LINT-55": "    Black box (LINT-55)                                             1"
+        },
+        "metrics_native_precision": "metric\tvalue\ndata_flops\t366336\nclock_gates\t4608\nperiod_ns\t2.000000\npropagated\ttrue\ntotal_area\t1936432.671921\ncombinational_area\t890054.252301\nsequential_area\t1046378.419620\nmax_slack_ns\t0\nmin_slack_ns\t0.0295387\ngate_max_slack_ns\t0.740547\ngate_min_slack_ns\t0.211413\n",
+        "constraints_summary": {
+          "lint_warning_counts": {
+            "LINT-28": 4052,
+            "LINT-29": 407,
+            "LINT-31": 667,
+            "LINT-33": 43,
+            "LINT-52": 560
+          },
+          "lint_warning_total": 5729,
+          "lint_warning_examples": {
+            "LINT-28": "Warning: In design 'route_a_m2_p3_wrapper', port 'io_p3_claim_in_bits_owner[2]' is not connected to any nets. (LINT-28)",
+            "LINT-29": "Warning: In design 'route_a_m2_p3_wrapper', input port 'io_pending_payload_binding_in_bits_transaction_identity_request_id[2]' is connected directly to output port 'io_accepted_pending_payload_binding_observation_bits_payload_binding_transaction_identity_request_id[2]'. (LINT-29)",
+            "LINT-31": "Warning: In design 'route_a_m2_p3_wrapper', output port 'io_p3_pack_read_materialized_work_out_bits_member_ordinal[6]' is connected directly to output port 'io_component_status_out_bits_acknowledgement_name[3]'. (LINT-31)",
+            "LINT-33": "Warning: In design 'route_a_m2_p3_wrapper', the same net is connected to more than one pin on submodule 'srl_69927'. (LINT-33)",
+            "LINT-52": "Warning: In design 'route_a_m2_p3_wrapper', output port 'io_p3_pack_read_materialized_work_out_bits_member_ordinal[6]' is connected directly to 'logic 0'. (LINT-52)"
+          },
+          "constraint_sections": [
+            "min_capacitance"
+          ],
+          "constraint_violations": 554,
+          "constraint_example": [
+            "   _0_net_[0]               0.000410       0.000000       -0.000410 (VIOLATED)",
+            "   _0_net_[1]               0.000410       0.000000       -0.000410 (VIOLATED)"
+          ],
+          "constraint_totals": [
+            [
+              "554",
+              "-0.227141"
+            ]
+          ],
+          "reference_cell_samples": {
+            "EDFQD2": "EDFQD2BWP12T30P140LVT tcbn28hpcplusbwp12t30p140lvtssg0p81v125c     3.528000   24773 87399.146882 n",
+            "DFQD2": "DFQD2BWP12T30P140LVT tcbn28hpcplusbwp12t30p140lvtssg0p81v125c     2.520000  369945 932261.392944 n",
+            "CKLNQD1": "CKLNQD1BWP12T30P140LVT tcbn28hpcplusbwp12t30p140lvtssg0p81v125c     2.520000       1     2.520000 b"
+          }
+        },
+        "native_lint_summary_counts": {
+          "LINT-28": 4052,
+          "LINT-29": 407,
+          "LINT-31": 667,
+          "LINT-33": 43,
+          "LINT-52": 560,
+          "LINT-55": 1
+        },
+        "lint_count_note": "frozen checker counts each category header plus detail; native summary separates 5729 warnings plus 1 proxy Information entry after hold pass"
+      }
+    }
+  },
+  "audit_source_commit": "8531ccf20a2fd02950ae7ba82c633a90b68e4f91",
+  "remote_root": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/wcg1_wrapper_mapping_sta_211f1e2_20261106_r2",
+  "status": "ACCEPTED_ISOLATED_WRAPPER_MAPPING_STA_SCREEN_CLEANLINESS_OPEN",
+  "acceptance": {
+    "tool_input_artifact_closure": "PASS",
+    "inline_native_binding": "PASS_4608_NATIVE_GATES_TE_ZERO",
+    "mapped_area": "IMPROVED_15.624812_PERCENT_MATCHED_HOLD_PASS",
+    "setup_hold_2ns": "PASS_REPORTED_ZERO_VIOLATIONS_NO_POSITIVE_SETUP_MARGIN",
+    "structural_cleanliness": "OPEN_LINT_AND_554_MIN_CAPACITANCE_VIOLATIONS",
+    "production_integration": "DEFAULT_OFF_UNCHANGED",
+    "full_top_timing_and_area_ratio": "NOT_UPDATED",
+    "PPA_system_acceleration_hardware_net_benefit": "NOT_ESTABLISHED"
+  },
+  "scope": {
+    "remote_mutations": false,
+    "RTL_changes": false,
+    "new_DC_or_simulation_jobs": false,
+    "RD1_PM1_access": false,
+    "RD2_integrated": false,
+    "original_r1_modified": false,
+    "universal_functional_equivalence": "NOT_ESTABLISHED_PREVIOUS_DIRECTED_ACCEPTANCE_REMAINS_8_OF_8"
+  },
+  "mapped_native_binding": {
+    "companion_model_sha256": "4aac97c4efda0665cdc8af807a1f5f6706f69a2359453b244562cd8158f27cbf",
+    "tie_cell_model": "module TIELBWP12T30P140LVT (ZN);\n    output ZN;\n    buf (ZN, 1'b0);\n\nendmodule",
+    "stages": {
+      "raw": {
+        "native_gate_modules": 4608,
+        "CP_E_TE_Q_present": true,
+        "TE_driven_by_native_TIEL": true,
+        "sample_module": "module route_a_compact_word_clock_gate_0 ( clock, enable, gated_clock );\n  input clock, enable;\n  output gated_clock;\n  wire   \\*Logic0* ;\n\n  CKLNQD1BWP12T30P140LVT native_gate ( .CP(clock), .E(enable), .TE(\\*Logic0* ), \n        .Q(gated_clock) );\n  TIELBWP12T30P140LVT U2 ( .ZN(\\*Logic0* ) );\nendmodule\n"
+      },
+      "repaired": {
+        "native_gate_modules": 4608,
+        "CP_E_TE_Q_present": true,
+        "TE_driven_by_native_TIEL": true,
+        "sample_module": "module route_a_compact_word_clock_gate_0 ( clock, enable, gated_clock );\n  input clock, enable;\n  output gated_clock;\n  wire   \\*Logic0* ;\n\n  CKLNQD1BWP12T30P140LVT native_gate ( .CP(clock), .E(enable), .TE(\\*Logic0* ), \n        .Q(gated_clock) );\n  TIELBWP12T30P140LVT U2 ( .ZN(\\*Logic0* ) );\nendmodule\n"
+      }
+    }
+  },
+  "local_validation": {
+    "frozen_source_files_rehashed": 130,
+    "all_source_hashes_match": true,
+    "pytest_passed": 36,
+    "pytest_command": ".venv/bin/python -m pytest -q -p no:cacheprovider tests/test_wcg1_wrapper_mapping.py tests/test_wcg1_bank_mapping_postcheck.py",
+    "git_diff_check": "PASS"
+  },
+  "checks_passed": 318
+}

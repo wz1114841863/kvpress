@@ -383,6 +383,18 @@ session/root, retains all original 2-ns controls and source geometry, and
 still fails closed before formal mapping on any native preflight Error.
 It is a launched experiment, not a mapped/timing result; preserve r1.
 
+Finish with `dc_wcg1_wrapper_mapping_retry_result_20261107.md` and JSON:
+r2 native/outer closure, 130 frozen source hashes and all 73 native artifacts
+pass. Inline/native binding retains 4,608 gates and 366,336 data flops; TE=0
+and positive capture arcs are checked. Matched hold-pass actual-wrapper cell
+area falls 15.624812%, from 2,295,026.201759 to 1,936,432.671921. Reported
+2-ns setup/hold passes, with candidate setup slack exactly 0, hold +0.029539
+ns and gate-enable setup/hold +0.740547/+0.211413 ns. Structural cleanliness
+remains open on identical lint and 554 min-capacitance violations. This
+supersedes r2 launch-only status at isolated mapping/STA scope; it is not
+whole-top integration/timing or a new Route-A/Full-KV ratio. No DC is rerun
+and RD1+PM1 is neither queried nor changed.
+
 For the read-only incremental storage/service cost ledger, read
 `route_a_incremental_storage_cost_ledger_p0_20261106.md` and its CSV/evidence
 JSON. It separates accepted RD1 mapped parents/compact tables from excluded
