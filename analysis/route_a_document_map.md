@@ -480,3 +480,18 @@ closure and separate original-policy versus matched propagated-clock/hold
 measurement tiers. RD1 is not timing-closed. No RTL repair or new tool/full-DC
 job is performed by this audit. Preserve prior failed diagnostic and all
 area/timing tradeoff records; do not infer whole-top WCG1 benefit or PPA.
+
+The user authorizes RD1+WCG1 input freeze and a complete paired DC, PM1 off,
+RD2 excluded, with primary and matched gated-clock/hold results separated.
+Read `dc_rd1_wcg1_full_paired_launch_20261107.md` and JSON. The standalone
+wrapper cannot be substituted because its header differs from the real
+parent-pruned child; contextual reference/gated emission is required first.
+A 3-GiB two-design JVM failed OOM and is preserved; r2 uses one 6-GiB JVM
+per side in `kvzap-rd1-wcg1:export-r2`. Constructor forwarding remains
+production-default-off. The new fail-closed freeze keeps 47 RD1 units and
+Full-KV unchanged, replaces only the context-verified wrapper and adds the
+native inline dependency (49 Route-A units). Thirty-six local regressions
+pass. The guarded full pipeline must wait for export, source/state/proxy/
+profile and full native-binding gates before formal compilation. Until
+those markers appear this is preparation/queued execution, not input freeze
+or a mapped result. Do not infer any new area/timing/cleanliness or PPA claim.

@@ -20,6 +20,7 @@ class RouteAMeasurementDut(
   p: RouteASkeletonParameters,
   externalizeFunctionalReferences: Boolean = false,
   bankPageManagerAllocatedLineSelector: Boolean = false,
+  gateCompactMembershipWords: Boolean = false,
 ) extends Module {
   val io = IO(new Bundle {
     val frontend_lifecycle_req = Flipped(RouteAChannels.frontend_lifecycle_req(p))
@@ -79,7 +80,7 @@ class RouteAMeasurementDut(
   val directAssociationMaterializer = Module(new RouteADirectPendingAssociationMaterializer(p))
   val arbiter = Module(new RouteACoreSideArbiter(p))
   val coreMemory = Module(new RouteACoreMemIfV1(p))
-  val m2P3 = Module(new RouteAM2P3Wrapper(p))
+  val m2P3 = Module(new RouteAM2P3Wrapper(p, gateCompactMembershipWords = gateCompactMembershipWords))
   // MR-2: the measurement contour owns its bounded M2 control protocol.
   // The historical reference endpoint remains only in legacy/test skeletons.
   val m2Control = Module(new RouteAM2ProductionControlOwner(p))
@@ -447,10 +448,12 @@ class RouteAMeasurementDut(
 final class RouteAControlProjection(
   p: RouteASkeletonParameters,
   bankPageManagerAllocatedLineSelector: Boolean = false,
+  gateCompactMembershipWords: Boolean = false,
 ) extends RouteAMeasurementDut(
       p,
       externalizeFunctionalReferences = true,
       bankPageManagerAllocatedLineSelector = bankPageManagerAllocatedLineSelector,
+      gateCompactMembershipWords = gateCompactMembershipWords,
     ) {
   override def desiredName: String = "route_a_control_projection"
 }

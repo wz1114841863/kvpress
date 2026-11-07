@@ -20,6 +20,7 @@ object RouteAControlProjectionGenerator {
   def construct(
     p: RouteASkeletonParameters,
     bankPageManagerAllocatedLineSelector: Boolean = false,
+    gateCompactMembershipWords: Boolean = false,
   ): RouteAControlProjection =
-    new RouteAControlProjection(p, bankPageManagerAllocatedLineSelector)
+    new RouteAControlProjection(p, bankPageManagerAllocatedLineSelector, gateCompactMembershipWords)
 }

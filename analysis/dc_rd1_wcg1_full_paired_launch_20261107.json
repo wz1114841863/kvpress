@@ -1,0 +1,67 @@
+{
+  "files_sha256": {
+    "accepted_wcg1_launch.json": "ada3843d894b76f611919602c664b77bcaa6a5c037dfe04819df77c35fcb9a5e",
+    "check_control_refinement_successor.py": "aedf409702bc6e6026642d644c36b3e22e6e579184e4d968b213f9722864180c",
+    "check_dc_array_proxy_materialization.py": "1b428d95bf083284492e2716002ac8456fdbdd5ca9e7a622233967f08d7fae78",
+    "check_kvzap_control_projection_constraint_coverage.py": "44ef88438a300017653a5eda9b028708118b1d272b4bcb96d21ab5e06472f627",
+    "check_kvzap_control_projection_dc_feasibility_fair_v1.sh": "e38dadaa68434426879ff1851805853134ecc371db7599fec3fe349a5a975dab",
+    "check_r5_descriptor_externalization_successor.py": "5c0fe92790a06c20b47e92bddab933826d02e6b0c937d8a268583e3a741cf582",
+    "check_rd1_wcg1_full_paired.py": "70b63f7622d8131dbe439bc9f61ad89bd7c4f50853ea3ec6717e07aefc920fc3",
+    "check_wcg1_bank_mapping.py": "69ef21f29247a44931431b4a84f98c6ec2c2c3ee630a361eead65b6a334b16bc",
+    "constraints_control_projection.tcl": "3bc9d0e4b3caf9244f38e265ad1222f2ea36d89bed0a31d27a4d3cba19fe5007",
+    "dc_feasibility_fair_rd1_shared_v1.json": "d968a8bc178af3f223c7f49ab8f1c5270f73fdd4ac60197e4e13b11cefd6aec4",
+    "env_kvzap_control_projection_dc.sh": "5439a78c063480bb9be1a4583929da3d2bf147101a884242f62dbad27c3fb8e4",
+    "freeze_rd1_wcg1_input.py": "a32b02e26160a367b961bc3e28638e41b878b833917c78e0acc7538b51adeb88",
+    "materialize_control_refinement_proxy.sh": "53b3c1829a216d720da3635563cf77fd0203c720ec6b10a1d79188094eefc8a6",
+    "materialize_dc_array_proxies.py": "8c7555eac8a4b89e439c2d8e9a44a79497736c7b3724778a348d643e1d798c4f",
+    "prepare_wcg1_wrapper_mapping.py": "be85d8e7b5901b3e989f4e971f41cb1fa094a057e5e53cf7de7773c033df00aa",
+    "preserve_r3_entry_id_driver.tcl": "a936bd9453002fc3de7f7388aa78c3e74cf31e45a0461773105935ae0157438d",
+    "run_kvzap_control_projection_dc_feasibility.tcl": "9027bfde757823c23485f25931a462854226c3d3ae7f369e7a9704ec532dd282",
+    "run_rd1_wcg1_full_paired.sh": "1d039f92a998d062a184cc2f72729296e5d520df2fb2aecfec36ef0b9417c574",
+    "run_rd1_wcg1_full_paired.tcl": "acbe913abdd35e3615f509d14151218769e0fca0f4e58302472d3ee36fb3e497"
+  },
+  "checksums_sha256": "634b781b4100c2ceefd7bde810fb2967e7670a54181785781c2c8fb201aeb465",
+  "archive_sha256": "64bb25f65b38e69042f9e587aa4b6779f0e633d8df6e1c8a3ab7c89cec2d4e3b",
+  "file_count": 19,
+  "schema": "rd1-wcg1-full-paired-launch-1",
+  "status": "PREPARED_CONTEXT_EXPORT_ACTIVE_NOT_FROZEN",
+  "run_id": "dc_feasibility_fair_rd1_wcg1_20261107_r1",
+  "PM1": false,
+  "RD2": false,
+  "reference_run": "dc_feasibility_fair_rd1_shared_20261105_r1",
+  "generation": {
+    "root": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_contextual_20261107_r2",
+    "archive_sha256": "fcf677b698d582c47080a865d4a75d690188cb0f6f90a8210e8752f2dfe6ddf1",
+    "source_files": 137,
+    "JVM_heap_GiB": 6,
+    "one_JVM_per_side": true,
+    "tmux": "kvzap-rd1-wcg1:export-r2"
+  },
+  "result_root": "/home/yaz80/wz_project/dc_project/kvzap_control_projection/runs/dc_feasibility_fair_rd1_wcg1_20261107_r1",
+  "stem": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/rd1_wcg1_20261107_r1",
+  "tmux": "kvzap-rd1-wcg1:paired-dc",
+  "log": "/home/yaz80/wz_project/chisel_projects/kvpress/logs/rd1_wcg1_full_dc_20261107_r1.log",
+  "checks": {
+    "pytest_passed": 36,
+    "shell_syntax": true,
+    "tcl_complete": true,
+    "CLI_help": true
+  },
+  "tier_names": [
+    "primary_raw",
+    "propagated_raw",
+    "propagated_hold_repaired"
+  ],
+  "constraints": {
+    "period_ns": 2,
+    "setup_uncertainty_ns": 0.1,
+    "hold_uncertainty_ns": 0.02,
+    "IO_delay_ns": 0.2,
+    "input_transition_ns": 0.05,
+    "output_load_pf": 0.005
+  },
+  "input_archive_sha256": null,
+  "source_freeze_pass": false,
+  "native_binding_pass": false,
+  "formal_pair_started": false
+}
