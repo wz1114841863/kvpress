@@ -1,0 +1,1565 @@
+{
+  "schema": "route_a_registration_window_contract_validation_v1",
+  "date": "2026-11-09",
+  "source_commit": "f9f8adfe4df1e39e42945049419a9b99d260a83d",
+  "branch": "research/kvzap-latest",
+  "verdict": "CONDITIONAL_MODEL_PASS_CURRENT_PRODUCTION_CONTRACT_NOT_CLOSED",
+  "inputs": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "31f85c67f53c7cab140bb72246eca7ca4594e5c3b9b457d68b5f61f7f2180740",
+      "bytes": 22013
+    },
+    {
+      "path": "README.md",
+      "sha256": "a4df6dc88999c1079cd965f6e1d5be323db386e7fac4963cd932a684816c9a73",
+      "bytes": 20483
+    },
+    {
+      "path": "analysis/architecture_spec.md",
+      "sha256": "2b319b854cfad59d0d43a0f347288d6a9ec8ad7cd3ea473f5e1c5d2a9e60ca4b",
+      "bytes": 67421
+    },
+    {
+      "path": "analysis/mr1b_direct_pending_cross_owner_contract_proposal.md",
+      "sha256": "6d540e7ef1e2683d85dec1fcb7fc9002bfc1d19b773f90a9d710eba616781aa9",
+      "bytes": 46826
+    },
+    {
+      "path": "analysis/route_a_paper_execution_scope_and_closure_20261109.md",
+      "sha256": "e734555c7db2c5bcd8a62f56eddc6bc3d196695f169596338945de687965222e",
+      "bytes": 16250
+    },
+    {
+      "path": "analysis/route_a_stage_a_execution_envelope_20261109.md",
+      "sha256": "a1d6b75ed1bfd71af0455a0ef52261ab4e3265382847be00dbce14f056e0a7c7",
+      "bytes": 16513
+    },
+    {
+      "path": "analysis/route_a_multigroup_journal_lifecycle_closure_20261109.md",
+      "sha256": "47e478c3cbbf1a78ecf8009aa305c05c6b00cf4eb6189b097448985a743f16f3",
+      "bytes": 20345
+    },
+    {
+      "path": "analysis/route_a_multigroup_journal_lifecycle_closure_20261109.json",
+      "sha256": "f1d1e17eedae56e9aa3d974c243d52f4f8932ae1c6be123b3608d56c23d27351",
+      "bytes": 23323
+    },
+    {
+      "path": "analysis/route_a_persistent_page_read_r2_result_20261109.md",
+      "sha256": "c9499563ae554aeb70ca2d83ea2883359f02afaad33dd1627100a1568e7b425a",
+      "bytes": 7144
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "sha256": "229f37ad12fb459611aafe80aee023e731b9cdcdf8da2eaa3ca280d9b4688b4c",
+      "bytes": 293132
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+      "sha256": "45d413f5ceb53e17e923c489782b88632074c3098f481f58e864a527199879d4",
+      "bytes": 16919
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPersistentPackedReadController.scala",
+      "sha256": "c78d23d9be058343c534f37c5ef132b05dd6f04b21db5ef9448f032ffe0e5925",
+      "bytes": 17437
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPersistentReadReceiptCollector.scala",
+      "sha256": "cdf3557175f83f9fa90c0c35619fc0908e44f40a91e4fd7e096a02c7c8aa932d",
+      "bytes": 5128
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+      "sha256": "3cf9dfbf8e66d3e7ab5b00c0c59a5532e8dcb04ad3a0b673229cab520c7f9fe0",
+      "bytes": 158192
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "sha256": "308f089b77df9f72fea68f0e320604cfab3b9e450f08826929ca9aa804675968",
+      "bytes": 78685
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "sha256": "085c425b9fa6a14fbdcb9911e4c33b1c53309b68e1b2e60b5a1e3e178bbdb2c0",
+      "bytes": 34615
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+      "sha256": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493",
+      "bytes": 9048
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+      "sha256": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887",
+      "bytes": 4098
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/DualMeasurementDutStructuralSpec.scala",
+      "sha256": "48877adbbae812ba196f280d0a6e37aba26c86c8f5298fee003ad37c19794c42",
+      "bytes": 6784
+    },
+    {
+      "path": "tools/check_route_a_registration_window_contract.py",
+      "sha256": "94bdb414a150dc803c5462d2561a54be8c71c55b7bedaddac854a5d494c5df7b",
+      "bytes": 23522
+    }
+  ],
+  "source_anchors": [
+    {
+      "id": "producer_creation_not_delivery",
+      "path": "analysis/mr1b_direct_pending_cross_owner_contract_proposal.md",
+      "line": 330,
+      "contains": "The pending-payload descriptor/location owner creates that registration at the"
+    },
+    {
+      "id": "generic_unbound_sources_are_legal",
+      "path": "analysis/mr1b_direct_pending_cross_owner_contract_proposal.md",
+      "line": 251,
+      "contains": "query source. It remains the pack-read ledger only."
+    },
+    {
+      "id": "single_registration_guard",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 354,
+      "contains": "  io.registration_in.ready := !registered && registrationLegal"
+    },
+    {
+      "id": "query_waits_for_journal",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 373,
+      "contains": "  io.pending_packing_reconciliation_lookup_out.valid := registered && reconciliationLookupPending"
+    },
+    {
+      "id": "Unseen_is_not_permanent_negative",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 371,
+      "contains": "  // `Unseen` answer remains a lawful direct source and keeps observing future"
+    },
+    {
+      "id": "sticky_withdrawal",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 416,
+      "contains": "  val withdrawalMatches = io.pending_to_packed_read_eligibility_withdrawal_in.valid && registered &&"
+    },
+    {
+      "id": "blocked_association_query",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 427,
+      "contains": "  io.association_query_in.ready := queryMatches && reconciliationKnown &&"
+    },
+    {
+      "id": "same_cycle_withdrawal_blocks_commit",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 490,
+      "contains": "  io.lease_commit_in.ready := commitMatches && !withdrawalMatches"
+    },
+    {
+      "id": "lease_live_latches",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 491,
+      "contains": "  when(io.lease_commit_in.fire) { leaseLive := true.B }"
+    },
+    {
+      "id": "materializer_cancellation_wait",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 628,
+      "contains": "  io.association_withdrawal_in.ready := state === AwaitIssue &&"
+    },
+    {
+      "id": "materializer_failure_return_idle",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 658,
+      "contains": "  when(io.association_failure_out.fire) { state := Idle }"
+    },
+    {
+      "id": "binder_waits_before_controller",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 747,
+      "contains": "  io.completion_plan_out.valid := haveDeclaration && (!pendingPresent || haveAssociation)"
+    },
+    {
+      "id": "R3_journal_reset_contract",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 2693,
+      "contains": "  // It is not a second residency table and is cleared only by destructive"
+    },
+    {
+      "id": "R3_withdrawal_after_true_fire",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 3496,
+      "contains": "    io.authority_transition_out.fire && transitionHasPendingReadBinding"
+    },
+    {
+      "id": "R3_full_result_snapshot",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 3579,
+      "contains": "    reconciliationResult.registration := reconciliationLookup.registration"
+    },
+    {
+      "id": "R2_joint_issue_gate",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+      "line": 957,
+      "contains": "  io.direct_lease_commit_out.valid := !cancelFire && finalIsDirect && io.core_mem_req.ready"
+    },
+    {
+      "id": "external_registration_input",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "line": 35,
+      "contains": "    val pending_source_descriptor_registration_in = Flipped(RouteAChannels.pending_source_descriptor_registration(p))"
+    },
+    {
+      "id": "registration_directly_connected",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "line": 171,
+      "contains": "  pendingDescriptorOwner.io.registration_in <> io.pending_source_descriptor_registration_in"
+    },
+    {
+      "id": "source_release_not_owner_recycle",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "line": 167,
+      "contains": "  lifecycle.io.pending_source_release_in <> directPending.io.direct_release_out"
+    },
+    {
+      "id": "controller_after_binder",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "line": 196,
+      "contains": "    control.io.plan_in <> sourcePlanBinder.io.completion_plan_out"
+    },
+    {
+      "id": "pending_only_legacy_branch",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPersistentPackedReadController.scala",
+      "line": 177,
+      "contains": "    when(!inputPacked) {"
+    },
+    {
+      "id": "declaration_has_no_window_field",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "line": 537,
+      "contains": "final class SourcePlanDeclaration(p: RouteASkeletonParameters) extends Bundle {"
+    }
+  ],
+  "production_source_manifest": [
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVMeasurementInterfaces.scala",
+      "sha256": "839fce10bce65d04d0cd586d467d494c04e43e28c4a5dff9aa01e03332481a96",
+      "bytes": 3552
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVReadPath.scala",
+      "sha256": "e82a577221ea775170c89755f8967c2246a36202300a3ca3b1f012c35d5f816a",
+      "bytes": 7314
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVS2Completion.scala",
+      "sha256": "ed28226bff0d973fe8b8a17f0059f121c1dc6f96d79f263d66d94dd3e521e24c",
+      "bytes": 18993
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+      "sha256": "3cf9dfbf8e66d3e7ab5b00c0c59a5532e8dcb04ad3a0b673229cab520c7f9fe0",
+      "bytes": 158192
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteACompactWordClocking.scala",
+      "sha256": "4bea447a12560a2430b798267447ee3028293f3769b82aedfa191a10985cf394",
+      "bytes": 2536
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAExactLowestPrioritySelector.scala",
+      "sha256": "e996a010466b98d2e2eb70e721da9cb258a8f6a56529c3fd1b34c9dc71f96a0a",
+      "bytes": 2022
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "sha256": "229f37ad12fb459611aafe80aee023e731b9cdcdf8da2eaa3ca280d9b4688b4c",
+      "bytes": 293132
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAM2EntryStorage.scala",
+      "sha256": "fe1f65bd79417aeb4d62d2e846939022155631b82c66515e8feea887f422688a",
+      "bytes": 13932
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMemberRecordReadSharing.scala",
+      "sha256": "3c549945718a39c700b95ec76616aa1e84d020f9b5114158598b58aee4b05c45",
+      "bytes": 1167
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+      "sha256": "45d413f5ceb53e17e923c489782b88632074c3098f481f58e864a527199879d4",
+      "bytes": 16919
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala",
+      "sha256": "c38ec16eb79c180293b932ea5c5889240bf22a7b12520df3b636412cebea2bee",
+      "bytes": 36172
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPersistentPackedReadController.scala",
+      "sha256": "c78d23d9be058343c534f37c5ef132b05dd6f04b21db5ef9448f032ffe0e5925",
+      "bytes": 17437
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPersistentReadReceiptCollector.scala",
+      "sha256": "cdf3557175f83f9fa90c0c35619fc0908e44f40a91e4fd7e096a02c7c8aa932d",
+      "bytes": 5128
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteARecordReadDecode.scala",
+      "sha256": "e662fcff2db1e0fbc3bd70dbcbb2d20eeb2d66dc977577892eb11bb2ffe9e7e0",
+      "bytes": 905
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "sha256": "308f089b77df9f72fea68f0e320604cfab3b9e450f08826929ca9aa804675968",
+      "bytes": 78685
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAPersistentReadInterfaces.scala",
+      "sha256": "ee220a1b36aca11e02c844baed3ae46204b031af122017cecae1bab38703283f",
+      "bytes": 2604
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAPersistentReadLifecycleInterfaces.scala",
+      "sha256": "89ef4e258e66fabc2df658a89faba230efcf6d506a57688b766f0532c13bce50",
+      "bytes": 1588
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAPersistentReadS2Interfaces.scala",
+      "sha256": "a81644aadc21704996a99f3d301fc28dcdbbad980a8eb0a306a06bd1ff175388",
+      "bytes": 938
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAPersistentReadTopInterfaces.scala",
+      "sha256": "4690c934f1abd746efbdfd2444596c3e8c6252af99e1f7d43ae5b17b3f296ea1",
+      "bytes": 985
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+      "sha256": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493",
+      "bytes": 9048
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+      "sha256": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887",
+      "bytes": 4098
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/FullKVMeasurementDut.scala",
+      "sha256": "cebc0577929aed960ed29cb0b95c674ed68479aafb71c18cf16e55775fa1389b",
+      "bytes": 6042
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PM1PageManagerHdlEmitter.scala",
+      "sha256": "7a9fc95edb17ddbbc6c7422322d4cd948ad96d52936e0ee4f9f36f03978f0ffe",
+      "bytes": 1364
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PairedControlProjectionHdlEmitter.scala",
+      "sha256": "8a589a6c74c02ebb78f7e1d3ee0080550bb9ee82da4bb6cd85255b7bf7405292",
+      "bytes": 8023
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAComponentStatusCollector.scala",
+      "sha256": "6b83963f747ad3f32c379df0bed30a84468fe891d9493cd9f0b3aea3f47ee329",
+      "bytes": 4982
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",
+      "sha256": "f4d7fba2658731590a2abea3a52d3402ac32d24bab700d012735393a65c4e4a6",
+      "bytes": 35177
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "sha256": "085c425b9fa6a14fbdcb9911e4c33b1c53309b68e1b2e60b5a1e3e178bbdb2c0",
+      "bytes": 34615
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/SynthesisControlProjectionGenerators.scala",
+      "sha256": "3dcf569311fa43652ce03408a1507206ca77b01f3dca65ef30d75a3aa276f844",
+      "bytes": 1032
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1ContextualHdlEmitter.scala",
+      "sha256": "6550ef0bfe64bd40e3903b45ecb2e05e2e4f2a91ff668ecaf9d8f24be0deda80",
+      "bytes": 1176
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1WrapperHdlEmitter.scala",
+      "sha256": "ad0f9bb5ddb915907792042983b0a76ffc6ea0e380643ecce55ce707af1886ef",
+      "bytes": 1139
+    }
+  ],
+  "external_registration_references": [
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 303,
+      "text": "val registration_in = Flipped(RouteAChannels.pending_source_descriptor_registration(p))"
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "line": 1521,
+      "text": "def pending_source_descriptor_registration(p: RouteASkeletonParameters) = Decoupled(new PendingSourceDescriptorRegistration(p))"
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "line": 35,
+      "text": "val pending_source_descriptor_registration_in = Flipped(RouteAChannels.pending_source_descriptor_registration(p))"
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "line": 171,
+      "text": "pendingDescriptorOwner.io.registration_in <> io.pending_source_descriptor_registration_in"
+    }
+  ],
+  "source_facts": {
+    "creation": "normative MR-1B: at accepted pending maturity; delivery deadline or end-of-registration signal absent",
+    "producer": "no concrete freeze/seal descriptor producer in current production top; input is external",
+    "owner": "once per reset; leaseLive no normal terminal clear input",
+    "withdrawal": "Valid-only mirror of true R3-to-R6 fire; does not backpressure authority",
+    "plan_failure_gap": "TransitionedPacked blocks pending association query without a negative response; v2 controller is after completion_plan and cannot discover this waiting preplan",
+    "unbound_direct": "R3 is not a directory for every lawful pending source; excluding those is not authorized"
+  },
+  "new_contract_assumptions": {
+    "producer_cut": "immutable complete group census plus no future generation, all offers accepted or exact-rejected with ACK before producer seal",
+    "token": "namespace32 + monotonically allocated group sequence32, bound to real member/pending ownership",
+    "DUT_cut": "all real R6 transitions, query results accepted, permanent owner facts retained or fully drained, readiness/notice custody, both close ACKs",
+    "live_service": "bounded K=1 independent old context may survive journal reuse; never recycle/cancel issued lease on journal close",
+    "late_request": "closed/stale/foreign-token/member explicitly rejected, never treated as Unseen",
+    "plan_cut": "local rejection without an accepted attention; R6 preplan fault for accepted unplanned attention; original cancel chain after plan acceptance; existing lease continues after issue"
+  },
+  "acceptance": {
+    "generic_wrapper_v1_changed": false,
+    "production_RTL_changed": false,
+    "native_test_started": false,
+    "remote_task_started": false,
+    "dc_sta_started": false,
+    "finite_model_conditionally_consistent": true,
+    "current_producer_contract_qualified": false,
+    "full_production_64_history_integration_authorized_by_evidence": false,
+    "repeated_pending_owner_lifecycle_implemented": false,
+    "all_fault_cleanup_proved": false
+  },
+  "capacity_argument": "Single active <=64 group, injective ordinal writes, clear only after seals/custody/queries and close ACKs, no old-token Unseen afterward; bounded independent K contexts are separate nonzero costs.",
+  "cost_arithmetic": {
+    "existing_journal_bits": 18112,
+    "existing_journal_bytes": 2264,
+    "registration_bits": 297,
+    "result_bits": 299,
+    "window_token_bits": 64,
+    "pending_context_capacity_K": 1,
+    "producer_queue_records_candidate": 64,
+    "producer_queue_registration_bits": 19008,
+    "producer_queue_registration_bytes": 2376,
+    "producer_queue_valid_and_shared_token_bits": 128,
+    "producer_queue_candidate_bits": 19136,
+    "producer_queue_candidate_bytes": 2392,
+    "extra_context_registration_and_token_bits_before_other_state": 361,
+    "previous_292_bit_inventory_is_complete_cost": false
+  },
+  "implementation_gates": [
+    {
+      "id": "P-SEAL",
+      "requirement": "real producer finite queue and immutable creation/delivery cut including held valid offers and selected source obligations",
+      "status": "OPEN"
+    },
+    {
+      "id": "P-OWN",
+      "requirement": "bind current token to real maturity/member facts; reject relabelled old binding",
+      "status": "OPEN"
+    },
+    {
+      "id": "P-UNBOUND",
+      "requirement": "independent live/pending proof and bounded cost for lawful unbound direct sources",
+      "status": "OPEN"
+    },
+    {
+      "id": "P-PREPLAN",
+      "requirement": "closed negative response and exact R6 preplan fault path, no invented terminal",
+      "status": "OPEN"
+    },
+    {
+      "id": "P-CUSTODY",
+      "requirement": "context custody/recycle with real cancel/abort/typed terminal/consumer/source release and retirement",
+      "status": "OPEN"
+    },
+    {
+      "id": "P-PHYSICAL",
+      "requirement": "source/queue/mux/query/ACK ports, timing and complete storage/service cost",
+      "status": "OPEN"
+    }
+  ],
+  "finite_model": {
+    "assumptions": [
+      "producer creates descriptor once at maturity, freezes generation and acknowledges all offered dispositions before seal",
+      "single <=64-member working group, no G1 admission before both close ACKs",
+      "all old queries resolve and permanent revoked facts remain in bounded independent owners",
+      "active token is bound to immutable pending/member ownership, not trusted solely from request bits",
+      "all accepted unplanned attentions have an explicit R6-owned rejection path; the lease component starts after association acceptance",
+      "the successful consumer/source-release branch uses one source-ending direct record; source_last is not derived from group size",
+      "owner custody ACK does not recycle or cancel an issued read",
+      "closed/wrong-namespace requests explicitly reject, never become Unseen"
+    ],
+    "bad_policy_counterexamples": {
+      "cancel_issued_lease": {
+        "invariant": "issued read was canceled/unpinned before matching typed terminal",
+        "kind": "exhaustive_bad_policy_counterexample",
+        "state": {
+          "consumers": 0,
+          "eligibility": 2,
+          "eligibility_value": true,
+          "issued": true,
+          "issued_after_transition": false,
+          "journal_cleared": false,
+          "next_open": false,
+          "owner_reused": false,
+          "phase": 4,
+          "pinned": false,
+          "source_released": false,
+          "terminal": 0,
+          "transferred": false,
+          "transitioned": true
+        },
+        "states_seen": 68,
+        "trace": [
+          "endpoint-open",
+          "exact-open-ACK",
+          "R2-candidate-stored",
+          "read-only-eligibility-query",
+          "eligibility-response/possibly-stale",
+          "joint-R2-R1-external-lease-fire",
+          "real-R6-transition/withdraw-new-issue"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      },
+      "clear_ignores_query": {
+        "invariant": "accepted unsnapshotted lookup still depends on cleared journal",
+        "kind": "exhaustive_bad_policy_counterexample",
+        "state": {
+          "accepted": true,
+          "admitted": 3,
+          "close_acks": 1,
+          "frozen": true,
+          "mature": 3,
+          "next_open": false,
+          "producer": "settled",
+          "query": 1,
+          "ready": true,
+          "reply": -1,
+          "revoked": false,
+          "sealed": true,
+          "transferred": false,
+          "transitioned": 3
+        },
+        "states_seen": 322,
+        "trace": [
+          "maturity[0]/create-once",
+          "admission[0]",
+          "maturity[1]/create-once",
+          "admission[1]",
+          "real-R6-transition[0]",
+          "real-R6-transition[1]",
+          "producer-freeze-creation-rights",
+          "offer-registration/hold-until-disposition",
+          "registration-accept/copy-exact-facts",
+          "producer-receives-exact-disposition",
+          "producer-seal-ACK",
+          "R5-ready/notice-custody",
+          "R3-clear-ACK"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      },
+      "closed_token_as_Unseen": {
+        "bad": "Unseen",
+        "correct": "Closed",
+        "invariant": "closed history must not be reported as Unseen",
+        "kind": "directed_policy_counterexample",
+        "trace": [
+          "G0 transitioned and closed",
+          "late G0 lookup after clear"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      },
+      "foreign_key_relabelled_as_current_window": {
+        "bad": "Unseen",
+        "correct": "NotOwned",
+        "invariant": "a current token alone cannot establish immutable member ownership",
+        "kind": "directed_policy_counterexample",
+        "trace": [
+          "G0 transitioned and closed",
+          "G1 opens",
+          "old binding relabelled with G1 token"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      },
+      "invent_terminal_without_accepted_attention": {
+        "bad": "R6_preplan_fault_once",
+        "correct": "local_reject_no_attention_terminal",
+        "invariant": "a local registration rejection cannot invent an attention terminal",
+        "kind": "directed_policy_counterexample",
+        "trace": [
+          "registration offered without accepted attention",
+          "closed window rejects registration"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      },
+      "late_reply_revives_pending": {
+        "invariant": "late Unseen/Pending reply resurrects pending eligibility",
+        "kind": "exhaustive_bad_policy_counterexample",
+        "state": {
+          "accepted": true,
+          "admitted": 3,
+          "close_acks": 0,
+          "frozen": false,
+          "mature": 3,
+          "next_open": false,
+          "producer": "accept_ack",
+          "query": 3,
+          "ready": false,
+          "reply": 1,
+          "revoked": false,
+          "sealed": false,
+          "transferred": false,
+          "transitioned": 1
+        },
+        "states_seen": 200,
+        "trace": [
+          "maturity[0]/create-once",
+          "admission[0]",
+          "maturity[1]/create-once",
+          "admission[1]",
+          "offer-registration/hold-until-disposition",
+          "registration-accept/copy-exact-facts",
+          "lookup-fire/snapshot=1",
+          "real-R6-transition[0]",
+          "held-result-delivered"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      },
+      "open_after_one_ACK": {
+        "invariant": "G1 opens before both independent old-group close ACKs",
+        "kind": "exhaustive_bad_policy_counterexample",
+        "state": {
+          "accepted": false,
+          "admitted": 3,
+          "close_acks": 1,
+          "frozen": true,
+          "mature": 3,
+          "next_open": true,
+          "producer": "settled",
+          "query": 0,
+          "ready": true,
+          "reply": -1,
+          "revoked": false,
+          "sealed": true,
+          "transferred": false,
+          "transitioned": 3
+        },
+        "states_seen": 298,
+        "trace": [
+          "maturity[0]/create-once",
+          "admission[0]",
+          "maturity[1]/create-once",
+          "admission[1]",
+          "real-R6-transition[0]",
+          "real-R6-transition[1]",
+          "producer-freeze-creation-rights",
+          "retire-unoffered-obsolete-descriptor",
+          "producer-seal-ACK",
+          "R5-ready/notice-custody",
+          "R3-clear-ACK",
+          "open-G1/separate-phase"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      },
+      "reuse_owner_on_journal_clear": {
+        "invariant": "journal release overwrote a live service/cancel/query context",
+        "kind": "exhaustive_bad_policy_counterexample",
+        "state": {
+          "consumers": 0,
+          "eligibility": 0,
+          "eligibility_value": false,
+          "issued": false,
+          "issued_after_transition": false,
+          "journal_cleared": true,
+          "next_open": false,
+          "owner_reused": true,
+          "phase": 0,
+          "pinned": false,
+          "source_released": false,
+          "terminal": 0,
+          "transferred": true,
+          "transitioned": true
+        },
+        "states_seen": 13,
+        "trace": [
+          "real-R6-transition/withdraw-new-issue",
+          "owner-custody-ACK/retain-old-context",
+          "journal-close-after-window-obligations"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      },
+      "seal_ignores_offer": {
+        "invariant": "producer seal lies about outstanding creation/offer/disposition",
+        "kind": "exhaustive_bad_policy_counterexample",
+        "state": {
+          "accepted": false,
+          "admitted": 0,
+          "close_acks": 0,
+          "frozen": true,
+          "mature": 3,
+          "next_open": false,
+          "producer": "queued",
+          "query": 0,
+          "ready": false,
+          "reply": -1,
+          "revoked": false,
+          "sealed": true,
+          "transferred": false,
+          "transitioned": 0
+        },
+        "states_seen": 37,
+        "trace": [
+          "maturity[0]/create-once",
+          "maturity[1]/create-once",
+          "producer-freeze-creation-rights",
+          "producer-seal-ACK"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      },
+      "trust_cached_eligibility": {
+        "invariant": "cached eligibility overrode real authority/commit-edge recheck",
+        "kind": "exhaustive_bad_policy_counterexample",
+        "state": {
+          "consumers": 0,
+          "eligibility": 2,
+          "eligibility_value": true,
+          "issued": true,
+          "issued_after_transition": true,
+          "journal_cleared": false,
+          "next_open": false,
+          "owner_reused": false,
+          "phase": 3,
+          "pinned": true,
+          "source_released": false,
+          "terminal": 0,
+          "transferred": false,
+          "transitioned": true
+        },
+        "states_seen": 62,
+        "trace": [
+          "endpoint-open",
+          "exact-open-ACK",
+          "R2-candidate-stored",
+          "read-only-eligibility-query",
+          "real-R6-transition/withdraw-new-issue",
+          "eligibility-response/possibly-stale",
+          "joint-R2-R1-external-lease-fire"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      }
+    },
+    "checks": {
+      "lease_custody": {
+        "coverage": {
+          "G1_before_R1_terminal": [
+            "endpoint-open",
+            "exact-open-ACK",
+            "R2-candidate-stored",
+            "read-only-eligibility-query",
+            "eligibility-response/possibly-stale",
+            "joint-R2-R1-external-lease-fire",
+            "real-R6-transition/withdraw-new-issue",
+            "owner-custody-ACK/retain-old-context",
+            "journal-close-after-window-obligations",
+            "G1-journal-open/old-service-context-still-pinned"
+          ],
+          "G1_before_cancel_ACK": [
+            "real-R6-transition/withdraw-new-issue",
+            "endpoint-open",
+            "exact-open-ACK",
+            "R2-candidate-stored",
+            "exact-withdrawal-accepted",
+            "cancel-request",
+            "owner-custody-ACK/retain-old-context",
+            "journal-close-after-window-obligations",
+            "G1-journal-open/old-service-context-still-pinned"
+          ],
+          "G1_before_source_release": [
+            "endpoint-open",
+            "exact-open-ACK",
+            "R2-candidate-stored",
+            "read-only-eligibility-query",
+            "eligibility-response/possibly-stale",
+            "joint-R2-R1-external-lease-fire",
+            "real-R6-transition/withdraw-new-issue",
+            "matching-typed-R1-terminal/OK",
+            "owner-custody-ACK/retain-old-context",
+            "journal-close-after-window-obligations",
+            "G1-journal-open/old-service-context-still-pinned"
+          ],
+          "context_recycle_after_cancel": [
+            "real-R6-transition/withdraw-new-issue",
+            "endpoint-open",
+            "exact-open-ACK",
+            "R2-candidate-stored",
+            "exact-withdrawal-accepted",
+            "cancel-request",
+            "exact-cancel-ACK",
+            "endpoint-abort",
+            "exact-abort-ACK",
+            "R6-failure-accepted",
+            "old-context-recycle-after-all-real-ACKs"
+          ],
+          "context_recycle_after_success": [
+            "endpoint-open",
+            "exact-open-ACK",
+            "R2-candidate-stored",
+            "read-only-eligibility-query",
+            "eligibility-response/possibly-stale",
+            "joint-R2-R1-external-lease-fire",
+            "matching-typed-R1-terminal/OK",
+            "consumer-commit[0]",
+            "consumer-commit[1]",
+            "consumer-commit[2]",
+            "consumer-commit[3]",
+            "real-source-release-ACK",
+            "old-context-recycle-after-all-real-ACKs"
+          ],
+          "fault_preserves_quarantined_context": [
+            "endpoint-open",
+            "exact-open-ACK",
+            "R2-candidate-stored",
+            "read-only-eligibility-query",
+            "eligibility-response/possibly-stale",
+            "joint-R2-R1-external-lease-fire",
+            "real-R6-transition/withdraw-new-issue",
+            "matching-typed-R1-terminal/fault/quarantine",
+            "owner-custody-ACK/retain-old-context",
+            "journal-close-after-window-obligations",
+            "G1-journal-open/old-service-context-still-pinned"
+          ],
+          "stale_positive_eligibility_after_transition": [
+            "endpoint-open",
+            "exact-open-ACK",
+            "R2-candidate-stored",
+            "read-only-eligibility-query",
+            "real-R6-transition/withdraw-new-issue",
+            "eligibility-response/possibly-stale"
+          ]
+        },
+        "goal_states": 61,
+        "progress_boundary": "existence of a completion path under acknowledgements, not fair/unbounded RTL liveness",
+        "states": 270,
+        "states_without_a_completion_path": 0,
+        "transitions": 599,
+        "verdict": "PASS"
+      },
+      "producer_full64_drain": {
+        "coverage": {
+          "all64_disposed_before_seal": [
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record",
+            "retire-one-unoffered-obsolete-record"
+          ],
+          "held_disposition": [
+            "offer-one-registration",
+            "consume-offer/Closed-disposition"
+          ],
+          "held_offer": [
+            "offer-one-registration"
+          ]
+        },
+        "goal_states": 1,
+        "progress_boundary": "existence of a completion path under acknowledgements, not fair/unbounded RTL liveness",
+        "states": 194,
+        "states_without_a_completion_path": 0,
+        "transitions": 383,
+        "verdict": "PASS"
+      },
+      "window_members1_descriptor0": {
+        "coverage": {},
+        "goal_states": 1,
+        "progress_boundary": "existence of a completion path under acknowledgements, not fair/unbounded RTL liveness",
+        "states": 17,
+        "states_without_a_completion_path": 0,
+        "transitions": 23,
+        "verdict": "PASS"
+      },
+      "window_members1_descriptor1": {
+        "coverage": {
+          "G1_open_without_attention": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "real-R6-transition[0]",
+            "producer-freeze-creation-rights",
+            "retire-unoffered-obsolete-descriptor",
+            "producer-seal-ACK",
+            "R5-ready/notice-custody",
+            "R3-clear-ACK",
+            "ingress-close-ACK",
+            "open-G1/separate-phase"
+          ],
+          "Pending_snapshot_survives_later_transition": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "offer-registration/hold-until-disposition",
+            "registration-accept/copy-exact-facts",
+            "lookup-fire/snapshot=1",
+            "real-R6-transition[0]",
+            "held-result-delivered"
+          ],
+          "R3_ACK_first": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "real-R6-transition[0]",
+            "producer-freeze-creation-rights",
+            "retire-unoffered-obsolete-descriptor",
+            "producer-seal-ACK",
+            "R5-ready/notice-custody",
+            "R3-clear-ACK"
+          ],
+          "Unseen_snapshot_survives_later_transition": [
+            "maturity[0]/create-once",
+            "offer-registration/hold-until-disposition",
+            "registration-accept/copy-exact-facts",
+            "lookup-fire/snapshot=0",
+            "admission[0]",
+            "real-R6-transition[0]",
+            "held-result-delivered"
+          ],
+          "ingress_ACK_first": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "real-R6-transition[0]",
+            "producer-freeze-creation-rights",
+            "retire-unoffered-obsolete-descriptor",
+            "producer-seal-ACK",
+            "R5-ready/notice-custody",
+            "ingress-close-ACK"
+          ],
+          "late_registration_observes_transition": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "real-R6-transition[0]",
+            "offer-registration/hold-until-disposition",
+            "registration-accept/copy-exact-facts",
+            "lookup-fire/snapshot=2",
+            "held-result-delivered"
+          ],
+          "producer_offer_rejected_with_ack": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "real-R6-transition[0]",
+            "offer-registration/hold-until-disposition",
+            "offer-consumed-with-Closed-reject"
+          ],
+          "query_held_after_producer_seal": [
+            "maturity[0]/create-once",
+            "producer-freeze-creation-rights",
+            "offer-registration/hold-until-disposition",
+            "registration-accept/copy-exact-facts",
+            "producer-receives-exact-disposition",
+            "producer-seal-ACK"
+          ]
+        },
+        "goal_states": 4,
+        "progress_boundary": "existence of a completion path under acknowledgements, not fair/unbounded RTL liveness",
+        "states": 203,
+        "states_without_a_completion_path": 0,
+        "transitions": 455,
+        "verdict": "PASS"
+      },
+      "window_members2_descriptor0": {
+        "coverage": {},
+        "goal_states": 1,
+        "progress_boundary": "existence of a completion path under acknowledgements, not fair/unbounded RTL liveness",
+        "states": 30,
+        "states_without_a_completion_path": 0,
+        "transitions": 48,
+        "verdict": "PASS"
+      },
+      "window_members2_descriptor1": {
+        "coverage": {
+          "G1_open_without_attention": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "real-R6-transition[0]",
+            "real-R6-transition[1]",
+            "producer-freeze-creation-rights",
+            "retire-unoffered-obsolete-descriptor",
+            "producer-seal-ACK",
+            "R5-ready/notice-custody",
+            "R3-clear-ACK",
+            "ingress-close-ACK",
+            "open-G1/separate-phase"
+          ],
+          "Pending_snapshot_survives_later_transition": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "offer-registration/hold-until-disposition",
+            "registration-accept/copy-exact-facts",
+            "lookup-fire/snapshot=1",
+            "real-R6-transition[0]",
+            "held-result-delivered"
+          ],
+          "R3_ACK_first": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "real-R6-transition[0]",
+            "real-R6-transition[1]",
+            "producer-freeze-creation-rights",
+            "retire-unoffered-obsolete-descriptor",
+            "producer-seal-ACK",
+            "R5-ready/notice-custody",
+            "R3-clear-ACK"
+          ],
+          "Unseen_snapshot_survives_later_transition": [
+            "maturity[0]/create-once",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "offer-registration/hold-until-disposition",
+            "registration-accept/copy-exact-facts",
+            "lookup-fire/snapshot=0",
+            "admission[0]",
+            "real-R6-transition[0]",
+            "held-result-delivered"
+          ],
+          "ingress_ACK_first": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "real-R6-transition[0]",
+            "real-R6-transition[1]",
+            "producer-freeze-creation-rights",
+            "retire-unoffered-obsolete-descriptor",
+            "producer-seal-ACK",
+            "R5-ready/notice-custody",
+            "ingress-close-ACK"
+          ],
+          "late_registration_observes_transition": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "real-R6-transition[0]",
+            "offer-registration/hold-until-disposition",
+            "registration-accept/copy-exact-facts",
+            "lookup-fire/snapshot=2",
+            "held-result-delivered"
+          ],
+          "producer_offer_rejected_with_ack": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "real-R6-transition[0]",
+            "real-R6-transition[1]",
+            "offer-registration/hold-until-disposition",
+            "offer-consumed-with-Closed-reject"
+          ],
+          "query_held_after_producer_seal": [
+            "maturity[0]/create-once",
+            "maturity[1]/create-once",
+            "producer-freeze-creation-rights",
+            "offer-registration/hold-until-disposition",
+            "registration-accept/copy-exact-facts",
+            "producer-receives-exact-disposition",
+            "producer-seal-ACK"
+          ]
+        },
+        "goal_states": 4,
+        "progress_boundary": "existence of a completion path under acknowledgements, not fair/unbounded RTL liveness",
+        "states": 337,
+        "states_without_a_completion_path": 0,
+        "transitions": 828,
+        "verdict": "PASS"
+      },
+      "window_members3_descriptor0": {
+        "coverage": {},
+        "goal_states": 1,
+        "progress_boundary": "existence of a completion path under acknowledgements, not fair/unbounded RTL liveness",
+        "states": 59,
+        "states_without_a_completion_path": 0,
+        "transitions": 119,
+        "verdict": "PASS"
+      },
+      "window_members3_descriptor1": {
+        "coverage": {
+          "G1_open_without_attention": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "maturity[2]/create-once",
+            "admission[2]",
+            "real-R6-transition[0]",
+            "real-R6-transition[1]",
+            "real-R6-transition[2]",
+            "producer-freeze-creation-rights",
+            "retire-unoffered-obsolete-descriptor",
+            "producer-seal-ACK",
+            "R5-ready/notice-custody",
+            "R3-clear-ACK",
+            "ingress-close-ACK",
+            "open-G1/separate-phase"
+          ],
+          "Pending_snapshot_survives_later_transition": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "maturity[2]/create-once",
+            "admission[2]",
+            "offer-registration/hold-until-disposition",
+            "registration-accept/copy-exact-facts",
+            "lookup-fire/snapshot=1",
+            "real-R6-transition[0]",
+            "held-result-delivered"
+          ],
+          "R3_ACK_first": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "maturity[2]/create-once",
+            "admission[2]",
+            "real-R6-transition[0]",
+            "real-R6-transition[1]",
+            "real-R6-transition[2]",
+            "producer-freeze-creation-rights",
+            "retire-unoffered-obsolete-descriptor",
+            "producer-seal-ACK",
+            "R5-ready/notice-custody",
+            "R3-clear-ACK"
+          ],
+          "Unseen_snapshot_survives_later_transition": [
+            "maturity[0]/create-once",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "maturity[2]/create-once",
+            "admission[2]",
+            "offer-registration/hold-until-disposition",
+            "registration-accept/copy-exact-facts",
+            "lookup-fire/snapshot=0",
+            "admission[0]",
+            "real-R6-transition[0]",
+            "held-result-delivered"
+          ],
+          "ingress_ACK_first": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "maturity[2]/create-once",
+            "admission[2]",
+            "real-R6-transition[0]",
+            "real-R6-transition[1]",
+            "real-R6-transition[2]",
+            "producer-freeze-creation-rights",
+            "retire-unoffered-obsolete-descriptor",
+            "producer-seal-ACK",
+            "R5-ready/notice-custody",
+            "ingress-close-ACK"
+          ],
+          "late_registration_observes_transition": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "maturity[2]/create-once",
+            "admission[2]",
+            "real-R6-transition[0]",
+            "offer-registration/hold-until-disposition",
+            "registration-accept/copy-exact-facts",
+            "lookup-fire/snapshot=2",
+            "held-result-delivered"
+          ],
+          "producer_offer_rejected_with_ack": [
+            "maturity[0]/create-once",
+            "admission[0]",
+            "maturity[1]/create-once",
+            "admission[1]",
+            "maturity[2]/create-once",
+            "admission[2]",
+            "real-R6-transition[0]",
+            "real-R6-transition[1]",
+            "real-R6-transition[2]",
+            "offer-registration/hold-until-disposition",
+            "offer-consumed-with-Closed-reject"
+          ],
+          "query_held_after_producer_seal": [
+            "maturity[0]/create-once",
+            "maturity[1]/create-once",
+            "maturity[2]/create-once",
+            "producer-freeze-creation-rights",
+            "offer-registration/hold-until-disposition",
+            "registration-accept/copy-exact-facts",
+            "producer-receives-exact-disposition",
+            "producer-seal-ACK"
+          ]
+        },
+        "goal_states": 4,
+        "progress_boundary": "existence of a completion path under acknowledgements, not fair/unbounded RTL liveness",
+        "states": 583,
+        "states_without_a_completion_path": 0,
+        "transitions": 1615,
+        "verdict": "PASS"
+      }
+    },
+    "classification_cases": 72,
+    "closed_plan_cuts": [
+      {
+        "attention_accepted": false,
+        "lease_issued": false,
+        "plan_accepted": false,
+        "required_action": "local_reject_no_attention_terminal"
+      },
+      {
+        "attention_accepted": true,
+        "lease_issued": false,
+        "plan_accepted": false,
+        "required_action": "R6_preplan_fault_once"
+      },
+      {
+        "attention_accepted": true,
+        "lease_issued": false,
+        "plan_accepted": true,
+        "required_action": "cancel_abort_then_R6_failure"
+      },
+      {
+        "attention_accepted": true,
+        "lease_issued": true,
+        "plan_accepted": true,
+        "required_action": "continue_exact_leased_read"
+      }
+    ],
+    "full64_directed_trace": [
+      "maturity[0]/create-once",
+      "admission[0]",
+      "maturity[1]/create-once",
+      "admission[1]",
+      "maturity[2]/create-once",
+      "admission[2]",
+      "maturity[3]/create-once",
+      "admission[3]",
+      "maturity[4]/create-once",
+      "admission[4]",
+      "maturity[5]/create-once",
+      "admission[5]",
+      "maturity[6]/create-once",
+      "admission[6]",
+      "maturity[7]/create-once",
+      "admission[7]",
+      "maturity[8]/create-once",
+      "admission[8]",
+      "maturity[9]/create-once",
+      "admission[9]",
+      "maturity[10]/create-once",
+      "admission[10]",
+      "maturity[11]/create-once",
+      "admission[11]",
+      "maturity[12]/create-once",
+      "admission[12]",
+      "maturity[13]/create-once",
+      "admission[13]",
+      "maturity[14]/create-once",
+      "admission[14]",
+      "maturity[15]/create-once",
+      "admission[15]",
+      "maturity[16]/create-once",
+      "admission[16]",
+      "maturity[17]/create-once",
+      "admission[17]",
+      "maturity[18]/create-once",
+      "admission[18]",
+      "maturity[19]/create-once",
+      "admission[19]",
+      "maturity[20]/create-once",
+      "admission[20]",
+      "maturity[21]/create-once",
+      "admission[21]",
+      "maturity[22]/create-once",
+      "admission[22]",
+      "maturity[23]/create-once",
+      "admission[23]",
+      "maturity[24]/create-once",
+      "admission[24]",
+      "maturity[25]/create-once",
+      "admission[25]",
+      "maturity[26]/create-once",
+      "admission[26]",
+      "maturity[27]/create-once",
+      "admission[27]",
+      "maturity[28]/create-once",
+      "admission[28]",
+      "maturity[29]/create-once",
+      "admission[29]",
+      "maturity[30]/create-once",
+      "admission[30]",
+      "maturity[31]/create-once",
+      "admission[31]",
+      "maturity[32]/create-once",
+      "admission[32]",
+      "maturity[33]/create-once",
+      "admission[33]",
+      "maturity[34]/create-once",
+      "admission[34]",
+      "maturity[35]/create-once",
+      "admission[35]",
+      "maturity[36]/create-once",
+      "admission[36]",
+      "maturity[37]/create-once",
+      "admission[37]",
+      "maturity[38]/create-once",
+      "admission[38]",
+      "maturity[39]/create-once",
+      "admission[39]",
+      "maturity[40]/create-once",
+      "admission[40]",
+      "maturity[41]/create-once",
+      "admission[41]",
+      "maturity[42]/create-once",
+      "admission[42]",
+      "maturity[43]/create-once",
+      "admission[43]",
+      "maturity[44]/create-once",
+      "admission[44]",
+      "maturity[45]/create-once",
+      "admission[45]",
+      "maturity[46]/create-once",
+      "admission[46]",
+      "maturity[47]/create-once",
+      "admission[47]",
+      "maturity[48]/create-once",
+      "admission[48]",
+      "maturity[49]/create-once",
+      "admission[49]",
+      "maturity[50]/create-once",
+      "admission[50]",
+      "maturity[51]/create-once",
+      "admission[51]",
+      "maturity[52]/create-once",
+      "admission[52]",
+      "maturity[53]/create-once",
+      "admission[53]",
+      "maturity[54]/create-once",
+      "admission[54]",
+      "maturity[55]/create-once",
+      "admission[55]",
+      "maturity[56]/create-once",
+      "admission[56]",
+      "maturity[57]/create-once",
+      "admission[57]",
+      "maturity[58]/create-once",
+      "admission[58]",
+      "maturity[59]/create-once",
+      "admission[59]",
+      "maturity[60]/create-once",
+      "admission[60]",
+      "maturity[61]/create-once",
+      "admission[61]",
+      "maturity[62]/create-once",
+      "admission[62]",
+      "maturity[63]/create-once",
+      "admission[63]",
+      "real-R6-transition[0]",
+      "real-R6-transition[1]",
+      "real-R6-transition[2]",
+      "real-R6-transition[3]",
+      "real-R6-transition[4]",
+      "real-R6-transition[5]",
+      "real-R6-transition[6]",
+      "real-R6-transition[7]",
+      "real-R6-transition[8]",
+      "real-R6-transition[9]",
+      "real-R6-transition[10]",
+      "real-R6-transition[11]",
+      "real-R6-transition[12]",
+      "real-R6-transition[13]",
+      "real-R6-transition[14]",
+      "real-R6-transition[15]",
+      "real-R6-transition[16]",
+      "real-R6-transition[17]",
+      "real-R6-transition[18]",
+      "real-R6-transition[19]",
+      "real-R6-transition[20]",
+      "real-R6-transition[21]",
+      "real-R6-transition[22]",
+      "real-R6-transition[23]",
+      "real-R6-transition[24]",
+      "real-R6-transition[25]",
+      "real-R6-transition[26]",
+      "real-R6-transition[27]",
+      "real-R6-transition[28]",
+      "real-R6-transition[29]",
+      "real-R6-transition[30]",
+      "real-R6-transition[31]",
+      "real-R6-transition[32]",
+      "real-R6-transition[33]",
+      "real-R6-transition[34]",
+      "real-R6-transition[35]",
+      "real-R6-transition[36]",
+      "real-R6-transition[37]",
+      "real-R6-transition[38]",
+      "real-R6-transition[39]",
+      "real-R6-transition[40]",
+      "real-R6-transition[41]",
+      "real-R6-transition[42]",
+      "real-R6-transition[43]",
+      "real-R6-transition[44]",
+      "real-R6-transition[45]",
+      "real-R6-transition[46]",
+      "real-R6-transition[47]",
+      "real-R6-transition[48]",
+      "real-R6-transition[49]",
+      "real-R6-transition[50]",
+      "real-R6-transition[51]",
+      "real-R6-transition[52]",
+      "real-R6-transition[53]",
+      "real-R6-transition[54]",
+      "real-R6-transition[55]",
+      "real-R6-transition[56]",
+      "real-R6-transition[57]",
+      "real-R6-transition[58]",
+      "real-R6-transition[59]",
+      "real-R6-transition[60]",
+      "real-R6-transition[61]",
+      "real-R6-transition[62]",
+      "real-R6-transition[63]",
+      "producer-freeze-creation-rights",
+      "producer-seal-ACK",
+      "R5-ready/notice-custody",
+      "R3-clear-ACK",
+      "ingress-close-ACK",
+      "open-G1/separate-phase"
+    ],
+    "not_proved": [
+      "existing producer implements seal or bounded delivery",
+      "RTL refinement/equivalence",
+      "multiple descriptor owners or arbitrary source-plan mixtures",
+      "data numeric correspondence",
+      "multi-record or source_last=false direct-source continuation",
+      "full32K traffic/capacity, wrap or unbounded liveness",
+      "2ns, mapped area or net benefit"
+    ],
+    "occupancy_argument": "only active-group unique ordinals write the <=64-row journal; next group opens after old close; transferred service contexts are separate bounded nonzero cost",
+    "same_cycle_joint_fire_cases": [
+      {
+        "R2_R1_external_lease_joint_fire": false,
+        "external_ready": false,
+        "transition": false
+      },
+      {
+        "R2_R1_external_lease_joint_fire": false,
+        "external_ready": false,
+        "transition": true
+      },
+      {
+        "R2_R1_external_lease_joint_fire": true,
+        "external_ready": true,
+        "transition": false
+      },
+      {
+        "R2_R1_external_lease_joint_fire": false,
+        "external_ready": true,
+        "transition": true
+      }
+    ],
+    "schema": "route_a_registration_window_finite_model_v1",
+    "verdict": "PASS_CONDITIONAL_CONTRACT_ONLY"
+  },
+  "finite_model_receipt_sha256": "37fd91e47034ea500b200bfa70cebf734f9426da7ec46dbdcc9e67eeb9f874c1",
+  "verification_boundary": "handwritten compositional finite contract abstraction and static current-source inspection; not extraction from RTL, RTL equivalence, native functional acceptance, full32K/wrap/fair liveness, physical mapping or net benefit",
+  "static_verification": {
+    "verdict": "PASS",
+    "counts": {
+      "inputs": 20,
+      "production_source_manifest": 30,
+      "source_anchors": 22,
+      "model_graphs": 8,
+      "model_states": 1693,
+      "model_transitions": 4070,
+      "bad_policy_counterexamples": 10,
+      "classification_cases": 72,
+      "optimized_python_fail_closed": 1,
+      "local_links": 3,
+      "live_entries": 3,
+      "deterministic_fresh_model_receipts": 2
+    },
+    "generic_v1_and_production_diff": "empty against f9f8adf",
+    "native_rtl_simulation": "NOT_RUN",
+    "remote_or_dc_sta": "NOT_STARTED",
+    "new_contract_instantiation": "NOT_QUALIFIED"
+  }
+}

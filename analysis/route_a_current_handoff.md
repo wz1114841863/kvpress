@@ -16,13 +16,35 @@ and external-v2 functionality remain open. Original normative v1 contracts
 are preserved; the v2 functional successor adds no new area/timing or net-benefit
 evidence. The multi-group journal lifecycle audit now separates a 64-row working
 set from cumulative exact history, and specifies safe migration/close barriers.
-An acknowledged finite registration window is only a versioned contract
-alternative, not an established release guarantee. Physical history service,
-complete costs and 2ns closure remain open.
+The finite registration-window candidate now passes conditional protocol-model
+checks, but the actual producer seal, immutable member ownership, unbound
+direct-source coverage and closed-preplan failure path remain unqualified.
+It does not yet authorize 64-row rolling history in production. Physical
+history service, complete costs and 2ns closure remain open.
 
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
+
+## Registration-window conditional validation (2026-11-09)
+
+Read [`route_a_registration_window_contract_validation_20261109.md`](route_a_registration_window_contract_validation_20261109.md)
+and JSON. Source `f9f8adf` and the independent no-RTL Python model distinguish
+creation-at-maturity from delivery/registration closure. Six small window
+graphs, a lease-custody graph and a full64 producer-drain count graph cover
+1,693 states/4,070 transitions with no invariant violation; seven exhaustive
+bad-policy and three directed counterexamples are preserved. These are
+conditional contract checks, not native functional or RTL-equivalence evidence.
+
+A safe seal requires frozen creation plus all offer dispositions/ACKs; DUT
+close also needs resolved queries, permanent revoked facts and bounded owner
+custody before both close ACKs. Old issued leases may continue after G1 opens;
+journal reuse cannot recycle their context. A current token alone must not
+turn a relabelled old binding into Unseen. Current producer seal/ownership,
+lawful unbound direct sources, pending association negative response/preplan
+fault, normal owner recycle and physical cost remain OPEN. Generic wrapper/v1
+and every production RTL file are unchanged. No native/remote/DC/STA starts,
+and full production rolling64 or sustained-pending acceptance does not follow.
 
 ## Multi-group journal lifecycle and minimal plan (2026-11-09)
 

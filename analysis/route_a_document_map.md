@@ -7,6 +7,18 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Registration-window contract: conditional model PASS, production OPEN (2026-11-09)
+
+[`route_a_registration_window_contract_validation_20261109.md`](route_a_registration_window_contract_validation_20261109.md)
+and JSON record the producer freeze/disposition/seal cut and separate owner
+custody for queries, withdrawals and issued leases. The independent Python
+model checks 1,693 states/4,070 transitions, seven exhaustive bad policies,
+three directed counterexamples, classification/plan cuts and full64 witnesses.
+No existing producer closure or RTL equivalence is inferred. Immutable member
+ownership, lawful unbound direct sources, pending preplan rejection and owner
+recycle are unresolved implementation gates. No RTL/native/remote/DC changes;
+64-row rolling production history is not accepted by this evidence.
+
 ## Multi-group journal lifecycle, bounds and minimal plan (2026-11-09)
 
 [`route_a_multigroup_journal_lifecycle_closure_20261109.md`](route_a_multigroup_journal_lifecycle_closure_20261109.md)

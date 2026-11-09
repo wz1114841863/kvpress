@@ -7,6 +7,19 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Registration-window contract conditional verification (2026-11-09)
+
+The [contract verification](route_a_registration_window_contract_validation_20261109.md)
+and [source/model/counterexample ledger](route_a_registration_window_contract_validation_20261109.json)
+find no existing producer delivery/seal guarantee. A new freeze/disposition/
+seal plus bounded owner-custody contract is consistent in a finite model
+(1,693 states/4,070 transitions; seven exhaustive and three directed bad-policy
+counterexamples). Issued leases can survive journal reuse, but their contexts
+cannot be overwritten. Member ownership, lawful unbound sources, pending
+preplan rejection and normal owner recycling remain open, so full production
+rolling64 is not accepted. The Python checker changes no RTL or v1 contract;
+no native test, remote job or DC/STA is started.
+
 ## Multi-group journal lifecycle and minimal plan (2026-11-09)
 
 The [lifecycle and cost audit](route_a_multigroup_journal_lifecycle_closure_20261109.md)
