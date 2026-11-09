@@ -7,6 +7,13 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Stage A current-RTL probe preparation (2026-11-09)
+
+[`route_a_stage_a_probe_preparation_20261109.md`](route_a_stage_a_probe_preparation_20261109.md)
+describes two whole-DUT test-only diagnostic probes, data provenance,
+explicit external sidecar/numeric boundaries and source/marker/XML gates.
+Preparation does not claim remote build/simulation completion or repair.
+
 ## Stage A lifecycle execution envelope (2026-11-09)
 
 [`route_a_stage_a_execution_envelope_20261109.md`](route_a_stage_a_execution_envelope_20261109.md)

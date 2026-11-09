@@ -7,6 +7,14 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Stage A current-RTL probes prepared (2026-11-09)
+
+The [probe preparation](route_a_stage_a_probe_preparation_20261109.md)
+adds separate same-page and second-admission diagnostics around the complete
+functional DUT. No production RTL changes. Static preparation checks pass;
+remote compile/test and blocker evidence remain pending. A diagnostic PASS
+does not close continuous execution, numeric functionality or timing.
+
 ## Stage A execution scope defined (2026-11-09)
 
 The [lifecycle envelope](route_a_stage_a_execution_envelope_20261109.md) and

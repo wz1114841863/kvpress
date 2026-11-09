@@ -11,6 +11,19 @@ This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
 
+## Stage A current-RTL probes prepared (2026-11-09)
+
+Read [`route_a_stage_a_probe_preparation_20261109.md`](route_a_stage_a_probe_preparation_20261109.md).
+The user authorizes two independent current-RTL functional probes, with no
+production RTL or full DC change. Both first establish a real packed
+write/read and successful first terminal, then inspect repeated-read or
+second-admission state. Test-only taps observe whole-DUT owners; external
+position backing and protocol-only numeric packets remain explicit. The
+small test profile uses 16 stream slots to make layer1 legal, gate flag off.
+Preparation checks pass; remote compilation and simulation are still pending.
+Diagnostic PASS must not be labelled continuous-function PASS. Launch in a
+new isolated tmux/workspace with pinned inputs, then notify the user to wait.
+
 ## Stage A execution envelope defined (2026-11-09)
 
 Read [`route_a_stage_a_execution_envelope_20261109.md`](route_a_stage_a_execution_envelope_20261109.md)
