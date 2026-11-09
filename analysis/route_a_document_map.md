@@ -7,7 +7,17 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
-## Persistent page read r2 launched, parent gate qualified (2026-11-09)
+## Persistent page read r2 functional result accepted (2026-11-09)
+
+[`route_a_persistent_page_read_r2_result_20261109.md`](route_a_persistent_page_read_r2_result_20261109.md)
+and JSON accept 15/15 native tests, 155 matching frozen inputs, preserved
+parent gate, all reports/artifacts and five zero exits. Actual same-page
+repeated service, fail-closed recovery and the specified retire-preflight cut
+pass in explicit v2; default-v1 regressions/blockers remain preserved. This
+closes a bounded Stage A read witness, not multi-group, numerical/full32K,
+external-v2, 2ns or complete-cost work. No new RTL/test/DC/STA in this inspection.
+
+## Persistent page read r2 launch snapshot, parent gate qualified (2026-11-09)
 
 [`route_a_persistent_page_read_r2_launch_20261109.md`](route_a_persistent_page_read_r2_launch_20261109.md)
 and JSON record source `40a74b6`, 155 frozen files and independent tmux

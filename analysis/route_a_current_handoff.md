@@ -6,24 +6,45 @@ and accepted control-mapping results remain preserved. RD1+WCG1 r2 completed
 with tool/input/artifact closure and an 11.741151% primary top-area reduction
 versus RD1 (129.517x Full-KV control). Global setup regresses and the matched
 hold pass is not timing-closed. Complete costs and PPA/net benefit remain open.
-Stage A current-RTL probes now complete with two qualified blocker diagnoses;
-same-page repeated service and multi-group admission remain unsupported by
-the observed current path, rather than newly closed continuous functionality.
-An explicit default-off persistent-read v2 r1 run has now completed: 11/14
-tests pass, while all three whole-DUT cases block at their first R5 read query.
-A shared lookup ownership bug in the R5 parent is diagnosed; no repair or
-rerun is performed by this inspection. Repeated-read/error/retire acceptance
-remains open, separately from preserved default-v1 blocker evidence.
-The minimal successor proposal is now documented and finite-model checked;
-production RTL and normative contracts remain unchanged. Persistent read
-qualification is assigned to R5, while group reuse requires exact journal
-history preservation. Physical history service, cost and 2ns closure remain open.
+Stage A default-v1 blocker probes remain preserved. The explicit default-off
+persistent-read v2 r2 successor now has accepted bounded repeated-read,
+error/recovery and retire-preflight evidence: 15/15 native tests, all five
+exit layers zero, frozen input/artifact closure and strict final check PASS.
+The R5 parent lookup-ownership repair is qualified in this scope; r1 failure
+is retained. Multi-group admission/journal, full capacity/concurrency/numeric
+and external-v2 functionality remain open. Original normative v1 contracts
+are preserved; the v2 functional successor adds no new area/timing or net-benefit
+evidence. Physical history service, complete costs and 2ns closure remain open.
 
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
 
-## Persistent page read r2 running after parent-gate PASS (2026-11-09)
+## Persistent page read r2 bounded functional acceptance (2026-11-09)
+
+Read [`route_a_persistent_page_read_r2_result_20261109.md`](route_a_persistent_page_read_r2_result_20261109.md)
+and JSON. Source `40a74b6`, 155 inputs and archive hash match; fresh archived
+final checker and an independent audit accept 7 suites/15 native tests,
+unchanged parent snapshot, all XML/ELF/log artifacts, exact markers and
+compile/parent/test/runner/tmux exits 0/0/0/0/0. Pane14445 is idle, no children.
+
+One real packed write/publication supports two actual payload/sidecar fills,
+eight consumer commits, two releases/terminals, fresh S2 generation1-to-2 and
+final retire/reclaim. Four invalid attentions fault without extra service,
+foreign declaration creates no terminal, and legal recovery passes. Retire
+with an accepted attention/declaration but missing selector finishes the old
+service before reclaim. Default-v1 4 functional and 2 expected-blocker tests
+also pass. Scope is small internal-backing, one valid tail member, packed-only
+sequential service, gate flag off and numeric=0. No full32K/mixed/external,
+multi-group/journal, numeric, 2ns or complete-cost acceptance follows.
+
+This inspection changes no RTL/input and starts no test/DC/STA. Stage A's
+repeated-read witness is closed in the tested v2 envelope; Stage A as a whole
+still awaits multi-group lifecycle/history and broader evidence.
+
+## Persistent page read r2 launch snapshot after parent-gate PASS (2026-11-09)
+
+Historical snapshot; completed acceptance is recorded above.
 
 Read [`route_a_persistent_page_read_r2_launch_20261109.md`](route_a_persistent_page_read_r2_launch_20261109.md)
 and JSON. Frozen source `40a74b6`, 155 files, archive SHA

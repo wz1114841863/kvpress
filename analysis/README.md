@@ -7,7 +7,17 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
-## Persistent page read r2 running after parent PASS (2026-11-09)
+## Persistent page read r2 bounded functional PASS (2026-11-09)
+
+The [accepted r2 result](route_a_persistent_page_read_r2_result_20261109.md)
+and [native/input/final evidence](route_a_persistent_page_read_r2_result_20261109.json)
+confirm 7 suites/15 tests, matching 155 frozen sources and all five exits0.
+One packing supports two real page services, error/recovery and the tested
+retire cut; v1 regressions pass. Small internal-backing/gate-off/numeric0
+boundaries remain, as do multi-group/journal, full scope, external service,
+timing and complete-cost work. No new run or RTL change is made by acceptance.
+
+## Persistent page read r2 launch snapshot after parent PASS (2026-11-09)
 
 The [r2 launch](route_a_persistent_page_read_r2_launch_20261109.md) and
 [frozen input/parent evidence](route_a_persistent_page_read_r2_launch_20261109.json)
