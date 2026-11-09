@@ -85,6 +85,14 @@ final class RouteAPersistentPageReadHarness(p: RouteASkeletonParameters) extends
     val attention_live = Bool()
     val preflight_busy = Bool()
     val declaration_live = Bool()
+    val preflight_state = UInt(4.W)
+    val r5_scan_outstanding = Bool()
+    val r5_scan_allowed = Bool()
+    val r5_v2_response_owner = Bool()
+    val r5_shared_request_fire = Bool()
+    val r5_shared_response_fire = Bool()
+    val r5_query_request_fire = Bool()
+    val r5_mark_request_fire = Bool()
     val publication_fire = Bool()
     val publication_status = UInt(2.W)
     val page_ready_fire = Bool()
@@ -110,6 +118,14 @@ final class RouteAPersistentPageReadHarness(p: RouteASkeletonParameters) extends
   observation.attention_live := tap(dut.lifecycle.attentionValid).asUInt.orR
   observation.preflight_busy := tap(dut.persistentActivation.get.io.busy)
   observation.declaration_live := tap(dut.sourcePlanBinder.haveDeclaration)
+  observation.preflight_state := tap(dut.persistentActivation.get.state)
+  observation.r5_scan_outstanding := tap(dut.pageManager.scanOutstanding)
+  observation.r5_scan_allowed := tap(dut.pageManager.scanAllowed)
+  observation.r5_v2_response_owner := tap(dut.pageManager.persistentAvailabilityOutstanding)
+  observation.r5_shared_request_fire := fire(dut.pageManager.availabilityStorage.io.availability_lookup_req)
+  observation.r5_shared_response_fire := fire(dut.pageManager.availabilityStorage.io.availability_lookup_rsp)
+  observation.r5_query_request_fire := fire(dut.pageManager.persistentRead.get.query_in)
+  observation.r5_mark_request_fire := fire(dut.pageManager.persistentRead.get.mark_ready_in)
   observation.publication_fire := fire(dut.m2P3.io.m2_publish_ack)
   observation.publication_status := tap(dut.m2P3.io.m2_publish_ack.bits.status)
   observation.page_ready_fire := fire(dut.m2P3.io.post_r6_packed_page_ready_observation)
@@ -228,7 +244,22 @@ final class RouteAPersistentPageReadSpec extends AnyFunSpec with ChiselSim {
     def until(message: String, limit: Int = 1024)(predicate: => Boolean): Unit = {
       var waited = 0
       while (!predicate && waited < limit) { tick(); waited += 1 }
-      assert(predicate, s"$message after $waited clocks")
+      val complete = predicate
+      if (!complete) {
+        val o = d.observation
+        // Query actual read-only taps on failure; do not infer internal state
+        // from a READY timeout or increase its original 2048-clock bound.
+        println(s"KVZAP_PERSISTENT_READ_TIMEOUT waited=$waited preflight_state=${uint(o.preflight_state)} " +
+          s"preflight_busy=${bool(o.preflight_busy)} declaration_live=${bool(o.declaration_live)} " +
+          s"scan_outstanding=${bool(o.r5_scan_outstanding)} scan_allowed=${bool(o.r5_scan_allowed)} " +
+          s"v2_response_owner=${bool(o.r5_v2_response_owner)} " +
+          s"shared_req_fire=${bool(o.r5_shared_request_fire)} shared_rsp_fire=${bool(o.r5_shared_response_fire)} " +
+          s"query_fire=${bool(o.r5_query_request_fire)} mark_fire=${bool(o.r5_mark_request_fire)} " +
+          s"s2_state=${uint(o.s2_slot_state)} s2_generation=${uint(o.s2_slot_generation)} " +
+          s"positive_grants=${payloadHandle.nonEmpty} payload_fragments=$payloadFragments " +
+          s"sidecar_fragments=$sidecarFragments rejected=$rejected terminals_ok=$terminalsOk terminals_fault=$terminalsFault")
+      }
+      assert(complete, s"$message after $waited clocks")
     }
     def idleInputs(): Unit = {
       d.io.frontend_lifecycle_req.valid.poke(false.B); d.io.runtime_retire_req.valid.poke(false.B)

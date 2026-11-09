@@ -23,6 +23,21 @@ This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
 
+## Persistent page read r2 repair prepared (2026-11-09)
+
+Read [`route_a_persistent_page_read_r2_repair_20261109.md`](route_a_persistent_page_read_r2_repair_20261109.md)
+and JSON. R5 now sets scanner outstanding only for its own scanAllowed fire;
+v2 response asserts no phantom scanner work. R3/Admission/M2/R2/R6 and all
+other 29 production main files match `67459cc`. Whole-DUT timeout reporting
+adds actual read-only observations without widening the bound.
+
+New real-R5 parent regression covers mark/query/query, actual scan overlap
+and held responses. A separate r2 runner must pass and snapshot this one
+native test before running the unchanged fourteen-test phase (15 total).
+Local compile/lowering and 22 checker short tests pass; native results remain
+pending. r1 flow/results stay preserved. External-backing service ownership
+has a separate pre-existing OPEN issue, outside the internal-backing coverage.
+
 ## Persistent page read v2 r1 failure inspected (2026-11-09)
 
 Read [`route_a_persistent_page_read_result_20261109.md`](route_a_persistent_page_read_result_20261109.md)

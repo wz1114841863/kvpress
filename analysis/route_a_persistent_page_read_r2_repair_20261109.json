@@ -1,0 +1,125 @@
+{
+  "schema": "persistent-page-read-r2-repair-1",
+  "date": "2026-11-09",
+  "base_commit": "67459cc1879c60d9b1f07517415c9e192b93d667",
+  "status": "REPAIRED_CANDIDATE_LOCAL_PRECHECK_PASS_NATIVE_GATE_PENDING",
+  "validation_flow": "r2_parent_gate",
+  "production_RTL_changed_files": [
+    "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala"
+  ],
+  "production_other_main_files_equal_base": 29,
+  "protected_region": {
+    "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+    "start": "final class RouteAAdmissionPublicationIngressAdapter",
+    "end": "final class RouteAR5AvailabilityArrayBoundary",
+    "bytes": 133572,
+    "sha256": "44df91b67ed3f5572c420555ec345f053c79ba080acd3e79dcbea4a54a8415d4",
+    "equal_base": true
+  },
+  "r1_flow_unchanged": true,
+  "input_pins": [
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "sha256": "229f37ad12fb459611aafe80aee023e731b9cdcdf8da2eaa3ca280d9b4688b4c",
+      "bytes": 293132
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAPersistentPageReadSpec.scala",
+      "sha256": "7fe9ac3e651a6da029f91e0ffe3f5e85bdbb0da747c9651249be6a14bbaa2c76",
+      "bytes": 32619
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAR5PersistentReadParentSpec.scala",
+      "sha256": "94ea22f338360a9952c97e859cc3c9ad99e1a85696e2a5f910b12efa8f27cb65",
+      "bytes": 14035
+    },
+    {
+      "path": "hardware/route_a/dc/run_persistent_page_read_validation_r2.sh",
+      "sha256": "9dab215562d9d649f5a96fe0694436edc9acb7b000409560ee91756942311454",
+      "bytes": 4697
+    },
+    {
+      "path": "tools/check_persistent_page_read_validation_r2.py",
+      "sha256": "b4af998b7ca7e4fbae67e5bda57bc12268c48cd25480c826d6ff0972094efb4f",
+      "bytes": 7743
+    },
+    {
+      "path": "tests/test_persistent_page_read_validation_r2_check.py",
+      "sha256": "584472008d88091a3c2c994524fa31f2726f985b93d3c3b16c4e539a2f41af64",
+      "bytes": 9422
+    },
+    {
+      "path": "hardware/route_a/dc/run_persistent_page_read_validation.sh",
+      "sha256": "12270cb4a8e5d505f069bbc14652d203c3375bcc0a7deda1401558d8330d5c90",
+      "bytes": 3770
+    },
+    {
+      "path": "tools/check_persistent_page_read_validation.py",
+      "sha256": "b7e5b1babdd80d4b534ca9904a2757b8700d9ba82bcfda86f44459857b0d3946",
+      "bytes": 10883
+    },
+    {
+      "path": "tools/check_stage_a_continuation_probes.py",
+      "sha256": "1b0e2f644366554d75a6cb91dc7cfa5f9894edb634479a8ce3d91d796a8437d7",
+      "bytes": 5916
+    }
+  ],
+  "repair": {
+    "scanner_request_condition": "scanAllowed && shared availability request fire",
+    "response_ownership_unchanged": true,
+    "v2_response_invariant": "!scanOutstanding",
+    "new_state_bits": 0,
+    "new_production_ports": 0,
+    "timeout_bound_unchanged": 2048
+  },
+  "parent_native_suite": "kvpress.routea.r5.RouteAR5PersistentReadParentSpec",
+  "parent_typed_marker": "KVZAP_PERSISTENT_READ_R5_PARENT_PASS real_parent=1 allocations=2 marks=1 queries=2 scan_overlap=1 held_result_cycles=4 ghost_scan_outstanding=0 owner_facts_mocked=1",
+  "planned_tests": {
+    "parent_gate": 1,
+    "full_phase": 14,
+    "total": 15,
+    "suites": 7,
+    "owner_tests": 6,
+    "successor_whole_DUT": 3,
+    "legacy_tests": 6
+  },
+  "local_checks": {
+    "Test_compile_exit": 0,
+    "structural_Chisel_firtool_tests": 1,
+    "structural_failures": 0,
+    "native_simulations_run": 0,
+    "r2_checker_tests": 11,
+    "r1_checker_tests": 11,
+    "bash_syntax": "PASS",
+    "help": "PASS",
+    "git_diff_check": "PASS",
+    "artifacts": [
+      {
+        "path": "analysis/experiments/persistent_page_read_v2_20261109_r2/local_compile_and_lowering.log",
+        "sha256": "f1767d33af44051c562adf1ac9f237d33899c59ef064ddeb2eae4b9104a2af1d",
+        "bytes": 1357
+      },
+      {
+        "path": "analysis/experiments/persistent_page_read_v2_20261109_r2/local_structural_report.xml",
+        "sha256": "f23a8aa39b3000a1d0552b8578e16d1fddd80e462d2ebe1546c36c56376eadb6",
+        "bytes": 4751
+      }
+    ]
+  },
+  "scope": {
+    "R2_changed": false,
+    "R3_changed": false,
+    "R6_changed": false,
+    "multi_group_admission_changed": false,
+    "new_history_backend": false,
+    "DC_or_STA_started": 0,
+    "clock_period_ns_unchanged": 2,
+    "remote_native_started": false
+  },
+  "open_items": [
+    "actual parent gate and full15 native acceptance pending",
+    "external descriptor backing service ownership has a pre-existing untested issue; external-v2 not qualified",
+    "full32K/mixed-top/reset/wrap/pending lifecycle and numerical correspondence remain open",
+    "no new mapped area/2ns timing/net benefit evidence"
+  ]
+}

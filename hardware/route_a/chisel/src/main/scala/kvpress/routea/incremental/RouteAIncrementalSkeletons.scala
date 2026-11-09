@@ -4288,7 +4288,9 @@ final class RouteAPageManager(
     !scanOutstanding && !scanComplete && !io.reclaim_permit_in.valid && !persistentReadActivity
   availabilityStorage.io.availability_lookup_req.valid := scanAllowed
   availabilityStorage.io.availability_lookup_req.bits := scanIndex
-  when(availabilityStorage.io.availability_lookup_req.fire) {
+  // The shared port's final fire also includes the v2 request connected
+  // below. Only the scanner's own offer may create scanner outstanding work.
+  when(scanAllowed && availabilityStorage.io.availability_lookup_req.fire) {
     scanOutstanding := true.B
   }
   when(availabilityStorage.io.availability_lookup_rsp.fire && !io.reclaim_permit_in.fire &&
@@ -4714,6 +4716,8 @@ final class RouteAPageManager(
       when(availabilityStorage.io.availability_lookup_req.fire) { state := AvailabilityResponse }
     }
     when(state === AvailabilityResponse && availabilityStorage.io.availability_lookup_rsp.fire) {
+      assert(!scanOutstanding,
+        "A persistent-read response cannot leave phantom scanner outstanding work")
       val response = availabilityStorage.io.availability_lookup_rsp.bits
       assert(response.page_id === target.page_id,
         "Persistent R5 lookup must preserve its exact target PageRef")

@@ -7,6 +7,15 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Persistent page read R5 repair candidate (2026-11-09)
+
+The [r2 repair plan](route_a_persistent_page_read_r2_repair_20261109.md) and
+[source/check ledger](route_a_persistent_page_read_r2_repair_20261109.json)
+record the scanner ownership fix and real-parent mark/query/query regression.
+New runner gates the original fourteen tests on the parent's native PASS,
+for fifteen total; local compile/lowering and checker tests do not establish
+native repair success. r1 remains preserved; no DC/STA or multi-group change.
+
 ## Persistent page read v2 r1 failure diagnosed (2026-11-09)
 
 The [result inspection](route_a_persistent_page_read_result_20261109.md) and

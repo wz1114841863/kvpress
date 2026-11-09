@@ -7,6 +7,14 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Persistent page read r2 repair and parent gate (2026-11-09)
+
+[`route_a_persistent_page_read_r2_repair_20261109.md`](route_a_persistent_page_read_r2_repair_20261109.md)
+and JSON record the scanner-owned request guard, real R5-parent regression
+and r2 parent-first 15-test flow. Local compile/lowering/checker tests pass;
+native repair acceptance is pending. r1 inputs/results and protected owners
+are preserved. No multi-group, DC/STA or external-backing closure is added.
+
 ## Persistent page read v2 r1 failed result (2026-11-09)
 
 [`route_a_persistent_page_read_result_20261109.md`](route_a_persistent_page_read_result_20261109.md)
