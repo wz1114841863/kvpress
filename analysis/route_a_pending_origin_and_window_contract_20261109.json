@@ -1,0 +1,873 @@
+{
+  "schema": "route_a_pending_origin_and_window_contract_v1",
+  "date": "2026-11-09",
+  "source_commit": "a7a92df76c192cd3273b6b9cabd4dd3409065784",
+  "branch": "research/kvzap-latest",
+  "verdict": "LOGICAL_PROVENANCE_AND_SCOPED_CLOSE_CONTRACT_SPECIFIED_REFERENCE_CHECK_PASS_IMPLEMENTATION_OPEN",
+  "inputs": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "31f85c67f53c7cab140bb72246eca7ca4594e5c3b9b457d68b5f61f7f2180740",
+      "bytes": 22013
+    },
+    {
+      "path": "README.md",
+      "sha256": "a4df6dc88999c1079cd965f6e1d5be323db386e7fac4963cd932a684816c9a73",
+      "bytes": 20483
+    },
+    {
+      "path": "analysis/architecture_spec.md",
+      "sha256": "2b319b854cfad59d0d43a0f347288d6a9ec8ad7cd3ea473f5e1c5d2a9e60ca4b",
+      "bytes": 67421
+    },
+    {
+      "path": "analysis/architecture_gate_a1_pending_delivery_realization_closure.md",
+      "sha256": "8db961ef1cd75c826d7c13c245df654bd6141152613b88beaea6f542a393f780",
+      "bytes": 5605
+    },
+    {
+      "path": "analysis/mr1b_direct_pending_cross_owner_contract_proposal.md",
+      "sha256": "6d540e7ef1e2683d85dec1fcb7fc9002bfc1d19b773f90a9d710eba616781aa9",
+      "bytes": 46826
+    },
+    {
+      "path": "analysis/route_a_paper_execution_scope_and_closure_20261109.md",
+      "sha256": "e734555c7db2c5bcd8a62f56eddc6bc3d196695f169596338945de687965222e",
+      "bytes": 16250
+    },
+    {
+      "path": "analysis/route_a_registration_window_contract_validation_20261109.md",
+      "sha256": "06bc32a4c47ed900706baa6836a72b9ffd20007632c7005e1c9cd6e36816d3c9",
+      "bytes": 17971
+    },
+    {
+      "path": "analysis/route_a_registration_window_contract_validation_20261109.json",
+      "sha256": "000628f817faa6307ba731c6609e36f3d17994e4cb82a8ec09dfbab8d3b31752",
+      "bytes": 60971
+    },
+    {
+      "path": "analysis/route_a_multigroup_journal_lifecycle_closure_20261109.md",
+      "sha256": "47e478c3cbbf1a78ecf8009aa305c05c6b00cf4eb6189b097448985a743f16f3",
+      "bytes": 20345
+    },
+    {
+      "path": "analysis/route_a4112b_external_storage_lifecycle_contract.md",
+      "sha256": "a4dc7fd4b3593478d00ac72a63a26ea44fd6c61203d2400317fd349b5e5209dd",
+      "bytes": 2525
+    },
+    {
+      "path": "kvpress/route_a_lifecycle_adapter_reference.py",
+      "sha256": "46855f9106354edcabe495acd5deb986c850f3768f2c904766b3f0af2c06bf9f",
+      "bytes": 13807
+    },
+    {
+      "path": "kvpress/route_a_attention.py",
+      "sha256": "370224989113a83ff7ff9daa66076ab5957665920366dbe5d1b18bc1b319cd8e",
+      "bytes": 31430
+    },
+    {
+      "path": "kvpress/route_a_external_cold_storage.py",
+      "sha256": "e785ec1678bf955899cb1938a27703a4f9d80ad61d63b6ffd876a264b5017a4a",
+      "bytes": 6951
+    },
+    {
+      "path": "kvpress/route_a_policy_backend.py",
+      "sha256": "14c5449684786758a74fba1aeaa62315c763d5675ab3ddf04cfc5a88491e3dfe",
+      "bytes": 107490
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "sha256": "229f37ad12fb459611aafe80aee023e731b9cdcdf8da2eaa3ca280d9b4688b4c",
+      "bytes": 293132
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "sha256": "308f089b77df9f72fea68f0e320604cfab3b9e450f08826929ca9aa804675968",
+      "bytes": 78685
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+      "sha256": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493",
+      "bytes": 9048
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+      "sha256": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887",
+      "bytes": 4098
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "sha256": "085c425b9fa6a14fbdcb9911e4c33b1c53309b68e1b2e60b5a1e3e178bbdb2c0",
+      "bytes": 34615
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteADirectPendingReadPathSpec.scala",
+      "sha256": "31d811f57e8df205f7a6897a24e549e9e932d58ac21fd0686de37b12db1a9d5a",
+      "bytes": 21835
+    },
+    {
+      "path": "tools/check_route_a_registration_window_contract.py",
+      "sha256": "94bdb414a150dc803c5462d2561a54be8c71c55b7bedaddac854a5d494c5df7b",
+      "bytes": 23522
+    },
+    {
+      "path": "tools/check_route_a_pending_origin_contract.py",
+      "sha256": "4d638426f46900684b9f21d05e2345f2adeca7d77982a1d2d14519eb303cc28a",
+      "bytes": 19545
+    }
+  ],
+  "source_anchors": [
+    {
+      "id": "algorithm_pending_fifo",
+      "path": "kvpress/route_a_attention.py",
+      "line": 238,
+      "contains": "        self._pending: list[deque[_Record]] = [deque() for _ in range(heads)]",
+      "matching_lines": [
+        238
+      ]
+    },
+    {
+      "id": "algorithm_shared_budget",
+      "path": "kvpress/route_a_attention.py",
+      "line": 381,
+      "contains": "        for _ in range(self.admission_budget):",
+      "matching_lines": [
+        381
+      ]
+    },
+    {
+      "id": "algorithm_pending_is_read",
+      "path": "kvpress/route_a_attention.py",
+      "line": 401,
+      "contains": "        for name in (\"hot\", \"pending\", \"packed\"):",
+      "matching_lines": [
+        401
+      ]
+    },
+    {
+      "id": "prefill_must_not_respend_budget",
+      "path": "kvpress/route_a_policy_backend.py",
+      "line": 1501,
+      "contains": "            # token and silently drain pending staging, changing Route-A policy",
+      "matching_lines": [
+        1501
+      ]
+    },
+    {
+      "id": "R6_reference_once_maturity",
+      "path": "kvpress/route_a_lifecycle_adapter_reference.py",
+      "line": 191,
+      "contains": "        self._require(entry.authority is AuthorityState.HOT and entry.disposition is None, \"maturity disposition may occur exactly once from hot\")",
+      "matching_lines": [
+        191
+      ]
+    },
+    {
+      "id": "R6_reference_entry_identity",
+      "path": "kvpress/route_a_lifecycle_adapter_reference.py",
+      "line": 180,
+      "contains": "        self._require(arrival.entry_id not in self._entries, \"KV entry may arrive exactly once\")",
+      "matching_lines": [
+        180
+      ]
+    },
+    {
+      "id": "R6_reference_packed_event",
+      "path": "kvpress/route_a_lifecycle_adapter_reference.py",
+      "line": 201,
+      "contains": "    def metadata_publish_commit(self, *, entry_id: int) -> None:",
+      "matching_lines": [
+        201
+      ]
+    },
+    {
+      "id": "R6_RTL_not_full_authority_table",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 1081,
+      "contains": "    // pending -> packed. R6 intentionally carries no duplicate token table;",
+      "matching_lines": [
+        1081
+      ]
+    },
+    {
+      "id": "ingress_full_member_storage",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 1468,
+      "contains": "  val payloadBindings = Reg(Vec(MemberCount, new PendingPayloadReadBinding(p)))",
+      "matching_lines": [
+        1468
+      ]
+    },
+    {
+      "id": "ingress_atomic_join",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 1516,
+      "contains": "  when(io.r6_admission_context_in.fire) {",
+      "matching_lines": [
+        1516
+      ]
+    },
+    {
+      "id": "ingress_coordinate_check",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 1501,
+      "contains": "    payloadBindingMatches && context.entry_id === contextCoordinate &&",
+      "matching_lines": [
+        1501
+      ]
+    },
+    {
+      "id": "R3_exact_creation_identity",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 3549,
+      "contains": "    registration.transaction_identity.asUInt === binding.transaction_identity.asUInt &&",
+      "matching_lines": [
+        3549
+      ]
+    },
+    {
+      "id": "descriptor_key",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "line": 371,
+      "contains": "final class PendingDescriptorKey(p: RouteASkeletonParameters) extends Bundle {",
+      "matching_lines": [
+        371
+      ]
+    },
+    {
+      "id": "descriptor_immutable_fields",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "line": 401,
+      "contains": "  val pending_ordinal = UInt(RouteAAnchorWidths.LogicalPositionWidth.W)",
+      "matching_lines": [
+        149,
+        401,
+        467,
+        948
+      ],
+      "selected_scope": "PendingSourceDescriptorRegistration"
+    },
+    {
+      "id": "service_plan_key",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "line": 546,
+      "contains": "  val pending_descriptor_key = new PendingDescriptorKey(p)",
+      "matching_lines": [
+        546
+      ]
+    },
+    {
+      "id": "production_pending_authority_to_ingress",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "line": 360,
+      "contains": "  lifecycle.io.authority_transition_out.ready := Mux(r6ToPending, admission.io.r6_authority_in.ready, true.B)",
+      "matching_lines": [
+        360
+      ]
+    },
+    {
+      "id": "production_external_registration",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "line": 171,
+      "contains": "  pendingDescriptorOwner.io.registration_in <> io.pending_source_descriptor_registration_in",
+      "matching_lines": [
+        171
+      ]
+    },
+    {
+      "id": "generic_unbound_direct_fixture",
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteADirectPendingReadPathSpec.scala",
+      "line": 49,
+      "contains": "  // models only the lawful `unseen` reconciliation outcome; it does not",
+      "matching_lines": [
+        49
+      ]
+    },
+    {
+      "id": "descriptor_creation",
+      "path": "analysis/mr1b_direct_pending_cross_owner_contract_proposal.md",
+      "line": 330,
+      "contains": "The pending-payload descriptor/location owner creates that registration at the",
+      "matching_lines": [
+        330
+      ]
+    },
+    {
+      "id": "all_pending_sources_required",
+      "path": "analysis/mr1b_direct_pending_cross_owner_contract_proposal.md",
+      "line": 373,
+      "contains": "The pending-payload descriptor/location owner must cover every pending source",
+      "matching_lines": [
+        373
+      ]
+    }
+  ],
+  "production_source_manifest": [
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVMeasurementInterfaces.scala",
+      "sha256": "839fce10bce65d04d0cd586d467d494c04e43e28c4a5dff9aa01e03332481a96",
+      "bytes": 3552
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVReadPath.scala",
+      "sha256": "e82a577221ea775170c89755f8967c2246a36202300a3ca3b1f012c35d5f816a",
+      "bytes": 7314
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVS2Completion.scala",
+      "sha256": "ed28226bff0d973fe8b8a17f0059f121c1dc6f96d79f263d66d94dd3e521e24c",
+      "bytes": 18993
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+      "sha256": "3cf9dfbf8e66d3e7ab5b00c0c59a5532e8dcb04ad3a0b673229cab520c7f9fe0",
+      "bytes": 158192
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteACompactWordClocking.scala",
+      "sha256": "4bea447a12560a2430b798267447ee3028293f3769b82aedfa191a10985cf394",
+      "bytes": 2536
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAExactLowestPrioritySelector.scala",
+      "sha256": "e996a010466b98d2e2eb70e721da9cb258a8f6a56529c3fd1b34c9dc71f96a0a",
+      "bytes": 2022
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "sha256": "229f37ad12fb459611aafe80aee023e731b9cdcdf8da2eaa3ca280d9b4688b4c",
+      "bytes": 293132
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAM2EntryStorage.scala",
+      "sha256": "fe1f65bd79417aeb4d62d2e846939022155631b82c66515e8feea887f422688a",
+      "bytes": 13932
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMemberRecordReadSharing.scala",
+      "sha256": "3c549945718a39c700b95ec76616aa1e84d020f9b5114158598b58aee4b05c45",
+      "bytes": 1167
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+      "sha256": "45d413f5ceb53e17e923c489782b88632074c3098f481f58e864a527199879d4",
+      "bytes": 16919
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala",
+      "sha256": "c38ec16eb79c180293b932ea5c5889240bf22a7b12520df3b636412cebea2bee",
+      "bytes": 36172
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPersistentPackedReadController.scala",
+      "sha256": "c78d23d9be058343c534f37c5ef132b05dd6f04b21db5ef9448f032ffe0e5925",
+      "bytes": 17437
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPersistentReadReceiptCollector.scala",
+      "sha256": "cdf3557175f83f9fa90c0c35619fc0908e44f40a91e4fd7e096a02c7c8aa932d",
+      "bytes": 5128
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteARecordReadDecode.scala",
+      "sha256": "e662fcff2db1e0fbc3bd70dbcbb2d20eeb2d66dc977577892eb11bb2ffe9e7e0",
+      "bytes": 905
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "sha256": "308f089b77df9f72fea68f0e320604cfab3b9e450f08826929ca9aa804675968",
+      "bytes": 78685
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAPersistentReadInterfaces.scala",
+      "sha256": "ee220a1b36aca11e02c844baed3ae46204b031af122017cecae1bab38703283f",
+      "bytes": 2604
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAPersistentReadLifecycleInterfaces.scala",
+      "sha256": "89ef4e258e66fabc2df658a89faba230efcf6d506a57688b766f0532c13bce50",
+      "bytes": 1588
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAPersistentReadS2Interfaces.scala",
+      "sha256": "a81644aadc21704996a99f3d301fc28dcdbbad980a8eb0a306a06bd1ff175388",
+      "bytes": 938
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAPersistentReadTopInterfaces.scala",
+      "sha256": "4690c934f1abd746efbdfd2444596c3e8c6252af99e1f7d43ae5b17b3f296ea1",
+      "bytes": 985
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+      "sha256": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493",
+      "bytes": 9048
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+      "sha256": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887",
+      "bytes": 4098
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/FullKVMeasurementDut.scala",
+      "sha256": "cebc0577929aed960ed29cb0b95c674ed68479aafb71c18cf16e55775fa1389b",
+      "bytes": 6042
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PM1PageManagerHdlEmitter.scala",
+      "sha256": "7a9fc95edb17ddbbc6c7422322d4cd948ad96d52936e0ee4f9f36f03978f0ffe",
+      "bytes": 1364
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PairedControlProjectionHdlEmitter.scala",
+      "sha256": "8a589a6c74c02ebb78f7e1d3ee0080550bb9ee82da4bb6cd85255b7bf7405292",
+      "bytes": 8023
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAComponentStatusCollector.scala",
+      "sha256": "6b83963f747ad3f32c379df0bed30a84468fe891d9493cd9f0b3aea3f47ee329",
+      "bytes": 4982
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",
+      "sha256": "f4d7fba2658731590a2abea3a52d3402ac32d24bab700d012735393a65c4e4a6",
+      "bytes": 35177
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "sha256": "085c425b9fa6a14fbdcb9911e4c33b1c53309b68e1b2e60b5a1e3e178bbdb2c0",
+      "bytes": 34615
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/SynthesisControlProjectionGenerators.scala",
+      "sha256": "3dcf569311fa43652ce03408a1507206ca77b01f3dca65ef30d75a3aa276f844",
+      "bytes": 1032
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1ContextualHdlEmitter.scala",
+      "sha256": "6550ef0bfe64bd40e3903b45ecb2e05e2e4f2a91ff668ecaf9d8f24be0deda80",
+      "bytes": 1176
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1WrapperHdlEmitter.scala",
+      "sha256": "ad0f9bb5ddb915907792042983b0a76ffc6ea0e380643ecce55ce707af1886ef",
+      "bytes": 1139
+    }
+  ],
+  "identity_domains": {
+    "E": "session namespace32 + entry_id24, not payload address",
+    "D": "session namespace32 + existing PendingDescriptorKey26, maps explicitly to E",
+    "M": "group UID64 + ordinal7, exact count/header separately checked",
+    "S": "attention identity5 + selected Pending SourceInstance34 + D58 + endpoint generation8"
+  },
+  "origin_paths": {
+    "member": "actual accepted ingress witness + immutable owner D/E facts + positive current Pending proof",
+    "object": "immutable owner D/E facts + positive Pending proof, no current-group requirement; never absence-as-Unseen"
+  },
+  "lifecycle": {
+    "birth": "trusted accepted once-per-entry Hot-to-Pending fact and immutable location/descriptor facts; registration cannot create it",
+    "member_link": "actual accepted ingress; cannot be relabelled by caller token",
+    "packed": "every true R6 Pending-to-Packed revokes new issue, independently of journal binding presence",
+    "pending_directory_eviction": "after NotPending is visible and every old reference drained or has complete independent custody; safe key/namespace reuse separately required",
+    "pending_nonmember": "survives unrelated group close and individual attention completion; may later link to another group without identity mutation",
+    "old_lease": "continues in bounded independent K context; journal close does not unpin/cancel or recycle it"
+  },
+  "group_close_conditions": [
+    "immutable actual Members(W), original publication/real R6 handoffs and R5 readiness/notice custody",
+    "producer ProjectionSeal covers W and only W; related member offers/ACKs settled or explicitly transferred",
+    "every member is NotPending; local revocation captured and backing update visible",
+    "unknown-target accepted directory lookups resolved; targeted results/contexts have complete stable snapshots and sticky revoke",
+    "both exact R3/ingress close ACKs before separate G1 open; unrelated pending may remain"
+  ],
+  "capacity": {
+    "journal_rows": 64,
+    "Q_candidate": 1,
+    "K_existing_direct_context": 1,
+    "H_D_live_catalogue": "not yet qualified",
+    "forbidden_shortcuts": [
+      "global pending=64",
+      "admission_budget512 is directory capacity",
+      "extra pre-attention draining to remove all pending",
+      "infinite retired-key/producer queues",
+      "global revoke at group close",
+      "mutating a held reply payload"
+    ]
+  },
+  "cost_arithmetic": {
+    "namespace_bits": 32,
+    "entry_bits": 24,
+    "descriptor_key_bits": 26,
+    "data_identity_bits": 56,
+    "descriptor_identity_bits": 58,
+    "group_uid_bits": 64,
+    "attention_service_association_bits": 105,
+    "data_row_bits": 224,
+    "descriptor_row_bits": 137,
+    "member_index_bits": 3712,
+    "member_index_bytes": 464,
+    "raw_one_data_one_descriptor_bits": 361,
+    "merged_one_to_one_row_candidate_bits": 273,
+    "example_H_D_64_directory_bytes": 2888,
+    "example_H_D_6656_directory_bytes": 300352,
+    "cold_keep_all_H_D_9400320_directory_bytes": 424189440,
+    "H_D_live_capacity": "OPEN; service budget512 and metadata credits are not data-object bounds",
+    "disclaimer": "Unmerged conceptual fields and one explicitly conditional merged format; no complete incremental area/storage/port claim. Directory examples exclude 464-B group index and other control/holding."
+  },
+  "model_receipt_sha256": "4cf2dedfe21a7865b8cb9d9fa4c34b89dc4fcfc931cc53157f2ba1f5ab2e92f5",
+  "model": {
+    "assumptions": [
+      "data birth is an actual once-per-entry Hot-to-Pending fact plus immutable location facts",
+      "coherent owner catalogue and bounded query/context holding exist; no client can create/update catalogue facts",
+      "new direct issue rechecks pending state at the joint edge; old issued leases retain their records",
+      "unknown D-to-E lookups drain before group close; known snapshots retain full immutable facts and independent sticky revocation",
+      "catalogue removal/reuse requires real drain or exact independent custody and safe namespace/key reuse"
+    ],
+    "bad_policy_counterexamples": {
+      "global_revoke_on_G0_close": {
+        "invariant": "closing G0 revoked unrelated still-pending B",
+        "state": {
+          "a_handed_off": true,
+          "a_packed": true,
+          "b_bound_to_g1": false,
+          "b_revoked": true,
+          "close_acks": 3,
+          "closing": true,
+          "context": 0,
+          "directory_commit": true,
+          "held_payload_changed": false,
+          "illegal_permit": false,
+          "issued": false,
+          "next_open": true,
+          "producer_sealed": true,
+          "queried": 0,
+          "query_poisoned": false,
+          "query_revoked": false,
+          "query_stage": 0,
+          "query_target": 0,
+          "query_value": false,
+          "ready": true,
+          "revoked": false,
+          "terminal": false
+        },
+        "states_seen": 453,
+        "trace": [
+          "true-R6-pack-A/local-revocation",
+          "coherent-directory-A-NotPending-ACK",
+          "G0-producer-projection-seal",
+          "R5-ready-and-notice-custody",
+          "close-cut/stop-new-unresolved-lookups",
+          "A-custody-ACK/retain-sticky-query-and-context",
+          "R3-journal-close-ACK",
+          "ingress-close-ACK",
+          "open-G1/only-G0-projection-released"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      },
+      "ignore_unresolved_directory_query": {
+        "invariant": "close ACK crossed an unresolved D-to-E lookup",
+        "state": {
+          "a_handed_off": false,
+          "a_packed": true,
+          "b_bound_to_g1": false,
+          "b_revoked": false,
+          "close_acks": 1,
+          "closing": true,
+          "context": 0,
+          "directory_commit": true,
+          "held_payload_changed": false,
+          "illegal_permit": false,
+          "issued": false,
+          "next_open": false,
+          "producer_sealed": true,
+          "queried": 1,
+          "query_poisoned": false,
+          "query_revoked": false,
+          "query_stage": 1,
+          "query_target": 1,
+          "query_value": false,
+          "ready": true,
+          "revoked": false,
+          "terminal": false
+        },
+        "states_seen": 256,
+        "trace": [
+          "true-R6-pack-A/local-revocation",
+          "coherent-directory-A-NotPending-ACK",
+          "G0-producer-projection-seal",
+          "R5-ready-and-notice-custody",
+          "lookup[1]-fire/target-unresolved",
+          "close-cut/stop-new-unresolved-lookups",
+          "R3-journal-close-ACK"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      },
+      "rewrite_held_reply": {
+        "invariant": "revocation mutated an independently held reply payload",
+        "state": {
+          "a_handed_off": false,
+          "a_packed": true,
+          "b_bound_to_g1": false,
+          "b_revoked": false,
+          "close_acks": 0,
+          "closing": false,
+          "context": 0,
+          "directory_commit": false,
+          "held_payload_changed": true,
+          "illegal_permit": false,
+          "issued": false,
+          "next_open": false,
+          "producer_sealed": false,
+          "queried": 1,
+          "query_poisoned": false,
+          "query_revoked": true,
+          "query_stage": 2,
+          "query_target": 1,
+          "query_value": false,
+          "ready": false,
+          "revoked": false,
+          "terminal": false
+        },
+        "states_seen": 87,
+        "trace": [
+          "true-R6-pack-A/local-revocation",
+          "lookup[1]-fire/target-unresolved",
+          "resolve-D-to-E/full-stable-snapshot",
+          "wrongly-rewrite-held-valid-payload"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      },
+      "trust_stale_positive": {
+        "invariant": "stale lookup result granted a new pending context after real packing",
+        "state": {
+          "a_handed_off": false,
+          "a_packed": true,
+          "b_bound_to_g1": false,
+          "b_revoked": false,
+          "close_acks": 0,
+          "closing": false,
+          "context": 1,
+          "directory_commit": false,
+          "held_payload_changed": false,
+          "illegal_permit": true,
+          "issued": false,
+          "next_open": false,
+          "producer_sealed": false,
+          "queried": 1,
+          "query_poisoned": false,
+          "query_revoked": true,
+          "query_stage": 0,
+          "query_target": 1,
+          "query_value": true,
+          "ready": false,
+          "revoked": false,
+          "terminal": false
+        },
+        "states_seen": 82,
+        "trace": [
+          "true-R6-pack-A/local-revocation",
+          "lookup[1]-fire/target-unresolved",
+          "resolve-D-to-E/full-stable-snapshot",
+          "accept-verified-pending-context"
+        ],
+        "verdict": "COUNTEREXAMPLE"
+      }
+    },
+    "finite_graph": {
+      "coverage": {
+        "A_lease_survives_G0_close": [
+          "lookup[1]-fire/target-unresolved",
+          "resolve-D-to-E/full-stable-snapshot",
+          "accept-verified-pending-context",
+          "joint-issue/recheck-positive-owner-fact",
+          "true-R6-pack-A/local-revocation",
+          "coherent-directory-A-NotPending-ACK",
+          "G0-producer-projection-seal",
+          "R5-ready-and-notice-custody",
+          "close-cut/stop-new-unresolved-lookups",
+          "A-custody-ACK/retain-sticky-query-and-context",
+          "R3-journal-close-ACK",
+          "ingress-close-ACK",
+          "open-G1/only-G0-projection-released"
+        ],
+        "A_old_positive_snapshot_held_with_sticky_revoke": [
+          "true-R6-pack-A/local-revocation",
+          "G0-producer-projection-seal",
+          "R5-ready-and-notice-custody",
+          "lookup[1]-fire/target-unresolved",
+          "coherent-directory-A-NotPending-ACK",
+          "close-cut/stop-new-unresolved-lookups",
+          "resolve-D-to-E/full-stable-snapshot",
+          "A-custody-ACK/retain-sticky-query-and-context",
+          "R3-journal-close-ACK",
+          "ingress-close-ACK",
+          "open-G1/only-G0-projection-released"
+        ],
+        "B_later_binds_G1": [
+          "true-R6-pack-A/local-revocation",
+          "coherent-directory-A-NotPending-ACK",
+          "G0-producer-projection-seal",
+          "R5-ready-and-notice-custody",
+          "close-cut/stop-new-unresolved-lookups",
+          "A-custody-ACK/retain-sticky-query-and-context",
+          "R3-journal-close-ACK",
+          "ingress-close-ACK",
+          "open-G1/only-G0-projection-released",
+          "real-ingress-B-to-G1/same-data-and-descriptor"
+        ],
+        "directory_ACK_waits_for_local_shadow": [
+          "true-R6-pack-A/local-revocation",
+          "lookup[1]-fire/target-unresolved",
+          "resolve-D-to-E/full-stable-snapshot"
+        ],
+        "held_B_snapshot_survives_G0_close": [
+          "true-R6-pack-A/local-revocation",
+          "coherent-directory-A-NotPending-ACK",
+          "G0-producer-projection-seal",
+          "R5-ready-and-notice-custody",
+          "close-cut/stop-new-unresolved-lookups",
+          "A-custody-ACK/retain-sticky-query-and-context",
+          "R3-journal-close-ACK",
+          "ingress-close-ACK",
+          "open-G1/only-G0-projection-released",
+          "lookup[2]-fire/target-unresolved",
+          "resolve-D-to-E/full-stable-snapshot"
+        ],
+        "unbound_B_context_survives_G0_close": [
+          "true-R6-pack-A/local-revocation",
+          "coherent-directory-A-NotPending-ACK",
+          "G0-producer-projection-seal",
+          "R5-ready-and-notice-custody",
+          "close-cut/stop-new-unresolved-lookups",
+          "A-custody-ACK/retain-sticky-query-and-context",
+          "R3-journal-close-ACK",
+          "ingress-close-ACK",
+          "open-G1/only-G0-projection-released",
+          "lookup[2]-fire/target-unresolved",
+          "resolve-D-to-E/full-stable-snapshot",
+          "accept-verified-pending-context"
+        ]
+      },
+      "goal_states": 52,
+      "progress_boundary": "existence of a completion path under acknowledgements, not fair/unbounded RTL liveness",
+      "states": 1009,
+      "states_without_a_completion_path": 0,
+      "transitions": 2697,
+      "verdict": "PASS"
+    },
+    "late_and_unrelated_cases": {
+      "old_member": "Closed",
+      "old_object": "NotPending",
+      "old_relabelled_as_G1": "NotPending",
+      "unrelated_B_after_G0_close": "PendingVerified"
+    },
+    "negative_identity_cases": {
+      "data_creation_identity": "NotOwned",
+      "data_endpoint": "NotOwned",
+      "data_entry_id": "NotOwned",
+      "data_epoch": "StaleNamespace",
+      "data_handle": "NotOwned",
+      "data_head": "NotOwned",
+      "data_layer": "NotOwned",
+      "data_payload_ref": "NotOwned",
+      "data_position": "NotOwned",
+      "data_storage_generation": "NotOwned",
+      "descriptor_data_identity": "NotOwned",
+      "descriptor_epoch": "StaleNamespace",
+      "descriptor_generation": "NotLiveDescriptor",
+      "descriptor_pending_ordinal": "NotOwned",
+      "descriptor_reference": "NotLiveDescriptor",
+      "descriptor_source_last": "NotOwned",
+      "descriptor_valid_count": "NotOwned",
+      "relabel_B_as_G0_member": "NotMember",
+      "wrong_selected_descriptor": "BadServicePair",
+      "wrong_selected_instance": "BadServicePair",
+      "wrong_service_identity": "BadServicePair",
+      "wrong_source_kind": "BadServiceKind"
+    },
+    "not_proved": [
+      "actual external producer or RTL implements this service",
+      "catalogue capacity/ports/area or full32K coverage",
+      "arbitrary physical memory latency or coherency implementation",
+      "whole-DUT equivalence or 2ns closure",
+      "multi-record direct-source continuation and all fault/retire/reset/wrap cuts"
+    ],
+    "positive_identity_cases": {
+      "member_before_R3_admission": "PendingVerified",
+      "new_attention_same_immutable_descriptor": "PendingVerified",
+      "same_member_via_object_route": "PendingVerified",
+      "unbound_pending_no_current_group": "PendingVerified"
+    },
+    "schema": "route_a_pending_origin_contract_model_v1",
+    "synthetic_budget_witness": {
+      "admitted_per_head": [
+        64,
+        64,
+        64,
+        64,
+        64,
+        64,
+        64,
+        64
+      ],
+      "budget": 512,
+      "heads": 8,
+      "hot": 128,
+      "mask": "synthetic keep-all, not an evaluated predictor mask",
+      "matured_records": 7168,
+      "pending_per_head": [
+        832,
+        832,
+        832,
+        832,
+        832,
+        832,
+        832,
+        832
+      ],
+      "pending_total": 6656,
+      "tokens": 1024
+    },
+    "verdict": "PROPOSED_CONTRACT_CHECK_PASS_NOT_RTL_QUALIFICATION"
+  },
+  "acceptance": {
+    "generic_wrapper_v1_changed": false,
+    "RTL_changed": false,
+    "algorithm_or_mask_changed": false,
+    "native_simulation_started": false,
+    "remote_or_dc_sta_started": false,
+    "identity_and_logical_close_responsibilities_specified": true,
+    "real_pending_origin_service_qualified": false,
+    "whole_DUT_continuous_execution_qualified": false,
+    "live_capacity_ports_physical_cost_qualified": false
+  },
+  "remaining_implementation_gates": [
+    "true origin/binding/ProjectionSeal/coherent lookup and negative/custody interfaces",
+    "H/D/producer/key reservation live bounds and memory/port/update provision",
+    "closed preplan R6 fault and real context recycle/drain",
+    "native functional equivalence/concurrency, reset/wrap/retire cuts, original 2ns setup/hold and full costs"
+  ],
+  "evidence_boundary": "Software sources support necessity/semantic lifecycle, not clocked RTL scheduling. This is a proposed handwritten owner/finite contract reference, not source-derived RTL equivalence.",
+  "static_verification": {
+    "verdict": "PASS",
+    "counts": {
+      "inputs": 22,
+      "production_source_manifest": 30,
+      "source_anchors": 20,
+      "positive_identity_cases": 4,
+      "negative_identity_cases": 22,
+      "finite_states": 1009,
+      "finite_transitions": 2697,
+      "finite_coverage": 6,
+      "bad_policy_counterexamples": 4,
+      "deterministic_fresh_model_receipts": 2,
+      "optimized_python_fail_closed": 1,
+      "local_links": 3,
+      "live_entries": 3
+    },
+    "RTL_v1_algorithm_tests_prior_models_diff": "empty against a7a92df",
+    "native_rtl": "NOT_RUN",
+    "remote_dc_sta": "NOT_STARTED",
+    "catalogue_implementation_capacity_ports": "OPEN"
+  },
+  "group_close_interpretation": "Closure revokes new successful pending eligibility for Members(W); it does not assume all old messages cease. Late object queries receive exact negative dispositions; unrelated pending remains legal."
+}

@@ -16,15 +16,37 @@ and external-v2 functionality remain open. Original normative v1 contracts
 are preserved; the v2 functional successor adds no new area/timing or net-benefit
 evidence. The multi-group journal lifecycle audit now separates a 64-row working
 set from cumulative exact history, and specifies safe migration/close barriers.
-The finite registration-window candidate now passes conditional protocol-model
-checks, but the actual producer seal, immutable member ownership, unbound
-direct-source coverage and closed-preplan failure path remain unqualified.
-It does not yet authorize 64-row rolling history in production. Physical
-history service, complete costs and 2ns closure remain open.
+The pending-origin contract now distinguishes data, descriptor, group and
+attention-service identities: true ingress witnesses validate members; a
+positive live/pending owner proof covers nonmembers. Group close is scoped
+to that group's projection and preserves unrelated pending sources. Local
+contract checks support these rules, but real producer/owner service,
+catalogue live capacity/ports, preplan failure and context recycling remain
+unqualified. No production rolling64 or physical-cost acceptance follows.
+Complete costs and 2ns closure remain open.
 
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
+
+## Pending-origin identity and scoped-close contract (2026-11-09)
+
+Read [`route_a_pending_origin_and_window_contract_20261109.md`](route_a_pending_origin_and_window_contract_20261109.md)
+and JSON. Source `a7a92df` distinguishes E(namespace/entry), D(descriptor key),
+W(group/ordinal) and S(attention/source/D/endpoint generation). Current members
+need real accepted ingress linkage; nonmembers use positive owner Pending
+facts, never an absence-as-Unseen shortcut. G0 close preserves unrelated B,
+which can later enter G1 without changing its immutable data/descriptor.
+Old G0 data cannot regain pending eligibility through another token or route.
+
+The no-RTL reference checks four positive and 22 negative identity cases,
+1,009 states/2,697 transitions and four bad-policy counterexamples. A synthetic
+source-rule scalar example leaves 6,656 pending records after budget512;
+that budget is service, not capacity. Journal64 does not bound the complete
+pending catalogue. Logical proof/close obligations are now specified, while
+real owner backing, H/D live bounds/ports/cost, negative preplan routing,
+context recycle and native coverage remain OPEN. All production RTL/v1 and
+prior results are unchanged; no remote/native/DC/STA task is started.
 
 ## Registration-window conditional validation (2026-11-09)
 

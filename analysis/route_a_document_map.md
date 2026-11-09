@@ -7,6 +7,18 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Pending-origin identities and scoped registration close (2026-11-09)
+
+[`route_a_pending_origin_and_window_contract_20261109.md`](route_a_pending_origin_and_window_contract_20261109.md)
+and JSON define independent data/descriptor/group/service identities,
+accepted-ingress member witnesses and positive owner proofs for lawful
+nonmembers. Closing one group preserves unrelated pending sources; stale
+positive replies require stable snapshots plus independent revocation.
+The reference checks four positive/22 negative identity cases, 1,009 states,
+2,697 transitions and four bad policies. Synthetic budget512 leaves pending
+residual and cannot justify a 64-entry global directory. Real backing/capacity,
+ports/cost and production implementation remain open; no RTL/native/DC work.
+
 ## Registration-window contract: conditional model PASS, production OPEN (2026-11-09)
 
 [`route_a_registration_window_contract_validation_20261109.md`](route_a_registration_window_contract_validation_20261109.md)

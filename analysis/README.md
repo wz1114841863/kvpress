@@ -7,6 +7,18 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Pending-origin and group-close contract (2026-11-09)
+
+The [identity/lifecycle contract](route_a_pending_origin_and_window_contract_20261109.md)
+and [source/reference evidence](route_a_pending_origin_and_window_contract_20261109.json)
+separate true group membership from positive pending-object ownership. Group
+close preserves legal nonmembers; old packed data cannot revive through an
+Unseen miss or a new token. Local checks pass four positive/22 negative cases,
+1,009 states/2,697 transitions and four bad-policy detections. The algorithm's
+admission budget bounds service, not global pending capacity; a live catalogue
+needs explicit capacity, ports and cost. These are candidate contract results,
+with no production RTL/v1 change, native test, remote job or DC/STA launch.
+
 ## Registration-window contract conditional verification (2026-11-09)
 
 The [contract verification](route_a_registration_window_contract_validation_20261109.md)
