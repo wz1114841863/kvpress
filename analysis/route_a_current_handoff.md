@@ -21,6 +21,19 @@ This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
 
+## Persistent page read v2 remote validation running (2026-11-09)
+
+Read [`route_a_persistent_page_read_launch_20261109.md`](route_a_persistent_page_read_launch_20261109.md)
+and JSON. Source `1d49fc8` is frozen in a new 152-file archive, SHA
+`40973dc895eb4a72798aeb9da760efdac8d71a1f79614857f392ddacef7ab119`.
+Independent tmux is **`kvzap-persistent-read-v2-r1:validation`**, run
+`persistent_page_read_v2_20261109_r1` under the remote artifacts root.
+Fresh input hashes pass, remote compile exit0/COMPILE_PASS and SIMULATION_BEGIN
+are present. The first native Verilator build is observed; test/outer exits
+and all 14-test functional acceptance remain pending. User notified to wait.
+No DC/STA, multi-group change, old-job cleanup or automatic retry. Use the
+archived checker with `--final` after completion, including tmux wrapper exit.
+
 ## Persistent page read v2 implementation prepared (2026-11-09)
 
 Read [`route_a_persistent_page_read_preparation_20261109.md`](route_a_persistent_page_read_preparation_20261109.md)

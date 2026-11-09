@@ -7,6 +7,15 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Persistent page read v2 validation launched (2026-11-09)
+
+[`route_a_persistent_page_read_launch_20261109.md`](route_a_persistent_page_read_launch_20261109.md)
+and JSON freeze `1d49fc8`/152 source files and record independent tmux
+`kvzap-persistent-read-v2-r1:validation`. Actual input hashes and remote
+compile pass; native construction has started, while 14-test repeat/error/
+retire/v1 acceptance and outer exits are pending. User notified to wait;
+no DC/STA or second-group implementation, and no old run is disturbed.
+
 ## Persistent page read successor preparation (2026-11-09)
 
 [`route_a_persistent_page_read_preparation_20261109.md`](route_a_persistent_page_read_preparation_20261109.md)

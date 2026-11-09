@@ -7,6 +7,15 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Persistent page read v2 native run active (2026-11-09)
+
+The [launch record](route_a_persistent_page_read_launch_20261109.md) and
+[frozen input/startup snapshot](route_a_persistent_page_read_launch_20261109.json)
+record source `1d49fc8`, 152 hash-checked inputs and independent tmux
+`kvzap-persistent-read-v2-r1:validation`. Remote compile exit0 and first
+native build are observed. The 14 functional/regression tests and outer
+closure remain pending; no repeated-read PASS, DC/STA or full-decode claim.
+
 ## Persistent page read implementation candidate (2026-11-09)
 
 The [preparation record](route_a_persistent_page_read_preparation_20261109.md)
