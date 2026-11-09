@@ -23,6 +23,18 @@ This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
 
+## Persistent page read r2 running after parent-gate PASS (2026-11-09)
+
+Read [`route_a_persistent_page_read_r2_launch_20261109.md`](route_a_persistent_page_read_r2_launch_20261109.md)
+and JSON. Frozen source `40a74b6`, 155 files, archive SHA
+`e7a65e92cf22c9c4ab620d3094c94c05b21b6874a8e5d8d053da3196e7a293ee`,
+run `persistent_page_read_v2_20261109_r2` is in independent tmux
+**`kvzap-persistent-read-v2-r2:validation`**. Actual input/remote compile and
+real R5-parent native test pass, with strict XML/ELF/log/typed-marker snapshot.
+The unchanged fourteen-test phase has now started; full15/outer closure is
+pending. Parent PASS closes only this short regression, not repeated-read/
+error/retire whole-DUT acceptance. User notified to wait; no DC/STA or retry.
+
 ## Persistent page read r2 repair prepared (2026-11-09)
 
 Read [`route_a_persistent_page_read_r2_repair_20261109.md`](route_a_persistent_page_read_r2_repair_20261109.md)

@@ -1,0 +1,145 @@
+{
+  "schema": "persistent-page-read-r2-launch-1",
+  "date": "2026-11-09",
+  "status": "RUNNING_ORIGINAL14_AFTER_QUALIFIED_R5_PARENT_GATE",
+  "run_id": "persistent_page_read_v2_20261109_r2",
+  "source_freeze": {
+    "source_commit": "40a74b6a259afaaf6aac8efcb7a6c01fb271862a",
+    "validation_flow": "r2_parent_gate",
+    "files": 155,
+    "archive": "analysis/experiments/persistent_page_read_v2_20261109_r2/source.tar",
+    "archive_bytes": 75427840,
+    "archive_sha256": "e7a65e92cf22c9c4ab620d3094c94c05b21b6874a8e5d8d053da3196e7a293ee",
+    "source_manifest_sha256": "8251d21b4d847b598650ac6a052d3ea40e8576ca86231f6728581fbd579ed030"
+  },
+  "remote": {
+    "run_id": "persistent_page_read_v2_20261109_r2",
+    "session": "kvzap-persistent-read-v2-r2",
+    "window": "validation",
+    "remote_root": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/persistent_page_read_v2_20261109_r2",
+    "archive": "/home/yaz80/wz_project/chisel_projects/kvpress/inputs/persistent_page_read_v2_20261109_r2.tar",
+    "runner": "/home/yaz80/wz_project/chisel_projects/kvpress/inputs/persistent_page_read_v2_20261109_r2_runner.sh",
+    "bootstrap": "/home/yaz80/wz_project/chisel_projects/kvpress/inputs/persistent_page_read_v2_20261109_r2_bootstrap.sh",
+    "outer_log": "/home/yaz80/wz_project/chisel_projects/kvpress/logs/persistent_page_read_v2_20261109_r2_outer.log",
+    "uploaded_hashes": [
+      "e7a65e92cf22c9c4ab620d3094c94c05b21b6874a8e5d8d053da3196e7a293ee  /home/yaz80/wz_project/chisel_projects/kvpress/inputs/persistent_page_read_v2_20261109_r2.tar",
+      "9dab215562d9d649f5a96fe0694436edc9acb7b000409560ee91756942311454  /home/yaz80/wz_project/chisel_projects/kvpress/inputs/persistent_page_read_v2_20261109_r2_runner.sh",
+      "cb7643970b67b16fb805d2270cfd1cc84959b7663fa92e429db17c45ccfd4289  /home/yaz80/wz_project/chisel_projects/kvpress/inputs/persistent_page_read_v2_20261109_r2_bootstrap.sh"
+    ],
+    "source_commit": "40a74b6a259afaaf6aac8efcb7a6c01fb271862a",
+    "archive_sha256": "e7a65e92cf22c9c4ab620d3094c94c05b21b6874a8e5d8d053da3196e7a293ee",
+    "source_files": 155,
+    "validation_flow": "r2_parent_gate",
+    "launch_started": true,
+    "launch_snapshot": "kvzap-persistent-read-v2-r2:validation.0 pid=14445 command=bash"
+  },
+  "startup_snapshot": {
+    "snapshot_utc": "2026-11-09T07:24:02.198020Z",
+    "source_commit": "40a74b6a259afaaf6aac8efcb7a6c01fb271862a",
+    "archive_sha256": "e7a65e92cf22c9c4ab620d3094c94c05b21b6874a8e5d8d053da3196e7a293ee",
+    "source_files_checked": 155,
+    "input_manifest_sha256": "a10ba2dfe739bde896219d7db7824c1c66b78617e0bf49bd7e2ebcfc4013634c",
+    "markers": {
+      "KVZAP_PERSISTENT_READ_R2_INPUT_PASS files=155": 1,
+      "KVZAP_PERSISTENT_READ_R2_COMPILE_PASS": 1,
+      "KVZAP_PERSISTENT_READ_R2_PARENT_BEGIN": 1,
+      "KVZAP_PERSISTENT_READ_R2_PARENT_GATE_PASS tests=1": 1,
+      "KVZAP_PERSISTENT_READ_R2_FULL_TESTS_BEGIN": 1
+    },
+    "exits": {
+      "compile_exit_status": "0",
+      "parent_exit_status": "0",
+      "test_exit_status": null,
+      "exit_status": null,
+      "tmux_wrapper_exit_status": null
+    },
+    "parent_gate_saved": true,
+    "runner_tail": [
+      "[info] - keeps scanner ownership separate across mark two queries and allocation interleaving",
+      "[info] Run completed in 5 seconds, 660 milliseconds.",
+      "[info] Total number of tests run: 1",
+      "[info] Suites: completed 1, aborted 0",
+      "[info] Tests: succeeded 1, failed 0, canceled 0, ignored 0, pending 0",
+      "[info] All tests passed.",
+      "[success] Total time: 7 s, completed Nov 9, 2026, 3:23:04 PM",
+      "KVZAP_PERSISTENT_READ_R2_PARENT_GATE_PASS tests=1",
+      "KVZAP_PERSISTENT_READ_R2_FULL_TESTS_BEGIN",
+      "Picked up _JAVA_OPTIONS: -Xmx4g -XX:ActiveProcessorCount=2",
+      "[info] welcome to sbt 1.11.5 (Ubuntu Java 11.0.19)",
+      "[info] loading project definition from /home/yaz80/wz_project/chisel_projects/kvpress/artifacts/persistent_page_read_v2_20261109_r2/workspace/hardware/route_a/chisel/project",
+      "[info] loading settings for project root from build.sbt...",
+      "[info] set current project to kvpress-route-a-chisel (in build file:/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/persistent_page_read_v2_20261109_r2/workspace/hardware/route_a/chisel/)"
+    ]
+  },
+  "qualified_parent_gate": {
+    "schema": "persistent-page-read-r2-parent-gate-1",
+    "validation_flow": "r2_parent_gate",
+    "source_commit": "40a74b6a259afaaf6aac8efcb7a6c01fb271862a",
+    "archive_sha256": "e7a65e92cf22c9c4ab620d3094c94c05b21b6874a8e5d8d053da3196e7a293ee",
+    "source_files_checked": 155,
+    "tests": 1,
+    "marker": "KVZAP_PERSISTENT_READ_R5_PARENT_PASS real_parent=1 allocations=2 marks=1 queries=2 scan_overlap=1 held_result_cycles=4 ghost_scan_outstanding=0 owner_facts_mocked=1",
+    "report": {
+      "path": "workspace/hardware/route_a/chisel/target/test-reports/TEST-kvpress.routea.r5.RouteAR5PersistentReadParentSpec.xml",
+      "bytes": 5225,
+      "sha256": "c687ef0961580d116e1a6522dfaed4faaa13e0516e7deeda73ec22387e59bbc0"
+    },
+    "native": [
+      {
+        "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAR5PersistentReadParentSpec/keeps-scanner-ownership-separate-across-mark-two-queries-and-allocation-interleaving/workdir-verilator/simulation",
+        "bytes": 543272,
+        "sha256": "75b08a78c0ad4c01ea44d545280e45f17a809eceae95fd2c04d0be58f9263f40"
+      },
+      {
+        "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAR5PersistentReadParentSpec/keeps-scanner-ownership-separate-across-mark-two-queries-and-allocation-interleaving/workdir-verilator/compilation-log.txt",
+        "bytes": 11726,
+        "sha256": "9c9b0b164b72d34d73985396c8ed44e1adff8b9d138b80eb0047c39a2f7a967a"
+      },
+      {
+        "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAR5PersistentReadParentSpec/keeps-scanner-ownership-separate-across-mark-two-queries-and-allocation-interleaving/workdir-verilator/simulation-log.txt",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAR5PersistentReadParentSpec/keeps-scanner-ownership-separate-across-mark-two-queries-and-allocation-interleaving/workdir-verilator/execution-script.txt",
+        "bytes": 18316,
+        "sha256": "dad98deb7af48a0cefedebff426bd38d2331fedb557d29dac78be0afc01a9b70"
+      }
+    ],
+    "log": {
+      "path": "parent_test.log",
+      "bytes": 1123,
+      "sha256": "94ec68bd16f4f694975a77ef604e2895ee55dabb2b17f1c64ed6f2828c0e3e5e"
+    },
+    "phase_exit": {
+      "path": "parent_exit_status",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    }
+  },
+  "parent_gate_readonly_recheck": "PASS_ARCHIVED_CHECKER_NO_NEW_SIMULATION",
+  "parent_gate_receipt_sha256": "b7af85bb0e0f58c14e3f0b4e9af09b350a115a4ef4b6b13bf4e2d65f38bde61c",
+  "expected_native_tests": 15,
+  "completed_native_parent_tests": 1,
+  "remaining_functional_phase_tests": 14,
+  "full_functional_acceptance": "PENDING",
+  "numeric_correspondence": "NOT_ESTABLISHED",
+  "external_descriptor_backing": "NOT_QUALIFIED",
+  "full32K_or_multigroup": "NOT_ESTABLISHED",
+  "clock_period_ns_unchanged": 2,
+  "DC_or_STA_started": 0,
+  "user_notified_to_wait": true,
+  "automatic_retry": false,
+  "r1_root_preserved": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/persistent_page_read_v2_20261109_r1",
+  "validation": {
+    "source_files_rechecked": 155,
+    "archive_and_upload_hashes_match": true,
+    "actual_remote_compile_exit": 0,
+    "actual_parent_exit": 0,
+    "parent_XML_ELF_marker_qualified": true,
+    "full_phase_begin": true,
+    "local_compile_lowering": true,
+    "checker_short_tests": 22,
+    "git_diff_check": "PASS"
+  }
+}

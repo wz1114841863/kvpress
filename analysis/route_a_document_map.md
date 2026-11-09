@@ -7,6 +7,15 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Persistent page read r2 launched, parent gate qualified (2026-11-09)
+
+[`route_a_persistent_page_read_r2_launch_20261109.md`](route_a_persistent_page_read_r2_launch_20261109.md)
+and JSON record source `40a74b6`, 155 frozen files and independent tmux
+`kvzap-persistent-read-v2-r2:validation`. Compile and real-parent native
+regression pass; the original fourteen-test phase is running. Full15/outer,
+whole-DUT same-page/errors/retire and broader scope remain pending. Preserve
+r1; no DC/STA, multi-group implementation or automatic retry.
+
 ## Persistent page read r2 repair and parent gate (2026-11-09)
 
 [`route_a_persistent_page_read_r2_repair_20261109.md`](route_a_persistent_page_read_r2_repair_20261109.md)

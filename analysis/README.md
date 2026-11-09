@@ -7,6 +7,15 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Persistent page read r2 running after parent PASS (2026-11-09)
+
+The [r2 launch](route_a_persistent_page_read_r2_launch_20261109.md) and
+[frozen input/parent evidence](route_a_persistent_page_read_r2_launch_20261109.json)
+record 155 checked files, compile exit0 and a qualified real R5-parent test.
+Independent tmux is `kvzap-persistent-read-v2-r2:validation`; original14 tests
+have started, with full15/outer acceptance pending. Parent PASS is bounded;
+no full-DUT/numeric/timing or net-benefit conclusion follows yet.
+
 ## Persistent page read R5 repair candidate (2026-11-09)
 
 The [r2 repair plan](route_a_persistent_page_read_r2_repair_20261109.md) and
