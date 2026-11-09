@@ -7,6 +7,17 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Persistent page read v2 r1 failed result (2026-11-09)
+
+[`route_a_persistent_page_read_result_20261109.md`](route_a_persistent_page_read_result_20261109.md)
+and JSON record 11/14 success, three whole-DUT first-read timeouts, matching
+152 source/archive hashes and complete native failure artifacts. R5 parent
+shared-request bookkeeping misattributes v2 mark to scanner outstanding;
+saved protocol and frozen native HDL support the diagnosis. Second-read,
+whole-DUT error and retire branches are not reached. No RTL repair or rerun;
+launch snapshots below are historical, and no functional/cost/timing closure
+is inferred from the five passing owner units or default-v1 regressions.
+
 ## Persistent page read v2 validation launched (2026-11-09)
 
 [`route_a_persistent_page_read_launch_20261109.md`](route_a_persistent_page_read_launch_20261109.md)

@@ -9,9 +9,11 @@ hold pass is not timing-closed. Complete costs and PPA/net benefit remain open.
 Stage A current-RTL probes now complete with two qualified blocker diagnoses;
 same-page repeated service and multi-group admission remain unsupported by
 the observed current path, rather than newly closed continuous functionality.
-An explicit default-off persistent-read v2 implementation is now prepared;
-its native repeated-read/error/retire acceptance is still pending, separately
-from the preserved default-v1 blocker evidence.
+An explicit default-off persistent-read v2 r1 run has now completed: 11/14
+tests pass, while all three whole-DUT cases block at their first R5 read query.
+A shared lookup ownership bug in the R5 parent is diagnosed; no repair or
+rerun is performed by this inspection. Repeated-read/error/retire acceptance
+remains open, separately from preserved default-v1 blocker evidence.
 The minimal successor proposal is now documented and finite-model checked;
 production RTL and normative contracts remain unchanged. Persistent read
 qualification is assigned to R5, while group reuse requires exact journal
@@ -21,7 +23,27 @@ This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
 
-## Persistent page read v2 remote validation running (2026-11-09)
+## Persistent page read v2 r1 failure inspected (2026-11-09)
+
+Read [`route_a_persistent_page_read_result_20261109.md`](route_a_persistent_page_read_result_20261109.md)
+and JSON. Compile/test/runner/tmux exits are 0/1/1/1, 152 input hashes match,
+and 14 native builds/reports are preserved. Five v2 owner units and six v1
+tests pass; all three v2 whole-DUT cases time out at the first packed READY,
+before second-read/error/retire branches. The archived strict checker rejects
+the run correctly. Pane is idle with no descendant task; no automatic retry.
+
+Saved protocol records are identical across the three failures: publication,
+post-R6 receipt and page notice occur, but R5 positive grant never fires and
+S2 remains Empty. Frozen source/native HDL show v2 mark lookup incorrectly
+sets scanner scanOutstanding; its response bypasses scanner clearing, blocking
+the next query. This register value is inferred from exact logic, not a direct
+GET. Next repair should isolate scanner-owned request bookkeeping and first
+test the real R5 parent mark-to-query path. No production RTL or input change,
+new simulation/DC/STA, functional acceptance, area/timing or net-benefit claim.
+
+## Persistent page read v2 remote validation launch snapshot (2026-11-09)
+
+Historical launch state, superseded by the completed failure inspection above.
 
 Read [`route_a_persistent_page_read_launch_20261109.md`](route_a_persistent_page_read_launch_20261109.md)
 and JSON. Source `1d49fc8` is frozen in a new 152-file archive, SHA

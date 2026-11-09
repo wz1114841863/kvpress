@@ -7,7 +7,17 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
-## Persistent page read v2 native run active (2026-11-09)
+## Persistent page read v2 r1 failure diagnosed (2026-11-09)
+
+The [result inspection](route_a_persistent_page_read_result_20261109.md) and
+[source/native/protocol evidence](route_a_persistent_page_read_result_20261109.json)
+confirm a completed 11/14 run with three whole-DUT first-read failures.
+R5 parent shared-lookup ownership leaves a phantom scanner outstanding bit;
+no successful R5 read grant/S2 service occurs. Second-read/error/retire
+capabilities remain unaccepted. Inputs and 14 native artifacts are verified,
+v1 regressions pass, and this batch performs no RTL repair or new run.
+
+## Persistent page read v2 native launch snapshot (2026-11-09)
 
 The [launch record](route_a_persistent_page_read_launch_20261109.md) and
 [frozen input/startup snapshot](route_a_persistent_page_read_launch_20261109.json)

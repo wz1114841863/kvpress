@@ -1,0 +1,1423 @@
+{
+  "schema": "persistent-page-read-failed-result-1",
+  "run_id": "persistent_page_read_v2_20261109_r1",
+  "inspection_head": "69f413b",
+  "status": "COMPLETED_FAILED_COMMON_FIRST_READ_R5_QUERY_BLOCKER",
+  "remote_read_only": true,
+  "production_RTL_changed": false,
+  "frozen_inputs_changed": false,
+  "simulator_replayed": false,
+  "new_remote_jobs_started": 0,
+  "DC_or_STA_started": 0,
+  "independent_run_audit": {
+    "schema": "persistent-page-read-independent-audit-1",
+    "audited_utc": "2026-11-09T06:50:04.465920Z",
+    "read_only": true,
+    "source_commit": "1d49fc8a8716c6b3e117e62bb6d5ae97f5693118",
+    "source_files_checked": 152,
+    "archive_expected": "40973dc895eb4a72798aeb9da760efdac8d71a1f79614857f392ddacef7ab119",
+    "archive_actual": "40973dc895eb4a72798aeb9da760efdac8d71a1f79614857f392ddacef7ab119",
+    "manifest_equal": true,
+    "exits": {
+      "compile_exit_status": "0",
+      "test_exit_status": "1",
+      "exit_status": "1",
+      "tmux_wrapper_exit_status": "1"
+    },
+    "markers": {
+      "KVZAP_PERSISTENT_READ_INPUT_PASS files=152": 1,
+      "KVZAP_PERSISTENT_READ_COMPILE_PASS": 1,
+      "KVZAP_PERSISTENT_READ_FUNCTIONAL_RUN_PASS_SINGLE_GROUP_NOT_FULL_DECODE": 0,
+      "KVZAP_PERSISTENT_READ_OUTER_EXIT=1": 1
+    },
+    "tmux_wrapper_exit1_marker": 1,
+    "reports": [
+      {
+        "suite": "kvpress.routea.RouteAMeasurementDutR3Spec",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "time": "1176.093",
+        "cases": [
+          {
+            "name": "closes one production R3/R5/R6 packed path through source terminal and reclaim",
+            "time": "296.06",
+            "failure_message": null,
+            "error": null
+          },
+          {
+            "name": "opens hot only through the accepted plan and reaches the shared terminal after four commits",
+            "time": "296.559",
+            "failure_message": null,
+            "error": null
+          },
+          {
+            "name": "fails closed when a stale first packed-read response arrives after publication",
+            "time": "298.1",
+            "failure_message": null,
+            "error": null
+          },
+          {
+            "name": "cancels a pre-issue direct candidate on the real accepted packed transition and lets R6 fault-terminal it",
+            "time": "285.374",
+            "failure_message": null,
+            "error": null
+          }
+        ],
+        "file": {
+          "path": "workspace/hardware/route_a/chisel/target/test-reports/TEST-kvpress.routea.RouteAMeasurementDutR3Spec.xml",
+          "bytes": 6147,
+          "sha256": "84a5f4bd4191f084ff16710a3d58e5052d0be47c3343b085d7f80bb4a7726acd"
+        }
+      },
+      {
+        "suite": "kvpress.routea.RouteAPersistentPackedReadControllerSpec",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "time": "10.375",
+        "cases": [
+          {
+            "name": "holds one owner-granted reservation through joint-accept and accepted-copy backpressure",
+            "time": "3.58",
+            "failure_message": null,
+            "error": null
+          },
+          {
+            "name": "joins skewed cancellation ACKs and rejects a foreign declaration without reserving or inventing an R6 fault",
+            "time": "3.556",
+            "failure_message": null,
+            "error": null
+          },
+          {
+            "name": "keeps an already installed R6 plan ineligible while its completed sources wait for merge",
+            "time": "3.239",
+            "failure_message": null,
+            "error": null
+          }
+        ],
+        "file": {
+          "path": "workspace/hardware/route_a/chisel/target/test-reports/TEST-kvpress.routea.RouteAPersistentPackedReadControllerSpec.xml",
+          "bytes": 5985,
+          "sha256": "b2c666b0a257ccd6dbf3134ba18e3dbaf3d0fcfa1f77e20a892f9bf16229788a"
+        }
+      },
+      {
+        "suite": "kvpress.routea.RouteAPersistentPageReadSpec",
+        "tests": 3,
+        "failures": 3,
+        "errors": 0,
+        "skipped": 0,
+        "time": "868.162",
+        "cases": [
+          {
+            "name": "reads one genuinely packed page twice and retires after both transient services drain",
+            "time": "290.507",
+            "failure_message": "predicate was false packed source did not reach READY after 2048 clocks",
+            "error": null
+          },
+          {
+            "name": "terminates bad page owner and S2 selections without inventing service or foreign attention",
+            "time": "290.408",
+            "failure_message": "predicate was false packed source did not reach READY after 2048 clocks",
+            "error": null
+          },
+          {
+            "name": "finishes accepted preflight while retiring and only then permits page reclaim",
+            "time": "287.247",
+            "failure_message": "predicate was false packed source did not reach READY after 2048 clocks",
+            "error": null
+          }
+        ],
+        "file": {
+          "path": "workspace/hardware/route_a/chisel/target/test-reports/TEST-kvpress.routea.RouteAPersistentPageReadSpec.xml",
+          "bytes": 29747,
+          "sha256": "2ad60c66d4095aa77b66221a0aad846cd7f63605a37651ad360b5041eee3da5e"
+        }
+      },
+      {
+        "suite": "kvpress.routea.RouteAS2PersistentReservationSpec",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "time": "2.966",
+        "cases": [
+          {
+            "name": "separates invalid from busy and holds a granted real reservation through response backpressure",
+            "time": "2.966",
+            "failure_message": null,
+            "error": null
+          }
+        ],
+        "file": {
+          "path": "workspace/hardware/route_a/chisel/target/test-reports/TEST-kvpress.routea.RouteAS2PersistentReservationSpec.xml",
+          "bytes": 5475,
+          "sha256": "e9680a911b6736dc819c56e01100599bdc7f81800aa52fa1af0cd608b9fa0a46"
+        }
+      },
+      {
+        "suite": "kvpress.routea.RouteAStageAContinuationProbeSpec",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "time": "597.57",
+        "cases": [
+          {
+            "name": "qualifies the existing same-page repeat-read blocker without changing the RTL",
+            "time": "294.514",
+            "failure_message": null,
+            "error": null
+          },
+          {
+            "name": "qualifies the existing second-admission blocker in the same session without reset",
+            "time": "303.056",
+            "failure_message": null,
+            "error": null
+          }
+        ],
+        "file": {
+          "path": "workspace/hardware/route_a/chisel/target/test-reports/TEST-kvpress.routea.RouteAStageAContinuationProbeSpec.xml",
+          "bytes": 5691,
+          "sha256": "bad2e8f1a9cd38a603e37ea3afaf80c72b2c8104fccb1649bbb6a30c5d1aed52"
+        }
+      },
+      {
+        "suite": "kvpress.routea.r5.RouteAR5PersistentReadAvailabilitySpec",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "time": "2.85",
+        "cases": [
+          {
+            "name": "retains exact read qualification and prioritizes non-backpressured allocation/reclaim clears",
+            "time": "2.85",
+            "failure_message": null,
+            "error": null
+          }
+        ],
+        "file": {
+          "path": "workspace/hardware/route_a/chisel/target/test-reports/TEST-kvpress.routea.r5.RouteAR5PersistentReadAvailabilitySpec.xml",
+          "bytes": 5487,
+          "sha256": "d229f5531ea05ee32156e7a14453cd976f85c5f102217bdd88cbddcd6878953b"
+        }
+      }
+    ],
+    "native": [
+      {
+        "suite": "RouteAMeasurementDutR3Spec",
+        "case": "cancels-a-pre-issue-direct-candidate-on-the-real-accepted-packed-transition-and-lets-R6-fault-terminal-it",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/cancels-a-pre-issue-direct-candidate-on-the-real-accepted-packed-transition-and-lets-R6-fault-terminal-it/workdir-verilator/simulation",
+            "bytes": 11148912,
+            "sha256": "cf8efa8fe0f1ce38d723d89b02c73fb6344ac9cfb8f9c0881e4fdfb0cdd7fd7e"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/cancels-a-pre-issue-direct-candidate-on-the-real-accepted-packed-transition-and-lets-R6-fault-terminal-it/workdir-verilator/compilation-log.txt",
+            "bytes": 71395,
+            "sha256": "a2359ddac852143c9e82645264b46e5d58b2f7d5522daf2aecfb4f780f52f02a"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/cancels-a-pre-issue-direct-candidate-on-the-real-accepted-packed-transition-and-lets-R6-fault-terminal-it/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/cancels-a-pre-issue-direct-candidate-on-the-real-accepted-packed-transition-and-lets-R6-fault-terminal-it/workdir-verilator/execution-script.txt",
+            "bytes": 17109,
+            "sha256": "43a73e0c2208bddbe3e7d6680d0454dab7bac072fccbf79a6699c354d53b9f24"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAMeasurementDutR3Spec",
+        "case": "closes-one-production-R3-R5-R6-packed-path-through-source-terminal-and-reclaim",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/closes-one-production-R3-R5-R6-packed-path-through-source-terminal-and-reclaim/workdir-verilator/simulation",
+            "bytes": 11148912,
+            "sha256": "f5bbef292ca3512a820f49f1dbfd5417b22c4ae544c85f31fec4c8c655928f1e"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/closes-one-production-R3-R5-R6-packed-path-through-source-terminal-and-reclaim/workdir-verilator/compilation-log.txt",
+            "bytes": 69316,
+            "sha256": "e9e773f0fdbd669c9098fa49af1e79bcdf804543670e8d5fafdd20d739942f31"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/closes-one-production-R3-R5-R6-packed-path-through-source-terminal-and-reclaim/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/closes-one-production-R3-R5-R6-packed-path-through-source-terminal-and-reclaim/workdir-verilator/execution-script.txt",
+            "bytes": 41433,
+            "sha256": "0a28f2922f7bc09c1265f48b8900c22bb69002e413c00d4198c4071ad6ee9b2c"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAMeasurementDutR3Spec",
+        "case": "fails-closed-when-a-stale-first-packed-read-response-arrives-after-publication",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/fails-closed-when-a-stale-first-packed-read-response-arrives-after-publication/workdir-verilator/simulation",
+            "bytes": 11148912,
+            "sha256": "30d0b2e9f2883c5ec6aa6a986803308e8ee1a1a379fdf55fc6f1e1bc67c4b176"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/fails-closed-when-a-stale-first-packed-read-response-arrives-after-publication/workdir-verilator/compilation-log.txt",
+            "bytes": 69316,
+            "sha256": "38d983239ced39e5e63c6053701c09af3118270ba26df38a23c2b8e318437b42"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/fails-closed-when-a-stale-first-packed-read-response-arrives-after-publication/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/fails-closed-when-a-stale-first-packed-read-response-arrives-after-publication/workdir-verilator/execution-script.txt",
+            "bytes": 16555,
+            "sha256": "2bc442f55606a66b3f68ae76bf039e0655342b2a8cac503387e5173123eed7ba"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAMeasurementDutR3Spec",
+        "case": "opens-hot-only-through-the-accepted-plan-and-reaches-the-shared-terminal-after-four-commits",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/opens-hot-only-through-the-accepted-plan-and-reaches-the-shared-terminal-after-four-commits/workdir-verilator/simulation",
+            "bytes": 11148912,
+            "sha256": "7ac1091e569e31fedd1a3d0c68f6b9b88f35d633692790c919ba19103aef0fa8"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/opens-hot-only-through-the-accepted-plan-and-reaches-the-shared-terminal-after-four-commits/workdir-verilator/compilation-log.txt",
+            "bytes": 70317,
+            "sha256": "107f0f9446bfdae8ddd63bbac6640b0964fe1d97c3ce3033da8dfb98f97490f8"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/opens-hot-only-through-the-accepted-plan-and-reaches-the-shared-terminal-after-four-commits/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAMeasurementDutR3Spec/opens-hot-only-through-the-accepted-plan-and-reaches-the-shared-terminal-after-four-commits/workdir-verilator/execution-script.txt",
+            "bytes": 19311,
+            "sha256": "3c9610deae80b8661b3527ae596c7e7beb29adb908a0f46701236cd28ff1bfe1"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAPersistentPackedReadControllerSpec",
+        "case": "holds-one-owner-granted-reservation-through-joint-accept-and-accepted-copy-backpressure",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPackedReadControllerSpec/holds-one-owner-granted-reservation-through-joint-accept-and-accepted-copy-backpressure/workdir-verilator/simulation",
+            "bytes": 686096,
+            "sha256": "a2703caa072582a269718bce9a9294917aff2655103ee609299f1ba4d190beac"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPackedReadControllerSpec/holds-one-owner-granted-reservation-through-joint-accept-and-accepted-copy-backpressure/workdir-verilator/compilation-log.txt",
+            "bytes": 11935,
+            "sha256": "be1adb6d926c324dc8b51d0e6072f5990aada477eb9f0e7ed96a5482705e5c78"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPackedReadControllerSpec/holds-one-owner-granted-reservation-through-joint-accept-and-accepted-copy-backpressure/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPackedReadControllerSpec/holds-one-owner-granted-reservation-through-joint-accept-and-accepted-copy-backpressure/workdir-verilator/execution-script.txt",
+            "bytes": 21429,
+            "sha256": "1e1de3150e15e537e3ad0379248a4edc8c480d17d11c72255a5c43acd7b5085e"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAPersistentPackedReadControllerSpec",
+        "case": "joins-skewed-cancellation-ACKs-and-rejects-a-foreign-declaration-without-reserving-or-inventing-an-R6-fault",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPackedReadControllerSpec/joins-skewed-cancellation-ACKs-and-rejects-a-foreign-declaration-without-reserving-or-inventing-an-R6-fault/workdir-verilator/simulation",
+            "bytes": 686096,
+            "sha256": "f9f628405e0a1fb7a8318551cb60d2b88897d583da0eb75bd42da77fea563ed2"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPackedReadControllerSpec/joins-skewed-cancellation-ACKs-and-rejects-a-foreign-declaration-without-reserving-or-inventing-an-R6-fault/workdir-verilator/compilation-log.txt",
+            "bytes": 12315,
+            "sha256": "51f21e82906208321a902887518844570d5e98847086b8aac96d131428cb5260"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPackedReadControllerSpec/joins-skewed-cancellation-ACKs-and-rejects-a-foreign-declaration-without-reserving-or-inventing-an-R6-fault/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPackedReadControllerSpec/joins-skewed-cancellation-ACKs-and-rejects-a-foreign-declaration-without-reserving-or-inventing-an-R6-fault/workdir-verilator/execution-script.txt",
+            "bytes": 15515,
+            "sha256": "90966ec058c58c047021403f12e27c2c12d8ef2d42ec729c158d6cb1e45cb4d3"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAPersistentPackedReadControllerSpec",
+        "case": "keeps-an-already-installed-R6-plan-ineligible-while-its-completed-sources-wait-for-merge",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPackedReadControllerSpec/keeps-an-already-installed-R6-plan-ineligible-while-its-completed-sources-wait-for-merge/workdir-verilator/simulation",
+            "bytes": 408112,
+            "sha256": "5023e780b67c3452889d3ee4143398b9f852ce0544402e841e9c7a6cf8103e2a"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPackedReadControllerSpec/keeps-an-already-installed-R6-plan-ineligible-while-its-completed-sources-wait-for-merge/workdir-verilator/compilation-log.txt",
+            "bytes": 11954,
+            "sha256": "65cc8ca720b9d5c1d77909ee65e79c28c09c39d29935bfa01e6efc649ea2e2e2"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPackedReadControllerSpec/keeps-an-already-installed-R6-plan-ineligible-while-its-completed-sources-wait-for-merge/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPackedReadControllerSpec/keeps-an-already-installed-R6-plan-ineligible-while-its-completed-sources-wait-for-merge/workdir-verilator/execution-script.txt",
+            "bytes": 3953,
+            "sha256": "edb8c337fc88d6e598edb2dc2f9c49d1241067a10e19e3e9214d1a175e4047a3"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAPersistentPageReadSpec",
+        "case": "finishes-accepted-preflight-while-retiring-and-only-then-permits-page-reclaim",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/finishes-accepted-preflight-while-retiring-and-only-then-permits-page-reclaim/workdir-verilator/simulation",
+            "bytes": 12113344,
+            "sha256": "9766c2f460b38397d802bd174b1a3c291683824f21d7447abcd0d34569084e16"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/finishes-accepted-preflight-while-retiring-and-only-then-permits-page-reclaim/workdir-verilator/compilation-log.txt",
+            "bytes": 71420,
+            "sha256": "a2dec3ec9592135157d2a2c7f0d23b9c6ccf857e1b8cc464054e36b9ee67dd4c"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/finishes-accepted-preflight-while-retiring-and-only-then-permits-page-reclaim/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/finishes-accepted-preflight-while-retiring-and-only-then-permits-page-reclaim/workdir-verilator/execution-script.txt",
+            "bytes": 1948770,
+            "sha256": "74fe8d27fe8de7e0eb3f47db057b16395dce82fd0e6f84a50de4a2785c146f5a"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAPersistentPageReadSpec",
+        "case": "reads-one-genuinely-packed-page-twice-and-retires-after-both-transient-services-drain",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/reads-one-genuinely-packed-page-twice-and-retires-after-both-transient-services-drain/workdir-verilator/simulation",
+            "bytes": 12117440,
+            "sha256": "2faa3261dd73d0a681d9df05beb2add21409f69b79db235f8a76813ad67abfb6"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/reads-one-genuinely-packed-page-twice-and-retires-after-both-transient-services-drain/workdir-verilator/compilation-log.txt",
+            "bytes": 72052,
+            "sha256": "d52d50fabc1ba3530b94c50ddbc200aada8b2e1f86b5a6d15ab93f65aeecd55d"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/reads-one-genuinely-packed-page-twice-and-retires-after-both-transient-services-drain/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/reads-one-genuinely-packed-page-twice-and-retires-after-both-transient-services-drain/workdir-verilator/execution-script.txt",
+            "bytes": 1948770,
+            "sha256": "74fe8d27fe8de7e0eb3f47db057b16395dce82fd0e6f84a50de4a2785c146f5a"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAPersistentPageReadSpec",
+        "case": "terminates-bad-page-owner-and-S2-selections-without-inventing-service-or-foreign-attention",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/terminates-bad-page-owner-and-S2-selections-without-inventing-service-or-foreign-attention/workdir-verilator/simulation",
+            "bytes": 12117440,
+            "sha256": "9a3ce3af98a99efeb8402432a4c6a27a2dac6120e4e1e1f866910d419b48897d"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/terminates-bad-page-owner-and-S2-selections-without-inventing-service-or-foreign-attention/workdir-verilator/compilation-log.txt",
+            "bytes": 72447,
+            "sha256": "58e1660644fad8e569b083dfbe800cd66c3c132c773d829a06bca96da9129b64"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/terminates-bad-page-owner-and-S2-selections-without-inventing-service-or-foreign-attention/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/terminates-bad-page-owner-and-S2-selections-without-inventing-service-or-foreign-attention/workdir-verilator/execution-script.txt",
+            "bytes": 1948770,
+            "sha256": "74fe8d27fe8de7e0eb3f47db057b16395dce82fd0e6f84a50de4a2785c146f5a"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAR5PersistentReadAvailabilitySpec",
+        "case": "retains-exact-read-qualification-and-prioritizes-non-backpressured-allocation-reclaim-clears",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAR5PersistentReadAvailabilitySpec/retains-exact-read-qualification-and-prioritizes-non-backpressured-allocation-reclaim-clears/workdir-verilator/simulation",
+            "bytes": 318024,
+            "sha256": "5f2a1088f6b4204f226931ae9d9dce07d70acd2e7003ee51f24579f4ffa64149"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAR5PersistentReadAvailabilitySpec/retains-exact-read-qualification-and-prioritizes-non-backpressured-allocation-reclaim-clears/workdir-verilator/compilation-log.txt",
+            "bytes": 11992,
+            "sha256": "2f5f04dafb8c7dfb62fe1670cfc1c8894b7dffffb0358ac2ff2c5caabf614525"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAR5PersistentReadAvailabilitySpec/retains-exact-read-qualification-and-prioritizes-non-backpressured-allocation-reclaim-clears/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAR5PersistentReadAvailabilitySpec/retains-exact-read-qualification-and-prioritizes-non-backpressured-allocation-reclaim-clears/workdir-verilator/execution-script.txt",
+            "bytes": 7073,
+            "sha256": "84407ddbec4255918d53911e55208b434e5ae65255c45c62cb2b53f14be5b87b"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAS2PersistentReservationSpec",
+        "case": "separates-invalid-from-busy-and-holds-a-granted-real-reservation-through-response-backpressure",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAS2PersistentReservationSpec/separates-invalid-from-busy-and-holds-a-granted-real-reservation-through-response-backpressure/workdir-verilator/simulation",
+            "bytes": 293232,
+            "sha256": "f40d506dd9823511d2b84e5fac8fa77fa53da941961f484e0a42905ef7553a6b"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAS2PersistentReservationSpec/separates-invalid-from-busy-and-holds-a-granted-real-reservation-through-response-backpressure/workdir-verilator/compilation-log.txt",
+            "bytes": 11935,
+            "sha256": "60e01950d8e3e74f242950679452657c8504126fc157e3768461bc1cdc7a4751"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAS2PersistentReservationSpec/separates-invalid-from-busy-and-holds-a-granted-real-reservation-through-response-backpressure/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAS2PersistentReservationSpec/separates-invalid-from-busy-and-holds-a-granted-real-reservation-through-response-backpressure/workdir-verilator/execution-script.txt",
+            "bytes": 9538,
+            "sha256": "1e734d71b2c906d604ba8b16ddf6ceb426f4f85d97a7d1cccc22674174af2dc1"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAStageAContinuationProbeSpec",
+        "case": "qualifies-the-existing-same-page-repeat-read-blocker-without-changing-the-RTL",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-same-page-repeat-read-blocker-without-changing-the-RTL/workdir-verilator/simulation",
+            "bytes": 12027352,
+            "sha256": "b63451ac1c09ba9aa1a4070d614329c9384e194db820c92959d6ef10108cd2c6"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-same-page-repeat-read-blocker-without-changing-the-RTL/workdir-verilator/compilation-log.txt",
+            "bytes": 71814,
+            "sha256": "d48eab5fc236301a5c7fedac5d294e97a7884db3bfce276bd0f9ce2b28a4eb83"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-same-page-repeat-read-blocker-without-changing-the-RTL/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-same-page-repeat-read-blocker-without-changing-the-RTL/workdir-verilator/execution-script.txt",
+            "bytes": 375500,
+            "sha256": "729001fed9a8f8c541fbd9da561671dd8a4c117ea45f342e9efc097ad0d3259e"
+          }
+        ]
+      },
+      {
+        "suite": "RouteAStageAContinuationProbeSpec",
+        "case": "qualifies-the-existing-second-admission-blocker-in-the-same-session-without-reset",
+        "artifacts": [
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-second-admission-blocker-in-the-same-session-without-reset/workdir-verilator/simulation",
+            "bytes": 12027352,
+            "sha256": "7b2f4918e075cb1bfb506561852e80f8f8c26244babd622f502755c6240e3386"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-second-admission-blocker-in-the-same-session-without-reset/workdir-verilator/compilation-log.txt",
+            "bytes": 72130,
+            "sha256": "3df0539d43c1a7cf1e062ee9dfe8b49f2ca630ac8515176ff748aab6a0c1a916"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-second-admission-blocker-in-the-same-session-without-reset/workdir-verilator/simulation-log.txt",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          {
+            "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-second-admission-blocker-in-the-same-session-without-reset/workdir-verilator/execution-script.txt",
+            "bytes": 378975,
+            "sha256": "a4476ce891e83c12962defbc68f0b34ff2d493870907b7f5b871e3cadf104d21"
+          }
+        ]
+      }
+    ],
+    "outer_files": [
+      {
+        "path": "runner.log",
+        "bytes": 7299,
+        "sha256": "b883e12c76a16b767a34d5d48084f5d7f8262cb9f624c8337a18c542a36b6626"
+      },
+      {
+        "path": "outer.log",
+        "bytes": 7341,
+        "sha256": "e08625fa7b4cef53a1e075ee564878e414764cdacfdd70b65bf565a3aa2bc8f4"
+      },
+      {
+        "path": "compile.log",
+        "bytes": 1792,
+        "sha256": "50ac04db151c30c9e75da2aebc6585875495d2c5fec4d50497e3a0547c853059"
+      },
+      {
+        "path": "test.log",
+        "bytes": 5319,
+        "sha256": "cff0d58b774dc5ae01985b53c5ffa894e9d0c35239ffd0ae58395a546ad7c886"
+      },
+      {
+        "path": "input_manifest.json",
+        "bytes": 33422,
+        "sha256": "f83f9beb72cb50a6d06c499658bbce892a69d40727ac4c67b7388bc6b5ec8c96"
+      }
+    ]
+  },
+  "saved_protocol_decode": {
+    "schema": "persistent-read-saved-protocol-decode-1",
+    "read_only": true,
+    "native_executable_launched": false,
+    "cases": [
+      {
+        "case": "finishes-accepted-preflight-while-retiring-and-only-then-permits-page-reclaim",
+        "total_tick_commands": 2160,
+        "port_map_entries": 280,
+        "execution_script": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/finishes-accepted-preflight-while-retiring-and-only-then-permits-page-reclaim/workdir-verilator/execution-script.txt",
+          "bytes": 1948770,
+          "sha256": "74fe8d27fe8de7e0eb3f47db057b16395dce82fd0e6f84a50de4a2785c146f5a"
+        },
+        "testbench": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/finishes-accepted-preflight-while-retiring-and-only-then-permits-page-reclaim/generated-sources/testbench.sv",
+          "sha256": "095920098c5938245093bf1bfc20ae35c96304277d3e4dce8b7b2035536c1bdb"
+        },
+        "native_R5_HDL": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/finishes-accepted-preflight-while-retiring-and-only-then-permits-page-reclaim/primary-sources/route_a_page_manager_persistent_v2.sv",
+          "bytes": 376756,
+          "sha256": "5c2bb18b878853217be6c65d1757d603aafea78e50c34fd403f6a1451db99247"
+        },
+        "get_observations": {
+          "persistent_receipt_fault_out_valid": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_publication_fire": {
+            "samples": 2159,
+            "nonzero": 1,
+            "last": 0,
+            "values": [
+              0,
+              1
+            ],
+            "nonzero_cycles": [
+              97
+            ]
+          },
+          "observation_page_ready_fire": {
+            "samples": 2159,
+            "nonzero": 1,
+            "last": 0,
+            "values": [
+              0,
+              1
+            ],
+            "nonzero_cycles": [
+              100
+            ]
+          },
+          "persistent_page_available_out_valid": {
+            "samples": 2159,
+            "nonzero": 1,
+            "last": 0,
+            "values": [
+              0,
+              1
+            ],
+            "nonzero_cycles": [
+              108
+            ]
+          },
+          "observation_materialized_sidecar_fire": {
+            "samples": 2159,
+            "nonzero": 1,
+            "last": 0,
+            "values": [
+              0,
+              1
+            ],
+            "nonzero_cycles": [
+              29
+            ]
+          },
+          "observation_descriptor_grant_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_consumer_commit_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_s2_release_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_payload_fragment_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_sidecar_fragment_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "persistent_rejected_out_valid": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "io_attention_terminal_rsp_valid": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_materialized_position": {
+            "samples": 1,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_publication_status": {
+            "samples": 1,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "persistent_page_available_out_ready": {
+            "samples": 1,
+            "nonzero": 1,
+            "last": 1,
+            "values": [
+              1
+            ],
+            "nonzero_cycles": [
+              108
+            ]
+          },
+          "persistent_page_available_out_bits_valid_records": {
+            "samples": 1,
+            "nonzero": 1,
+            "last": 1,
+            "values": [
+              1
+            ],
+            "nonzero_cycles": [
+              108
+            ]
+          },
+          "observation_attention_live": {
+            "samples": 1,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_s2_any_live": {
+            "samples": 1,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_page0_readable": {
+            "samples": 1,
+            "nonzero": 1,
+            "last": 1,
+            "values": [
+              1
+            ],
+            "nonzero_cycles": [
+              109
+            ]
+          },
+          "persistent_page_select_in_ready": {
+            "samples": 2,
+            "nonzero": 2,
+            "last": 1,
+            "values": [
+              1
+            ],
+            "nonzero_cycles": [
+              110,
+              110
+            ]
+          },
+          "observation_s2_slot_state": {
+            "samples": 2050,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          }
+        },
+        "not_observed": [
+          "observation_preflight_busy",
+          "observation_declaration_live",
+          "observation_s2_slot_generation"
+        ]
+      },
+      {
+        "case": "reads-one-genuinely-packed-page-twice-and-retires-after-both-transient-services-drain",
+        "total_tick_commands": 2160,
+        "port_map_entries": 280,
+        "execution_script": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/reads-one-genuinely-packed-page-twice-and-retires-after-both-transient-services-drain/workdir-verilator/execution-script.txt",
+          "bytes": 1948770,
+          "sha256": "74fe8d27fe8de7e0eb3f47db057b16395dce82fd0e6f84a50de4a2785c146f5a"
+        },
+        "testbench": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/reads-one-genuinely-packed-page-twice-and-retires-after-both-transient-services-drain/generated-sources/testbench.sv",
+          "sha256": "095920098c5938245093bf1bfc20ae35c96304277d3e4dce8b7b2035536c1bdb"
+        },
+        "native_R5_HDL": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/reads-one-genuinely-packed-page-twice-and-retires-after-both-transient-services-drain/primary-sources/route_a_page_manager_persistent_v2.sv",
+          "bytes": 376756,
+          "sha256": "5c2bb18b878853217be6c65d1757d603aafea78e50c34fd403f6a1451db99247"
+        },
+        "get_observations": {
+          "persistent_receipt_fault_out_valid": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_publication_fire": {
+            "samples": 2159,
+            "nonzero": 1,
+            "last": 0,
+            "values": [
+              0,
+              1
+            ],
+            "nonzero_cycles": [
+              97
+            ]
+          },
+          "observation_page_ready_fire": {
+            "samples": 2159,
+            "nonzero": 1,
+            "last": 0,
+            "values": [
+              0,
+              1
+            ],
+            "nonzero_cycles": [
+              100
+            ]
+          },
+          "persistent_page_available_out_valid": {
+            "samples": 2159,
+            "nonzero": 1,
+            "last": 0,
+            "values": [
+              0,
+              1
+            ],
+            "nonzero_cycles": [
+              108
+            ]
+          },
+          "observation_materialized_sidecar_fire": {
+            "samples": 2159,
+            "nonzero": 1,
+            "last": 0,
+            "values": [
+              0,
+              1
+            ],
+            "nonzero_cycles": [
+              29
+            ]
+          },
+          "observation_descriptor_grant_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_consumer_commit_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_s2_release_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_payload_fragment_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_sidecar_fragment_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "persistent_rejected_out_valid": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "io_attention_terminal_rsp_valid": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_materialized_position": {
+            "samples": 1,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_publication_status": {
+            "samples": 1,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "persistent_page_available_out_ready": {
+            "samples": 1,
+            "nonzero": 1,
+            "last": 1,
+            "values": [
+              1
+            ],
+            "nonzero_cycles": [
+              108
+            ]
+          },
+          "persistent_page_available_out_bits_valid_records": {
+            "samples": 1,
+            "nonzero": 1,
+            "last": 1,
+            "values": [
+              1
+            ],
+            "nonzero_cycles": [
+              108
+            ]
+          },
+          "observation_attention_live": {
+            "samples": 1,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_s2_any_live": {
+            "samples": 1,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_page0_readable": {
+            "samples": 1,
+            "nonzero": 1,
+            "last": 1,
+            "values": [
+              1
+            ],
+            "nonzero_cycles": [
+              109
+            ]
+          },
+          "persistent_page_select_in_ready": {
+            "samples": 2,
+            "nonzero": 2,
+            "last": 1,
+            "values": [
+              1
+            ],
+            "nonzero_cycles": [
+              110,
+              110
+            ]
+          },
+          "observation_s2_slot_state": {
+            "samples": 2050,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          }
+        },
+        "not_observed": [
+          "observation_preflight_busy",
+          "observation_declaration_live",
+          "observation_s2_slot_generation"
+        ]
+      },
+      {
+        "case": "terminates-bad-page-owner-and-S2-selections-without-inventing-service-or-foreign-attention",
+        "total_tick_commands": 2160,
+        "port_map_entries": 280,
+        "execution_script": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/terminates-bad-page-owner-and-S2-selections-without-inventing-service-or-foreign-attention/workdir-verilator/execution-script.txt",
+          "bytes": 1948770,
+          "sha256": "74fe8d27fe8de7e0eb3f47db057b16395dce82fd0e6f84a50de4a2785c146f5a"
+        },
+        "testbench": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/terminates-bad-page-owner-and-S2-selections-without-inventing-service-or-foreign-attention/generated-sources/testbench.sv",
+          "sha256": "095920098c5938245093bf1bfc20ae35c96304277d3e4dce8b7b2035536c1bdb"
+        },
+        "native_R5_HDL": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAPersistentPageReadSpec/terminates-bad-page-owner-and-S2-selections-without-inventing-service-or-foreign-attention/primary-sources/route_a_page_manager_persistent_v2.sv",
+          "bytes": 376756,
+          "sha256": "5c2bb18b878853217be6c65d1757d603aafea78e50c34fd403f6a1451db99247"
+        },
+        "get_observations": {
+          "persistent_receipt_fault_out_valid": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_publication_fire": {
+            "samples": 2159,
+            "nonzero": 1,
+            "last": 0,
+            "values": [
+              0,
+              1
+            ],
+            "nonzero_cycles": [
+              97
+            ]
+          },
+          "observation_page_ready_fire": {
+            "samples": 2159,
+            "nonzero": 1,
+            "last": 0,
+            "values": [
+              0,
+              1
+            ],
+            "nonzero_cycles": [
+              100
+            ]
+          },
+          "persistent_page_available_out_valid": {
+            "samples": 2159,
+            "nonzero": 1,
+            "last": 0,
+            "values": [
+              0,
+              1
+            ],
+            "nonzero_cycles": [
+              108
+            ]
+          },
+          "observation_materialized_sidecar_fire": {
+            "samples": 2159,
+            "nonzero": 1,
+            "last": 0,
+            "values": [
+              0,
+              1
+            ],
+            "nonzero_cycles": [
+              29
+            ]
+          },
+          "observation_descriptor_grant_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_consumer_commit_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_s2_release_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_payload_fragment_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_sidecar_fragment_fire": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "persistent_rejected_out_valid": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "io_attention_terminal_rsp_valid": {
+            "samples": 2159,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_materialized_position": {
+            "samples": 1,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_publication_status": {
+            "samples": 1,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "persistent_page_available_out_ready": {
+            "samples": 1,
+            "nonzero": 1,
+            "last": 1,
+            "values": [
+              1
+            ],
+            "nonzero_cycles": [
+              108
+            ]
+          },
+          "persistent_page_available_out_bits_valid_records": {
+            "samples": 1,
+            "nonzero": 1,
+            "last": 1,
+            "values": [
+              1
+            ],
+            "nonzero_cycles": [
+              108
+            ]
+          },
+          "observation_attention_live": {
+            "samples": 1,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_s2_any_live": {
+            "samples": 1,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          },
+          "observation_page0_readable": {
+            "samples": 1,
+            "nonzero": 1,
+            "last": 1,
+            "values": [
+              1
+            ],
+            "nonzero_cycles": [
+              109
+            ]
+          },
+          "persistent_page_select_in_ready": {
+            "samples": 2,
+            "nonzero": 2,
+            "last": 1,
+            "values": [
+              1
+            ],
+            "nonzero_cycles": [
+              110,
+              110
+            ]
+          },
+          "observation_s2_slot_state": {
+            "samples": 2050,
+            "nonzero": 0,
+            "last": 0,
+            "values": [
+              0
+            ],
+            "nonzero_cycles": []
+          }
+        },
+        "not_observed": [
+          "observation_preflight_busy",
+          "observation_declaration_live",
+          "observation_s2_slot_generation"
+        ]
+      }
+    ]
+  },
+  "current_source_pins": [
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "bytes": 292851,
+      "sha256": "a31f951792dea6b9370890802f51c2a00a77702fba973c0cc2fecdeb74a88e7f"
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAPersistentPageReadSpec.scala",
+      "bytes": 30449,
+      "sha256": "d6a1866ca71d8395bc4b7cc1bbaf64bc06afa07067973fae3b633b0c83b8e851"
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPersistentPackedReadController.scala",
+      "bytes": 17437,
+      "sha256": "c78d23d9be058343c534f37c5ef132b05dd6f04b21db5ef9448f032ffe0e5925"
+    },
+    {
+      "path": "tools/check_persistent_page_read_validation.py",
+      "bytes": 10883,
+      "sha256": "b7e5b1babdd80d4b534ca9904a2757b8700d9ba82bcfda86f44459857b0d3946"
+    },
+    {
+      "path": "analysis/route_a_persistent_page_read_launch_20261109.json",
+      "bytes": 5612,
+      "sha256": "1ff27f517a0c21d08482ab7569ad6c1fac2acd14fb3ffb3ab52a945610989a99"
+    }
+  ],
+  "source_facts": [
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 4286,
+      "needle": "val scanAllowed"
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 4291,
+      "needle": "when(availabilityStorage.io.availability_lookup_req.fire)"
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 4295,
+      "needle": "!persistentAvailabilityOutstanding"
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 4711,
+      "needle": "state === AvailabilityRequest && !scanOutstanding"
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 4716,
+      "needle": "state === AvailabilityResponse"
+    }
+  ],
+  "strict_acceptance": {
+    "checker": "archived tools/check_persistent_page_read_validation.py --final",
+    "exit_code": 1,
+    "first_failed_gate": "test_exit_status must equal 0",
+    "source_line": 124,
+    "classification": "EXPECTED_REJECTION_OF_FAILED_TESTS_NOT_SUMMARY_SCRIPT_ERROR"
+  },
+  "root_cause": {
+    "owner": "R5 parent shared availability lookup bookkeeping",
+    "request": "shared request fire unconditionally sets scanOutstanding even for v2 mark",
+    "response": "v2 response excluded from legacy scan clearing",
+    "consequence": "qualification completes but ghost scanner outstanding bit blocks subsequent v2 availability request",
+    "evidence_kind": "deterministic source and frozen native-HDL inference supported by recorded I/O; internal register not directly GET",
+    "native_HDL_lines": [
+      607,
+      609,
+      1317,
+      1330,
+      1848,
+      2258
+    ],
+    "repair_candidate": "set scanOutstanding only for scanAllowed && shared_req.fire; retain exact response ownership",
+    "repair_implemented": false,
+    "parent_regression_needed": [
+      "mark then query then query",
+      "scanner/v2 request-response interleaving",
+      "held response and response ownership"
+    ]
+  },
+  "capability_verdicts": {
+    "v2_same_page_twice": "NOT_REACHED_AFTER_FIRST_READ_BLOCKED",
+    "v2_error_cases": "NOT_REACHED_FIRST_POSITIVE_SERVICE_BLOCKED",
+    "v2_retire": "NOT_REACHED_FIRST_POSITIVE_SERVICE_BLOCKED",
+    "v2_receipt_notification": "OBSERVED_AFTER_TRUE_PUBLICATION_AND_ALL_R6",
+    "v2_owner_units": "5_PASS_BOUNDED",
+    "default_v1_R3": "4_PASS",
+    "default_v1_diagnostics": "2_PASS_EXPECTED_BLOCKERS_REPRODUCED",
+    "numeric": "NOT_ESTABLISHED",
+    "full_continuous_decode": "NOT_ESTABLISHED",
+    "new_area_timing_net_benefit": "NO_NEW_EVIDENCE"
+  },
+  "validation": {
+    "source_and_archive_hashes": "PASS",
+    "XML_and_native_artifacts": "PASS_FOR_COMPLETED_FAILURE",
+    "independent_protocol_decode": "PASS",
+    "all_three_execution_scripts_equal": true,
+    "source_and_native_HDL_causal_review": "PASS_STATIC_DIAGNOSIS",
+    "production_source_equal_inspection_head": true,
+    "git_diff_check": "PASS"
+  }
+}
