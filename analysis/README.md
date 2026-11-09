@@ -7,6 +7,17 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Paper scope and next closure targets (2026-11-09)
+
+The [execution scope and closure plan](route_a_paper_execution_scope_and_closure_20261109.md)
+sets a bounded, repeatable Qwen-anchor lifecycle/control prototype as the
+paper implementation target. First-use functionality and WCG1 mapped-area
+acceptance are preserved; sustained-use evidence, storage port/lifetime
+contracts, complete incremental accounting and top-level 2ns timing remain
+open. Storage-contract work and existing-DDC timing diagnosis should precede
+the next implementation candidate. This document-only batch starts no job
+and changes no RTL, generic compatibility, fair constraints or frozen input.
+
 ## RD1+WCG1 full paired result (2026-11-09)
 
 The [audited result](dc_rd1_wcg1_full_paired_result_20261109.md) and

@@ -11,6 +11,27 @@ This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
 
+## Paper execution scope and finite closure target (2026-11-09)
+
+Read [`route_a_paper_execution_scope_and_closure_20261109.md`](route_a_paper_execution_scope_and_closure_20261109.md).
+The user directs the next phase toward paper scope, storage contracts,
+complete incremental costs and top-level critical timing. The target is a
+bounded, repeatable Route-A lifecycle/control prototype for the existing
+Qwen3-8B/32K/s1 anchor with a fully stated backend cost/service boundary.
+Current first-use/retire acceptance remains valid; reset-free multi-group
+admission, repeated page use and a data-linked numeric execution model are
+still missing evidence, not silently assumed functionality.
+
+Keep RD1+WCG1 as the measured area candidate, PM1 off/RD2 excluded. Current
+primary control delta is 2,967,645.576422 area units; 129.517x is not a full
+system ratio. Resolve field lifetime/maximum-live/ports for compact/P3/M2/R5
+and diagnose existing-DDC ready/setup chains and common hold-pass behavior
+before another RTL candidate/full synthesis. Preserve generic compatibility,
+all frozen semantics and 2ns constraints; any lifecycle/interface successor
+needs an explicit versioned difference and verification plan. This planning
+batch changes documentation only and starts no RTL or remote job. Older
+launch-state paragraphs below remain dated historical snapshots.
+
 ## RD1+WCG1 full result accepted within scope (2026-11-09)
 
 Read [`dc_rd1_wcg1_full_paired_result_20261109.md`](dc_rd1_wcg1_full_paired_result_20261109.md)

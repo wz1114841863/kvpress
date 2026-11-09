@@ -7,6 +7,17 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Paper execution scope and closure work (2026-11-09)
+
+[`route_a_paper_execution_scope_and_closure_20261109.md`](route_a_paper_execution_scope_and_closure_20261109.md)
+defines the finite paper target after full WCG1 area acceptance: repeatable
+lifecycle/control execution, compatible compact/P3/M2/R5 storage contracts,
+complete backend differential costs and top-level 2ns setup/hold evidence.
+It distinguishes current first-use functionality from the missing sustained
+execution bridge, preserves generic compatibility and frozen contracts, and
+orders storage/timing diagnosis before further implementation experiments.
+This is a planning decision, not new functional/cost/timing acceptance.
+
 ## Completed full paired r2 result (2026-11-09)
 
 [`dc_rd1_wcg1_full_paired_result_20261109.md`](dc_rd1_wcg1_full_paired_result_20261109.md)
