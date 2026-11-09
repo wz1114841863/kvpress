@@ -11,6 +11,29 @@ This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
 
+## Stage A execution envelope defined (2026-11-09)
+
+Read [`route_a_stage_a_execution_envelope_20261109.md`](route_a_stage_a_execution_envelope_20261109.md)
+and its source-pinned JSON. The user authorizes Stage A scope definition.
+The event/input/owner/state/observation map separates existing first-use
+acceptance from two unexecuted targets: same-page repeated service and
+same-session admission of a second group, without reset.
+
+Source tracing confirms an attention terminal leaves R6 Active, and S2
+release frees a service slot rather than the persistent packed page. Page
+generation stays unchanged between reads; reuse of an S2 slot advances its
+source generation. Metadata handoff already returns credit, while ingress
+StateDone, reset-only journal ordinals and one-shot activation facts block
+the new sustained-use target. The top also lacks an actual Q-vector/data-to-
+partial path; initial witnesses must be labelled protocol/control only.
+
+The next bounded batch is to implement/run the two current-RTL probes with
+real functional bodies, record exact first blockers, and define any minimum
+successor explicitly. No new functional PASS is claimed here. This batch
+changes analysis/navigation only; no RTL, simulation, remote job, synthesis
+or constraint change occurs. Generic capacity/compatibility, RD1+WCG1 area
+reference, PM1 off and RD2 excluded remain preserved.
+
 ## Paper execution scope and finite closure target (2026-11-09)
 
 Read [`route_a_paper_execution_scope_and_closure_20261109.md`](route_a_paper_execution_scope_and_closure_20261109.md).

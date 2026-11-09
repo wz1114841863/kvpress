@@ -7,6 +7,17 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Stage A execution scope defined (2026-11-09)
+
+The [lifecycle envelope](route_a_stage_a_execution_envelope_20261109.md) and
+[source-pinned mapping](route_a_stage_a_execution_envelope_20261109.json)
+define runtime/DUT duties, persistent-page versus transient-source lifetime,
+same-page repeated-read and second-group scenario specifications. R6 terminal
+and S2 release already preserve session/page lifetime; ingress/journal and
+activation facts remain the concrete blockers. Numeric data correspondence
+also stays open. This is scope closure only, with no new simulation, RTL,
+remote experiment, timing or cost result.
+
 ## Paper scope and next closure targets (2026-11-09)
 
 The [execution scope and closure plan](route_a_paper_execution_scope_and_closure_20261109.md)

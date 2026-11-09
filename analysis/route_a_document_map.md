@@ -7,6 +7,17 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Stage A lifecycle execution envelope (2026-11-09)
+
+[`route_a_stage_a_execution_envelope_20261109.md`](route_a_stage_a_execution_envelope_20261109.md)
+and JSON define the scope, lifecycle/input/owner/state map, runtime and
+provider responsibilities, page-versus-S2 identity lifetimes, two minimum
+scenario specifications and concrete source-level blockers. Scope definition
+is complete; repeated-read/multi-group/numeric/workload verification remains
+open. No RTL change or simulation/remote/DC/STA job is performed. Read this
+before implementing the first repeated-execution probes; retain the paper
+plan and historical first-use/mapping evidence at their original levels.
+
 ## Paper execution scope and closure work (2026-11-09)
 
 [`route_a_paper_execution_scope_and_closure_20261109.md`](route_a_paper_execution_scope_and_closure_20261109.md)
