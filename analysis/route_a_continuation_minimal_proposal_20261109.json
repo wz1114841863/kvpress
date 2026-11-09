@@ -1,0 +1,799 @@
+{
+  "schema": "route-a-continuation-minimal-proposal-1",
+  "date": "2026-11-09",
+  "branch": "research/kvzap-latest",
+  "base_commit": "dbb85b0ce6f3a1a8152aed7726cee4f1b8f57295",
+  "status": "PROPOSAL_AND_FINITE_MODEL_ONLY_NOT_RTL_OR_ARCHITECTURE_FREEZE",
+  "scope": "Stage A minimal repeated packed service and multi-group admission, with B1/B2/C feasibility gates",
+  "production_RTL_modified": false,
+  "production_contract_modified": false,
+  "remote_jobs_started": 0,
+  "DC_or_STA_started": 0,
+  "clock_period_ns_unchanged": 2,
+  "PM1_enabled": false,
+  "RD2_integrated": false,
+  "input_pins": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "31f85c67f53c7cab140bb72246eca7ca4594e5c3b9b457d68b5f61f7f2180740",
+      "bytes": 22013
+    },
+    {
+      "path": "analysis/architecture_spec.md",
+      "sha256": "2b319b854cfad59d0d43a0f347288d6a9ec8ad7cd3ea473f5e1c5d2a9e60ca4b",
+      "bytes": 67421
+    },
+    {
+      "path": "analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md",
+      "sha256": "964eb391d205bc4fba1962c4465df61ad29c3a3a7de9cc442e44860ba27f3849",
+      "bytes": 8682
+    },
+    {
+      "path": "analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md",
+      "sha256": "445b00f6410da976421eb7a3a9fd1da1d1610a9b341ad2bf44f1de17ecc2b684",
+      "bytes": 6693
+    },
+    {
+      "path": "analysis/architecture_gate_a_r2_arbitration_dependency_contract.md",
+      "sha256": "1c093357af0571c671f9fc8785c95700bb0f4b56cc911c0619db366461216f0b",
+      "bytes": 4963
+    },
+    {
+      "path": "analysis/route_a_paper_execution_scope_and_closure_20261109.md",
+      "sha256": "e734555c7db2c5bcd8a62f56eddc6bc3d196695f169596338945de687965222e",
+      "bytes": 16250
+    },
+    {
+      "path": "analysis/route_a_stage_a_execution_envelope_20261109.md",
+      "sha256": "a1d6b75ed1bfd71af0455a0ef52261ab4e3265382847be00dbce14f056e0a7c7",
+      "bytes": 16513
+    },
+    {
+      "path": "analysis/route_a_stage_a_execution_envelope_20261109.json",
+      "sha256": "534be603b6b3a157da1b1b4d068e5a5cc94b5e7b50a8c40344a28dba55e117f0",
+      "bytes": 33785
+    },
+    {
+      "path": "analysis/route_a_stage_a_probe_result_20261109.md",
+      "sha256": "9ee093117aa3b46f6ebba88fb0499cec93409225b502acec497cfd47cb8ed1d0",
+      "bytes": 7662
+    },
+    {
+      "path": "analysis/route_a_stage_a_probe_result_20261109.json",
+      "sha256": "af85b7f1d2d19bd6ae4ecec5964d3716278c8231dce74fcdf7258ab816703127",
+      "bytes": 50586
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "sha256": "428c73752850f2da02666a0951d8b614f0d7463131869825f58e4fef8af7a354",
+      "bytes": 271688
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+      "sha256": "9d12d28663aa62bd2e775af91e52d5b320ca239bc01ee9e4a7e7519441cd750d",
+      "bytes": 154996
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "sha256": "308f089b77df9f72fea68f0e320604cfab3b9e450f08826929ca9aa804675968",
+      "bytes": 78685
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+      "sha256": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493",
+      "bytes": 9048
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+      "sha256": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887",
+      "bytes": 4098
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+      "sha256": "45d413f5ceb53e17e923c489782b88632074c3098f481f58e864a527199879d4",
+      "bytes": 16919
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala",
+      "sha256": "c38ec16eb79c180293b932ea5c5889240bf22a7b12520df3b636412cebea2bee",
+      "bytes": 36172
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "sha256": "f99da5a179806d383a102d719b35e5473308c5d2a4b679eb8adad9e8ce45ec99",
+      "bytes": 30412
+    },
+    {
+      "path": "tools/check_route_a_continuation_plan_model.py",
+      "sha256": "9bb30abc3cbf5979457ca11d31b62208d2cf9871ccbb4cf0c608522b088299fa",
+      "bytes": 20884
+    }
+  ],
+  "source_facts": [
+    {
+      "fact": "plan_without_PageRef_or_owner",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "line": 524,
+      "needle": "final class SourceCompletionPlan"
+    },
+    {
+      "fact": "full_binding_fields",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "line": 345,
+      "needle": "final class PendingPayloadReadBinding"
+    },
+    {
+      "fact": "old_ready_without_head",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "line": 501,
+      "needle": "final class PostR6PackedPageReadyObservation"
+    },
+    {
+      "fact": "old_lease_after_plan",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "line": 1052,
+      "needle": "selected in the accepted R6 plan"
+    },
+    {
+      "fact": "one_pending_registration",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 354,
+      "needle": "io.registration_in.ready := !registered"
+    },
+    {
+      "fact": "lease_without_normal_clear",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 491,
+      "needle": "when(io.lease_commit_in.fire) { leaseLive := true.B }"
+    },
+    {
+      "fact": "entry_coordinate",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 936,
+      "needle": "val derivedEntryId = lifecycle.logical_position * 288.U"
+    },
+    {
+      "fact": "journal_ordinal_not_reusable",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 2733,
+      "needle": "assert(!reconciliationPresent(admission.group_member_ordinal(5, 0)))"
+    },
+    {
+      "fact": "exact_history_key",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 3432,
+      "needle": "private def reconciliationMatches("
+    },
+    {
+      "fact": "old_Unseen_semantics",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 393,
+      "needle": "PendingPackingReconciliationState.Unseen.U"
+    },
+    {
+      "fact": "availability_child",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 3582,
+      "needle": "final class RouteAR5AvailabilityArrayBoundary"
+    },
+    {
+      "fact": "lease_invalid_as_ready_low",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+      "line": 428,
+      "needle": "io.s2_fill_lease_request_in.ready := initialized"
+    },
+    {
+      "fact": "activation_ephemeral_facts",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala",
+      "line": 220,
+      "needle": "havePlan && havePageReady"
+    },
+    {
+      "fact": "descriptor_reserved_zero",
+      "path": "analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md",
+      "line": 47,
+      "needle": "reserved, written and checked as zero"
+    },
+    {
+      "fact": "maintenance_write_only",
+      "path": "analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md",
+      "line": 76,
+      "needle": "desc_maint_write"
+    }
+  ],
+  "preserved_probe_source_files_checked": 140,
+  "production_files_equal_base": [
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVMeasurementInterfaces.scala",
+      "sha256": "839fce10bce65d04d0cd586d467d494c04e43e28c4a5dff9aa01e03332481a96",
+      "bytes": 3552
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVReadPath.scala",
+      "sha256": "e82a577221ea775170c89755f8967c2246a36202300a3ca3b1f012c35d5f816a",
+      "bytes": 7314
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVS2Completion.scala",
+      "sha256": "ed28226bff0d973fe8b8a17f0059f121c1dc6f96d79f263d66d94dd3e521e24c",
+      "bytes": 18993
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+      "sha256": "9d12d28663aa62bd2e775af91e52d5b320ca239bc01ee9e4a7e7519441cd750d",
+      "bytes": 154996
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteACompactWordClocking.scala",
+      "sha256": "4bea447a12560a2430b798267447ee3028293f3769b82aedfa191a10985cf394",
+      "bytes": 2536
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAExactLowestPrioritySelector.scala",
+      "sha256": "e996a010466b98d2e2eb70e721da9cb258a8f6a56529c3fd1b34c9dc71f96a0a",
+      "bytes": 2022
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "sha256": "428c73752850f2da02666a0951d8b614f0d7463131869825f58e4fef8af7a354",
+      "bytes": 271688
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAM2EntryStorage.scala",
+      "sha256": "fe1f65bd79417aeb4d62d2e846939022155631b82c66515e8feea887f422688a",
+      "bytes": 13932
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMemberRecordReadSharing.scala",
+      "sha256": "3c549945718a39c700b95ec76616aa1e84d020f9b5114158598b58aee4b05c45",
+      "bytes": 1167
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+      "sha256": "45d413f5ceb53e17e923c489782b88632074c3098f481f58e864a527199879d4",
+      "bytes": 16919
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala",
+      "sha256": "c38ec16eb79c180293b932ea5c5889240bf22a7b12520df3b636412cebea2bee",
+      "bytes": 36172
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteARecordReadDecode.scala",
+      "sha256": "e662fcff2db1e0fbc3bd70dbcbb2d20eeb2d66dc977577892eb11bb2ffe9e7e0",
+      "bytes": 905
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "sha256": "308f089b77df9f72fea68f0e320604cfab3b9e450f08826929ca9aa804675968",
+      "bytes": 78685
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+      "sha256": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493",
+      "bytes": 9048
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+      "sha256": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887",
+      "bytes": 4098
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/FullKVMeasurementDut.scala",
+      "sha256": "cebc0577929aed960ed29cb0b95c674ed68479aafb71c18cf16e55775fa1389b",
+      "bytes": 6042
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PM1PageManagerHdlEmitter.scala",
+      "sha256": "7a9fc95edb17ddbbc6c7422322d4cd948ad96d52936e0ee4f9f36f03978f0ffe",
+      "bytes": 1364
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PairedControlProjectionHdlEmitter.scala",
+      "sha256": "8a589a6c74c02ebb78f7e1d3ee0080550bb9ee82da4bb6cd85255b7bf7405292",
+      "bytes": 8023
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAComponentStatusCollector.scala",
+      "sha256": "6b83963f747ad3f32c379df0bed30a84468fe891d9493cd9f0b3aea3f47ee329",
+      "bytes": 4982
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",
+      "sha256": "f4d7fba2658731590a2abea3a52d3402ac32d24bab700d012735393a65c4e4a6",
+      "bytes": 35177
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "sha256": "f99da5a179806d383a102d719b35e5473308c5d2a4b679eb8adad9e8ce45ec99",
+      "bytes": 30412
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/SynthesisControlProjectionGenerators.scala",
+      "sha256": "3dcf569311fa43652ce03408a1507206ca77b01f3dca65ef30d75a3aa276f844",
+      "bytes": 1032
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1ContextualHdlEmitter.scala",
+      "sha256": "6550ef0bfe64bd40e3903b45ecb2e05e2e4f2a91ff668ecaf9d8f24be0deda80",
+      "bytes": 1176
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1WrapperHdlEmitter.scala",
+      "sha256": "ad0f9bb5ddb915907792042983b0a76ffc6ea0e380643ecce55ce707af1886ef",
+      "bytes": 1139
+    }
+  ],
+  "ownership": {
+    "publication": "R3 sole publication; R6 accepts member authority",
+    "persistent_read": "R5 availability read_ready plus descriptor v2",
+    "runtime": "hint only; actual accepted attention owner must match",
+    "journal": "R3 ReconciliationHistoryOwner: unchanged working bank plus charged persistent exact archive"
+  },
+  "interfaces_candidate_bits": {
+    "page_available": 50,
+    "page_select": 31,
+    "group_receipt": 58,
+    "R5_read_query": 40,
+    "R5_read_response": 193,
+    "context_selector_entry": 42,
+    "group_reuse_key": 58
+  },
+  "read_successor": {
+    "mode": "explicit production-v2, generic/v1 retained",
+    "availability_bits_per_page": [
+      9,
+      10
+    ],
+    "descriptor_v2_tag_bits": "[59:52]",
+    "descriptor_v2_reserved_zero_bits": "[127:60]",
+    "ready_condition": "all real R3-to-R6 handoffs plus exact collector receipt, live allocated PageRef and canonical owner/tag/count",
+    "clear_on": [
+      "allocation",
+      "reclaim",
+      "destructive reset"
+    ],
+    "attention_terminal_clears_page": false,
+    "preflight": [
+      "R6-owned live unplanned attention and actual owner verification",
+      "registered R5 query OK/NOT_READY/INVALID/FAULT; NOT_READY cannot lock ready installation",
+      "S2-owned v2 pre-plan reservation status BUSY/INVALID/GRANTED, R6-authorized; never misuse v1 accepted-plan interface",
+      "hold descriptor result and same lease until joint SourcePlanBinder/R6 accept; do not request twice",
+      "preserve pending-association joint-fire and fork only after success",
+      "exact-id reject held until binder/R6 ACK, outward fault terminal then tracker free",
+      "foreign declaration rejected without invented tracker/terminal",
+      "real S2 abort/return if lease acquired before cancellation"
+    ],
+    "drain": "stop new work; allow existing preflight/receipt/query/lease/reject to complete before reclaim"
+  },
+  "group_successor": {
+    "working_records": 64,
+    "full_binding_bits": 281,
+    "archive_key_bits": 214,
+    "opaque64_fields_removed": false,
+    "coordinate_reconstruction": false,
+    "archive_start": "only after all R6+collector, reuse completed withdrawal read mux",
+    "permit_requires": [
+      "per-row ACK and whole-group archive commit ACK",
+      "R5 read_ready ACK",
+      "publication sink state safely consumed/held",
+      "exact group key held through ingress and R3 clear ACK",
+      "controller observes both exact close ACKs before separate rearm/open; delayed old clear cannot touch new group"
+    ],
+    "attention_required_before_reuse": false,
+    "lookup": "current working, old exact archive, no false-Unseen window",
+    "history_lifetime": "until destructive reset including retire; initialized namespace before next session",
+    "fault": "retain working, stop next group, report fault; no overwrite/retry/fallback",
+    "R2": "unchanged global arbitration; maintenance is write-only, charged raw-line read service remains open"
+  },
+  "cost_inventory": {
+    "page_count": 146880,
+    "read_ready_bits": 146880,
+    "read_ready_bytes": 18360,
+    "availability_before_bytes": 165240,
+    "availability_after_bytes": 183600,
+    "descriptor_nominal_bytes_unchanged": 2350080,
+    "descriptor_tag_previously_zero_bits_activated": 1175040,
+    "descriptor_tag_information_bytes": 146880,
+    "working_journal_binding_bits": 281,
+    "working_journal_records": 64,
+    "working_journal_data_and_two_bitmaps_bits": 18112,
+    "archive_key_bits": 214,
+    "archive_state_bits": 2,
+    "archive_namespace_epoch_bits": 32,
+    "archive_reserved_bits": 8,
+    "archive_record_bytes": 32,
+    "archive_direct_rows": 9437184,
+    "archive_direct_bytes": 301989888,
+    "archive_direct_MiB": 288,
+    "archive_cold_max_rows": 9400320,
+    "archive_cold_max_bytes": 300810240,
+    "archive_cold_max_MiB": 286.875,
+    "archive_direct_padding_bytes": 1179648,
+    "archive_same_stream_position_stride_bytes": 9216,
+    "archive_RMW_core_bytes_per_record": 128,
+    "archive_RMW_declared_transfer_proxy_bytes_per_record": 512,
+    "archive_core_bytes_per_full64_group": 8192,
+    "archive_declared_transfer_proxy_bytes_per_full64_group": 32768,
+    "archive_core_bytes_keepall_cold": 1203240960,
+    "archive_declared_transfer_proxy_bytes_keepall_cold": 4812963840,
+    "old_query_core_bytes": 64,
+    "old_query_declared_transfer_proxy_bytes": 256,
+    "runtime_page_hint_8B_candidate_bytes": 1175040,
+    "enumerated_holding_fields_bits": {
+      "context_selector_4x42": 168,
+      "collector_member_check": 26,
+      "receipt_hold": 59,
+      "reuse_permit_hold": 61,
+      "read_query_hold": 41,
+      "read_reply_hold": 194,
+      "runtime_notice_hold": 51,
+      "archive_narrow_control": 136,
+      "archive_rmw_line": 512,
+      "preflight_failure_hold": 8,
+      "reuse_close_ack_and_phase": 3
+    },
+    "enumerated_holding_fields_subtotal_bits": 1259,
+    "optional_separate_registration_hold_bits": 297,
+    "including_optional_hold_bits": 1556
+  },
+  "cost_limits": [
+    "nominal bytes and one conservative direct layout, not mapped area or complete physical cost",
+    "archive separate from payload/descriptor and not common Full-KV cost; 288MiB is not minimum or measured request usage",
+    "256B/action numbers are declared transfer proxies, not measured HBM",
+    "namespace init/epoch-wrap, external read/write controller/ports and runtime directory reuse OPEN",
+    "S2 status/abort, two-sided cancel ACK, FSM/arbiters/drain/transport/macro/controller not fully enumerated"
+  ],
+  "open_gates": [
+    {
+      "id": "F-READ",
+      "status": "OPEN",
+      "gate": "R6/S2 preflight authorization/status/reject/cancel, mixed-source and retire"
+    },
+    {
+      "id": "F-GROUP",
+      "status": "OPEN",
+      "gate": "two-sided reuse permit, group/control clear and exact late-lookup overlap"
+    },
+    {
+      "id": "S-HISTORY",
+      "status": "OPEN",
+      "gate": "physical backend, RMW integrity, namespace initialization/epoch wrap and capacity/service bound"
+    },
+    {
+      "id": "S-R5",
+      "status": "OPEN",
+      "gate": "Valid-update losslessness/priority, macro ports and all descriptor-v2 writers"
+    },
+    {
+      "id": "F-PENDING",
+      "status": "OPEN",
+      "gate": "single-entry owner ordinary release/re-registration; immutable admission versus new attention identity"
+    },
+    {
+      "id": "F-BOUNDS",
+      "status": "OPEN",
+      "gate": "full workload and finite RID/incarnation/candidate/ordinal/group/stage/source/page generation reuse/wrap"
+    },
+    {
+      "id": "T-2NS",
+      "status": "OPEN",
+      "gate": "original 2ns top-level setup/hold/clock-gating, no added READY combinational loops"
+    },
+    {
+      "id": "C-FULL",
+      "status": "OPEN",
+      "gate": "all memory/peripherals/numeric/external runtime and service cost, traffic/energy/latency"
+    },
+    {
+      "id": "F-NUMERIC",
+      "status": "OPEN",
+      "gate": "Q and actual K/V/position to partial/R4 correspondence"
+    }
+  ],
+  "implementation_order": [
+    "read-v2 receipt/R5/selector/preflight, keeping single working group",
+    "history physical contract/cost then group-v2 permit/rearm",
+    "legacy and v2 whole-DUT positive/negative functional/retire/wrap tests",
+    "complete differential-cost update and qualified source freeze",
+    "only then consider paired DC/STA at original2ns"
+  ],
+  "finite_model_receipt": {
+    "schema": "route-a-continuation-plan-model-1",
+    "evidence_class": "finite_abstract_protocol_model",
+    "status": "PASS_FINITE_PLAN_CHECK_ONLY",
+    "groups": 2,
+    "members_per_group": 2,
+    "max_archive_writes_outstanding": 1,
+    "read_count_limit_per_page": 2,
+    "candidate": {
+      "policy": "candidate",
+      "result": "NO_MISMATCH_IN_FINITE_MODEL",
+      "states_examined": 224,
+      "states_discovered": 224,
+      "transitions_examined": 499,
+      "mismatches": 0,
+      "deadlocks": 0,
+      "goal_states": 9,
+      "coverage": {
+        "second_group_admitted_without_attention": true,
+        "both_groups_archived_and_working_cleared": true,
+        "old_page_read_after_second_page_ready": true,
+        "both_pages_read_twice": true,
+        "ingress_close_ACK_before_R3": true,
+        "R3_close_ACK_before_ingress": true
+      }
+    },
+    "bad_organization_counterexamples": [
+      {
+        "policy": "clear_at_handoff",
+        "result": "COUNTEREXAMPLE",
+        "states_examined": 10,
+        "states_discovered": 18,
+        "transitions_examined": 19,
+        "counterexample": {
+          "invariant": "exact_late_lookup_survives_working_clear",
+          "group": 0,
+          "member": 0,
+          "actual": "Unseen",
+          "expected": "TransitionedPacked",
+          "events": [
+            "publish_G0",
+            "R6_accept_G0_M0",
+            "collect_G0_M0",
+            "R6_accept_G0_M1",
+            "collect_G0_M1",
+            "clear_working_G0_without_archive_commit"
+          ],
+          "state": {
+            "admitted": 1,
+            "working": -1,
+            "published": 1,
+            "r6": 3,
+            "collected": 3,
+            "writes": 0,
+            "acks": 0,
+            "committed": 0,
+            "ready": 0,
+            "permitted": 0,
+            "cleared": 1,
+            "ingress_closed": 0,
+            "rearmed": 0,
+            "reads": [
+              0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "policy": "ready_at_visibility",
+        "result": "COUNTEREXAMPLE",
+        "states_examined": 4,
+        "states_discovered": 6,
+        "transitions_examined": 5,
+        "counterexample": {
+          "invariant": "no_ready_before_all_R6_and_collector",
+          "group": 0,
+          "actual": "ready",
+          "expected": "not_ready",
+          "events": [
+            "publish_G0",
+            "install_R5_ready_G0"
+          ],
+          "state": {
+            "admitted": 1,
+            "working": 0,
+            "published": 1,
+            "r6": 0,
+            "collected": 0,
+            "writes": 0,
+            "acks": 0,
+            "committed": 0,
+            "ready": 1,
+            "permitted": 0,
+            "cleared": 0,
+            "ingress_closed": 0,
+            "rearmed": 0,
+            "reads": [
+              0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "policy": "last_page_only",
+        "result": "COUNTEREXAMPLE",
+        "states_examined": 74,
+        "states_discovered": 82,
+        "transitions_examined": 133,
+        "counterexample": {
+          "invariant": "published_old_page_remains_queryable",
+          "group": 0,
+          "actual": "not_found",
+          "expected": "ready",
+          "events": [
+            "publish_G0",
+            "R6_accept_G0_M0",
+            "collect_G0_M0",
+            "R6_accept_G0_M1",
+            "collect_G0_M1",
+            "archive_write_G0_M0",
+            "archive_ack_G0_M0",
+            "archive_write_G0_M1",
+            "archive_ack_G0_M1",
+            "archive_group_commit_G0",
+            "install_R5_ready_G0",
+            "GroupReusePermit_G0",
+            "R3_close_ACK_G0",
+            "ingress_close_ACK_G0",
+            "controller_rearm_G0",
+            "admit_G1",
+            "publish_G1",
+            "R6_accept_G1_M0",
+            "collect_G1_M0",
+            "R6_accept_G1_M1",
+            "collect_G1_M1",
+            "install_R5_ready_G1"
+          ],
+          "state": {
+            "admitted": 3,
+            "working": 1,
+            "published": 3,
+            "r6": 15,
+            "collected": 15,
+            "writes": 3,
+            "acks": 3,
+            "committed": 1,
+            "ready": 3,
+            "permitted": 1,
+            "cleared": 1,
+            "ingress_closed": 1,
+            "rearmed": 1,
+            "reads": [
+              0,
+              0
+            ]
+          }
+        }
+      },
+      {
+        "policy": "early_rearm",
+        "result": "COUNTEREXAMPLE",
+        "states_examined": 54,
+        "states_discovered": 59,
+        "transitions_examined": 99,
+        "counterexample": {
+          "invariant": "no_G1_admission_before_both_G0_close_ACKs",
+          "group": 1,
+          "actual": "admitted",
+          "expected": "wait_for_exact_group_ACK_join",
+          "events": [
+            "publish_G0",
+            "R6_accept_G0_M0",
+            "collect_G0_M0",
+            "R6_accept_G0_M1",
+            "collect_G0_M1",
+            "archive_write_G0_M0",
+            "archive_ack_G0_M0",
+            "archive_write_G0_M1",
+            "archive_ack_G0_M1",
+            "archive_group_commit_G0",
+            "install_R5_ready_G0",
+            "GroupReusePermit_G0",
+            "ingress_close_ACK_G0",
+            "controller_rearm_G0",
+            "admit_G1"
+          ],
+          "state": {
+            "admitted": 3,
+            "working": 1,
+            "published": 1,
+            "r6": 3,
+            "collected": 3,
+            "writes": 3,
+            "acks": 3,
+            "committed": 1,
+            "ready": 1,
+            "permitted": 1,
+            "cleared": 0,
+            "ingress_closed": 1,
+            "rearmed": 1,
+            "reads": [
+              0,
+              0
+            ]
+          }
+        }
+      }
+    ],
+    "archive_format": {
+      "result": "FINITE_FULL_KEY_ARCHIVE_FORMAT_PASS",
+      "selected_record_bytes": 32,
+      "exact_key_bits": 214,
+      "state_bits": 2,
+      "namespace_epoch_bits": 32,
+      "reserved_bits": 8,
+      "record_bits": 256,
+      "coordinate_fields_retained": true,
+      "independent_opaque_fields_retained": true,
+      "field_widths": {
+        "entry_id": 24,
+        "layer": 6,
+        "kv_head": 3,
+        "logical_position": 15,
+        "request_id": 3,
+        "incarnation": 2,
+        "payload_ref": 64,
+        "transaction_group_tag": 8,
+        "group_member_ordinal": 7,
+        "group_valid_records": 7,
+        "payload_handle_or_address": 64,
+        "source_generation": 8,
+        "destination_endpoint": 3
+      },
+      "positive_exact_queries": 8192,
+      "single_field_negative_queries": 106496,
+      "namespace_negative_queries": 8192,
+      "invalid_state_negative_queries": 8192,
+      "reserved_bit_negative_queries": 8192,
+      "boundary_key_vectors": 52,
+      "boundary_roundtrips": 2496,
+      "out_of_range_fields_rejected": 32,
+      "limits": "finite representation-level checks including width extremes and symbolic 0/1 fields; not legal-workload coverage, RTL equivalence, storage integrity/ECC or physical implementation proof"
+    },
+    "assumptions": [
+      "bindings initially admitted atomically into one working bank",
+      "publication is the existing visibility event, not R6 acceptance",
+      "collector event represents an exact post-R6 joined receipt",
+      "ordered member acceptance; archive writes begin only after all R6/collector members complete",
+      "archive streaming reuses the completed group's idle withdrawal journal read mux",
+      "per-row ack and whole-group archive commit are explicit service events",
+      "archive is a new charged persistent backing, not the existing single-entry descriptor owner",
+      "admitted groups have live allocated pages with matching fixed generation",
+      "R5 ready installation follows all joined R6/collector receipts independently of archive commit",
+      "GroupReusePermit requires both archive commit and R5-ready acknowledgement",
+      "R3 close ACK clears working; ingress close ACK is separate, and both carry exact abstract group tags",
+      "controller rearms only after both exact-group close ACKs; only then may the next group enter",
+      "close ACK ordering is independent of attention consumption",
+      "namespace matches and retained pages remain live; no reset, retire or wrap in this model"
+    ],
+    "not_proven": [
+      "existing or successor RTL correctness",
+      "full 32K capacity or maximum-live bound",
+      "timing at 2 ns",
+      "numeric correctness",
+      "fairness under an unresponsive environment",
+      "physical macro port implementation",
+      "ready/valid RTL payload-holding implementation",
+      "full-bitwidth stale ACK/epoch/generation comparator implementation",
+      "mapped area, traffic, energy or net benefit"
+    ],
+    "production_RTL_modified": false,
+    "ML_model_or_EDA_loaded": false
+  },
+  "validation": {
+    "finite_model_command": "python3 tools/check_route_a_continuation_plan_model.py --output /tmp/route_a_continuation_plan_model_20261109.json",
+    "finite_model_exit": 0,
+    "help_exit": 0,
+    "source_pins_and_production_equality": "PASS",
+    "document_arithmetic_link_checks": "PASS",
+    "git_diff_check": "PASS",
+    "arithmetic_assertions": 34,
+    "source_pins_checked": 19,
+    "production_files_equal_base_checked": 24,
+    "source_fact_lines_checked": 15,
+    "proposal_local_links_checked": 3,
+    "live_entries_checked": 3,
+    "fresh_model_receipt_equal": true,
+    "evidence_limit": "static and finite abstract protocol/format checks; no successor RTL simulation or EDA",
+    "preserved_probe_source_files_checked": 140,
+    "four_negative_counterexamples": true,
+    "independent_reviews": [
+      "read ownership/preflight: PASS for proposal, no RTL proof",
+      "journal: dual-ACK barrier added and finite-model checked",
+      "storage/traffic/R2 cost: arithmetic PASS, physical implementation OPEN"
+    ]
+  }
+}

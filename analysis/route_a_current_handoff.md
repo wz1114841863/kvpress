@@ -9,10 +9,40 @@ hold pass is not timing-closed. Complete costs and PPA/net benefit remain open.
 Stage A current-RTL probes now complete with two qualified blocker diagnoses;
 same-page repeated service and multi-group admission remain unsupported by
 the observed current path, rather than newly closed continuous functionality.
+The minimal successor proposal is now documented and finite-model checked;
+production RTL and normative contracts remain unchanged. Persistent read
+qualification is assigned to R5, while group reuse requires exact journal
+history preservation. Physical history service, cost and 2ns closure remain open.
 
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
+
+## Stage A minimal continuation proposal (2026-11-09)
+
+Read [`route_a_continuation_minimal_proposal_20261109.md`](route_a_continuation_minimal_proposal_20261109.md)
+and JSON. Candidate production-v2 adds R5-owned post-R6 read_ready and explicit
+page selection/query; an attention-independent collector replaces repeated
+consumption of publication facts. R6/S2 preflight authorization, typed negative
+responses and exact reject/drain are required, rather than indefinite ready-low.
+Generic/v1 behavior and all frozen arbitration/publication/authority remain.
+
+Keep the 64x281 working journal; archive its exact 214-bit reconciliation key
+after all R6/collector completion, then issue a two-sided group reuse permit
+only after archive commit and R5-ready ACK. No attention is required before the
+next group. Full direct history at 32 B/row is one 288-MiB candidate provision,
+not a minimum or measured request use; read_ready adds 18,360 B nominal state.
+Descriptor tag activates former reserved-zero bits in an explicit v2 format.
+External history traffic/ports/controller/init and current pending-owner reuse
+remain open; this is not yet a complete sustained hot/pending/packed backend.
+
+Pure-Python finite checks cover 224 states/499 transitions, six intended
+coverage goals and four detected bad-organization counterexamples, including
+both close-ACK orders and premature rearm. Archive
+format fidelity checks also pass. They prove neither successor RTL nor timing,
+full capacity or net benefit. No production RTL/contract change, remote job,
+DC or STA. Proposed order is read successor first, then history/second group
+only with a physical-service/cost contract, followed by qualified regressions.
 
 ## Stage A current-RTL probe result accepted (2026-11-09)
 

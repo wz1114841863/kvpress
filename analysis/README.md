@@ -7,6 +7,17 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Stage A minimal functional successor proposal (2026-11-09)
+
+The [minimal proposal](route_a_continuation_minimal_proposal_20261109.md) and
+[source/cost/model ledger](route_a_continuation_minimal_proposal_20261109.json)
+assign persistent read facts to R5 and retain exact journal history before
+group reuse. R6/S2 preflight, typed errors, reset/retire and physical service
+cost are part of feasibility, with no unpriced external port. Nominal
+read_ready is 18,360 B; a 32-B direct archive is one 288-MiB provision, not a
+minimum or actual workload use. Finite protocol/format checks pass; no RTL,
+contract, remote experiment, DC/STA or continuous-backend acceptance is added.
+
 ## Stage A current-RTL probe result (2026-11-09)
 
 The [audited result](route_a_stage_a_probe_result_20261109.md) and

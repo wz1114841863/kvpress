@@ -7,6 +7,17 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Stage A minimal continuation proposal (2026-11-09)
+
+[`route_a_continuation_minimal_proposal_20261109.md`](route_a_continuation_minimal_proposal_20261109.md)
+and JSON specify R5 persistent read qualification/query, R6/S2 preflight
+failure/drain, and exact-history-backed group reuse. Candidate storage, ports,
+RMW traffic and 2ns obligations are explicit, including 18,360 B read_ready
+and one 288-MiB direct archive provision. Finite checks (224 states/499
+transitions plus four bad-organization counterexamples and archive-format
+checks) support the proposal only. RTL, normative contracts, physical service,
+timing and complete incremental cost remain open; no remote/EDA job is started.
+
 ## Stage A current-RTL probe result (2026-11-09)
 
 [`route_a_stage_a_probe_result_20261109.md`](route_a_stage_a_probe_result_20261109.md)
