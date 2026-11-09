@@ -11,6 +11,22 @@ This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
 
+## Stage A current-RTL probes launched (2026-11-09)
+
+Read [`route_a_stage_a_probe_launch_20261109.md`](route_a_stage_a_probe_launch_20261109.md)
+and JSON. Frozen source `0aa5472` is running in independent
+**`kvzap-stage-a-probes-r1:probes`**, run ID
+`stage_a_continuation_probe_20261109_r1`, under the existing remote base.
+Archive SHA is `e595ed19730dd393693589d7c884ba90eb1cd7febd1c03fd1d6fbb844bad8301`;
+all 24 production main files match `097533d`. Actual input gate passes 140
+files and startup is main Scala compilation. Compile/test/outer completion
+and the two bounded blocker diagnoses are not yet accepted.
+
+The user has been notified to wait. Preserve old jobs/inputs, no automatic
+retry and no production RTL/DC/STA change. Inspect actual markers, XML,
+hashes, first-use data continuity and internal state evidence only after
+the user's completion notice; diagnostic PASS is not capability PASS.
+
 ## Stage A current-RTL probes prepared (2026-11-09)
 
 Read [`route_a_stage_a_probe_preparation_20261109.md`](route_a_stage_a_probe_preparation_20261109.md).

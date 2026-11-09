@@ -7,6 +7,14 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Stage A current-RTL probes launched (2026-11-09)
+
+[`route_a_stage_a_probe_launch_20261109.md`](route_a_stage_a_probe_launch_20261109.md)
+and JSON record pinned source/archive, unchanged production RTL and the
+independent tmux `kvzap-stage-a-probes-r1:probes`. Input gate passes; startup
+snapshot is Scala compilation. Wait for user completion notice before
+accepting native tests or blocker evidence. No DC/STA or functional repair.
+
 ## Stage A current-RTL probe preparation (2026-11-09)
 
 [`route_a_stage_a_probe_preparation_20261109.md`](route_a_stage_a_probe_preparation_20261109.md)

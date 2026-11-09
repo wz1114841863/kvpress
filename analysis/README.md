@@ -7,6 +7,15 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Stage A current-RTL probes launched (2026-11-09)
+
+The [remote launch](route_a_stage_a_probe_launch_20261109.md) and
+[input evidence](route_a_stage_a_probe_launch_20261109.json) freeze source
+`0aa5472` with unchanged production RTL. Independent tmux is
+`kvzap-stage-a-probes-r1:probes`; actual input gate passes and main compilation
+is the startup stage. The two diagnostic outcomes remain pending. The user
+has been notified to wait; no DC/STA or automatic retry is scheduled.
+
 ## Stage A current-RTL probes prepared (2026-11-09)
 
 The [probe preparation](route_a_stage_a_probe_preparation_20261109.md)
