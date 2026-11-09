@@ -1,17 +1,43 @@
 # Route-A current handoff — RTL3 closure and measurement RTL status
 
-**Status date:** 2026-11-08
+**Status date:** 2026-11-09
 **Repository state:** `research/kvzap-latest`; bounded RTL3 functional closure
-and accepted control-mapping results remain preserved. RD1+WCG1 r2 now has
-accepted source/proxy/profile inputs and an active guarded native-preflight /
-full-pair pipeline. No completed mapped result is inferred from this launch.
-Sustained-service, complete-cost and full-top 2-ns timing claims remain open.
+and accepted control-mapping results remain preserved. RD1+WCG1 r2 completed
+with tool/input/artifact closure and an 11.741151% primary top-area reduction
+versus RD1 (129.517x Full-KV control). Global setup regresses and the matched
+hold pass is not timing-closed. Complete costs and PPA/net benefit remain open.
 
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
 
-## RD1+WCG1 full paired r2 active (2026-11-08)
+## RD1+WCG1 full result accepted within scope (2026-11-09)
+
+Read [`dc_rd1_wcg1_full_paired_result_20261109.md`](dc_rd1_wcg1_full_paired_result_20261109.md)
+and JSON. Both native sides, all six stage markers, postcheck, full RUN_PASS
+and both outer exit-0 records agree. Independent read-only checking reproduces
+the saved result and rehashes 136 native artifacts, 4 inputs, 19 bundle files,
+189 proxy-tree files and 49 composed SV files. Full-KV primary reproduces the
+original/RD1 metrics; its one retained VER-41 diagnostic remains explicit.
+
+Primary Route-A area is 2,990,737.008920, **-11.741151% vs RD1**, ratio
+**129.517x**. Wrapper falls 15.492059%; all 366,336 table flops, 4,608 native
+gates and 48 driven entry_id bits remain. Gate latches increase sequential
+cell count to 581,714; clock root direct loads fall 577,110 -> 215,382 without
+removing downstream storage/clock costs. Setup worsens to -0.469940 ns, TNS
+-12,698.75 ns / 36,017 paths. Structural cleanliness remains open.
+
+Propagated raw setup is -0.482178 ns. After the identical hold pass, Route-A
+setup/hold are -0.575940/-0.034459 ns with 825 hold violations; Full-KV also
+has 46 hold violations. The supplemental 119.016x ratio uses its larger
+25,372.872553 Full-KV denominator and is not another WCG1 saving. Gate-enable
+and gated-table capture hold pass locally, not the whole design. Keep the
+measured area candidate and negative timing/hold results separately. No new
+RTL, DC/STA job or integration decision is made by this inspection. All
+runs are preserved; the current pane is idle bash. PPA, external-service zero
+cost, acceleration and hardware net benefit are not established.
+
+## RD1+WCG1 full paired r2 launch snapshot (2026-11-08)
 
 Read [`dc_rd1_wcg1_full_paired_retry_launch_20261108.md`](dc_rd1_wcg1_full_paired_retry_launch_20261108.md)
 and JSON. Repair `d680550` passes 48 preparation tests. The successful old

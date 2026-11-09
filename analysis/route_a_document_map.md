@@ -7,7 +7,18 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
-## Active full paired r2 (2026-11-08)
+## Completed full paired r2 result (2026-11-09)
+
+[`dc_rd1_wcg1_full_paired_result_20261109.md`](dc_rd1_wcg1_full_paired_result_20261109.md)
+and JSON supersede the launch snapshot: both sides/all tiers completed with
+input/tool/artifact closure; original-policy top area falls 11.741151% to
+129.517x Full-KV control. Setup worsens, and the matched supplemental hold
+pass leaves violations on both sides. Gate-local checks do not imply global
+timing closure; 119.016x after hold uses a changed denominator. Read the
+result for complete native pins, hierarchy/driver/state/lint evidence and
+separate area/timing/cleanliness verdicts. No new job is started.
+
+## Full paired launch snapshot r2 (2026-11-08)
 
 [`dc_rd1_wcg1_full_paired_retry_launch_20261108.md`](dc_rd1_wcg1_full_paired_retry_launch_20261108.md)
 and JSON record successful reuse/freeze, 49-unit source closure, five array

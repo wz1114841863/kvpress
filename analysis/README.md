@@ -7,7 +7,19 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
-## RD1+WCG1 retry pipeline active (2026-11-08)
+## RD1+WCG1 full paired result (2026-11-09)
+
+The [audited result](dc_rd1_wcg1_full_paired_result_20261109.md) and
+[JSON evidence](dc_rd1_wcg1_full_paired_result_20261109.json) confirm complete
+native execution, all tiers and matching source/input/artifact hashes.
+Primary control area decreases 11.741151% versus RD1, to 129.517x Full-KV;
+setup worsens, and the equal supplemental hold pass does not close global
+setup/hold on either side. Its 119.016x ratio is not a further area saving.
+WCG1 is a measured area candidate, while timing, structural cleanliness,
+complete incremental costs and hardware net benefit remain unresolved.
+This read-only inspection starts no experiment and changes no RTL.
+
+## RD1+WCG1 retry launch snapshot (2026-11-08)
 
 The [r2 launch](dc_rd1_wcg1_full_paired_retry_launch_20261108.md) and
 [JSON](dc_rd1_wcg1_full_paired_retry_launch_20261108.json) record the repaired
