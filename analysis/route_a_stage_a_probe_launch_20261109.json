@@ -599,7 +599,7 @@
   },
   "schema": "stage-a-continuation-probe-launch-1",
   "timezone": "Asia/Shanghai",
-  "status": "LAUNCHED_INPUT_PASS_MAIN_COMPILE_AT_STARTUP_SNAPSHOT",
+  "status": "COMPILE_PASS_SIMULATION_FLOW_STARTED_NOT_ACCEPTED",
   "startup_snapshot": {
     "input_gate": "PASS files=140",
     "main_compile_started": true,
@@ -632,5 +632,15 @@
     "old_runs_modified": false,
     "automatic_retry": false,
     "await_user_completion_notice": true
+  },
+  "compile_verification": {
+    "compile_exit_status": 0,
+    "compile_native_marker": "KVZAP_STAGE_A_PROBES_COMPILE_PASS",
+    "sbt_compile_seconds": 39,
+    "completed_local": "2026-11-09 11:32:52 Asia/Shanghai",
+    "simulation_flow_marker": "KVZAP_STAGE_A_PROBES_SIMULATION_BEGIN",
+    "test_exit_status": null,
+    "outer_exit_status": null,
+    "diagnostic_results_accepted": false
   }
 }

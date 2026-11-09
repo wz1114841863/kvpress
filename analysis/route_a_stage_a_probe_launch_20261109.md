@@ -39,3 +39,7 @@ tmux attach -t kvzap-stage-a-probes-r1
 - 测试档为16 stream slots、gate关闭；外部position backing和固定partial/R4协议包明确保留。不能称full32K或WCG1全顶层动态验证、数值闭合、面积／时序结果。
 
 用户已收到独立tmux与等待通知。待用户通知远程结束后，检查compile/test/outer退出状态、XML恰2项、实际marker、source／archive hashes、首轮数据与内部证据。**诊断PASS仅说明具体有界阻断被复现，不代表持续功能PASS。** 若阻断处停止，最终retire/reclaim未到达，也不能冒充新的完整持续witness。
+
+## 编译启动后核验
+
+同一run的随后只读快照确认`compile_exit_status=0`，实际`KVZAP_STAGE_A_PROBES_COMPILE_PASS`齐全；SBT编译耗时39s，于2026-11-09 11:32:52 Asia/Shanghai完成。runner已进入`KVZAP_STAGE_A_PROBES_SIMULATION_BEGIN`，test／outer exit仍不存在。这里只提升编译完成状态，未接受elaboration／Verilator构建／两个实际场景结果；上面的初始启动快照保持原记录。

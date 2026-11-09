@@ -19,8 +19,10 @@ and JSON. Frozen source `0aa5472` is running in independent
 `stage_a_continuation_probe_20261109_r1`, under the existing remote base.
 Archive SHA is `e595ed19730dd393693589d7c884ba90eb1cd7febd1c03fd1d6fbb844bad8301`;
 all 24 production main files match `097533d`. Actual input gate passes 140
-files and startup is main Scala compilation. Compile/test/outer completion
-and the two bounded blocker diagnoses are not yet accepted.
+files. Subsequent startup verification has compile exit 0 / COMPILE_PASS
+and SIMULATION_BEGIN; test/outer completion and the two bounded blocker
+diagnoses are not yet accepted. Elaboration/native simulation results remain
+pending, separately from successful Scala compilation.
 
 The user has been notified to wait. Preserve old jobs/inputs, no automatic
 retry and no production RTL/DC/STA change. Inspect actual markers, XML,
