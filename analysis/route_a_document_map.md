@@ -7,6 +7,18 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Multi-group journal lifecycle, bounds and minimal plan (2026-11-09)
+
+[`route_a_multigroup_journal_lifecycle_closure_20261109.md`](route_a_multigroup_journal_lifecycle_closure_20261109.md)
+and JSON distinguish working-record reuse from deleting exact history. Under
+v1, history remains valid until reset; safe migration requires all real uses,
+archive commit, query consistency and two-sided close before rearm. The 64-row
+working set is 2,264 B; cumulative cold keep-all history can reach 9,400,320
+records. A direct archive provisions 288 MiB, one candidate rather than a
+minimum. A bounded registration-close window needs an explicit new contract
+and last-use proof; the current single-registration owner also lacks normal
+recycling. This is a source/cost/plan audit only, with no RTL, tests or DC.
+
 ## Persistent page read r2 functional result accepted (2026-11-09)
 
 [`route_a_persistent_page_read_r2_result_20261109.md`](route_a_persistent_page_read_r2_result_20261109.md)

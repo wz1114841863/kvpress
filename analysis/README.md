@@ -7,6 +7,19 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Multi-group journal lifecycle and minimal plan (2026-11-09)
+
+The [lifecycle and cost audit](route_a_multigroup_journal_lifecycle_closure_20261109.md)
+and [source/width/bounds ledger](route_a_multigroup_journal_lifecycle_closure_20261109.json)
+separate the existing 2,264-B working journal from cumulative exact history.
+Current late lookup prevents deletion before reset. Exact migration and two
+close ACKs provide a compatibility baseline; a finite registration window
+requires a versioned producer-close/owner-drain contract not yet established.
+Cold keep-all history can reach 9,400,320 records; the earlier 288-MiB direct
+archive is a candidate, not a lower bound or an accepted physical cost.
+Repeated pending-owner recycling is separately open. No RTL/test/remote/DC
+work starts here, and multi-group functional acceptance remains pending.
+
 ## Persistent page read r2 bounded functional PASS (2026-11-09)
 
 The [accepted r2 result](route_a_persistent_page_read_r2_result_20261109.md)

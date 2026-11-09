@@ -1,0 +1,537 @@
+{
+  "schema": "route_a_multigroup_journal_lifecycle_plan_v1",
+  "date": "2026-11-09",
+  "branch": "research/kvzap-latest",
+  "source_commit": "1f752ee4f983f47e965c77d15d86cdfeb4d47b12",
+  "status": "SOURCE_LIFECYCLE_AND_COST_AUDIT_COMPLETE_PLAN_ONLY",
+  "scope": {
+    "rtl_changed": false,
+    "test_started": false,
+    "dc_started": false,
+    "remote_task_started": false,
+    "generic_v1_semantics_changed": false,
+    "proposed_group_reuse_implemented": false
+  },
+  "inputs": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "31f85c67f53c7cab140bb72246eca7ca4594e5c3b9b457d68b5f61f7f2180740",
+      "bytes": 22013
+    },
+    {
+      "path": "analysis/architecture_spec.md",
+      "sha256": "2b319b854cfad59d0d43a0f347288d6a9ec8ad7cd3ea473f5e1c5d2a9e60ca4b",
+      "bytes": 67421
+    },
+    {
+      "path": "analysis/route_a_paper_execution_scope_and_closure_20261109.md",
+      "sha256": "e734555c7db2c5bcd8a62f56eddc6bc3d196695f169596338945de687965222e",
+      "bytes": 16250
+    },
+    {
+      "path": "analysis/route_a_stage_a_execution_envelope_20261109.md",
+      "sha256": "a1d6b75ed1bfd71af0455a0ef52261ab4e3265382847be00dbce14f056e0a7c7",
+      "bytes": 16513
+    },
+    {
+      "path": "analysis/route_a_continuation_minimal_proposal_20261109.md",
+      "sha256": "b46736685bebe783b5e70bc4784a2a558c015ed374cc91cc405ead3f11be99b9",
+      "bytes": 24167
+    },
+    {
+      "path": "analysis/route_a_continuation_minimal_proposal_20261109.json",
+      "sha256": "50dc9794319a91a52f870b86c753bb135a276d229b0dd2c47cdb25c094352502",
+      "bytes": 31128
+    },
+    {
+      "path": "analysis/mr1b_direct_pending_cross_owner_contract_proposal.md",
+      "sha256": "6d540e7ef1e2683d85dec1fcb7fc9002bfc1d19b773f90a9d710eba616781aa9",
+      "bytes": 46826
+    },
+    {
+      "path": "analysis/route_a_persistent_page_read_r2_result_20261109.md",
+      "sha256": "c9499563ae554aeb70ca2d83ea2883359f02afaad33dd1627100a1568e7b425a",
+      "bytes": 7144
+    },
+    {
+      "path": "analysis/route_a_persistent_page_read_r2_result_20261109.json",
+      "sha256": "e61aedfa646163878dbafab96bc3c353fe029aac16c4441884758f39ccbd55c3",
+      "bytes": 43718
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "sha256": "229f37ad12fb459611aafe80aee023e731b9cdcdf8da2eaa3ca280d9b4688b4c",
+      "bytes": 293132
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+      "sha256": "45d413f5ceb53e17e923c489782b88632074c3098f481f58e864a527199879d4",
+      "bytes": 16919
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPersistentReadReceiptCollector.scala",
+      "sha256": "cdf3557175f83f9fa90c0c35619fc0908e44f40a91e4fd7e096a02c7c8aa932d",
+      "bytes": 5128
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "sha256": "308f089b77df9f72fea68f0e320604cfab3b9e450f08826929ca9aa804675968",
+      "bytes": 78685
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+      "sha256": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493",
+      "bytes": 9048
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+      "sha256": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887",
+      "bytes": 4098
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "sha256": "085c425b9fa6a14fbdcb9911e4c33b1c53309b68e1b2e60b5a1e3e178bbdb2c0",
+      "bytes": 34615
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR3PackReadPathSpec.scala",
+      "sha256": "eb16c9991bd25bade8a4ee1339b9863571dd3dab900aeeab772f7208e14b13a5",
+      "bytes": 23561
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/DualMeasurementDutStructuralSpec.scala",
+      "sha256": "48877adbbae812ba196f280d0a6e37aba26c86c8f5298fee003ad37c19794c42",
+      "bytes": 6784
+    }
+  ],
+  "source_anchors": [
+    {
+      "id": "journal_reset_only",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 2690,
+      "contains": "  // B2c: the current production ingress admits exactly one <=64-member group"
+    },
+    {
+      "id": "journal_binding",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 2696,
+      "contains": "  val reconciliationBindings = Reg(Vec(64, new PendingPayloadReadBinding(p)))"
+    },
+    {
+      "id": "journal_duplicate_guard",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 2846,
+      "contains": "assert(!reconciliationPresent("
+    },
+    {
+      "id": "lookup_fields",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 3545,
+      "contains": "  private def reconciliationMatches("
+    },
+    {
+      "id": "lookup_capture",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 3576,
+      "contains": "  io.pending_packing_reconciliation_lookup_in.ready := !reconciliationResultPending"
+    },
+    {
+      "id": "lookup_snapshot",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 3579,
+      "contains": "    reconciliationResult.registration := reconciliationLookup.registration"
+    },
+    {
+      "id": "owner_single_registration",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 354,
+      "contains": "  io.registration_in.ready := !registered && registrationLegal"
+    },
+    {
+      "id": "owner_query_once",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 373,
+      "contains": "  io.pending_packing_reconciliation_lookup_out.valid := registered && reconciliationLookupPending"
+    },
+    {
+      "id": "owner_lease_live",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 491,
+      "contains": "  when(io.lease_commit_in.fire) { leaseLive := true.B }"
+    },
+    {
+      "id": "ingress_done",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "line": 1451,
+      "contains": "  private val StateDone = states(7)"
+    },
+    {
+      "id": "metadata_wrap_guard",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+      "line": 120,
+      "contains": "  val newGroupSequenceAvailable = streamNextSequence(memberStream) =/= \"hffff\".U"
+    },
+    {
+      "id": "collector_reusable",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPersistentReadReceiptCollector.scala",
+      "line": 90,
+      "contains": "  when(io.page_available_out.fire) { state := Collect; haveMember := false.B; nextOrdinal := 0.U }"
+    },
+    {
+      "id": "top_ungated_registration",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "line": 171,
+      "contains": "  pendingDescriptorOwner.io.registration_in <> io.pending_source_descriptor_registration_in"
+    },
+    {
+      "id": "direct_release_bypasses_owner",
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "line": 167,
+      "contains": "  lifecycle.io.pending_source_release_in <> directPending.io.direct_release_out"
+    },
+    {
+      "id": "normative_no_eviction",
+      "path": "analysis/mr1b_direct_pending_cross_owner_contract_proposal.md",
+      "line": 645,
+      "contains": "eviction, runtime-retire deletion, or unbounded/reusable-adapter claim."
+    }
+  ],
+  "production_source_manifest": [
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVMeasurementInterfaces.scala",
+      "sha256": "839fce10bce65d04d0cd586d467d494c04e43e28c4a5dff9aa01e03332481a96",
+      "bytes": 3552
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVReadPath.scala",
+      "sha256": "e82a577221ea775170c89755f8967c2246a36202300a3ca3b1f012c35d5f816a",
+      "bytes": 7314
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVS2Completion.scala",
+      "sha256": "ed28226bff0d973fe8b8a17f0059f121c1dc6f96d79f263d66d94dd3e521e24c",
+      "bytes": 18993
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+      "sha256": "3cf9dfbf8e66d3e7ab5b00c0c59a5532e8dcb04ad3a0b673229cab520c7f9fe0",
+      "bytes": 158192
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteACompactWordClocking.scala",
+      "sha256": "4bea447a12560a2430b798267447ee3028293f3769b82aedfa191a10985cf394",
+      "bytes": 2536
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAExactLowestPrioritySelector.scala",
+      "sha256": "e996a010466b98d2e2eb70e721da9cb258a8f6a56529c3fd1b34c9dc71f96a0a",
+      "bytes": 2022
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "sha256": "229f37ad12fb459611aafe80aee023e731b9cdcdf8da2eaa3ca280d9b4688b4c",
+      "bytes": 293132
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAM2EntryStorage.scala",
+      "sha256": "fe1f65bd79417aeb4d62d2e846939022155631b82c66515e8feea887f422688a",
+      "bytes": 13932
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMemberRecordReadSharing.scala",
+      "sha256": "3c549945718a39c700b95ec76616aa1e84d020f9b5114158598b58aee4b05c45",
+      "bytes": 1167
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+      "sha256": "45d413f5ceb53e17e923c489782b88632074c3098f481f58e864a527199879d4",
+      "bytes": 16919
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala",
+      "sha256": "c38ec16eb79c180293b932ea5c5889240bf22a7b12520df3b636412cebea2bee",
+      "bytes": 36172
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPersistentPackedReadController.scala",
+      "sha256": "c78d23d9be058343c534f37c5ef132b05dd6f04b21db5ef9448f032ffe0e5925",
+      "bytes": 17437
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPersistentReadReceiptCollector.scala",
+      "sha256": "cdf3557175f83f9fa90c0c35619fc0908e44f40a91e4fd7e096a02c7c8aa932d",
+      "bytes": 5128
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteARecordReadDecode.scala",
+      "sha256": "e662fcff2db1e0fbc3bd70dbcbb2d20eeb2d66dc977577892eb11bb2ffe9e7e0",
+      "bytes": 905
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "sha256": "308f089b77df9f72fea68f0e320604cfab3b9e450f08826929ca9aa804675968",
+      "bytes": 78685
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAPersistentReadInterfaces.scala",
+      "sha256": "ee220a1b36aca11e02c844baed3ae46204b031af122017cecae1bab38703283f",
+      "bytes": 2604
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAPersistentReadLifecycleInterfaces.scala",
+      "sha256": "89ef4e258e66fabc2df658a89faba230efcf6d506a57688b766f0532c13bce50",
+      "bytes": 1588
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAPersistentReadS2Interfaces.scala",
+      "sha256": "a81644aadc21704996a99f3d301fc28dcdbbad980a8eb0a306a06bd1ff175388",
+      "bytes": 938
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAPersistentReadTopInterfaces.scala",
+      "sha256": "4690c934f1abd746efbdfd2444596c3e8c6252af99e1f7d43ae5b17b3f296ea1",
+      "bytes": 985
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+      "sha256": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493",
+      "bytes": 9048
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+      "sha256": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887",
+      "bytes": 4098
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/FullKVMeasurementDut.scala",
+      "sha256": "cebc0577929aed960ed29cb0b95c674ed68479aafb71c18cf16e55775fa1389b",
+      "bytes": 6042
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PM1PageManagerHdlEmitter.scala",
+      "sha256": "7a9fc95edb17ddbbc6c7422322d4cd948ad96d52936e0ee4f9f36f03978f0ffe",
+      "bytes": 1364
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PairedControlProjectionHdlEmitter.scala",
+      "sha256": "8a589a6c74c02ebb78f7e1d3ee0080550bb9ee82da4bb6cd85255b7bf7405292",
+      "bytes": 8023
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAComponentStatusCollector.scala",
+      "sha256": "6b83963f747ad3f32c379df0bed30a84468fe891d9493cd9f0b3aea3f47ee329",
+      "bytes": 4982
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",
+      "sha256": "f4d7fba2658731590a2abea3a52d3402ac32d24bab700d012735393a65c4e4a6",
+      "bytes": 35177
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "sha256": "085c425b9fa6a14fbdcb9911e4c33b1c53309b68e1b2e60b5a1e3e178bbdb2c0",
+      "bytes": 34615
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/SynthesisControlProjectionGenerators.scala",
+      "sha256": "3dcf569311fa43652ce03408a1507206ca77b01f3dca65ef30d75a3aa276f844",
+      "bytes": 1032
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1ContextualHdlEmitter.scala",
+      "sha256": "6550ef0bfe64bd40e3903b45ecb2e05e2e4f2a91ff668ecaf9d8f24be0deda80",
+      "bytes": 1176
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1WrapperHdlEmitter.scala",
+      "sha256": "ad0f9bb5ddb915907792042983b0a76ffc6ea0e380643ecce55ce707af1886ef",
+      "bytes": 1139
+    }
+  ],
+  "widths": {
+    "binding": 281,
+    "reconciliation_key": 214,
+    "registration": 297,
+    "result": 299,
+    "group_key": 58
+  },
+  "cost_arithmetic": {
+    "working_binding_bits": 17984,
+    "working_present_and_transition_bits": 128,
+    "working_journal_bits": 18112,
+    "working_journal_bytes": 2264,
+    "registration_bits": 297,
+    "result_bits": 299,
+    "result_pending_bits": 1,
+    "exact_key_bits": 214,
+    "withdrawal_only_binding_extra_bits": 67,
+    "direct_slots": 9437184,
+    "cold_keep_all_records": 9400320,
+    "full_pages_at_cold_keep_all": 146880,
+    "direct_archive_word_bytes": 32,
+    "direct_archive_bytes": 301989888,
+    "direct_archive_mib": 288.0,
+    "cold_archive_bytes": 300810240,
+    "cold_archive_mib": 286.875,
+    "cold_two_opaque64_bytes": 150405120,
+    "cold_two_opaque64_mib": 143.4375,
+    "row_rmw_read_bytes": 64,
+    "row_rmw_write_bytes": 64,
+    "row_rmw_core_bytes": 128,
+    "row_rmw_declared_proxy_bytes": 512,
+    "full_group_rmw_core_bytes": 8192,
+    "full_group_rmw_declared_proxy_bytes": 32768,
+    "cold_rmw_core_bytes": 1203240960,
+    "cold_rmw_declared_proxy_bytes": 4812963840,
+    "direct_region_full_scrub_bytes": 301989888,
+    "archive_candidate_extra_scalar_bits": 652,
+    "archive_optional_registration_hold_bits": 297,
+    "fenced_candidate_header_bits": 64,
+    "fenced_candidate_frontier_bits": 33,
+    "fenced_candidate_example_increment_bits": 292,
+    "fenced_candidate_owner_and_result_ticket_bits": 128
+  },
+  "bounds": {
+    "current_reset_only_journal": {
+      "records": 64,
+      "groups": 1
+    },
+    "strict_history_session": {
+      "max_mature_bindings": 9400320,
+      "assumptions": [
+        "position namespace 0..32767, hot128",
+        "36 layers, 8 KV heads",
+        "at most one immutable maturity binding per entry per session",
+        "keep-all is a capacity upper envelope, not observed mask",
+        "completed full64 groups fit 146880 page entries"
+      ]
+    },
+    "strict_archive_working": {
+      "working_records": 64,
+      "archive_records": "cumulative committed admissions; up to cold_keep_all_records",
+      "during_commit": "working/archive duplicate copies of the same <=64 logical records; no extra admitted group"
+    },
+    "fenced_alternative": {
+      "working_records": 64,
+      "groups": 1,
+      "status": "CONTRACT_CHANGE_NOT_APPROVED_OR_PROVED",
+      "conditions": [
+        "no new group before exact two-sided close ACKs",
+        "acknowledged producer registration seal",
+        "drained or durable owner-captured results and withdrawals",
+        "closed old registrations explicitly reject, never Unseen",
+        "owner lifecycle separately bounded and qualified"
+      ]
+    }
+  },
+  "release_conditions": {
+    "current_v1": "destructive reset only; publication/R6 handoff/S2 release/retire do not revoke legal late lookup",
+    "strict_working_reuse": [
+      "all actual R6 transitions and full withdrawal uses complete",
+      "post-R6 receipt/R5-ready and notice retained or accepted",
+      "exact archive rows acknowledged and group committed",
+      "accepted query result copied or completed and commit read ordering qualified",
+      "R3 and ingress both acknowledge close before separate rearm"
+    ],
+    "strict_archive": "retain through current session and retire; next destructive reset plus qualified namespace init permits physical region reuse",
+    "fenced_alternative": "only after explicit versioned registration-close fence, last-use proof and exact close ACKs; no current contract grants this",
+    "single_registration_top_special_case": "Only after the sole registration query/result and all original binding/withdrawal uses have completed is the current top known to have no future lookup consumer. This narrow once-per-reset contour cannot justify reusable generic-v1 history deletion, ordinary packed-only progress with no registration, or sustained pending service; not used to reduce the capacity provision."
+  },
+  "recommendation": {
+    "semantic_baseline": "strict exact-history-backed reuse remains the compatibility baseline, not an economical implementation acceptance",
+    "next_before_rtl": "qualify producer registration last-use/close contract; if compatible finite window is not approved, finish physical exact-history service/cost contract before implementing reuse",
+    "no_silent_contract_change": true,
+    "next_minimal_witness": "G0 full64, G1 reuses ordinal0 without reset or G0 read; exact late G0 and G1 lookup through real owners/wrapper; both pages remain readable; retire drains",
+    "pending_owner_recycle": "separate required successor if claiming repeated pending descriptor service; current one-registration contour cannot be counted as full sustained pending execution"
+  },
+  "unproved": [
+    "external exact-history read/write/commit/init service and coherent query cut",
+    "finite producer close contract",
+    "normal pending-owner re-registration/release and all cancel/lease drain cuts",
+    "full capacity/concurrency/wrap coverage",
+    "new 2ns setup/hold/clock-gating closure",
+    "complete differential physical cost and net benefit"
+  ],
+  "validation": "static source anchors, input/main-file hashes, arithmetic, local links, diff hygiene only; no new RTL/native/formal evidence",
+  "scalar_inventory": {
+    "archive": {
+      "namespace": 32,
+      "row_index": 24,
+      "ordinal": 7,
+      "ack_count": 7,
+      "phase": 3,
+      "group_key": 58,
+      "close_acks": 2,
+      "ready_notice_commit_flags": 3,
+      "init_fault_busy_flags": 3,
+      "rmw_line": 512,
+      "rmw_valid": 1
+    },
+    "fenced_alternative": {
+      "active_token": 64,
+      "closed_sequence_and_valid": 33,
+      "owner_registration_token": 64,
+      "result_registration_token": 64,
+      "group_key_hold": 58,
+      "close_acks": 2,
+      "phase": 3,
+      "seal_drain_flags": 4
+    },
+    "disclaimer": "Identified independent holding fields only, not complete incremental register bounds or mapped/physical area. Queue, transport, ACK association, lifecycle recycling and backend state remain open."
+  },
+  "validation_plan": [
+    {
+      "id": "V1",
+      "scope": "preserve default-v1 capacities, exact equality, lookup snapshot/precedence, held response and publication/authority"
+    },
+    {
+      "id": "G2",
+      "scope": "G0 full64, G1 ordinal0 reuse, no reset; distinct actual publication/handoff and credits"
+    },
+    {
+      "id": "NO_READ_BARRIER",
+      "scope": "G0 and G1 admission before any read; G0 remains repeatedly readable after G1"
+    },
+    {
+      "id": "LATE_EXACT",
+      "scope": "G0 lookup through G1, exact matches and independent mutations of all fields"
+    },
+    {
+      "id": "STALL_CUTS",
+      "scope": "held result/notice, skewed close ACKs, accepted query across commit with specified observation cut"
+    },
+    {
+      "id": "FAULT_LIMIT",
+      "scope": "missing/fault ACK, history full, same/cross bank, finite tag/stage/namespace wrap"
+    },
+    {
+      "id": "RETIRE",
+      "scope": "partial group/R6/archive/query/close and attention drain cuts, no invented retirement success"
+    },
+    {
+      "id": "PENDING_RECYCLE",
+      "scope": "actual cancel/abort/R1/consumer/source release before repeat registration; separate from packed-only witness"
+    },
+    {
+      "id": "FENCE_OPTION",
+      "scope": "only under an explicitly selected versioned contract: held registration offer, producer seal, Closed/Expired, unbound direct source, stale namespace"
+    }
+  ],
+  "static_verification": {
+    "verdict": "PASS",
+    "counts": {
+      "inputs": 18,
+      "production_source_manifest": 30,
+      "source_anchors": 15,
+      "local_links": 4,
+      "live_entries": 3,
+      "arithmetic_width_checks": 15,
+      "numeric_text_checks": 7,
+      "planned_validation_families": 9
+    },
+    "production_and_existing_tools_tests_diff": "empty against source_commit",
+    "native_functional_test": "NOT_RUN",
+    "remote_job": "NOT_STARTED",
+    "dc_sta": "NOT_STARTED"
+  }
+}

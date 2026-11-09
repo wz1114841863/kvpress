@@ -14,11 +14,34 @@ The R5 parent lookup-ownership repair is qualified in this scope; r1 failure
 is retained. Multi-group admission/journal, full capacity/concurrency/numeric
 and external-v2 functionality remain open. Original normative v1 contracts
 are preserved; the v2 functional successor adds no new area/timing or net-benefit
-evidence. Physical history service, complete costs and 2ns closure remain open.
+evidence. The multi-group journal lifecycle audit now separates a 64-row working
+set from cumulative exact history, and specifies safe migration/close barriers.
+An acknowledged finite registration window is only a versioned contract
+alternative, not an established release guarantee. Physical history service,
+complete costs and 2ns closure remain open.
 
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
+
+## Multi-group journal lifecycle and minimal plan (2026-11-09)
+
+Read [`route_a_multigroup_journal_lifecycle_closure_20261109.md`](route_a_multigroup_journal_lifecycle_closure_20261109.md)
+and JSON. Source `1f752ee` confirms reset-only late lookup, a 64-row/2,264-B
+working journal, and a separate one-registration-per-reset pending owner.
+Publication, R6 handoff, S2 release and retire do not revoke old lookup rights.
+The compatibility baseline remains exact-history migration plus two close ACKs
+before separate rearm; cold keep-all history can reach 9,400,320 records.
+The previous 32-B direct layout provisions 288 MiB, not a required minimum,
+observed workload use, on-chip area or economical implementation acceptance.
+
+Before RTL, qualify whether the producer can acknowledge registration closure
+and owners can retain/drain every accepted consequence. Only an explicitly
+versioned Closed/Expired contract could then bound history to one 64-row
+window. No such guarantee exists today. Otherwise complete the exact-history
+physical service/cost contract first. Repeated pending-owner recycling is a
+separate obligation. This batch changes documentation only and starts no
+RTL/native/remote/DC/STA work; Stage A multi-group functionality remains open.
 
 ## Persistent page read r2 bounded functional acceptance (2026-11-09)
 
