@@ -21,6 +21,7 @@ class RouteAMeasurementDut(
   externalizeFunctionalReferences: Boolean = false,
   bankPageManagerAllocatedLineSelector: Boolean = false,
   gateCompactMembershipWords: Boolean = false,
+  persistentReadEnabled: Boolean = false,
 ) extends Module {
   val io = IO(new Bundle {
     val frontend_lifecycle_req = Flipped(RouteAChannels.frontend_lifecycle_req(p))
@@ -66,15 +67,17 @@ class RouteAMeasurementDut(
     val external_core_mem_if_v1 = new CoreMemoryExternalPort(p)
   })
 
+  val persistentRead = if (persistentReadEnabled) Some(IO(new PersistentReadTopPort(p))) else None
+
   private def inactive[T <: Data](channel: DecoupledIO[T]): Unit = {
     channel.valid := false.B
     channel.bits := 0.U.asTypeOf(channel.bits)
   }
   private def discard[T <: Data](channel: DecoupledIO[T]): Unit = channel.ready := true.B
 
-  val lifecycle = Module(new RouteALifecycleAdapter(p))
+  val lifecycle = Module(new RouteALifecycleAdapter(p, persistentReadEnabled = persistentReadEnabled))
   val hot = Module(new RouteAHotSourcePath(p))
-  val s2 = Module(new RouteAS2GqaSourceWrapper(p))
+  val s2 = Module(new RouteAS2GqaSourceWrapper(p, persistentReadEnabled = persistentReadEnabled))
   val directPending = Module(new RouteADirectPendingEndpointV1(p))
   val pendingDescriptorOwner = Module(new RouteAPendingDescriptorOwner(p))
   val directAssociationMaterializer = Module(new RouteADirectPendingAssociationMaterializer(p))
@@ -92,8 +95,11 @@ class RouteAMeasurementDut(
     p,
     externalizeDescriptorBacking = externalizeFunctionalReferences,
     bankAllocatedLineSelector = bankPageManagerAllocatedLineSelector,
+    persistentReadEnabled = persistentReadEnabled,
   ))
   val activationBinder = Module(new RouteAPackedReadActivationBinder(p))
+  val persistentActivation = if (persistentReadEnabled) Some(Module(new RouteAPersistentPackedReadController(p))) else None
+  val persistentCollector = if (persistentReadEnabled) Some(Module(new RouteAPersistentReadReceiptCollector(p))) else None
   val associationOwner = Module(new RouteAPackedReadAssociationOwner(p))
   val planFork = Module(new RouteASourceCompletionPlanActivationFork(p))
   val hotActivation = Module(new RouteAHotSourcePlanActivationAdapter(p))
@@ -122,7 +128,7 @@ class RouteAMeasurementDut(
   val directPendingReadEndpoint = Module(new RouteADirectPendingReadEndpoint(p))
   val packedReadEndpoint = Module(new RouteAPackedS2ReadEndpoint(p))
   val packedSidecarEndpoint = Module(new RouteAS2PackedSidecarReadEndpoint(p))
-  val sourcePlanBinder = Module(new RouteASourcePlanBinder(p))
+  val sourcePlanBinder = Module(new RouteASourcePlanBinder(p, persistentReadEnabled = persistentReadEnabled))
   val packetAdapter = Module(new RouteASourceServicePacketAdapter(p))
   // This is typed packet/work/result protocol control only. The numeric R4
   // provider remains outside the projection through existing outer ports.
@@ -184,11 +190,36 @@ class RouteAMeasurementDut(
   directAssociationMaterializer.io.direct_abort_out <> directPending.io.direct_abort_in
   directAssociationMaterializer.io.direct_abort_ack_in <> directPending.io.direct_abort_ack_out
   lifecycle.io.pending_source_failure_in <> directAssociationMaterializer.io.association_failure_out
-  lifecycle.io.source_completion_plan_in <> sourcePlanBinder.io.completion_plan_out
+  if (persistentReadEnabled) {
+    val control = persistentActivation.get
+    val r6 = lifecycle.persistentRead.get
+    control.io.plan_in <> sourcePlanBinder.io.completion_plan_out
+    lifecycle.io.source_completion_plan_in <> control.io.plan_out
+    r6.context_query_in <> control.io.context_query_out
+    control.io.context_result_in <> r6.context_result_out
+    r6.preplan_reject_in <> control.io.r6_reject_out
+    sourcePlanBinder.preplanCancel.get <> control.io.binder_cancel_out
+    control.io.page_select_in <> persistentRead.get.page_select_in
+    persistentRead.get.rejected_out <> control.io.rejected_out
+    control.io.readiness_pending_in := persistentCollector.get.io.readiness_pending_out
+    control.io.attention_terminal_in.valid := io.attention_terminal_rsp.fire
+    control.io.attention_terminal_in.bits := io.attention_terminal_rsp.bits.transaction_identity
+    // The bridge is active from the original retained-admission join until
+    // membership handoff, covering work before the collector sees a member.
+    r6.owners_drained := metadataAdmission.io.active_group_count === 0.U &&
+      !persistentCollector.get.io.busy && !control.io.busy
+  } else {
+    lifecycle.io.source_completion_plan_in <> sourcePlanBinder.io.completion_plan_out
+  }
   planFork.io.accepted_plan_in <> lifecycle.io.source_completion_plan_copy_out
   packetAdapter.io.accepted_plan_in <> planFork.io.packet_plan_out
   hotActivation.io.accepted_plan_in <> planFork.io.hot_activation_plan_out
-  activationBinder.io.accepted_plan_in <> planFork.io.packed_activation_plan_out
+  if (persistentReadEnabled) {
+    persistentActivation.get.io.accepted_plan_in <> planFork.io.packed_activation_plan_out
+    inactive(activationBinder.io.accepted_plan_in)
+  } else {
+    activationBinder.io.accepted_plan_in <> planFork.io.packed_activation_plan_out
+  }
 
   s2.io.drain_collection_enable := lifecycle.io.drain_collection_enable
   s2.io.mem_init_done := coreMemory.io.r1_init_complete
@@ -198,14 +229,40 @@ class RouteAMeasurementDut(
 
   activationBinder.io.mem_init_done := coreMemory.io.r1_init_complete
   associationOwner.io.mem_init_done := coreMemory.io.r1_init_complete
-  pageManager.io.descriptor_location_request_in <> activationBinder.io.descriptor_location_request_out
-  activationBinder.io.descriptor_grant_in <> pageManager.io.descriptor_location_grant_out
-  s2.io.s2_fill_lease_request_in <> activationBinder.io.s2_fill_lease_request_out
-  activationBinder.io.s2_fill_lease_in <> s2.io.s2_fill_lease_out
-  associationOwner.io.demand_in <> activationBinder.io.demand_out
-  associationOwner.io.publication_authorization_in <> activationBinder.io.publication_authorization_out
-  associationOwner.io.descriptor_grant_in <> activationBinder.io.descriptor_grant_out
-  associationOwner.io.s2_fill_lease_in <> activationBinder.io.s2_fill_lease_out
+  if (persistentReadEnabled) {
+    val control = persistentActivation.get
+    val page = pageManager.persistentRead.get
+    val reservation = s2.persistentRead.get
+    page.query_in <> control.io.query_out
+    control.io.query_result_in <> page.query_result_out
+    reservation.v2_reservation_request_in <> control.io.reservation_request_out
+    control.io.reservation_result_in <> reservation.v2_reservation_result_out
+    associationOwner.io.demand_in <> control.io.demand_out
+    associationOwner.io.publication_authorization_in <> control.io.publication_authorization_out
+    associationOwner.io.descriptor_grant_in <> control.io.descriptor_grant_out
+    associationOwner.io.s2_fill_lease_in <> control.io.s2_fill_lease_out
+    inactive(pageManager.io.descriptor_location_request_in)
+    discard(pageManager.io.descriptor_location_grant_out)
+    inactive(s2.io.s2_fill_lease_request_in)
+    discard(s2.io.s2_fill_lease_out)
+    inactive(activationBinder.io.descriptor_grant_in)
+    inactive(activationBinder.io.s2_fill_lease_in)
+    discard(activationBinder.io.descriptor_location_request_out)
+    discard(activationBinder.io.s2_fill_lease_request_out)
+    discard(activationBinder.io.demand_out)
+    discard(activationBinder.io.publication_authorization_out)
+    discard(activationBinder.io.descriptor_grant_out)
+    discard(activationBinder.io.s2_fill_lease_out)
+  } else {
+    pageManager.io.descriptor_location_request_in <> activationBinder.io.descriptor_location_request_out
+    activationBinder.io.descriptor_grant_in <> pageManager.io.descriptor_location_grant_out
+    s2.io.s2_fill_lease_request_in <> activationBinder.io.s2_fill_lease_request_out
+    activationBinder.io.s2_fill_lease_in <> s2.io.s2_fill_lease_out
+    associationOwner.io.demand_in <> activationBinder.io.demand_out
+    associationOwner.io.publication_authorization_in <> activationBinder.io.publication_authorization_out
+    associationOwner.io.descriptor_grant_in <> activationBinder.io.descriptor_grant_out
+    associationOwner.io.s2_fill_lease_in <> activationBinder.io.s2_fill_lease_out
+  }
   associationOwner.io.invalidation_in.valid := false.B
   associationOwner.io.invalidation_in.bits := 0.U.asTypeOf(new PackedReadInvalidation)
   if (externalizeFunctionalReferences) {
@@ -342,8 +399,20 @@ class RouteAMeasurementDut(
   discard(lifecycle.io.metadata_publish_req)
   lifecycle.io.authority_transition_in <> m2P3.io.authority_transition_out
   discard(m2P3.io.publication_commit_observation)
-  activationBinder.io.publication_member_in <> m2P3.io.publication_member_observation
-  activationBinder.io.post_r6_page_ready_in <> m2P3.io.post_r6_packed_page_ready_observation
+  if (persistentReadEnabled) {
+    val collector = persistentCollector.get
+    collector.io.publication_member_in <> m2P3.io.publication_member_observation
+    collector.io.post_r6_page_ready_in <> m2P3.io.post_r6_packed_page_ready_observation
+    pageManager.persistentRead.get.mark_ready_in <> collector.io.mark_ready_out
+    collector.io.mark_ready_ack_in <> pageManager.persistentRead.get.mark_ready_ack_out
+    persistentRead.get.page_available_out <> collector.io.page_available_out
+    persistentRead.get.receipt_fault_out <> collector.io.receipt_fault_out
+    inactive(activationBinder.io.publication_member_in)
+    inactive(activationBinder.io.post_r6_page_ready_in)
+  } else {
+    activationBinder.io.publication_member_in <> m2P3.io.publication_member_observation
+    activationBinder.io.post_r6_page_ready_in <> m2P3.io.post_r6_packed_page_ready_observation
+  }
   pageManager.io.p3_payload_durable_in <> m2P3.io.p3_payload_durable_out
   m2P3.io.descriptor_durability_prerequisite_in <> pageManager.io.descriptor_durability_prerequisite_out
   pageManager.io.metadata_publish_visibility_in <> m2P3.io.metadata_publish_visibility_apply
@@ -435,6 +504,8 @@ class RouteAMeasurementDut(
   statusCollector.io.status_sources(2) <> arbiter.io.descriptor_drain_status_out
   statusCollector.io.status_sources(3) <> m2P3.io.component_status_out
   statusCollector.io.status_sources(4) <> pageManager.io.component_status_out
+  // V2 owner drain is checked at R6's phase barrier. Do not mask R5's init
+  // status with preflight work that itself awaits an initialized R6 session.
   statusCollector.io.status_sources(5) <> s2.io.component_status_out
   statusCollector.io.status_sources(6) <> directPending.io.component_status_out
   statusCollector.io.status_sources(7) <> merge.io.component_status_out

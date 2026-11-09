@@ -687,7 +687,10 @@ final class RouteADirectPendingAssociationMaterializer(p: RouteASkeletonParamete
   * query, then emits its association copy only after the completion-plan
   * handshake that R6 accepts. It has no source-selection or authority role.
   */
-final class RouteASourcePlanBinder(p: RouteASkeletonParameters) extends Module {
+final class RouteASourcePlanBinder(
+  p: RouteASkeletonParameters,
+  persistentReadEnabled: Boolean = false,
+) extends Module {
   override def desiredName: String = "route_a_source_plan_binder"
 
   val io = IO(new Bundle {
@@ -697,6 +700,7 @@ final class RouteASourcePlanBinder(p: RouteASkeletonParameters) extends Module {
     val completion_plan_out = RouteAChannels.source_completion_plan(p)
     val accepted_pending_association_out = RouteAChannels.pending_direct_association_declaration(p)
   })
+  val preplanCancel = if (persistentReadEnabled) Some(IO(Flipped(Decoupled(new PreplanRejectV2)))) else None
 
   val heldDeclaration = Reg(new SourcePlanDeclaration(p))
   val haveDeclaration = RegInit(false.B)
@@ -760,6 +764,22 @@ final class RouteASourcePlanBinder(p: RouteASkeletonParameters) extends Module {
   io.accepted_pending_association_out.bits := associationCopy
   when(io.accepted_pending_association_out.fire) { associationCopyPending := false.B }
 
+  if (persistentReadEnabled) {
+    val cancel = preplanCancel.get
+    cancel.ready := haveDeclaration && !associationCopyPending &&
+      sameIdentity(cancel.bits.transaction_identity, heldDeclaration.transaction_identity) &&
+      !io.completion_plan_out.ready
+    when(cancel.fire) {
+      assert(!io.completion_plan_out.fire, "preflight cancellation and plan acceptance are exclusive")
+      // No post-acceptance association has been emitted at this boundary.
+      // A pending owner query has already completed before completion_plan
+      // can become the preflight candidate.
+      haveDeclaration := false.B
+      querySent := false.B
+      haveAssociation := false.B
+    }
+  }
+
   val heldPlanWhileStalled = RegEnable(io.completion_plan_out.bits,
     io.completion_plan_out.valid && !io.completion_plan_out.ready)
   when(RegNext(io.completion_plan_out.valid && !io.completion_plan_out.ready, false.B)) {
@@ -777,7 +797,10 @@ final class RouteASourcePlanBinder(p: RouteASkeletonParameters) extends Module {
   * associations; long-lived hot/pending/packed state remains at its frozen
   * owners and crosses this wrapper as event-level authority transitions.
   */
-final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
+final class RouteALifecycleAdapter(
+  p: RouteASkeletonParameters,
+  persistentReadEnabled: Boolean = false,
+) extends Module {
   override def desiredName: String = "route_a_lifecycle_adapter"
 
   val io = IO(new Bundle {
@@ -814,6 +837,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     val metadata_publish_req = RouteAChannels.metadata_publish_req(p)
     val metadata_publish_ack_in = Flipped(RouteAChannels.metadata_publish_ack(p))
   })
+  val persistentRead = if (persistentReadEnabled) Some(IO(new R6PersistentReadPortV2)) else None
 
   private val StateReset = 0.U(3.W)
   private val StateIdle = 1.U(3.W)
@@ -861,6 +885,15 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
 
   val attentionValid = RegInit(VecInit(Seq.fill(trackerEntries)(false.B)))
   val attentionIdentity = Reg(Vec(trackerEntries, new TransactionIdentity))
+  val attentionLayerV2 = if (persistentReadEnabled)
+    Some(Reg(Vec(trackerEntries, UInt(RouteAAnchorWidths.LayerWidth.W)))) else None
+  val attentionHeadV2 = if (persistentReadEnabled)
+    Some(Reg(Vec(trackerEntries, UInt(RouteAAnchorWidths.KvHeadWidth.W)))) else None
+  // sourcePlanValid is cleared after all releases while merge may still be
+  // queued. Keep the distinct fact that this attention has never installed a
+  // plan; a completed source set cannot become preflight-eligible again.
+  val attentionUnplannedV2 = if (persistentReadEnabled)
+    Some(RegInit(VecInit(Seq.fill(trackerEntries)(false.B)))) else None
   val attentionStage = RegInit(VecInit(Seq.fill(trackerEntries)(AwaitMergeReady)))
   val sourcePlanValid = RegInit(VecInit(Seq.fill(trackerEntries)(false.B)))
   val sourcePlanPresence = Reg(Vec(trackerEntries, UInt(RouteAAnchorWidths.SourcePresenceWidth.W)))
@@ -885,6 +918,19 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val terminalStatus = Reg(UInt(RouteAAnchorWidths.TerminalStatusWidth.W))
   val terminalTrackerSlot = Reg(UInt(trackerIndexWidth.W))
   val terminalFromPendingFailure = RegInit(false.B)
+  val terminalFromPreplanV2 = if (persistentReadEnabled) Some(RegInit(false.B)) else None
+  val preflightResultPendingV2 = if (persistentReadEnabled) Some(RegInit(false.B)) else None
+
+  if (persistentReadEnabled) {
+    // Runtime retirement immediately stops new frontend lifecycle work via
+    // StateRetiring. Do not yet close the unchanged R2 payload ingress while
+    // accepted attentions still need their query/reservation/fill/terminal.
+    // Only after those owner tickets drain may component drain collection
+    // start; R2's arbitration and ingress policy themselves remain unchanged.
+    io.drain_collection_enable := state === StateRetiring && !attentionValid.asUInt.orR &&
+      !controlPending && !mergePending && !mergeInFlight && !terminalPending &&
+      !sourcePlanCopyPending && !preflightResultPendingV2.get && persistentRead.get.owners_drained
+  }
 
   private def identityMatches(left: TransactionIdentity, right: TransactionIdentity): Bool =
     left.asUInt === right.asUInt
@@ -974,6 +1020,11 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     }.elsewhen(isAttention) {
       attentionValid(freeAttentionSlot) := true.B
       attentionIdentity(freeAttentionSlot) := lifecycle.transaction_identity
+      if (persistentReadEnabled) {
+        attentionLayerV2.get(freeAttentionSlot) := lifecycle.layer
+        attentionHeadV2.get(freeAttentionSlot) := lifecycle.kv_head
+        attentionUnplannedV2.get(freeAttentionSlot) := true.B
+      }
       attentionStage(freeAttentionSlot) := AwaitMergeReady
       sourcePlanValid(freeAttentionSlot) := false.B
       sourcePlanReleased(freeAttentionSlot) := 0.U
@@ -1047,6 +1098,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val sourcePlan = io.source_completion_plan_in.bits
   val sourcePlanMatches = VecInit((0 until trackerEntries).map(slot =>
     attentionValid(slot) && attentionStage(slot) === AwaitMergeReady && !sourcePlanValid(slot) &&
+      (if (persistentReadEnabled) attentionUnplannedV2.get(slot) else true.B) &&
       identityMatches(attentionIdentity(slot), sourcePlan.transaction_identity),
   ))
   val sourcePlanSlot = PriorityEncoder(sourcePlanMatches)
@@ -1055,9 +1107,11 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     sourcePlan.pending_instance.source_kind === RouteASourceKind.Pending.U &&
     sourcePlan.packed_instance.source_kind === RouteASourceKind.Packed.U
   io.source_completion_plan_in.ready := (state === StateActive || state === StateRetiring) &&
-    !sourcePlanCopyPending && sourcePlanKindsLegal && sourcePlanMatches.asUInt.orR
+    !sourcePlanCopyPending && sourcePlanKindsLegal && sourcePlanMatches.asUInt.orR &&
+    (if (persistentReadEnabled) !terminalPending else true.B)
   when(io.source_completion_plan_in.fire) {
     sourcePlanValid(sourcePlanSlot) := true.B
+    if (persistentReadEnabled) { attentionUnplannedV2.get(sourcePlanSlot) := false.B }
     sourcePlanPresence(sourcePlanSlot) := sourcePlan.source_presence
     sourcePlanReleased(sourcePlanSlot) := 0.U
     sourcePlanHot(sourcePlanSlot) := sourcePlan.hot_instance
@@ -1101,6 +1155,58 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     sourcePlanValid(pendingFailureSlot) := false.B
   }
 
+  if (persistentReadEnabled) {
+    val v2 = persistentRead.get
+    val contextResult = Reg(new R6PreflightContextResultV2)
+    val contextMatches = VecInit((0 until trackerEntries).map(slot =>
+      attentionValid(slot) && attentionStage(slot) === AwaitMergeReady && !sourcePlanValid(slot) &&
+        attentionUnplannedV2.get(slot) &&
+        !(terminalPending && terminalTrackerSlot === slot.U) &&
+        identityMatches(attentionIdentity(slot), v2.context_query_in.bits.transaction_identity),
+    ))
+    val contextSlot = PriorityEncoder(contextMatches)
+    v2.context_query_in.ready := (state === StateActive ||
+      (state === StateRetiring && !reclaimPermitIssued)) && !preflightResultPendingV2.get
+    when(v2.context_query_in.fire) {
+      contextResult.transaction_identity := v2.context_query_in.bits.transaction_identity
+      contextResult.eligible := contextMatches.asUInt.orR
+      contextResult.layer := Mux(contextMatches.asUInt.orR, attentionLayerV2.get(contextSlot), 0.U)
+      contextResult.kv_head := Mux(contextMatches.asUInt.orR, attentionHeadV2.get(contextSlot), 0.U)
+      preflightResultPendingV2.get := true.B
+    }
+    v2.context_result_out.valid := preflightResultPendingV2.get
+    v2.context_result_out.bits := contextResult
+    when(v2.context_result_out.fire) { preflightResultPendingV2.get := false.B }
+
+    val rejectMatches = VecInit((0 until trackerEntries).map(slot =>
+      attentionValid(slot) && attentionStage(slot) === AwaitMergeReady && !sourcePlanValid(slot) &&
+        attentionUnplannedV2.get(slot) &&
+        identityMatches(attentionIdentity(slot), v2.preplan_reject_in.bits.transaction_identity),
+    ))
+    val rejectSlot = PriorityEncoder(rejectMatches)
+    // Existing pending-failure and merge paths retain their ordering. A
+    // pre-plan failure cannot race plan acceptance or an unrelated terminal.
+    v2.preplan_reject_in.ready := (state === StateActive || state === StateRetiring) &&
+      !terminalPending && !mergePending && !mergeInFlight &&
+      !io.pending_source_failure_in.valid && !io.merge_ready_in.valid &&
+      !io.source_completion_plan_in.valid && rejectMatches.asUInt.orR
+    when(v2.preplan_reject_in.fire) {
+      assert(!io.source_completion_plan_in.fire)
+      terminalPending := true.B
+      terminalIdentity := v2.preplan_reject_in.bits.transaction_identity
+      terminalStatus := p.coreMemoryFaultStatusCode.U
+      terminalTrackerSlot := rejectSlot
+      terminalFromPendingFailure := false.B
+      terminalFromPreplanV2.get := true.B
+      attentionUnplannedV2.get(rejectSlot) := false.B
+    }
+    val heldContext = RegEnable(v2.context_result_out.bits,
+      v2.context_result_out.valid && !v2.context_result_out.ready)
+    when(RegNext(v2.context_result_out.valid && !v2.context_result_out.ready, false.B)) {
+      assert(v2.context_result_out.bits.asUInt === heldContext.asUInt)
+    }
+  }
+
   private def releaseMatches(release: SourceRelease, expectedKind: Int, expected: Int => SourceInstance) =
     VecInit((0 until trackerEntries).map(slot =>
       attentionValid(slot) && attentionStage(slot) === AwaitMergeReady && sourcePlanValid(slot) &&
@@ -1140,6 +1246,7 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val mergeReadyMatches = VecInit((0 until trackerEntries).map(slot =>
     attentionValid(slot) && attentionStage(slot) === AwaitMergeReady &&
       !sourcePlanValid(slot) &&
+      (if (persistentReadEnabled) !(terminalPending && terminalTrackerSlot === slot.U) else true.B) &&
       identityMatches(attentionIdentity(slot), mergeReady.transaction_identity),
   ))
   val mergeReadySlot = PriorityEncoder(mergeReadyMatches)
@@ -1211,11 +1318,15 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   when(io.attention_terminal_rsp.fire) {
     // a_exactly_one_terminal: only the one matching live tracker may retire here.
     assert(attentionValid(terminalTrackerSlot) &&
-      (terminalFromPendingFailure || attentionStage(terminalTrackerSlot) === MergeIssued))
+      (terminalFromPendingFailure ||
+        (if (persistentReadEnabled) terminalFromPreplanV2.get else false.B) ||
+        attentionStage(terminalTrackerSlot) === MergeIssued))
     attentionValid(terminalTrackerSlot) := false.B
     sourcePlanValid(terminalTrackerSlot) := false.B
     terminalPending := false.B
     terminalFromPendingFailure := false.B
+    if (persistentReadEnabled) { terminalFromPreplanV2.get := false.B }
+    if (persistentReadEnabled) { attentionUnplannedV2.get(terminalTrackerSlot) := false.B }
   }
 
   io.runtime_retire_req.ready := state === StateActive && !io.runtime_retire_req.bits.session_id
@@ -1230,7 +1341,8 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
   val trackerEmpty = !attentionValid.asUInt.orR
   val preReclaimDrained = (drainAcks & "hef".U) === "hef".U
   val preReclaimReady = state === StateRetiring && !reclaimPermitIssued && trackerEmpty &&
-    !controlPending && !mergePending && !terminalPending && preReclaimDrained
+    !controlPending && !mergePending && !terminalPending && preReclaimDrained &&
+    (if (persistentReadEnabled) !preflightResultPendingV2.get && persistentRead.get.owners_drained else true.B)
   when(preReclaimReady) {
     // Pre-reclaim R1 and descriptor-drain facts cannot satisfy the final
     // drain: R5 is about to submit a new descriptor maintenance write.
@@ -1243,7 +1355,8 @@ final class RouteALifecycleAdapter(p: RouteASkeletonParameters) extends Module {
     reclaimComplete := true.B
   }
   val retireReady = state === StateRetiring && reclaimComplete && trackerEmpty && !controlPending && !mergePending &&
-    !terminalPending && drainAcks === "hff".U
+    !terminalPending && drainAcks === "hff".U &&
+    (if (persistentReadEnabled) !preflightResultPendingV2.get && persistentRead.get.owners_drained else true.B)
   io.session_retire_ack.valid := retireReady
   io.session_retire_ack.bits.session_id := false.B
   io.session_retire_ack.bits.transaction_identity := retireIdentity
@@ -3579,8 +3692,13 @@ final class RouteAR5ReclaimGenerationUpdateAck(p: RouteASkeletonParameters) exte
   val old_generations = Vec(4, UInt(RouteAAnchorWidths.PageGenerationWidth.W))
 }
 
-final class RouteAR5AvailabilityArrayBoundary(p: RouteASkeletonParameters) extends Module {
-  override def desiredName: String = "route_a_r5_availability_array_boundary"
+final class RouteAR5AvailabilityArrayBoundary(
+  p: RouteASkeletonParameters,
+  persistentReadEnabled: Boolean = false,
+) extends Module {
+  override def desiredName: String =
+    if (persistentReadEnabled) "route_a_r5_availability_array_boundary_persistent_v2"
+    else "route_a_r5_availability_array_boundary"
 
   private val entries = p.r5AllocatorEntries
   private val indexWidth = math.max(1, log2Ceil(entries))
@@ -3596,6 +3714,9 @@ final class RouteAR5AvailabilityArrayBoundary(p: RouteASkeletonParameters) exten
 
   val allocated = RegInit(VecInit(Seq.fill(entries)(false.B)))
   val generations = RegInit(VecInit(Seq.fill(entries)(0.U(RouteAAnchorWidths.PageGenerationWidth.W))))
+  val persistentRead = if (persistentReadEnabled) Some(IO(new PersistentReadAvailabilityPort)) else None
+  val readReady = if (persistentReadEnabled) Some(RegInit(VecInit(Seq.fill(entries)(false.B)))) else None
+  val lookupReadReady = if (persistentReadEnabled) Some(Reg(Bool())) else None
   val lookupRspValid = RegInit(false.B)
   val lookupRsp = Reg(new RouteAR5AvailabilityLookupResponse)
   io.availability_lookup_req.ready := !lookupRspValid
@@ -3607,9 +3728,30 @@ final class RouteAR5AvailabilityArrayBoundary(p: RouteASkeletonParameters) exten
     lookupRsp.page_id := index
     lookupRsp.allocated := allocated(index)
     lookupRsp.generation := generations(index)
+    if (persistentReadEnabled) lookupReadReady.get := readReady.get(index)
     lookupRspValid := true.B
   }
   when(io.availability_lookup_rsp.fire) { lookupRspValid := false.B }
+
+  if (persistentReadEnabled) {
+    val port = persistentRead.get
+    val ackPending = RegInit(false.B)
+    val ack = Reg(new PersistentReadAvailabilityMarkAck)
+    port.lookup_read_ready := lookupReadReady.get
+    port.mark_update.ready := !ackPending && !io.allocation_update.valid && !io.reclaim_generation_update.valid
+    port.mark_ack.valid := ackPending
+    port.mark_ack.bits := ack
+    when(port.mark_ack.fire) { ackPending := false.B }
+    when(port.mark_update.fire) {
+      val index = port.mark_update.bits.page_id(indexWidth - 1, 0)
+      val exactLive = port.mark_update.bits.page_id < entries.U && allocated(index) &&
+        generations(index) === port.mark_update.bits.generation
+      ack.page_ref := port.mark_update.bits
+      ack.accepted := exactLive
+      ackPending := true.B
+      when(exactLive) { readReady.get(index) := true.B }
+    }
+  }
 
   val allocationAckValid = RegInit(false.B)
   val allocationAck = Reg(new RouteAR5AllocationUpdateAck)
@@ -3625,6 +3767,7 @@ final class RouteAR5AvailabilityArrayBoundary(p: RouteASkeletonParameters) exten
   when(io.allocation_update.valid) {
     assert(io.allocation_update.bits < entries.U, "R5 allocation update index must be in range")
     allocated(io.allocation_update.bits) := true.B
+    if (persistentReadEnabled) readReady.get(io.allocation_update.bits) := false.B
     allocationAck.page_id := io.allocation_update.bits
     allocationAck.generation := generations(io.allocation_update.bits)
     allocationAckValid := true.B
@@ -3645,6 +3788,7 @@ final class RouteAR5AvailabilityArrayBoundary(p: RouteASkeletonParameters) exten
       for (line <- 0 until entries / 4; lane <- 0 until 4) {
         val page = line * 4 + lane
         when(io.reclaim_generation_update.bits === line.U) {
+          if (persistentReadEnabled) readReady.get(page) := false.B
           when(allocated(page)) {
             allocated(page) := false.B
             generations(page) := generations(page) + 1.U
@@ -3664,9 +3808,11 @@ final class RouteAPageManager(
   p: RouteASkeletonParameters,
   externalizeDescriptorBacking: Boolean = false,
   bankAllocatedLineSelector: Boolean = false,
+  persistentReadEnabled: Boolean = false,
 ) extends Module {
   override def desiredName: String =
-    if (bankAllocatedLineSelector) "route_a_page_manager_pm1" else "route_a_page_manager"
+    if (persistentReadEnabled) "route_a_page_manager_persistent_v2"
+    else if (bankAllocatedLineSelector) "route_a_page_manager_pm1" else "route_a_page_manager"
 
   val io = IO(new Bundle {
     val mem_init_done = Input(Bool())
@@ -3701,6 +3847,9 @@ final class RouteAPageManager(
   // from acquiring an un-driven external input.
   val descriptorService = if (externalizeDescriptorBacking)
     Some(IO(new R5DescriptorServiceExternalPort(p))) else None
+  val persistentRead = if (persistentReadEnabled) Some(IO(new PersistentReadR5Port(p))) else None
+  if (persistentReadEnabled) require(p.transactionGroupTagWidth <= 8,
+    "Persistent descriptor-v2 reserves exactly eight descriptor bits for the group tag")
 
   private val streamSlots = p.r5StreamSlots
   private val streamIndexWidth = math.max(1, log2Ceil(streamSlots))
@@ -3725,7 +3874,7 @@ final class RouteAPageManager(
   // and publication control here.  The child owns only availability/generation
   // words and exposes them through registered keyed reads and typed update
   // acknowledgements: the parent never consumes a whole-array view.
-  val availabilityStorage = Module(new RouteAR5AvailabilityArrayBoundary(p))
+  val availabilityStorage = Module(new RouteAR5AvailabilityArrayBoundary(p, persistentReadEnabled))
   availabilityStorage.io.availability_lookup_req.valid := false.B
   availabilityStorage.io.availability_lookup_req.bits := 0.U
   availabilityStorage.io.availability_lookup_rsp.ready := true.B
@@ -3817,6 +3966,11 @@ final class RouteAPageManager(
   val lookupFailed = RegInit(false.B)
   val lookupRequest = Reg(new DescriptorLocationRequest(p))
   val lookupResponse = Reg(new R5DescriptorServiceResponse(p))
+  // Optional v2 traffic shares the existing registered availability and
+  // descriptor ports; these wires are constants in every default/v1 instance.
+  val persistentReadBusy = WireDefault(false.B)
+  val persistentReadActivity = WireDefault(false.B)
+  val persistentAvailabilityOutstanding = WireDefault(false.B)
 
   if (externalizeDescriptorBacking) {
     descriptorService.get.request.valid := false.B
@@ -3856,7 +4010,7 @@ final class RouteAPageManager(
   )
   val reclaimActive = reclaimState =/= ReclaimIdle
   val reclaimLocalSafe = !buildActive.asUInt.orR && !allocationRspValid && !visibilityAckPending &&
-    !descriptorGrantPending
+    !descriptorGrantPending && !persistentReadBusy
 
   io.descriptor_location_grant_out.valid := descriptorGrantPending
   io.descriptor_location_grant_out.bits := descriptorGrant
@@ -3877,7 +4031,7 @@ final class RouteAPageManager(
   else false.B
   val lookupStart = if (externalizeDescriptorBacking)
     initialized && !io.drain_collection_enable && !reclaimPermitted && !descriptorGrantPending &&
-      !descriptorServiceBusy && io.descriptor_location_request_in.valid && descriptorRequestMatches
+      !descriptorServiceBusy && !persistentReadActivity && io.descriptor_location_request_in.valid && descriptorRequestMatches
   else false.B
   if (externalizeDescriptorBacking) {
     descriptorService.get.request.valid := lookupStart
@@ -3911,7 +4065,8 @@ final class RouteAPageManager(
     when(lookupFailed && !io.descriptor_location_request_in.valid) { lookupFailed := false.B }
   }
   io.descriptor_location_request_in.ready := initialized && !io.drain_collection_enable && !reclaimPermitted &&
-    !descriptorGrantPending && descriptorRequestMatches && (if (externalizeDescriptorBacking)
+    !descriptorGrantPending && (!persistentReadActivity || (if (externalizeDescriptorBacking)
+      lookupResponsePending else false.B)) && descriptorRequestMatches && (if (externalizeDescriptorBacking)
       lookupResponsePending && descriptorRequest.asUInt === lookupRequest.asUInt else true.B)
   when(io.descriptor_location_request_in.fire) {
     val payloadHandle = Wire(UInt(p.coreMemoryAddressRefWidth.W))
@@ -4130,13 +4285,14 @@ final class RouteAPageManager(
   // not a physical SRAM port/timing choice.
   val scanAllowed = initialized && !io.drain_collection_enable && !reclaimPermitted &&
     !allocationUpdatePending && !allocationRspValid && !reclaimActive &&
-    !scanOutstanding && !scanComplete && !io.reclaim_permit_in.valid
+    !scanOutstanding && !scanComplete && !io.reclaim_permit_in.valid && !persistentReadActivity
   availabilityStorage.io.availability_lookup_req.valid := scanAllowed
   availabilityStorage.io.availability_lookup_req.bits := scanIndex
   when(availabilityStorage.io.availability_lookup_req.fire) {
     scanOutstanding := true.B
   }
-  when(availabilityStorage.io.availability_lookup_rsp.fire && !io.reclaim_permit_in.fire) {
+  when(availabilityStorage.io.availability_lookup_rsp.fire && !io.reclaim_permit_in.fire &&
+    !persistentAvailabilityOutstanding) {
     val lookup = availabilityStorage.io.availability_lookup_rsp.bits
     assert(scanOutstanding, "R5 availability lookup response requires a pending scan request")
     assert(lookup.page_id === scanIndex,
@@ -4155,7 +4311,7 @@ final class RouteAPageManager(
   }
   io.page_allocation_req_in.ready := initialized && !io.drain_collection_enable && !reclaimPermitted &&
     !allocationRspValid && !allocationUpdatePending && allocValidRecords && scanComplete && freeHintValid &&
-    allocStreamWide < streamSlots.U && !buildActive(allocStream)
+    allocStreamWide < streamSlots.U && !buildActive(allocStream) && !persistentReadActivity
   when(io.page_allocation_req_in.fire) {
     availabilityStorage.io.allocation_update.valid := true.B
     availabilityStorage.io.allocation_update.bits := freeHintIndex
@@ -4196,7 +4352,8 @@ final class RouteAPageManager(
     // guarded by the existing R3 visibility acknowledgement.
     if (!externalizeDescriptorBacking) {
       descriptorEntryImage.get(ackIndex) := Cat(
-        0.U(76.W), ack.generation, 0.U(8.W), Fill(18, 1.U(1.W)),
+        (if (persistentReadEnabled) Cat(0.U(68.W), pendingAllocation.transaction_group_tag.pad(8)) else 0.U(76.W)),
+        ack.generation, 0.U(8.W), Fill(18, 1.U(1.W)),
         pendingAllocation.valid_records, pendingAllocation.kv_head, pendingAllocation.layer, 1.U(2.W),
       )
       descriptorReadable.get(ackIndex) := false.B
@@ -4236,7 +4393,7 @@ final class RouteAPageManager(
     buildActive(slot) && buildPayloadDurable(slot) && !buildFault(slot) &&
       (!buildNewDurable(slot) || (buildNeedsTail(slot) && !buildTailDurable(slot)))
   })
-  when(appendState === AppendIdle && appendEligible.asUInt.orR) {
+  when(appendState === AppendIdle && appendEligible.asUInt.orR && !persistentReadActivity) {
     appendSlot := PriorityEncoder(appendEligible)
     appendKind := Mux(!buildNewDurable(PriorityEncoder(appendEligible)),
       RouteADescriptorOperationKind.NewPage.U, RouteADescriptorOperationKind.TailLink.U)
@@ -4257,7 +4414,8 @@ final class RouteAPageManager(
   else descriptorEntryImage.get(allocatorIndex(appendSubjectPage))
   val appendDescriptorImage = Mux(
     appendKind === RouteADescriptorOperationKind.NewPage.U,
-    Cat(0.U(76.W), buildGeneration(appendSlot), 0.U(8.W), Fill(18, 1.U(1.W)),
+    Cat((if (persistentReadEnabled) Cat(0.U(68.W), buildTag(appendSlot).pad(8)) else 0.U(76.W)),
+      buildGeneration(appendSlot), 0.U(8.W), Fill(18, 1.U(1.W)),
       buildValidRecords(appendSlot), buildHead(appendSlot), buildLayer(appendSlot), 1.U(2.W)),
     Cat(
       appendOldImage(127, 44), buildGeneration(appendSlot),
@@ -4469,10 +4627,247 @@ final class RouteAPageManager(
   when(io.metadata_publish_visibility_in.fire) {
     assert(visibilityAnyMatch)
   }
+  if (persistentReadEnabled) {
+    // A single registered operation owns both reused ports. The v2 boundary
+    // accepts only R6-authorized existing-attention tickets from the top; it
+    // intentionally continues servicing those tickets during Retiring.
+    val port = persistentRead.get
+    val child = availabilityStorage.persistentRead.get
+    val Idle = 0.U(4.W)
+    val AvailabilityRequest = 1.U(4.W)
+    val AvailabilityResponse = 2.U(4.W)
+    val DescriptorReadRequest = 3.U(4.W)
+    val DescriptorReadResponse = 4.U(4.W)
+    val Evaluate = 5.U(4.W)
+    val MarkRequest = 6.U(4.W)
+    val MarkResponse = 7.U(4.W)
+    val LocationRequest = 8.U(4.W)
+    val LocationResponse = 9.U(4.W)
+    val Respond = 10.U(4.W)
+    val state = RegInit(Idle)
+    val isMark = RegInit(false.B)
+    val receipt = Reg(new PersistentReadReceipt(p))
+    val query = Reg(new PersistentReadQuery)
+    val allocated = Reg(Bool())
+    val generation = Reg(UInt(RouteAAnchorWidths.PageGenerationWidth.W))
+    val ready = Reg(Bool())
+    val image = Reg(UInt(128.W))
+    val ack = Reg(new PersistentReadMarkAck(p))
+    val result = Reg(new PersistentReadResult(p))
+    val target = Wire(new PageRef)
+    target := Mux(isMark, receipt.page_ref, query.page_ref)
+    val targetIndex = allocatorIndex(target.page_id)
+    val identity = Wire(new TransactionIdentity)
+    identity := Mux(isMark, 0.U.asTypeOf(new TransactionIdentity), query.transaction_identity)
+    val active = state =/= Idle
+    val offeredOrActive = active || port.mark_ready_in.valid || port.query_in.valid
+    persistentReadBusy := offeredOrActive
+    persistentReadActivity := offeredOrActive
+    persistentAvailabilityOutstanding := state === AvailabilityResponse
+    port.busy := offeredOrActive
+
+    val canAccept = initialized && !reclaimPermitted &&
+      state === Idle && appendState === AppendIdle && reclaimState === ReclaimIdle &&
+      !allocationUpdatePending && !allocationRspValid && !descriptorGrantPending &&
+      !lookupRequestOutstanding && !lookupResponsePending && !lookupFailed
+    port.mark_ready_in.ready := canAccept
+    port.query_in.ready := canAccept && !port.mark_ready_in.valid
+    port.mark_ready_ack_out.valid := state === Respond && isMark
+    port.mark_ready_ack_out.bits := ack
+    port.query_result_out.valid := state === Respond && !isMark
+    port.query_result_out.bits := result
+    child.mark_update.valid := state === MarkRequest
+    child.mark_update.bits := target
+    child.mark_ack.ready := state === MarkResponse
+
+    when(port.mark_ready_in.fire) {
+      isMark := true.B
+      receipt := port.mark_ready_in.bits
+      ack.receipt := port.mark_ready_in.bits
+      ack.status := PersistentReadStatus.Invalid.U
+      image := 0.U
+      allocated := false.B
+      generation := 0.U
+      ready := false.B
+      state := Mux(port.mark_ready_in.bits.page_ref.page_id < p.r5AllocatorEntries.U,
+        AvailabilityRequest, Respond)
+    }
+    when(port.query_in.fire) {
+      isMark := false.B
+      query := port.query_in.bits
+      result := 0.U.asTypeOf(new PersistentReadResult(p))
+      result.grant.transaction_identity := port.query_in.bits.transaction_identity
+      result.grant.page_ref := port.query_in.bits.page_ref
+      result.layer := port.query_in.bits.layer
+      result.kv_head := port.query_in.bits.kv_head
+      result.status := PersistentReadStatus.Invalid.U
+      image := 0.U
+      allocated := false.B
+      generation := 0.U
+      ready := false.B
+      state := Mux(port.query_in.bits.page_ref.page_id < p.r5AllocatorEntries.U,
+        AvailabilityRequest, Respond)
+    }
+    when(state === AvailabilityRequest && !scanOutstanding) {
+      availabilityStorage.io.availability_lookup_req.valid := true.B
+      availabilityStorage.io.availability_lookup_req.bits := targetIndex
+      when(availabilityStorage.io.availability_lookup_req.fire) { state := AvailabilityResponse }
+    }
+    when(state === AvailabilityResponse && availabilityStorage.io.availability_lookup_rsp.fire) {
+      val response = availabilityStorage.io.availability_lookup_rsp.bits
+      assert(response.page_id === target.page_id,
+        "Persistent R5 lookup must preserve its exact target PageRef")
+      allocated := response.allocated
+      generation := response.generation
+      ready := child.lookup_read_ready
+      when(!response.allocated || response.generation =/= target.generation) {
+        state := Respond
+      }.otherwise {
+        if (externalizeDescriptorBacking) state := DescriptorReadRequest
+        else {
+          image := descriptorEntryImage.get(targetIndex)
+          state := Evaluate
+        }
+      }
+    }
+
+    if (externalizeDescriptorBacking) {
+      val responseWords = Wire(Vec(4, UInt(128.W)))
+      for (lane <- 0 until 4) {
+        responseWords(lane) := descriptorService.get.response.bits.line_data(128 * (lane + 1) - 1, 128 * lane)
+      }
+      when(state === DescriptorReadRequest) {
+        descriptorService.get.request.valid := true.B
+        descriptorService.get.request.bits.operation := R5DescriptorServiceOperation.ReadLine.U
+        descriptorService.get.request.bits.transaction_identity := identity
+        descriptorService.get.request.bits.descriptor_line := target.page_id >> 2
+        descriptorService.get.request.bits.page_ref := target
+        descriptorService.get.request.bits.valid_records := Mux(isMark, receipt.valid_records, 0.U)
+        descriptorService.get.request.bits.line_data := 0.U
+        when(descriptorService.get.request.fire) { state := DescriptorReadResponse }
+      }
+      when(state === DescriptorReadResponse) {
+        descriptorService.get.response.ready := true.B
+        when(descriptorService.get.response.fire) {
+          val response = descriptorService.get.response.bits
+          val matches = response.operation === R5DescriptorServiceOperation.ReadLine.U &&
+            response.transaction_identity.asUInt === identity.asUInt &&
+            response.descriptor_line === (target.page_id >> 2)
+          when(matches && response.status === p.coreMemoryOkStatusCode.U && response.found) {
+            image := responseWords(target.page_id(1, 0))
+            state := Evaluate
+          }.otherwise {
+            ack.status := PersistentReadStatus.Fault.U
+            result.status := PersistentReadStatus.Fault.U
+            state := Respond
+          }
+        }
+      }
+    }
+
+    val canonicalLayer = image(7, 2)
+    val canonicalHead = image(10, 8)
+    val canonicalCount = image(17, 11)
+    val canonicalTag = image(59, 52)
+    val canonicalValid = allocated && generation === target.generation &&
+      image(51, 44) === target.generation && image(1, 0) =/= 0.U &&
+      image(127, 60) === 0.U && canonicalCount =/= 0.U && canonicalCount <= 64.U &&
+      canonicalLayer < 36.U && canonicalHead < 8.U
+    when(state === Evaluate) {
+      when(isMark) {
+        val receiptMatches = canonicalValid && canonicalLayer === receipt.p3_layer &&
+          canonicalHead === receipt.kv_head && canonicalCount === receipt.valid_records &&
+          canonicalTag === receipt.transaction_group_tag
+        when(receiptMatches) { state := MarkRequest }
+          .otherwise { ack.status := PersistentReadStatus.Invalid.U; state := Respond }
+      }.otherwise {
+        val ownerMatches = canonicalValid && canonicalLayer === query.layer && canonicalHead === query.kv_head
+        result.layer := canonicalLayer
+        result.kv_head := canonicalHead
+        result.transaction_group_tag := canonicalTag
+        result.grant.valid_records := canonicalCount
+        result.grant.sidecar_records := canonicalCount
+        when(!ownerMatches) {
+          result.status := PersistentReadStatus.Invalid.U
+          state := Respond
+        }.elsewhen(!ready) {
+          // Only a real exact receipt currently offered by the collector is
+          // evidence of installation in flight. A random unpublished hint is
+          // invalid, never an unbounded NOT_READY wait.
+          val installing = port.mark_ready_in.valid &&
+            port.mark_ready_in.bits.page_ref.asUInt === query.page_ref.asUInt &&
+            port.mark_ready_in.bits.p3_layer === canonicalLayer &&
+            port.mark_ready_in.bits.kv_head === canonicalHead &&
+            port.mark_ready_in.bits.valid_records === canonicalCount &&
+            port.mark_ready_in.bits.transaction_group_tag === canonicalTag
+          result.status := Mux(installing, PersistentReadStatus.NotReady.U, PersistentReadStatus.Invalid.U)
+          state := Respond
+        }.otherwise {
+          if (externalizeDescriptorBacking) state := LocationRequest
+          else {
+            when(descriptorReadable.get(targetIndex)) {
+              result.grant.payload_handle_or_address := target.page_id * 33280.U
+              result.grant.sidecar_handle_or_address := target.page_id * 33280.U + 32768.U
+              result.grant.live_reference_held := true.B
+              result.status := PersistentReadStatus.OK.U
+            }.otherwise { result.status := PersistentReadStatus.Invalid.U }
+            state := Respond
+          }
+        }
+      }
+    }
+    when(child.mark_update.fire) { state := MarkResponse }
+    when(child.mark_ack.fire) {
+      assert(child.mark_ack.bits.page_ref.asUInt === receipt.page_ref.asUInt,
+        "Persistent read qualification ACK must name the installed exact PageRef")
+      ack.status := Mux(child.mark_ack.bits.accepted, PersistentReadStatus.OK.U, PersistentReadStatus.Invalid.U)
+      state := Respond
+    }
+    if (externalizeDescriptorBacking) {
+      when(state === LocationRequest) {
+        descriptorService.get.request.valid := true.B
+        descriptorService.get.request.bits.operation := R5DescriptorServiceOperation.Lookup.U
+        descriptorService.get.request.bits.transaction_identity := query.transaction_identity
+        descriptorService.get.request.bits.descriptor_line := query.page_ref.page_id >> 2
+        descriptorService.get.request.bits.page_ref := query.page_ref
+        descriptorService.get.request.bits.valid_records := canonicalCount
+        descriptorService.get.request.bits.line_data := 0.U
+        when(descriptorService.get.request.fire) { state := LocationResponse }
+      }
+      when(state === LocationResponse) {
+        descriptorService.get.response.ready := true.B
+        when(descriptorService.get.response.fire) {
+          val response = descriptorService.get.response.bits
+          val matches = response.operation === R5DescriptorServiceOperation.Lookup.U &&
+            response.transaction_identity.asUInt === query.transaction_identity.asUInt &&
+            response.descriptor_line === (query.page_ref.page_id >> 2) &&
+            response.page_ref.asUInt === query.page_ref.asUInt && response.valid_records === canonicalCount
+          when(matches && response.status === p.coreMemoryOkStatusCode.U && response.found) {
+            result.grant.payload_handle_or_address := response.payload_handle_or_address
+            result.grant.sidecar_handle_or_address := response.sidecar_handle_or_address
+            result.grant.live_reference_held := true.B
+            result.status := PersistentReadStatus.OK.U
+          }.otherwise { result.status := PersistentReadStatus.Fault.U }
+          state := Respond
+        }
+      }
+    }
+    when(port.mark_ready_ack_out.fire || port.query_result_out.fire) { state := Idle }
+    val heldMark = RegEnable(port.mark_ready_ack_out.bits,
+      port.mark_ready_ack_out.valid && !port.mark_ready_ack_out.ready)
+    val heldResult = RegEnable(port.query_result_out.bits,
+      port.query_result_out.valid && !port.query_result_out.ready)
+    when(RegNext(port.mark_ready_ack_out.valid && !port.mark_ready_ack_out.ready, false.B)) {
+      assert(port.mark_ready_ack_out.valid && port.mark_ready_ack_out.bits.asUInt === heldMark.asUInt)
+    }
+    when(RegNext(port.query_result_out.valid && !port.query_result_out.ready, false.B)) {
+      assert(port.query_result_out.valid && port.query_result_out.bits.asUInt === heldResult.asUInt)
+    }
+  }
   val allocatorEmpty = !allocatedLine.asUInt.orR
   val buildsEmpty = !buildActive.asUInt.orR
   val locallyDrained = allocatorEmpty && buildsEmpty && !allocationRspValid && !visibilityAckPending && !descriptorGrantPending &&
-    !allocationUpdatePending && !reclaimActive && (!reclaimPermitted || io.reclaim_complete)
+    !allocationUpdatePending && !reclaimActive && !persistentReadBusy && (!reclaimPermitted || io.reclaim_complete)
   val initStatusPending = initialized && !initStatusReported
   io.component_status_out.valid := initStatusPending ||
     (initialized && initStatusReported && io.drain_collection_enable && locallyDrained)

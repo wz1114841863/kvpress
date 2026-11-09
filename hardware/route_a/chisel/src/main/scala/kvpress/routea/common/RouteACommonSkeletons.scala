@@ -289,7 +289,10 @@ final class RouteAS2PayloadSidecarArrayBoundary(p: RouteASkeletonParameters) ext
   * functional boundary; S2 control does not select a macro, port count,
   * latency, controller, or PPA.
   */
-final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module {
+final class RouteAS2GqaSourceWrapper(
+  p: RouteASkeletonParameters,
+  persistentReadEnabled: Boolean = false,
+) extends Module {
   override def desiredName: String = "route_a_s2_gqa_source_wrapper"
 
   val io = IO(new Bundle {
@@ -324,6 +327,12 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     val s2_observe_instance = Output(new SourceInstance(p))
     val component_status_out = RouteAChannels.component_status(p)
   })
+
+  // Conditional IO keeps every v1 elaboration's public port set unchanged.
+  val persistentRead = if (persistentReadEnabled) Some(IO(new PersistentReadS2Port(p))) else None
+  val v2ResultPending = if (persistentReadEnabled) Some(RegInit(false.B)) else None
+  val v2Offer = persistentRead.map(_.v2_reservation_request_in.valid).getOrElse(false.B)
+  val v2ResponseHeld = v2ResultPending.getOrElse(false.B)
 
   private val slots = 2
   private val StateEmpty = 0.U(3.W)
@@ -424,8 +433,10 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   // reserve the same S2 state.  They never arbitrate by priority: simultaneous
   // offers are rejected so composition must name exactly one producer.
   io.service_req_in.ready := initialized && !io.s2_fill_lease_request_in.valid && !leasePending &&
+    !v2Offer && !v2ResponseHeld &&
     slotState(serviceSlot) === StateEmpty
-  io.s2_fill_lease_request_in.ready := initialized && !io.service_req_in.valid && !leasePending && leaseRequestLegal
+  io.s2_fill_lease_request_in.ready := initialized && !io.service_req_in.valid && !leasePending &&
+    !v2Offer && !v2ResponseHeld && leaseRequestLegal
   when(io.service_req_in.fire) {
     slotState(serviceSlot) := StateFilling
     slotGeneration(serviceSlot) := slotGeneration(serviceSlot) + 1.U
@@ -458,6 +469,58 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
     leaseGrant.s2_slot := leaseSlot
     leaseGrant.source_generation := nextGeneration
     leaseGrant.requires_sidecar := true.B
+  }
+
+  if (persistentReadEnabled) {
+    val port = persistentRead.get
+    val pending = v2ResultPending.get
+    val result = Reg(new S2ReservationResultV2(p))
+    val request = port.v2_reservation_request_in.bits
+    val coordinateLegal = request.selected_instance.instance_coordinate < slots.U
+    val slot = request.selected_instance.instance_coordinate(RouteAAnchorWidths.S2SlotWidth - 1, 0)
+    val kindLegal = request.selected_instance.source_kind === RouteASourceKind.Packed.U
+    val slotBusy = slotState(slot) =/= StateEmpty
+    val nextGeneration = (slotGeneration(slot) + 1.U)(p.sourceGenerationWidth - 1, 0)
+    val generationLegal = nextGeneration === request.selected_instance.generation
+    val status = Mux(!coordinateLegal || !kindLegal || !generationLegal, S2ReservationStatusV2.Invalid.U,
+      Mux(slotBusy, S2ReservationStatusV2.Busy.U, S2ReservationStatusV2.Granted.U))
+
+    // A bad request is consumed and answered. It must never look like an
+    // indefinitely busy slot. The three reservation producers remain exclusive.
+    port.v2_reservation_request_in.ready := initialized && !pending && !leasePending &&
+      !io.service_req_in.valid && !io.s2_fill_lease_request_in.valid
+    port.v2_reservation_result_out.valid := pending
+    port.v2_reservation_result_out.bits := result
+    when(port.v2_reservation_request_in.fire) {
+      result := 0.U.asTypeOf(result)
+      result.status := status
+      result.lease.transaction_identity := request.transaction_identity
+      result.lease.page_ref := request.page_ref
+      result.lease.s2_slot := slot
+      result.lease.source_generation := nextGeneration
+      result.lease.requires_sidecar := true.B
+      pending := true.B
+      when(status === S2ReservationStatusV2.Granted.U) {
+        slotState(slot) := StateFilling
+        slotGeneration(slot) := nextGeneration
+        slotIdentity(slot) := request.transaction_identity
+        slotPageRef(slot) := request.page_ref
+        fillOpened(slot) := false.B
+        nextFragment(slot) := 0.U
+        payloadNext(slot) := 0.U
+        sidecarNext(slot) := 0.U
+        requiresSidecar(slot) := false.B
+        sidecarComplete(slot) := false.B
+        consumerMask(slot) := 0.U
+      }
+    }
+    when(port.v2_reservation_result_out.fire) { pending := false.B }
+    val stalledResult = port.v2_reservation_result_out.valid && !port.v2_reservation_result_out.ready
+    val heldResult = RegEnable(port.v2_reservation_result_out.bits, stalledResult)
+    when(RegNext(stalledResult, false.B)) {
+      assert(port.v2_reservation_result_out.valid)
+      assert(port.v2_reservation_result_out.bits.asUInt === heldResult.asUInt)
+    }
   }
 
   val fillOpen = io.s2_fill_open_in.bits
@@ -677,7 +740,8 @@ final class RouteAS2GqaSourceWrapper(p: RouteASkeletonParameters) extends Module
   io.s2_observe_instance.source_kind := RouteASourceKind.Packed.U
   io.s2_observe_instance.instance_coordinate := io.s2_observe_slot
   io.s2_observe_instance.generation := slotGeneration(io.s2_observe_slot)
-  val locallyDrained = VecInit((0 until slots).map(slot => slotState(slot) === StateEmpty)).asUInt.andR && !leasePending
+  val locallyDrained = VecInit((0 until slots).map(slot => slotState(slot) === StateEmpty)).asUInt.andR &&
+    !leasePending && !v2ResponseHeld
   io.component_status_out.valid := initialized && io.drain_collection_enable && locallyDrained
   io.component_status_out.bits.acknowledgement_name := p.r6.s2GqaDrainedStatusCode.U
   io.component_status_out.bits.asserted := true.B

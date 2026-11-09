@@ -7,6 +7,16 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Persistent page read successor preparation (2026-11-09)
+
+[`route_a_persistent_page_read_preparation_20261109.md`](route_a_persistent_page_read_preparation_20261109.md)
+and JSON describe the default-off v2 implementation and 14-test functional
+qualification plan. Source/protected-region checks, local compile/lowering
+and short acceptance-script tests support preparation only. Persistent R5
+facts, typed preflight failure, S2 reservation and retire drain are new;
+R3/R2 semantics, v1 and single-group admission remain preserved. Native
+repeat/error/retire validation, full scope, costs and timing are not inferred.
+
 ## Stage A minimal continuation proposal (2026-11-09)
 
 [`route_a_continuation_minimal_proposal_20261109.md`](route_a_continuation_minimal_proposal_20261109.md)

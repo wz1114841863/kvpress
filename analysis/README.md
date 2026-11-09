@@ -7,6 +7,16 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Persistent page read implementation candidate (2026-11-09)
+
+The [preparation record](route_a_persistent_page_read_preparation_20261109.md)
+and [source/check ledger](route_a_persistent_page_read_preparation_20261109.json)
+document explicit default-off v2 R5 read qualification, R6 preflight/failure,
+S2 reservation and retire drain. Protected R3/Admission/M2/R2 source regions
+match the baseline. Local compile/lowering and short checker gates do not
+replace the planned 14-test remote native acceptance. No multi-group journal,
+DC/STA, new mapped area or complete continuous-decode/numeric claim is added.
+
 ## Stage A minimal functional successor proposal (2026-11-09)
 
 The [minimal proposal](route_a_continuation_minimal_proposal_20261109.md) and

@@ -9,6 +9,9 @@ hold pass is not timing-closed. Complete costs and PPA/net benefit remain open.
 Stage A current-RTL probes now complete with two qualified blocker diagnoses;
 same-page repeated service and multi-group admission remain unsupported by
 the observed current path, rather than newly closed continuous functionality.
+An explicit default-off persistent-read v2 implementation is now prepared;
+its native repeated-read/error/retire acceptance is still pending, separately
+from the preserved default-v1 blocker evidence.
 The minimal successor proposal is now documented and finite-model checked;
 production RTL and normative contracts remain unchanged. Persistent read
 qualification is assigned to R5, while group reuse requires exact journal
@@ -17,6 +20,22 @@ history preservation. Physical history service, cost and 2ns closure remain open
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
+
+## Persistent page read v2 implementation prepared (2026-11-09)
+
+Read [`route_a_persistent_page_read_preparation_20261109.md`](route_a_persistent_page_read_preparation_20261109.md)
+and JSON before accepting the next functional successor. Explicit default-off
+`persistentReadEnabled` adds R5 persistent qualification/query, R6-owned
+preflight/reject/unplanned state, S2 typed reservation and an independent R3
+receipt collector. R3/Admission/M2 and R2 protected regions are byte-identical
+to `822c4c9`. Single-group journal/Done behavior remains; no archive or DC/STA.
+
+Local Scala/Chisel/firtool and short checker gates precede a planned 14-test
+independent remote native run. Preparation is not repeated-read acceptance.
+Retire stops new frontend work first, then drains existing accepted service
+before closing transport ingress. Scope remains the small functional fixture,
+external position/partial/R4 reference and no numeric/full32K/mixed-top closure.
+Consult a later launch/result record for actual run status, hashes and exits.
 
 ## Stage A minimal continuation proposal (2026-11-09)
 
