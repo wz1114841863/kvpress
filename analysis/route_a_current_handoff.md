@@ -6,15 +6,44 @@ and accepted control-mapping results remain preserved. RD1+WCG1 r2 completed
 with tool/input/artifact closure and an 11.741151% primary top-area reduction
 versus RD1 (129.517x Full-KV control). Global setup regresses and the matched
 hold pass is not timing-closed. Complete costs and PPA/net benefit remain open.
+Stage A current-RTL probes now complete with two qualified blocker diagnoses;
+same-page repeated service and multi-group admission remain unsupported by
+the observed current path, rather than newly closed continuous functionality.
 
 This is the compact, living entry point for a new discussion or implementation
 turn. It summarizes current status; it does not replace frozen evidence,
 historical review records, or the normative architecture contract.
 
-## Stage A current-RTL probes launched (2026-11-09)
+## Stage A current-RTL probe result accepted (2026-11-09)
+
+Read [`route_a_stage_a_probe_result_20261109.md`](route_a_stage_a_probe_result_20261109.md)
+and JSON. Run `stage_a_continuation_probe_20261109_r1` completed with all four
+exits 0, XML 2/2, exact native markers and fresh input/artifact hashes. The
+read-only checker reproduces saved results; all 140 source files match the
+freeze and checkout, including 24 unchanged main files, and two real native
+simulator builds/execution scripts remain. Pane is idle, no live run process.
+
+Each case first completes an actual packed write/read, sidecar, four consumer
+commits and one successful terminal. READ_REUSE then accepts the second
+attention/plan but holds in binder: no page-ready/member facts, no descriptor
+or lease request, no second read. R6 remains Active, the page is readable and
+S2 Empty. ADMISSION_REUSE holds legal context/authority/binding at ingress
+StateDone with no join; metadata credit occupancy is already zero. These
+states are asserted for 128 clocks, not inferred from timeout alone.
+
+Two diagnostic tests PASS; two continuous capabilities remain BLOCKED. The
+journal's reset-only namespace is a subsequent static obligation, not a
+reached assertion failure. Final retire/reclaim is not reached in these new
+probes. Small fixture, gate flag off, external position backing and numeric
+correspondence absent remain explicit. No RTL repair, rerun, DC/STA, new
+area/timing or net-benefit claim. The next successor must separately address
+persistent read activation and cross-group state/journal lifetime; no fix is
+implemented by this inspection. Earlier launch/preparation text is historical.
+
+## Stage A current-RTL probes launch snapshot (2026-11-09)
 
 Read [`route_a_stage_a_probe_launch_20261109.md`](route_a_stage_a_probe_launch_20261109.md)
-and JSON. Frozen source `0aa5472` is running in independent
+and JSON. Frozen source `0aa5472` was launched in independent
 **`kvzap-stage-a-probes-r1:probes`**, run ID
 `stage_a_continuation_probe_20261109_r1`, under the existing remote base.
 Archive SHA is `e595ed19730dd393693589d7c884ba90eb1cd7febd1c03fd1d6fbb844bad8301`;

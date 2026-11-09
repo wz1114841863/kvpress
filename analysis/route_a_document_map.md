@@ -7,6 +7,18 @@ from the stage-local records that establish particular results. It is a
 navigation aid, not a replacement for a frozen manifest, experiment report, or
 interface contract. No record is moved, deleted, or relabelled by this map.
 
+## Stage A current-RTL probe result (2026-11-09)
+
+[`route_a_stage_a_probe_result_20261109.md`](route_a_stage_a_probe_result_20261109.md)
+and JSON accept complete tool/input/artifact execution and 2/2 diagnostic
+tests. Actual current-RTL blockers are one-shot read activation facts and
+admission ingress StateDone; both follow successful first-use prerequisites
+and 128-clock state checks. The page/session survive, S2 is free and metadata
+credit has returned. Journal reuse remains a subsequent static obligation.
+This closes blocker diagnosis, not continuous functionality/numerics, and
+adds no RTL, timing, area or full-workload result. Launch entries below are
+retained historical snapshots.
+
 ## Stage A current-RTL probes launched (2026-11-09)
 
 [`route_a_stage_a_probe_launch_20261109.md`](route_a_stage_a_probe_launch_20261109.md)

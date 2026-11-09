@@ -7,6 +7,17 @@ The compact classification and new-conversation read set are in
 [`route_a_document_map.md`](route_a_document_map.md). It reduces routine
 context without deleting, moving, or rewriting frozen evidence.
 
+## Stage A current-RTL probe result (2026-11-09)
+
+The [audited result](route_a_stage_a_probe_result_20261109.md) and
+[native/source evidence](route_a_stage_a_probe_result_20261109.json) confirm
+normal completion, four exit-0 records and 2/2 diagnostic tests. Repeated
+read stops before descriptor/lease because activation facts were consumed;
+the second admission stops at ingress Done. These are actual bounded
+blocker reproductions after successful first service, not capability PASS.
+Input/source/native artifacts are verified. No repair, rerun or DC/STA;
+continuous execution, numerics, cost and timing remain open.
+
 ## Stage A current-RTL probes launched (2026-11-09)
 
 The [remote launch](route_a_stage_a_probe_launch_20261109.md) and

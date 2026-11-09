@@ -1,0 +1,1013 @@
+{
+  "audited_utc": "2026-11-09T04:28:50.118782+00:00",
+  "run_id": "stage_a_continuation_probe_20261109_r1",
+  "remote_root": "/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/stage_a_continuation_probe_20261109_r1",
+  "read_only": true,
+  "python_optimization": 0,
+  "exits": {
+    "compile_exit_status": 0,
+    "test_exit_status": 0,
+    "exit_status": 0,
+    "tmux_wrapper": 0
+  },
+  "markers": {
+    "runner.log": {
+      "KVZAP_STAGE_A_PROBES_INPUT_PASS files=140": 1,
+      "KVZAP_STAGE_A_PROBES_COMPILE_PASS": 1,
+      "KVZAP_STAGE_A_PROBES_SIMULATION_BEGIN": 1,
+      "KVZAP_STAGE_A_PROBES_POSTCHECK_PASS diagnostic_tests=2 continuous_functional_closure=NOT_ESTABLISHED": 1,
+      "KVZAP_STAGE_A_PROBES_DIAGNOSTIC_RUN_PASS_NOT_CONTINUOUS_FUNCTIONAL_PASS": 1,
+      "KVZAP_STAGE_A_PROBES_OUTER_EXIT=0": 1
+    },
+    "outer.log": {
+      "KVZAP_STAGE_A_PROBES_INPUT_PASS files=140": 1,
+      "KVZAP_STAGE_A_PROBES_COMPILE_PASS": 1,
+      "KVZAP_STAGE_A_PROBES_SIMULATION_BEGIN": 1,
+      "KVZAP_STAGE_A_PROBES_POSTCHECK_PASS diagnostic_tests=2 continuous_functional_closure=NOT_ESTABLISHED": 1,
+      "KVZAP_STAGE_A_PROBES_DIAGNOSTIC_RUN_PASS_NOT_CONTINUOUS_FUNCTIONAL_PASS": 1,
+      "KVZAP_STAGE_A_PROBES_OUTER_EXIT=0": 1,
+      "KVZAP_STAGE_A_TMUX_WRAPPER_EXIT=0": 1
+    }
+  },
+  "source_files_checked": 140,
+  "source_manifest_equal_launch": true,
+  "fresh_source_hashes": [
+    {
+      "path": "hardware/route_a/chisel/.gitignore",
+      "sha256": "0b3e1c9d4294271f47a401829db6c9fefc8388939226be79adca500b5295d43a",
+      "bytes": 122
+    },
+    {
+      "path": "hardware/route_a/chisel/README.md",
+      "sha256": "ab44f23e32d91b90159f4ea8523ff428e96cfe343573b9329473c37c4d4e970a",
+      "bytes": 27026
+    },
+    {
+      "path": "hardware/route_a/chisel/build.sbt",
+      "sha256": "db34502c68dee1c9b0ecedddf5789f0ec3924b67c5b40d9a275b3a49121a3b2f",
+      "bytes": 602
+    },
+    {
+      "path": "hardware/route_a/chisel/docs/.gitkeep",
+      "sha256": "9493717b960e0cba33d57187d0a1a047c074a15a22722ad10a9bc745ccba1244",
+      "bytes": 91
+    },
+    {
+      "path": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_r5_descriptor_externalized_v1/full_kv_control_projection.f",
+      "sha256": "fc47b50b33cb69f6e198413db7d35ca30fa42605254d600f388d4863a77fe960",
+      "bytes": 30
+    },
+    {
+      "path": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_r5_descriptor_externalized_v1/full_kv_control_projection.sv",
+      "sha256": "5e4d9918030e3d517d9913ff7c56e2325bd3c1f640e1a844d88a8a4473792256",
+      "bytes": 822385
+    },
+    {
+      "path": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_r5_descriptor_externalized_v1/paired_control_projection_r5_descriptor_externalized_v1.tar.gz",
+      "sha256": "9d58f0df438555dba433390b9db2c4f5a1e85fee67e431d142b60d026b810093",
+      "bytes": 28545991
+    },
+    {
+      "path": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_r5_descriptor_externalized_v1/paired_control_projection_r5_descriptor_externalized_v1.tar.gz.sha256",
+      "sha256": "933aa235411d47270385d93f824fbd20c362dd157ae50ffa957ef0a6e7ccfe85",
+      "bytes": 129
+    },
+    {
+      "path": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_r5_descriptor_externalized_v1/paired_control_projection_r5_descriptor_successor_manifest.json",
+      "sha256": "279e299d46a25916af4b42e1f064365ed4b20f3a5b293ef3a8f82a342b21bf3e",
+      "bytes": 1659
+    },
+    {
+      "path": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_r5_descriptor_externalized_v1/r5_descriptor_successor_check.json",
+      "sha256": "60894eb502a746788c64d5dc21ca5a38e9009407dc94fd3e4e5fae1fd68180fc",
+      "bytes": 878
+    },
+    {
+      "path": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_r5_descriptor_externalized_v1/route_a_control_projection_successor.f",
+      "sha256": "5201ba412545e8f0017bd457a899e8caa9d06e9c27425e792eade5420471938d",
+      "bytes": 3374
+    },
+    {
+      "path": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_v1/paired_control_projection_hdl_archive.sha256",
+      "sha256": "595cce31654765340a0348d6070ee4ad3f0774e8014da5017fa7553d950cb0d6",
+      "bytes": 141
+    },
+    {
+      "path": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_v1/paired_control_projection_hdl_check.json",
+      "sha256": "c6d518068a2e5f249affafed3b1fb55bae184bf62163fc9797b34692c92a60c7",
+      "bytes": 28006
+    },
+    {
+      "path": "hardware/route_a/chisel/generated/qwen3_8b_32k_s1_control_projection_v1/paired_control_projection_hdl_qwen3_8b_32k_s1_control_projection_v1.tar.gz",
+      "sha256": "335942f0f01c24124b1fda56c6ebbd8b3425afdb2c31220cac04ff871aa94310",
+      "bytes": 43808718
+    },
+    {
+      "path": "hardware/route_a/chisel/platform/README.md",
+      "sha256": "2d4907f7a9d968d2bb008ae1e320ffbf61a494dd92b5e00a3f26ea7f8cb875cf",
+      "bytes": 1585
+    },
+    {
+      "path": "hardware/route_a/chisel/platform/chisel-sbt",
+      "sha256": "4cc2b26d59d3f7318d94d4cef4ce1a15c9f8073e6a1707ce358ccc580ca4dcba",
+      "bytes": 1434
+    },
+    {
+      "path": "hardware/route_a/chisel/project/build.properties",
+      "sha256": "c78258dca59e72a7d2ff00a59398affb462c886c1e4f8242865e716e66d3f747",
+      "bytes": 19
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVMeasurementInterfaces.scala",
+      "sha256": "839fce10bce65d04d0cd586d467d494c04e43e28c4a5dff9aa01e03332481a96",
+      "bytes": 3552
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVReadPath.scala",
+      "sha256": "e82a577221ea775170c89755f8967c2246a36202300a3ca3b1f012c35d5f816a",
+      "bytes": 7314
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/baseline/FullKVS2Completion.scala",
+      "sha256": "ed28226bff0d973fe8b8a17f0059f121c1dc6f96d79f263d66d94dd3e521e24c",
+      "bytes": 18993
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala",
+      "sha256": "9d12d28663aa62bd2e775af91e52d5b320ca239bc01ee9e4a7e7519441cd750d",
+      "bytes": 154996
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteACompactWordClocking.scala",
+      "sha256": "4bea447a12560a2430b798267447ee3028293f3769b82aedfa191a10985cf394",
+      "bytes": 2536
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAExactLowestPrioritySelector.scala",
+      "sha256": "e996a010466b98d2e2eb70e721da9cb258a8f6a56529c3fd1b34c9dc71f96a0a",
+      "bytes": 2022
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala",
+      "sha256": "428c73752850f2da02666a0951d8b614f0d7463131869825f58e4fef8af7a354",
+      "bytes": 271688
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAM2EntryStorage.scala",
+      "sha256": "fe1f65bd79417aeb4d62d2e846939022155631b82c66515e8feea887f422688a",
+      "bytes": 13932
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMemberRecordReadSharing.scala",
+      "sha256": "3c549945718a39c700b95ec76616aa1e84d020f9b5114158598b58aee4b05c45",
+      "bytes": 1167
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAMetadataAdmissionBridge.scala",
+      "sha256": "45d413f5ceb53e17e923c489782b88632074c3098f481f58e864a527199879d4",
+      "bytes": 16919
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala",
+      "sha256": "c38ec16eb79c180293b932ea5c5889240bf22a7b12520df3b636412cebea2bee",
+      "bytes": 36172
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteARecordReadDecode.scala",
+      "sha256": "e662fcff2db1e0fbc3bd70dbcbb2d20eeb2d66dc977577892eb11bb2ffe9e7e0",
+      "bytes": 905
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala",
+      "sha256": "308f089b77df9f72fea68f0e320604cfab3b9e450f08826929ca9aa804675968",
+      "bytes": 78685
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASkeletonParameters.scala",
+      "sha256": "cc28258d1f63dd7788b2e3929ceffc57d17d0b0d74c499a9795b7374aa27d493",
+      "bytes": 9048
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/params/RouteASynthesisControlProjectionProfile.scala",
+      "sha256": "17cea99d93e8f4299269fc4dfb5fce3acc09d47929e65dd667a406217f0b4887",
+      "bytes": 4098
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/FullKVMeasurementDut.scala",
+      "sha256": "cebc0577929aed960ed29cb0b95c674ed68479aafb71c18cf16e55775fa1389b",
+      "bytes": 6042
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PM1PageManagerHdlEmitter.scala",
+      "sha256": "7a9fc95edb17ddbbc6c7422322d4cd948ad96d52936e0ee4f9f36f03978f0ffe",
+      "bytes": 1364
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/PairedControlProjectionHdlEmitter.scala",
+      "sha256": "8a589a6c74c02ebb78f7e1d3ee0080550bb9ee82da4bb6cd85255b7bf7405292",
+      "bytes": 8023
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAComponentStatusCollector.scala",
+      "sha256": "6b83963f747ad3f32c379df0bed30a84468fe891d9493cd9f0b3aea3f47ee329",
+      "bytes": 4982
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala",
+      "sha256": "f4d7fba2658731590a2abea3a52d3402ac32d24bab700d012735393a65c4e4a6",
+      "bytes": 35177
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala",
+      "sha256": "f99da5a179806d383a102d719b35e5473308c5d2a4b679eb8adad9e8ce45ec99",
+      "bytes": 30412
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/SynthesisControlProjectionGenerators.scala",
+      "sha256": "3dcf569311fa43652ce03408a1507206ca77b01f3dca65ef30d75a3aa276f844",
+      "bytes": 1032
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1ContextualHdlEmitter.scala",
+      "sha256": "6550ef0bfe64bd40e3903b45ecb2e05e2e4f2a91ff668ecaf9d8f24be0deda80",
+      "bytes": 1176
+    },
+    {
+      "path": "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/WCG1WrapperHdlEmitter.scala",
+      "sha256": "ad0f9bb5ddb915907792042983b0a76ffc6ea0e380643ecce55ce707af1886ef",
+      "bytes": 1139
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/resources/.gitkeep",
+      "sha256": "3ee4f022eb3f3b40be0890233fa405f8d57cf53a953c33453386452b88d09edc",
+      "bytes": 87
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/resources/rtl1_0_verification_binding.json",
+      "sha256": "fbcca99898330c0f89985a30c5ed4e1bc3b191bb6aa61a4c74423a344f519237",
+      "bytes": 6147
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/resources/rtl3_5c_functional_partial_packet.fixture",
+      "sha256": "6eda31a69c998a61fc0850df1faabe709073131706883785478b00360667da81",
+      "bytes": 1590
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/resources/rtl3_6b_functional_provider_terminal.fixture",
+      "sha256": "3a31b7946876de8cb2f4e8599025fcd621071f3a3f53f50a67d3db86ab1ba3fe",
+      "bytes": 1935
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/resources/sva/route_a_rtl1_0_assertion_binding_registry.sv",
+      "sha256": "a77b91b1efece0492600199ef2740a69d6f637c5dfcb1ee9da7d4c7a0d329476",
+      "bytes": 2264
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/DualMeasurementDutStructuralSpec.scala",
+      "sha256": "48877adbbae812ba196f280d0a6e37aba26c86c8f5298fee003ad37c19794c42",
+      "bytes": 6784
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/FullKVMeasurementDutSpec.scala",
+      "sha256": "0a136b6f43c21e594fb2066bc85c3b5d9ab851efe5bc8804acf5e1f9eacaadf6",
+      "bytes": 13268
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAMeasurementDutR3Spec.scala",
+      "sha256": "3dce3e46295ada5cdc8246084b66131df00524acac1a3d5ed08568d2af0d05f6",
+      "bytes": 31440
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAStageAContinuationProbeSpec.scala",
+      "sha256": "d9be771dc97512ffc984725563397981278e282f5cde7e7c132e005d0d5003d1",
+      "bytes": 25571
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAAdmissionPublicationIntegrationSpec.scala",
+      "sha256": "c7ca883530355fa7f8f17026d21998a07ea31d68268db258dcaa65e8b0de7f0e",
+      "bytes": 15960
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAFairReclaimIntegrationSpec.scala",
+      "sha256": "31fb9a096d27361821773d83c9d60d078e5202e239b631ce886f0f2878a5637f",
+      "bytes": 12602
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAInitDrainIntegrationSpec.scala",
+      "sha256": "0d7351b74caa11bec989e42ef8418c4d48212cd3f9f18fd962cc99db292c385c",
+      "bytes": 12470
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteAResetEpochIntegrationSpec.scala",
+      "sha256": "0c8c6568b2169e98539b882f96ff05900be5a6bb3d413e4a190bbabde1dd7133",
+      "bytes": 17725
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/integration/RouteARetirementDrainClosureSpec.scala",
+      "sha256": "3f217c96e33c78d56418262b884c2a976fc7826aebe2e81f3d8f66fccff188ec",
+      "bytes": 13356
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/merge/.gitkeep",
+      "sha256": "4da551f9eea496c8112a4c07feeb86fc4e8f134211bc5046e572aaff844fd1ba",
+      "bytes": 78
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r1/RouteACoreMemIfV1Spec.scala",
+      "sha256": "62767d6040567c94ab7a439398ff062d5444a2f84bcd63e1bb59af9186923cc3",
+      "bytes": 10429
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/.gitkeep",
+      "sha256": "a4cd45998ca8928ad05cdb833de227d18fc3661b6e0d02a9349fb667bc299c7b",
+      "bytes": 53
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteACoreSideArbiterSpec.scala",
+      "sha256": "e31691226cbd36c2c4d736092443dee84d90a9351a4191ddd621b203d4a05e35",
+      "bytes": 10631
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteADeliveryContextAllocationBridgeSpec.scala",
+      "sha256": "878ef381aeea27c13d9597a6182b04c532b7c6867ef1088d11bf3c6275d86f99",
+      "bytes": 8237
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteADeliveryContextRegistrySpec.scala",
+      "sha256": "baf365dae2be3b4a9261bad17e33dcbb27c7be5dcaa98508e9deb9220a5a1893",
+      "bytes": 9355
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r2/RouteATypedDeliveryRouterSpec.scala",
+      "sha256": "45e157b8bb9d7ef16158f56e2ca6aca743b707042c5e9de6a4a230bedbfff3b5",
+      "bytes": 9358
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r3_r5/.gitkeep",
+      "sha256": "51589231ee65128c76e585ef12c6f470665c917db1b584b33eab10153e38edb3",
+      "bytes": 64
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r3_r5/RouteAR3R5PublicationSpec.scala",
+      "sha256": "8c31a6ccf633e1776eb6e683bcf47ded2fbdcb003568d87a84ccce29da8080bb",
+      "bytes": 40561
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r4/RouteAMergeBoundarySpec.scala",
+      "sha256": "63448508ec6815a57bd999dd8ca32bfefa17b088f6e73611789b8d92b9ae8044",
+      "bytes": 18258
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1ExactPrioritySelectorSpec.scala",
+      "sha256": "a00353c9e3977d1c59135f128a1ac1a85c287dca9b518e11e621b4674747829f",
+      "bytes": 3842
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1RegisteredSelectorEmitter.scala",
+      "sha256": "587402dbe857f8e954c37d9bea8cd5e37175c6f0cde5ab9d12c9c2c6388f4917",
+      "bytes": 1464
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1RegisteredSelectorSpec.scala",
+      "sha256": "319aaf7d9ea26e70bb3145bd7cdf1f74e1734d3b71e702bbbf4f434d7aafa617",
+      "bytes": 1455
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAPM1SelectorEmitter.scala",
+      "sha256": "980c5d912597b96e1fd24fcff146fdd38fb9db1890da28f37ea6275e761fa802",
+      "bytes": 1793
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAR5AvailabilityArrayBoundarySpec.scala",
+      "sha256": "6b42e3e98c0a83066e9e50f7831148f635c4fcc3aa7dacb997affae68ea707ff",
+      "bytes": 4494
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r5/RouteAReclaimSpec.scala",
+      "sha256": "d06e9b35cc414ec8738fa294150c0af2eae1511d052d7577247d978276bf31f4",
+      "bytes": 16047
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/.gitkeep",
+      "sha256": "31b47a8835f2260c9e535f27fd8f04200c45c38742a6c4e034104ff6ed90a9ed",
+      "bytes": 53
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/RouteALifecycleAdapterSpec.scala",
+      "sha256": "7a50a38a9c5e5d32de729ed5593923a35fd542d046044f7a662841341d02cbf0",
+      "bytes": 17345
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/r6/RouteASourceCompletionPlanSpec.scala",
+      "sha256": "d864372a5d76c7eb70ea5d0e1a94641be58d3402d4b9c78a9ef9372e051d1db0",
+      "bytes": 14857
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1bWritePathHarness.scala",
+      "sha256": "f2958a58093c403fbb7380d2de7e28a2f926e0fd0f48e61343400dfed185d60d",
+      "bytes": 5594
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1bWritePathHarnessSpec.scala",
+      "sha256": "9e35e0c990ffa520e580ab9982d1d10a5d2187147329da40a8ac6b3d2d1c9287",
+      "bytes": 5872
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1cAtomicPublicationHarness.scala",
+      "sha256": "5893c14a6c563da1087682e21b4d4465cf237d20517fd3b08487bad95b726ebf",
+      "bytes": 5774
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteA2_1cAtomicPublicationHarnessSpec.scala",
+      "sha256": "5ef940044b74f4194ad16d56c52e59d16d2487c81d3ecd3c803aaf2266cf8ce8",
+      "bytes": 12357
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAActiveStateScoreboardIntegrationSpec.scala",
+      "sha256": "026976543a88b7b64b07de35e2250e6fae6f38ef6861605088376799a5b800b3",
+      "bytes": 12957
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAdmissionPublicationIngressAdapterSpec.scala",
+      "sha256": "41a1a064293aa971b4b5d429ebfed6f19fb4f76570120d2ee5165a367a1324f8",
+      "bytes": 15515
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAAttentionTerminalScoreboardAdapterSpec.scala",
+      "sha256": "a4bd500e1331b094b02ba25ef9c8cd763a65988e7f2d6464af4248213c7aa8cc",
+      "bytes": 6969
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC3bEventProvenanceObserver.scala",
+      "sha256": "083a78461cd00f27a8e02f2ac781b24d3ebb2800f148c8cfec798f3cf936d9dd",
+      "bytes": 5958
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC4BEventReplayOracle.scala",
+      "sha256": "7cb61c16d4001490bdc8bbe6fd2a5eaef1bab274c8bf7e591ef74bcffa1924a9",
+      "bytes": 2734
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAC4CNegativeReplayOracle.scala",
+      "sha256": "c0648d6c34bbbaa946b806d4e1a551a19e7c582a0beff53970b92dc39a209988",
+      "bytes": 1118
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteADirectPendingReadPathSpec.scala",
+      "sha256": "31d811f57e8df205f7a6897a24e549e9e932d58ac21fd0686de37b12db1a9d5a",
+      "bytes": 21835
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAFaultTerminalClosureSpec.scala",
+      "sha256": "7228897b22c399d8cf01b81dc7ba3b80640d39f34f1e36b4a4b69ea3a2ada40b",
+      "bytes": 8653
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAFourConsumerCompletionSpec.scala",
+      "sha256": "83fb7895a032b1e48eb70f46104e718f357d7340fe344b495910b9dd4713b3f2",
+      "bytes": 19326
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAM2EntryStorageSpec.scala",
+      "sha256": "6092da44d9f5dd11e51a4b102e416be7381a700dcf83e5de69551023b9742b4e",
+      "bytes": 9508
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAM2ProductionControlOwnerSpec.scala",
+      "sha256": "f4d7753a44b1ee8927a16ce1237dfcba80b2df3043d5536bdf4b9a40e277a965",
+      "bytes": 21638
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAMetadataAdmissionBridgeSpec.scala",
+      "sha256": "03b4c191512217879cd6331ba5172cb13ec26b1c2daa7e30054f1637bfd59a6b",
+      "bytes": 7744
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAPackedS2ReadPathSpec.scala",
+      "sha256": "aa93b5edc659f0d69e8a813f6b83d24b7b453cd6166ef6891d8d5e8ac4c9fb4d",
+      "bytes": 18824
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR3PackReadPathSpec.scala",
+      "sha256": "eb16c9991bd25bade8a4ee1339b9863571dd3dab900aeeab772f7208e14b13a5",
+      "bytes": 23561
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4R6StubTerminalIntegrationSpec.scala",
+      "sha256": "0f1bb67835b32fcf72deab8c838358f9d8253dcd2f2f492f41d14061eced4e47",
+      "bytes": 12047
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAR4ResultStubProviderSpec.scala",
+      "sha256": "012503078f82d43d2bab8a664e76a6c9b6d1165e7ed2ab08b084ddbc941157c4",
+      "bytes": 11962
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265a2PackReadPublicationSpec.scala",
+      "sha256": "7549833a9f0616d400cacd71dbf9929caa679da34afa2f1d01abbbadb051b6d4",
+      "bytes": 97459
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265aPackedReadTerminalHarnessSpec.scala",
+      "sha256": "4c8fb52419b4e9589ea40a5d8decf6652f0d873b3533ebb23fe93be353d49b55",
+      "bytes": 13484
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265bTerminalReclaimSpec.scala",
+      "sha256": "d8a8340a78f73a4a21b54189f592a0306a744c71772afde335a86195d8e61725",
+      "bytes": 23237
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL265eSameInstanceWitnessSpec.scala",
+      "sha256": "af301788f91f9d44732448764b33bf7706c29751e6e5473706716d8f332edce7",
+      "bytes": 60423
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26ComposedPackedSourceHarnessSpec.scala",
+      "sha256": "1ead762a15e69cddf3c2f2ef8b6ff1de05f11fc8bc4a6ff1017129a5e601f504",
+      "bytes": 13209
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26PublicationS2AssociationSpec.scala",
+      "sha256": "e4f587f84f9242048e7246c72283c63364f35d94d09de609d9de5c705c664c7e",
+      "bytes": 8227
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteARTL26PublicationToTerminalHarnessSpec.scala",
+      "sha256": "a0934d674fcbb44b764b2a123ba319e2a5f2898f66d40a3ef17da53a4db19af1",
+      "bytes": 16759
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReadIngressSpec.scala",
+      "sha256": "640e082ad06d9b3a93c78030ad9b7afd24e81df2b6ee1ec34fa5ce85cce41113",
+      "bytes": 10159
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReadIssueDescriptorSpec.scala",
+      "sha256": "aae70a9f7b9f217eeede3989536896e45669d993c5107eaa31857717b725f378",
+      "bytes": 8661
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAReclaimScoreboardAdapterSpec.scala",
+      "sha256": "301e07f3e1db9c7557403e70847e804bf115ba5dfd545bd2854e6f3882003f01",
+      "bytes": 7772
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteASourcePlanBinderSpec.scala",
+      "sha256": "94ee8b1043d9ddf082a16de7ac575f00f3a7762c7c9ff4ccd045582b4475dea4",
+      "bytes": 6901
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteASourceServicePacketAdapterSpec.scala",
+      "sha256": "66c561e3046e7fead5be5ac7e57fd81c5e89e06edcb657ae1f7763be6433cac4",
+      "bytes": 17902
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironment.scala",
+      "sha256": "69e9f470163427ce739e60ec4a5cbe4027ad6d1767abd653a9410ee810f285cc",
+      "bytes": 12684
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalMemoryEnvironmentSpec.scala",
+      "sha256": "345e12f766bd8907c1ab06435684f175141a5b3af0b09fa210e6ee66f522c3a4",
+      "bytes": 8850
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalPartialProviderBoundarySpec.scala",
+      "sha256": "ea6ff535f960a047827a08a85512a512520486b2ba8311eddbc13beb51a324eb",
+      "bytes": 4537
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalR4ReferenceBoundarySpec.scala",
+      "sha256": "a2ba9c54d43a3e87e1cce96703db8d0d6b9e3bd8d7a35f22b70395177e6ae6b3",
+      "bytes": 9346
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAFunctionalSidecarDeliverySpec.scala",
+      "sha256": "eae915c45c1c5aa2e617f2906f87e3709de799aab46b6d342ed62994e6c231bb",
+      "bytes": 9769
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAP3StageArrayBoundarySpec.scala",
+      "sha256": "d569fa2913c4339f32912dad2eb193afff7fbab6ec58f9d13d6662192e635cb4",
+      "bytes": 3804
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedActivationCompositionSpec.scala",
+      "sha256": "a62392e0af65b18d40ab5e0ab9fea742489bd7e6250ae2cfea89e2faa4ac5bda",
+      "bytes": 8357
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedActivationOwnerFactIntegrationSpec.scala",
+      "sha256": "e7ee45ab393fed7c463b06a17ffbd5dfac7ada546c02dfdf9f8b0646827a4719",
+      "bytes": 12195
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedAssociationAllocationBridgeSpec.scala",
+      "sha256": "088fce9049ff857ce789eab6c64ab6ea54e29c9b64ac3461be92a40597e4eaf3",
+      "bytes": 6235
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadActivationBinderSpec.scala",
+      "sha256": "406781a2e643573aa1a503f92dab3a9117320c035fcdbf3d2d378708aae846d5",
+      "bytes": 10522
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAPackedReadAssociationOwnerSpec.scala",
+      "sha256": "d307b1577d26edaa6c7d893ae15faba4a887141385c84a9393e863e64fe3162b",
+      "bytes": 26153
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARD1ReadNetworkEmitter.scala",
+      "sha256": "8bd063acc7ebbd1f2ed95162f91c204910a82f94b22dc352bae33b67248f4e45",
+      "bytes": 2191
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARD1ReadSharingSpec.scala",
+      "sha256": "8e66fbdbf5976530f17f12366b10e0547abad108d53e302f00f13f82018630b9",
+      "bytes": 5349
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARD2ReadDecodeSpec.scala",
+      "sha256": "b348cfdc17076bff37294b4747b1d0a3139973d2017042b691fc747705664d6f",
+      "bytes": 5634
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARD2ReadNetworkEmitter.scala",
+      "sha256": "4754d30081e680acd605550246d99cbf0425919cc228f39fd9c5b0db116fb481",
+      "bytes": 4163
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL36bFunctionalFixtureBridge.scala",
+      "sha256": "381d08d29d689622cb0caa8c73b97fe1e6d4ffe76369cae1d365c4e2cb2e8766",
+      "bytes": 9547
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL36cSidecarFixtureTransport.scala",
+      "sha256": "612bf7081e96a4a69e3446a283c44b744d15f1039102c8fd3fd9c0c8d167ed7c",
+      "bytes": 12266
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37bTerminalReleaseBridge.scala",
+      "sha256": "a2e8cc5b6b993173b1ce5e1dd5ad6b5d525902c2117550794346372212be098f",
+      "bytes": 6478
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cDrainMembershipJoin.scala",
+      "sha256": "3654fedbd68dee941947ed289d40c5ce0d85831c95906c6dee7e72188ae90719",
+      "bytes": 3011
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL37cEventScoreboard.scala",
+      "sha256": "6682d08f5cc22f9a499c6227ab4c0a3fbac33ff91dc0ad96bf98bfcb5691d86f",
+      "bytes": 810
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL385FullPathClosureSpec.scala",
+      "sha256": "8c7f9bf0b25e4014c7915f40b5ba3609140d1c44c15b94ed8796bf45e6cd64ed",
+      "bytes": 19208
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL39AMaterializationHarness.scala",
+      "sha256": "ae87823b5c83fbea091e6ba80de27e3212265bc530b572afdc1ec730ed5aee02",
+      "bytes": 13749
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL39AMaterializationSpec.scala",
+      "sha256": "25290ea2fb7afa8d2bebf2450eccc80640a43df7b1e50f144e1fc257635603e8",
+      "bytes": 16191
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteAWCG1WrapperSpec.scala",
+      "sha256": "5d22f11a9af983e8549b4da537705a522504cb0483aeea61416cdace0805cf01",
+      "bytes": 408
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/s2/.gitkeep",
+      "sha256": "d266db789e706ef61977279361e038df892e8c662afb060911ef41b8303de565",
+      "bytes": 72
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/s2/RouteAHotSourcePathSpec.scala",
+      "sha256": "322a6a4199026d0d3bb3d4cdaa0ccf62e37fd9cd505a09bc2ee0dab08f12654c",
+      "bytes": 3855
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/s2/RouteAS2DirectPendingSpec.scala",
+      "sha256": "699345da67485567960b1982735547ff93e68109ddda0d838258472c7e28e0d6",
+      "bytes": 15242
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/ControlProjectionElaborationSpec.scala",
+      "sha256": "dbacb4b0e3b05716f7a2e01135d816ed63b2b3868d7b4f561f01bb66889607bb",
+      "bytes": 3696
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteAKVSubsystemTopSpec.scala",
+      "sha256": "aace7dec8b4f5480e26dc16d015812bb54e2002c1a9aab2690ad6d1e9937a405",
+      "bytes": 6688
+    },
+    {
+      "path": "hardware/route_a/chisel/src/test/scala/kvpress/routea/structural/RouteASynthesisControlProjectionProfileSpec.scala",
+      "sha256": "b0c52b6e24202de11517b2dae6f935acb6864ceba23a0e48041af6775ac9c793",
+      "bytes": 1326
+    },
+    {
+      "path": "hardware/route_a/chisel/testbench/route_a_scoreboard_event_adapter.py",
+      "sha256": "bd35f833ec0cee69bcf06d4b889b0936a90a3697be47061b0d7c384e8524718a",
+      "bytes": 7512
+    },
+    {
+      "path": "hardware/route_a/chisel/testbench/route_a_scoreboard_oracle_binding.py",
+      "sha256": "507b545b72754401d4674cfb7ee3224d97f514e3f03d66fd1acc260cfe118d3e",
+      "bytes": 2438
+    },
+    {
+      "path": "hardware/route_a/dc/run_stage_a_continuation_probes.sh",
+      "sha256": "fbb27dcfab159a7c5e765912f23742f0b2fbc18ed758417c921b0436a66ea76a",
+      "bytes": 3266
+    },
+    {
+      "path": "tools/check_stage_a_continuation_probes.py",
+      "sha256": "1b0e2f644366554d75a6cb91dc7cfa5f9894edb634479a8ce3d91d796a8437d7",
+      "bytes": 5916
+    }
+  ],
+  "checker_matches_saved_result": true,
+  "result": {
+    "schema": "stage-a-continuation-probe-result-1",
+    "source_commit": "0aa5472a25d5dd4451dee39ef370c57706f57f79",
+    "archive_sha256": "e595ed19730dd393693589d7c884ba90eb1cd7febd1c03fd1d6fbb844bad8301",
+    "tests": 2,
+    "verdicts": {
+      "build_and_probe_execution": "PASS",
+      "same_page_reuse": "BLOCKED_CURRENT_RTL_IN_BOUNDED_PROBE",
+      "multi_group_admission": "BLOCKED_CURRENT_RTL_IN_BOUNDED_PROBE",
+      "continuous_functional_closure": "NOT_ESTABLISHED",
+      "numeric_data_correspondence": "NOT_ESTABLISHED",
+      "final_retire_reclaim_in_new_probes": "NOT_REACHED_AFTER_BLOCKER"
+    },
+    "observations": {
+      "READ_REUSE": {
+        "case": "READ_REUSE",
+        "outcome": "BLOCKED",
+        "blocker": "ONE_SHOT_ACTIVATION",
+        "second_attention_accepted": "1",
+        "second_plan_accepted": "1",
+        "r6_active": "1",
+        "s2_empty": "1",
+        "page_live": "1",
+        "binder_have_plan": "1",
+        "binder_have_page_ready": "0",
+        "binder_have_member_stream": "0",
+        "descriptor_requests": "0",
+        "lease_requests": "0",
+        "s2_generation": "1",
+        "second_read_requests": "0",
+        "first_terminal": "1",
+        "second_terminal": "0",
+        "publications": "1",
+        "handoffs": "1",
+        "consumer_commits": "4",
+        "payload_write_commits": "1",
+        "payload_fragments": "8",
+        "sidecar_fragments": "1",
+        "page_id": "0",
+        "page_generation": "0",
+        "no_fault": "1",
+        "bound_cycles": "128",
+        "capability_pass": "0",
+        "gate_compact": "0",
+        "r5_stream_slots": "16",
+        "position_backing_external": "1",
+        "numeric_correspondence": "0"
+      },
+      "ADMISSION_REUSE": {
+        "case": "ADMISSION_REUSE",
+        "outcome": "BLOCKED",
+        "blocker": "INGRESS_DONE",
+        "second_join_accepted": "0",
+        "r6_context_valid": "1",
+        "r6_authority_valid": "1",
+        "binding_valid": "1",
+        "ingress_done": "1",
+        "pending_binding_ready": "0",
+        "journal_ordinal0_present": "1",
+        "local_credit": "0",
+        "r6_active": "1",
+        "page_live": "1",
+        "first_terminal": "1",
+        "second_terminal": "0",
+        "publications": "1",
+        "handoffs": "1",
+        "consumer_commits": "4",
+        "payload_write_commits": "1",
+        "payload_fragments": "8",
+        "sidecar_fragments": "1",
+        "page_id": "0",
+        "page_generation": "0",
+        "no_fault": "1",
+        "bound_cycles": "128",
+        "capability_pass": "0",
+        "gate_compact": "0",
+        "r5_stream_slots": "16",
+        "position_backing_external": "1",
+        "numeric_correspondence": "0"
+      }
+    },
+    "xml_sha256": "67998a35c7028b6dc6ce6b2e25eb26246bad5c3b8db7e4309568397cd20576d1",
+    "test_log_sha256": "9a0178891cd5c77fd16aa5f2fbba1adef860527311408b79cbe0b862a8b1d52e",
+    "source_files_checked": 140,
+    "scope": "bounded diagnostic reproduction only; no RTL repair, full-anchor execution, numeric correctness, timing, area or net-benefit claim"
+  },
+  "first_use_lines": [
+    "KVZAP_STAGE_A_FIRST_USE_COMPLETE page_id=0 page_generation=0 payload_write_commits=1 payload_fragments=8 sidecar_fragments=1 publications=1 handoffs=1 consumers=4 terminals=1 gate_compact=0 r5_stream_slots=16 position_backing_external=1 numeric_correspondence=0",
+    "KVZAP_STAGE_A_FIRST_USE_COMPLETE page_id=0 page_generation=0 payload_write_commits=1 payload_fragments=8 sidecar_fragments=1 publications=1 handoffs=1 consumers=4 terminals=1 gate_compact=0 r5_stream_slots=16 position_backing_external=1 numeric_correspondence=0"
+  ],
+  "native_logs_error_scan": {
+    "compile.log": [],
+    "test.log": [],
+    "runner.log": []
+  },
+  "xml": {
+    "attributes": {
+      "hostname": "ercesi413",
+      "name": "kvpress.routea.RouteAStageAContinuationProbeSpec",
+      "tests": "2",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "time": "601.37",
+      "timestamp": "2026-11-09T11:32:58"
+    },
+    "cases": [
+      {
+        "classname": "kvpress.routea.RouteAStageAContinuationProbeSpec",
+        "name": "qualifies the existing same-page repeat-read blocker without changing the RTL",
+        "time": "303.766"
+      },
+      {
+        "classname": "kvpress.routea.RouteAStageAContinuationProbeSpec",
+        "name": "qualifies the existing second-admission blocker in the same session without reset",
+        "time": "297.604"
+      }
+    ]
+  },
+  "native_simulations": [
+    {
+      "case": "qualifies-the-existing-same-page-repeat-read-blocker-without-changing-the-RTL",
+      "artifacts": {
+        "simulation": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-same-page-repeat-read-blocker-without-changing-the-RTL/workdir-verilator/simulation",
+          "bytes": 12027352,
+          "sha256": "ee587c6fa2916ea0b77ef12b8e2944996a71787719b75dbe4b52955cb4423eb6"
+        },
+        "compilation-log.txt": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-same-page-repeat-read-blocker-without-changing-the-RTL/workdir-verilator/compilation-log.txt",
+          "bytes": 72051,
+          "sha256": "dea1d76e3a972beb5c23bae64339cfd813cfd9691f679bf1f0f9115f6fe9057b"
+        },
+        "simulation-log.txt": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-same-page-repeat-read-blocker-without-changing-the-RTL/workdir-verilator/simulation-log.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "execution-script.txt": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-same-page-repeat-read-blocker-without-changing-the-RTL/workdir-verilator/execution-script.txt",
+          "bytes": 375500,
+          "sha256": "729001fed9a8f8c541fbd9da561671dd8a4c117ea45f342e9efc097ad0d3259e"
+        }
+      },
+      "compilation_tail": [
+        "- V e r i l a t i o n   R e p o r t: Verilator 5.041 devel rev v5.040-350-g6ec5c85be",
+        "- Verilator: Built from 1191.025 MB sources in 99 modules, into 139.022 MB in 59 C++ files needing 0.636 MB",
+        "- Verilator: Walltime 286.469 s (elab=1.453, cvt=48.520, bld=233.501); cpu 54.493 s on 24 threads; alloced 1869.859 MB",
+        "make: Leaving directory '/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/stage_a_continuation_probe_20261109_r1/workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-same-page-repeat-read-blocker-without-changing-the-RTL/workdir-verilator'"
+      ],
+      "simulation_log_is_empty": true
+    },
+    {
+      "case": "qualifies-the-existing-second-admission-blocker-in-the-same-session-without-reset",
+      "artifacts": {
+        "simulation": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-second-admission-blocker-in-the-same-session-without-reset/workdir-verilator/simulation",
+          "bytes": 12027352,
+          "sha256": "d1ec8e0388ab767f98ecb1116362ae1660a57b1aaff5c7c60d10fa9d9a4160d6"
+        },
+        "compilation-log.txt": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-second-admission-blocker-in-the-same-session-without-reset/workdir-verilator/compilation-log.txt",
+          "bytes": 72367,
+          "sha256": "6a17175803f760d9dac089cafc9b909bfa23bad65e3f51fc854183c9ddfc2324"
+        },
+        "simulation-log.txt": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-second-admission-blocker-in-the-same-session-without-reset/workdir-verilator/simulation-log.txt",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "execution-script.txt": {
+          "path": "workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-second-admission-blocker-in-the-same-session-without-reset/workdir-verilator/execution-script.txt",
+          "bytes": 378975,
+          "sha256": "a4476ce891e83c12962defbc68f0b34ff2d493870907b7f5b871e3cadf104d21"
+        }
+      },
+      "compilation_tail": [
+        "- V e r i l a t i o n   R e p o r t: Verilator 5.041 devel rev v5.040-350-g6ec5c85be",
+        "- Verilator: Built from 1191.338 MB sources in 99 modules, into 139.032 MB in 59 C++ files needing 0.636 MB",
+        "- Verilator: Walltime 282.564 s (elab=1.468, cvt=48.572, bld=229.537); cpu 54.785 s on 24 threads; alloced 1869.852 MB",
+        "make: Leaving directory '/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/stage_a_continuation_probe_20261109_r1/workspace/hardware/route_a/chisel/build/chiselsim/RouteAStageAContinuationProbeSpec/qualifies-the-existing-second-admission-blocker-in-the-same-session-without-reset/workdir-verilator'"
+      ],
+      "simulation_log_is_empty": true
+    }
+  ],
+  "artifact_hashes": {
+    "input_manifest.json": {
+      "sha256": "073a7b982c13d939dff267a1da4f5a6bcd0e9621969be20688824bc916f004c5",
+      "bytes": 30739
+    },
+    "result.json": {
+      "sha256": "326c7e2e02a4a9af24d2af31a786f3155ed5efab63c6e4fc09d46fa7af676fe4",
+      "bytes": 2915
+    },
+    "compile.log": {
+      "sha256": "a0b0c8fc8a7c19ceb4c7bb922516adb4cfe2e1db71b39710ac93d762b15ce450",
+      "bytes": 1808
+    },
+    "test.log": {
+      "sha256": "9a0178891cd5c77fd16aa5f2fbba1adef860527311408b79cbe0b862a8b1d52e",
+      "bytes": 2783
+    },
+    "runner.log": {
+      "sha256": "d13edf75a0871c43b43ad1c5be4ca819acbc0c382f0c396c2408d377e3aa613e",
+      "bytes": 4947
+    },
+    "compile_exit_status": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    "test_exit_status": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    "exit_status": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    "test_xml": {
+      "sha256": "67998a35c7028b6dc6ce6b2e25eb26246bad5c3b8db7e4309568397cd20576d1",
+      "bytes": 5447
+    },
+    "outer_log": {
+      "sha256": "ab8cae723d953b40bc8cc0c66db4f0dd1245a4d43f1d00a0bd49174817b70bde",
+      "bytes": 4981
+    },
+    "tmux_wrapper_exit": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    }
+  },
+  "active_run_processes": [],
+  "pane": "kvzap-stage-a-probes-r1:probes.0 pid=20393 command=bash",
+  "compile_log": "Picked up _JAVA_OPTIONS: -Xmx4g -XX:ActiveProcessorCount=2\n[info] welcome to sbt 1.11.5 (Ubuntu Java 11.0.19)\n[info] loading project definition from /home/yaz80/wz_project/chisel_projects/kvpress/artifacts/stage_a_continuation_probe_20261109_r1/workspace/hardware/route_a/chisel/project\n[info] loading settings for project root from build.sbt...\n[info] set current project to kvpress-route-a-chisel (in build file:/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/stage_a_continuation_probe_20261109_r1/workspace/hardware/route_a/chisel/)\n[info] compiling 24 Scala sources to /home/yaz80/wz_project/chisel_projects/kvpress/artifacts/stage_a_continuation_probe_20261109_r1/workspace/hardware/route_a/chisel/target/scala-2.13/classes ...\n[warn] 2 deprecations (since 7.5.0); re-run with -deprecation for details\n[warn] 3824 feature warnings; re-run with -feature for details\n[warn] two warnings found\n[info] done compiling\n[info] compiling 85 Scala sources to /home/yaz80/wz_project/chisel_projects/kvpress/artifacts/stage_a_continuation_probe_20261109_r1/workspace/hardware/route_a/chisel/target/scala-2.13/test-classes ...\n[warn] /home/yaz80/wz_project/chisel_projects/kvpress/artifacts/stage_a_continuation_probe_20261109_r1/workspace/hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl2/RouteAM2EntryStorageSpec.scala:34:28: The outer reference in this type test cannot be checked at run time.\n[warn]   private final case class Result(status: Int, reason: Int, valid: Boolean, slot: Int, generation: Int)\n[warn]                            ^\n[warn] 6 deprecations (since 2.13.3); re-run with -deprecation for details\n[warn] 10016 feature warnings; re-run with -feature for details\n[warn] three warnings found\n[info] done compiling\n[success] Total time: 39 s, completed Nov 9, 2026, 11:32:52 AM\n",
+  "test_log": "Picked up _JAVA_OPTIONS: -Xmx4g -XX:ActiveProcessorCount=2\n[info] welcome to sbt 1.11.5 (Ubuntu Java 11.0.19)\n[info] loading project definition from /home/yaz80/wz_project/chisel_projects/kvpress/artifacts/stage_a_continuation_probe_20261109_r1/workspace/hardware/route_a/chisel/project\n[info] loading settings for project root from build.sbt...\n[info] set current project to kvpress-route-a-chisel (in build file:/home/yaz80/wz_project/chisel_projects/kvpress/artifacts/stage_a_continuation_probe_20261109_r1/workspace/hardware/route_a/chisel/)\nKVZAP_STAGE_A_FIRST_USE_COMPLETE page_id=0 page_generation=0 payload_write_commits=1 payload_fragments=8 sidecar_fragments=1 publications=1 handoffs=1 consumers=4 terminals=1 gate_compact=0 r5_stream_slots=16 position_backing_external=1 numeric_correspondence=0\nKVZAP_STAGE_A_PROBE_RESULT case=READ_REUSE outcome=BLOCKED blocker=ONE_SHOT_ACTIVATION second_attention_accepted=1 second_plan_accepted=1 r6_active=1 s2_empty=1 page_live=1 binder_have_plan=1 binder_have_page_ready=0 binder_have_member_stream=0 descriptor_requests=0 lease_requests=0 s2_generation=1 second_read_requests=0 first_terminal=1 second_terminal=0 publications=1 handoffs=1 consumer_commits=4 payload_write_commits=1 payload_fragments=8 sidecar_fragments=1 page_id=0 page_generation=0 no_fault=1 bound_cycles=128 capability_pass=0 gate_compact=0 r5_stream_slots=16 position_backing_external=1 numeric_correspondence=0\nKVZAP_STAGE_A_FIRST_USE_COMPLETE page_id=0 page_generation=0 payload_write_commits=1 payload_fragments=8 sidecar_fragments=1 publications=1 handoffs=1 consumers=4 terminals=1 gate_compact=0 r5_stream_slots=16 position_backing_external=1 numeric_correspondence=0\nKVZAP_STAGE_A_PROBE_RESULT case=ADMISSION_REUSE outcome=BLOCKED blocker=INGRESS_DONE second_join_accepted=0 r6_context_valid=1 r6_authority_valid=1 binding_valid=1 ingress_done=1 pending_binding_ready=0 journal_ordinal0_present=1 local_credit=0 r6_active=1 page_live=1 first_terminal=1 second_terminal=0 publications=1 handoffs=1 consumer_commits=4 payload_write_commits=1 payload_fragments=8 sidecar_fragments=1 page_id=0 page_generation=0 no_fault=1 bound_cycles=128 capability_pass=0 gate_compact=0 r5_stream_slots=16 position_backing_external=1 numeric_correspondence=0\n[info] RouteAStageAContinuationProbeSpec:\n[info] - qualifies the existing same-page repeat-read blocker without changing the RTL\n[info] - qualifies the existing second-admission blocker in the same session without reset\n[info] Run completed in 10 minutes, 1 second.\n[info] Total number of tests run: 2\n[info] Suites: completed 1, aborted 0\n[info] Tests: succeeded 2, failed 0, canceled 0, ignored 0, pending 0\n[info] All tests passed.\n[success] Total time: 603 s (0:10:03.0), completed Nov 9, 2026, 11:42:59 AM\n",
+  "process_exe_cwd_audit": [],
+  "local_crosscheck": {
+    "source_files_match_current_checkout": 140,
+    "production_files_match_097533d": 24,
+    "production_RTL_changed": false,
+    "simulation_or_DC_rerun": false,
+    "remote_files_written": false
+  },
+  "schema": "route_a_stage_a_probe_result_audit_v1",
+  "date": "2026-11-09",
+  "timezone": "Asia/Shanghai",
+  "report": "analysis/route_a_stage_a_probe_result_20261109.md",
+  "report_sha256": "9ee093117aa3b46f6ebba88fb0499cec93409225b502acec497cfd47cb8ed1d0",
+  "source_commit": "0aa5472a25d5dd4451dee39ef370c57706f57f79",
+  "disposition": {
+    "tool_input_artifact_closure": "PASS",
+    "diagnostic_tests": {
+      "passed": 2,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "same_page_second_service": "BLOCKED_ONE_SHOT_ACTIVATION",
+    "second_admission_group": "BLOCKED_INGRESS_DONE",
+    "journal_duplicate_assertion_reached": false,
+    "continuous_functional_closure": "NOT_ESTABLISHED",
+    "numeric_correspondence": "NOT_ESTABLISHED",
+    "new_retire_reclaim_reached": false,
+    "RTL_modified": false,
+    "simulation_restarted": false,
+    "DC_or_STA_run": false
+  },
+  "documentation_validation": {
+    "report_hash_matches": true,
+    "local_links_checked": 8,
+    "live_entries_checked": 3,
+    "peer_review": "PASS; source/marker interpretation and bounded scope independently reviewed",
+    "git_diff_check": "required before commit",
+    "new_RTL_tests_run_in_inspection": 0,
+    "reason": "read-only acceptance of the existing completed run; production and test sources unchanged"
+  }
+}
