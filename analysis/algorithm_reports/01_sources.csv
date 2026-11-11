@@ -1,0 +1,238 @@
+path,kind,purpose,local_status,preservation
+analysis/baseline_freeze.json,核心配置/结果,报告结论与样本条件；保留,present,retain; no deletion decision
+analysis/baseline_config.yaml,核心配置/结果,报告结论与样本条件；保留,present,retain; no deletion decision
+analysis/baseline_results.csv,核心配置/结果,报告结论与样本条件；保留,present,retain; no deletion decision
+analysis/predictor_trace_gate_a.json,核心配置/结果,报告结论与样本条件；保留,present,retain; no deletion decision
+analysis/predictor_trace_gate_b_freeze.json,核心配置/结果,报告结论与样本条件；保留,present,retain; no deletion decision
+analysis/longbench_core_v1_freeze.json,核心配置/结果,报告结论与样本条件；保留,present,retain; no deletion decision
+analysis/longbench_balanced_v2_freeze.json,核心配置/结果,报告结论与样本条件；保留,present,retain; no deletion decision
+analysis/b4_route_b_screening_freeze.json,核心配置/结果,报告结论与样本条件；保留,present,retain; no deletion decision
+analysis/repo_inventory.md,相关历史文档,提取动机/实验条件；报错过程不进入正文；非删除清单,present,retain; no deletion decision
+analysis/reproduction_notes.md,相关历史文档,提取动机/实验条件；报错过程不进入正文；非删除清单,present,retain; no deletion decision
+analysis/kvzap_baseline.md,相关历史文档,提取动机/实验条件；报错过程不进入正文；非删除清单,present,retain; no deletion decision
+analysis/kvzap_smoke_test.md,相关历史文档,提取动机/实验条件；报错过程不进入正文；非删除清单,present,retain; no deletion decision
+analysis/kvzap_trace.md,相关历史文档,提取动机/实验条件；报错过程不进入正文；非删除清单,present,retain; no deletion decision
+analysis/route_a_research_plan.md,相关历史文档,提取动机/实验条件；报错过程不进入正文；非删除清单,present,retain; no deletion decision
+analysis/route_a_deep_review_20261107.md,相关历史文档,提取动机/实验条件；报错过程不进入正文；非删除清单,present,retain; no deletion decision
+AGENTS.md,背景/设计与数据定义,解释算法、历史路线和字段；可能被其他阶段引用,present,retain; no deletion decision
+RESEARCH_CONTEXT.md,背景/设计与数据定义,解释算法、历史路线和字段；可能被其他阶段引用,present,retain; no deletion decision
+KVZAP_ARCHITECTURE_PATH.md,背景/设计与数据定义,解释算法、历史路线和字段；可能被其他阶段引用,present,retain; no deletion decision
+TRACE_SCHEMA.md,背景/设计与数据定义,解释算法、历史路线和字段；可能被其他阶段引用,present,retain; no deletion decision
+EXPERIMENT_PLAN.md,背景/设计与数据定义,解释算法、历史路线和字段；可能被其他阶段引用,present,retain; no deletion decision
+CODEX_FIRST_TASK.md,背景/设计与数据定义,解释算法、历史路线和字段；可能被其他阶段引用,present,retain; no deletion decision
+papers/KVzap.pdf,背景/设计与数据定义,解释算法、历史路线和字段；可能被其他阶段引用,present,retain; no deletion decision
+pilot_inputs/longbench_core_v1.jsonl,采样输入,样本身份、选样与桶定义；不能将accuracy输入替代缺失的原JSONL,present,retain; no deletion decision
+pilot_inputs/longbench_core_v1.manifest.json,采样输入,样本身份、选样与桶定义；不能将accuracy输入替代缺失的原JSONL,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0,原始trace目录,manifest、score_mask.npz、样本映射；热图/新统计所需,present,retain; no deletion decision
+pilot_inputs/longbench_balanced_v2.jsonl,采样输入,样本身份、选样与桶定义；不能将accuracy输入替代缺失的原JSONL,missing,retain; no deletion decision
+pilot_inputs/longbench_balanced_v2.manifest.json,采样输入,样本身份、选样与桶定义；不能将accuracy输入替代缺失的原JSONL,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0,原始trace目录,manifest、score_mask.npz、样本映射；热图/新统计所需,present,retain; no deletion decision
+analysis/experiments/longbench_core_v1_analysis/analysis_manifest.json,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_core_v1_analysis/block_occupancy.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_core_v1_analysis/decoding_growth.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_core_v1_analysis/head_similarity.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_core_v1_analysis/layer_head_retention.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_core_v1_analysis/request_pair_similarity.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_core_v1_analysis/request_summary.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_core_v1_analysis/run_length_distribution.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_core_v1_analysis/run_length_summary.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_core_v1_analysis/score_threshold_sensitivity.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_analysis/analysis_manifest.json,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_analysis/block_occupancy.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_analysis/decoding_growth.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_analysis/head_similarity.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_analysis/layer_head_retention.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_analysis/request_group_summary.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_analysis/request_pair_similarity.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_analysis/request_summary.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_analysis/run_length_distribution.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_analysis/run_length_summary.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_analysis/score_threshold_sensitivity.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_structured_policy_v2/evaluation_manifest.json,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_structured_policy_v2/head_length_bucketing.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_structured_policy_v2/structured_policy_request.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_structured_policy_v2/structured_policy_summary.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_structured_policy_v3/evaluation_manifest.json,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_structured_policy_v3/head_length_bucketing.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_structured_policy_v3/structured_policy_request.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_structured_policy_v3/structured_policy_summary.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_phase3_layout_01/evaluation_manifest.json,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_phase3_layout_01/layer_head_page_cost.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_phase3_layout_01/layout_cost_summary.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/longbench_balanced_v2_phase3_layout_01/request_layout_cost.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/accuracy_full_probe_01/request_results.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/accuracy_full_probe_01/run_manifest.json,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/accuracy_kvzap_probe_01/request_results.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/accuracy_kvzap_probe_01/run_manifest.json,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/accuracy_b4_m0_probe_02/request_results.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/accuracy_b4_m0_probe_02/run_manifest.json,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/accuracy_b4_m0_sentinel_01/request_results.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/accuracy_b4_m0_sentinel_01/run_manifest.json,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/accuracy_b4_m025_sentinel_01/request_results.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/accuracy_b4_m025_sentinel_01/run_manifest.json,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/accuracy_b4_stratified9_01/request_results.csv,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+analysis/experiments/accuracy_b4_stratified9_01/run_manifest.json,结果表/分析输入记录,逐请求/逐head数据和规则化/生成对照；v3与冻结筛查为报告主来源，其他版本待核对独有信息,present,retain; no deletion decision
+tools/run_kvzap_baseline.py,实现/重分析入口,字段、规则、aggregation与可复现方法；不是启动新实验的指令,present,retain; no deletion decision
+tools/export_kvzap_predictor_trace.py,实现/重分析入口,字段、规则、aggregation与可复现方法；不是启动新实验的指令,present,retain; no deletion decision
+tools/prepare_kvzap_real_pilot.py,实现/重分析入口,字段、规则、aggregation与可复现方法；不是启动新实验的指令,present,retain; no deletion decision
+tools/run_kvzap_predictor_pilot.py,实现/重分析入口,字段、规则、aggregation与可复现方法；不是启动新实验的指令,present,retain; no deletion decision
+tools/analyze_kvzap_trace.py,实现/重分析入口,字段、规则、aggregation与可复现方法；不是启动新实验的指令,present,retain; no deletion decision
+tools/evaluate_kvzap_structured_masks.py,实现/重分析入口,字段、规则、aggregation与可复现方法；不是启动新实验的指令,present,retain; no deletion decision
+tools/run_kvzap_structured_accuracy.py,实现/重分析入口,字段、规则、aggregation与可复现方法；不是启动新实验的指令,present,retain; no deletion decision
+tools/evaluate_kvzap_physical_layout.py,实现/重分析入口,字段、规则、aggregation与可复现方法；不是启动新实验的指令,present,retain; no deletion decision
+kvpress/presses/kvzap_press.py,实现/重分析入口,字段、规则、aggregation与可复现方法；不是启动新实验的指令,present,retain; no deletion decision
+kvpress/presses/dms_press.py,实现/重分析入口,字段、规则、aggregation与可复现方法；不是启动新实验的指令,present,retain; no deletion decision
+kvpress/presses/margin_block_dms.py,实现/重分析入口,字段、规则、aggregation与可复现方法；不是启动新实验的指令,present,retain; no deletion decision
+kvpress/attention_patch.py,实现/重分析入口,字段、规则、aggregation与可复现方法；不是启动新实验的指令,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00001_longbench__qasper__row000079_55f187ab59/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00001_longbench__qasper__row000079_55f187ab59/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00002_longbench__qasper__row000163_9f0cfa087a/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00002_longbench__qasper__row000163_9f0cfa087a/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00003_longbench__qasper__row000049_38f7bd77d8/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00003_longbench__qasper__row000049_38f7bd77d8/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00004_longbench__qasper__row000070_ada76fd5a6/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00004_longbench__qasper__row000070_ada76fd5a6/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00005_longbench__narrativeqa__row000003_b9cbc5ef98/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00005_longbench__narrativeqa__row000003_b9cbc5ef98/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00006_longbench__qasper__row000016_42c9ee29ad/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00006_longbench__qasper__row000016_42c9ee29ad/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00007_longbench__gov_report__row000096_c1772ef83e/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00007_longbench__gov_report__row000096_c1772ef83e/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00008_longbench__multi_news__row000127_9fc0fcd9cd/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00008_longbench__multi_news__row000127_9fc0fcd9cd/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00009_longbench__gov_report__row000180_d5960d4141/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00009_longbench__gov_report__row000180_d5960d4141/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00010_longbench__multi_news__row000144_04bbfd3c93/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00010_longbench__multi_news__row000144_04bbfd3c93/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00011_longbench__gov_report__row000057_fc32433f47/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00011_longbench__gov_report__row000057_fc32433f47/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00012_longbench__multi_news__row000073_5704d279d1/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00012_longbench__multi_news__row000073_5704d279d1/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00013_longbench__2wikimqa__row000089_60ffd27137/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00013_longbench__2wikimqa__row000089_60ffd27137/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00014_longbench__2wikimqa__row000134_02068600e1/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00014_longbench__2wikimqa__row000134_02068600e1/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00015_longbench__2wikimqa__row000055_450d7bc0ed/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00015_longbench__2wikimqa__row000055_450d7bc0ed/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00016_longbench__musique__row000135_d701ce4f50/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00016_longbench__musique__row000135_d701ce4f50/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00017_longbench__2wikimqa__row000083_f9f30ec8d3/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00017_longbench__2wikimqa__row000083_f9f30ec8d3/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00018_longbench__musique__row000155_390ee15fd1/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_core_v1_shard0/requests/00018_longbench__musique__row000155_390ee15fd1/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00001_longbench__qasper__row000037_1e044342b7/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00001_longbench__qasper__row000037_1e044342b7/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00002_longbench__qasper__row000042_3ad0241a44/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00002_longbench__qasper__row000042_3ad0241a44/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00003_longbench__qasper__row000079_55f187ab59/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00003_longbench__qasper__row000079_55f187ab59/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00004_longbench__qasper__row000146_9fd281abc3/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00004_longbench__qasper__row000146_9fd281abc3/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00005_longbench__qasper__row000163_9f0cfa087a/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00005_longbench__qasper__row000163_9f0cfa087a/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00006_longbench__qasper__row000049_38f7bd77d8/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00006_longbench__qasper__row000049_38f7bd77d8/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00007_longbench__qasper__row000051_cabbdf5b11/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00007_longbench__qasper__row000051_cabbdf5b11/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00008_longbench__qasper__row000070_ada76fd5a6/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00008_longbench__qasper__row000070_ada76fd5a6/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00009_longbench__qasper__row000072_00d441bae2/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00009_longbench__qasper__row000072_00d441bae2/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00010_longbench__qasper__row000077_06af765ac2/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00010_longbench__qasper__row000077_06af765ac2/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00011_longbench__narrativeqa__row000002_a57da3db74/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00011_longbench__narrativeqa__row000002_a57da3db74/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00012_longbench__narrativeqa__row000003_b9cbc5ef98/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00012_longbench__narrativeqa__row000003_b9cbc5ef98/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00013_longbench__narrativeqa__row000005_65cd159877/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00013_longbench__narrativeqa__row000005_65cd159877/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00014_longbench__qasper__row000016_42c9ee29ad/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00014_longbench__qasper__row000016_42c9ee29ad/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00015_longbench__qasper__row000073_5a3f1a82fb/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00015_longbench__qasper__row000073_5a3f1a82fb/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00016_longbench__gov_report__row000096_c1772ef83e/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00016_longbench__gov_report__row000096_c1772ef83e/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00017_longbench__gov_report__row000109_8305f9dd2d/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00017_longbench__gov_report__row000109_8305f9dd2d/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00018_longbench__multi_news__row000054_abf305c7b4/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00018_longbench__multi_news__row000054_abf305c7b4/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00019_longbench__multi_news__row000127_9fc0fcd9cd/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00019_longbench__multi_news__row000127_9fc0fcd9cd/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00020_longbench__qmsum__row000042_8cd97e36c3/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00020_longbench__qmsum__row000042_8cd97e36c3/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00021_longbench__gov_report__row000180_d5960d4141/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00021_longbench__gov_report__row000180_d5960d4141/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00022_longbench__multi_news__row000129_306a5ba55d/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00022_longbench__multi_news__row000129_306a5ba55d/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00023_longbench__multi_news__row000144_04bbfd3c93/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00023_longbench__multi_news__row000144_04bbfd3c93/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00024_longbench__qmsum__row000016_334bf10349/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00024_longbench__qmsum__row000016_334bf10349/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00025_longbench__qmsum__row000044_f810b3a2ef/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00025_longbench__qmsum__row000044_f810b3a2ef/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00026_longbench__gov_report__row000003_532b306c98/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00026_longbench__gov_report__row000003_532b306c98/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00027_longbench__gov_report__row000057_fc32433f47/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00027_longbench__gov_report__row000057_fc32433f47/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00028_longbench__multi_news__row000073_5704d279d1/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00028_longbench__multi_news__row000073_5704d279d1/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00029_longbench__qmsum__row000010_2a07c973d7/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00029_longbench__qmsum__row000010_2a07c973d7/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00030_longbench__qmsum__row000036_efacaac02a/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00030_longbench__qmsum__row000036_efacaac02a/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00031_longbench__2wikimqa__row000062_560e9dcd79/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00031_longbench__2wikimqa__row000062_560e9dcd79/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00032_longbench__2wikimqa__row000089_60ffd27137/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00032_longbench__2wikimqa__row000089_60ffd27137/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00033_longbench__2wikimqa__row000106_1ae95fc45a/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00033_longbench__2wikimqa__row000106_1ae95fc45a/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00034_longbench__2wikimqa__row000118_365114dc39/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00034_longbench__2wikimqa__row000118_365114dc39/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00035_longbench__2wikimqa__row000134_02068600e1/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00035_longbench__2wikimqa__row000134_02068600e1/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00036_longbench__2wikimqa__row000055_450d7bc0ed/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00036_longbench__2wikimqa__row000055_450d7bc0ed/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00037_longbench__2wikimqa__row000167_ac49451b9b/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00037_longbench__2wikimqa__row000167_ac49451b9b/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00038_longbench__musique__row000068_98094ef01f/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00038_longbench__musique__row000068_98094ef01f/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00039_longbench__musique__row000135_d701ce4f50/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00039_longbench__musique__row000135_d701ce4f50/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00040_longbench__musique__row000191_c49d6e1f22/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00040_longbench__musique__row000191_c49d6e1f22/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00041_longbench__2wikimqa__row000017_126eadcea6/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00041_longbench__2wikimqa__row000017_126eadcea6/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00042_longbench__2wikimqa__row000083_f9f30ec8d3/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00042_longbench__2wikimqa__row000083_f9f30ec8d3/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00043_longbench__2wikimqa__row000124_530042fa5c/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00043_longbench__2wikimqa__row000124_530042fa5c/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00044_longbench__musique__row000052_0806f3c50c/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00044_longbench__musique__row000052_0806f3c50c/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00045_longbench__musique__row000155_390ee15fd1/manifest.json,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/pilots/longbench_balanced_v2_shard0/requests/00045_longbench__musique__row000155_390ee15fd1/score_mask.npz,原始trace文件,未来保留分布、位置热图、不同统计轴所需；v1/v2样本重合不代表文件可以删除,present,retain; no deletion decision
+traces/qwen3_8b_single_384/answer.json,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/qwen3_8b_single_384/decoding_events.csv,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/qwen3_8b_single_384/layer_head_summary.csv,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/qwen3_8b_single_384/manifest.json,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/qwen3_8b_single_384/request_summary.csv,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/qwen3_8b_single_384/score_mask.npz,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/hardware_predictor_gate_a_01/layer_head_summary.csv,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/hardware_predictor_gate_a_01/manifest.json,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/hardware_predictor_gate_a_01/reference_comparison.json,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/hardware_predictor_gate_a_01/request_summary.csv,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/hardware_predictor_gate_a_01/score_mask.npz,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/retrieval_predictor_gate_b_01/gate_a_evidence.json,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/retrieval_predictor_gate_b_01/layer_head_summary.csv,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/retrieval_predictor_gate_b_01/manifest.json,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/retrieval_predictor_gate_b_01/request_summary.csv,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/retrieval_predictor_gate_b_01/score_mask.npz,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/summarization_predictor_gate_b_01/gate_a_evidence.json,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/summarization_predictor_gate_b_01/layer_head_summary.csv,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/summarization_predictor_gate_b_01/manifest.json,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/summarization_predictor_gate_b_01/request_summary.csv,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/summarization_predictor_gate_b_01/score_mask.npz,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/reasoning_predictor_gate_b_01/gate_a_evidence.json,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/reasoning_predictor_gate_b_01/layer_head_summary.csv,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/reasoning_predictor_gate_b_01/manifest.json,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/reasoning_predictor_gate_b_01/request_summary.csv,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision
+traces/reasoning_predictor_gate_b_01/score_mask.npz,早期Gate/参考trace,matched reference与Gate A/B结构数据；不将旧单请求替代pilot,present,retain; no deletion decision

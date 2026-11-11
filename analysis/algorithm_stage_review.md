@@ -6,6 +6,8 @@
 RTL、DC、RD1/WCG1 及持续执行补齐不并入这条历史主线。
 
 本页是**已有探索的综合整理和报告编排评估**，不是六份最终报告已经完成的声明。
+R1 已整理为[算法复现、稀疏结构与路线筛选](algorithm_reports/01_reproduction_and_route_selection.md)，
+配套关键数据与相关资料清单；其余五份尚待逐份提炼。
 没有重跑实验、改变旧结论或清理原文件。已阅读纵向计划、阶段归档、主要合同、
 冻结结果及选定原始 JSON；未逐一重新验收所有运行。下文区分可直接引用的结果与
 仍需提取数据的部分，不能将旧计划中的验收要求当成实际通过。
@@ -74,7 +76,7 @@ Jaccard 约 0.205、扣除 marginal-rate 后约 0.069。B=4,m=+0.25 删除率约
 
 **核心来源。** [baseline](baseline_freeze.json)、[v1](longbench_core_v1_freeze.json)、
 [v2](longbench_balanced_v2_freeze.json)、[Route-B](b4_route_b_screening_freeze.json)。
-正式提炼还应从 v2 request/head 汇总选出分布图，避免只保留上述均值。
+R1 正文已提取关键数据表、范围与分组结果，并列出未来分布图的数据来源；当前不要求生成图片。
 
 ### R2：Packed-page、调度与 admission 摊销
 
@@ -241,7 +243,7 @@ workload 行，保留 common/fixed/activity/unestimated 成本表，而不是罗
 [来源索引 CSV](algorithm_stage_source_index.csv)，使细阶段不会在压缩叙事时消失。
 索引记录原文标题/行号和应归报告；它不是实验通过清单、去重结果或删除依据。
 
-尚待完成：逐份将关键原始表/曲线提炼成六份自足报告，特别是 R3 的软件测量分布、
+尚待完成：将其余五个专题的关键原始表/曲线提炼成自足报告，特别是 R3 的软件测量分布、
 R5 的组织/服务对照。旧论文范围和硬件实现问题另留在项目总览中，避免反复塞入
 算法阶段正文。建议整编顺序 R1→R2→R3→R4→R5→R6，完成一份就用它承接对应旧
 阅读入口，不再新增同主题的每日总结；各份完成后再评估相应中间材料的可清理性。
