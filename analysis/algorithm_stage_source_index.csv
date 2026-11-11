@@ -1,0 +1,142 @@
+target_report,source_path,source_line,source_section,use_boundary
+R5,analysis/route_a_research_plan.md,80,A4.6.8.2.2.0 — strict metadata-recordization sufficiency gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,98,A4.6.8.2.2.1 — record-aware organization sensitivity,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,168,A0 — static packed-page feasibility (implementation; no model execution),历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,187,A1 — static scheduling and traffic DSE (implementation; no new model execution),历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,204,A2 — read-only decode-lifecycle trace (completed evidence freeze),历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,249,A3 — calibrated system model and stop/go,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,299,A3-edge — parameterized edge-target refinement,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,325,A3.5c-to-A3 bounded-service contract,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,350,A3.5 — calibratable admission shadow reference,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,362,A3.5b — batched admission-submission reference,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,382,A3.5c — budgeted continuous admission,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,390,A3.6 — hybrid dense-pending + packed-cold activation DSE,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,427,A3.7 — memory-system refinement and adaptive layer gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,446,A3.8 — observable-feature gate screen,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,458,A3.9 — state-consistent continue-admission gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,470,A3.10 — position-preserving deferred-admission input,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,491,A3.11 — branch-consistent deferred memory-system DSE,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,502,A3.12 — common-hardware cross-workload gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,512,A3.13 — short-horizon no-admission control,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,522,A3.14 — observable request-cap contract screen,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,532,A3.15 — high-cap natural-early-stop counterexample,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,550,A3.16 — minimum-continuation contract gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,561,A3.17 — cross-workload contract and policy robustness,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,572,A3.18 — continuation-contract breach sensitivity,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,581,A3.19 — observed-prefix contract sufficiency,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R2,analysis/route_a_research_plan.md,591,A3.20 _ no-contract speculative deferred-admission curve,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,614,A4 _ policy-on reference and measurement gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,644,A4.2.2 — scheduler/merge placement reconciliation,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,661,A4.2.3 — marginal fan-in/service sensitivity,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,674,A4.2.4 — ordered logical source/merge event gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,686,A4 status handoff — 2026-09-09,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,761,A4.0 closeout and A4.1 entry (2026-09-02),历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,864,A4.2.5 — ordered logical dependency schedule sensitivity,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,879,A4.2.6 — exact logical fan-in accounting,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,893,A4.2.7 — cross-workload logical-event stability pipeline,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,912,A4.2.11 — partitioned modeled scheduler/backpressure sensitivity,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,921,A4.2.12 — dependency-preserving source-ready/dispatch reconstruction,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,938,A4.2.13 — same-layer KV head-group sharing boundary,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,950,A4.2.14 — Qwen anchor core-contract closure,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,962,M0 — Nous Llama 3.1 8B no-model portability provenance gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,979,M1 — Nous Llama 3.1 8B functional semantic-portability gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,999,M2 — Nous Llama 3.1 8B Route-A lifecycle-portability gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1015,M3 — Qwen/Llama semantic-portability and descriptor-envelope comparison,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1030,M3.2 — archival-unit and provenance-consumption clarification,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1043,M4 — bounded Nous Llama 3.1 8B workload-descriptor expansion,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1067,M4.1 — summarization ULP diagnostic closure,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1079,M5 — Llama matched-horizon source/fan-in descriptor alignment,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1101,M5.1 — fixed-continuation horizon correction,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1125,M6 — conditioned Qwen/Llama logical-descriptor coverage envelope,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1153,P0 — SnapKV frontend admission contract on the Qwen3-8B anchor,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1189,P1 — SnapKV static packed-page opportunity,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1226,P3 — SnapKV bounded same-mask semantic mapping,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1272,P2 — SnapKV lifecycle/resource descriptor,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1316,DMS-M0 — official trained-DMS provenance and runtime-compatibility gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,1404,A4.2.9 — matched split-source interface-demand accounting,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,1414,A4.2.10 — modeled backpressure envelope,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1427,DMS-M0 — compatible isolated runtime accepted,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1448,DMS-M1 — native decision/cache semantic observation,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1473,DMS-M2 — delayed-eviction/slot-reuse adapter-contract replay,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1519,DMS-M3 — active-native-slot topology precondition,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1550,DMS-M4 — active-resident attention semantic gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1582,Cross-frontend Commonality Study — next phase,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1615,Cross-frontend C1 semantic descriptor,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1650,Cross-frontend C2 realization adapters,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1671,Cross-frontend C3 commonality matrix,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1693,Cross-frontend C4 attention primitive study,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R4,analysis/route_a_research_plan.md,1715,Cross-frontend C5 direction decision,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R3,analysis/route_a_research_plan.md,1738,A4.2.8 — matched-horizon three-workload logical-event stability,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1750,A4.3.0 — resource-contract / workload-envelope / Full-KV fallback gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1771,A4.3.1 — policy-on pending-staging snapshot envelope,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1801,A4.3.2 — policy-on lifecycle-transition envelope,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1818,A4.3.3 — conditional admission/staging envelope,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1830,A4.3.4 — prefill micro-event functional gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1841,A4.3.5 — micro-event admission-quantum functional sweep,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1849,A4.3.6 — conditioned Llama micro-event admission-quantum sweep,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1865,A4.3.7 — cross-anchor Q-sensitivity closeout,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1877,A4.4.0 — activation contract and benefit bypass contract,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1899,A4.4.1 — Qwen activation-contract anchor,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1911,A4.4.2 — non-pooled cross-anchor contract closeout,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1924,A4.5.0 — logical capacity-protection boundary replay,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1942,A4.5.1 — model-on layer-local protection semantic gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1960,A4.5.2 — request-global controller reconciliation,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,1981,A4.5.3 — model-on next-epoch request-global protection semantic gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2002,A4.5.4 — protected Route-A shadow-state disposition semantic gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2022,A4.6.0 — Route-A-active long-horizon steady-state gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2043,A4.6.1 — source-separated activation-burst logical envelope,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2063,A4.6.2 — multi-horizon logical admission-service envelope,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2085,A4.6.3.0 — physicalization mapping contract,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2102,A4.6.3.1 — aggregate attention/admission contention envelope,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2113,A4.6.3.2 — temporal abstract contention replay,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2139,A4.6.4 — causal elastic-admission contract,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2166,A4.6.5 — observer-only causal pending-capacity and service-shortage envelope,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2185,A4.6.6 — equal-budget pending-organization contract,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2213,A4.6.7.0 — immutable pending-ownership semantic reference,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2237,A4.6.7.1 — unweighted organization-management exposure versus capacity recovery,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2265,A4.6.8.0 — birth-ordered span representation sufficiency gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2295,"A4.6.8.1 — representation-aware, hardware-agnostic access contract",历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2326,A4.6.8.2.0 — access-epoch trace and span-lifetime closure,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2352,A4.6.8.2.1 — metadata-organization and abstract access-hotspot sensitivity,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2372,A4.7.0 — metadata-access concurrency contract,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2408,A4.7.1 — semantic metadata-transaction / atomicity contract,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2435,A4.7.2.0 — final metadata storage sufficiency closure,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2460,A4.7.2.1 — metadata physicalization sensitivity DSE,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2503,A4.8.0 — causal commit-aware metadata backlog replay,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2532,A4.8.1a — causal readiness and shortage-root propagation audit,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2552,A4.8.1b — fixed-service shortage/root sensitivity,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2570,A4.8.2a — bounded contract-simplification legality gate,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2591,A4.8.2b — bounded admitted-template service replay,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2614,A4.9.0 — final eager-RMW envelope closure,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2635,A4.9.1 — declared candidate metadata-engine cycle model,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2646,A4.9.2 — final execution-granularity sensitivity,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R5,analysis/route_a_research_plan.md,2660,A4.10 — queue / staging / credit-backpressure resource contract,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R6,analysis/route_a_research_plan.md,2669,A4.11--A4.14 completed software-to-hardware evidence closure,历史研究阶段入口；计划、已完成记录与结果需区分；不是独立有效实验计数
+R1,analysis/baseline_freeze.json,1,baseline 指定环境与结果,核心来源；具体结果按其证据类型引用
+R1,analysis/predictor_trace_gate_a.json,1,单请求 predictor-only Gate A,核心来源；具体结果按其证据类型引用
+R1,analysis/predictor_trace_gate_b_freeze.json,1,三类请求 Gate B,核心来源；具体结果按其证据类型引用
+R1,analysis/longbench_core_v1_freeze.json,1,18条 v1,核心来源；具体结果按其证据类型引用
+R1,analysis/longbench_balanced_v2_freeze.json,1,45条 balanced v2,核心来源；具体结果按其证据类型引用
+R1,analysis/b4_route_b_screening_freeze.json,1,B4结构/生成筛查及布局模型,核心来源；具体结果按其证据类型引用
+R2,analysis/route_a2_lifecycle_freeze.json,1,read-only lifecycle,核心来源；具体结果按其证据类型引用
+R2,analysis/route_a_stage_archive_20260902.md,1,A0-A3结果与负例归档,核心来源；具体结果按其证据类型引用
+R3,analysis/route_a_a4_discussion_brief_20260909.md,1,软件功能与profiling摘要,核心来源；具体结果按其证据类型引用
+R4,analysis/cross_frontend_residency_evidence_archive_20260915.md,1,跨模型/前端结果及边界,核心来源；具体结果按其证据类型引用
+R4,analysis/cross_frontend_commonality_study_plan.md,1,C0-C5完成记录与最终方向,核心来源；具体结果按其证据类型引用
+R6,analysis/route_a4141_accounted_net_benefit_ledger_contract.md,1,最终成本口径与条件性处置,核心来源；具体结果按其证据类型引用
+R6,analysis/route_a4110_semantic_contract.md,1,A4.11.0 trace-off three-path semantic matrix,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4111_measurement_contract.md,1,A4.11.1 trace-off three-path software measurement,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4112_control_event_contract.md,1,A4.11.2 trace-on control-event mapping contract,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4112b_external_storage_lifecycle_contract.md,1,A4.11.2b external-storage lifecycle binding closure,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4120_metadata_interface_inventory_contract.md,1,A4.12.0 — metadata/control interface inventory contract,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4121_metadata_macro_envelope_contract.md,1,A4.12.1 — metadata macro/area envelope contract,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4122_metadata_cycle_energy_contract.md,1,A4.12.2 — metadata cycle/service and estimated-energy contract,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4123_metadata_partial_ledger_contract.md,1,A4.12.3 — metadata-side partial benefit ledger,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4130_payload_interface_inventory_contract.md,1,A4.13.0 — Route-A payload interface inventory,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4131_payload_organization_contract.md,1,A4.13.1 — bounded pending + packed payload organization envelope,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4132_packed_cold_hbm_traffic_contract.md,1,A4.13.2 — packed-cold attention HBM traffic accounting contract,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4133_packed_kv_hbm_realization_contract.md,1,A4.13.3 — packed-KV HBM realization / source-buffer DSE contract,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4134_page_source_reuse_interface_contract.md,1,A4.13.4 — page-source reuse and merge interface freeze,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4135_target_payload_service_cost_contract.md,1,A4.13.5 — target-profile payload service and cost DSE contract,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4140_workload_aligned_metadata_cost_contract.md,1,A4.14.0 — workload-aligned metadata-cost binding contract,前RTL功能/成本合同；计划约束不代替实际结果
+R6,analysis/route_a4141_accounted_net_benefit_ledger_contract.md,1,A4.14.1 — Route-A accounted net-benefit ledger and decision contract,前RTL功能/成本合同；计划约束不代替实际结果

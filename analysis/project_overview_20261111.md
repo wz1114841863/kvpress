@@ -27,6 +27,10 @@
 
 ## 几个月的工作，按一条线看
 
+算法至前 RTL 系统探索的详细脉络、六份紧凑报告归并建议，见
+[算法阶段整编评估](algorithm_stage_review.md)。它按研究目的、计划、结果和分析整理，
+不以运行报错和校验过程作为阅读主线。
+
 1. **算法与 trace。** 复现指定 KVzap predictor，用 baseline 和 18/45 条 trace 了解
    稀疏结构。不同请求的 layer/head 保留比例轮廓较稳定，但 token 级 mask 重叠较低，
    不能直接当成共享 mask。

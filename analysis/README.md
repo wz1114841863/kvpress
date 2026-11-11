@@ -3,6 +3,9 @@
 **先看：[项目总览与管理入口（2026-11-11）](project_overview_20261111.md)。**
 该入口是面向人的精简快照；具体实验结论以对应冻结记录和结果文件为准。
 
+算法至前 RTL 的研究过程及六份专题报告归并建议，见
+[算法阶段整编评估](algorithm_stage_review.md)和[阶段来源索引](algorithm_stage_source_index.csv)。
+
 ## Current Route-A entry
 
 This is the full navigation page for the active KVzap Route-A research track.
