@@ -6,6 +6,7 @@
 算法至前 RTL 的研究过程及六份专题报告归并建议，见
 [算法阶段整编评估](algorithm_stage_review.md)和[阶段来源索引](algorithm_stage_source_index.csv)。
 首份专题已整理：[R1 算法复现、稀疏结构与路线筛选](algorithm_reports/01_reproduction_and_route_selection.md)。
+第二份专题：[R2 Packing、调度与摊销](algorithm_reports/02_packing_scheduling_and_amortization.md)。
 
 ## Current Route-A entry
 
