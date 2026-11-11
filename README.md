@@ -14,6 +14,9 @@ Deploying long-context LLMs is costly due to the linear growth of the key-value 
 
 ## KVzap Route-A research documentation
 
+For a short Chinese overview of the project, current evidence and repository
+layout, start with [项目总览与管理入口](analysis/project_overview_20261111.md).
+
 The repository also contains an evidence-bound KVzap Route-A research track.
 Its current documentation entry, authority order, frozen-evidence index, and
 next gate are maintained in [analysis/README.md](analysis/README.md).  This

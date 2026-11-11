@@ -1,5 +1,8 @@
 # Analysis documentation index
 
+**先看：[项目总览与管理入口（2026-11-11）](project_overview_20261111.md)。**
+该入口是面向人的精简快照；具体实验结论以对应冻结记录和结果文件为准。
+
 ## Current Route-A entry
 
 This is the full navigation page for the active KVzap Route-A research track.
