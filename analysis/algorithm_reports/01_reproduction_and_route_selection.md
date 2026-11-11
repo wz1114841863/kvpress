@@ -268,83 +268,41 @@ Route-B有Pareto优势时重新考虑它。参见[历史路线§3.4](../../KVZAP
 5. v1选样偏斜被v2部分纠正；v2和9请求生成筛查仍有样本边界。
 6. head容量取整损失较小，但压缩机会能否抵消packing与控制成本，留给后续R2—R6。
 
-## 8. 相关资料、数据保留与未来绘图
+## 8. 数据来源与保留决定
 
-本报告的[关键数据包](01_key_data.json)保存正文所用的表格数据和aggregation定义，
-包括45条逐请求压缩数据、36条生成对照、结构与布局汇总。未来可直接据此绘制
-压缩CDF、候选比较、分类删除率和筛查指标图；本轮无需先生成图片。
+R1只保留本报告作为阅读入口。正文中的表格直接提炼自以下既有结果，不再另存一套
+关键数据包、逐文件管理清单或归档方案。未来绘图直接使用原表和trace；均值不能
+重建完整分布，因此相关原始数据继续保留。
 
-只有均值无法重建热图、完整分布或位置图。以下原表和原trace仍应保留：
-
-| 将来想画什么/重做什么 | 需要的数据 |
+| 用途 | 原位置与必要数据 |
 |---|---|
-| 删除率CDF、分类/长度分布 | v2 `request_summary.csv`＋preparation manifest |
-| layer/head retention热图、跨请求相关性 | `layer_head_retention.csv`、`request_pair_similarity.csv` |
-| head共享位置统计 | `head_similarity.csv`；新位置分析还需`score_mask.npz` |
-| keep/drop run-length CDF | `run_length_distribution.csv`，只有均值/P95不足以重建 |
-| block碎片、margin与阈值曲线 | `block_occupancy.csv`、`structured_policy_request.csv`、`score_threshold_sensitivity.csv` |
-| head取整和page布局对照 | `head_length_bucketing.csv`、`request_layout_cost.csv`、`layer_head_page_cost.csv`及原配置 |
-| 筛查质量对照 | `request_results.csv`、对应metric定义、输入/运行条件；重算质量还需答案与参考 |
-| 改统计轴、重新生成候选mask | 原`score_mask.npz`、每请求manifest、schema与分析实现 |
+| 官方路径复现 | [baseline结果](../baseline_results.csv)、[配置](../baseline_config.yaml)、[冻结记录](../baseline_freeze.json) |
+| 单请求及三类请求观测 | [Gate A](../predictor_trace_gate_a.json)、[Gate B](../predictor_trace_gate_b_freeze.json)，以及[Gate原trace](../../traces/hardware_predictor_gate_a_01/)和三个Gate B trace目录 |
+| 选样与18条→45条的推进 | [v1冻结](../longbench_core_v1_freeze.json)、[v2冻结](../longbench_balanced_v2_freeze.json)、[选样资料](../../pilot_inputs/)、对应pilot run manifest |
+| 删除率分布、head热图、相关性、run-length与阈值曲线 | [v2主分析](../experiments/longbench_balanced_v2_analysis/)中的request_summary、request_group_summary、layer_head_retention、request_pair_similarity、head_similarity、run_length_distribution、block_occupancy和score_threshold_sensitivity各CSV；[v1分析](../experiments/longbench_core_v1_analysis/)保留选样演进证据 |
+| B4/B8、margin与head容量取整 | [v3结构化分析](../experiments/longbench_balanced_v2_structured_policy_v3/)中的structured_policy_request、structured_policy_summary和head_length_bucketing各CSV及evaluation manifest |
+| Timeline/packed布局比较 | [布局分析](../experiments/longbench_balanced_v2_phase3_layout_01/)中的request_layout_cost、layout_cost_summary、layer_head_page_cost各CSV及evaluation manifest |
+| 生成质量筛查 | [9请求结果](../experiments/accuracy_b4_stratified9_01/request_results.csv)、对应run manifest、答案/参考及metric定义；[Route-B冻结](../b4_route_b_screening_freeze.json)限定其结论范围 |
+| 新位置统计、重新生成候选mask | [原pilot trace](../../traces/pilots/)中的逐请求score_mask.npz和manifest；[字段定义](../../TRACE_SCHEMA.md)、[分析实现](../../tools/analyze_kvzap_trace.py)、[规则化实现](../../tools/evaluate_kvzap_structured_masks.py)、[布局实现](../../tools/evaluate_kvzap_physical_layout.py) |
 
-完整关联文件见[资料清单](01_sources.csv)：列出文档、配置、逐请求/逐head结果、实现
-入口与原trace的角色和本地存在性，不列hash，不作为可删性判断。原始
-`pilot_inputs/longbench_balanced_v2.jsonl`当前本地缺失，preparation manifest仍在；
-另一个accuracy输入不能直接当作它的替代。因此既有数据的绘图多数可以完成，但
-不能承诺当前本地已经具备所有从头重跑条件。
+原始`pilot_inputs/longbench_balanced_v2.jsonl`当前本地缺失，preparation manifest仍在；
+accuracy输入不能直接替代它。现有结果可用于许多图表，但不能据此保证所有实验
+都能从本地重新运行。数据、trace和日志很多被Git忽略，提交代码不等于备份这些数据。
 
-本轮仅进行结果提炼、局部算术与来源检查，没有重跑模型、重新验收全部trace、
-移动或删除原资料。图表应在论文表达需要时生成，保留数据与定义比现在增加图片更重要。
+既有共享引用与冻结路径检查得到的保留决定如下：
 
-### 8.1 目前实际文件结构
+- **原位保留：** 冻结记录及其登记制品、v1/v2原trace和主分析、v3结构化结果、最终
+  布局与9请求结果，以及共享代码/schema。baseline和v2测试按原路径检查制品。
+- **早期结果重复也不能直接删：** B4 probe `accuracy_b4_m0_probe_02`及两个sentinel
+  的6个manifest/结果文件，被Route-B冻结记录直接登记。它们继续保留原位。
+- **已有重复或被扩展的版本：** structured-policy v2的manifest、head bucketing与v3
+  完全相同；另两表共有字段值相同，但v3新增容量/加权统计列。Full-KV与原KVzap
+  两个早期probe的结果行也已被最终筛查覆盖；删除旧集合前仍需核对独有条件和引用。
+- **过程资料不进入正文：** 旧初始计划、启动/采集日志、技术报错和混合说明的过程
+  部分无需日常阅读。其中kvzap_trace.md仍含独有规则并引用两份日志，baseline说明
+  也有相对链接；不因本报告完成就自动删除这些旧文件。
+- **状态仍不明：** longbench_balanced_v2_accuracy_gate_01.log只见加载片段，不能判作
+  完整成功或失败。原v2输入缺失也仍需定位。
 
-目前采用“报告集中、原始证据保持原位”的结构；没有把237项资料复制进报告目录。
-
-```text
-analysis/
-  algorithm_reports/
-    01_reproduction_and_route_selection.md  # 阅读正文
-    01_key_data.json                        # 关键结果提取，不是全部原始数据
-    01_sources.csv                          # 路径、用途、管理分类和判断依据
-  baseline_{config.yaml,results.csv,freeze.json}
-  predictor_trace_gate*.json                # 单请求/三类请求的既有记录
-  longbench_*_freeze.json                   # pilot结果与范围
-  b4_route_b_screening_freeze.json          # Route-B最终筛查边界
-  experiments/
-    longbench_core_v1_analysis/             # v1逐请求/逐head分析
-    longbench_balanced_v2_analysis/          # v2主结构结果
-    longbench_balanced_v2_structured_policy_v{2,3}/
-    longbench_balanced_v2_phase3_layout_01/  # 三种mask的布局对照
-    accuracy_*probe*/、accuracy_*sentinel*/ # 前置小筛查
-    accuracy_b4_stratified9_01/              # 最终9请求×4变体
-pilot_inputs/                              # 样本输入与选样说明；v2原JSONL缺失
-traces/                                   # Gate和pilot原score/mask
-logs/                                     # 本地可见的采集/筛查/运行过程日志
-tools/、kvpress/                           # 共享分析工具与算法实现
-```
-
-上图为相关目录的简写，不是完整目录列表，也不是新增归档目录。实验和trace很多
-被Git忽略；代码提交不代表它们已经备份。后续若移动，必须先处理原记录的路径引用。
-
-### 8.2 已能判断的历史、过程与重复内容
-
-| 文件或集合 | 本轮判断 | 后续处理边界 |
-|---|---|---|
-| `CODEX_FIRST_TASK.md`、`EXPERIMENT_PLAN.md` | 初始任务/探索清单，包含已过时下一步及未执行设想 | 历史计划候选；不能将全部勾选项当已做实验 |
-| `analysis/kvzap_trace.md` | 混合文档：有旧状态、启动步骤、报错审计，也有独有trace规则和边界 | 可拆出过程内容归档；不能整篇按报错文件删除 |
-| `analysis/kvzap_smoke_test.md` | 早期使用/环境指导，不是最终结果报告 | 历史指导候选；仍可能被代码文档引用 |
-| `analysis/reproduction_notes.md`、`kvzap_baseline.md` | 与R1部分内容重合，但保留冻结说明/命令与指标解释 | 保留依赖，后续评估是否转为复现附件；不是纯冗余 |
-| structured-policy v2的4份文件 | manifest和bucketing与v3逐字节相同；另两CSV各270/84行的共有字段值相同，但v3新增容量/加权统计字段 | 前两项为重复内容候选，后两项为被扩展历史版本；v3是R1主来源，未完成全仓依赖审计，不直接删除v2 |
-| `accuracy_*probe*`及两个sentinel集合 | 已检查的有效结果行与最终9请求筛查对应行完全相同 | 早期小筛查/结果重复候选；各自运行条件与记录仍独立，不等于目录可整体删除 |
-| `logs/*first.log`、`longbench_balanced_v2_full.log`等 | 第一条/完整采集的历史进度，不是新增科学结果 | 过程日志归档候选，不参与主文阅读 |
-| `logs/accuracy_b4_m0_probe_01.log`、`prepare_longbench_balanced_v2.log` | 本地可见的失败尝试/准备报错日志 | 技术过程归档候选；不影响已验收后续结果 |
-| `logs/longbench_balanced_v2_accuracy_gate_01.log` | 只看到模型加载片段，没有从该日志确认完整结果 | 运行状态不明的过程记录，不能直接叫成功或失败 |
-| v1/v2的原trace与结构分析 | 请求重合但不是本轮判定的文件重复 | v1说明选样如何推进；不能因v2样本包含v1就删v1 |
-
-R1范围内未找到独立命名的launch/handoff报告；启动与旧交接主要混在早期说明里。
-后来的Route-A交接含R2—R6和硬件进展，不能因R1已整理就整体视为冗余。
-资料清单已逐项加入管理分类和依据，并补入本地12份相关日志；这不是删除许可。
-
-后续共享引用与冻结路径检查已形成[目录整理与归档方案](01_archive_plan.md)。
-清单249项的当前处置为223项原位保留、19项有条件归档候选、7项待核对。
-其中被冻结的早期B4 probe/sentinel继续原位保留，不能仅因结果重复就归档。
+本次只删除新增且可由本报告与既有结果替代的三个整理附件，没有移动或删除原始
+实验资料。后续R2—R6同样以各一份正文为目标，不默认增加数据包、清单和方案文件。
