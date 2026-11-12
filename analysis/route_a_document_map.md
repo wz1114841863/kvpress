@@ -248,8 +248,8 @@ Read only when the question needs the corresponding history or object:
 | Trigger | Read on demand | Why it is not default core |
 |---|---|---|
 | Trace schema, trace collection, or predictor evidence | [`../TRACE_SCHEMA.md`](../TRACE_SCHEMA.md) | Continuous trace record; irrelevant to a pure RTL successor-plan discussion. |
-| A0--A4 research/DSE disposition or a proxy/accounting claim | [`route_a_research_plan.md`](route_a_research_plan.md) | Longitudinal research record, not the live RTL interface authority. |
-| Original Route-A rationale or a historical architecture-stage transition | [`../KVZAP_ARCHITECTURE_PATH.md`](../KVZAP_ARCHITECTURE_PATH.md) | Historical route narrative; later slices may supersede its next-step wording. |
+| A0--A4 research/DSE disposition or a proxy/accounting claim | [Project overview](project_overview_20261111.md), then the relevant [R1—R6 report](algorithm_reports/) | Research explanation and direct result links; not the live RTL interface authority. |
+| Original Route-A rationale or a historical architecture-stage transition | [R1 route selection](algorithm_reports/01_reproduction_and_route_selection.md) and [R6 architecture-entry decision](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md) | Separates the original conditional choice from implementation evidence and current status. |
 | Broad discovery of a named attachment | [`README.md`](README.md) | Full index; use it to locate a record, not as a default technical contract. |
 
 ## Stage evidence index
@@ -257,7 +257,7 @@ Read only when the question needs the corresponding history or object:
 | Flow stage | Preserve and read only when needed | Primary entry / lookup rule |
 |---|---|---|
 | Phase 0 / predictor and trace freezes | Baseline, LongBench, Route-B screening, and trace-gate freezes | `baseline_freeze.json`, `predictor_trace_gate_*`, `longbench_*_freeze.json`, `b4_route_b_screening_freeze.json`; see `AGENTS.md` for claim limits. |
-| Route-A A0--A4 research/DSE | Static feasibility, lifecycle, accounting, and final A4.14.1 ledger | `route_a_research_plan.md`, `route_a_a0_a3_a4_handoff_20260902.md`, `route_a_stage_archive_20260902.md`, `route_a41*` / `route_a41[1-4]*_contract.md`, the named `analysis/experiments/` report, and `a4141_local_provenance_recovery_20261016.md` when local ledger availability is at issue. |
+| Route-A A0--A4 research/DSE | Static feasibility, lifecycle, accounting, and final A4.14.1 ledger | Start with [R1—R6](algorithm_reports/) and their direct `analysis/experiments/` links. Retained old research plans/handoffs and A4 contracts are historical dependencies, not extra required reading; use `a4141_local_provenance_recovery_20261016.md` only for the specific local ledger recovery snapshot, and R5§9 for the later remote A4.9.2/A4.10 lookup. |
 | Architecture and Gate-A / Gate-RTL0 | Frozen interface, cross-closure, hierarchy, ports, and assertions | `architecture_spec.md`, `architecture_gate_a_*`, `rtl_entry_*_contract.md`, and their manifests/freezes. |
 | RTL1 / RTL2 | Control and constrained transaction/dataflow steps | Find the numbered `rtl1_*` or `rtl2_*` contract and its paired manifest through `rtl2_phase_contract.md` or `README.md`; do not load the entire lineage by default. |
 | RTL3.0--RTL3.8.5 | Replacement-owner, functional environments, source/R4 paths, and all-source coverage | Start at the relevant `rtl3_*_contract.md` named by the phase ledger; use `rtl3_8_5_full_path_closure_coverage_contract.md` for all-source coverage limits. |

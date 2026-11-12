@@ -10,11 +10,17 @@ they were treated as input and were not modified.
 Evidence used:
 
 - repository instructions: `AGENTS.md`, `RESEARCH_CONTEXT.md`,
-  `TRACE_SCHEMA.md`, and `CODEX_FIRST_TASK.md`;
+  `TRACE_SCHEMA.md`, and the initial repository-inspection task;
 - repository documentation: `README.md`, `kvzap/README.md`, and
   `evaluation/README.md`;
 - implementation and tests cited below;
 - local paper `papers/KVzap.pdf` (arXiv:2601.07891v1, 20 pages).
+
+Navigation update, 2026-11-12: the completed initial-task checklist has been
+retired. Its repository-inspection findings remain below; the later research
+story and working software entry points are in [R1](algorithm_reports/01_reproduction_and_route_selection.md)
+and the [project overview](project_overview_20261111.md). Those current reports
+were not inputs to the original 2026-08-06 inspection.
 
 No model or dataset was downloaded, no benchmark or training job was run, and
 no implementation file was changed. Therefore model/checkpoint availability is

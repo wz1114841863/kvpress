@@ -1,17 +1,20 @@
 # Analysis documentation index
 
-**先看：[项目总览与管理入口（2026-11-11）](project_overview_20261111.md)。**
+**先看：[项目总览与管理入口](project_overview_20261111.md)。**
 该入口是面向人的精简快照；具体实验结论以对应冻结记录和结果文件为准。
 
-算法至前 RTL 的研究过程及六份专题报告归并建议，见
-[算法阶段整编评估](algorithm_stage_review.md)和[阶段来源索引](algorithm_stage_source_index.csv)。
-首份专题已整理：[R1 算法复现、稀疏结构与路线筛选](algorithm_reports/01_reproduction_and_route_selection.md)。
-第二份专题：[R2 Packing、调度与摊销](algorithm_reports/02_packing_scheduling_and_amortization.md)。
-第三份专题：[R3 功能参考与执行观察](algorithm_reports/03_functional_reference_and_execution_observations.md)。
-第四份专题：[R4 跨模型与前端边界](algorithm_reports/04_cross_model_and_frontend_boundaries.md)。
-第五份专题：[R5 Pending与metadata资源探索](algorithm_reports/05_pending_and_metadata_resource_exploration.md)。
-第六份专题：[R6 前RTL成本账本与架构入口判断](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md)。
-六份正文现已齐备；原始资料仍保留，资料缺口与未计成本见各报告。
+算法至前 RTL 的研究过程由总览与以下六份正文完整串联，直接引用原始结果：
+
+- [R1 算法复现、稀疏结构与路线筛选](algorithm_reports/01_reproduction_and_route_selection.md)。
+- [R2 Packing、调度与摊销](algorithm_reports/02_packing_scheduling_and_amortization.md)。
+- [R3 功能参考与执行观察](algorithm_reports/03_functional_reference_and_execution_observations.md)。
+- [R4 跨模型与前端边界](algorithm_reports/04_cross_model_and_frontend_boundaries.md)。
+- [R5 Pending与metadata资源探索](algorithm_reports/05_pending_and_metadata_resource_exploration.md)。
+- [R6 前RTL成本账本与架构入口判断](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md)。
+
+2026-11-12 已删除13份内容已归并、无冻结或工具输入依赖的旧说明/合同及整编
+中间文件；有保留引用或输入依赖的原文继续原位保存。实验数据没有清理，资料
+缺口与未计成本见各报告，不再需要额外整编评估或来源索引作为阅读中间层。
 
 ## Current Route-A entry
 
@@ -468,8 +471,9 @@ Read these only when the corresponding level of detail is required:
 | RTL1-I3 source/R4/R6 control composition | [`rtl1_i3_delivery_source_contract.md`](rtl1_i3_delivery_source_contract.md) and [`rtl1_i3_interface_manifest.json`](rtl1_i3_interface_manifest.json) |
 | RTL1-I4 reclaim transport contract | [`rtl1_i4_reclaim_contract.md`](rtl1_i4_reclaim_contract.md) and [`rtl1_i4_interface_manifest.json`](rtl1_i4_interface_manifest.json) |
 
-The R1--R6 contracts and their Python references remain the precise executable
-attachments to the specification. They are not parallel living architecture
+The hardware R1--R6 closure contracts (distinct from the six algorithm reports
+above) and their Python references remain the precise executable attachments
+to the specification. They are not parallel living architecture
 specifications: use them for module-level interface/assertion work or exact
 historical provenance.
 
@@ -483,7 +487,7 @@ The final research disposition is the A4.14.1 ledger report at
 |---|---|
 | External-storage correctness and lifecycle binding | [`route_a4112b_external_storage_lifecycle_contract.md`](route_a4112b_external_storage_lifecycle_contract.md) |
 | M2 metadata/control contract | [`route_a4120_metadata_interface_inventory_contract.md`](route_a4120_metadata_interface_inventory_contract.md) through [`route_a4122_metadata_cycle_energy_contract.md`](route_a4122_metadata_cycle_energy_contract.md) |
-| Packed payload, sidecar, source reuse, and service envelope | [`route_a4131_payload_organization_contract.md`](route_a4131_payload_organization_contract.md) through [`route_a4135_target_payload_service_cost_contract.md`](route_a4135_target_payload_service_cost_contract.md) |
+| Packed payload, sidecar, source reuse, and service envelope | [`A4.13.1`](route_a4131_payload_organization_contract.md), [`A4.13.3`](route_a4133_packed_kv_hbm_realization_contract.md), [`A4.13.4`](route_a4134_page_source_reuse_interface_contract.md), [`A4.13.5`](route_a4135_target_payload_service_cost_contract.md); research explanation and earlier accounting are in [R6](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md). |
 | Workload-aligned metadata and final ledger | [`route_a4140_workload_aligned_metadata_cost_contract.md`](route_a4140_workload_aligned_metadata_cost_contract.md), [`route_a4141_accounted_net_benefit_ledger_contract.md`](route_a4141_accounted_net_benefit_ledger_contract.md) |
 
 These are immutable research/provenance attachments. They must not be edited,
@@ -492,10 +496,11 @@ speedup evidence.
 
 ## Historical records and provenance
 
-Older handoffs, stage archives, individual Gate-A closure records, and
-per-revision provenance freezes are intentionally retained at their existing
-paths. Many freezes name exact source paths and SHA-256 values; moving or
-deleting them would make old evidence difficult to materialize and review.
+Older records still required by frozen source/input bindings, retained
+historical references, or tools remain at their existing paths. Covered,
+unbound algorithm explanations have been removed; this is not permission to
+delete experiment data or the remaining Gate-A/provenance attachments. Many
+freezes name exact source paths and SHA-256 values.
 
 For routine work, do not begin with those files. Start with the living
 documents above—especially `route_a_current_handoff.md` and the phase ledger—
@@ -509,8 +514,10 @@ current status: refresh `route_a_current_handoff.md` for the compact current
 disposition, refresh `route_a_document_map.md` when the core/stage retrieval
 classification changes, append detailed RTL phase progress to
 `rtl2_phase_contract.md`, append compatible trace schema records to
-`TRACE_SCHEMA.md`, and append Route-A research progress to
-`route_a_research_plan.md`. Update `architecture_spec.md` only for accepted
+`TRACE_SCHEMA.md`, and update the relevant report in `algorithm_reports/`
+and `project_overview_20261111.md` for research interpretation and current
+status. The old `route_a_research_plan.md` remains a historical source, not
+the default place to append another research summary. Update `architecture_spec.md` only for accepted
 interface-contract changes or a clearly labelled status alignment. Create a
 new numbered volume only when a continuous living record becomes impractical
 to navigate. The specifically named current handoff is a living document;

@@ -166,6 +166,12 @@ pending峰值等，也不是GPU allocator或HBM物理容量测量。来源：
 却让Full-KV重复读四次。早期A4.13.2的Full-KV no-reuse只保留作归因参考；
 A4.13.3以后，headline是两边都拥有相同合法GQA复用。
 
+A4.13.2曾并列Full-KV逐query无复用、packed逐query无复用、packed合法GQA复用
+三条accounting路径，用于分离裁剪/页取整与共享读取的作用；第三条相对第一条
+同时包含两种变化，不能当最终公平收益。该阶段的256-B accounting sector只是
+K或V word大小，后续profile的64-B modeled transaction也只是声明粒度，两者
+都不是已验证的原生HBM事务。最终比较沿用下表的两边合法复用口径。
+
 合法复用要求同layer/KV head/position/phase的四个query-head事件具有相同
 source长度和page状态，逐组验证，不是直接把全部字节除以4。Full-KV causal
 span也按相同64-token页取整。Route-A packed页额外带512 B position sidecar。
