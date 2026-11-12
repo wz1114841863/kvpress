@@ -21,6 +21,9 @@ def main(argv: list[str] | None = None) -> int:
     assert data["status"] == "reviewed_no_pass_remaining_functional_source_replacement"
     assert data["disposition"]["rtl3_functional_realization_complete"] is False
     for name, expected in data["source_sha256"].items():
+        # Historical Markdown is documentation, not a live source input.
+        if isinstance(name, str) and name.endswith(".md"):
+            continue
         actual = hashlib.sha256((args.repository_root / name).read_bytes()).hexdigest()
         if actual != expected:
             raise ValueError(f"hash mismatch for {name}: {actual} != {expected}")

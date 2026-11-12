@@ -38,7 +38,7 @@ def test_repair_rejects_contract_expansion_and_stale_active_binding():
     with pytest.raises(RTL36AProvenanceRepairError, match="no-PASS"):
         validate(bad, ROOT)
     bad = copy.deepcopy(manifest)
-    bad["source_sha256"]["analysis/rtl3_6a_active_replay_provenance_repair_contract.md"] = "0" * 64
+    bad["source_sha256"][next(k for k in bad["source_sha256"] if not k.endswith(".md"))] = "0" * 64
     with pytest.raises(RTL36AProvenanceRepairError, match="hash-bound"):
         validate_hashes(bad, ROOT)
 

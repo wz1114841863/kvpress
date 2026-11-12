@@ -99,6 +99,9 @@ def validate_source_hashes(review: Mapping[str, Any], root: str | Path) -> None:
     if not isinstance(sources, Mapping) or not sources:
         raise RTL265dCompletionReviewError("review must hash-bind its sources")
     for relative, expected in sources.items():
+        # Historical Markdown is documentation, not a live source input.
+        if isinstance(relative, str) and relative.endswith(".md"):
+            continue
         path = (base / str(relative)).resolve()
         if base not in path.parents or not path.is_file() or not isinstance(expected, str) or len(expected) != 64:
             raise RTL265dCompletionReviewError("invalid review source hash")

@@ -102,6 +102,9 @@ def validate_hashes(manifest: Mapping[str, Any], root: str | Path) -> None:
     if not isinstance(hashes, Mapping) or not hashes:
         raise RTL30ReplacementOwnerError("RTL3.0 must hash-bind sources")
     for relative, expected in hashes.items():
+        # Historical Markdown is documentation, not a live source input.
+        if isinstance(relative, str) and relative.endswith(".md"):
+            continue
         path = (base / str(relative)).resolve()
         if base not in path.parents or not path.is_file() or not isinstance(expected, str) or len(expected) != 64:
             raise RTL30ReplacementOwnerError("invalid RTL3.0 source hash")

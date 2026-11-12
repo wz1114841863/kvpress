@@ -10,6 +10,9 @@
 [H3 存储实现、测量边界与完整成本](hardware_reports/03_storage_measurement_boundary_and_complete_cost.md)和
 [H4 面积／时序优化与设计复盘](hardware_reports/04_area_timing_optimization_and_design_review.md)。
 软件—硬件职责调整仍是待讨论候选，没有改变现有RTL或研究协议。
+RTL阶段74份细分历史说明已合并到H2；实际工具读取的接口矩阵、事件schema和
+manifest仍保留，旧合同原文可在整理前Git版本`636c19b`查看。旧源码快照的哈希
+与后续实现存在不一致，历史门槛尚未全部解除；不能将其视为当前功能验证。
 
 硬件资料已补齐M2实现分叉、S2同参验证后的成本边界及未实施优化候选。清理分两批：
 先删除44份启动、重试和修复说明，再解除纯措辞检查与历史Markdown存在性依赖，
@@ -145,7 +148,7 @@ DC包含项与历史proxy，区分必要信息、职责/接口和物理表示的
 H3承接算法R6之后的真实实现成本，避免重复抄写前RTL的proxy账本。
 
 主要依据：[架构规格](architecture_spec.md)、
-[RTL2/3推进](rtl2_phase_contract.md)、[首次使用闭合](rtl3_9_c4_d_functional_completion_review.md)、
+[RTL2/3推进](rtl2_0_activation_manifest.json)、[首次使用闭合](rtl3_9_c4_d_functional_completion_review_manifest.json)、
 [MR-2](measurement_dut_cut_freeze_20261025.json)、[完整增量账本](route_a_incremental_storage_cost_ledger_p0_20261106.md)、
 [最新完整DC结果](dc_rd1_wcg1_full_paired_result_20261109.md)、
 [持续页读取结果](route_a_persistent_page_read_r2_result_20261109.md)。

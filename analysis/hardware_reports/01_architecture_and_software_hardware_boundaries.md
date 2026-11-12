@@ -215,7 +215,7 @@ Full-KV控制分母和Route-A实现成本影响，既不能直接当完整系统
 [R5](../architecture_gate_a_r5_page_manager_descriptor_contract.md)、
 [R6](../architecture_gate_a_r6_top_level_lifecycle_contract.md)。
 
-后续反馈来自[首次使用闭合](../rtl3_9_c4_d_functional_completion_review.md)、
+后续反馈来自[首次使用闭合](../rtl3_9_c4_d_functional_completion_review_manifest.json)、
 [持续执行探针](../route_a_stage_a_probe_result_20261109.md)、
 [持久页v2结果](../route_a_persistent_page_read_r2_result_20261109.md)、
 [多组journal审查](../route_a_multigroup_journal_lifecycle_closure_20261109.md)和

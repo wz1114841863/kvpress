@@ -113,6 +113,9 @@ def validate_source_hashes(binding: Mapping[str, Any], repo_root: str | Path) ->
         raise RTL26EventBindingError("binding must hash-bind reviewed sources")
     root = Path(repo_root).resolve()
     for relative, expected in sources.items():
+        # Historical Markdown is documentation, not a live source input.
+        if isinstance(relative, str) and relative.endswith(".md"):
+            continue
         if not isinstance(relative, str) or not isinstance(expected, str) or len(expected) != 64:
             raise RTL26EventBindingError("invalid source hash entry")
         path = (root / relative).resolve()

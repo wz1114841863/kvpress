@@ -35,6 +35,9 @@ def validate(manifest_path: Path, repository_root: Path) -> None:
     ]:
         raise ValueError("RTL3.5-B forbidden boundary differs from the approved scope")
     for relative_path, expected in manifest["source_sha256"].items():
+        # Historical Markdown is documentation, not a live source input.
+        if isinstance(relative_path, str) and relative_path.endswith(".md"):
+            continue
         actual = _sha256(repository_root / relative_path)
         if actual != expected:
             raise ValueError(f"hash mismatch for {relative_path}: {actual} != {expected}")

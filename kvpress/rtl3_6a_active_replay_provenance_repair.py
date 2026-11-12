@@ -71,6 +71,9 @@ def validate(manifest: Mapping[str, Any], root: str | Path) -> None:
         if not isinstance(sources, Mapping) or not sources:
             raise RTL36AProvenanceRepairError(f"active binding lacks source hashes: {relative}")
         for source, expected in sources.items():
+            # Historical Markdown is documentation, not a live source input.
+            if isinstance(source, str) and source.endswith(".md"):
+                continue
             if _sha256(Path(root) / source) != expected:
                 raise RTL36AProvenanceRepairError(f"active binding still has source drift: {relative}:{source}")
 
@@ -81,6 +84,9 @@ def validate_hashes(manifest: Mapping[str, Any], root: str | Path) -> None:
     if not isinstance(hashes, Mapping) or not hashes:
         raise RTL36AProvenanceRepairError("RTL3.6-A must hash-bind its repair sources")
     for relative, expected in hashes.items():
+        # Historical Markdown is documentation, not a live source input.
+        if isinstance(relative, str) and relative.endswith(".md"):
+            continue
         path = (base / str(relative)).resolve()
         if base not in path.parents or not path.is_file() or not isinstance(expected, str) or len(expected) != 64:
             raise RTL36AProvenanceRepairError("invalid RTL3.6-A source hash")

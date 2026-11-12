@@ -49,6 +49,9 @@ def validate_source_hashes(review: dict[str, Any], root: str | Path) -> None:
     if not isinstance(hashes, dict) or not hashes:
         raise RTL26CompletionReviewError("entry audit must hash-bind its reviewed sources")
     for relative, expected in hashes.items():
+        # Historical Markdown is documentation, not a live source input.
+        if isinstance(relative, str) and relative.endswith(".md"):
+            continue
         if not isinstance(relative, str) or not isinstance(expected, str) or len(expected) != 64:
             raise RTL26CompletionReviewError("invalid source hash record")
         actual = hashlib.sha256((root / relative).read_bytes()).hexdigest()

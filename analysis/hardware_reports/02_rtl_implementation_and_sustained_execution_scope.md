@@ -256,9 +256,9 @@ journal及pending descriptor要覆盖仍合法的查询、withdrawal和服务。
 
 ## 9. 原始定义与结果入口
 
-实现库存可核查[RTL1跨owner清单](../rtl1_i_interface_manifest.json)、[RTL2/3推进](../rtl2_phase_contract.md)、
-[七种source协议覆盖](../rtl3_8_5_full_path_closure_coverage_contract.md)、
-[C4-D首次使用结论](../rtl3_9_c4_d_functional_completion_review.md)、
+实现库存可核查[RTL1跨owner清单](../rtl1_i_interface_manifest.json)、[RTL2/3推进](../rtl2_0_activation_manifest.json)、
+[七种source协议覆盖](../rtl3_8_5_full_path_closure_coverage_manifest.json)、
+[C4-D首次使用结论](../rtl3_9_c4_d_functional_completion_review_manifest.json)、
 [MR-1B单记录路径](../mr1b_direct_pending_cross_owner_contract_proposal.md)、
 [MR-2边界](../measurement_dut_cut_freeze_20261025.json)与[测量DUT范围](../measurement_dut_cut_freeze_20261025.md)。
 

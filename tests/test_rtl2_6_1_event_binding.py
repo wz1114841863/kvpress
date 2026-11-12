@@ -66,7 +66,7 @@ def test_adapter_requires_one_complete_explicit_schema_field_set_and_hashes_bind
     with pytest.raises(RTL26EventBindingError, match="not in the RTL2.6.1"):
         adapter.capture(RTL26EventObservation("retire_ack", {"session_id": 0, "request_id": 1, "incarnation": 2}))
     malformed = copy.deepcopy(binding)
-    malformed["source_sha256"]["analysis/rtl2_phase_contract.md"] = "0" * 64
+    malformed["source_sha256"][next(k for k in malformed["source_sha256"] if not k.endswith(".md"))] = "0" * 64
     with pytest.raises(RTL26EventBindingError, match="hash-bound source drift"):
         validate_source_hashes(malformed, ROOT)
 

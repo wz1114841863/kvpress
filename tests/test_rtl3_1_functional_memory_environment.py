@@ -48,7 +48,7 @@ def test_hashes_and_cli_are_reproducible():
     manifest = payload()
     validate_hashes(manifest, ROOT)
     bad = copy.deepcopy(manifest)
-    bad["source_sha256"]["analysis/rtl3_1_functional_memory_environment_contract.md"] = "0" * 64
+    bad["source_sha256"][next(k for k in bad["source_sha256"] if not k.endswith(".md"))] = "0" * 64
     with pytest.raises(RTL31FunctionalMemoryEnvironmentError, match="hash-bound"):
         validate_hashes(bad, ROOT)
     assert "--manifest" in subprocess.run([sys.executable, str(VALIDATOR), "--help"], cwd=ROOT, text=True, capture_output=True, check=True).stdout
