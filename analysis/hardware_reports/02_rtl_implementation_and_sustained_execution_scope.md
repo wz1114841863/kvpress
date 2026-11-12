@@ -69,7 +69,8 @@ RETAIN → pending → pack-read → P3 → packed-write
 ```
 
 **分析。** 这是有价值的控制/数据流证据，但当时仍有验证专用的publication→S2关联、
-结果stub和测试平台连接。RTL2的最终通过明确限定为testbench-only functional dataflow，
+结果stub和测试平台连接。RTL2.0早期完成七项接口修订的静态清单，只说明owner和carrier方案得到确认，
+并不等于行为已接通。RTL2的最终通过明确限定为testbench-only functional dataflow，
 没有证明对应的全部生产连接已经实现。单次attention terminal也从未被定义成自动退休。
 
 ### 分阶段定向验证：已覆盖什么
@@ -106,7 +107,10 @@ pending binding生成pack-read，随后走durable write、publication与逐成�
 作为测试环境保存和返回事务数据，并观察request、fragment和write-commit事件；
 早期packed-read组合仍显式依赖sidecar边界。后来的testbench shared-store witness
 要求C2读取的是R3成功写入的同一8-fragment payload对象，而不是独立注入的副本；
-这仍是功能环境的对象关联，并未选择真实物理地址或内存控制器。RTL3.6阶段因没有同次live partial→R4→R6
+这仍是功能环境的对象关联，并未选择真实物理地址或内存控制器。 C1从已接受分配关联
+获取sidecar fixture，未知handle、数量或stale身份不允许通过；C2把这条fixture路径与
+packed读组成testbench，要求payload和sidecar都完成后S2才READY，并检查reset后旧响应
+抑制。两个R1端口属于测试组合边界，不代表生产系统选了两个物理内存接口。RTL3.6阶段因没有同次live partial→R4→R6
 闭合、完整sidecar与reset组合而保留no-PASS，后续见证逐步缩小缺口。
 
 **结果。** 早期复核没有因为分段通过就宣告端到端完成，继续补上数据对象连续性、

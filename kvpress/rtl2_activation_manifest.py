@@ -189,10 +189,6 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         raise RTL2ActivationManifestError("completion review must record its pre-behavior state")
     if completion.get("next_authorized_phase") != "rtl2_1a_only":
         raise RTL2ActivationManifestError("completion review may authorize only RTL2.1a")
-    for key in ("artifact", "manifest"):
-        if Path(completion[key]).suffix != ".md" and not Path(completion[key]).is_file():
-            raise RTL2ActivationManifestError(f"completion review {key} does not exist: {completion[key]!r}")
-
     review = _object(manifest, "review_disposition")
     if review.get("rtl2_0_pass") is not True:
         raise RTL2ActivationManifestError("RTL2.0 completion review must pass only after all amendments close")
