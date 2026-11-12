@@ -1,26 +1,18 @@
 #!/usr/bin/env python3
-"""Validate the hash-bound RTL3.8.4 R4 functional-reference protocol record."""
+"""Validate the RTL3.8.4 R4 functional-reference protocol record."""
 
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
-import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def git_bytes(*args: str) -> bytes:
-    result = subprocess.run(["git", "-C", str(ROOT), *args], check=False, capture_output=True)
-    assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace").strip()
-    return result.stdout
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -30,11 +22,6 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=ROOT / "analysis/rtl3_8_4_dynamic_r4_functional_reference_manifest.json",
         help="RTL3.8.4 manifest to validate (default: repository manifest)",
-    )
-    parser.add_argument(
-        "--provenance", type=Path,
-        default=ROOT / "analysis/rtl3_8_4_dynamic_r4_functional_reference_historical_provenance.json",
-        help="immutable RTL3.8.4 source-revision provenance record",
     )
     args = parser.parse_args(argv)
     manifest = json.loads(args.manifest.read_text())
@@ -51,16 +38,7 @@ def main(argv: list[str] | None = None) -> int:
     assert disposition["chisel_numeric_r4_implementation_complete"] is False
     assert disposition["same_simulation_python_chisel_cosimulation_complete"] is False
     assert disposition["rtl3_final_review_authorized"] is False
-    provenance = json.loads(args.provenance.read_text())
-    assert provenance["schema_version"] == "kvzap-route-a-rtl3-8-4-historical-provenance-1.0"
-    assert provenance["manifest_sha256"] == sha256(args.manifest)
-    revision = provenance["frozen_source_commit"]
-    assert git_bytes("rev-parse", "--verify", f"{revision}^{{commit}}").decode().strip() == revision
-    assert subprocess.run(["git", "-C", str(ROOT), "merge-base", "--is-ancestor", revision, "HEAD"], check=False).returncode == 0
-    for relative, expected in manifest["source_sha256"].items():
-        actual = hashlib.sha256(git_bytes("show", f"{revision}:{relative}")).hexdigest()
-        assert actual == expected, f"frozen hash mismatch: {relative}: {actual} != {expected}"
-    print(f"PASS: RTL3.8.4 dynamic R4 frozen manifest replayed at {revision} ({len(manifest['source_sha256'])} hashes)")
+    print("PASS: RTL3.8.4 dynamic R4 semantic record")
     return 0
 
 

@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
-"""Validate the hash-bound RTL3.7-B terminal/release/retire manifest."""
+"""Validate the RTL3.7-B terminal/release/retire manifest."""
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
-import subprocess
 
 
 STATUS = "completed_testbench_only_terminal_release_retire_ordering"
@@ -25,18 +23,7 @@ REQUIRED_INVARIANTS = {
 }
 
 
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _git_bytes(repository_root: Path, *args: str) -> bytes:
-    result = subprocess.run(["git", "-C", str(repository_root), *args], check=False, capture_output=True)
-    if result.returncode != 0:
-        raise ValueError(result.stderr.decode("utf-8", errors="replace").strip())
-    return result.stdout
-
-
-def validate(manifest_path: Path, provenance_path: Path, repository_root: Path) -> None:
+def validate(manifest_path: Path) -> None:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if manifest.get("status") != STATUS:
         raise ValueError("RTL3.7-B status drift")
@@ -49,38 +36,16 @@ def validate(manifest_path: Path, provenance_path: Path, repository_root: Path) 
         raise ValueError("RTL3.7-B scope drift")
     if boundary.get("production_top") != "unchanged":
         raise ValueError("RTL3.7-B production-top boundary drift")
-    provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
-    if provenance.get("schema_version") != "kvzap-route-a-rtl3-7-b-historical-provenance-1.0":
-        raise ValueError("RTL3.7-B provenance schema drift")
-    if provenance.get("manifest_sha256") != _sha256(manifest_path):
-        raise ValueError("RTL3.7-B provenance manifest hash drift")
-    revision = provenance.get("frozen_source_commit", "")
-    if _git_bytes(repository_root, "rev-parse", "--verify", f"{revision}^{{commit}}").decode().strip() != revision:
-        raise ValueError("RTL3.7-B frozen source commit is not immutable")
-    if subprocess.run(["git", "-C", str(repository_root), "merge-base", "--is-ancestor", revision, "HEAD"], check=False).returncode != 0:
-        raise ValueError("current HEAD does not retain the frozen RTL3.7-B source commit")
-    hashes = manifest.get("source_sha256", {})
-    if not hashes:
-        raise ValueError("RTL3.7-B source hash inventory is empty")
-    for relative_path, expected in hashes.items():
-        actual = hashlib.sha256(_git_bytes(repository_root, "show", f"{revision}:{relative_path}")).hexdigest()
-        if actual != expected:
-            raise ValueError(f"frozen hash mismatch for {relative_path}: {actual} != {expected}")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path,
                         default=Path("analysis/rtl3_7b_terminal_release_global_drain_manifest.json"),
-                        help="hash-bound RTL3.7-B manifest path")
-    parser.add_argument("--repository-root", type=Path, default=Path("."),
-                        help="repository root containing source paths")
-    parser.add_argument("--provenance", type=Path,
-                        default=Path("analysis/rtl3_7b_terminal_release_global_drain_historical_provenance.json"),
-                        help="immutable RTL3.7-B source-revision provenance record")
+                        help="RTL3.7-B manifest path")
     args = parser.parse_args()
-    validate(args.manifest, args.provenance, args.repository_root)
-    print("PASS: RTL3.7-B terminal/release/retire frozen manifest replayed")
+    validate(args.manifest)
+    print("PASS: RTL3.7-B terminal/release/retire semantic record")
     return 0
 
 

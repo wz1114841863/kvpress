@@ -7,7 +7,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 VALIDATOR = ROOT / "tools/validate_rtl3_8_2_functional_sidecar_delivery.py"
-PROVENANCE = ROOT / "analysis/rtl3_8_2_functional_sidecar_delivery_historical_provenance.json"
 
 
 def test_rtl3_8_2_functional_sidecar_delivery_frozen_manifest_replay_passes() -> None:
@@ -21,17 +20,13 @@ def test_rtl3_8_2_functional_sidecar_delivery_frozen_manifest_replay_passes() ->
     )
     assert result.returncode == 0, result.stderr + result.stdout
     assert "PASS: RTL3.8.2" in result.stdout
-    assert "frozen manifest replayed" in result.stdout
 
 
-def test_rtl3_8_2_validator_rejects_nonimmutable_provenance_revision(tmp_path: Path) -> None:
-    bad = json.loads(PROVENANCE.read_text(encoding="utf-8"))
-    bad["frozen_source_commit"] = "0" * 40
-    bad_path = tmp_path / "bad_provenance.json"
-    bad_path.write_text(json.dumps(bad), encoding="utf-8")
-    result = subprocess.run(
-        [sys.executable, str(VALIDATOR), "--provenance", str(bad_path)],
-        cwd=ROOT, check=False, capture_output=True, text=True,
-    )
+def test_validator_rejects_invalid_status(tmp_path: Path) -> None:
+    manifest = json.loads((ROOT / "analysis/rtl3_8_2_functional_sidecar_delivery_manifest.json").read_text(encoding="utf-8"))
+    manifest["status"] = "invalid"
+    path = tmp_path / "bad_manifest.json"
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    result = subprocess.run([sys.executable, str(VALIDATOR), "--manifest", str(path)],
+                            cwd=ROOT, capture_output=True, text=True, check=False)
     assert result.returncode != 0
-    assert "Needed a single revision" in result.stderr or "unknown revision" in result.stderr

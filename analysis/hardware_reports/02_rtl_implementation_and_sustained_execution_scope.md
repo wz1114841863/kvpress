@@ -78,7 +78,8 @@ pending binding生成pack-read，随后走durable write、publication与逐成�
 
 **结果。** 早期复核没有因为分段通过就宣告端到端完成，继续补上数据对象连续性、
 sidecar、生产owner连接、完成顺序和drain。RTL3.8.5覆盖七种非空source组合及每来源
-四消费者的协议路径；它使用命名外部包和测试观察器，不是七种完整数值attention测试。
+四消费者的协议路径；它使用命名外部包和测试观察器，不是七种完整数值attention测试。 对应的事件schema和coverage记录继续用于语义检查；
+历史源码哈希回放只反映当时快照，不构成当前功能或数值正确性的证明。
 
 RTL3.9 C0—C3b进一步让真实R3全部成员被R6接受后，才建立首次packed读；随后实际
 payload/sidecar到达S2、四消费者完成、R6终结，最后完成retire/reclaim。C4-D于
