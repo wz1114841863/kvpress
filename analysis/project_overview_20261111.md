@@ -202,7 +202,7 @@ HBM字节、动态能量proxy、DC cell area与物理PPA分别属于不同证据
 | 位置 | 内容及用途 |
 |---|---|
 | [kvpress/](../kvpress/) | 软件推理与前端；[KVzap predictor](../kvpress/presses/kvzap_press.py)、[DMS包装](../kvpress/presses/dms_press.py)、[attention patch](../kvpress/attention_patch.py)是关键入口，实际数据流见R1 |
-| [evaluation/](../evaluation/)、[kvzap/](../kvzap/) | benchmark、算法相关工具和训练代码；代码存在不等于本研究运行过或训练过 |
+| `kvzap/`、[tools/](../tools/) | KVzap 训练、专项评测及研究脚本；上游通用 evaluation 目录已移除，需要时可从 Git 恢复 |
 | [analysis/algorithm_reports/](algorithm_reports/) | 六份研究正文；从本页直接进入，不需先读中间评估/索引 |
 | [analysis/hardware_reports/](hardware_reports/) | H1—H4四份硬件阶段研究正文，覆盖架构、功能、存储成本与面积/时序优化 |
 | [analysis/experiments/](experiments/) | 原始结果、配置、输入副本、manifest、日志和失败运行；目录数不等于有效实验数 |
