@@ -37,7 +37,21 @@ external-cold存储参考能够执行；但这份Python参考没有展示软件�
 | Same-mask dense KVzap | 按固定KVzap mask保留数据，用dense保留项参考计算 | 检查同一选择下的数值和存储路径差异 |
 | Same-mask Route-A | 相同mask，按hot/pending/packed取数并合并 | 检查packing后的功能与执行开销 |
 
-后两者共用一份计时外采集的mask事件，要求每个事件恰好消费一次。这样才能把
+**代码关系。** 无模型入口 [run_kvzap_route_a4_reference.py](../../tools/run_kvzap_route_a4_reference.py)
+调用 [route_a_attention.py](../../kvpress/route_a_attention.py)：调用者提供K/V和keep mask，
+`RouteAPackedAttentionState` 管理hot/pending/packed，分源计算后用online-softmax
+合并。该入口的dense计算使用**同一Route-A状态导出的记录**，主要检查分源计算和
+合并，不能独立证明记录没有被遗漏；保留的测试另用原始输入和mask直接构造参考。
+
+真实模型入口 [run_kvzap_route_a40_policy_gate.py](../../tools/run_kvzap_route_a40_policy_gate.py)
+通过 [route_a_policy_backend.py](../../kvpress/route_a_policy_backend.py) 将参考状态接入
+选定的模型attention层。它包含Full-KV bypass、独立online dense同mask参考与
+Route-A路径；只有显式启用配对及mask replay时，后两条才复用同一决策。
+后续external-cold路径还使用[存储adapter](../../kvpress/route_a_external_cold_storage.py)
+和[Qwen cache适配](../../kvpress/route_a_qwen_cache.py)，以检查所选cold数据归属。
+这些代码是软件功能原型，不是RTL、物理存储控制器或性能加速实现。
+
+后续固定mask配对中，后两者共用一份计时外采集的mask事件，要求每个事件恰好消费一次。这样才能把
 “选择了不同token”与“同样token换一种存储和计算组织”分开。
 
 独立在线dense与Route-A初始对照曾出现**5/268,992个threshold决策翻转**。这使得

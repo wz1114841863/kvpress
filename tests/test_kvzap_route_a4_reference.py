@@ -210,3 +210,18 @@ def test_mask_decision_stays_with_hot_token_across_append_calls():
     state.append(keys[:, 2:], keys[:, 2:], torch.tensor([[True, False]]), start_position=2)
     assert [item.position for item in state.records(0)["packed"]] == [1]
     assert [item.position for item in state.records(0)["hot"]] == [2, 3]
+
+
+def test_route_a_attention_matches_independent_original_input_selection():
+    state = make_state(window=2, page_tokens=2, budget=1)
+    keys = torch.tensor([[[1., 0.], [0., 1.], [2., 0.], [0., 2.], [1., 1.], [3., 1.]]])
+    values = torch.tensor([[[2., 1.], [1., 3.], [4., 0.], [0., 4.], [2., 2.], [5., 1.]]])
+    keep = torch.tensor([[True, False, True, True, False, True]])
+    state.append(keys, values, keep, start_position=0)
+    query = torch.tensor([0.3, -0.2])
+    # The last two positions remain hot even when their original mask says drop.
+    selected = torch.tensor([0, 2, 3, 4, 5])
+    expected = torch.softmax(keys[0, selected] @ query, dim=0) @ values[0, selected]
+    assert state.state_summary(0)["pending_tokens"] > 0
+    assert state.state_summary(0)["packed_tokens"] > 0
+    torch.testing.assert_close(state.attention(query, head=0), expected, rtol=1e-6, atol=1e-6)
