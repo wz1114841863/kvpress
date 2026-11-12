@@ -112,7 +112,8 @@ production DUT。现有非连续成员组和opaque mapping也不能自行生成b
 
 随后选择较小的生产职责：保留A4详细FIFO生命周期为replay/accounting证据，先实现
 admission所需的metadata append。最初生产owner只检查provenance和两成员响应，仍不足
-以证明entry内容；后来才接入真实`MetadataAppendOperand`、私有prepare、head lookup、
+以证明entry内容：group的opaque mapping reference和owner只是归属事实，不能当作
+entry值、物理地址或更新数据。后来才接入真实`MetadataAppendOperand`、私有prepare、head lookup、
 slot/generation/credit与abort。Member响应不提前改可见entry；匹配publication才原子写
 双head及span，真实post-R6 all-member handoff再清对应entry并归还资源。
 
