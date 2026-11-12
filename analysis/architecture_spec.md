@@ -1021,8 +1021,7 @@ control-first behavioral RTL; it does not establish RTL functional correctness.
 Gate-RTL0.1 is complete as a non-implementational planning closure.  Its
 authority is `analysis/rtl_entry_hierarchy_owner_contract.md`; its
 machine-readable companion is `analysis/rtl_entry_interface_manifest.json`,
-with hash binding and exact no-model regression in
-`analysis/rtl_entry_hierarchy_owner_provenance_freeze.md`.
+with historical planning details summarized in the hierarchy contract.
 The manifest freezes the top integration shell, R6 lifecycle adapter, common
 hot/S2/R1/R2 infrastructure, Route-A direct-pending/R3/R5/R4 components, their
 environment endpoints, and a sole owner for each mutable architectural
@@ -1042,9 +1041,7 @@ preflight rejects a missing/unknown parameter source or any byte-level drift
 between its marked matrix and the manifest.  Bundle records are interface
 planning vocabulary, not physical aggregate-wire, HBM, SRAM, controller, or
 numeric-pipeline choices.  The next Gate-RTL0 work is the separate
-assumption/guarantee assertion traceability and scoreboard/coverage plan.  The
-hash binding and exact no-model result are frozen in
-`analysis/rtl_entry_port_parameter_provenance_freeze.md`.
+assumption/guarantee assertion traceability and scoreboard/coverage plan.  The retained interface manifest and port matrix describe the planned boundary.
 
 #### Gate-RTL0.3 — assertion and verification planning closure
 

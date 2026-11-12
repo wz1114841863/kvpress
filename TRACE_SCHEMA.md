@@ -2602,8 +2602,7 @@ orders. It validates only the fixed-request native-resident source reference.
 
 The completed C0—C5 commonality study is summarized in
 `analysis/algorithm_reports/04_cross_model_and_frontend_boundaries.md`.
-The historical C0 input remains in
-`analysis/cross_frontend_residency_evidence_archive_20260915.md`. Its v1
+The historical C0 descriptor is described in that report. Its v1
 descriptor separates semantic identity/visibility/epoch/order fields from the
 `persistent_packed`, `one_shot_packed`, and `dynamic_resident_slot` realization
 extensions. Every descriptor value must explicitly distinguish `observed`,

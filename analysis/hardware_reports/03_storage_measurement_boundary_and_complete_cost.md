@@ -259,7 +259,6 @@ DC cell-area units、32-nm CACTI mm²、HBM容量B和每请求mJ属于不同技�
 [MR-2](../measurement_dut_cut_freeze_20261025.json)及[测量DUT](../measurement_dut_cut_freeze_20261025.md)。
 具体成本来自[增量账本](../route_a_incremental_storage_cost_ledger_p0_20261106.md)、
 [STORE P0字段数据](../dc_compact_store_p0_fields_20261106.csv)、
-[STORE P0证据](../dc_compact_store_p0_evidence_20261106.json)、
 [存储选项](../dc_compact_storage_realization_options_20261106.json)、
 [ST1范围结果](../dc_st1_scope_key_validation_result_20261106.json)、
 [P3映射评估](../p3_staging_storage_mapping_feasibility_20261106.md)及

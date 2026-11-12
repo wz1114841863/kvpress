@@ -218,8 +218,8 @@ Full-KV控制分母和Route-A实现成本影响，既不能直接当完整系统
 
 本文已在正文串起研究过程。需要核查接口或实验范围时，可直接查：
 [架构规格](../architecture_spec.md)、
-[pending路径选择](../architecture_gate_a1_pending_delivery_realization_closure.md)、
-[有限anchor](../architecture_gate_a3_plan.md)、
+[pending路径详细合同](../mr1b_direct_pending_cross_owner_contract_proposal.md)、
+[有限anchor参数](../architecture_gate_a3_rtl_entry_qwen3_8b_32k_s1_v1.json)、
 Gate-A结论见本文第6节、
 [RTL层次与owner](../rtl_entry_hierarchy_owner_contract.md)、
 [Gate-RTL0结论](../rtl_entry_interface_manifest.json)。

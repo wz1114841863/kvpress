@@ -1,6 +1,6 @@
 # Route-A 论文执行范围与实现收口 — 2026-11-09
 
-依据：[深层复审](route_a_deep_review_20261107.md)、[复审证据账本](route_a_deep_review_evidence_20261107.json)、[RD1＋WCG1 完整验收](dc_rd1_wcg1_full_paired_result_20261109.md)。本轮源码／结果截面为 `cbf2296`，分支 `research/kvzap-latest`。
+相关研究过程见[项目总览](project_overview_20261111.md)及[硬件报告](hardware_reports/01_architecture_and_software_hardware_boundaries.md)；[RD1＋WCG1 完整结果](dc_rd1_wcg1_full_paired_result_20261109.json)。本轮源码／结果截面为 `cbf2296`，分支 `research/kvzap-latest`。
 
 本文件落实用户要求的论文范围和后续收口顺序，是研究执行与证据计划，不替代 [architecture specification](architecture_spec.md)、通用 wrapper 合同或既有冻结。这里列出的未完成项不是新验收结果。本轮只更新分析与导航文档，不修改 RTL、容量、接口、冻结输入或 EDA 策略，不启动远程任务。
 
@@ -21,7 +21,7 @@
 
 ## 2. “功能闭合”为什么仍有缺口
 
-[C4-D](rtl3_9_c4_d_functional_completion_review.md)闭合的是：唯一 publication／逐成员 authority、首个正确 packed read、S2 READY、四消费者、terminal、retire/reclaim，以及已登记的 stale/mismatch/fault/reset 负例。memory、partial/R4 仍是明确的环境。**相对于这个有界合同，既有 PASS 有效；相对于持续 decode 后端，当前实现尚不完整。**
+[C4-D](rtl3_9_c4_d_functional_completion_review_manifest.json)闭合的是：唯一 publication／逐成员 authority、首个正确 packed read、S2 READY、四消费者、terminal、retire/reclaim，以及已登记的 stale/mismatch/fault/reset 负例。memory、partial/R4 仍是明确的环境。**相对于这个有界合同，既有 PASS 有效；相对于持续 decode 后端，当前实现尚不完整。**
 
 当前源码中的具体限制包括：
 
@@ -60,7 +60,7 @@
 
 实现候选按“现有合同可等价替换／需要新实现合同／尚无可行实现”分类。后两项不能登记为优化成功。P3/M2/R5 被排除的 child 优化主要减少尚未计价的成本，不直接降低现有 129.517× 控制分子。
 
-来源：[STORE P0](dc_compact_store_p0_audit_20261106.md)、[增量存储审计](route_a_incremental_storage_cost_ledger_p0_20261106.md)、[P3 映射评估](p3_staging_storage_mapping_feasibility_20261106.md)。
+来源：[STORE P0](dc_compact_store_p0_fields_20261106.csv)、[增量存储审计](route_a_incremental_storage_cost_ledger_p0_20261106.md)、[P3 映射评估](p3_staging_storage_mapping_feasibility_20261106.md)。
 
 ## 4. 完整增量成本：绝对差额与比值分别报告
 

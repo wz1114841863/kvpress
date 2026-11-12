@@ -2,13 +2,13 @@
 
 **本阶段结论：执行范围和职责已定义；持续执行验证尚未完成。** 本轮按用户要求执行阶段 A，限定为当前源码到论文执行目标的定点映射及最小场景定义；不重做 MR-1/MR-2，不改 RTL／接口／容量，不运行仿真、DC、STA、模型或远程任务。
 
-源码截面：`research/kvzap-latest`，`2a613f5`。上位执行计划为 [11月9日论文范围](route_a_paper_execution_scope_and_closure_20261109.md)，规范仍是 [architecture specification](architecture_spec.md)与各既有合同。配套 [JSON](route_a_stage_a_execution_envelope_20261109.json)保存源码 hash、逐行锚点、生命周期／环境／场景／缺口登记。该文件不是新的架构冻结或持续 decode PASS。
+源码截面：`research/kvzap-latest`，`2a613f5`。上位执行计划为 [11月9日论文范围](route_a_paper_execution_scope_and_closure_20261109.md)，规范仍是 [architecture specification](architecture_spec.md)与各既有合同。生命周期、环境职责与未闭合问题见本文和[H2](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)。该文件不是新的架构冻结或持续 decode PASS。
 
 ## 1. 本阶段明确的执行范围
 
 | 层次 | 范围 | 证据身份 |
 |---|---|---|
-| 已验收基础 | first-use publication／authority → packed read → S2 READY → 四消费者 → attention terminal → 最终 retire/reclaim，及登记负例 | 沿用 [C4-D](rtl3_9_c4_d_functional_completion_review.md)，本轮不增加历史验收覆盖 |
+| 已验收基础 | first-use publication／authority → packed read → S2 READY → 四消费者 → attention terminal → 最终 retire/reclaim，及登记负例 | 沿用 [C4-D](rtl3_9_c4_d_functional_completion_review_manifest.json)，本轮不增加历史验收覆盖 |
 | 最小持续原型目标 | 一个 session 内无需 reset：同一已发布 packed page 在两个不同 decode step 完成合法读取；至少两组 admission 完成各自 publication／handoff；瞬态资源按合同复用 | 下一批独立定向验证目标，**尚未执行**；不是已有完整后端 |
 | 论文有限实例 | Qwen3-8B，context envelope 32K，单并发 sequence，36 layers／8 KV heads／4 GQA consumers，原 mask、hot128、maturity、page64 | 资源与语义边界，不表示已覆盖全部32K数据、全部合法并发或整个冻结 workload |
 | 数据／数值目标 | 给定 Q、实际 K/V 与 logical position，经外部 reference partial／merge 建立可检查对应；控制 DUT 保留真实 owner／权限／传输 | 独立于协议包验证，当前尚未接通；不要求本阶段实现 attention PE／exp 产品 datapath |
