@@ -20,7 +20,9 @@
 解释A4之后为何按owner划分模块，区分算法正确性、Route-A合同与实现选择。
 [H2 RTL实现与持续执行范围](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 串起骨架、首次使用与显式v2重复读取，区分真实owner、外部服务和持续decode缺口。
-H3—H4的待整理范围见总览；当前没有确定新的软硬件分工。
+[H3 存储实现、测量边界与完整成本](hardware_reports/03_storage_measurement_boundary_and_complete_cost.md)
+说明compact、P3/M2/R5/S2为何需要，哪些已计/未计，区分算法、职责与实现开销。
+H4的待整理范围见总览；当前没有确定新的软硬件分工。
 
 ## Current Route-A entry
 
