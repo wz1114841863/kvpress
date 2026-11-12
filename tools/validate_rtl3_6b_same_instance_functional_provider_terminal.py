@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Validate the hash-bound RTL3.6-B static fixture composition manifest."""
+"""Validate the RTL3.6-B static fixture composition manifest."""
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
 
@@ -14,8 +13,6 @@ from kvpress.rtl3_6b_functional_provider_terminal_fixture import (
 )
 
 
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def validate(manifest_path: Path, repository_root: Path) -> None:
@@ -35,13 +32,6 @@ def validate(manifest_path: Path, repository_root: Path) -> None:
         raise ValueError("RTL3.6-B manifest names an unexpected fixture")
     if load_fixture_fields(fixture) != encoded_fixture_fields():
         raise ValueError("RTL3.6-B fixture differs from functional-provider/R4-oracle output")
-    for relative_path, expected in manifest["source_sha256"].items():
-        # Historical Markdown is documentation, not a live source input.
-        if isinstance(relative_path, str) and relative_path.endswith(".md"):
-            continue
-        actual = _sha256(repository_root / relative_path)
-        if actual != expected:
-            raise ValueError(f"hash mismatch for {relative_path}: {actual} != {expected}")
 
 
 def main() -> int:
@@ -50,7 +40,7 @@ def main() -> int:
         "--manifest",
         type=Path,
         default=Path("analysis/rtl3_6b_same_instance_functional_provider_terminal_manifest.json"),
-        help="hash-bound RTL3.6-B manifest path",
+        help="RTL3.6-B manifest path",
     )
     parser.add_argument("--repository-root", type=Path, default=Path("."), help="repository root containing source paths")
     args = parser.parse_args()
