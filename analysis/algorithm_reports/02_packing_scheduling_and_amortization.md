@@ -100,9 +100,10 @@ Dynamic page虽然让PE更忙，却引入更多分发和合并，总周期反而
 包含开销的完成时间，而不是单看利用率，也不能外推某种调度始终最好。
 
 **现有代码入口。** [A1调度脚本](../../tools/simulate_kvzap_route_a1_scheduler.py)
-的 `load_a0` 读取A0逐head CSV和运行说明；`PageCostModel` 根据已声明的带宽、
-计算吞吐和metadata成本计算任务时间；`simulate_workloads` 构造模拟batch并调用
-static、whole-head LPT或dynamic-page调度，最后输出逐layer、逐batch和汇总CSV。
+的 `load_a0` 读取A0逐head CSV和运行说明；[共享调度实现](../../kvpress/research/scheduling.py)
+中的 `PageCostModel` 根据声明的带宽、计算吞吐和metadata成本计算任务时间，
+`simulate_workloads` 构造模拟batch并调用static、whole-head LPT或dynamic-page调度。
+入口最后输出逐layer、逐batch和汇总CSV，并继续导出原有函数供旧调用使用。
 可用 `python -m tools.simulate_kvzap_route_a1_scheduler --a0-dir A0目录 --output-dir 新目录`
 运行；page、PE和batch的扫描范围及各项开销均由参数指定。
 

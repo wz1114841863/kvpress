@@ -2,7 +2,7 @@ import argparse
 
 import pytest
 
-from tools.simulate_kvzap_route_a1_scheduler import (
+from kvpress.research.scheduling import (
     PageCostModel,
     build_dynamic_tasks,
     batch_result,
@@ -12,6 +12,11 @@ from tools.simulate_kvzap_route_a1_scheduler import (
     schedule_static,
     simulate_workloads,
 )
+from tools.simulate_kvzap_route_a1_scheduler import PageCostModel as LegacyPageCostModel
+
+
+def test_historical_entrypoint_reexports_shared_cost_model():
+    assert LegacyPageCostModel is PageCostModel
 
 
 def test_length_aware_lpt_recovers_static_head_imbalance():
