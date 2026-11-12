@@ -8,6 +8,7 @@
 首份专题已整理：[R1 算法复现、稀疏结构与路线筛选](algorithm_reports/01_reproduction_and_route_selection.md)。
 第二份专题：[R2 Packing、调度与摊销](algorithm_reports/02_packing_scheduling_and_amortization.md)。
 第三份专题：[R3 功能参考与执行观察](algorithm_reports/03_functional_reference_and_execution_observations.md)。
+第四份专题：[R4 跨模型与前端边界](algorithm_reports/04_cross_model_and_frontend_boundaries.md)。
 
 ## Current Route-A entry
 

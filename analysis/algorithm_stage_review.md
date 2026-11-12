@@ -1,6 +1,6 @@
 # 算法与系统探索阶段：研究脉络及紧凑报告整编评估
 
-更新：2026-11-11；整理起点 `research/kvzap-latest / c9cc40d`。
+更新：2026-11-12；整理起点 `research/kvzap-latest / c9cc40d`。
 本次任务是恢复研究过程的可读性，范围覆盖官方算法复现至 A4.14.1 的前 RTL 探索，
 包括跨模型/前端支线。这里的“算法阶段”也包含功能软件参考和系统模型；后来的
 RTL、DC、RD1/WCG1 及持续执行补齐不并入这条历史主线。
@@ -11,7 +11,9 @@ R1 已收敛为[算法复现、稀疏结构与路线筛选](algorithm_reports/01
 R2 已整理为[Packing、调度与摊销](algorithm_reports/02_packing_scheduling_and_amortization.md)，
 直接提取原始容量、调度、预算、短输出与前缀结果。
 R3 已整理为[功能参考与执行观察](algorithm_reports/03_functional_reference_and_execution_observations.md)，
-涵盖三源语义、cold ownership、数值边界、软件测量和逻辑事件；尚待整理R4—R6三份。
+涵盖三源语义、cold ownership、数值边界、软件测量和逻辑事件。
+R4 已整理为[跨模型与前端边界](algorithm_reports/04_cross_model_and_frontend_boundaries.md)，
+涵盖Llama、SnapKV、官方DMS与C0—C5，保留各自数值/生命周期边界；尚待整理R5—R6两份。
 后续每个专题以一份正文为目标，直接引用已有数据，不默认配套数据包、资料清单或归档方案。
 没有重跑实验、改变旧结论或清理原文件。已阅读纵向计划、阶段归档、主要合同、
 冻结结果及选定原始 JSON；未逐一重新验收所有运行。下文区分可直接引用的结果与
@@ -166,8 +168,9 @@ traversal 的语义抽象，未得到共同 cache、scheduler 或硬件资源合
 此支线最值得留下的成果是适用边界与未观察项，不是环境兼容过程或副本校验。
 
 **核心来源。** [跨前端证据归档](cross_frontend_residency_evidence_archive_20260915.md)、
-[C0—C5 完成记录](cross_frontend_commonality_study_plan.md)。最终报告以一张比较矩阵
-为主；不同模型、fixed continuation 与自然输出不合并统计。
+[C0—C5 完成记录](cross_frontend_commonality_study_plan.md)。R4正文已提取M6六行fan-in、
+SnapKV布局和DMS重放结果，以比较矩阵收口适用范围；不同模型、fixed continuation
+与自然输出不合并统计，严格ULP未通过和未知字段继续保留。
 
 ### R5：激活、pending 与 metadata 资源探索
 
@@ -249,7 +252,7 @@ workload 行，保留 common/fixed/activity/unestimated 成本表，而不是罗
 [来源索引 CSV](algorithm_stage_source_index.csv)，使细阶段不会在压缩叙事时消失。
 索引记录原文标题/行号和应归报告；它不是实验通过清单、去重结果或删除依据。
 
-尚待完成：将R4—R6三个专题的关键原始表/曲线提炼成自足报告，特别是
+尚待完成：将R5—R6两个专题的关键原始表/曲线提炼成自足报告，特别是
 R5 的组织/服务对照。旧论文范围和硬件实现问题另留在项目总览中，避免反复塞入
 算法阶段正文。建议整编顺序 R1→R2→R3→R4→R5→R6，完成一份就用它承接对应旧
 阅读入口，不再新增同主题的每日总结；各份完成后再评估相应中间材料的可清理性。
