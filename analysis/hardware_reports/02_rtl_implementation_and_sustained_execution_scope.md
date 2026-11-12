@@ -133,7 +133,10 @@ release后才能retire，以及stale response、fault、有限背压和reset；�
 RTL3.9 C0—C3b进一步让真实R3全部成员被R6接受后，才建立首次packed读；随后实际
 payload/sidecar到达S2、四消费者完成、R6终结，最后完成retire/reclaim。C4-D于
 2026-10-15验收这条**有界packed首次使用链**。其定向复核包含一个成功/事件回放测试
-和三个stale/mismatch、numeric fault、reset负例；这是该次检查数量，不是全部历史测试总数。
+和三个stale/mismatch、numeric fault、reset负例；这是该次检查数量，不是全部历史测试总数。 C4-A只捕获
+完整的accepted page-free事实，descriptor invalidate不能从不完整carrier推断；C4-C的
+负例约束stale/mismatch不得产生额外terminal/free/retire，numeric fault不得提前free，
+reset不得重放未接受事件。事件含义和观测仍由实际witness及其检查承担。
 
 **分析。** 这里的“numeric fault”证明错误能够正确终结，“四消费者commit”证明协议
 消费与释放顺序正确；它们不等于实际QK/softmax/AV数学结果已经被验证。功能memory、
