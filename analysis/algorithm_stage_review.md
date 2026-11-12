@@ -9,7 +9,9 @@ RTL、DC、RD1/WCG1 及持续执行补齐不并入这条历史主线。
 R1 已收敛为[算法复现、稀疏结构与路线筛选](algorithm_reports/01_reproduction_and_route_selection.md)
 一份正文，关键数据表、原始来源和必要保留决定均在其中。
 R2 已整理为[Packing、调度与摊销](algorithm_reports/02_packing_scheduling_and_amortization.md)，
-直接提取原始容量、调度、预算、短输出与前缀结果；尚待整理R3—R6四份。
+直接提取原始容量、调度、预算、短输出与前缀结果。
+R3 已整理为[功能参考与执行观察](algorithm_reports/03_functional_reference_and_execution_observations.md)，
+涵盖三源语义、cold ownership、数值边界、软件测量和逻辑事件；尚待整理R4—R6三份。
 后续每个专题以一份正文为目标，直接引用已有数据，不默认配套数据包、资料清单或归档方案。
 没有重跑实验、改变旧结论或清理原文件。已阅读纵向计划、阶段归档、主要合同、
 冻结结果及选定原始 JSON；未逐一重新验收所有运行。下文区分可直接引用的结果与
@@ -138,8 +140,9 @@ GQA 可共享某些 source/descriptor dispatch 信息，Q 相关 partial/merge �
 **核心来源。** [A4.0 与 A4.1 进度归档](route_a_a0_a3_a4_handoff_20260902.md)、
 [A4 讨论简报](route_a_a4_discussion_brief_20260909.md)、
 [A4.1 测量计划](route_a41_measurement_plan.md)、[纵向计划 A4.2](route_a_research_plan.md)。
-最终 R3 必须提取各 workload 软件计时分布、测量方式和 allocator 值；本轮未把
-同步组件计时相加成 end-to-end 时间，也未重新审核全部 profiler 数据。
+R3正文已提取指定retrieval/summarization配置的软件计时与分位数、测量范围、allocator
+和source调用结构，直接引用原结果；不将同步组件时间加成end-to-end时间，也不声称
+重新验收全部profiler或完成更多workload性能评测。
 
 ### R4：跨模型与跨前端的适用边界
 
@@ -246,7 +249,7 @@ workload 行，保留 common/fixed/activity/unestimated 成本表，而不是罗
 [来源索引 CSV](algorithm_stage_source_index.csv)，使细阶段不会在压缩叙事时消失。
 索引记录原文标题/行号和应归报告；它不是实验通过清单、去重结果或删除依据。
 
-尚待完成：将R3—R6四个专题的关键原始表/曲线提炼成自足报告，特别是 R3 的软件测量分布、
+尚待完成：将R4—R6三个专题的关键原始表/曲线提炼成自足报告，特别是
 R5 的组织/服务对照。旧论文范围和硬件实现问题另留在项目总览中，避免反复塞入
 算法阶段正文。建议整编顺序 R1→R2→R3→R4→R5→R6，完成一份就用它承接对应旧
 阅读入口，不再新增同主题的每日总结；各份完成后再评估相应中间材料的可清理性。
