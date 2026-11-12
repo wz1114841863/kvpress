@@ -204,7 +204,36 @@ M4的144次调用为36层×4次decode，全部满足该实验自己的`atol=rtol
 C0索引已有证据，C1定义描述字段，C2作各前端映射，C3区分共同/专用/未知，
 C4复核各自attention比较依据，C5决定研究方向。它们没有新增六轮模型实验，
 跨主机复核也不增加独立模型样本。来源：
-[共同性研究计划与完成记录](../cross_frontend_commonality_study_plan.md)。
+[C0既有证据索引](../experiments/cross_frontend_c0_evidence_index_01/cross_frontend_c0_evidence_index_report.json)。
+
+### 5.1 C1—C2：统一描述问题，不强行统一数据格式
+
+描述粒度为`(model,layer,kv_head,epoch)`，包括八类字段：
+
+| 字段 | 回答的问题与必须保留的区别 |
+|---|---|
+| model_topology | 哪个模型、多少层/head、query与KV如何分组；不能合并成共同硬件尺寸 |
+| identity | 哪一条记录；明确身份是原始position还是arrival serial |
+| epoch | 哪个phase、forward/decode index和q_len；一次terminal状态不是完整在线时间线 |
+| decision | 选择结果何时已知、何时生效；未观察的时刻仍未知 |
+| visibility | 此时attention语义上必须看见哪些记录；与物理搬运完成不同 |
+| position_provenance | 是否真的捕获原始位置；不能由DMS slot或arrival编号冒充 |
+| traversal_order | 按什么顺序读取、该顺序为何有约束 |
+| attention_binding | query/KV对应关系及该前端自己的正确性比较依据 |
+
+每个值带五种状态之一：`observed`为直接观察，`derived`为确定性推导，
+`modeled`为声明假设，`unknown`为缺乏证据，`not_applicable`为该实现不适用。
+例如SnapKV生成期状态是unknown，不能填0；DMS的原始position未知，不能用
+已知arrival serial替代。八类字段都被描述，不表示八类值在各前端都已观察到。
+来源：[C1描述与字段可用性](../experiments/cross_frontend_c1_semantic_descriptor_01/cross_frontend_c1_semantic_descriptor_report.json)。
+
+C2再分别投影为KVzap的`persistent_packed`、SnapKV的`one_shot_packed`和DMS的
+`dynamic_resident_slot`。pending、page descriptor、free-slot list、native block
+table均属各自实现扩展；不能因为某种后端需要它，就提升为全部算法的共同字段。
+这些是语义描述，不是建议硬件逐项存一份表，也没有证明共同抽象的实现开销为零。
+来源：[C2三类实现映射](../experiments/cross_frontend_c2_realization_adapters_01/cross_frontend_c2_realization_adapters_report.json)。
+
+### 5.2 C3—C5：哪些共同，哪些仍然专用
 
 | 比较维度 | KVzap Qwen/Llama | SnapKV本次证据 | 官方DMS本次证据 |
 |---|---|---|---|
@@ -248,8 +277,8 @@ attention遍历不足以推出共同cache和调度器。没有观察到的字段
 source长度和尾页统计；SnapKV P1保留request及layer/head CSV；DMS M3保留控制
 和活跃槽位NPZ。未来可据已有数据重绘相应图表，但不能重建当时没有记录的
 生成期行为、物理时序或性能。本文没有移动或删除原资料，也未重新验收全部
-原始trace；必要制品的位置仍由上述结果及
-[跨前端证据归档](../cross_frontend_residency_evidence_archive_20260915.md)承接。
+原始trace；必要制品由正文直链的M0—M6、P0—P3、M0—M4及C0—C5 JSON登记，
+无需经由旧的共同性计划或证据归档理解本文结论。
 
 这条支线结束后，主线回到R5：既然继续研究KVzap特有的持久packed生命周期，
 就要在具体workload、activation和服务假设下收口pending、归属及metadata资源，

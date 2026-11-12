@@ -1,136 +1,121 @@
 # KVzap 项目总览与管理入口
 
-整理日期：2026-11-11。整理时分支 `research/kvzap-latest`，已有研究源码 HEAD
-`8a7ea4e`。这是一份**人能快速读懂的状态快照和导航**；某项结果的具体输入、
-适用范围和验收仍以对应原始记录为准。项目正在整理，下一项研究计划尚未决定。
+更新：2026-11-12；本轮整理基于 `research/kvzap-latest / a10570d`。
+本页与R1—R6构成研究阅读入口：先看本页，再按问题进入六份报告，即可理解从
+算法复现、系统探索到硬件检验的推进过程。原始JSON/CSV、trace、源码、schema
+与冻结记录用于技术复核；旧计划、启动记录和交接不再是理解算法阶段的必读材料。
+本轮整理没有重跑模型、模拟或DC，没有决定新研究路线。
 
-## 先看这一页：我们做到了哪里
+## 我们研究什么，目前做到了哪里
 
-我们研究的是：KVzap 删除 KV 后，能否通过实际存储组织和调度，把**逻辑上的稀疏**
-变成有价值的物理节省。当前针对 Qwen3-8B 进行了算法分析、系统建模、Route-A
-硬件原型和控制逻辑综合。**已经有可复核的算法结构、模型和有界硬件功能结果；
-还没有证明完整硬件实现的时序闭合或系统净收益。**
+问题是：KVzap选择少留一些KV后，能否通过存储组织、一次packing和后续重复
+读取，把逻辑稀疏变成值得实现的容量、访问和能量节省？这首先是稀疏KV存储与
+执行管理问题；它本身不等于加速Transformer算术，也不是训练新的predictor。
 
-| 研究部分 | 已取得的结果 | 目前不能直接得出的结论 |
+**已经得到指定范围的算法结构、软件功能和条件性系统模型证据；硬件原型的
+部分功能已验证，但完整持续执行、统一时序和系统净收益仍未闭合。**
+
+## 六份报告：每一步为什么做，结果怎样推动下一步
+
+| 报告与范围 | 本阶段要解决的问题 | 主要结论与下一步 |
 |---|---|---|
-| 原始算法 | 指定环境的 baseline 功能检查通过；45 条 balanced v2 predictor-only trace 的 token 加权逻辑删除约 66.23%，逻辑压缩约 2.96× | 正式任务准确率、物理显存下降或加速 |
-| 系统模型 | 已分析 packed page、调度、生命周期和 admission；A4.14.1 在三个固定 workload 与明确服务/proxy 假设下得到条件性机会 | 实际硬件成本已覆盖、统一时钟下的真实延迟或系统净收益 |
-| 硬件功能 | 早期 first-use 路径有测试；显式 v2 的小规模场景验证一次 packing 后同页读取两次，以及指定错误和 retire 排空场景 | 默认 v1 具有重复读取、多组 admission 已实现、全 32K 并发或真实数值计算闭环 |
-| 控制面积 | 最后验收的 RD1＋WCG1 paired DC：Route-A 2,990,737.01、Full-KV 23,091.43，同库 cell-area units，控制投影约 129.52× | 整芯片面积比、完整 Route-A 成本、PPA 或净硬件收益 |
-| 时序 | 同一 2 ns 约束下，RD1＋WCG1 primary 的 Route-A setup WNS 为 −0.469940 ns；补充 hold-pass 后 setup/hold 也未闭合 | 顶层 2 ns 已可实现，或孤立门控检查通过等于全局通过 |
+| [R1 算法复现、稀疏结构与路线筛选](algorithm_reports/01_reproduction_and_route_selection.md)：baseline、trace、v1/v2、Route-B | 算法能否运行，稀疏位置是否规则，为什么选择packing？ | 45条v2 trace逻辑压缩约2.96×；比例轮廓稳定但位置不规则。原mask packing保留更多容量机会，实际硬件成本尚未比较完整 |
+| [R2 Packing、调度与摊销](algorithm_reports/02_packing_scheduling_and_amortization.md)：A0—A3.20 | 整理存储是否回本，调度是否值得？ | P64容量模型接近逻辑压缩；调度的merge/dispatch可吃掉收益。长请求有正向模型区域，短输出、错误continuation和启动前缀有亏损反例 |
+| [R3 功能参考与执行观察](algorithm_reports/03_functional_reference_and_execution_observations.md)：A4.0—A4.2 | hot/pending/packed能否真正参与attention，代价在哪里？ | 给定mask和数值标准下可执行；Python参考仍较慢。分源并行带来额外partial传输，逻辑事件不能直接给出物理服务时序 |
+| [R4 跨模型与前端边界](algorithm_reports/04_cross_model_and_frontend_boundaries.md)：Llama、SnapKV、DMS、C0—C5 | 哪些语义可迁移，哪些机制专用？ | 两个模型提供有界KVzap语义证据；其他前端暴露不同生命周期。共同身份/作用域/遍历/比较依据尚不构成共用cache或低成本硬件 |
+| [R5 Pending与metadata资源探索](algorithm_reports/05_pending_and_metadata_resource_exploration.md)：A4.3—A4.10 | 待整理KV如何保存、归属、排队和原子更新？ | 共享与span有逻辑价值；RMW拆分是负结果。内部交错改善模型排空但未消除溢出，有限shared/staging及生产者持有责任须计入 |
+| [R6 前RTL成本账本与架构入口判断](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md)：A4.11—A4.14.1 | 已计成本后还剩多少机会，为什么允许进入架构？ | 三固定workload通过公平HBM的2×工程余量门槛并有正动态能量遗漏预算；允许写架构规格，未证明完整硬件净收益 |
 
-上表的面积数字来自指定冻结输入的综合快照；后续增加的持久页 v2 功能**没有**计入
-该次综合结果。`129.52×` 只比较控制投影，不能推断最终完整系统面积比一定更大或更小。
-详细依据：[深层复审](route_a_deep_review_20261107.md)、
-[RD1＋WCG1 结果](dc_rd1_wcg1_full_paired_result_20261109.md)、
-[持久页读取结果](route_a_persistent_page_read_r2_result_20261109.md)。
+六份报告分别给出实验目的、计划、结果、分析和直接数据来源。它们不是六组
+独立样本：v1包含于v2，后续大量研究复用同一批固定请求或事件，敏感性组合数
+也不等于独立请求数。Qwen、Llama、自然生成与固定continuation不合并统计。
 
-## 几个月的工作，按一条线看
+整条因果链是：**逻辑压缩机会 → 保持mask的物理整理 → 回本条件 → 功能与执行
+观察 → 适用边界 → 有限资源合同 → 条件性成本账本 → 接受实际硬件检验。**
+后一个阶段在补前一个阶段未解决的问题，不能把前面的正号直接传递到最后。
 
-算法至前 RTL 系统探索的详细脉络、六份紧凑报告归并建议，见
-[算法阶段整编评估](algorithm_stage_review.md)。它按研究目的、计划、结果和分析整理，
-不以运行报错和校验过程作为阅读主线。
+## 方案的共同词汇与历史选择
 
-1. **算法与 trace。** 复现指定 KVzap predictor，用 baseline 和 18/45 条 trace 了解
-   稀疏结构。不同请求的 layer/head 保留比例轮廓较稳定，但 token 级 mask 重叠较低，
-   不能直接当成共享 mask。
-2. **物理方案筛选。** Route-A 保留原 mask、按 token packing；Route-B 曾筛查 B=4
-   结构化策略。B=4 在特定 timeline-page 模型里有小幅 proxy 优势，但逻辑压缩更低，
-   现有生成质量结果只属于小样本筛查。两者都是带条件的证据。
-3. **Route-A 系统建模。** A0—A4 逐步研究 page、调度、生命周期、流量和服务成本。
-   短输出存在 admission 不易摊销的反例；A4.14.1 的收益是固定工作负载和假设下的
-   账本，不能自动转成硬件实测收益。
-4. **规格与原型。** 在后续阶段授权下实现并验证部分 owner、publication、authority、
-   读取和回收路径；持续 decode 的全部数据和数值服务尚未完成。
-5. **面积与时序诊断。** 依次验证 metadata bridge、compact membership、RD1、WCG1
-   等改动，面积比最初综合快照下降，但顶层时序和完整增量成本仍是问题。RD2 隔离
-   映射无面积收益；PM1 在完整顶层有小面积收益，但其选择器 setup 退化，未纳入
-   最后的 RD1＋WCG1 基线。
-6. **持续执行缺口。** 默认 v1 的同页第二次读取与第二组 admission 曾被定向探针
-   阻断。显式 v2 已在有限场景补齐前者；后者及 journal/pending 生命周期尚无生产
-   实现验收。最新候选合同和参考模型有助于界定问题，不能当作 RTL 或成本验证。
+Route-A的目标生命周期为：
 
-继续追溯：
-[45 条 trace 冻结](longbench_balanced_v2_freeze.json) ·
-[Route-B 冻结](b4_route_b_screening_freeze.json) ·
-[A4.14.1 合同](route_a4141_accounted_net_benefit_ledger_contract.md) ·
-[两项持续执行探针](route_a_stage_a_probe_result_20261109.md) ·
-[多组 journal 生命周期](route_a_multigroup_journal_lifecycle_closure_20261109.md) ·
-[pending 来源候选合同](route_a_pending_origin_and_window_contract_20261109.md)。
+```text
+creation时预测 → 最近128条hot保护 → maturity
+  → drop，或成为仍须可读的pending保留项
+  → 按预算admission并追加到每layer/head的packed pages
+  → 后续decode重复读取 → 最终退休/回收
+```
 
-## 现在真正还没有解决什么
+一个KV记录属于某个layer、KV head及token位置。Qwen目标的K+V按BF16/head_dim128
+为512 B，page64为32 KiB；这些是本次参数，不是算法的通用常数。打包与读取
+依赖membership、position、页身份、归属和生命周期管理，不能只按payload估成本。
+软件参考与RTL是不同实现；软件能重复处理状态，不代表RTL已支持全部持续行为。
 
-- **功能范围：** 一次打包后重复读取已有小规模 v2 证据，但同一 session 的多组
-  admission、合法 pending 来源、旧 journal 的安全释放和真实数值链仍未闭合。
-- **存储：** compact 两张表及其并发读写是已映射控制面积的重要来源；P3、M2、R5
-  等存储、端口和外围仍有未计价部分。当前 64-bit 字段不能在现有通用接口合同下
-  直接假定能截短；当前寄存器实现也不能被当成算法必然面积下界。
-- **时序：** 跨 owner 的 ready/控制链和其他路径在原 2 ns 下有 setup 违例；当前
-  结果也不能证明完整时钟树和 hold 已收敛。
-- **收益：** 逻辑删除、模型中的 traffic/动态能量余量、控制逻辑面积分别属于
-  不同证据层次，不能直接相加或相互替代。完整存储、服务、能量和延迟账本仍开放。
-- **路线选择：** 原 mask 与硬件适配、保持 mask 换存储表示、改变 mask 的算法—硬件
-  协同都可作为未来讨论对象；目前尚未决定新路线，也没有以此覆盖历史冻结结果。
+Route-B改变score-to-mask以换规则性。B4,+0.25约2.14×逻辑压缩同样有价值，
+但原mask在arbitrary-token packed布局下容量更好，B4生成筛查也未建立质量等价。
+因此当时保留Route-B备选，优先研究Route-A；并未完成同质量、同技术的A/B完整
+硬件比较。若packing/管理过贵，仍有理由重新比较，不能把历史选择当成最终胜负。
 
-存储/服务范围见[增量成本账本](route_a_incremental_storage_cost_ledger_p0_20261106.md)
-和 [P3 staging 可行性](p3_staging_storage_mapping_feasibility_20261106.md)；
-当前论文原型范围见[执行范围文件](route_a_paper_execution_scope_and_closure_20261109.md)。
+## 从前RTL账本到硬件：哪些问题真正暴露了出来
 
-## 仓库怎么找：先找入口，再看具体证据
+A4.14.1的正向判断有明确前提：Qwen3-8B、原mask、hot128/page64/budget512、
+三个固定workload、共同合法GQA复用，以及public-CACTI和声明HBM服务参数。
+它已计部分metadata宏、payload访问、admission搬运和source buffers；P3本地
+stage、完整控制、partial/merge数值处理、外围、leakage及统一时序仍未全部计价。
+正的动态能量遗漏预算不是面积预算，也不能支付时序违例。
 
-| 位置 | 放什么 | 何时进入 |
+后来的RTL把状态owner、publication、authority、握手和错误处理变成具体电路，
+暴露出compact表及访问网络、跨owner ready链、页管理和生命周期问题。这说明
+原始条件性假设需要实现检验；也不能反过来抹掉已观察的压缩、功能或模型事实。
+
+| 硬件检验部分 | 最后已验收的范围/快照 | 仍未建立 |
 |---|---|---|
-| [README](../README.md)、[AGENTS.md](../AGENTS.md) | 上游 KVPress 使用说明与本研究的规则、历史冻结状态 | 环境、项目规则、baseline 范围 |
-| [analysis/](README.md) | 研究结论、设计合同、阶段交接、冻结清单 | 要找“为什么这样设计、结论依据是什么” |
-| [analysis/experiments/](experiments/) | 各次运行的报告和数据；大量路径被 Git 忽略，部分不在 Git 历史中 | 按原报告/manifest 指定路径追溯，不能假设换机器后仍在 |
-| [kvpress/](../kvpress/) | KVPress 算法和推理集成；[KVzapPress](../kvpress/presses/kvzap_press.py)、[DMS](../kvpress/presses/dms_press.py) 与 [attention patch](../kvpress/attention_patch.py) 是重要入口 | 找 predictor、mask、压缩实际软件路径 |
-| [kvzap/](../kvzap/)、[evaluation/](../evaluation/) | KVzap 相关训练/数据脚本；上游评估入口 | 追溯前端实现与 benchmark，不等于当前已完成正式评测 |
-| [hardware/route_a/chisel/](../hardware/route_a/chisel/) | Chisel 硬件源码、测试和部分导出；`src/main` 是源码，`src/test` 是测试 | 找具体 RTL 行为或有界测试 |
-| [hardware/route_a/dc/](../hardware/route_a/dc/) | 综合、STA、冻结和产物检查脚本 | 追溯某次映射条件；先看对应结果，不把脚本存在当成实验通过 |
-| [hardware/route_a/mem/](../hardware/route_a/mem/)、[payload/](../hardware/route_a/payload/) | 存储 proxy 工具和 payload 配置 | 找成本模型的假设与覆盖范围 |
-| [tools/](../tools/)、[tests/](../tests/) | 大量阶段性分析工具及其 Python 测试 | 由阶段报告反查对应脚本；文件名相似不证明能互相替代或可以删除 |
-| [traces/](../traces/)、[papers/](../papers/) | trace 与原论文 | 核查原始输入和研究背景；大数据不一定被 Git 跟踪 |
+| 功能 | first-use路径有测试；显式v2小规模场景覆盖一次packing后同页读两次、错误路径及retire排空 | 默认v1的重复读取、同session多组admission、完整32K并发和数值链 |
+| 控制面积 | RD1＋WCG1：Route-A 2,990,737.01、Full-KV 23,091.43，同库cell-area units，约129.52× | 完整系统面积、PPA或净硬件收益 |
+| 时序 | 原2 ns下Route-A primary setup WNS −0.469940 ns；primary hold无违例，补充hold-pass后setup/hold仍未闭合 | 完整顶层setup/hold/clock-gating及物理时钟树闭合 |
+| 优化处置 | metadata bridge、compact membership、RD1/WCG1有各自证据；RD2负结果未集成，PM1有小面积收益但顶层setup退化后未纳入最终基线 | 局部收益能无限叠加，或当前寄存器实现是算法必然面积下界 |
 
-硬件里可先从 [顶层](../hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala)、
-[增量控制](../hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala)、
-[共同控制](../hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala)、
-[持久页测试](../hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAPersistentPageReadSpec.scala)
-进入；不能把这些文件当作实现的全部依赖。
+上述DC快照不含后加的持久页v2功能；129.52×是控制投影比，不能推断最终系统
+面积比一定更大或更小。具体实现证据按需查
+[RD1＋WCG1结果](dc_rd1_wcg1_full_paired_result_20261109.md)、
+[持久页结果](route_a_persistent_page_read_r2_result_20261109.md)。
 
-## 如何区分当前资料和历史资料
+目前集中存在四类未闭合问题：同session多组admission与journal/pending释放，
+compact/P3/M2/R5等必要存储及端口，原2 ns下跨owner控制链和setup/hold，以及
+完整差分成本。注册窗口关闭等候选合同仍需生产者承诺、在途操作排空和实现验证，
+不能将参考模型通过当成生产RTL已实现。未来研究方向尚未决定。
 
-1. **结果或冻结文件**回答“当时实际完成了什么”；先看实验范围、run ID 和输入，再引用数值。
-2. **规格和接口合同**回答“该版本要求什么”；不能把候选合同或参考模型当成已实现功能。
-3. **launch/准备/失败记录**解释过程与可复现性；旧 launch 上的“正在运行”只表示当时的快照，
-   要查同 run 的最终结果。失败记录仍有价值。
-4. **导航/交接文件**帮助找到资料，可能随时间积累；本总览也有日期。若概括与指定实验
-   的最终结果冲突，查看该结果的输入与验收，不按文件名新旧直接覆盖。
-5. 根目录 `AGENTS.md` 及部分旧文档保留了“尚未进入 RTL”等历史阶段描述；后续明确授权
-   的 RTL 与 DC 工作及各自验收实际存在。不要把当时的下一步自动当成今天的进度，
-   也不要据此改写冻结记录。
+## 哪些早期设想没有变成已证明的结论
 
-要完整追踪时，再读 [文档地图](route_a_document_map.md)、
-[当前交接](route_a_current_handoff.md)、[架构规格](architecture_spec.md)；
-不需要每次从头读完全部文件。详细研究过程与依赖缺项见
-[深层复审](route_a_deep_review_20261107.md)。
+正式RULER/LongBench准确率、与KVzip oracle的全面误删比较、长上下文下的
+predictor质量保证、threshold/window/score量化的完整质量权衡，不在六份报告
+已建立的结论内。结构阈值扫描不能代替这些质量实验。FastKVzip等新增算法的
+硬件适配也尚未验收；C0—C5只分析已有前端证据，没有完成统一后端。
 
-## 管理现状与保留原则
+最初关于吞吐、内存和RTL的目标，应理解为待检验目标。软件计时、模型cycles、
+HBM字节、动态能量proxy、DC cell area与物理PPA分别属于不同证据，不能互相
+替代。当前研究的瓶颈是功能范围、存储与服务合同、实现成本和时序能否同时成立。
 
-2026-11-11 本地只读快照：Git 跟踪 1,584 个文件，其中 `analysis/` 581、`tools/` 290、
-`tests/` 293、`hardware/` 234；`analysis/` 中可见 339 个 Markdown，
-`analysis/experiments/` 有 405 个直接子目录。这些是盘点数，不是有效实验数、唯一
-成果数或冗余文件数。`analysis/experiments/` 约 7.3 GB，
-`hardware/route_a/chisel/build/` 约 19 GB，`.venv/` 约 5.1 GB；本地大小会变化。
+## 仓库与数据怎么找
 
-很多实验数据及构建输出被忽略，不会随普通 Git push/clone 自动保存；一个结果文件、
-一份 manifest 和它所指向的原始制品必须分开看。11 月 7 日复审也记录了部分传递依赖
-缺项，本次没有重新核验全部文件或远程备份。**不要在确认依赖、恢复方式和保存位置
-之前批量删除、移动或归档。**
+| 位置 | 内容及用途 |
+|---|---|
+| [kvpress/](../kvpress/) | 软件推理与前端；[KVzap predictor](../kvpress/presses/kvzap_press.py)、[DMS包装](../kvpress/presses/dms_press.py)、[attention patch](../kvpress/attention_patch.py)是关键入口，实际数据流见R1 |
+| [evaluation/](../evaluation/)、[kvzap/](../kvzap/) | benchmark、算法相关工具和训练代码；代码存在不等于本研究运行过或训练过 |
+| [analysis/algorithm_reports/](algorithm_reports/) | 六份研究正文；从本页直接进入，不需先读中间评估/索引 |
+| [analysis/experiments/](experiments/) | 原始结果、配置、输入副本、manifest、日志和失败运行；目录数不等于有效实验数 |
+| [traces/](../traces/)、[pilot_inputs/](../pilot_inputs/) | score/mask、生命周期和请求输入，很多被Git忽略 |
+| [tools/](../tools/)、[tests/](../tests/) | 采集、分析、模型与对应检查；从各报告的数据链接和实现入口查找 |
+| [hardware/route_a/chisel/](../hardware/route_a/chisel/) | Chisel源码与功能测试；可从[顶层](../hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala)进入 |
+| [hardware/route_a/dc/](../hardware/route_a/dc/)、[mem/](../hardware/route_a/mem/)、[payload/](../hardware/route_a/payload/) | 综合/STA、存储proxy与payload配置；工具存在不是结果通过 |
+| [TRACE_SCHEMA](../TRACE_SCHEMA.md)、[架构规格](architecture_spec.md) | 按需核查字段、版本及实现合同，不承担算法研究过程的补充叙述 |
 
-整理时工作树已有 9 个 `.github/` 文件的删除改动，本整理不判断其来源，也不恢复或
-提交这些改动。此信息是当时快照，之后应以 `git status` 为准。
+理解研究过程读七份文件；核验数值、重绘分布或复现时，再进入各报告直链的
+JSON/CSV、trace、配置和源码。均值不能重建完整分布，提交文档也不等于备份
+Git忽略的数据。旧文件暂时保留，部分原文仍被历史冻结或工具绑定，不能仅因
+阅读入口已简化便直接删去。
 
-今后每次完成一项工作，可只更新本页的当前状态和相关权威入口；具体日志、hash 和
-逐项证明放在该实验自己的记录中。旧记录不因导航简化而删除。对于疑似冗余代码，
-先确认调用方、冻结依赖和验证覆盖，再决定是否需要单独整理；本次尚未逐文件判断
-可删性，也没有修改生产代码、运行研究实验或操作远程任务。
+本轮资料状态有两个明确限制：R1的原v2请求JSONL本地仍缺；R5的A4.9.2/A4.10
+汇总已在已有`algorithm`项目中找到并与接受链核验，但本地仍缺副本，具体位置
+和结果见R5§9。其他传递依赖并未全部重新验收。因此七份文件已串起研究解释，
+不表示全部实验已可从本地离线重建。后续更新优先修改这七份文件中的对应内容，
+不再为同一研究阶段默认增加数据包、清单或新的总览副本。

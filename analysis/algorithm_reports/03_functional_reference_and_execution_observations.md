@@ -107,8 +107,8 @@ head没有pending误作实现失败，也不能把跨调用的多个最大值拼
 
 该标准下，全层budget1完成replay、ownership、bridge及forced/独立greedy检查，
 原来7个大于16-ULP的事件仍记录。来源：[全层quantization-aware结果](../experiments/route_a4133_all_layers_budget1_quantization_aware_continuation_01/a4133_alllayer_quantization_aware_continuation_manifest.json)。
-详细单层/全head推进见[既有测量记录](../route_a41_measurement_plan.md)的ownership与
-continuation章节。这里保留改变数值判断的发现，不复述启动或环境报错。
+这些对照分别检查局部attention、后续logits传播与执行dtype误差；不能因为其中
+一项通过，就将其余两项也判为通过。表中边界也是后续所有软件与硬件比较的前提。
 
 ## 5. Cache替换：让逻辑长度与实际保存的数据分开
 
@@ -210,6 +210,28 @@ dense attention变成接近两次partial加一次merge。Profiler的嵌套/重�
 再采集有序、无服务时间戳的逻辑事件；对齐workload的实际decode调用，重建依赖
 和dispatch epoch，最后检查GQA共享范围。没有用聚合次数直接推队列深度。
 
+### 8.1 A4.2.0—4.2.5：先分清放在哪里，再补充顺序证据
+
+最初将hot/pending/packed和merge放在同一`(layer,KV-head group)`引擎，保持
+head内归属，不产生跨引擎partial传输。split-source则让非空源分别服务，每个
+源须输出局部max、归一化量、value累积及valid/empty信息，再由reducer合并。
+潜在并行收益伴随额外dispatch、状态传输和在途存储；两种组织都仍只有一次逻辑merge。
+
+A4.2.1只将既有A3的候选范围对应到观察到的接口，未选定硬件参数。
+A4.2.2显式扫描partial payload16/64 B、传输/dispatch工作和状态容量轴；这些
+是抽象敏感性标签，不是已经实现的partial格式。后续R6才声明每query的FP32
+partial为520 B，不能拿早期16 B轴作真实数值数据通路的成本。
+来源：[放置/传输模型](../experiments/route_a422_scheduler_merge_placement_01/a422_scheduler_merge_placement_report.json)。
+
+A4.2.3发现边际调用量只能约束fan-in，不能恢复共同出现关系：h32共有76,032
+次hot、72,864次packed、436次pending，仅凭这些总量，三源同时出现次数可以
+在0—436之间。因此不能从调用均值直接推断merge队列；A4.2.4增加有序逻辑事件，
+A4.2.5再保持源与merge依赖进行逻辑重建，仍未记录source完成或服务时间戳。
+来源：[边际服务敏感性](../experiments/route_a423_scheduler_merge_service_sensitivity_01/a423_scheduler_merge_service_sensitivity_report.json)、
+[有序逻辑重建](../experiments/route_a425_summarization_all_layers_budget512_horizon32_ordered_logical_schedule_02/a425_ordered_logical_schedule_report.json)。
+
+### 8.2 A4.2.6—4.2.8：确切fan-in与同horizon比较
+
 h32的76,032个事件被精确分为hot-only3,168、hot＋packed72,428、三源436，合计
 守恒。它比仅知道pending和packed各调用多少次更精确，但依然不知道物理并发数。
 来源：[确切fan-in](../experiments/route_a426_summarization_all_layers_budget512_horizon32_exact_fanin_01/a426_exact_fanin_distribution_report.json)。
@@ -224,6 +246,41 @@ h32的76,032个事件被精确分为hot-only3,168、hot＋packed72,428、三源4
 
 事件数仍不同，因为question bridge工作量不同；相同decode horizon不能直接形成
 同一需求分布。来源：[matched-horizon三workload](../experiments/route_a428_matched_horizon_three_workload_budget512_cap8_01/a428_matched_horizon_workload_stability_report.json)。
+
+### 8.3 A4.2.9—4.2.12：额外接口需求与背压，仍需声明服务假设
+
+A4.2.9按上表同一组事件，对split-source数出以下工作：
+
+| Workload | 逻辑merge数 | 需导出的partial状态数 | 相对每merge一个输入的额外reduction输入 |
+|---|---:|---:|---:|
+| Retrieval | 33,408 | 66,012 | 32,604 |
+| Summarization | 48,384 | 95,188 | 46,804 |
+| Reasoning | 82,944 | 165,976 | 83,032 |
+
+单位是声明的接口状态/输入个数，不是bytes、总线事务或cycle。co-located对应
+跨引擎导出为0，但本地partial和merge工作仍在。结果说明“把源拆开”不能只算
+并行好处；还须算状态出口、reducer和数据生命周期。来源：
+[匹配workload的接口需求](../experiments/route_a429_matched_interface_demand_01/a429_matched_interface_demand_report.json)。
+
+A4.2.10使用声明的source/reducer工作量与容量轴1/2/4/8/16/32。修正版把一次
+evaluation的全部源聚成一个fan-in merge task，容量单位不再是单个partial。
+例如summarization在容量轴1、balanced服务下，背压task数为0；将reducer工作
+从1改为2后，48,384个task中有48,383个经历背压。**是否积压高度依赖未校准的
+服务假设**，既不能由前者宣布FIFO足够小，也不能由后者宣称真实硬件必然堵塞。
+来源：[fan-in task背压模型修正版](../experiments/route_a4210_modeled_backpressure_envelope_02/a4210_modeled_backpressure_envelope_report.json)。
+
+A4.2.11进一步比较global/per-layer/per-layer-KV-head放置、三种arrival合同、
+flat/tree merge、并行轴1/2及容量轴1—16，每workload共180个模型组合。
+改变放置也改变服务资源组织，不能把虚拟finish work的差值当作免费加速。
+A4.2.12为其中的`trace_dispatch_epoch`补上依赖依据：三workload分别有
+1,044/1,512/2,592个layer dispatch epoch，每epoch对应32条query-head事件；
+它们使用同层append后的不可变source snapshot，而跨层仍保留顺序。原Python
+调用是串行的，“同层允许重叠”只表示依赖上有资格，未观察真实并发执行。
+因此这一支线最终保留了需求与敏感性，没有定下FIFO、引擎数或时钟。
+来源：[分区背压敏感性](../experiments/route_a4211_partitioned_backpressure_sensitivity_03/a4211_partitioned_backpressure_sensitivity_report.json)、
+[dispatch epoch依据](../experiments/route_a4212_dispatch_epoch_evidence_02/a4212_dispatch_epoch_evidence_report.json)。
+
+### 8.4 A4.2.13—4.2.14：共享边界与接口收口
 
 GQA检查进一步明确：同一source snapshot下，一个KV head对应的4个query heads
 可以共用source/page-descriptor dispatch描述，但各query的partial-softmax和merge
@@ -254,6 +311,8 @@ metadata的容量、归属与服务（R5），最后做同口径成本账本（R
 
 本报告仅保留一份正文。未来复核或绘图使用原目录中的功能manifest、mask replay
 NPZ、`a41_raw_repetitions.jsonl`、测量summary、独立profiler、ordered JSONL及
-fan-in/dispatch结果；不要只保留本报告的P50或调用均值。历史研究链可查
-[A4.1既有记录](../route_a41_measurement_plan.md)和[纵向计划](../route_a_research_plan.md)。
-没有新增数据包/资料清单，也未移动或删除原始实验资料。
+fan-in/dispatch及背压敏感性结果；不要只保留本报告的P50或调用均值。
+复核A4.2可直接使用正文各JSON及[接口需求分析](../../tools/analyze_kvzap_route_a429_matched_interface_demand.py)、
+[分区敏感性分析](../../tools/analyze_kvzap_route_a4211_partitioned_backpressure_sensitivity.py)；
+程序的输入/轴定义与结果里的config配对，不能用新假设覆盖旧结果。
+上述研究解释已在本文给出，不再需要旧测量计划或纵向交接补充；原始资料保留原位。

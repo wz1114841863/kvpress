@@ -1,6 +1,6 @@
 # R1：算法复现、稀疏结构与路线筛选
 
-整理日期：2026-11-11。研究阶段：2026 年 8 月 baseline、predictor trace、LongBench
+整理日期：2026-11-12。研究阶段：2026 年 8 月 baseline、predictor trace、LongBench
 结构分析及 Route-B 筛查。模型 Qwen3-8B，官方 KVzap MLP，threshold −4，最近
 128 token 保护窗口，seed42。本文依据已有结果表重新提炼数据，不重新运行模型。
 
@@ -58,6 +58,34 @@ Full-KV、只在 prefill 裁剪、prefill+decode 裁剪。三个内置请求分�
 所有回答保持精度，也不能说明 KVPress fake-key 路径已经少存了对应物理 KV。
 因此下一步改为独立观察 predictor 的 score 和位置结构。
 
+### 2.1 实际软件路径与最小复现入口
+
+逐层predictor输入为hidden state `[batch,T,hidden_dim]`，输出score
+`[batch,KV_heads,T]`；K/V为`[batch,KV_heads,T,head_dim]`。本次Qwen有36层、
+8个KV heads。软件在attention之后观察hidden state并作预测，score严格小于−4
+时标为drop；最近128项先受保护，离开窗口才生效。不能用此结果支持prefill
+attention之前删除KV。实现见[KVzap predictor](../../kvpress/presses/kvzap_press.py)、
+[DMS包装](../../kvpress/presses/dms_press.py)。这里的DMSPress是KVPress包装，
+不同于R4的官方训练DMS模型。
+
+原软件的head-wise mask通过dense K/V上的fake-key attention实现，未真正缩短
+各head的物理tensor；论文中的逻辑索引表达不能替代本仓库的实际存储行为。
+这正是后来需要packing后端的原因。来源：[attention实现](../../kvpress/attention_patch.py)。
+
+冻结baseline环境为A100-SXM-64GB、PyTorch2.10.0+cu128、Transformers5.0.0；
+模型/predictor revision及解码配置见[原配置](../baseline_config.yaml)。旧的
+Transformers4.57.3 smoke建议不是该baseline的精确复现环境。新运行入口为：
+
+```bash
+.venv/bin/python tools/run_kvzap_baseline.py --output-dir analysis/experiments/baseline_recheck_20261112_01
+```
+
+以上是供后续复现的命令示例，目录ID需按新运行命名，本次没有执行模型。脚本默认输出指向已冻结的
+`analysis/`，复现时必须使用新目录。自定义`--input-jsonl`每行必需
+`request_id/context/question`，可选`subset/required_substrings/max_new_tokens`。
+输出配置YAML、逐请求CSV和说明；CSV保存答案但不保存原context/question。
+`generated_tokens_retokenized`也不等于内部decode调用数，不能与R2的call混算。
+
 ## 3. 从单请求 trace 到45条结构样本
 
 ### 3.1 Gate A/B：确认观测对象，再扩大样本
@@ -78,6 +106,17 @@ Gate B 扩展到三种内置请求，得到：
 
 来源：[Gate A](../predictor_trace_gate_a.json)、[Gate B](../predictor_trace_gate_b_freeze.json)。
 这些请求与 baseline 的输入范围不完全相同，删除率不能逐项当作相同请求的重测差。
+
+有效的predictor-only trace只做一次正常prefill，逐层观察输入并独立调用官方
+predictor，将score复制到CPU后重建mask；不调用有状态DMS裁剪hook，不修改
+native cache，也不生成答案。要求全部layer/head齐全、score有限、shape明确、
+阈值mask与hot保护正确，并记录输入、模型和schema身份。Gate A先与987-token
+参考匹配；Gate B及后续新请求沿用已通过的Gate A，每请求独立运行。
+采集入口为[export_kvzap_predictor_trace.py](../../tools/export_kvzap_predictor_trace.py)：
+用`--preset hardware --reference-trace traces/qwen3_8b_single_384`重查Gate A，
+或用`--input-jsonl <input> --request-id <id>`选一条新请求，两者均需
+`--output-dir <new_trace_dir>`。已冻结trace不可覆盖。早期有状态采集的残缺层、
+无有效manifest或未通过观测等价检查的输出不属于本报告结果，不能与有效trace混用。
 
 ### 3.2 v1暴露选样问题，v2检验结论是否保留
 
@@ -255,9 +294,9 @@ head的keep紧凑排列，再按page取整。下表压缩均按token加权总槽
 现存冻结筛查没有提供这种完整对照。不能据此说“当时没有考虑硬件”，也不能说
 “当时已经证明Route-A更容易实现、更经济”。
 
-历史路线文件明确允许在Route-A无法提供token compaction，或后续系统比较显示
-Route-B有Pareto优势时重新考虑它。参见[历史路线§3.4](../../KVZAP_ARCHITECTURE_PATH.md)。
-本次整理据此澄清历史判断，不启动新的路线实验或改写原冻结结论。
+当时的备选条件是：若目标系统不能提供token compaction，或后续同口径系统比较
+显示Route-B有Pareto优势，就重新评估Route-B。当前报告保留这一条件，不将
+历史主线选择视为不可被后续硬件证据推翻的结论。R2继续检验packing的代价。
 
 ## 7. 应保留的结论与负结果
 
@@ -289,20 +328,6 @@ R1只保留本报告作为阅读入口。正文中的表格直接提炼自以下
 accuracy输入不能直接替代它。现有结果可用于许多图表，但不能据此保证所有实验
 都能从本地重新运行。数据、trace和日志很多被Git忽略，提交代码不等于备份这些数据。
 
-既有共享引用与冻结路径检查得到的保留决定如下：
-
-- **原位保留：** 冻结记录及其登记制品、v1/v2原trace和主分析、v3结构化结果、最终
-  布局与9请求结果，以及共享代码/schema。baseline和v2测试按原路径检查制品。
-- **早期结果重复也不能直接删：** B4 probe `accuracy_b4_m0_probe_02`及两个sentinel
-  的6个manifest/结果文件，被Route-B冻结记录直接登记。它们继续保留原位。
-- **已有重复或被扩展的版本：** structured-policy v2的manifest、head bucketing与v3
-  完全相同；另两表共有字段值相同，但v3新增容量/加权统计列。Full-KV与原KVzap
-  两个早期probe的结果行也已被最终筛查覆盖；删除旧集合前仍需核对独有条件和引用。
-- **过程资料不进入正文：** 旧初始计划、启动/采集日志、技术报错和混合说明的过程
-  部分无需日常阅读。其中kvzap_trace.md仍含独有规则并引用两份日志，baseline说明
-  也有相对链接；不因本报告完成就自动删除这些旧文件。
-- **状态仍不明：** longbench_balanced_v2_accuracy_gate_01.log只见加载片段，不能判作
-  完整成功或失败。原v2输入缺失也仍需定位。
-
-本次只删除新增且可由本报告与既有结果替代的三个整理附件，没有移动或删除原始
-实验资料。后续R2—R6同样以各一份正文为目标，不默认增加数据包、清单和方案文件。
+以上原始结果、冻结登记的早期B4 probe/sentinel、共享代码和schema仍需保留。
+仅有加载片段的旧accuracy日志不能算新增的成功或失败实验。研究解释由本报告
+承接，技术复核直接查表中数据与源码；本轮没有移动、删除或改写原始资料。

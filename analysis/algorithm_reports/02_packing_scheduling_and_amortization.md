@@ -1,6 +1,6 @@
 # R2：Packing、调度与摊销
 
-整理日期：2026-11-11。范围：Route-A的A0—A3.20探索。固定Qwen3-8B官方KVzap
+整理日期：2026-11-12。范围：Route-A的A0—A3.20探索。固定Qwen3-8B官方KVzap
 MLP、threshold −4、hot window128；原始mask不变。本报告提炼已有数据，未重跑模型。
 文中容量、bytes、cycles和利用率均按各阶段声明的模型解释，不是硬件实测。
 
@@ -136,6 +136,11 @@ metadata、queue/dispatch和计算/带宽上限显式计入，并扫描page、�
 `break_even_decode_step`按**累计bytes**计算；它标为第2步不意味着cycles第2步回本。
 周期节省应独立检查，不能混用两个门槛。
 
+最简单的固定工作量近似为`回本读取次数=一次admission费用/每次读取节省`，
+仅在分母为正、前后费用同单位时适用。真实重放中head长度、pending、页分配和
+服务竞争都随调用变化，因此应逐前缀检查`累计Route-A费用≤累计Full-KV费用`。
+容量压缩、字节回本和周期回本应分别报告，不能用字节回本点替代周期回本点。
+
 **分析与承接。** 更快的attention引擎可能使一次性admission反而主导关键路径。
 因此A3-edge进一步把共享packing引擎数量、每引擎bytes/cycle、burst取整、page setup
 和服务窗口分开扫描。这里的早期负结果是模型发现，不是工具运行失败；也不能将
@@ -269,6 +274,8 @@ layer/batch/summary与cost manifest、A2的lifecycle事件和page replay、admis
 逐前缀表。它们均在正文链接的原实验目录及[A2冻结](../route_a2_lifecycle_freeze.json)
 指向的目录中。只保留本报告中的均值/几个模型点，不足以恢复全部曲线。
 
-历史推进细节可追溯[纵向研究计划](../route_a_research_plan.md)与
-[A0—A3归档](../route_a_stage_archive_20260902.md)；本报告不复述启动、报错或hash流程，
-不新增数据包/管理清单，也不移动或删除原始资料。
+复核时按正文直接进入A0容量表、A1调度表/参数、A2冻结所指的事件，以及A3逐步
+ledger和前缀曲线；A3.20的[分析实现](../../tools/analyze_kvzap_route_a320_speculative_defer_curve.py)
+保留了D扫描与前缀口径。静态mask、dense生命周期、shadow副本和分支重放是不同
+证据层次，不能把它们拼成已经运行的持续稀疏后端。研究顺序和条件性判断已在
+本文给出，理解本阶段无需再读旧计划或交接；原始数据仍保留原位。

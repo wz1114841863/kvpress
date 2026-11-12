@@ -7,6 +7,8 @@ trace和模型结果，未运行模型、重放实验、修改RTL或启动综合
 功能参考沿用Qwen官方MLP/threshold −4、Llama官方Linear/threshold −7、hot128/
 page64；每模型为retrieval、summarization、reasoning各一个固定内置请求，不是
 正式准确率benchmark。各阶段的服务与组织敏感性在下文另述。
+本轮在已有远程项目中找回A4.9.2/A4.10原始汇总，并核对其与下游冻结输入的
+身份关系；§9补充真实对照数据，原件仍在远程，没有新建本地数据副本。
 
 ## 1. 这一阶段为什么逐步走向资源管理
 
@@ -212,6 +214,12 @@ A4.6.8.2.2把非payload原语收敛成四类逻辑记录：
 span-lifecycle、ownership-order四类依赖，检查逻辑关键链和并行工作；这不等于
 获得了硬件并行度或时序路径。
 
+该阶段还区分“连续多个检查点有依赖”与“存在一条长的直接依赖链”，并保留
+关键路径节点/边及其类型、checkpoint并行余量的min/P1/P5。高P95或平均并行
+余量不能排除少量检查点串行；热点bucket、head偏斜与跨bucket fanout也不能
+直接换算端口。由此才进入事务、锁和服务模型，而不是从访问总量直接选bank。
+来源：[最终依赖/低尾观察](../experiments/route_a470_metadata_access_concurrency_remote_replica_02/a470_metadata_access_concurrency_report.json)。
+
 A4.7.1将记录组成有唯一commit边界的事务：admission创建/连接、非终端dequeue、
 终端dequeue/释放。要求所有成员完成后才可发布状态，避免读到半更新的归属。
 tail extension虽被定义，实际观察计数为0，不得因接口存在便称已覆盖。
@@ -308,28 +316,77 @@ A4.9.1选择一个明确候选布局作执行DSE：per-head namespace、terminal
 53,696 bit也不含完整pending payload、事务队列或实现外围。来源：
 [A4.9.1候选模型与结果](../experiments/route_a491_candidate_metadata_engine_02/a491_candidate_metadata_engine_report.json)。
 
-### 9.2 保留单一commit，研究内部交错与lossless credit
+### 9.2 A4.9.2：内部交错能改善服务，但未消除队列问题
 
 A4.9.2把比较轴收窄为whole-bank与record-granular：允许不同组的内部记录操作
 交错，但同record锁保持到原子组commit，前驱释放和对外可见性仍由原commit
 决定；不再改FIFO、ownership、RMW模板或增加第三种语义变体。
 
+原始汇总有4候选×168个context，共672行。与原whole-bank基线比较：
+
+| 候选 | Whole-bank界内排空 | Record-granular界内排空 | Record-granular仍观察到queue溢出 | 两者均排空时的服务坐标差范围 |
+|---|---:|---:|---:|---:|
+| HA4-base | 137/168 | 147/168 | 168/168 | −734…−118 |
+| HA8-base | 168/168 | 168/168 | 168/168 | −623…−69 |
+| HA8-wide | 168/168 | 168/168 | 168/168 | −626…−69 |
+| ST8-base | 43/168 | 161/168 | 168/168 | −3,197…−1,865 |
+
+差为record-granular减whole-bank的声明服务坐标；只比较两者均在界内排空的
+样本，不拿删失端点算加速。其负号说明保守的整bank占用确有可释放的内部并行
+机会，但168/168的溢出观察继续存在。ST8显著改善也仍有7个context未在界内
+排空，不能宣布所有映射都已解决。这里没有测面积、物理cycle或硬件加速。
+
+### 9.3 A4.10：有限队列须交代工作留在哪里
+
 A4.10随后固定HA8-wide主点、HA8-base对照和record-granular执行，比较bank-local、
 local＋layer-shared overflow、有限shared/staging及lossless credit。队列满时
 延迟接收并持有工作，不通过丢弃、改grant或默认Full-KV回退来清空。
 
+对HA8-base/HA8-wide各168个context，三种组织都最终完成全部事务、末态残留0。
+但“排空”背后的存储/背压责任不同：
+
+| 候选 | local32之后的组织 | 界内排空 | 有背压的context | 最大layer-shared / staging占用 | 最大外部held事务 |
+|---|---|---:|---:|---:|---:|
+| HA8-base | shared无界参照 | 168/168 | 0/168 | 719 / 0 | 0 |
+| HA8-base | shared256＋credit | 168/168 | 70/168 | 256 / 0 | 2,173 |
+| HA8-base | shared256＋staging512＋credit | 168/168 | 0/168 | 256 / 463 | 0 |
+| HA8-wide | shared无界参照 | 168/168 | 0/168 | 719 / 0 | 0 |
+| HA8-wide | shared256＋credit | 168/168 | 70/168 | 256 / 0 | 2,170 |
+| HA8-wide | shared256＋staging512＋credit | 168/168 | 0/168 | 256 / 463 | 0 |
+
+local按bank，shared/staging峰值按layer，held是重放中全部被暂缓接收的事务
+高水位；各列独立取最大值，不代表同一时刻。只有shared256时，多出的工作
+留在模型的外部held集合，需要生产者可保持数据或可背压的真实合同，不能当作
+工作消失或“总共只需256项”。加staging512后，本次覆盖峰值463且held为0，
+提供了有限候选的依据，仍不是任意流量的容量保证。
+
+队列组织也有模型代价：相对A4.9.2基线，HA8-base/HA8-wide增加的服务坐标
+最大分别528/380，不能只报无损排空而省略接收、搬移与仲裁的工作。两候选的
+168行及三种组织是同批context的对照，不是1,008个独立请求。
+
 最终被下游成本研究继承的合同为`local32/shared256/staging512`：local按bank、
 shared/staging按layer，条目属于metadata工作队列。这里staging512不是P3 payload
-的512个fragment，也不是admission budget512。来源：
-[纵向计划的执行/队列合同](../route_a_research_plan.md)、
+的512个fragment，也不是admission budget512。继承关系可直接检查：
 [现有A4.14.0冻结输入副本](../experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4140_source.json)。
 
-**资料边界。** 本地未找到A4.9.2与A4.10独立原始结果汇总。上段执行原则可由
-现有计划与[record-granular脚本](../../tools/simulate_kvzap_route_a492_record_granular_engine.py)、
-[queue/credit脚本](../../tools/simulate_kvzap_route_a410_queue_contract.py)交叉核对，
-继承配置可由A4.14.0副本确认；本文不填造两阶段的面积、排空改善百分比或
-queue分位数，也不声称重新验收了它们。后续清理必须保留或找回其唯一原始
-汇总/trace，不能只因下游采用了配置便认为完整对照数据已有替代副本。
+### 9.4 找回的原始结果与仍有的资料边界
+
+2026-11-12在`algorithm`主机的既有项目找到两份complete JSON，根目录为
+`/home/myserver/workplace1/zsy/zsy_2/kvpress/analysis/experiments/`：
+
+- `route_a492_record_granular_engine_01/a492_record_granular_engine_report.json`。
+- `route_a410_queue_staging_credit_contract_04/a410_queue_staging_credit_contract_report.json`。
+
+A4.10与本地A4.14.0登记的冻结输入一致，并且其上游摘要与找到的A4.9.2一致；
+远程A4.12.0和A4.14.0中的A4.10输入副本也与原件一致。上表直接汇总原JSON，
+核对了schema、complete状态、semantic guards和完成计数；没有重新运行模拟。
+可结合[record-granular实现](../../tools/simulate_kvzap_route_a492_record_granular_engine.py)、
+[queue/credit实现](../../tools/simulate_kvzap_route_a410_queue_contract.py)检查计数定义。
+
+**本地仍缺这两份独立汇总及A4.10输入副本，本轮未同步，也未验收全部上游
+原始trace。** 因而从“独立结果未找到”更新为“结果已在远程核验、本地副本
+缺失”，不能升级成完整离线复现链已恢复。资料位置在本文给出，阅读研究结论
+无需跳转旧计划或交接；后续清理仍须保全远程原件和未同步的输入。
 
 ## 10. 这一阶段最终证明什么，哪些问题仍留到后面
 
@@ -350,7 +407,7 @@ queue分位数，也不声称重新验收了它们。后续清理必须保留或
 的R3 compact admission关联表，不能用53,696 bit直接作为后者应有的容量或
 面积预算。算法mask与grant被冻结，不意味着后续表示和物理实现自动经济。
 
-本文只新增一份正文，关键表直接来自已有JSON。未来可以用原始按context/phase
+本文保持一份正文，关键表直接来自已有JSON。未来可以用原始按context/phase
 数据重绘容量前沿、服务/drain曲线和热点分布；正文中的累计事件数不能替代
 唯一原始轨迹。已读取关键汇总和相关脚本，未重算全部原始trace或传递依赖。
 没有移动、覆盖或删除原始资料。

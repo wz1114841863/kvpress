@@ -46,17 +46,37 @@ attention位置数分别29、42、72，含相应multi-token/question与decode范
 路径：Full-KV bypass、same-mask dense、external-storage Route-A，再把lifecycle
 observer放到最终external-storage路径，且从第一次prefill append之前开始记录。
 
+这条路径分四步建立，四步回答的问题不同：
+
+| 阶段 | 具体检查 | 能得到什么 |
+|---|---|---|
+| A4.11.0 trace-off语义 | 三workload的mask replay、全层external ownership及数值检查 | 先确认所比较的软件路径成立 |
+| A4.11.1 trace-off测量 | fresh/reset运行中各一个计时区、allocator峰值和三路径比较 | 软件时间/内存观察，不校准A4.10队列或硬件服务 |
+| A4.11.2 trace-on映射 | prefill之前布防，比较trace-on/off并逐项列出映射缺口 | 成熟保留项与pending标量可观察，ready/完成/commit仍未观察 |
+| A4.11.2b external-storage绑定 | 把observer与真正external-cold数据路径、exact-token及末态scalar对应 | 防止沿用早期reference的生命周期替后来的存储实现作证 |
+
+A4.11.1、A4.11.2的complete汇总本轮也在R5§9.4所列远程根目录找到，分别为
+`route_a4111_trace_off_measurement_matrix_02/a4111_trace_off_measurement_matrix_report.json`
+和`route_a4112_control_event_mapping_02/a4112_trace_on_control_event_mapping_report.json`。
+这里只提取其阶段关系和已记录guard，不用状态complete代替软件加速结论。
+
 **结果。** A4.11.2b要求same-mask dense、external trace-off和trace-on的生成token
 ID完全对应，mask恰好消费一次，外部两路径最终scalar状态对应；已接受的绑定
 保留了这些guard。Full-KV与裁剪路径的答案相同不是必要条件，不能据此升级为
 算法质量通过。数值检查继续保留各自FP32/quantization-aware标准及record-only
-ULP诊断。来源：[语义合同](../route_a4110_semantic_contract.md)、
-[external lifecycle合同](../route_a4112b_external_storage_lifecycle_contract.md)、
+ULP诊断。来源：
 [已保存的A4.11.2b绑定结果](../experiments/route_a4140_workload_aligned_metadata_cost_01/input_artifacts/a4112b_source.json)。
 
 软件直接观察的是maturity、pending、admitted和packed页状态。后续将保留token
 按64-token span及append-event/layer/head组成事务组，是确定性转换；bank、
 credit、micro-op完成和physical commit仍由模型声明，未由软件测得。
+
+具体说，`matured_kept_tokens`能作为到达量的来源，却不是原子组到达时间；软件
+pending水位不是bank FIFO/shared队列占用；ready group、micro-op done、单一
+commit/ownership publish、bank端口、RMW lane和跨bank协调都没有直接的软件
+对应事件。因此从软件到模型是带明确未映射项的转换，不能反推真实服务时序。
+复核入口：[scalar映射验证器](../../tools/validate_kvzap_route_a4112_control_event_mapping.py)、
+[external绑定验证器](../../tools/validate_kvzap_route_a4112b_external_storage_binding.py)。
 
 **分析。** 这一步补上了“算的是哪条路径”的连接。它不等于硬件已经实现完整
 生命周期，也不能把转换出来的事务组称为真实总线请求或SRAM访问。
@@ -68,14 +88,19 @@ credit、micro-op完成和physical commit仍由模型声明，未由软件测得
 三种metadata映射。抽象2/2/2服务需求没有直接作为物理2R2W宏输入；CACTI宏
 均是明确的1RW proxy，如何组合满足服务另用模型检查。
 
+字段账本采用head-control59 bit、span-owner50 bit，均pad到64 bit。R5所述
+225个head-control与614个span-owner对应`225×59＋614×50=43,975 bit`，pad后
+53,696 bit。**这些是语义metadata字段，不含payload page ID、offset、bank或
+地址/handle宽度，也不含完整生产控制状态。** 不能拿这个位数当后来RTL两张
+compact表的预算，或认为只需把它们换成SRAM就已覆盖全部存储。来源：
+[候选字段及配置](../experiments/route_a491_candidate_metadata_engine_02/a491_candidate_metadata_engine_report.json)。
+
 | 候选 | 计划实现方式 | 已有处置 |
 |---|---|---|
 | M1 | 每bank一份metadata 1RW SRAM，head/span争用；RMW占两个服务坐标 | 没有排空所有冻结context，被拒为完整映射 |
 | M2 | 每bank两份head-control副本＋一份span-owner SRAM；head更新显式镜像 | 作为完整SRAM-proxy候选进入后续账本；镜像写不免费 |
 | M3 | head-control放小寄存器热状态，span放SRAM | 有服务可行性记录，但寄存器面积/能量未估，不选为完整成本赢家 |
 
-处置依据见[metadata侧收口记录](../route_a_research_plan.md)及
-[partial-ledger合同中的候选处置](../route_a4123_metadata_partial_ledger_contract.md)；
 [A4.14.0接受结果](../experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4140_source.json)
 继续显式保留M1拒绝、M3未计价、只重放M2的范围。本文未重新验收M1/M3原始运行。
 
@@ -87,8 +112,8 @@ controller、arbitration、scoreboard、commit、wire/clock及未估register均�
 动态成本则按实际模型access乘pJ/access。M2 head写/RMW要更新两份副本；M3
 寄存器能量没有用CACTI的SRAM值代替。特别是，**M2 queue/staging的宏面积有
 计入，queue/staging动态access没有完整映射，不能把head/span能量当总M2能量。**
-来源：[宏包络合同](../route_a4121_metadata_macro_envelope_contract.md)、
-[服务/能量合同](../route_a4122_metadata_cycle_energy_contract.md)。
+来源：[M2固定provision与访问系数](../experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4140_source.json)、
+[最终固定设施账本](../experiments/route_a4141_accounted_net_benefit_ledger_01/a4141_accounted_net_benefit_ledger_report.json)。
 
 **分析。** A4.12.3只能把metadata成本和payload机会并列呈现：168个metadata
 context与三个external-storage请求当时没有逐一配对。不能拿两组独立数字相除
@@ -97,7 +122,12 @@ context与三个external-storage请求当时没有逐一配对。不能拿两组
 ## 4. A4.13.1：payload放在哪里，packing是否需要额外搬运
 
 **目的与计划。** Packed cold保留在HBM，按512 B K+V/record、64 records/page
-计为32 KiB/page；每record另有8 B position sidecar。本阶段只比较三个声明映射：
+计为32 KiB/page；每record另有8 B position sidecar。
+
+这些大小来自固定目标的head_dim128、BF16每标量2 B：K与V各256 B，合计512 B；
+64个64-bit逻辑位置占512 B。Sidecar对应软件参考的位置表示，不是已选定的
+物理地址编码，也没有证明所有模型都需同样位宽。层数/head/page数与本地服务
+如何映射成物理存储，仍需独立实现和计价。本阶段比较以下三个声明映射：
 
 | 候选 | Pending与packing的组织 | 明确承担的代价 |
 |---|---|---|
@@ -139,8 +169,7 @@ A4.13.3以后，headline是两边都拥有相同合法GQA复用。
 合法复用要求同layer/KV head/position/phase的四个query-head事件具有相同
 source长度和page状态，逐组验证，不是直接把全部字节除以4。Full-KV causal
 span也按相同64-token页取整。Route-A packed页额外带512 B position sidecar。
-来源：[公平GQA合同](../route_a4133_packed_kv_hbm_realization_contract.md)、
-[对应结果副本](../experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4133_source.json)。
+来源：[公平GQA实现账本副本](../experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4133_source.json)。
 
 **结果。** 最终HBM字节账本包含Route-A attention源读取、packed sidecar以及P3
 admission的pending写/读和packed写：
@@ -159,12 +188,24 @@ admission的pending写/读和packed写：
 A4.13.4固定`FILL → READY → 四消费者及partial更新 → RELEASE`：四个消费者
 完成之前不能回收buffer。每个活动GQA组仍需四份独立partial，按FP32接口为
 `4×(128+2)×4 = 2,080 B`；它只是接口大小，没有选RF/SRAM或实现merge算术。
-来源：[source复用与merge合同](../route_a4134_page_source_reuse_interface_contract.md)。
+这不是可免费实现的共享：source有效性、四消费者完成、partial状态与回收条件
+都需要真实存储/控制。来源：[source/partial模型实现](../../tools/analyze_kvzap_route_a4134_page_source_reuse_interface.py)。
 
 A4.13.5再比较S1单32-KiB buffer和S2双32-KiB ping-pong。每buffer用一个
 128×2,048-bit、1RW public-CACTI proxy；S2通过不同buffer分别fill/consume，
 不是假定一块存储免费多端口。每页128次fill write、128次multicast read，
 后者广播给四个query heads，不重复计四份宏读。
+
+对具有N页、固定fill/consume工作的同一stream，模型为：
+
+```text
+S1 = N × (T_fill + T_consume)
+S2 = T_fill + (N−1) × max(T_fill,T_consume) + T_consume
+```
+
+第一项保留warm-up，最后一项保留drain；只有`T_consume≥T_fill`才可完全隐藏
+下一页fill。它不是任意并发stream的时间公式，hot/pending直读与P3搬运还须
+各自计服务。两套buffer的端口、广播与仲裁仍须落到实现。
 
 目标profile固定64-B modeled transaction、read/write startup32、HBM读8 pJ/B、
 写10 pJ/B、consumer每模型周期消费一个256-B内部beat。主点256 B/model-cycle，
@@ -226,8 +267,7 @@ staging/held观察峰值均0。它们是特定重放的高水位，不足以缩�
 S2是公平Full-KV/Route-A共有的声明GQA基础设施，固定面积不算Route-A增量；
 两侧的动态access仍各自计价。M2固定面积属于Route-A增量。两项public-CACTI
 32-nm proxy既不构成完整芯片面积，也不能直接与后来DC cell-area units相加。
-来源：[最终成本合同](../route_a4141_accounted_net_benefit_ledger_contract.md)、
-[最终固定设施与遗漏项](../experiments/route_a4141_accounted_net_benefit_ledger_01/a4141_accounted_net_benefit_ledger_report.json)。
+来源：[最终固定设施与遗漏项](../experiments/route_a4141_accounted_net_benefit_ledger_01/a4141_accounted_net_benefit_ledger_report.json)。
 
 ## 8. 最终动态能量差与“遗漏成本预算”应怎样理解
 
@@ -281,8 +321,9 @@ energy proxy，不是同工艺、同物理实现的完整能量结果。未估le
 
 该决定只允许编写规格；规格freeze/reviewer与RTL-entry是后续独立门槛。
 它没有授权宣称PPA、2-ns时序、原生HBM、实测speedup、持续decode完整实现
-或完整芯片净收益。后来的[architecture spec](../architecture_spec.md)保留了
-共同/增量成本、遗漏预算与metadata/payload服务坐标不得相加等条件。
+或完整芯片净收益。进入架构后的义务是把上述共同/增量设施、存储owner、端口、
+commit、外部服务与统一时序逐项落实；metadata/payload服务坐标不得直接相加，
+遗漏动态能量预算也不能支付面积或setup/hold违例。总览接续后来的实现结果。
 
 ## 10. 这份报告承接什么，哪些原始资料仍需保留
 
@@ -293,8 +334,9 @@ R1—R6已经把原始mask机会、packing/摊销、功能执行、跨模型/前
 
 本次直接核对最终报告、四份直接输入副本，以及既有本地恢复记录列出的绑定/
 lifecycle制品；没有重新验收全部上游CACTI raw、模型输出或metadata重放。
-部分传递依赖仍缺独立原始汇总，不能因为最终有输入副本便认为整个链条可从
-底层重建。必要报告、副本、生命周期和payload trace、CACTI宏配置/raw及profile
+R5本轮已在远程找回并核验A4.9.2/A4.10；其独立汇总和部分中间输入在本地仍
+缺副本，完整链条尚未逐项恢复。不能因为最终有输入副本便认为全链可从底层
+重建。必要报告、副本、生命周期和payload trace、CACTI宏配置/raw及profile
 参数仍保留原位；正文不展开启动、报错、重复交接或hash明细。
 
 所有表格直接引用既有JSON，无新增配套数据包或来源清单。未来可据原始按
