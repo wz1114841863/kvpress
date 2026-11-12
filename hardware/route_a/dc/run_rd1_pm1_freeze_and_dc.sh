@@ -34,7 +34,7 @@ import hashlib,json,sys
 from pathlib import Path
 profile=json.load(open(sys.argv[1]));stem=Path(sys.argv[2])
 profile['source_successor']=stem.name
-profile['source_freeze']='analysis/dc_rd1_pm1_parallel_launch_20261106.md'
+profile['source_freeze']='analysis/hardware_reports/04_area_timing_optimization_and_design_review.md'
 profile['status']='approved_rd1_pm1_same_fair_v1_pending_native_result'
 profile['integrity']['hdl_archive_sha256']=hashlib.sha256(Path(str(stem)+'_paired_input.tar.gz').read_bytes()).hexdigest()
 (stem/'dc_profile.json').write_text(json.dumps(profile,indent=2)+'\n')

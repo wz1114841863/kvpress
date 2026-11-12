@@ -19,8 +19,9 @@ def load_manifest(path: str | Path) -> dict[str, Any]:
 def validate_manifest(manifest: dict[str, Any]) -> None:
     if manifest.get("schema_version") != SCHEMA or manifest.get("status") != STATUS: raise RTL2AdmissionGroupBuilderError("unexpected RTL2.0b manifest identity")
     if "No P3 payload movement" not in str(manifest.get("scope")): raise RTL2AdmissionGroupBuilderError("scope must retain no-dataflow boundary")
+    # Historical Markdown citations need not remain in the working tree.
     for path in _strings(manifest, "contract_references"):
-        if not Path(path).is_file(): raise RTL2AdmissionGroupBuilderError(f"missing contract reference: {path}")
+        if Path(path).suffix != ".md" and not Path(path).is_file(): raise RTL2AdmissionGroupBuilderError(f"missing contract reference: {path}")
     anchor = _object(manifest, "anchor")
     if (anchor.get("max_group_members"), anchor.get("active_kv_head_groups"), anchor.get("pack_engines"), anchor.get("p3_reservation_owner_value")) != (64, 1, 1, 0): raise RTL2AdmissionGroupBuilderError("anchor group/packer/reservation values drifted")
     if "not an R1 request ID" not in str(anchor.get("p3_reservation_owner_meaning")): raise RTL2AdmissionGroupBuilderError("P3 owner must remain local reservation-only")

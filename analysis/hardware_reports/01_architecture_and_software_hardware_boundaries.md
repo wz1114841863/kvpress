@@ -207,7 +207,7 @@ Full-KV控制分母和Route-A实现成本影响，既不能直接当完整系统
 [有限anchor](../architecture_gate_a3_plan.md)、
 [Gate-A结论](../architecture_gate_a_reviewer_02.md)、
 [RTL层次与owner](../rtl_entry_hierarchy_owner_contract.md)、
-[Gate-RTL0结论](../gate_rtl0_reviewer_01.md)。
+[Gate-RTL0结论](../rtl_entry_interface_manifest.json)。
 硬件各职责原定义为[R1](../architecture_gate_a_r1_core_memory_wrapper_contract.md)、
 [R2](../architecture_gate_a_r2_arbitration_dependency_contract.md)、
 [R3](../architecture_gate_a_r3_m2_p3_wrapper_contract.md)、

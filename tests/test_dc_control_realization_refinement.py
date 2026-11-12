@@ -9,7 +9,6 @@ INTERFACES = ROOT / "hardware/route_a/chisel/src/main/scala/kvpress/routea/inter
 M2 = ROOT / "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala"
 MEASUREMENT_DUT = ROOT / "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAMeasurementDut.scala"
 MEASUREMENT_R3_SPEC = ROOT / "hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAMeasurementDutR3Spec.scala"
-DIAGNOSIS = ROOT / "analysis/dc_control_realization_diagnosis_20261101.md"
 
 
 def test_metadata_admission_keeps_group_summary_not_duplicate_binding_ledger() -> None:
@@ -36,16 +35,6 @@ def test_m2_operand_and_owner_validate_only_consumed_group_facts() -> None:
     assert "operand.members(" not in m2
 
 
-def test_diagnosis_preserves_scope_and_cost_boundary() -> None:
-    diagnosis = DIAGNOSIS.read_text(encoding="utf-8")
-    for required in (
-        "645,012 sequential bits",
-        "R3/P3 membership owner",
-        "not a zero-cost memory proxy",
-        "same-constraint successor DC run",
-        "not a PPA result",
-    ):
-        assert required in diagnosis
 
 
 def test_functional_measurement_dormant_r5_service_is_fully_driven() -> None:

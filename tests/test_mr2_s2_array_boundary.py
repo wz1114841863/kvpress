@@ -5,7 +5,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "hardware/route_a/chisel/src/main/scala/kvpress/routea/common/RouteACommonSkeletons.scala"
-CONTRACT = ROOT / "analysis/mr2_s2_array_boundary_contract.md"
 
 
 def test_mr2_s2_array_boundary_keeps_arrays_out_of_s2_control_wrapper() -> None:
@@ -43,17 +42,3 @@ def test_mr2_s2_array_boundary_keeps_arrays_out_of_s2_control_wrapper() -> None:
         assert required in text
     assert "storage.io.payload_write_enable" not in wrapper
     assert "storage.io.sidecar_write_enable" not in wrapper
-
-
-def test_mr2_s2_contract_records_array_only_and_retained_control_boundary() -> None:
-    text = CONTRACT.read_text(encoding="utf-8")
-    for required in (
-        "array-only",
-        "RouteAS2GqaSourceWrapper`",
-        "s2_payload_fragment_in.fire",
-        "s2_sidecar_fragment_in.fire",
-        "s2_payload_read_req_in.fire",
-        "s2_sidecar_read_req_in.fire",
-        "not an SRAM macro",
-    ):
-        assert required in text

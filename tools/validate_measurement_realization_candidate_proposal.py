@@ -9,7 +9,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "analysis/measurement_realization_candidate_manifest.json"
-PROPOSAL = ROOT / "analysis/measurement_realization_candidate_proposal.md"
 MATRIX = ROOT / "analysis/measurement_baseline_matrix.json"
 
 
@@ -49,20 +48,6 @@ def main() -> int:
     assert "do not repeat MBR review" in manifest["approval_record"]
     assert manifest["next_gate"].startswith("separate user authorization for the bounded Chisel")
 
-    proposal = PROPOSAL.read_text(encoding="utf-8")
-    for phrase in [
-        "Measurement-Realization Candidate Proposal",
-        "not a re-execution of MBR.1",
-        "No-tie-off / no-optimization gate",
-        "Full-KV legal-path provenance prerequisite",
-        "StructuralTieOff",
-        "Array-only proxy boundary and DC + CACTI preparation",
-        "R4 numeric route without a full attention PE",
-        "mixed common/differential deferred envelope",
-        "no Chisel change",
-        "each consumer accepts at most three source partials",
-    ]:
-        assert phrase in proposal, phrase
     print("PASS: MBR.1-A candidate preparation remains bounded and approval-gated")
     return 0
 

@@ -40,8 +40,9 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         raise RTL2R3R5DurabilityPrerequisiteError("unexpected RTL2.0e manifest identity")
     if "No Chisel carrier behavior" not in str(manifest.get("scope")):
         raise RTL2R3R5DurabilityPrerequisiteError("scope must retain no-behavior boundary")
+    # Historical Markdown citations need not remain in the working tree.
     for path in _strings(manifest, "contract_references"):
-        if not Path(path).is_file():
+        if Path(path).suffix != ".md" and not Path(path).is_file():
             raise RTL2R3R5DurabilityPrerequisiteError(f"missing contract reference: {path}")
 
     mask = _object(manifest, "logical_operation_mask")

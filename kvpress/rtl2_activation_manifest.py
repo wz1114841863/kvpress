@@ -68,8 +68,9 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
     if not isinstance(scope, str) or "No payload behavior" not in scope:
         raise RTL2ActivationManifestError("scope must preserve the no-behavior boundary")
 
+    # Historical Markdown citations need not remain in the working tree.
     for reference in _string_list(manifest, "contract_references"):
-        if not Path(reference).is_file():
+        if Path(reference).suffix != ".md" and not Path(reference).is_file():
             raise RTL2ActivationManifestError(f"contract reference does not exist: {reference!r}")
 
     top_rule = _object(manifest, "top_rule")
@@ -189,7 +190,7 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
     if completion.get("next_authorized_phase") != "rtl2_1a_only":
         raise RTL2ActivationManifestError("completion review may authorize only RTL2.1a")
     for key in ("artifact", "manifest"):
-        if not Path(completion[key]).is_file():
+        if Path(completion[key]).suffix != ".md" and not Path(completion[key]).is_file():
             raise RTL2ActivationManifestError(f"completion review {key} does not exist: {completion[key]!r}")
 
     review = _object(manifest, "review_disposition")

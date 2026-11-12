@@ -32,7 +32,7 @@ from pathlib import Path
 import hashlib,json,sys
 p=json.load(open(sys.argv[1]));s=Path(sys.argv[2])
 p['source_successor']=s.name
-p['source_freeze']='analysis/dc_wcg1_full_paired_integration_baseline_20261107.md'
+p['source_freeze']='analysis/hardware_reports/04_area_timing_optimization_and_design_review.md'
 p['status']='approved_RD1_WCG1_PM1_off_RD2_excluded_pending_result'
 p['integrity']['hdl_archive_sha256']=hashlib.sha256(Path(str(s)+'_paired_input.tar.gz').read_bytes()).hexdigest()
 p['tops']['route_a']['expected_file_count']=49

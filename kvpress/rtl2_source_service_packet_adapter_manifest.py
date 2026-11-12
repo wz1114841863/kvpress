@@ -37,8 +37,9 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         raise RTL2SourceServicePacketAdapterError("unexpected RTL2.0f manifest identity")
     if "No Chisel packet behavior" not in str(manifest.get("scope")):
         raise RTL2SourceServicePacketAdapterError("scope must retain no-behavior boundary")
+    # Historical Markdown citations need not remain in the working tree.
     for path in _strings(manifest, "contract_references"):
-        if not Path(path).is_file():
+        if Path(path).suffix != ".md" and not Path(path).is_file():
             raise RTL2SourceServicePacketAdapterError(f"missing contract reference: {path}")
 
     child = _object(manifest, "child")

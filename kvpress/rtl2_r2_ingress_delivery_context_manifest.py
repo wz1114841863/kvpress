@@ -15,8 +15,9 @@ def load_manifest(path:str|Path)->dict[str,Any]:
 def validate_manifest(m:dict[str,Any])->None:
     if m.get("schema_version")!=SCHEMA or m.get("status")!=STATUS: raise RTL2R2IngressDeliveryContextError("unexpected RTL2.0c manifest identity")
     if "No behavioral R2 rewrite" not in str(m.get("scope")): raise RTL2R2IngressDeliveryContextError("scope must retain no-behavior boundary")
+    # Historical Markdown citations need not remain in the working tree.
     for p in _strings(m,"contract_references"):
-        if not Path(p).is_file(): raise RTL2R2IngressDeliveryContextError(f"missing contract reference: {p}")
+        if Path(p).suffix != ".md" and not Path(p).is_file(): raise RTL2R2IngressDeliveryContextError(f"missing contract reference: {p}")
     r2=_object(m,"r2_owner_boundary")
     if r2.get("owner")!="route_a_core_side_arbiter": raise RTL2R2IngressDeliveryContextError("R2 owner differs")
     if "delivery-context decode" not in _strings(r2,"does_not_own") or "one logical R1 request/output path" not in _strings(r2,"retains"): raise RTL2R2IngressDeliveryContextError("R2 boundary loses opaque-context or sole-R1 rule")

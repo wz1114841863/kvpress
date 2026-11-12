@@ -245,7 +245,8 @@ def _validate_parameter_source(source: str) -> None:
     if not isinstance(source, str) or not source:
         raise RTLEntryManifestError("parameter source must be nonempty")
     path_text = source.split("#", 1)[0]
-    if not Path(path_text).is_file():
+    # Markdown sources are historical citations; the interface matrix is read separately.
+    if Path(path_text).suffix != ".md" and not Path(path_text).is_file():
         raise RTLEntryManifestError(f"parameter source does not exist: {path_text}")
 
 

@@ -11,7 +11,6 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "analysis/synthesis_eligibility_manifest.json"
 BOM = ROOT / "analysis/measurement_boundary_bom.json"
 MATRIX = ROOT / "analysis/measurement_baseline_matrix.json"
-PLAN = ROOT / "analysis/measurement_baseline_fairness_plan.md"
 
 
 def main() -> int:
@@ -60,22 +59,6 @@ def main() -> int:
     assert "MBR.1 is closed and must not be repeated" in matrix["approval_record"]
     assert matrix["next_gate"].startswith("separate user authorization for the bounded Chisel")
 
-    plan = PLAN.read_text(encoding="utf-8")
-    for phrase in [
-        "MBR.1 — Paired Full-KV Measurement-Baseline Fairness Plan",
-        "full_kv_measurement_control_cut",
-        "Full-KV is not defined by deleting Route-A signals from a witness.",
-        "Future-top integration allocation",
-        "deferred_unestimated",
-        "declared matching service/profile basis",
-        "Payload\nand metadata coordinates are retained separately",
-        "Area, static-power, and dynamic-energy/activity ledgers",
-        "A_RA_R4_numeric_or_partial_state",
-        "E_RA_source_partial_delta_events",
-        "mixed\ncommon/differential, deferred",
-        "does not create Full-KV RTL",
-    ]:
-        assert phrase in plan, phrase
     print("PASS: MBR.1 maps a paired Full-KV fairness plan without realization claims")
     return 0
 

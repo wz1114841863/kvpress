@@ -30,8 +30,9 @@ def load_manifest(path: str | Path) -> dict[str, Any]:
 def validate_manifest(manifest: dict[str, Any]) -> None:
     if manifest.get("schema_version") != SCHEMA_VERSION or manifest.get("status") != STATUS:
         raise RTL21AManifestError("unexpected RTL2.1a manifest version or status")
+    # Historical Markdown citations need not remain in the working tree.
     for reference in _string_list(manifest, "contract_references"):
-        if not Path(reference).is_file():
+        if Path(reference).suffix != ".md" and not Path(reference).is_file():
             raise RTL21AManifestError(f"contract reference does not exist: {reference!r}")
     implementation = _object(manifest, "implementation")
     if implementation.get("child") != "route_a_admission_publication_ingress_adapter" or implementation.get("parent") != "route_a_kv_subsystem_top":

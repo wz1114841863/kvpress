@@ -88,8 +88,10 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
     references = manifest.get("contract_references")
     if not isinstance(references, list) or not references:
         raise RTL1IManifestError("contract_references must be a nonempty list")
+    # Historical Markdown citations are labels; retain checks for actual file inputs.
     for reference in references:
-        if not isinstance(reference, str) or not Path(reference).is_file():
+        if (not isinstance(reference, str) or not reference
+                or (Path(reference).suffix != ".md" and not Path(reference).is_file())):
             raise RTL1IManifestError(f"contract reference does not exist: {reference!r}")
 
     inert = _records(manifest, "top_inert_inventory")

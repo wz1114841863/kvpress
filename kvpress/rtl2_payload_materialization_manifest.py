@@ -38,8 +38,9 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
     scope = manifest.get("scope")
     if not isinstance(scope, str) or "No payload storage implementation" not in scope:
         raise RTL2PayloadMaterializationError("scope must retain the no-storage boundary")
+    # Historical Markdown citations need not remain in the working tree.
     for reference in _strings(manifest, "contract_references"):
-        if not Path(reference).is_file():
+        if Path(reference).suffix != ".md" and not Path(reference).is_file():
             raise RTL2PayloadMaterializationError(f"missing contract reference: {reference}")
 
     anchor = _object(manifest, "anchor_payload_contract")

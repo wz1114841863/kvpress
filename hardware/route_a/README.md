@@ -6,23 +6,21 @@ keeps future payload-path and Chisel work separate.
 
 ## Status and authority
 
-The workspace has passed Gate-RTL0, completed RTL1 control-plane and constrained
-RTL2 transaction/dataflow closure, and is now in **RTL3 functional subsystem
-closure**. The latest completed slice is RTL3.9-B3: in one functional Chisel
-instance, R3's sole atomic publication is sequenced after payload and
-descriptor durability, R5 visibility acknowledgement, and R6's matching
-`pending -> packed` authority acceptance. The next planned slice is RTL3.9-C,
-the first post-publication owner-correct packed read into S2/source service.
+Research history and current conclusions are consolidated in the
+[project overview](../../analysis/project_overview_20261111.md) and
+[H1–H4](../../analysis/hardware_reports/). The bounded first-use path and
+explicit persistent-read v2 witness have functional evidence; multi-group
+admission, sustained decode and the complete numerical/service path remain
+open. The accepted RD1+WCG1 control mapping reduces area, while top-level
+setup/hold and complete incremental costs remain unresolved. This workspace
+is not a completed numeric/memory realization or a PPA/speedup result.
 
-The current state and ordered plan are maintained in
-`analysis/route_a_current_handoff.md`; the detailed live phase ledger is
-`analysis/rtl2_phase_contract.md`. The original RTL1 entry contract remains
-historical provenance, not the current completion claim. None of these
-functional closures establishes formal proof, PDK/PPA, native HBM-controller
-behavior, timing, throughput, or measured performance. They do not change
-KVzap pruning, admission, transaction semantics, A4.9.2 record-granular
-execution, or the A4.10 `HA8-wide + local32/shared256/staging512` logical
-contract.
+Use the [current handoff](../../analysis/route_a_current_handoff.md) for the
+short continuation state and [architecture specification](../../analysis/architecture_spec.md)
+for technical definitions. Historical contracts referenced by frozen records
+can be read at their recorded Git revisions; the pre-cleanup hardware-document
+snapshot is `636c19b`. The Chisel README also contains historical phase notes;
+current research scope is described by H2 rather than those old launch states.
 
 The frozen A4.12.0 interface table is the input authority for this workspace:
 

@@ -6,7 +6,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "analysis/realization_preparation_wrapper_common_disposition_manifest.json"
-REVIEW = ROOT / "analysis/realization_preparation_wrapper_common_disposition.md"
 TOP_SELECTION = ROOT / "analysis/synthesis_top_candidate_selection_manifest.json"
 
 
@@ -50,12 +49,3 @@ def test_disposition_succeeds_the_selected_tops_without_premature_realization() 
     selected = json.loads(TOP_SELECTION.read_text(encoding="utf-8"))
     selected_classes = {candidate["projection_from"] for candidate in selected["candidates"]}
     assert {manifest["candidate_tops"]["route_a"], manifest["candidate_tops"]["full_kv"]} == selected_classes
-    review = REVIEW.read_text(encoding="utf-8")
-    for required in (
-        "human_approved_wrapper_rtl_in_progress",
-        "equivalent implementation",
-        "route_a_differential_for_current_pair",
-        "unestimated_not_zero",
-        "does **not** authorize macro selection",
-    ):
-        assert required in review

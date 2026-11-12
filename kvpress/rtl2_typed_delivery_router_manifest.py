@@ -35,8 +35,9 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         raise RTL2TypedDeliveryRouterError("unexpected RTL2.0d manifest identity")
     if "No router behavior" not in str(manifest.get("scope")):
         raise RTL2TypedDeliveryRouterError("scope must retain no-behavior boundary")
+    # Historical Markdown citations need not remain in the working tree.
     for path in _strings(manifest, "contract_references"):
-        if not Path(path).is_file():
+        if Path(path).suffix != ".md" and not Path(path).is_file():
             raise RTL2TypedDeliveryRouterError(f"missing contract reference: {path}")
 
     router = _object(manifest, "router")

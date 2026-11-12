@@ -7,8 +7,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "analysis/synthesis_top_candidate_selection_manifest.json"
 BOM = ROOT / "analysis/measurement_boundary_bom.json"
-REVIEW = ROOT / "analysis/synthesis_top_candidate_selection_review.md"
-HANDOFF = ROOT / "analysis/route_a_current_handoff.md"
 SKELETON = ROOT / "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala"
 
 
@@ -51,16 +49,3 @@ def test_candidate_selection_preserves_pre_dc_fairness_and_reference_gates() -> 
     assert manifest["next_authorized_activity"] == "array-only wrapper-interface planning and common-equivalence disposition"
     assert "run DC/CACTI" in manifest["prohibited_actions"]
     assert "composition-only" in SKELETON.read_text(encoding="utf-8")
-
-
-def test_candidate_selection_is_live_linked_and_nonphysical() -> None:
-    review = REVIEW.read_text(encoding="utf-8")
-    assert "Synthesis-top candidate selection (2026-10-25)" in HANDOFF.read_text(encoding="utf-8")
-    for required in (
-        "conditional_paired_control_top_candidates_selected",
-        "RouteAKVSubsystemTop` is expressly **not** a candidate",
-        "single-record",
-        "Pre-DC closure conditions",
-        "does not authorize Chisel changes, physical macro selection, DC/CACTI, or PPA",
-    ):
-        assert required in review

@@ -53,8 +53,8 @@ be summed.
 
 The reviewed architecture specification and Gate-RTL0 are now complete. The
 RTL1 Chisel bootstrap may establish a pinned build environment and
-non-architectural elaboration preflight; subsequent RTL remains governed by
-`analysis/rtl1_phase_contract.md`. Neither activity may silently add an A4.14
+non-architectural elaboration preflight; the implementation history and remaining functional boundaries are summarized in
+[H2](../../../analysis/hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md). Neither activity may silently add an A4.14
 DSE variant, alter the frozen architecture boundary, or convert proxy evidence
 into timing/PPA/native-HBM claims.
 

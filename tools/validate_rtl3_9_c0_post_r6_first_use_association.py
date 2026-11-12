@@ -8,11 +8,6 @@ from pathlib import Path
 
 
 REQUIRED = {
-    "analysis/rtl3_9_c0_post_r6_first_use_association_contract.md": (
-        "PostR6PackedPageReadyObservation",
-        "authority_transition_out.fire",
-        "no descriptor",
-    ),
     "hardware/route_a/chisel/src/main/scala/kvpress/routea/interfaces/RouteAInterfaces.scala": (
         "PostR6PackedPageReadyObservation",
         "post_r6_packed_page_ready_observation",

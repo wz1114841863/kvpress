@@ -8,11 +8,6 @@ from pathlib import Path
 
 
 REQUIRED = {
-    "analysis/rtl3_9_c2_functional_read_to_s2_contract.md": (
-        "S2 `READY`",
-        "terminal fault",
-        "C3/C4",
-    ),
     "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": (
         "packed_terminal_bridge.io.work_in <> packed_association_owner.io.packed_s2_work_out",
         "packed_s2_read_producer.io.work_in <> packed_terminal_bridge.io.work_out",

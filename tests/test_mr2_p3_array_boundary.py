@@ -5,7 +5,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala"
-CONTRACT = ROOT / "analysis/mr2_p3_array_boundary_contract.md"
 
 
 def test_mr2_p3_array_boundary_keeps_storage_out_of_r3_control_wrapper() -> None:
@@ -24,16 +23,3 @@ def test_mr2_p3_array_boundary_keeps_storage_out_of_r3_control_wrapper() -> None
     assert "stageStorage.io.payload_read_rsp.ready := packedWriteState === WriteReadResponse" in wrapper
     assert "P3 payload read response must match the parent-selected packed-write fragment" in wrapper
     assert "P3 payload write acknowledgement must match the parent-selected request" in wrapper
-
-
-def test_mr2_p3_contract_records_array_only_and_retained_control_boundary() -> None:
-    text = CONTRACT.read_text(encoding="utf-8")
-    for required in (
-        "array-only",
-        "RouteAM2P3Wrapper` remains the sole owner",
-        "p3_pending_fragment_in.fire",
-        "p3_sidecar_bind_in.fire",
-        "packed-write",
-        "not a macro",
-    ):
-        assert required in text

@@ -38,9 +38,9 @@ def test_missing_frozen_module_is_rejected():
         validate_manifest(manifest)
 
 
-def test_unknown_parameter_source_is_rejected():
+def test_missing_parameter_input_is_rejected():
     manifest = copy.deepcopy(load_manifest(MANIFEST))
-    manifest["interface_records"]["signals"][0]["fields"][0]["parameter_source"] = "analysis/not_a_contract.md"
+    manifest["interface_records"]["signals"][0]["fields"][0]["parameter_source"] = "analysis/not_an_input.json"
     with pytest.raises(RTLEntryManifestError, match="parameter source does not exist"):
         validate_manifest(manifest)
 

@@ -8,9 +8,6 @@ from pathlib import Path
 
 
 REQUIRED = {
-    "analysis/rtl3_9_c3a_packed_source_service_terminal_contract.md": (
-        "S2 is `READY`", "four consumer commits", "C3b",
-    ),
     "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": (
         "s2.io.service_req_in <> lifecycle.io.s2_service_req",
         "source_commit_demultiplexer.io.commit_in <> merge.io.consumer_partial_commit",

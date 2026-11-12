@@ -28,7 +28,7 @@ The following remain deliberately unselected:
 
 M2/P3/R5/S2 array interiors are now materialized separately as same-header
 `syn_black_box` proxies by `materialize_dc_array_proxies.py`; see
-[`analysis/dc_array_proxy_materialization_20261029.md`](../../../analysis/dc_array_proxy_materialization_20261029.md).
+[`analysis/dc_array_proxy_materialization_20261029.json`](../../../analysis/dc_array_proxy_materialization_20261029.json).
 This preserves parent control and does not select a macro, latency, or physical
 cost. Each future DC top must use its own frozen `.f`; do not combine the two filelists because the
 independent generated units define common module names.  See
@@ -39,7 +39,7 @@ for the HDL, source and evidence boundary.
 
 The reconstructed R3 entry-id repair uses the explicit
 `run_m2p3_compact_entry_id_repair_dc.sh IMMUTABLE_RUN_ID` launcher.  See
-[`dc_entry_id_driver_repair_20261104.md`](../../../analysis/dc_entry_id_driver_repair_20261104.md)
+[研究过程与结果（H4）](../../../analysis/hardware_reports/04_area_timing_optimization_and_design_review.md)
 for the opt-in `r3_entry_id_driver_v1` policy, focused mapped regression and
 production acceptance gate.  It preserves only 24 internal result nets and
 requires a real driver on both 24-bit outputs after mapping.  No RTL or timing

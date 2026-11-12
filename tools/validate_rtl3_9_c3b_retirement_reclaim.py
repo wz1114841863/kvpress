@@ -8,10 +8,6 @@ from pathlib import Path
 
 
 REQUIRED = {
-    "analysis/rtl3_9_c3b_retirement_reclaim_contract.md": (
-        "one matching R6 attention terminal", "R6 reclaim permit",
-        "one matching R6 session-retire acknowledgement", "functional outer environment",
-    ),
     "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": (
         "status_collector.io.reclaim_drain_restart := lifecycle.io.reclaim_drain_restart",
         "page_manager.io.reclaim_permit_in <> lifecycle.io.reclaim_permit_out",

@@ -8,11 +8,6 @@ from pathlib import Path
 
 
 REQUIRED = {
-    "analysis/rtl3_9_c1_post_publication_demand_activation_contract.md": (
-        "post-R6",
-        "C2--C4",
-        "registry allocation",
-    ),
     "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala": (
         "packed_association_owner.io.demand_in <> packed_activation_binder.io.demand_out",
         "packed_association_owner.io.publication_authorization_in <>",

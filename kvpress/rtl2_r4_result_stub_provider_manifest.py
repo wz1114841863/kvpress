@@ -25,8 +25,9 @@ def validate_manifest(manifest: dict[str, Any]) -> None:
         raise RTL2R4ResultStubProviderError("unexpected RTL2.0g manifest identity")
     if "Verification-only R4 result/fault stub-provider contract" not in str(manifest.get("scope")):
         raise RTL2R4ResultStubProviderError("scope must retain verification-only boundary")
+    # Historical Markdown citations need not remain in the working tree.
     for path in _strings(manifest, "contract_references"):
-        if not Path(path).is_file():
+        if Path(path).suffix != ".md" and not Path(path).is_file():
             raise RTL2R4ResultStubProviderError(f"missing contract reference: {path}")
 
     provider = _object(manifest, "provider")

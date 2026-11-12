@@ -255,11 +255,11 @@ journal及pending descriptor要覆盖仍合法的查询、withdrawal和服务。
 
 ## 9. 原始定义与结果入口
 
-实现过程参见[RTL1](../rtl1_phase_contract.md)、[RTL2/3推进](../rtl2_phase_contract.md)、
+实现库存可核查[RTL1跨owner清单](../rtl1_i_interface_manifest.json)、[RTL2/3推进](../rtl2_phase_contract.md)、
 [七种source协议覆盖](../rtl3_8_5_full_path_closure_coverage_contract.md)、
 [C4-D首次使用结论](../rtl3_9_c4_d_functional_completion_review.md)、
 [MR-1B单记录路径](../mr1b_direct_pending_cross_owner_contract_proposal.md)、
-[MR-2边界](../mr2_completion_review.md)与[测量DUT范围](../measurement_dut_cut_freeze_20261025.md)。
+[MR-2边界](../measurement_dut_cut_freeze_20261025.json)与[测量DUT范围](../measurement_dut_cut_freeze_20261025.md)。
 
 持续执行参见[阶段A范围与环境](../route_a_stage_a_execution_envelope_20261109.md)、
 [两项现状探针](../route_a_stage_a_probe_result_20261109.md)、

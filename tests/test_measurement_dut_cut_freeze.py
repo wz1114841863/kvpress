@@ -8,7 +8,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FREEZE = ROOT / "analysis/measurement_dut_cut_freeze_20261025.json"
 BOM = ROOT / "analysis/measurement_boundary_bom.json"
-HANDOFF = ROOT / "analysis/route_a_current_handoff.md"
 
 
 def test_dual_measurement_cut_freeze_hashes_and_actual_top_inventory() -> None:
@@ -41,16 +40,3 @@ def test_dual_measurement_cut_freeze_maps_each_bom_record_once() -> None:
     assert sum(len(values) for values in categories.values()) == len(actual)
     assert freeze["direct_pending_limit"]["valid_count"] == 1
     assert "multi-record" in freeze["direct_pending_limit"]["prohibited_inference"]
-
-
-def test_dual_measurement_cut_freeze_is_live_linked_and_nonphysical() -> None:
-    review = (ROOT / "analysis/measurement_dut_cut_freeze_20261025.md").read_text(encoding="utf-8")
-    assert "Dual-DUT measurement-cut freeze (2026-10-25)" in HANDOFF.read_text(encoding="utf-8")
-    for required in (
-        "functional measurement-cut freeze",
-        "does **not** declare the present Chisel classes a fully equivalent",
-        "single-record",
-        "does not select a macro/wrapper/controller/numeric",
-        "separate realization-preparation review",
-    ):
-        assert required in review

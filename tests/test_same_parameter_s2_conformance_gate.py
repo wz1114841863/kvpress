@@ -24,9 +24,3 @@ def test_paired_s2_regressions_use_the_same_anchor_parameter_vector() -> None:
     ):
         assert parameter in full_kv
         assert parameter.replace(" = ", "=") in route_a
-
-
-def test_paired_s2_gate_does_not_claim_common_cost_cancellation() -> None:
-    freeze = (ROOT / "analysis/successor_synthesis_source_port_filelist_freeze_20261028.md").read_text(encoding="utf-8")
-    assert "cannot support payload or\nadapter cost cancellation" in freeze
-    assert "one explicit 9-bit parameter vector" in freeze

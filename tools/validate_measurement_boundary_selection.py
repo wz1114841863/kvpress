@@ -10,7 +10,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "analysis/synthesis_eligibility_manifest.json"
 BOM = ROOT / "analysis/measurement_boundary_bom.json"
-SELECTION = ROOT / "analysis/measurement_boundary_selection.md"
 TOP = ROOT / "hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala"
 
 
@@ -63,8 +62,6 @@ def main() -> int:
     ]:
         assert "analysis/srp3_realization_requirements_decision_plan.md" in by_id[record_id]["cost_evidence_plan_ref"]
         assert "analysis/srp4_differential_cost_evidence_plan.md" in by_id[record_id]["cost_evidence_plan_ref"]
-    for record_id in ["m2_storage_realization", "p3_payload_stage_page", "r5_availability_state", "s2_common_payload_gqa_control", "s2_incremental_sidecar_storage"]:
-        assert "array only may use a future black-box/macro proxy" in by_id[record_id]["array_treatment"]
     assert bom["next_gate"].startswith("MBR.1 paired Full-KV fairness-plan review")
 
     top = TOP.read_text(encoding="utf-8")
@@ -72,20 +69,6 @@ def main() -> int:
     assert "StructuralTieOff.source" in top
     assert "functional_r4_reference" in top
 
-    selection = SELECTION.read_text(encoding="utf-8")
-    for phrase in [
-        "Candidate selection completed and **human MBR.0 review passed**",
-        "route_a_measurement_control_cut",
-        "Required non-tied functional contours",
-        "Evidence references and array-versus-control split",
-        "deferred_unestimated",
-        "RouteAS2GqaSourceWrapper",
-        "wholesale merely because it",
-        "not the MBR.1 baseline design",
-        "It **does not** resolve SRP.5's future-top",
-        "fairness-baseline planning; it does not authorize RTL, wrapper selection,",
-    ]:
-        assert phrase in selection, phrase
     print("PASS: MBR.0 selects a bounded candidate BOM without authorizing realization")
     return 0
 

@@ -5,7 +5,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala"
-CONTRACT = ROOT / "analysis/mr2_m2_array_boundary_contract.md"
 
 
 def test_mr2_m2_entry_arrays_are_owned_only_by_the_named_boundary() -> None:
@@ -36,19 +35,3 @@ def test_mr2_m2_entry_arrays_are_owned_only_by_the_named_boundary() -> None:
     assert "entryStorage.io.handoff_release.valid := true.B" in owner
     assert "entryStorage.io.head_lookup_req.valid" in owner
     assert "metadataVisible" in owner
-
-
-def test_mr2_m2_contract_records_array_only_and_retained_control_boundary() -> None:
-    text = CONTRACT.read_text(encoding="utf-8")
-    for required in (
-        "array-only",
-        "RouteAM2EntryArrayBoundary",
-        "288 logical head keys",
-        "614 logical",
-        "metadata_publish_commit",
-        "post-R6 all-member handoff",
-        "metadataSlotOccupied",
-        "metadataSlotGeneration",
-        "not an SRAM macro",
-    ):
-        assert required in text

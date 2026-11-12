@@ -9,7 +9,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 AUDIT = ROOT / "analysis/full_kv_baseline_path_audit_20261016.json"
-DOC = ROOT / "analysis/full_kv_baseline_path_audit_20261016.md"
 MATRIX = ROOT / "analysis/measurement_baseline_matrix.json"
 CANDIDATE = ROOT / "analysis/measurement_realization_candidate_manifest.json"
 
@@ -35,18 +34,6 @@ def main() -> int:
     assert "DC" in package["excluded"] and "CACTI" in package["excluded"]
     assert package["next_gate"] == "explicit user authorization to implement W0 Chisel files"
 
-    doc = DOC.read_text(encoding="utf-8")
-    for phrase in [
-        "MBR.0, MBR.1, and\nMBR.1-A are approved and are not reopened here.",
-        "insufficient for direct integration",
-        "First concrete dual-DUT Chisel integration work package",
-        "FullKVReadProducer",
-        "FullKVS2ReadEndpoint",
-        "FullKVTerminalRetireAdapter",
-        "No further\nMBR review or new overall planning phase is required.",
-        "W0 is ready for a direct user authorization",
-    ]:
-        assert phrase in doc, phrase
     print("PASS: Full-KV path gaps and W0 Chisel scope are explicit and bounded")
     return 0
 
