@@ -14,7 +14,7 @@ from typing import Any, Callable
 
 import torch
 
-from kvpress.route_a_attention import DenseSameMaskAttentionState, RouteALifecycleTransitionRecorder, RouteALogicalEventRecorder, RouteAPackedAttentionState, dense_same_mask_attention
+from kvpress.research.route_a import DenseSameMaskAttentionState, RouteALifecycleTransitionRecorder, RouteALogicalEventRecorder, RouteAPackedAttentionState, dense_same_mask_attention
 from kvpress.route_a_external_cold_storage import RouteAExternalColdStorageAdapter
 
 

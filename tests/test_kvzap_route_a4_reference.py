@@ -1,6 +1,6 @@
 import torch
 
-from kvpress.route_a_attention import DenseSameMaskAttentionState, _Record, RouteALifecycleTransitionRecorder, RouteAPackedAttentionState, RouteAPolicy, dense_same_mask_attention, online_softmax_merge, policy_attention
+from kvpress.research.route_a import DenseSameMaskAttentionState, _Record, RouteALifecycleTransitionRecorder, RouteAPackedAttentionState, RouteAPolicy, dense_same_mask_attention, online_softmax_merge, policy_attention
 
 
 def make_state(*, heads=1, window=2, page_tokens=2, budget=1):

@@ -15,7 +15,7 @@ import torch
 import transformers
 from transformers import DynamicCache, pipeline
 
-from kvpress.route_a_attention import RouteALifecycleTransitionRecorder, RouteALogicalEventRecorder
+from kvpress.research.route_a import RouteALifecycleTransitionRecorder, RouteALogicalEventRecorder
 from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackendSet, RouteAQwenExternalColdStorageAttentionBackendSet
 from kvpress.route_a_qwen_cache import RouteAQwenMultiLayerExternalColdCache
 from tools.export_kvzap_predictor_trace import GATE_A_PREDICTOR_REVISION, GATE_B_MODEL_REVISION, assert_no_runtime_mask_state, get_git_commit, stable_hash

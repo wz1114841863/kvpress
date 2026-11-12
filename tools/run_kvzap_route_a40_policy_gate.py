@@ -17,7 +17,7 @@ from huggingface_hub import snapshot_download
 from transformers import pipeline
 
 from kvpress import KVzapPress
-from kvpress.route_a_attention import RouteALifecycleTransitionRecorder
+from kvpress.research.route_a import RouteALifecycleTransitionRecorder
 from kvpress.route_a_policy_backend import DenseSameMaskAttentionBackendSet, RouteAPolicyAttentionBackendSet, compare_original_mask_events
 from tools.export_kvzap_predictor_trace import GATE_A_PREDICTOR_REVISION, GATE_B_MODEL_REVISION, assert_no_runtime_mask_state, file_sha256, get_git_commit, stable_hash, validate_gate_a_evidence
 from tools.run_kvzap_trace import DEFAULT_MODEL, DEFAULT_PREDICTOR, PRESETS, build_builtin_request, load_jsonl_request, seed_everything

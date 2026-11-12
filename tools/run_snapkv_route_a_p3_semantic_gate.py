@@ -22,7 +22,7 @@ import torch
 import transformers
 from transformers import DynamicCache, pipeline
 
-from kvpress.route_a_attention import DenseSameMaskAttentionState, dense_same_mask_attention
+from kvpress.research.route_a import DenseSameMaskAttentionState, dense_same_mask_attention
 from kvpress.route_a_frontend_contract import (
     FRONTEND_DECISION_STREAM_SCHEMA,
     SNAPKV_FRONTEND_NAME,

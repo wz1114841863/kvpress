@@ -12,7 +12,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
-from kvpress.route_a_attention import RouteALifecycleTransitionRecorder
+from kvpress.research.route_a import RouteALifecycleTransitionRecorder
 from tools.analyze_kvzap_route_a4721_metadata_physical_dse import bank_index
 from tools.export_kvzap_predictor_trace import get_git_commit, stable_hash
 from tools.run_kvzap_route_a412_whole_decode_gate import read_source

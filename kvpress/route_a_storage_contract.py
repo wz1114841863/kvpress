@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from kvpress.route_a_attention import RouteAPackedAttentionState
+from kvpress.research.route_a import RouteAPackedAttentionState
 
 
 def selected_storage_ownership_contract(
