@@ -3,6 +3,10 @@
 This consumes predictor-only prefill traces only.  It is deliberately a final
 mask replay: it does not infer per-step admissions, allocator behaviour, HBM
 traffic, latency, or throughput.
+
+Data flow: validate existing trace -> replay each layer/head mask -> write
+request, head and grouped CSVs. PackedKVSimulator is also used by the SnapKV
+layout study, so its input and result contract is shared.
 """
 
 from __future__ import annotations
@@ -94,7 +98,7 @@ class PackedKVSimulator:
         tokens = final_drop.shape[-1]
         if window < 0 or window > tokens:
             raise ValueError(f"invalid window {window} for T={tokens}")
-        if np.any(final_drop[..., tokens - window :] & valid[..., tokens - window :]) if window else False:
+        if window and np.any(final_drop[..., tokens - window :] & valid[..., tokens - window :]):
             raise ValueError("protected hot-window token was dropped")
         hot_valid = valid[..., tokens - window :] if window else valid[..., :0]
         cold_keep = (~final_drop[..., : tokens - window]) & valid[..., : tokens - window]
@@ -182,6 +186,26 @@ def summarize(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return output
 
 
+
+def replay_traces(
+    traces: list[dict[str, Any]],
+    page_sizes: list[int],
+    metadata: dict[str, dict[str, Any]],
+    kv_bytes_per_token: int,
+    metadata_bytes_per_page: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Compute request, per-head and grouped capacity rows for validated traces."""
+    request_rows: list[dict[str, Any]] = []
+    head_rows: list[dict[str, Any]] = []
+    for page in page_sizes:
+        simulator = PackedKVSimulator(page, kv_bytes_per_token, metadata_bytes_per_page)
+        for trace in traces:
+            request, heads = replay_trace(trace, simulator, metadata)
+            request_rows.append(request)
+            head_rows.extend(heads)
+    return request_rows, head_rows, summarize(request_rows)
+
+
 def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
@@ -194,18 +218,13 @@ def main() -> None:
     traces = [validate_trace(path) for path in args.trace_dirs]
     if not all(trace["predictor_only"] for trace in traces):
         raise ValueError("Route-A0 accepts predictor-only traces only")
+    request_rows, head_rows, summary_rows = replay_traces(
+        traces, args.page_tokens, metadata, args.kv_bytes_per_token, args.metadata_bytes_per_page
+    )
     args.output_dir.mkdir(parents=True)
-    request_rows: list[dict[str, Any]] = []
-    head_rows: list[dict[str, Any]] = []
-    for page in args.page_tokens:
-        simulator = PackedKVSimulator(page, args.kv_bytes_per_token, args.metadata_bytes_per_page)
-        for trace in traces:
-            request, heads = replay_trace(trace, simulator, metadata)
-            request_rows.append(request)
-            head_rows.extend(heads)
     write_csv(args.output_dir / "request_packed_page_replay.csv", request_rows, REQUEST_COLUMNS)
     write_csv(args.output_dir / "layer_head_packed_page_replay.csv", head_rows, HEAD_COLUMNS)
-    write_csv(args.output_dir / "packed_page_replay_summary.csv", summarize(request_rows), SUMMARY_COLUMNS)
+    write_csv(args.output_dir / "packed_page_replay_summary.csv", summary_rows, SUMMARY_COLUMNS)
     provenance = [{
         "trace_dir": str(trace["trace_dir"]),
         "manifest_sha256": sha256(trace["trace_dir"] / "manifest.json"),

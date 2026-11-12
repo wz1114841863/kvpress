@@ -1,6 +1,6 @@
 import numpy as np
 
-from tools.simulate_kvzap_packed_pages import PackedKVSimulator, replay_trace
+from tools.simulate_kvzap_packed_pages import PackedKVSimulator, replay_trace, replay_traces
 
 
 def simulator(page_tokens=4):
@@ -51,3 +51,18 @@ def test_request_summary_matches_head_counts():
     assert request["physical_allocated_slots"] == sum(row["hot_slots"] + row["cold_allocated_slots"] for row in heads)
     assert request["cold_page_count"] == sum(row["cold_page_count"] for row in heads)
     assert request["tail_waste_slots"] == sum(row["tail_waste_slots"] for row in heads)
+
+
+def test_multiple_requests_and_page_sizes_keep_head_and_group_totals_consistent():
+    final = np.asarray([[[False, True, False, False, False, False, False, False]]])
+    traces = [
+        {"trace_id": name, "request": {"request_id": name},
+         "manifest": {"sliding_window": 2}, "final": final, "valid": np.ones_like(final, dtype=bool)}
+        for name in ("first", "second")
+    ]
+    requests, heads, summaries = replay_traces(traces, [2, 4], {}, 8, 2)
+    assert len(requests) == len(heads) == 4
+    assert [row["cold_allocated_slots"] for row in requests] == [6, 6, 8, 8]
+    all_groups = [row for row in summaries if row["group_type"] == "all"]
+    assert [(row["page_tokens"], row["request_count"], row["physical_allocated_slots"])
+            for row in all_groups] == [(2, 2, 16), (4, 2, 20)]

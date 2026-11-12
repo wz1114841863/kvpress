@@ -55,6 +55,17 @@ metadata数量。原始数据：[A0汇总](../experiments/longbench_balanced_v2_
 后续研究的候选折中点，不是已证明的全局最优。打包搬运、查表、调度和控制成本
 还没有被这张容量表覆盖，必须分别计账。
 
+**现有代码入口。** [packed-page 重放脚本](../../tools/simulate_kvzap_packed_pages.py)
+先通过 [trace 分析工具](../../tools/analyze_kvzap_trace.py)读取并检查已有predictor-only
+trace，再由 `PackedKVSimulator.replay` 按layer/head计算hot、cold pages及尾页；
+`replay_trace` 汇总单请求与逐head结果，`replay_traces` 汇总多个请求和page大小，
+最后写出请求、逐head和分组三个CSV及运行说明。SnapKV静态布局分析也复用
+`PackedKVSimulator`，因此保留原类和字段接口。输入trace与历史结果无需移动。
+
+运行入口为 `python -m tools.simulate_kvzap_packed_pages TRACE目录 --output-dir 新目录`；
+可选 `--pilot-manifest` 提供分类信息，`--page-tokens` 指定page大小。输出中的
+bytes是参数化容量估计，不是实际显存或HBM测量。
+
 ## 3. A1：任务分得细，不一定完成得快
 
 **目的与计划。** 将A0的每head长度/page数变成工作量，比较三种策略：固定head归属；
