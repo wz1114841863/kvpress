@@ -9,6 +9,8 @@ field retains the C1 availability status.
 """
 from __future__ import annotations
 
+from kvpress.research.cross_frontend import projected_field, c1_status, require_qwen_shape, snap_statuses, require_dms_shape, build_kvzap_projection, build_snap_projection, build_dms_projection, validate_projection
+
 import argparse
 import hashlib
 import json
@@ -108,158 +110,22 @@ def verify_c1_bindings(c1: dict[str, Any], sources: dict[str, Path]) -> dict[str
     return verified
 
 
-def projected_field(status: str, value: Any = None, *, reason: str | None = None, evidence: list[str]) -> dict[str, Any]:
-    item: dict[str, Any] = {"status": status, "evidence_sources": evidence}
-    if status in {"unknown", "not_applicable"}:
-        if reason is None:
-            raise ValueError(f"C2 {status} projection requires a reason")
-        item["reason"] = reason
-        item["value"] = None
-    else:
-        item["value"] = value
-    return item
 
 
-def c1_status(c1: dict[str, Any], frontend: str, field_name: str) -> str:
-    try:
-        status = c1["frontend_field_availability"][frontend]["fields"][field_name]["status"]
-    except (KeyError, TypeError) as error:
-        raise ValueError(f"C2 C1 availability lacks {frontend}.{field_name}") from error
-    if status not in VALUE_STATUSES:
-        raise ValueError(f"C2 C1 has invalid availability status for {frontend}.{field_name}")
-    return status
 
 
-def require_qwen_shape(qwen: dict[str, Any], m6: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    descriptor = qwen.get("qwen3_8b_kvzap_resource_descriptor")
-    core = qwen.get("route_a_core_contract_v1")
-    per_model = m6.get("per_model_fixed_workload_descriptors")
-    if not isinstance(descriptor, dict) or not isinstance(core, dict) or not isinstance(per_model, dict):
-        raise ValueError("C2 KVzap sources lack required core/coverage descriptors")
-    scope = descriptor.get("scope")
-    if not isinstance(scope, dict) or scope.get("model") != "Qwen/Qwen3-8B" or scope.get("observed_layer_count") != 36 or scope.get("observed_kv_head_count") != 288:
-        raise ValueError("C2 KVzap Qwen source does not expose the expected semantic topology")
-    if not isinstance(per_model.get("qwen3_8b_kvzap"), list) or not isinstance(per_model.get("nous_llama31_8b_kvzap"), list):
-        raise ValueError("C2 KVzap coverage must retain separate Qwen and Llama rows")
-    return descriptor, scope, core
 
 
-def snap_statuses(snap: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    descriptor = snap.get("descriptor")
-    rows = descriptor.get("field_statuses") if isinstance(descriptor, dict) else None
-    if not isinstance(rows, list):
-        raise ValueError("C2 SnapKV source lacks field-status rows")
-    by_name = {row.get("name"): row for row in rows if isinstance(row, dict)}
-    required = ("terminal_per_identity_action", "canonical_identity_and_append_order", "online_decision_epochs_and_maturity_events", "generated_token_decision_and_decode_continuation")
-    if any(by_name.get(name, {}).get("status") not in {"available", "unavailable"} for name in required):
-        raise ValueError("C2 SnapKV source has incomplete terminal/decode boundary")
-    if by_name["generated_token_decision_and_decode_continuation"].get("value") is not None:
-        raise ValueError("C2 SnapKV generated decode must remain null")
-    return by_name
 
 
-def require_dms_shape(dms: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
-    active = dms.get("active_resident_attention")
-    topology = dms.get("fresh_native_control_topology")
-    if not isinstance(active, dict) or not isinstance(topology, dict):
-        raise ValueError("C2 DMS source lacks active-resident/topology evidence")
-    if active.get("all_36_layers_all_decode_steps_observed") is not True or topology.get("final_active_physical_slot_order_nonmonotonic_count") != 269:
-        raise ValueError("C2 DMS source does not preserve all-layer/nonmonotonic-order boundary")
-    return active, topology
 
 
-def build_kvzap_projection(c1: dict[str, Any], qwen: dict[str, Any], m6: dict[str, Any]) -> dict[str, Any]:
-    frontend = "kvzap_route_a_persistent_packed"
-    descriptor, scope, core = require_qwen_shape(qwen, m6)
-    lifecycle = core["lifecycle"]
-    attention = core["attention"]
-    dependency = core["dependency"]
-    return {
-        "frontend": frontend,
-        "realization_extension": "persistent_packed",
-        "model_anchors": {
-            "qwen3_8b": {"model": scope["model"], "model_revision": scope["model_revision"], "layer_count": scope["observed_layer_count"], "kv_head_count": scope["observed_kv_head_count"], "query_heads_per_kv_head_group": descriptor["qwen_specific_group_width_values"]},
-            "llama31_8b": {"status": "observed_separate_coverage", "reason": "M6 supplies separate normalized rows; C2 does not pool them with Qwen or infer an identical topology."},
-        },
-        "core_fields": {
-            "model_topology": projected_field(c1_status(c1, frontend, "model_topology"), {"topology_scope": "model-specific; Qwen and Llama rows remain separate", "qwen": scope}, evidence=["kvzap_qwen_core_contract", "kvzap_qwen_llama_coverage"]),
-            "identity": projected_field(c1_status(c1, frontend, "identity"), {"source_record_id_kind": "original_logical_position", "keying": "(layer, kv_head, original_logical_position)"}, evidence=["kvzap_qwen_core_contract"]),
-            "epoch": projected_field(c1_status(c1, frontend, "epoch"), {"lifecycle": ["creation", "hot_window", "maturity", "pending_staging", "sealed_packed_cold"], "source_statement": lifecycle}, evidence=["kvzap_qwen_core_contract"]),
-            "decision": projected_field(c1_status(c1, frontend, "decision"), {"retain_drop": "original KVzap decision available no later than maturity", "source_statement": lifecycle[0]}, evidence=["kvzap_qwen_core_contract"]),
-            "visibility": projected_field(c1_status(c1, frontend, "visibility"), {"active_sources": ["hot", "pending", "packed"], "semantic_scope": "policy-on functional reference"}, evidence=["kvzap_qwen_core_contract"]),
-            "position_provenance": projected_field(c1_status(c1, frontend, "position_provenance"), {"position_kind": "original_logical_position", "append_order_preserved": True}, evidence=["kvzap_qwen_core_contract"]),
-            "traversal_order": projected_field(c1_status(c1, frontend, "traversal_order"), {"source_order_contract": "ordered hot/pending/packed partial-or-skip decisions, then one merge", "cross_layer_order_preserved": True, "source_statement": dependency}, evidence=["kvzap_qwen_core_contract"]),
-            "attention_binding": projected_field(c1_status(c1, frontend, "attention_binding"), {"comparator": "online same-mask dense; Full-KV bypass distinct", "source_statement": attention, "query_to_kv_group_relation": "model-scoped, not an accelerator dimension"}, evidence=["kvzap_qwen_core_contract"]),
-        },
-        "realization_extension_fields": {"hot_pending_packed_lifecycle": "applicable", "page_or_tail_values": "frontend-specific trace-derived fields; not exported as common core", "online_softmax_merge": "KVzap-specific accepted functional composition"},
-    }
 
 
-def build_snap_projection(c1: dict[str, Any], snap: dict[str, Any]) -> dict[str, Any]:
-    frontend = "snapkv_one_shot_packed"
-    rows = snap_statuses(snap)
-    source = snap["source"]
-    terminal = rows["terminal_per_identity_action"]["value"]
-    return {
-        "frontend": frontend,
-        "realization_extension": "one_shot_packed",
-        "model_anchors": {"qwen3_8b": {"status": "derived", "reason": "P2 is a fixed Qwen3-8B study; no pooled topology or hardware dimension is created."}},
-        "core_fields": {
-            "model_topology": projected_field(c1_status(c1, frontend, "model_topology"), {"scope": "fixed Qwen3-8B P2 study only"}, evidence=["snapkv_terminal_prefill"]),
-            "identity": projected_field(c1_status(c1, frontend, "identity"), {"source_record_id_kind": "original_logical_position", "keying": "(layer, kv_head, original_logical_position)", "terminal_event_count": terminal["event_count"]}, evidence=["snapkv_terminal_prefill"]),
-            "epoch": projected_field(c1_status(c1, frontend, "epoch"), {"observed_epoch": source["p0_decision_epoch"], "generated_decode_epoch": None}, evidence=["snapkv_terminal_prefill"]),
-            "decision": projected_field(c1_status(c1, frontend, "decision"), {"decision_kind": "terminal prefill retain/drop", "known_epoch": terminal["decision_epoch"], "online_effective_epoch": None}, evidence=["snapkv_terminal_prefill"]),
-            "visibility": projected_field(c1_status(c1, frontend, "visibility"), {"supported_scope": "bounded same-mask prefill-tail probe", "generated_decode_visibility": None}, evidence=["snapkv_terminal_prefill"]),
-            "position_provenance": projected_field(c1_status(c1, frontend, "position_provenance"), {"position_kind": "original_logical_position", "protected_suffix_mapping": "recorded only for the compatibility mapping"}, evidence=["snapkv_terminal_prefill"]),
-            "traversal_order": projected_field(c1_status(c1, frontend, "traversal_order"), {"order": "canonical original-position order per (layer, KV head)", "excluded": "native score-ranked gather order"}, evidence=["snapkv_terminal_prefill"]),
-            "attention_binding": projected_field(c1_status(c1, frontend, "attention_binding"), {"comparator": "same-mask prefill-tail", "native_decode_comparator": None}, evidence=["snapkv_terminal_prefill"]),
-        },
-        "unknown_subfields": {
-            "generated_decode_epoch": "P2 records generated-token/decode continuation as unavailable/null.",
-            "online_decision_or_maturity_epoch": "P2 records no online decision epochs or maturity events.",
-            "native_decode_visibility_and_comparator": "Native SnapKV cache/decode semantics are deliberately excluded.",
-        },
-        "realization_extension_fields": {"terminal_action": "applicable", "protected_observation_suffix": "applicable only to the P0-P3 compatibility mapping", "pending_or_decode_lifecycle": "unknown, not zero"},
-    }
 
 
-def build_dms_projection(c1: dict[str, Any], dms: dict[str, Any]) -> dict[str, Any]:
-    frontend = "official_dms_dynamic_resident_slot"
-    active, topology = require_dms_shape(dms)
-    return {
-        "frontend": frontend,
-        "realization_extension": "dynamic_resident_slot",
-        "model_anchors": {"qwen3_8b": {"status": "observed", "layer_coverage": 36, "query_heads_per_kv_head_group_values": active["query_heads_per_kv_head_group_values"], "head_dim_values": active["head_dim_values"], "scope": "fixed official DMS decode contract"}},
-        "core_fields": {
-            "model_topology": projected_field(c1_status(c1, frontend, "model_topology"), {"layer_coverage": 36, "query_heads_per_kv_head_group_values": active["query_heads_per_kv_head_group_values"], "head_dim_values": active["head_dim_values"]}, evidence=["official_dms_active_resident"]),
-            "identity": projected_field(c1_status(c1, frontend, "identity"), {"source_record_id_kind": "source_arrival_serial", "literal_original_token_position": None}, evidence=["official_dms_active_resident"]),
-            "epoch": projected_field(c1_status(c1, frontend, "epoch"), {"phase": "fixed decode contract", "decode_flash_attention_call_count": active["decode_flash_attention_call_count"]}, evidence=["official_dms_active_resident"]),
-            "decision": projected_field(c1_status(c1, frontend, "decision"), {"controller": "delayed eviction/reuse", "provenance": "M1-M3 bound and replayed in M4"}, evidence=["official_dms_active_resident"]),
-            "visibility": projected_field(c1_status(c1, frontend, "visibility"), {"source": "native active resident set", "semantic_scope": "one-source functional replay"}, evidence=["official_dms_active_resident"]),
-            "position_provenance": projected_field(c1_status(c1, frontend, "position_provenance"), reason="No generally captured literal original token-position field exists; arrival serial and required native order remain distinct.", evidence=["official_dms_active_resident"]),
-            "traversal_order": projected_field(c1_status(c1, frontend, "traversal_order"), {"order": "official native logical-slot/block-table order", "nonmonotonic_layer_kv_head_orders": topology["final_active_physical_slot_order_nonmonotonic_count"], "arrival_order_substitution": "forbidden"}, evidence=["official_dms_active_resident"]),
-            "attention_binding": projected_field(c1_status(c1, frontend, "attention_binding"), {"comparator": "unchanged official native DMS FlashAttention versus one-source active-resident FP32 replay", "tolerance_scope": "fixed contract only"}, evidence=["official_dms_active_resident"]),
-        },
-        "realization_extension_fields": {"active_slot": "applicable", "delayed_eviction_and_reuse": "applicable", "native_slot_block_traversal": "required", "packed_cold_mapping": "not established"},
-    }
 
 
-def validate_projection(c1: dict[str, Any], projection: dict[str, Any]) -> None:
-    frontend = projection.get("frontend")
-    if frontend not in FRONTENDS or projection.get("realization_extension") not in {"persistent_packed", "one_shot_packed", "dynamic_resident_slot"}:
-        raise ValueError("C2 projection has unknown frontend/extension")
-    fields = projection.get("core_fields")
-    if not isinstance(fields, dict) or set(fields) != set(CORE_FIELDS):
-        raise ValueError(f"C2 {frontend} must project exactly the v1 core fields")
-    for field_name, item in fields.items():
-        expected = c1_status(c1, frontend, field_name)
-        if item.get("status") != expected:
-            raise ValueError(f"C2 {frontend}.{field_name} changed C1 status {expected!r} to {item.get('status')!r}")
-        if not item.get("evidence_sources"):
-            raise ValueError(f"C2 {frontend}.{field_name} lacks evidence_sources")
-        if expected in {"unknown", "not_applicable"}:
-            if item.get("value") is not None or not item.get("reason"):
-                raise ValueError(f"C2 {frontend}.{field_name} fabricated or unexplained unavailable value")
 
 
 def main() -> None:

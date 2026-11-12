@@ -9,6 +9,8 @@ or hardware interface.
 """
 from __future__ import annotations
 
+from kvpress.research.cross_frontend import snap_field_rows, build_kvzap, build_snap, build_dms, validate_reports
+
 import argparse
 import hashlib
 import json
@@ -91,94 +93,14 @@ def verify_c2_source(c2: dict[str, Any], label: str, path: Path) -> dict[str, An
     return record
 
 
-def snap_field_rows(snap: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    rows = snap.get("descriptor", {}).get("field_statuses")
-    if not isinstance(rows, list):
-        raise ValueError("C4 SnapKV P2 lacks field statuses")
-    values = {row.get("name"): row for row in rows if isinstance(row, dict)}
-    semantic = values.get("same_mask_prefill_tail_semantics")
-    generated = values.get("generated_token_decision_and_decode_continuation")
-    if semantic is None or semantic.get("status") != "available":
-        raise ValueError("C4 SnapKV same-mask prefill-tail functional evidence is absent")
-    if generated is None or generated.get("status") != "unavailable" or generated.get("value") is not None:
-        raise ValueError("C4 SnapKV generated decode must remain unavailable/null")
-    return values
 
 
-def build_kvzap(qwen: dict[str, Any]) -> dict[str, Any]:
-    core = qwen.get("route_a_core_contract_v1")
-    attention = core.get("attention") if isinstance(core, dict) else None
-    data_plane = core.get("data_plane_interfaces") if isinstance(core, dict) else None
-    if not isinstance(attention, list) or not isinstance(data_plane, list):
-        raise ValueError("C4 KVzap core lacks attention/data-plane contract")
-    required_sources = {"hot_source", "pending_retained_cold_staging", "sealed_packed_cold_pages", "online_softmax_merge"}
-    names = {row.get("name") for row in data_plane if isinstance(row, dict)}
-    if not required_sources.issubset(names) or not any("Same-mask dense" in line for line in attention):
-        raise ValueError("C4 KVzap functional traversal comparator is incomplete")
-    return {
-        "frontend": "kvzap_route_a_persistent_packed",
-        "source_cardinality": {"minimum": 1, "maximum": 3, "rule": "hot, pending, and packed each produce an ordered partial or explicit empty outcome; no source must be fabricated."},
-        "source_traversal": {"order": ["hot", "pending", "packed"], "empty_source_behavior": "explicit partial-or-skip", "merge": "exactly one online-softmax merge after source decisions"},
-        "semantic_comparator": {"accepted_comparator": "online same-mask dense", "separate_control": "Full-KV bypass", "evidence_classification": "previously accepted functional reference; C4 rechecks manifest assertions only"},
-        "c4_primitive_fit": "supports ordered variable-length source traversal with optional multi-source composition",
-        "boundary": "C4 does not select split/co-located placement, scheduler, merge precision, page layout, or physical source implementation.",
-    }
 
 
-def build_snap(snap: dict[str, Any]) -> dict[str, Any]:
-    fields = snap_field_rows(snap)
-    canonical = fields.get("canonical_identity_and_append_order")
-    if canonical is None or canonical.get("status") != "available":
-        raise ValueError("C4 SnapKV canonical traversal mapping is absent")
-    return {
-        "frontend": "snapkv_one_shot_packed",
-        "source_cardinality": {"minimum": 1, "maximum": 1, "rule": "one canonical terminal-prefill source; no artificial hot/pending/packed decomposition"},
-        "source_traversal": {"order": "canonical original-position order per (layer, KV head)", "excluded_order": "native score-ranked gather order", "merge": "not required by the bounded one-source probe"},
-        "semantic_comparator": {"accepted_comparator": "same-mask prefill-tail", "decode_scope": "not established", "evidence_classification": "previously accepted bounded functional probe; C4 rechecks P2/P3 summary only"},
-        "c4_primitive_fit": "supports a single ordered variable-length source for the bounded prefill-tail scope",
-        "boundary": "No generated decode, online lifecycle, native SnapKV cache/decode traversal, or multi-source requirement is inferred.",
-    }
 
 
-def build_dms(dms: dict[str, Any]) -> dict[str, Any]:
-    guards = dms.get("observational_guards")
-    active = dms.get("active_resident_attention")
-    topology = dms.get("fresh_native_control_topology")
-    if not isinstance(guards, dict) or not isinstance(active, dict) or not isinstance(topology, dict):
-        raise ValueError("C4 DMS M4 lacks guard/active/topology objects")
-    if guards.get("native_dms_cache_used") is not True or guards.get("attention_replaced") is not False or active.get("all_active_resident_replays_within_declared_tolerance") is not True:
-        raise ValueError("C4 DMS native active-resident comparator is incomplete")
-    if topology.get("final_active_physical_slot_order_nonmonotonic_count") != 269:
-        raise ValueError("C4 DMS required native-order boundary drifted")
-    return {
-        "frontend": "official_dms_dynamic_resident_slot",
-        "source_cardinality": {"minimum": 1, "maximum": 1, "rule": "one native active-resident source; no artificial partition or packed-cold mapping"},
-        "source_traversal": {"order": "official native logical-slot/block-table order", "arrival_order_substitution": "forbidden", "nonmonotonic_layer_kv_head_orders": 269, "merge": "not required by the one-source replay"},
-        "semantic_comparator": {"accepted_comparator": "unchanged official native DMS FlashAttention versus one-source active-resident FP32 replay", "scope": "fixed decode contract", "evidence_classification": "previously accepted functional replay; C4 rechecks M4 guard/summary only"},
-        "c4_primitive_fit": "supports a single ordered variable-length active-resident source only when native traversal order is preserved",
-        "boundary": "Arrival serial is not a literal original token position; C4 does not claim slot-order invariance or a packed-cold realization.",
-    }
 
 
-def validate_reports(reports: dict[str, dict[str, Any]], c3: dict[str, Any]) -> None:
-    if set(reports) != {"kvzap_route_a_persistent_packed", "snapkv_one_shot_packed", "official_dms_dynamic_resident_slot"}:
-        raise ValueError("C4 must emit exactly three frontend traversal reports")
-    for name, report in reports.items():
-        card = report.get("source_cardinality")
-        comparator = report.get("semantic_comparator")
-        traversal = report.get("source_traversal")
-        if not isinstance(card, dict) or card.get("minimum") < 1 or card.get("maximum") < card.get("minimum"):
-            raise ValueError(f"C4 invalid source cardinality for {name}")
-        if not isinstance(comparator, dict) or not comparator.get("accepted_comparator"):
-            raise ValueError(f"C4 missing accepted comparator for {name}")
-        if not isinstance(traversal, dict) or not traversal.get("order"):
-            raise ValueError(f"C4 missing traversal order for {name}")
-    if reports["snapkv_one_shot_packed"]["source_cardinality"]["maximum"] != 1 or reports["official_dms_dynamic_resident_slot"]["source_cardinality"]["maximum"] != 1:
-        raise ValueError("C4 must not require multi-source composition for SnapKV or DMS")
-    if reports["official_dms_dynamic_resident_slot"]["source_traversal"].get("arrival_order_substitution") != "forbidden":
-        raise ValueError("C4 must preserve the DMS native-order restriction")
-    if not any(row.get("name") == "universal_multi_source_composition" for row in c3.get("unresolved_boundaries", []) if isinstance(row, dict)):
-        raise ValueError("C4 must retain C3 multi-source unresolved boundary")
 
 
 def main() -> None:

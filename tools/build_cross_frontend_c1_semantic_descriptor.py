@@ -7,6 +7,8 @@ or hardware interface.
 """
 from __future__ import annotations
 
+from kvpress.research.cross_frontend import VALUE_STATUSES, CORE_FIELD_TYPES, REALIZATION_EXTENSIONS, field, availability_matrix, validate_matrix
+
 import argparse
 import hashlib
 import json
@@ -17,22 +19,6 @@ from typing import Any
 
 C1_SCHEMA = "cross-frontend-c1-semantic-descriptor-1.0"
 C0_SCHEMA = "cross-frontend-c0-evidence-index-1.0"
-VALUE_STATUSES = frozenset({"observed", "derived", "modeled", "unknown", "not_applicable"})
-CORE_FIELD_TYPES = {
-    "model_topology": {"value_type": "object", "scope": "model-level; model ID/revision, layer count, KV-head count, and query-to-KV grouping when available"},
-    "identity": {"value_type": "object", "scope": "(layer, kv_head, source_record_id), with source_record_id kind explicitly labeled"},
-    "epoch": {"value_type": "object", "scope": "phase, event kind, forward/decode index, and q_len when available"},
-    "decision": {"value_type": "object", "scope": "decision value plus known and effective epochs; unobserved timing stays unknown"},
-    "visibility": {"value_type": "object", "scope": "whether a record must be attention-visible at an epoch, distinct from physical completion"},
-    "position_provenance": {"value_type": "object", "scope": "literal original logical position, explicit serial, or explicit unknown; never inferred from a slot ID"},
-    "traversal_order": {"value_type": "object", "scope": "required source traversal order and the evidence/reason that constrains it"},
-    "attention_binding": {"value_type": "object", "scope": "query/KV grouping and the frontend-specific accepted semantic comparator"},
-}
-REALIZATION_EXTENSIONS = {
-    "persistent_packed": {"applies_to": "KVzap Route-A", "extension_only_fields": ["hot_pending_packed_state", "maturity", "admission_service", "append_only_pages", "page_sealing_and_tail"]},
-    "one_shot_packed": {"applies_to": "SnapKV P0-P3 mapping", "extension_only_fields": ["terminal_action", "protected_observation_suffix", "canonical_static_packed_state", "initial_compaction"]},
-    "dynamic_resident_slot": {"applies_to": "official DMS M0-M4", "extension_only_fields": ["active_slot", "delayed_eviction", "reclaim_reuse", "slot_to_arrival_identity", "native_slot_block_traversal"]},
-}
 
 
 def parse_args() -> argparse.Namespace:
@@ -96,78 +82,10 @@ def require_c0_bindings(c0: dict[str, Any], sources: dict[str, Path], *, allow_r
     return bound
 
 
-def field(status: str, statement: str, *, reason: str | None = None, subfields: dict[str, dict[str, str]] | None = None) -> dict[str, Any]:
-    item: dict[str, Any] = {"status": status, "statement": statement}
-    if reason is not None:
-        item["reason"] = reason
-    if subfields is not None:
-        item["subfields"] = subfields
-    return item
 
 
-def availability_matrix() -> dict[str, Any]:
-    return {
-        "kvzap_route_a_persistent_packed": {
-            "frontend": "KVzap Route-A", "realization_extension": "persistent_packed",
-            "evidence_scope": "Qwen core closure plus separate Qwen/Llama fixed-horizon coverage; model rows remain separate",
-            "fields": {
-                "model_topology": field("observed", "Model-specific descriptors are recorded without pooling Qwen and Llama values."),
-                "identity": field("observed", "Layer, KV-head, and original-position source identities are preserved by Route-A lifecycle evidence."),
-                "epoch": field("observed", "Creation, hot-window, maturity, pending, and packed-cold lifecycle epochs are explicitly represented."),
-                "decision": field("observed", "Original KVzap decision semantics and maturity handling are bound by the core closure."),
-                "visibility": field("observed", "Policy-on hot, pending, and packed pages are functionally attention-visible under the accepted comparator."),
-                "position_provenance": field("observed", "Original positions and append order are preserved by the same-mask reference."),
-                "traversal_order": field("observed", "The accepted reference preserves original mask, position, append order, hot window, and online-softmax composition."),
-                "attention_binding": field("observed", "Online same-mask dense is the semantic comparator; Full-KV bypass remains a separate control."),
-            },
-        },
-        "snapkv_one_shot_packed": {
-            "frontend": "SnapKV", "realization_extension": "one_shot_packed",
-            "evidence_scope": "Qwen3-8B terminal-prefill P2/P3 mapping and bounded prefill-tail same-mask probe only",
-            "fields": {
-                "model_topology": field("derived", "The P2 artifact is archived as a Qwen3-8B fixed-model study; it must not contribute a pooled hardware dimension."),
-                "identity": field("observed", "One terminal prefill action is recorded per layer/KV-head/original-position identity."),
-                "epoch": field("observed", "Only the terminal prefill epoch is observed.", subfields={"generated_decode_epoch": {"status": "unknown", "reason": "P2 records generated-token/decode continuation as unavailable/null."}}),
-                "decision": field("observed", "Terminal retained/dropped action is observed at prefill completion.", subfields={"online_known_or_effective_epoch": {"status": "unknown", "reason": "No online decision/maturity event is observed in P2."}}),
-                "visibility": field("derived", "Bounded same-mask prefill-tail visibility is supported by the P2 semantic probe, not native SnapKV decode behavior.", subfields={"generated_decode_visibility": {"status": "unknown", "reason": "Native SnapKV decode/cache semantics were deliberately excluded."}}),
-                "position_provenance": field("observed", "Canonical original-position mapping and protected suffix mapping are recorded."),
-                "traversal_order": field("observed", "Canonical original-position order is the static packed mapping order; it is not asserted as a native decode traversal."),
-                "attention_binding": field("observed", "Same-mask prefill-tail is the accepted bounded comparator.", subfields={"native_decode_comparator": {"status": "unknown", "reason": "No native SnapKV decode claim is supported."}}),
-            },
-        },
-        "official_dms_dynamic_resident_slot": {
-            "frontend": "official DMS", "realization_extension": "dynamic_resident_slot",
-            "evidence_scope": "Qwen3-8B official DMS M0-M4 fixed decode contract",
-            "fields": {
-                "model_topology": field("observed", "The all-36-layer native DMS replay records the workload/model binding and observed query-to-KV grouping."),
-                "identity": field("observed", "Source arrival serial is observed as the source-record identity; it is not relabeled as a literal token position."),
-                "epoch": field("observed", "The fixed decode contract observes delayed controller events and active-resident attention replay."),
-                "decision": field("observed", "Delayed eviction/reuse controller behavior is provenance-bound through M1-M3 and replayed in M4."),
-                "visibility": field("observed", "The native active resident set is functionally replayed as one attention source under the accepted contract."),
-                "position_provenance": field("unknown", "Literal original token position is unavailable.", reason="A generally captured literal original token-position field is absent; only arrival serial and required native order are available."),
-                "traversal_order": field("observed", "Required native logical-slot/block-table traversal order is observed; nonmonotonic layer/KV-head orders preclude substituting arrival order."),
-                "attention_binding": field("observed", "Unchanged official native DMS FlashAttention is compared with one-source active-resident FP32 replay."),
-            },
-        },
-    }
 
 
-def validate_matrix(matrix: dict[str, Any]) -> None:
-    if any(set(frontend.get("fields", {})) != set(CORE_FIELD_TYPES) for frontend in matrix.values()):
-        raise ValueError("C1 every frontend must provide exactly the typed v1 core fields")
-    for frontend_name, frontend in matrix.items():
-        if frontend.get("realization_extension") not in REALIZATION_EXTENSIONS:
-            raise ValueError(f"C1 {frontend_name} names an unknown realization extension")
-        for name, item in frontend["fields"].items():
-            if item.get("status") not in VALUE_STATUSES:
-                raise ValueError(f"C1 {frontend_name}.{name} has invalid status")
-            if item["status"] in {"unknown", "not_applicable"} and not item.get("reason"):
-                raise ValueError(f"C1 {frontend_name}.{name} requires a reason for {item['status']}")
-            for subfield_name, subfield in item.get("subfields", {}).items():
-                if subfield.get("status") not in VALUE_STATUSES:
-                    raise ValueError(f"C1 {frontend_name}.{name}.{subfield_name} has invalid status")
-                if subfield["status"] in {"unknown", "not_applicable"} and not subfield.get("reason"):
-                    raise ValueError(f"C1 {frontend_name}.{name}.{subfield_name} requires a reason for {subfield['status']}")
 
 
 def main() -> None:

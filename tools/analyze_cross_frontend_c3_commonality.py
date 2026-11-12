@@ -9,6 +9,8 @@ records frontend-specific realization/order differences.
 """
 from __future__ import annotations
 
+from kvpress.research.cross_frontend import CORE_FIELDS, FRONTENDS, field_matrix, invariant_candidates, frontend_specific, unresolved, validate_analysis, analyze_projections
+
 import argparse
 import hashlib
 import json
@@ -20,21 +22,6 @@ from typing import Any
 
 C2_SCHEMA = "cross-frontend-c2-realization-adapters-1.0"
 C3_SCHEMA = "cross-frontend-c3-commonality-matrix-1.0"
-CORE_FIELDS = (
-    "model_topology",
-    "identity",
-    "epoch",
-    "decision",
-    "visibility",
-    "position_provenance",
-    "traversal_order",
-    "attention_binding",
-)
-FRONTENDS = (
-    "kvzap_route_a_persistent_packed",
-    "snapkv_one_shot_packed",
-    "official_dms_dynamic_resident_slot",
-)
 
 
 def parse_args() -> argparse.Namespace:
@@ -74,132 +61,16 @@ def load_c2(path: Path) -> dict[str, Any]:
     return value
 
 
-def field_matrix(c2: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    projections = c2.get("projections")
-    if not isinstance(projections, dict) or set(projections) != set(FRONTENDS):
-        raise ValueError("C3 requires exactly three C2 frontend projections")
-    rows: dict[str, dict[str, Any]] = {}
-    for field_name in CORE_FIELDS:
-        cells: dict[str, Any] = {}
-        for frontend in FRONTENDS:
-            projection = projections[frontend]
-            core = projection.get("core_fields") if isinstance(projection, dict) else None
-            item = core.get(field_name) if isinstance(core, dict) else None
-            if not isinstance(item, dict) or item.get("status") not in {"observed", "derived", "modeled", "unknown", "not_applicable"}:
-                raise ValueError(f"C3 missing typed C2 field {frontend}.{field_name}")
-            cells[frontend] = {"status": item["status"], "reason": item.get("reason"), "value": item.get("value")}
-        statuses = {name: item["status"] for name, item in cells.items()}
-        rows[field_name] = {
-            "per_frontend": cells,
-            "all_observed": all(status == "observed" for status in statuses.values()),
-            "all_available": all(status in {"observed", "derived"} for status in statuses.values()),
-            "statuses": statuses,
-        }
-    return rows
 
 
-def invariant_candidates(matrix: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
-    candidates = [
-        {
-            "name": "explicit_source_record_identity",
-            "required_fields": ["identity"],
-            "common_abstraction": "Every evaluated frontend exposes an explicit source_record_id associated with layer and KV head.",
-            "non_invariant_detail": "KVzap/SnapKV use original logical positions; DMS uses an arrival serial, not a literal position.",
-        },
-        {
-            "name": "explicit_epoch_and_decision_scope",
-            "required_fields": ["epoch", "decision"],
-            "common_abstraction": "Every evaluated frontend binds its retained/active control semantics to an explicit scope or epoch.",
-            "non_invariant_detail": "KVzap has lifecycle/maturity, SnapKV only terminal prefill, and DMS a fixed decode controller contract; no common online timeline is inferred.",
-        },
-        {
-            "name": "required_frontend_specific_traversal_order",
-            "required_fields": ["traversal_order"],
-            "common_abstraction": "Attention realization must preserve the frontend-specified source traversal order.",
-            "non_invariant_detail": "This does not define one canonical order: DMS native slot/block order cannot be replaced by arrival order.",
-        },
-        {
-            "name": "frontend_bound_semantic_comparator",
-            "required_fields": ["attention_binding"],
-            "common_abstraction": "Each frontend requires an explicit accepted semantic comparator for any later attention study.",
-            "non_invariant_detail": "Comparators are distinct: KVzap same-mask dense, SnapKV prefill-tail, and DMS native FlashAttention replay.",
-        },
-    ]
-    accepted: list[dict[str, Any]] = []
-    for candidate in candidates:
-        if all(matrix[field]["all_observed"] for field in candidate["required_fields"]):
-            accepted.append(candidate)
-    return accepted
 
 
-def frontend_specific(c2: dict[str, Any]) -> list[dict[str, Any]]:
-    projections = c2["projections"]
-    return [
-        {
-            "frontend": "kvzap_route_a_persistent_packed",
-            "realization_extension": projections["kvzap_route_a_persistent_packed"]["realization_extension"],
-            "specific_mechanisms": ["hot/pending/packed lifecycle", "maturity and admission", "optional multi-source partial composition with one online-softmax merge"],
-            "boundary": "These are KVzap Route-A realization mechanisms, not common C3 interface fields.",
-        },
-        {
-            "frontend": "snapkv_one_shot_packed",
-            "realization_extension": projections["snapkv_one_shot_packed"]["realization_extension"],
-            "specific_mechanisms": ["terminal prefill action", "protected observation suffix compatibility mapping", "canonical static original-position packing"],
-            "boundary": "No generated decode, online maturity, or native decode/cache semantics are observed.",
-        },
-        {
-            "frontend": "official_dms_dynamic_resident_slot",
-            "realization_extension": projections["official_dms_dynamic_resident_slot"]["realization_extension"],
-            "specific_mechanisms": ["dynamic active slots", "delayed eviction/reuse", "required native logical-slot/block-table traversal"],
-            "boundary": "DMS is not asserted to be a packed-cold source and its native order is not an order-invariance result.",
-        },
-    ]
 
 
-def unresolved(matrix: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
-    unresolved_rows = [
-        {
-            "name": "literal_dms_original_position",
-            "affected_field": "position_provenance",
-            "reason": matrix["position_provenance"]["per_frontend"]["official_dms_dynamic_resident_slot"]["reason"],
-        },
-        {
-            "name": "snapkv_generated_decode_and_online_lifecycle",
-            "affected_fields": ["epoch", "decision", "visibility", "attention_binding"],
-            "reason": "C2 retains terminal-prefill scope only; generated decode, maturity timing, native decode visibility, and native decode comparator remain unknown.",
-        },
-        {
-            "name": "shared_physical_or_temporal_resource_contract",
-            "affected_fields": ["all"],
-            "reason": "No common source-ready/completion order, queue/backpressure, allocator, capacity, traffic, timing, or hardware interface is established by C0-C3.",
-        },
-        {
-            "name": "universal_multi_source_composition",
-            "affected_fields": ["visibility", "traversal_order"],
-            "reason": "KVzap has accepted hot/pending/packed composition; SnapKV and DMS must not be artificially partitioned into sources.",
-        },
-    ]
-    return unresolved_rows
 
 
-def validate_analysis(matrix: dict[str, dict[str, Any]], invariants: list[dict[str, Any]], unresolved_rows: list[dict[str, Any]]) -> None:
-    for candidate in invariants:
-        if not all(matrix[field]["all_observed"] for field in candidate["required_fields"]):
-            raise ValueError(f"C3 invariant {candidate['name']} lacks all-observed prerequisite")
-    if matrix["position_provenance"]["all_observed"]:
-        raise ValueError("C3 must not erase the DMS position-provenance unknown")
-    if not any(row["name"] == "snapkv_generated_decode_and_online_lifecycle" for row in unresolved_rows):
-        raise ValueError("C3 must retain SnapKV decode/lifecycle as unresolved")
 
 
-def analyze_projections(c2: dict[str, Any]) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
-    """Classify observed common fields without changing frontend semantics."""
-    matrix = field_matrix(c2)
-    invariants = invariant_candidates(matrix)
-    specific = frontend_specific(c2)
-    unresolved_rows = unresolved(matrix)
-    validate_analysis(matrix, invariants, unresolved_rows)
-    return matrix, invariants, specific, unresolved_rows
 
 
 def main() -> None:

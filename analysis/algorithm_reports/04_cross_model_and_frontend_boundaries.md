@@ -205,10 +205,11 @@ M4的144次调用为36层×4次decode，全部满足该实验自己的`atol=rtol
 阈值裁剪包装，与本节的官方训练DMS模型不是同一实现。
 
 SnapKV侧通过[前端合同及observer](../../kvpress/route_a_frontend_contract.py)
-提取prefill终态选择，[P1静态分析](../../tools/analyze_snapkv_route_a_p1_packed_opportunity.py)
-复用packed-page容量模型，[P3入口](../../tools/run_snapkv_route_a_p3_semantic_gate.py)
+提取prefill终态选择；[SnapKV静态映射](../../kvpress/research/snapkv.py)
+复用packed-page容量模型，[P1入口](../../tools/analyze_snapkv_route_a_p1_packed_opportunity.py)
+负责读取决策和输出结果，[P3入口](../../tools/run_snapkv_route_a_p3_semantic_gate.py)
 在固定选择下做prefill-tail参考比较。官方DMS侧的[M1入口](../../tools/run_dms_route_a_m1_native_semantic_gate.py)
-加载官方DMS模型与原生cache并记录状态，M4使用原生attention语义的有界重放；
+加载官方DMS模型与原生cache并记录状态，M4使用[DMS原生槽位attention重放](../../kvpress/research/dms.py)；
 它没有调用KVzap predictor，也没有把DMS转换成Route-A packed cold。
 
 ## 5. C0—C5：共同性研究最后到底保留了什么
@@ -225,6 +226,8 @@ C4复核各自attention比较依据，C5决定研究方向。它们没有新增�
 → [C3共同性分类](../../tools/analyze_cross_frontend_c3_commonality.py)
 → [C4 attention依据](../../tools/build_cross_frontend_c4_attention_primitive_study.py)
 → [C5方向判断](../../tools/build_cross_frontend_c5_direction_decision.py)。C3的
+共享的[跨前端语义计算](../../kvpress/research/cross_frontend.py)负责字段描述、
+各前端投影、共同性分类及其各自attention对照；历史入口继续负责输入和输出。
 `analyze_projections` 将字段矩阵、共同候选、各自机制和未知边界集中计算；
 只有各前端都被观察到的前置字段才形成共同候选，不填补未观察值。
 
