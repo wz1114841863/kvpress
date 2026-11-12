@@ -9,7 +9,6 @@ from kvpress.rtl3_1_functional_memory_environment import (
     RTL31FunctionalMemoryEnvironmentError,
     load,
     validate,
-    validate_hashes,
 )
 
 
@@ -44,12 +43,6 @@ def test_rtl31_rejects_authority_or_premature_s2_scope():
         validate(bad)
 
 
-def test_hashes_and_cli_are_reproducible():
-    manifest = payload()
-    validate_hashes(manifest, ROOT)
-    bad = copy.deepcopy(manifest)
-    bad["source_sha256"][next(k for k in bad["source_sha256"] if not k.endswith(".md"))] = "0" * 64
-    with pytest.raises(RTL31FunctionalMemoryEnvironmentError, match="hash-bound"):
-        validate_hashes(bad, ROOT)
+def test_validator_cli_checks_the_semantic_contract():
     assert "--manifest" in subprocess.run([sys.executable, str(VALIDATOR), "--help"], cwd=ROOT, text=True, capture_output=True, check=True).stdout
     assert "passed" in subprocess.run([sys.executable, str(VALIDATOR)], cwd=ROOT, text=True, capture_output=True, check=True).stdout

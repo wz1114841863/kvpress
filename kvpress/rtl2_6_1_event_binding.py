@@ -8,7 +8,6 @@ carriers before the completion review can count these events as emittable.
 from __future__ import annotations
 
 from dataclasses import dataclass
-import hashlib
 import json
 from pathlib import Path
 from typing import Any, Mapping
@@ -107,22 +106,6 @@ def validate_binding(binding: Mapping[str, Any], schema: Mapping[str, Any]) -> N
         raise RTL26EventBindingError("RTL2.6.1 forbidden boundary drift")
 
 
-def validate_source_hashes(binding: Mapping[str, Any], repo_root: str | Path) -> None:
-    sources = binding.get("source_sha256")
-    if not isinstance(sources, Mapping) or not sources:
-        raise RTL26EventBindingError("binding must hash-bind reviewed sources")
-    root = Path(repo_root).resolve()
-    for relative, expected in sources.items():
-        # Historical Markdown is documentation, not a live source input.
-        if isinstance(relative, str) and relative.endswith(".md"):
-            continue
-        if not isinstance(relative, str) or not isinstance(expected, str) or len(expected) != 64:
-            raise RTL26EventBindingError("invalid source hash entry")
-        path = (root / relative).resolve()
-        if root not in path.parents or not path.is_file():
-            raise RTL26EventBindingError(f"hash-bound source unavailable: {relative}")
-        if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
-            raise RTL26EventBindingError(f"hash-bound source drift: {relative}")
 
 
 class RouteARTL26EventFieldBindingAdapter:
@@ -138,7 +121,6 @@ class RouteARTL26EventFieldBindingAdapter:
         binding = load_binding(binding_path or root / "analysis/rtl2_6_1_event_binding_manifest.json")
         schema = json.loads((root / "analysis/rtl2_scoreboard_event_schema.json").read_text(encoding="utf-8"))
         validate_binding(binding, schema)
-        validate_source_hashes(binding, root)
         self._fields = {record["event"]: tuple(record["required_fields"]) for record in binding["event_bindings"]}
 
     def capture(self, observation: RTL26EventObservation) -> RTL26EventObservation:

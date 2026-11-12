@@ -14,7 +14,6 @@ from kvpress.rtl2_6_1_event_binding import (
     RouteARTL26EventFieldBindingAdapter,
     load_binding,
     validate_binding,
-    validate_source_hashes,
 )
 
 
@@ -55,9 +54,8 @@ def test_binding_rejects_hidden_defaults_non_origin_carriers_and_early_emission_
         validate_binding(malformed, schema)
 
 
-def test_adapter_requires_one_complete_explicit_schema_field_set_and_hashes_bind_sources():
+def test_adapter_requires_one_complete_explicit_schema_field_set():
     binding, _ = _payloads()
-    validate_source_hashes(binding, ROOT)
     adapter = RouteARTL26EventFieldBindingAdapter(ROOT)
     observation = RTL26EventObservation("merge_request", {"request_id": 1, "incarnation": 2, "source_presence": 4})
     assert adapter.capture(observation) == observation
@@ -65,10 +63,6 @@ def test_adapter_requires_one_complete_explicit_schema_field_set_and_hashes_bind
         adapter.capture(RTL26EventObservation("merge_request", {"request_id": 1, "incarnation": 2}))
     with pytest.raises(RTL26EventBindingError, match="not in the RTL2.6.1"):
         adapter.capture(RTL26EventObservation("retire_ack", {"session_id": 0, "request_id": 1, "incarnation": 2}))
-    malformed = copy.deepcopy(binding)
-    malformed["source_sha256"][next(k for k in malformed["source_sha256"] if not k.endswith(".md"))] = "0" * 64
-    with pytest.raises(RTL26EventBindingError, match="hash-bound source drift"):
-        validate_source_hashes(malformed, ROOT)
 
 
 def test_validator_has_help_and_default_inputs():

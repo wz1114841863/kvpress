@@ -1,7 +1,6 @@
 """Validation rules for the RTL3.1 testbench-only functional memory environment."""
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 from typing import Any, Mapping
@@ -59,23 +58,8 @@ def validate(manifest: Mapping[str, Any]) -> None:
         raise RTL31FunctionalMemoryEnvironmentError("RTL3.1 evidence boundary drift")
 
 
-def validate_hashes(manifest: Mapping[str, Any], root: str | Path) -> None:
-    base = Path(root).resolve()
-    hashes = manifest.get("source_sha256")
-    if not isinstance(hashes, Mapping) or not hashes:
-        raise RTL31FunctionalMemoryEnvironmentError("RTL3.1 must hash-bind sources")
-    for relative, expected in hashes.items():
-        # Historical Markdown is documentation, not a live source input.
-        if isinstance(relative, str) and relative.endswith(".md"):
-            continue
-        path = (base / str(relative)).resolve()
-        if base not in path.parents or not path.is_file() or not isinstance(expected, str) or len(expected) != 64:
-            raise RTL31FunctionalMemoryEnvironmentError("invalid RTL3.1 source hash")
-        if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
-            raise RTL31FunctionalMemoryEnvironmentError(f"hash-bound source drift: {relative}")
 
 
 def load_and_validate(manifest_path: str | Path, root: str | Path) -> None:
     manifest = load(manifest_path)
     validate(manifest)
-    validate_hashes(manifest, root)

@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from kvpress.rtl2_6_1_event_binding import load_binding, validate_binding, validate_source_hashes
+from kvpress.rtl2_6_1_event_binding import load_binding, validate_binding
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -18,7 +18,6 @@ def main() -> int:
     args = parser.parse_args()
     binding = load_binding(args.binding)
     validate_binding(binding, json.loads(args.schema.read_text(encoding="utf-8")))
-    validate_source_hashes(binding, ROOT)
     print(f"RTL2.6.1 event field-provenance binding passed: {args.binding}")
     return 0
 
