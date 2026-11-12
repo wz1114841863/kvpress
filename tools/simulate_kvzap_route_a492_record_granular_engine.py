@@ -9,6 +9,8 @@ dependent transaction before its enclosing transaction commits.
 """
 from __future__ import annotations
 
+from kvpress.research.metadata import (record_summarize as summarize, MicroOp, ActiveMicroOp, micro_op_duration, build_micro_ops, whole_bank_queue_observations, record_granular_replay)
+
 import argparse
 import hashlib
 import json
@@ -56,14 +58,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def summarize(values: list[int]) -> dict[str, int]:
-    if not values:
-        return {"count": 0, "min": 0, "p50": 0, "p95": 0, "p99": 0, "max": 0, "sum": 0}
-    ordered = sorted(values)
-    def at(fraction: float) -> int:
-        return ordered[min(len(ordered) - 1, int((len(ordered) - 1) * fraction))]
-    return {"count": len(ordered), "min": ordered[0], "p50": at(.50), "p95": at(.95),
-            "p99": at(.99), "max": ordered[-1], "sum": sum(ordered)}
 
 
 def context_id(key: tuple[str, str, int, str]) -> tuple[str, str, int, str]:
@@ -116,209 +110,16 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
     return {"a490": a490, "a491": a491, "a4720": a4720, "input_hashes": expected}
 
 
-@dataclass(frozen=True)
-class MicroOp:
-    transaction_index: int
-    object_key: tuple[str, tuple[Any, ...]]
-    bank: int
-    operation: str
 
 
-@dataclass(frozen=True)
-class ActiveMicroOp:
-    finish_tick: int
-    micro_op: MicroOp
 
 
-def micro_op_duration(operation: str) -> int:
-    if operation in {"read", "write"}:
-        return 1
-    if operation == "rmw":
-        return 2
-    raise ValueError(f"undeclared modeled operation: {operation}")
 
 
-def build_micro_ops(groups: list[dict[str, Any]], transactions: list[ScheduledTransaction], candidate: dict[str, Any]) -> dict[int, tuple[MicroOp, ...]]:
-    """Lower one immutable group to one member micro-op per modeled object."""
-    if len(groups) != len(transactions):
-        raise AssertionError("immutable group/transaction cardinality mismatch")
-    result: dict[int, tuple[MicroOp, ...]] = {}
-    for index, (group, transaction) in enumerate(zip(groups, transactions)):
-        if transaction.index != index:
-            raise AssertionError("transaction index diverged from immutable group order")
-        lowered = lower_transaction(group, LAYOUT)
-        members = tuple(sorted((
-            MicroOp(
-                transaction_index=index,
-                object_key=object_key,
-                bank=bank_index(str(candidate["mapping"]), int(candidate["banks"]), object_key,
-                                layer=int(group["layer"]), head=int(group["kv_head"])),
-                operation=operation,
-            )
-            for object_key, operation in lowered.items()
-        ), key=lambda item: repr(item.object_key)))
-        if len({member.object_key for member in members}) != len(members):
-            raise AssertionError("one transaction contains duplicate modeled-object micro-ops")
-        demand = Counter((member.bank, member.operation) for member in members)
-        if demand != transaction.demands or frozenset(member.bank for member in members) != transaction.banks:
-            raise AssertionError("record micro-op lowering does not exactly reproduce A4.9.1 demand")
-        result[index] = members
-    return result
 
 
-def whole_bank_queue_observations(transactions: list[ScheduledTransaction], opportunities: list[tuple[str, int]], candidate: dict[str, Any], drain_limit: int) -> dict[str, Any]:
-    """Instrument the unchanged A4.9.1 algorithm without altering its result."""
-    arrivals: dict[int, list[ScheduledTransaction]] = defaultdict(list)
-    for transaction in transactions:
-        arrivals[transaction.arrival_ordinal].append(transaction)
-    pending: list[ScheduledTransaction] = []
-    committed: set[int] = set()
-    active: list[tuple[int, ScheduledTransaction]] = []
-    bank_until = [0] * int(candidate["banks"])
-    coordinator_until = 0
-    peak_by_bank = [0] * int(candidate["banks"])
-    tick = 0
-    last_arrival = len(opportunities) - 1
-    while tick <= last_arrival or pending or active:
-        if tick > last_arrival + drain_limit:
-            break
-        pending.extend(arrivals.get(tick, []))
-        finished = [item for item in active if item[0] <= tick]
-        active = [item for item in active if item[0] > tick]
-        committed.update(transaction.index for _, transaction in finished)
-        queued = Counter(bank for transaction in pending for bank in transaction.banks)
-        for bank in range(int(candidate["banks"])):
-            peak_by_bank[bank] = max(peak_by_bank[bank], queued[bank])
-        retained: list[ScheduledTransaction] = []
-        for transaction in pending:
-            if any(parent not in committed for parent in transaction.predecessors):
-                retained.append(transaction); continue
-            if any(bank_until[bank] > tick for bank in transaction.banks):
-                retained.append(transaction); continue
-            if len(transaction.banks) > 1 and candidate["commit_slots"] and coordinator_until > tick:
-                retained.append(transaction); continue
-            reads = sum(value for (_, operation), value in transaction.demands.items() if operation == "read")
-            writes = sum(value for (_, operation), value in transaction.demands.items() if operation == "write")
-            rmw = sum(value for (_, operation), value in transaction.demands.items() if operation == "rmw")
-            duration = max(
-                (reads + candidate["read_ports"] - 1) // candidate["read_ports"],
-                (writes + candidate["write_ports"] - 1) // candidate["write_ports"],
-                2 * ((rmw + candidate["rmw_lanes"] - 1) // candidate["rmw_lanes"]), 1,
-            ) + (1 if len(transaction.banks) > 1 else 0)
-            for bank in transaction.banks:
-                bank_until[bank] = tick + duration
-            if len(transaction.banks) > 1 and candidate["commit_slots"]:
-                coordinator_until = tick + duration
-            active.append((tick + duration, transaction))
-        pending = retained
-        tick += 1
-    return {
-        "peak_queued_transaction_groups_per_bank": summarize(peak_by_bank),
-        "queue_occupancy_definition": "A4.9.1 pending transaction groups touching each modeled bank immediately before unchanged whole-bank selection; active groups are excluded.",
-    }
 
 
-def record_granular_replay(transactions: list[ScheduledTransaction], opportunities: list[tuple[str, int]], micro_ops: dict[int, tuple[MicroOp, ...]], candidate: dict[str, Any], drain_limit: int) -> dict[str, Any]:
-    """Interleave only micro-ops; all semantic publication remains at group commit."""
-    arrivals: dict[int, list[int]] = defaultdict(list)
-    for transaction in transactions:
-        arrivals[transaction.arrival_ordinal].append(transaction.index)
-    pending: list[int] = []
-    committed: set[int] = set()
-    completed_members: dict[int, set[MicroOp]] = defaultdict(set)
-    started_members: dict[int, set[MicroOp]] = defaultdict(set)
-    locks: dict[tuple[str, tuple[Any, ...]], int] = {}
-    active: list[ActiveMicroOp] = []
-    transaction_first_start: dict[int, int] = {}
-    transaction_commit_tick: dict[int, int] = {}
-    reasons: Counter[str] = Counter()
-    peak_queue_by_bank = [0] * int(candidate["banks"])
-    active_samples: list[int] = []
-    coordinator_until = 0
-    tick = 0
-    last_arrival = len(opportunities) - 1
-    while tick <= last_arrival or pending or active:
-        if tick > last_arrival + drain_limit:
-            break
-        pending.extend(arrivals.get(tick, []))
-        finished = [item for item in active if item.finish_tick <= tick]
-        active = [item for item in active if item.finish_tick > tick]
-        for item in finished:
-            completed_members[item.micro_op.transaction_index].add(item.micro_op)
-        # Commit is the sole visibility/release point.  Stable immutable order is
-        # retained even when internal members completed in a different order.
-        for index in list(pending):
-            transaction = transactions[index]
-            if any(parent not in committed for parent in transaction.predecessors):
-                continue
-            if len(completed_members[index]) != len(micro_ops[index]):
-                continue
-            cross_bank = len(transaction.banks) > 1
-            if cross_bank and candidate["commit_slots"] and coordinator_until > tick:
-                reasons["cross_bank_commit_coordination"] += 1
-                continue
-            if cross_bank and candidate["commit_slots"]:
-                coordinator_until = tick + 1
-            pending.remove(index)
-            committed.add(index)
-            transaction_commit_tick[index] = tick
-            for member in micro_ops[index]:
-                if locks.get(member.object_key) != index:
-                    raise AssertionError("transaction committed without owning every member lock")
-                del locks[member.object_key]
-        # This is the same per-bank *queued transaction group* definition used
-        # above for A4.9.1: a group leaves the queue on its first internal start.
-        queued = Counter(
-            bank for index in pending if not started_members[index]
-            for bank in transactions[index].banks
-        )
-        for bank in range(int(candidate["banks"])):
-            peak_queue_by_bank[bank] = max(peak_queue_by_bank[bank], queued[bank])
-        active_by_resource = Counter((item.micro_op.bank, item.micro_op.operation) for item in active)
-        for index in pending:
-            transaction = transactions[index]
-            if any(parent not in committed for parent in transaction.predecessors):
-                reasons["intrinsic_dependency"] += 1
-                continue
-            for member in micro_ops[index]:
-                if member in started_members[index]:
-                    continue
-                lock_owner = locks.get(member.object_key)
-                if lock_owner is not None and lock_owner != index:
-                    reasons["same_record_lock"] += 1
-                    continue
-                limit_name = {"read": "read_ports", "write": "write_ports", "rmw": "rmw_lanes"}[member.operation]
-                if active_by_resource[(member.bank, member.operation)] >= int(candidate[limit_name]):
-                    reasons[f"bank_{member.operation}_port" if member.operation != "rmw" else "rmw_lane"] += 1
-                    continue
-                locks[member.object_key] = index
-                started_members[index].add(member)
-                transaction_first_start.setdefault(index, tick)
-                active.append(ActiveMicroOp(tick + micro_op_duration(member.operation), member))
-                active_by_resource[(member.bank, member.operation)] += 1
-        active_samples.append(len(active))
-        tick += 1
-    first_start_delays = [transaction_first_start[index] - transaction.arrival_ordinal for index, transaction in enumerate(transactions) if index in transaction_first_start]
-    commit_delays = [transaction_commit_tick[index] - transaction.arrival_ordinal for index, transaction in enumerate(transactions) if index in transaction_commit_tick]
-    if any(index in committed and any(parent not in committed or transaction_commit_tick[parent] > transaction_commit_tick[index] for parent in transaction.predecessors) for index, transaction in enumerate(transactions)):
-        raise AssertionError("a transaction committed before an intrinsic predecessor commit")
-    stale_locks = {object_key: owner for object_key, owner in locks.items() if owner in committed}
-    if stale_locks:
-        raise AssertionError("committed transaction left a same-record lock behind")
-    return {
-        "completed": len(committed), "total": len(transactions),
-        "drained_within_declared_bound": len(committed) == len(transactions),
-        "abstract_cycles_elapsed": tick,
-        "transaction_first_micro_op_delay_abstract_cycles": summarize(first_start_delays),
-        "transaction_commit_delay_abstract_cycles": summarize(commit_delays),
-        "peak_queued_transaction_groups_per_bank": summarize(peak_queue_by_bank),
-        "queue_overflow_groups_observed": max(0, max(peak_queue_by_bank, default=0) - int(candidate["queue_groups_per_bank"])),
-        "active_micro_op_concurrency": summarize(active_samples),
-        "blocking_observation_counts": {name: reasons[name] for name in (
-            "intrinsic_dependency", "same_record_lock", "bank_read_port", "bank_write_port", "rmw_lane", "cross_bank_commit_coordination",
-        )},
-        "execution_boundary": "Micro-ops may interleave only inside immutable A4.7.1 transaction groups. Every member remains externally invisible until the sole existing group commit; FIFO/ownership/oldest release and all dependencies are commit-gated. Abstract cycles/resources are declared model coordinates, not hardware timing or implementation evidence.",
-    }
 
 
 def prior_rows(report: dict[str, Any]) -> dict[tuple[tuple[str, str, int, str], str], dict[str, Any]]:

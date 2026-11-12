@@ -251,14 +251,16 @@ staging/held观察峰值均0。它们是特定重放的高水位，不足以缩�
 不能据此断言“metadata控制几乎零成本”。面积是固定provision，只记一次，
 不能按三个workload相加成三套硬件。
 
-**代码与依赖。** [A4.12 metadata cycle/energy模型](../../tools/simulate_kvzap_route_a4122_metadata_cycle_energy.py)
-复用A4.9.1候选、A4.9.2 micro-op及A4.10队列容量，并以声明的宏访问参数
+**代码与依赖。** [metadata共享模型](../../kvpress/research/metadata.py)包含A4.9候选、
+micro-op、A4.10队列和A4.12服务／能量计算；[A4.12实验入口](../../tools/simulate_kvzap_route_a4122_metadata_cycle_energy.py)
+以声明的宏访问参数
 计算服务与动态能量proxy；[A4.14.0 workload映射](../../tools/analyze_kvzap_route_a4140_workload_aligned_metadata_cost.py)
 将同一组真实软件生命周期转换成固定metadata事务，再调用该模型重放。
 [最终账本入口](../../tools/analyze_kvzap_route_a4141_accounted_net_benefit_ledger.py)
 读取已保存的A4.13.1容量、A4.13.3公平GQA流量、A4.13.5服务成本与A4.14.0
 metadata结果，由 `build_workload_rows` 按workload合并，`energy_budget` 只计算
-已计动态能量的差额。payload和metadata服务坐标没有共同时间模型，不能相加
+已计动态能量的差额。这些纯账本计算在[共享成本模块](../../kvpress/research/cost.py)，
+原入口仍负责读取、校验和输出。payload和metadata服务坐标没有共同时间模型，不能相加
 当作延迟；遗漏预算也不能充当面积预算或完整硬件净收益。
 
 现有A4.14.1四份输入副本可在本地重跑这一级账本；这不等于R5缺失的A4.9.2、

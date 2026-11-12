@@ -2,6 +2,8 @@
 """A4.9.1 declared-candidate metadata-engine replay (no model/RTL)."""
 from __future__ import annotations
 
+from kvpress.research.metadata import LAYOUT, CANDIDATES, candidate_summarize as summarize, candidate_duration as duration, candidate_replay as replay
+
 import argparse
 import hashlib
 import json
@@ -23,14 +25,7 @@ from tools.export_kvzap_predictor_trace import get_git_commit, stable_hash
 
 SCHEMA = "kvzap-route-a491-candidate-metadata-engine-1.0"
 A490_SCHEMA = "kvzap-route-a490-eager-rmw-envelope-1.0"
-LAYOUT = "both_colocated_direct_v1"
 # Every tuple is a declared abstract candidate, not a selected implementation.
-CANDIDATES = (
-    {"name": "ha4_base", "banks": 4, "mapping": "head_affine_v1", "read_ports": 1, "write_ports": 1, "rmw_lanes": 1, "queue_groups_per_bank": 32, "commit_slots": 0},
-    {"name": "ha8_base", "banks": 8, "mapping": "head_affine_v1", "read_ports": 1, "write_ports": 1, "rmw_lanes": 1, "queue_groups_per_bank": 32, "commit_slots": 0},
-    {"name": "ha8_wide", "banks": 8, "mapping": "head_affine_v1", "read_ports": 2, "write_ports": 2, "rmw_lanes": 2, "queue_groups_per_bank": 32, "commit_slots": 0},
-    {"name": "st8_base", "banks": 8, "mapping": "object_identity_striped_v1", "read_ports": 1, "write_ports": 1, "rmw_lanes": 1, "queue_groups_per_bank": 32, "commit_slots": 1},
-)
 
 
 def parse_args() -> argparse.Namespace:
@@ -46,11 +41,6 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def summarize(values: list[int]) -> dict[str, int]:
-    if not values: return {"count": 0, "min": 0, "p50": 0, "p95": 0, "p99": 0, "max": 0, "sum": 0}
-    s = sorted(values); n = len(s)
-    at = lambda q: s[min(n - 1, max(0, int((n - 1) * q)))]
-    return {"count": n, "min": s[0], "p50": at(.50), "p95": at(.95), "p99": at(.99), "max": s[-1], "sum": sum(s)}
 
 
 def validate(args: argparse.Namespace) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
@@ -80,42 +70,8 @@ def entry_sufficiency(a4721: dict[str, Any]) -> dict[str, Any]:
     return {"storage_scope": row["storage_scope"], "namespace_policy": row["namespace_policy"], "generation_bits": row["generation_bits"], "context_count": row["context_count"], "joint_safe_field_widths_bits": widths, "modeled_object_raw_width_bits": raw, "candidate_entry_width_bits": padded, "modeled_object_counts": counts, "joint_safe_raw_metadata_bits": raw_total, "candidate_aligned_metadata_bits": sum(counts[name] * padded[name] for name in counts), "alignment_bits": 64, "physical_entry_boundary": "This word-padded entry accounting is a declared candidate model, not an SRAM macro allocation or measurement."}
 
 
-def duration(tx: Any, candidate: dict[str, Any]) -> int:
-    """Declared atomic group reservation: ports/lane capacity set modeled cycles."""
-    reads = sum(v for (_, op), v in tx.demands.items() if op == "read")
-    writes = sum(v for (_, op), v in tx.demands.items() if op == "write")
-    rmw = sum(v for (_, op), v in tx.demands.items() if op == "rmw")
-    service = max((reads + candidate["read_ports"] - 1) // candidate["read_ports"], (writes + candidate["write_ports"] - 1) // candidate["write_ports"], 2 * ((rmw + candidate["rmw_lanes"] - 1) // candidate["rmw_lanes"]), 1)
-    return service + (1 if len(tx.banks) > 1 else 0)
 
 
-def replay(transactions: list[Any], opportunities: list[tuple[str, int]], candidate: dict[str, Any], drain_limit: int) -> dict[str, Any]:
-    arrivals: dict[int, list[Any]] = defaultdict(list)
-    for tx in transactions: arrivals[tx.arrival_ordinal].append(tx)
-    pending: list[Any] = []; committed: set[int] = set(); active: list[tuple[int, Any]] = []
-    bank_until = [0] * candidate["banks"]; coordinator_until = 0; starts = {}; causes = Counter(); peak = 0; overflow = 0; tick = 0
-    last_arrival = len(opportunities) - 1
-    while tick <= last_arrival or pending or active:
-        if tick > last_arrival + drain_limit: break
-        for tx in arrivals.get(tick, []): pending.append(tx)
-        finished = [item for item in active if item[0] <= tick]
-        active = [item for item in active if item[0] > tick]
-        committed.update(tx.index for _, tx in finished)
-        peak = max(peak, len(pending) + len(active))
-        bank_queued = Counter(b for tx in pending for b in tx.banks)
-        overflow = max(overflow, max(bank_queued.values(), default=0) - candidate["queue_groups_per_bank"])
-        kept = []
-        for tx in pending:
-            if any(p not in committed for p in tx.predecessors): causes["intrinsic_dependency"] += 1; kept.append(tx); continue
-            if any(bank_until[b] > tick for b in tx.banks): causes["bank_or_rmw_reservation"] += 1; kept.append(tx); continue
-            if len(tx.banks) > 1 and candidate["commit_slots"] and coordinator_until > tick: causes["cross_bank_commit"] += 1; kept.append(tx); continue
-            d = duration(tx, candidate); starts[tx.index] = tick
-            for b in tx.banks: bank_until[b] = tick + d
-            if len(tx.banks) > 1 and candidate["commit_slots"]: coordinator_until = tick + d
-            active.append((tick + d, tx))
-        pending = kept; tick += 1
-    delays = [starts[t.index] - t.arrival_ordinal for t in transactions if t.index in starts]
-    return {"completed": len(committed), "total": len(transactions), "drained_within_declared_bound": len(committed) == len(transactions), "abstract_cycles_elapsed": tick, "transaction_start_delay_abstract_cycles": summarize(delays), "peak_inflight_or_queued_transaction_groups": peak, "queue_overflow_groups_observed": overflow, "blocking_observation_counts": dict(causes), "model_boundary": "One logical opportunity introduces arrivals at one abstract cycle. An atomic group reserves all touched modeled banks until its declared read/write/RMW service completes; this is a conservative candidate service model, not an SRAM atomic, calibrated timing, or hardware latency."}
 
 
 def main() -> None:

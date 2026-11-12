@@ -291,11 +291,14 @@ commit exclusion，不能引入未计价的shadow/version selector。下表的�
 
 ## 9. A4.9—A4.10：有限metadata包络、执行粒度与队列合同
 
-**代码与依赖。** [A4.9.1候选模型](../../tools/simulate_kvzap_route_a491_candidate_metadata_engine.py)
-定义布局和服务候选；[A4.9.2记录级模型](../../tools/simulate_kvzap_route_a492_record_granular_engine.py)
-沿用这些候选，将事务拆成 `MicroOp` 并重放记录锁、端口和单一commit；
-[A4.10队列模型](../../tools/simulate_kvzap_route_a410_queue_contract.py)再复用候选和
-micro-op构造，模拟local/shared/staging队列、credit与排空。三者均是轨迹上的
+**代码与依赖。** [pending共享模型](../../kvpress/research/pending.py)保存容量计算和
+私有／共享归属FIFO；相应历史实验入口继续负责读取轨迹和输出结果。
+[metadata共享模型](../../kvpress/research/metadata.py)保存候选、记录级 `MicroOp`、
+锁、端口、commit及有限队列重放。历史入口
+[A4.9.1](../../tools/simulate_kvzap_route_a491_candidate_metadata_engine.py)、
+[A4.9.2](../../tools/simulate_kvzap_route_a492_record_granular_engine.py)和
+[A4.10](../../tools/simulate_kvzap_route_a410_queue_contract.py)保留原有导入名称；
+A4.10模拟local/shared/staging队列、credit与排空。三者均是轨迹上的
 离散模型，模型坐标不等同于实际硬件时钟。
 
 这些文件虽带阶段号，当前仍互相导入：A4.10还被A4.12/A4.14工作负载计价

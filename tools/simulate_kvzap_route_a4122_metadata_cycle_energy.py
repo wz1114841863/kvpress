@@ -2,6 +2,8 @@
 """A4.12.2 declared metadata service/cycle and CACTI-access-energy replay."""
 from __future__ import annotations
 
+from kvpress.research.metadata import BANKS, service_summary as summary, macro_metrics, Active, service_duration as duration, resource_capacities, access_plan, can_use, commit_ready_groups, service_replay as replay
+
 import argparse
 import hashlib
 import json
@@ -28,7 +30,6 @@ A4120_SHA256 = "e5a7ad30b45be7acbda7c2b0b788fdfa4ee74553d6fc93bc9317dce0c4be3534
 A4121_SHA256 = "d5f0f436251cb607b884e3102788caf2e775e398542686ad9ca88b58a96e3f7d"
 A410_SHA256 = "97f9cec11c8ffff95ce8405d303f35ddf76ea2c4078512f0d98d38e6ec0ec9e4"
 A492_SHA256 = "746a03453914294ecd7a48333bebe60d047689626f3ee8e3e4c76def5e00dae8"
-BANKS = 8
 
 
 def parse_args() -> argparse.Namespace:
@@ -45,12 +46,6 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def summary(values: list[int]) -> dict[str, int]:
-    if not values:
-        return {"count": 0, "min": 0, "p50": 0, "p95": 0, "p99": 0, "max": 0, "sum": 0}
-    ordered = sorted(values)
-    def at(q: float) -> int: return ordered[int((len(ordered) - 1) * q)]
-    return {"count": len(ordered), "min": ordered[0], "p50": at(.5), "p95": at(.95), "p99": at(.99), "max": ordered[-1], "sum": sum(ordered)}
 
 
 def required_report(path: Path, schema: str, expected_sha: str, label: str) -> dict[str, Any]:
@@ -62,19 +57,6 @@ def required_report(path: Path, schema: str, expected_sha: str, label: str) -> d
     return report
 
 
-def macro_metrics(a4121: dict[str, Any]) -> dict[str, dict[str, float]]:
-    rows: dict[str, dict[str, float]] = {}
-    for candidate in a4121.get("candidate_rows", []):
-        for macro in candidate.get("macro_rows", []):
-            role = str(macro["role"])
-            metric = macro["per_instance_cacti_proxy"]
-            prior = rows.setdefault(role, metric)
-            if prior != metric:
-                raise ValueError(f"A4.12.1 has inconsistent CACTI proxy metrics for {role}")
-    required = {"persistent_head_control_and_span_owner", "replicated_head_control", "span_owner_primary", "span_owner_sram_backing"}
-    if set(rows) & required != required:
-        raise ValueError("A4.12.1 required macro rows are absent")
-    return rows
 
 
 def validate(args: argparse.Namespace) -> dict[str, Any]:
@@ -107,170 +89,18 @@ def validate(args: argparse.Namespace) -> dict[str, Any]:
     return {"a4120": a4120, "a4121": a4121, "macros": macro_metrics(a4121)}
 
 
-@dataclass(frozen=True)
-class Active:
-    finish: int
-    member: MicroOp
-    resources: tuple[tuple[int, str], ...]
 
 
-def duration(operation: str) -> int:
-    if operation in {"read", "write"}: return 1
-    if operation == "rmw": return 2
-    raise ValueError(f"unknown operation {operation}")
 
 
-def resource_capacities(candidate: str) -> dict[str, int]:
-    if candidate == "M1_banked_sram_pipelined_rmw": return {"unified_1rw": 1}
-    if candidate == "M2_replicated_or_duplicated_control_storage": return {"head_replica_0": 1, "head_replica_1": 1, "span_owner_1rw": 1}
-    if candidate == "M3_register_hot_state_with_sram_backing": return {"head_hot_register": 2, "span_owner_1rw": 1}
-    raise ValueError(candidate)
 
 
-def access_plan(candidate: str, member: MicroOp, busy: Counter[tuple[int, str]]) -> tuple[tuple[tuple[int, str], ...], dict[str, Counter[str]]]:
-    """Fixed candidate mappings.  A returned resource tuple must issue atomically."""
-    bank, klass, op = member.bank, member.object_key[0], member.operation
-    rw = Counter({"read": 1}) if op == "read" else Counter({"write": 1}) if op == "write" else Counter({"read": 1, "write": 1})
-    if candidate == "M1_banked_sram_pipelined_rmw":
-        return ((bank, "unified_1rw"),), {"persistent_head_control_and_span_owner": rw}
-    if candidate == "M2_replicated_or_duplicated_control_storage":
-        if klass == "span_owner": return ((bank, "span_owner_1rw"),), {"span_owner_primary": rw}
-        if klass != "head_control": raise AssertionError("unexpected frozen metadata class")
-        if op == "read":
-            left, right = (bank, "head_replica_0"), (bank, "head_replica_1")
-            selected = left if busy[left] <= busy[right] else right
-            return (selected,), {"replicated_head_control": rw}
-        mirrored = Counter(rw); mirrored["write"] *= 2
-        return ((bank, "head_replica_0"), (bank, "head_replica_1")), {"replicated_head_control": mirrored}
-    if candidate == "M3_register_hot_state_with_sram_backing":
-        if klass == "span_owner": return ((bank, "span_owner_1rw"),), {"span_owner_sram_backing": rw}
-        if klass == "head_control": return ((bank, "head_hot_register"),), {"head_control_register_hot_state_unestimated": rw}
-        raise AssertionError("unexpected frozen metadata class")
-    raise ValueError(candidate)
 
 
-def can_use(resources: tuple[tuple[int, str], ...], busy: Counter[tuple[int, str]], capacities: dict[str, int]) -> bool:
-    return all(busy[item] < capacities[item[1]] for item in resources)
 
 
-def commit_ready_groups(active_groups: set[int], completed: dict[int, set[MicroOp]], members: dict[int, tuple[MicroOp, ...]], transactions: list[Any], committed: set[int]) -> list[int]:
-    """Frozen A4.9.2 publication gate; deliberately no physical commit slot."""
-    return [index for index in sorted(active_groups) if len(completed[index]) == len(members[index]) and all(parent in committed for parent in transactions[index].predecessors)]
 
 
-def replay(transactions: list[Any], opportunities: list[tuple[str, int]], members: dict[int, tuple[MicroOp, ...]], candidate: str, macros: dict[str, dict[str, float]], drain_limit: int) -> dict[str, Any]:
-    capacities = resource_capacities(candidate)
-    arrivals: dict[int, list[int]] = defaultdict(list)
-    for tx in transactions: arrivals[tx.arrival_ordinal].append(tx.index)
-    local, active_groups, committed = set(), set(), set()
-    started: dict[int, set[MicroOp]] = defaultdict(set); completed: dict[int, set[MicroOp]] = defaultdict(set)
-    locks: dict[Any, int] = {}; active: list[Active] = []
-    shared: dict[int, deque[int]] = defaultdict(deque); staging: dict[int, deque[int]] = defaultdict(deque); held: dict[int, deque[int]] = defaultdict(deque)
-    local_count: Counter[int] = Counter(); shared_count: Counter[int] = Counter(); staging_count: Counter[int] = Counter(); held_count: Counter[int] = Counter()
-    layers = sorted({tx.layer for tx in transactions}); first_start: dict[int, int] = {}; commit_tick: dict[int, int] = {}; member_done_tick: dict[int, int] = {}
-    reasons: Counter[str] = Counter(); access_counts: dict[str, Counter[str]] = defaultdict(Counter); committed_per_tick: list[int] = []; issue_per_tick: list[int] = []; occupancy: Counter[tuple[int, str]] = Counter(); local_samples: list[list[int]] = [[] for _ in range(BANKS)]
-    # These are declared transaction-group state samples, not physical FIFO
-    # measurements.  Keep them alongside the existing local samples so a later
-    # workload-aligned replay can report whether the frozen lossless contract
-    # actually used its shared/staging/held tiers without changing arbitration.
-    shared_peaks: Counter[int] = Counter(); staging_peaks: Counter[int] = Counter(); held_peaks: Counter[int] = Counter(); local_peaks: Counter[int] = Counter()
-    def sample_queue_high_water() -> None:
-        for bank in range(BANKS): local_peaks[bank] = max(local_peaks[bank], local_count[bank])
-        for layer in layers:
-            shared_peaks[layer] = max(shared_peaks[layer], shared_count[layer])
-            staging_peaks[layer] = max(staging_peaks[layer], staging_count[layer])
-            held_peaks[layer] = max(held_peaks[layer], held_count[layer])
-    tick = 0; last = len(opportunities) - 1
-    def can_local(index: int) -> bool: return all(local_count[b] < LOCAL_CAPACITY for b in transactions[index].banks)
-    def put_local(index: int) -> None:
-        local.add(index)
-        for b in transactions[index].banks: local_count[b] += 1
-    def remove_local(index: int) -> None:
-        if index in local:
-            local.remove(index)
-            for b in transactions[index].banks: local_count[b] -= 1
-    def deferred(layer: int) -> bool: return bool(shared[layer] or staging[layer] or held[layer])
-    def enqueue(queue: dict[int, deque[int]], count: Counter[int], index: int) -> None: queue[transactions[index].layer].append(index); count[transactions[index].layer] += 1
-    def dequeue(queue: dict[int, deque[int]], count: Counter[int], layer: int) -> int:
-        index = queue[layer].popleft(); count[layer] -= 1; return index
-    def arrive(index: int) -> None:
-        layer = transactions[index].layer
-        if not deferred(layer) and can_local(index): put_local(index)
-        elif shared_count[layer] < SHARED_CAPACITY: enqueue(shared, shared_count, index)
-        elif staging_count[layer] < STAGING_CAPACITY: enqueue(staging, staging_count, index)
-        else: enqueue(held, held_count, index)
-    def advance() -> None:
-        changed = True
-        while changed:
-            changed = False
-            for layer in layers:
-                while staging[layer] and shared_count[layer] < SHARED_CAPACITY: enqueue(shared, shared_count, dequeue(staging, staging_count, layer)); changed = True
-                while held[layer] and staging_count[layer] < STAGING_CAPACITY: enqueue(staging, staging_count, dequeue(held, held_count, layer)); changed = True
-                while shared[layer] and can_local(shared[layer][0]): put_local(dequeue(shared, shared_count, layer)); changed = True
-    while tick <= last or local or active_groups or any(shared.values()) or any(staging.values()) or any(held.values()) or active:
-        if tick > last + drain_limit: break
-        finished = [item for item in active if item.finish <= tick]; active = [item for item in active if item.finish > tick]
-        for item in finished:
-            completed[item.member.transaction_index].add(item.member)
-            if len(completed[item.member.transaction_index]) == len(members[item.member.transaction_index]): member_done_tick[item.member.transaction_index] = tick
-        # The unchanged A4.9.2 HA8-wide candidate has commit_slots=0.  Preserve
-        # its single visibility boundary but do not synthesize a global serial
-        # controller: all groups ready at this coordinate publish together.
-        ready = commit_ready_groups(active_groups, completed, members, transactions, committed)
-        committed_now = 0
-        for index in ready:
-            committed.add(index); active_groups.remove(index); commit_tick[index] = tick
-            for member in members[index]:
-                if locks.get(member.object_key) != index: raise AssertionError("commit without fixed member lock")
-                del locks[member.object_key]
-            committed_now += 1
-        committed_per_tick.append(committed_now)
-        advance()
-        for index in arrivals.get(tick, []): arrive(index)
-        # Sample immediately after the fixed arrival/credit decision and before
-        # work is issued.  This preserves a lossless admission high-watermark
-        # even when ``advance`` can immediately promote a queue member.
-        sample_queue_high_water()
-        advance()
-        busy: Counter[tuple[int, str]] = Counter(resource for item in active for resource in item.resources)
-        issued = 0
-        for index in sorted(local | active_groups):
-            tx = transactions[index]
-            if any(parent not in committed for parent in tx.predecessors): reasons["intrinsic_dependency"] += 1; continue
-            for member in members[index]:
-                if member in started[index]: continue
-                owner = locks.get(member.object_key)
-                if owner is not None and owner != index: reasons["same_record_lock"] += 1; continue
-                resources, energy = access_plan(candidate, member, busy)
-                if not can_use(resources, busy, capacities):
-                    reasons["physical_service_" + resources[0][1]] += 1; continue
-                locks[member.object_key] = index; started[index].add(member); first_start.setdefault(index, tick); active_groups.add(index); remove_local(index)
-                for role, accesses in energy.items(): access_counts[role].update(accesses)
-                active.append(Active(tick + duration(member.operation), member, resources)); busy.update(resources); issued += 1
-        for resource, count in busy.items(): occupancy[resource] += count
-        for bank in range(BANKS): local_samples[bank].append(local_count[bank])
-        sample_queue_high_water()
-        issue_per_tick.append(issued); tick += 1
-    if any(owner in committed for owner in locks.values()): raise AssertionError("committed group retained a lock")
-    if any(i in committed and any(parent not in committed or commit_tick[parent] > commit_tick[i] for parent in transactions[i].predecessors) for i in committed): raise AssertionError("dependency released before commit")
-    estimate: dict[str, Any] = {}; total_pj = 0.0
-    for role, counts in sorted(access_counts.items()):
-        if role not in macros:
-            estimate[role] = {"access_counts": dict(counts), "estimated_dynamic_energy_pj": None, "status": "not_estimated_without_register_library_or_synthesis"}; continue
-        metric = macros[role]; energy = counts["read"] * metric["dynamic_read_energy_pj"] + counts["write"] * metric["dynamic_write_energy_pj"]
-        estimate[role] = {"access_counts": dict(counts), "read_energy_pj": metric["dynamic_read_energy_pj"], "write_energy_pj": metric["dynamic_write_energy_pj"], "estimated_dynamic_energy_pj": energy}; total_pj += energy
-    slots = BANKS * sum(capacities.values())
-    return {"completed":len(committed), "total":len(transactions), "drained_within_declared_bound":len(committed)==len(transactions), "service_model_cycles_elapsed":tick,
-        "single_operation_latency_service_model_cycles":{"read":1,"write":1,"rmw":2,"commit_publish":1},
-        "sustained_issue_rate_micro_ops_per_service_cycle":{"total_micro_ops":sum(issue_per_tick),"average":sum(issue_per_tick)/tick if tick else 0.0,"peak":max(issue_per_tick,default=0)},
-        "bank_service_utilization":{"busy_resource_slot_cycles":sum(occupancy.values()),"available_resource_slot_cycles":slots*tick,"fraction":sum(occupancy.values())/(slots*tick) if tick else 0.0,"per_resource_slot_cycles":{f"bank{b}_{r}":occupancy[(b,r)] for b in range(BANKS) for r in capacities}},
-        "queue_residence_service_model_cycles":{"first_micro_op_delay":summary([first_start[i]-transactions[i].arrival_ordinal for i in first_start]),"commit_delay":summary([commit_tick[i]-transactions[i].arrival_ordinal for i in commit_tick]),"member_done_to_commit_wait":summary([commit_tick[i]-member_done_tick[i] for i in commit_tick])},
-        "semantic_commit_publication_groups_per_service_cycle":{"committed_groups":sum(committed_per_tick),"average":sum(committed_per_tick)/tick if tick else 0.0,"peak":max(committed_per_tick,default=0),"boundary":"Observed frozen semantic publication rate only; A4.12.2 does not infer a physical commit controller or commit-port throughput."},
-        "per_bank_local_occupancy":{str(b):summary(values) for b,values in enumerate(local_samples)},
-        "declared_queue_high_water_transaction_groups":{"local_per_bank":{str(bank):local_peaks[bank] for bank in range(BANKS)},"shared_per_layer":{str(layer):shared_peaks[layer] for layer in layers},"staging_per_layer":{str(layer):staging_peaks[layer] for layer in layers},"held_per_layer":{str(layer):held_peaks[layer] for layer in layers},"boundary":"Post-arrival/pre-service and post-service maxima in the frozen lossless declared replay; not physical FIFO occupancy or provisioned SRAM depth."},
-        "trace_end_residual_backlog":len(local)+len(active_groups)+sum(map(len,shared.values()))+sum(map(len,staging.values()))+sum(map(len,held.values()))+len(active),
-        "blocking_observation_counts":dict(reasons), "macro_access_and_estimated_sram_dynamic_energy":estimate, "estimated_sram_dynamic_energy_pj_excluding_unestimated_registers":total_pj,
-        "boundary":"Service cycles and resource slots are declared A4.12.2 model coordinates, not measured timing, a selected macro port count, throughput, PDK, layout, RTL, or architecture evidence. The sole frozen semantic commit boundary is preserved without inventing a physical global commit controller. CACTI energy is estimated only from counted SRAM accesses and excludes unestimated registers and all controller/payload costs."}
 
 
 def main() -> None:

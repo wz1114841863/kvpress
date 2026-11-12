@@ -8,6 +8,8 @@ state under three ownership organizations.
 """
 from __future__ import annotations
 
+from kvpress.research.pending import consecutive_max, snapshot, organization_summary, zero_breach_budget, meets_target, min_budget_for_target
+
 import argparse
 import json
 import math
@@ -62,14 +64,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def consecutive_max(opportunities: list[int]) -> int:
-    best = run = 0
-    previous: int | None = None
-    for value in opportunities:
-        run = run + 1 if previous == value - 1 else 1
-        best = max(best, run)
-        previous = value
-    return best
 
 
 def lcm_all(values: list[int]) -> int:
@@ -104,147 +98,14 @@ def layer_samples(observed: dict[str, Any]) -> dict[int, list[tuple[int, list[in
     return dict(sorted(result.items()))
 
 
-def snapshot(*, pending: list[int], total_budget: int, organization: str, private_quota: int = 0) -> dict[str, int]:
-    """Pure capacity ownership accounting for one layer/opportunity snapshot."""
-    if total_budget < 0 or private_quota < 0 or not pending or min(pending) < 0:
-        raise ValueError("invalid logical capacity snapshot")
-    head_count = len(pending)
-    total_pending = sum(pending)
-    if organization == "head_local_equal_quota":
-        if total_budget % head_count:
-            raise ValueError("head-local equal quota requires budget divisible by head count")
-        quota = total_budget // head_count
-        overflow_demand = sum(max(0, value - quota) for value in pending)
-        private_reserved = total_budget
-        shared_capacity = 0
-        unused_private = sum(max(0, quota - value) for value in pending)
-    elif organization == "layer_shared":
-        quota = 0
-        overflow_demand = total_pending
-        private_reserved = 0
-        shared_capacity = total_budget
-        unused_private = 0
-    elif organization == "hierarchical_private_plus_shared_overflow":
-        private_reserved = head_count * private_quota
-        if private_reserved > total_budget:
-            raise ValueError("hierarchical private quota exceeds equal total budget")
-        quota = private_quota
-        overflow_demand = sum(max(0, value - quota) for value in pending)
-        shared_capacity = total_budget - private_reserved
-        unused_private = sum(max(0, quota - value) for value in pending)
-    else:
-        raise ValueError(f"unknown organization {organization}")
-    excess = max(0, overflow_demand - shared_capacity)
-    # "Stranded" is deliberately only private capacity inaccessible while this
-    # same snapshot breaches.  Idle capacity without a breach is ordinary slack.
-    stranded = unused_private if excess else 0
-    return {
-        "head_count": head_count,
-        "total_pending": total_pending,
-        "total_budget": total_budget,
-        "private_quota_per_head": quota,
-        "private_reserved": private_reserved,
-        "shared_overflow_capacity": shared_capacity,
-        "overflow_demand": overflow_demand,
-        "peak_excess": excess,
-        "unused_private_reservation": unused_private,
-        "stranded_private_reservation": stranded,
-    }
 
 
-def organization_summary(*, samples: dict[int, list[tuple[int, list[int]]]], total_budget: int, organization: str, private_quota: int = 0, include_per_layer: bool = False) -> dict[str, Any]:
-    """Summarize one organization at a fixed, equal per-layer budget C."""
-    per_layer: list[dict[str, Any]] = []
-    all_breach_opportunities = 0
-    breached_layer_count = 0
-    all_stranded_opportunities = 0
-    total_stranded = 0
-    peak_stranded = 0
-    peak_excess = 0
-    max_duration = 0
-    for layer, rows in sorted(samples.items()):
-        values = [snapshot(pending=pending, total_budget=total_budget, organization=organization, private_quota=private_quota) for _, pending in rows]
-        breaches = [opportunity for (opportunity, _), value in zip(rows, values) if value["peak_excess"] > 0]
-        stranded = [value["stranded_private_reservation"] for value in values if value["peak_excess"] > 0]
-        layer_peak = max(value["peak_excess"] for value in values)
-        peak_excess = max(peak_excess, layer_peak)
-        max_duration = max(max_duration, consecutive_max(breaches))
-        all_breach_opportunities += len(breaches)
-        breached_layer_count += bool(breaches)
-        all_stranded_opportunities += sum(value > 0 for value in stranded)
-        total_stranded += sum(stranded)
-        peak_stranded = max(peak_stranded, max(stranded, default=0))
-        if include_per_layer:
-            per_layer.append({
-                "layer": layer,
-                "breach_opportunity_count": len(breaches),
-                "first_breach_opportunity": breaches[0] if breaches else None,
-                "peak_excess": layer_peak,
-                "max_consecutive_breach_duration": consecutive_max(breaches),
-                "stranded_private_reservation_during_breach_total": sum(stranded),
-                "stranded_private_reservation_peak_during_breach": max(stranded, default=0),
-            })
-    result: dict[str, Any] = {
-        "organization": organization,
-        "total_logical_capacity_budget_per_layer": total_budget,
-        "private_quota_per_head": private_quota,
-        "shared_overflow_capacity_per_layer": total_budget - private_quota * len(next(iter(samples.values()))[0][1]),
-        "breached_layer_count": breached_layer_count,
-        "breach_layer_opportunity_count": all_breach_opportunities,
-        "peak_excess_logical_tokens": peak_excess,
-        "max_consecutive_breach_duration": max_duration,
-        "stranded_private_reservation_during_breach_total": total_stranded,
-        "stranded_private_reservation_peak_during_breach": peak_stranded,
-        "stranded_breach_layer_opportunity_count": all_stranded_opportunities,
-    }
-    if include_per_layer:
-        result["per_layer"] = per_layer
-    return result
 
 
-def zero_breach_budget(*, samples: dict[int, list[tuple[int, list[int]]]], organization: str, private_quota: int = 0) -> int:
-    """Exact Cmin for zero breach under a named fixed ownership arrangement."""
-    head_count = len(next(iter(samples.values()))[0][1])
-    if organization == "head_local_equal_quota":
-        return head_count * max(max(pending) for rows in samples.values() for _, pending in rows)
-    if organization == "layer_shared":
-        return max(sum(pending) for rows in samples.values() for _, pending in rows)
-    if organization == "hierarchical_private_plus_shared_overflow":
-        overflow = max(sum(max(0, value - private_quota) for value in pending) for rows in samples.values() for _, pending in rows)
-        return head_count * private_quota + overflow
-    raise ValueError(f"unknown organization {organization}")
 
 
-def meets_target(summary: dict[str, Any], target: dict[str, int]) -> bool:
-    return summary["peak_excess_logical_tokens"] <= target["maximum_peak_excess_logical_tokens"] and summary["max_consecutive_breach_duration"] <= target["maximum_consecutive_breach_duration"]
 
 
-def min_budget_for_target(*, samples: dict[int, list[tuple[int, list[int]]]], organization: str, target: dict[str, int], private_quota: int = 0) -> int:
-    """Find minimum C for a monotone bounded-breach observer target."""
-    head_count = len(next(iter(samples.values()))[0][1])
-    high = zero_breach_budget(samples=samples, organization=organization, private_quota=private_quota)
-    if organization == "head_local_equal_quota":
-        low_quota, high_quota = 0, high // head_count
-        while low_quota < high_quota:
-            middle = (low_quota + high_quota) // 2
-            result = organization_summary(samples=samples, total_budget=middle * head_count, organization=organization)
-            if meets_target(result, target):
-                high_quota = middle
-            else:
-                low_quota = middle + 1
-        return low_quota * head_count
-    low = head_count * private_quota if organization == "hierarchical_private_plus_shared_overflow" else 0
-    while low < high:
-        middle = (low + high) // 2
-        if organization == "hierarchical_private_plus_shared_overflow" and middle < head_count * private_quota:
-            low = head_count * private_quota
-            continue
-        result = organization_summary(samples=samples, total_budget=middle, organization=organization, private_quota=private_quota)
-        if meets_target(result, target):
-            high = middle
-        else:
-            low = middle + 1
-    return low
 
 
 def a465_horizon(a465_row: dict[str, Any], horizon: int) -> dict[str, Any]:
