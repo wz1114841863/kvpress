@@ -4,6 +4,9 @@ This is a parameterized model, not a model execution or a hardware measurement.
 It only constructs deterministic *simulated serving batches* from independent
 predictor-only requests. Layers are sequential; work may be scheduled only
 within a layer across requests already present in the simulated batch.
+
+Data flow: load A0 per-head rows -> build head/page work -> schedule each
+layer -> aggregate batches and summaries -> write the modeled results.
 """
 
 from __future__ import annotations
@@ -253,21 +256,11 @@ def public_layer_row(row: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in row.items() if not key.startswith("_")}
 
 
-def main() -> None:
-    args = parse_args()
-    if args.output_dir.exists():
-        raise FileExistsError(f"Output directory already exists: {args.output_dir}")
-    for name, values in (("--page-tokens", args.page_tokens), ("--pe-counts", args.pe_counts), ("--batch-sizes", args.batch_sizes)):
-        if not values or len(set(values)) != len(values) or any(value <= 0 for value in values):
-            raise ValueError(f"{name} must contain unique positive integers")
-    if len(set(args.policies)) != len(args.policies) or min(args.head_dispatch_cycles, args.dynamic_dispatch_cycles, args.merge_cycles_per_extra_segment) < 0:
-        raise ValueError("policies must be unique and overhead values must be non-negative")
-    heads, a0_manifest, kv_bytes = load_a0(args.a0_dir)
-    available_pages = {int(row["page_tokens"]) for row in heads}
-    if set(args.page_tokens) - available_pages:
-        raise ValueError(f"Requested page sizes absent from A0: {sorted(set(args.page_tokens) - available_pages)}")
+def simulate_workloads(
+    heads: list[dict[str, str]], kv_bytes: int, args: argparse.Namespace
+) -> tuple[list[str], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Build and schedule A0 workloads, then aggregate the modeled results."""
     source_order = list(dict.fromkeys(row["trace_id"] for row in heads))
-    args.output_dir.mkdir(parents=True)
     layer_rows: list[dict[str, Any]] = []
     batch_rows: list[dict[str, Any]] = []
     for page in args.page_tokens:
@@ -283,9 +276,27 @@ def main() -> None:
                         one_batch = [layer_result(batch_id, batch, page, pe_count, layer, policy, build_head_tasks(page_rows, batch, layer, page, cost), cost, args) for layer in layers]
                         layer_rows.extend(one_batch)
                         batch_rows.append(batch_result(one_batch))
+    return source_order, layer_rows, batch_rows, summarize(batch_rows)
+
+
+def main() -> None:
+    args = parse_args()
+    if args.output_dir.exists():
+        raise FileExistsError(f"Output directory already exists: {args.output_dir}")
+    for name, values in (("--page-tokens", args.page_tokens), ("--pe-counts", args.pe_counts), ("--batch-sizes", args.batch_sizes)):
+        if not values or len(set(values)) != len(values) or any(value <= 0 for value in values):
+            raise ValueError(f"{name} must contain unique positive integers")
+    if len(set(args.policies)) != len(args.policies) or min(args.head_dispatch_cycles, args.dynamic_dispatch_cycles, args.merge_cycles_per_extra_segment) < 0:
+        raise ValueError("policies must be unique and overhead values must be non-negative")
+    heads, a0_manifest, kv_bytes = load_a0(args.a0_dir)
+    available_pages = {int(row["page_tokens"]) for row in heads}
+    if set(args.page_tokens) - available_pages:
+        raise ValueError(f"Requested page sizes absent from A0: {sorted(set(args.page_tokens) - available_pages)}")
+    source_order, layer_rows, batch_rows, summary_rows = simulate_workloads(heads, kv_bytes, args)
+    args.output_dir.mkdir(parents=True)
     write_csv(args.output_dir / "scheduler_layer_results.csv", [public_layer_row(row) for row in layer_rows], LAYER_COLUMNS)
     write_csv(args.output_dir / "scheduler_batch_results.csv", batch_rows, BATCH_COLUMNS)
-    write_csv(args.output_dir / "scheduler_summary.csv", summarize(batch_rows), SUMMARY_COLUMNS)
+    write_csv(args.output_dir / "scheduler_summary.csv", summary_rows, SUMMARY_COLUMNS)
     manifest = {"schema_version": "kvzap-route-a1-scheduler-dse-1.0", "git_commit": get_git_commit(), "a0_dir": str(args.a0_dir), "a0_replay_manifest_sha256": sha256(args.a0_dir / "replay_manifest.json"), "a0_layer_head_sha256": sha256(args.a0_dir / "layer_head_packed_page_replay.csv"), "source_trace_count": len(a0_manifest["source_traces"]), "source_traces": a0_manifest["source_traces"], "batch_construction": {"kind": "sequential-source-order", "source_trace_ids": source_order, "drop_incomplete_batch": args.drop_incomplete_batch, "label": "simulated serving batches; independent predictor-only requests, not native model batches"}, "page_tokens": args.page_tokens, "pe_counts": args.pe_counts, "batch_sizes": args.batch_sizes, "policies": args.policies, "cost_model": {"kv_bytes_per_token": kv_bytes, "bandwidth_bytes_per_cycle": args.bandwidth_bytes_per_cycle, "throughput_ops_per_cycle": args.throughput_ops_per_cycle, "attention_ops_per_kv_token": args.attention_ops_per_kv_token, "metadata_lookup_cycles_per_page": args.metadata_lookup_cycles_per_page, "head_dispatch_cycles": args.head_dispatch_cycles, "dynamic_dispatch_cycles": args.dynamic_dispatch_cycles, "merge_cycles_per_extra_segment": args.merge_cycles_per_extra_segment, "page_cost": "max(KV_bytes / bandwidth, attention_ops / throughput) + page metadata lookup"}, "policy_definitions": {"static_head": "fixed owner = (batch request slot * kv_heads + kv_head) mod PE count", "length_aware_head": "whole-head LPT scheduling; no cross-PE partial-softmax merge", "dynamic_page": "LPT scheduling of a hot segment plus one task per allocated cold page; per-task dispatch and serial merge cost for each extra head segment"}, "notes": ["All cycles and utilization are modeled from declared constants and static A0 replay work; they are not hardware measurements.", "Layers are sequential barriers; only requests already in a simulated batch are jointly schedulable within a layer.", "No conclusion about decode admission, actual HBM traffic, latency, throughput, or accuracy is supported."]}
     (args.output_dir / "scheduler_manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"Simulated {len(batch_rows)} Route-A1 batch/policy/PE/page workloads: {args.output_dir}")

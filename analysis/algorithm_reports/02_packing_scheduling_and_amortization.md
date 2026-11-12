@@ -98,6 +98,21 @@ whole-head dispatch设为0。完成周期包含merge；利用率只按PE工作�
 Dynamic page虽然让PE更忙，却引入更多分发和合并，总周期反而更高。结论是应比较
 包含开销的完成时间，而不是单看利用率，也不能外推某种调度始终最好。
 
+**现有代码入口。** [A1调度脚本](../../tools/simulate_kvzap_route_a1_scheduler.py)
+的 `load_a0` 读取A0逐head CSV和运行说明；`PageCostModel` 根据已声明的带宽、
+计算吞吐和metadata成本计算任务时间；`simulate_workloads` 构造模拟batch并调用
+static、whole-head LPT或dynamic-page调度，最后输出逐layer、逐batch和汇总CSV。
+可用 `python -m tools.simulate_kvzap_route_a1_scheduler --a0-dir A0目录 --output-dir 新目录`
+运行；page、PE和batch的扫描范围及各项开销均由参数指定。
+
+**待修正的公平性统计限制。** 2026-11-12检查发现：whole-head LPT和dynamic-page
+的内部请求完成时间按任务被调度时首次出现的顺序保存，跨层汇总时却按batch顺序
+相加。当请求在不同层的首次调度顺序不同时，`request_local_finish_cycles_*` 及
+相应CV汇总可能将不同请求的时间相加。一个两请求两层的最小例子中，两请求
+各应为10 cycles，却分别汇成18和2。上述makespan、PE利用率、dispatch和merge
+不使用该跨层请求向量，未发现受这一问题影响；但本段不能证明其他指标完全无误。
+本次仅整理代码，保留历史计算行为和结果，不能把受影响指标当作可靠的请求公平性证据。
+
 ## 4. A2：从最终mask走向实际decode生命周期
 
 **目的与计划。** 静态mask不知道一个KV在创建后何时离开hot窗口、何时需要打包、

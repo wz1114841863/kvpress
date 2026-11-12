@@ -7,6 +7,7 @@ from tools.simulate_kvzap_route_a1_scheduler import (
     make_batches,
     schedule_lpt,
     schedule_static,
+    simulate_workloads,
 )
 
 
@@ -50,3 +51,26 @@ def test_sequential_batches_keep_or_explicitly_drop_short_tail():
     ids = ["r0", "r1", "r2", "r3", "r4"]
     assert make_batches(ids, 2, drop_incomplete=False) == [["r0", "r1"], ["r2", "r3"], ["r4"]]
     assert make_batches(ids, 2, drop_incomplete=True) == [["r0", "r1"], ["r2", "r3"]]
+
+
+def test_workloads_keep_short_batch_and_aggregate_dispatch_and_merge():
+    heads = [
+        {"trace_id": name, "layer": "0", "kv_head": "0", "page_tokens": "4",
+         "hot_slots": "2", "cold_page_count": "1"}
+        for name in ("a", "b", "c")
+    ]
+    args = argparse.Namespace(
+        page_tokens=[4], batch_sizes=[2], pe_counts=[2], policies=["dynamic_page"],
+        drop_incomplete_batch=False, bandwidth_bytes_per_cycle=8,
+        throughput_ops_per_cycle=8, attention_ops_per_kv_token=1,
+        metadata_lookup_cycles_per_page=0, head_dispatch_cycles=0,
+        dynamic_dispatch_cycles=2, merge_cycles_per_extra_segment=5,
+    )
+    order, layers, batches, summaries = simulate_workloads(heads, 8, args)
+    assert order == ["a", "b", "c"]
+    assert [row["batch_size_actual"] for row in batches] == [2, 1]
+    assert [row["dispatch_cycles"] for row in batches] == [8, 4]
+    assert [row["merge_serial_cycles"] for row in batches] == [10, 5]
+    assert len(layers) == 2
+    assert summaries[0]["batch_count"] == 2
+    assert summaries[0]["request_count"] == 3
