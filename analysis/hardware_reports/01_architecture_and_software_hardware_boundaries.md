@@ -34,8 +34,7 @@ A4.14.1把三个固定workload的metadata、payload和部分服务成本对应�
 
 ### Gate-A2 与最终复核实际检查了什么
 
-Gate-A2使用[纯软件事务参考](../../kvpress/route_a_architecture_reference.py)和
-[定向测试](../../tests/test_route_a_architecture_reference.py)检查：不完整metadata组不能
+Gate-A2使用[纯软件事务参考](../../kvpress/route_a_architecture_reference.py)及当时的定向测试检查：不完整metadata组不能
 发布，payload写完成不立即转移authority，四个GQA消费者提交前不能释放，stale或
 错代响应不能改变当前对象，ready-low只能延迟而不能改变状态。数学merge按
 `hot→pending→packed`处理；全空source和非正归一化分母均拒绝。这些是事件和数学
