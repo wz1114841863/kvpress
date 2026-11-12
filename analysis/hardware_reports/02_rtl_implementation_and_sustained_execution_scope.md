@@ -57,7 +57,9 @@ pack-read、packed-write、descriptor durable和publication，再读取到S2并�
 是不同事实，source packet/R4 stub只负责协议关联，不生成attention数值。
 
 **结果。** 初次完成复核发现，若干事件只有schema，分段测试也还不是同一实例上的完整
-事务。后续补齐实际握手事件捕获，并在一个测试平台实例中串起：
+事务。中间复核因缺少同一实例的真实owner链而不予通过；后续的同实例witness
+覆盖R3到publication、S2四消费者到terminal、R5 durable reclaim到retire ACK，
+并检查stale关联拒绝和terminal背压不改变状态。之后补齐实际握手事件捕获，串起：
 
 ```text
 RETAIN → pending → pack-read → P3 → packed-write

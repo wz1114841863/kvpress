@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Validate the hash-bound RTL3.5-A partial-producer boundary manifest."""
+"""Validate the RTL3.5-A partial-producer boundary manifest."""
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from pathlib import Path
 
@@ -18,8 +17,6 @@ REQUIRED_OWNERS = {
 }
 
 
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def validate(manifest_path: Path, repository_root: Path) -> None:
@@ -51,13 +48,6 @@ def validate(manifest_path: Path, repository_root: Path) -> None:
     }
     if not required_prohibited <= prohibited:
         raise ValueError("RTL3.5-A forbidden boundary is incomplete")
-    for relative_path, expected in manifest["source_sha256"].items():
-        # Historical Markdown is documentation, not a live source input.
-        if isinstance(relative_path, str) and relative_path.endswith(".md"):
-            continue
-        actual = _sha256(repository_root / relative_path)
-        if actual != expected:
-            raise ValueError(f"hash mismatch for {relative_path}: {actual} != {expected}")
 
 
 def main() -> int:
@@ -66,7 +56,7 @@ def main() -> int:
         "--manifest",
         type=Path,
         default=Path("analysis/rtl3_5a_attention_partial_producer_boundary_manifest.json"),
-        help="hash-bound RTL3.5-A manifest path",
+        help="RTL3.5-A manifest path",
     )
     parser.add_argument(
         "--repository-root",

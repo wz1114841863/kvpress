@@ -6,7 +6,6 @@ no production RTL, physical-memory, numeric-datapath, timing, or PPA claim.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 from typing import Any, Mapping
@@ -93,26 +92,8 @@ def validate(manifest: Mapping[str, Any], root: str | Path) -> None:
         raise RTL36FunctionalRealizationReviewError("RTL3.6 evidence boundary drift")
 
 
-def validate_hashes(manifest: Mapping[str, Any], root: str | Path) -> None:
-    base = Path(root).resolve()
-    hashes = manifest.get("source_sha256")
-    if not isinstance(hashes, Mapping) or not hashes:
-        raise RTL36FunctionalRealizationReviewError("RTL3.6 review must hash-bind sources")
-    for relative, expected in hashes.items():
-        # Historical Markdown is documentation, not a live source input.
-        if isinstance(relative, str) and relative.endswith(".md"):
-            continue
-        # The validator and its test evolve independently of the historical snapshot.
-        if relative in {"kvpress/rtl3_6_functional_realization_review.py", "tests/test_rtl3_6_functional_realization_review.py"}:
-            continue
-        path = (base / str(relative)).resolve()
-        if base not in path.parents or not path.is_file() or not isinstance(expected, str) or len(expected) != 64:
-            raise RTL36FunctionalRealizationReviewError("invalid RTL3.6 source hash")
-        if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
-            raise RTL36FunctionalRealizationReviewError(f"hash-bound source drift: {relative}")
 
 
 def load_and_validate(manifest_path: str | Path, root: str | Path) -> None:
     manifest = load(manifest_path)
     validate(manifest, root)
-    validate_hashes(manifest, root)

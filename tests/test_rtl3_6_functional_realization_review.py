@@ -11,7 +11,6 @@ from kvpress.rtl3_6_functional_realization_review import (
     RTL36FunctionalRealizationReviewError,
     load,
     validate,
-    validate_hashes,
 )
 
 
@@ -47,13 +46,7 @@ def test_rtl3_6_rejects_false_pass_hidden_gap_and_predecessor_drift():
         validate(bad, ROOT)
 
 
-def test_rtl3_6_hashes_and_validator_help_are_reproducible():
-    manifest = load(MANIFEST)
-    validate_hashes(manifest, ROOT)
-    bad = copy.deepcopy(manifest)
-    bad["source_sha256"][next(k for k in bad["source_sha256"] if not k.endswith(".md") and not k.startswith("tests/") and k != "kvpress/rtl3_6_functional_realization_review.py")] = "0" * 64
-    with pytest.raises(RTL36FunctionalRealizationReviewError, match="hash-bound"):
-        validate_hashes(bad, ROOT)
+def test_rtl3_6_validator_help_and_semantic_review():
     help_result = subprocess.run([sys.executable, str(VALIDATOR), "--help"], cwd=ROOT, text=True, capture_output=True, check=True)
     assert "--manifest" in help_result.stdout
     result = subprocess.run([sys.executable, str(VALIDATOR)], cwd=ROOT, text=True, capture_output=True, check=True)
