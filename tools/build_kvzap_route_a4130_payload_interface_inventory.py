@@ -51,7 +51,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--route-a-attention-source",
         type=Path,
-        default=Path("kvpress/route_a_attention.py"),
+        default=Path("kvpress/research/route_a.py"),
         help="Software reference containing Route-A logical source and merge semantics.",
     )
     parser.add_argument("--preflight-only", action="store_true", help="Validate authorities and dimensional contract without creating output.")

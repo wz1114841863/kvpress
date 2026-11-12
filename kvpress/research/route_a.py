@@ -1,0 +1,553 @@
+"""A4.0 functional Route-A packed-attention reference.
+
+This is intentionally a small, policy-on *semantic* reference.  It owns no
+model cache and does not install attention hooks.  A caller supplies K/V and
+the already-decided original KVzap keep mask; the reference preserves that
+mask while moving mature retained tokens through a pending FIFO into sealed,
+append-only packed pages.  It is not an allocator, kernel, or timing model.
+"""
+
+from __future__ import annotations
+
+import heapq
+import hashlib
+import struct
+from collections import deque
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any
+
+import torch
+
+
+class RouteAPolicy(str, Enum):
+    """The caller-visible request-start policy; no implicit length decision."""
+
+    FULL_KV_BYPASS = "full_kv_bypass"
+    ROUTE_A_FAST_PATH = "route_a_fast_path"
+
+
+class RouteALogicalEventRecorder:
+    """Optional ordered Route-A logical-event recorder; deliberately untimed."""
+
+    SCHEMA = "kvzap-route-a424-logical-attention-events-1.0"
+
+    def __init__(self) -> None:
+        self.events: list[dict[str, Any]] = []
+
+    def record_attention(self, *, layer: int, kv_head: int, query_head: int | None, cache_position: int | None, phase: str | None, source_rows: list[dict[str, Any]], packed_page_count: int, packed_full_page_count: int, packed_tail_tokens: int) -> None:
+        if [row["source"] for row in source_rows] != ["hot", "pending", "packed"]:
+            raise AssertionError("logical event source order differs from Route-A contract")
+        if any(row["outcome"] not in {"partial", "skip"} for row in source_rows):
+            raise AssertionError("logical event has an invalid source outcome")
+        self.events.append({
+            "logical_event_sequence": len(self.events),
+            "layer": layer,
+            "kv_head": kv_head,
+            "query_head": query_head,
+            "cache_position": cache_position,
+            "phase": phase,
+            "source_decisions": source_rows,
+            "merge_after_source_decisions": True,
+            "packed_page_count": packed_page_count,
+            "packed_full_page_count": packed_full_page_count,
+            "packed_tail_tokens": packed_tail_tokens,
+        })
+
+    def summary(self) -> dict[str, Any]:
+        source = {name: {"partial_attention_events": 0, "empty_source_skip_events": 0} for name in ("hot", "pending", "packed")}
+        layer_heads: dict[int, set[int]] = {}
+        for expected, event in enumerate(self.events):
+            if event["logical_event_sequence"] != expected or event["merge_after_source_decisions"] is not True:
+                raise AssertionError("logical event ordering or merge marker is invalid")
+            layer_heads.setdefault(int(event["layer"]), set()).add(int(event["kv_head"]))
+            for row in event["source_decisions"]:
+                source[row["source"]]["partial_attention_events" if row["outcome"] == "partial" else "empty_source_skip_events"] += 1
+        return {"event_count": len(self.events), "merge_event_count": len(self.events), "by_source": source, "observed_layer_kv_heads": [{"layer": layer, "kv_heads": sorted(heads)} for layer, heads in sorted(layer_heads.items())], "timestamps_recorded": False}
+
+
+class RouteALifecycleTransitionRecorder:
+    """Optional, scalar-only Route-A lifecycle recorder; deliberately untimed.
+
+    Each event is one call to the reference state's ``append`` method.  It
+    records state before maturity, after maturity, and after this reference
+    call's bounded admission service.  It is not a queue arrival/completion
+    trace or a hardware service-time observation.
+    """
+
+    SCHEMA = "kvzap-route-a432-logical-lifecycle-transitions-1.0"
+
+    def __init__(self) -> None:
+        self.events: list[dict[str, Any]] = []
+        self._last_end_by_layer: dict[int, int] = {}
+
+    def record_append(self, *, layer: int, phase: str | None, start_position: int, input_token_count: int, heads: list[dict[str, int]]) -> None:
+        if input_token_count <= 0 or start_position < 0 or not heads:
+            raise AssertionError("lifecycle transition has invalid append dimensions")
+        if phase not in {"prefill", "multi_token", "decode"}:
+            raise AssertionError("lifecycle transition has invalid phase")
+        end_position = start_position + input_token_count - 1
+        previous = self._last_end_by_layer.get(layer)
+        if previous is not None and start_position != previous + 1:
+            raise AssertionError("lifecycle transition positions are non-contiguous within a layer")
+        for expected_head, row in enumerate(heads):
+            if row.get("kv_head") != expected_head:
+                raise AssertionError("lifecycle transition KV-head order is invalid")
+            required = ("hot_tokens_before", "pending_tokens_before_maturity", "matured_kept_tokens", "matured_dropped_tokens", "pending_tokens_after_maturity", "admitted_tokens", "pending_tokens_after_service", "packed_tokens_before", "packed_tokens_after_service", "packed_page_count_after_service", "packed_full_page_count_after_service", "packed_tail_tokens_after_service")
+            if any(not isinstance(row.get(key), int) or row[key] < 0 for key in required):
+                raise AssertionError("lifecycle transition has invalid scalar state")
+            if row["pending_tokens_after_maturity"] != row["pending_tokens_before_maturity"] + row["matured_kept_tokens"]:
+                raise AssertionError("lifecycle transition maturity conservation failed")
+            if row["pending_tokens_after_service"] != row["pending_tokens_after_maturity"] - row["admitted_tokens"]:
+                raise AssertionError("lifecycle transition service conservation failed")
+            if row["packed_tokens_after_service"] != row["packed_tokens_before"] + row["admitted_tokens"]:
+                raise AssertionError("lifecycle transition packed conservation failed")
+        self.events.append({"logical_transition_sequence": len(self.events), "layer": layer, "phase": phase, "start_position": start_position, "end_position": end_position, "input_token_count": input_token_count, "heads": heads, "admitted_tokens_total": sum(row["admitted_tokens"] for row in heads), "timestamps_recorded": False})
+        self._last_end_by_layer[layer] = end_position
+
+    def summary(self) -> dict[str, Any]:
+        for expected, event in enumerate(self.events):
+            if event["logical_transition_sequence"] != expected or event["timestamps_recorded"] is not False:
+                raise AssertionError("lifecycle transition ordering or timestamp guard is invalid")
+        return {"event_count": len(self.events), "observed_layers": sorted(self._last_end_by_layer), "timestamps_recorded": False, "recording_semantics": "post-append scalar Route-A reference state before maturity, after maturity, and after bounded logical admission service; no queue arrival/completion or timing"}
+
+
+@dataclass
+class _Record:
+    position: int
+    key: torch.Tensor
+    value: torch.Tensor
+    keep: bool = True
+
+
+@dataclass
+class _PackedPages:
+    page_tokens: int
+    keys: list[list[torch.Tensor]] = field(default_factory=list)
+    values: list[list[torch.Tensor]] = field(default_factory=list)
+    positions: list[list[int]] = field(default_factory=list)
+
+    def append(self, record: _Record) -> None:
+        if not self.keys or len(self.keys[-1]) == self.page_tokens:
+            self.keys.append([]); self.values.append([]); self.positions.append([])
+        self.keys[-1].append(record.key.clone())
+        self.values[-1].append(record.value.clone())
+        self.positions[-1].append(record.position)
+
+    def records(self) -> list[_Record]:
+        return [
+            _Record(position, key, value)
+            for page_k, page_v, page_p in zip(self.keys, self.values, self.positions, strict=True)
+            for key, value, position in zip(page_k, page_v, page_p, strict=True)
+        ]
+
+    @property
+    def logical_tokens(self) -> int:
+        return sum(map(len, self.keys))
+
+    @property
+    def page_count(self) -> int:
+        return len(self.keys)
+
+    @property
+    def full_page_count(self) -> int:
+        """Number of immutable full pages; a full append-only page is sealed."""
+        return sum(len(page) == self.page_tokens for page in self.keys)
+
+    @property
+    def tail_tokens(self) -> int:
+        """Occupancy of the sole mutable tail page, or zero when absent/full."""
+        if not self.keys or len(self.keys[-1]) == self.page_tokens:
+            return 0
+        return len(self.keys[-1])
+
+
+def _attention(query: torch.Tensor, records: list[_Record]) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """Return stable partial attention as ``(max_logit, exp_sum, weighted_v)``."""
+    if query.ndim != 1:
+        raise ValueError("query must be [head_dim]")
+    if not records:
+        empty = torch.zeros((), dtype=torch.float32, device=query.device)
+        return torch.tensor(float("-inf"), dtype=torch.float32, device=query.device), empty, torch.zeros_like(query, dtype=torch.float32)
+    keys = torch.stack([item.key for item in records]).to(device=query.device, dtype=torch.float32)
+    values = torch.stack([item.value for item in records]).to(device=query.device, dtype=torch.float32)
+    logits = keys @ query.to(dtype=torch.float32)
+    maximum = logits.max()
+    weights = torch.exp(logits - maximum)
+    return maximum, weights.sum(), (weights[:, None] * values).sum(dim=0)
+
+
+def online_softmax_merge(partials: list[tuple[torch.Tensor, torch.Tensor, torch.Tensor]]) -> torch.Tensor:
+    """Numerically stable merge of independently computed partial attentions."""
+    nonempty = [item for item in partials if float(item[1]) > 0.0]
+    if not nonempty:
+        if not partials:
+            raise ValueError("at least one partial is required")
+        return torch.zeros_like(partials[0][2])
+    maximum = torch.stack([item[0] for item in nonempty]).max()
+    scales = [torch.exp(item[0] - maximum) for item in nonempty]
+    denominator = sum(scale * item[1] for scale, item in zip(scales, nonempty, strict=True))
+    numerator = sum((scale * item[2] for scale, item in zip(scales, nonempty, strict=True)))
+    return numerator / denominator
+
+
+def dense_same_mask_attention(query: torch.Tensor, records: list[_Record]) -> torch.Tensor:
+    """Reference attention over the exact same retained records."""
+    return online_softmax_merge([_attention(query, records)])
+
+
+def policy_attention(
+    policy: RouteAPolicy, query: torch.Tensor, *, state: "RouteAPackedAttentionState | None" = None,
+    head: int = 0, full_kv_records: list[_Record] | None = None,
+) -> torch.Tensor:
+    """Select the explicit bypass or Route-A data path without hidden fallback.
+
+    ``FULL_KV_BYPASS`` neither reads nor evolves Route-A state.  The caller must
+    supply its regular Full-KV records.  ``ROUTE_A_FAST_PATH`` reads only the
+    packed/pending/hot stores exposed by ``state``.
+    """
+    if policy is RouteAPolicy.FULL_KV_BYPASS:
+        if full_kv_records is None:
+            raise ValueError("Full-KV bypass requires explicit full_kv_records")
+        return dense_same_mask_attention(query, full_kv_records)
+    if policy is RouteAPolicy.ROUTE_A_FAST_PATH:
+        if state is None:
+            raise ValueError("Route-A fast path requires Route-A state")
+        return state.attention(query, head=head)
+    raise ValueError(f"unsupported Route-A policy: {policy}")
+
+
+class RouteAPackedAttentionState:
+    """One layer's exact-mask Route-A state for a small functional harness.
+
+    The admission budget is shared across KV heads and drains globally oldest
+    pending positions first.  The caller may use a distinct instance per layer.
+    """
+
+    def __init__(self, *, heads: int, head_dim: int, window: int, page_tokens: int, admission_budget: int, elide_empty_sources: bool = False, logical_event_recorder: RouteALogicalEventRecorder | None = None, lifecycle_transition_recorder: RouteALifecycleTransitionRecorder | None = None, logical_layer: int | None = None) -> None:
+        if min(heads, head_dim, page_tokens, admission_budget) <= 0 or window < 0:
+            raise ValueError("invalid Route-A reference dimensions")
+        self.heads, self.head_dim, self.window = heads, head_dim, window
+        self.admission_budget = admission_budget
+        self.elide_empty_sources = elide_empty_sources
+        if (logical_event_recorder is not None or lifecycle_transition_recorder is not None) and logical_layer is None:
+            raise ValueError("logical recorder requires a layer identifier")
+        self.logical_event_recorder, self.lifecycle_transition_recorder, self.logical_layer = logical_event_recorder, lifecycle_transition_recorder, logical_layer
+        self._empty_source_skip_counts = {name: 0 for name in ("hot", "pending", "packed")}
+        self._hot: list[deque[_Record]] = [deque() for _ in range(heads)]
+        self._pending: list[deque[_Record]] = [deque() for _ in range(heads)]
+        self._pages = [_PackedPages(page_tokens) for _ in range(heads)]
+        self._next_position = 0
+        self._decided_kept: list[list[int]] = [[] for _ in range(heads)]
+        self._decided_dropped: list[list[int]] = [[] for _ in range(heads)]
+        self._mask_digest = hashlib.sha256()
+        self._mask_count = 0
+
+    def _record_mask_decision(self, *, head: int, position: int, keep: bool) -> None:
+        """Hash every original predictor decision, including protected-hot ones."""
+        self._mask_digest.update(struct.pack("<II?", head, position, keep))
+        self._mask_count += 1
+
+    def mask_summary(self) -> dict[str, int | str]:
+        return {"original_mask_sha256": self._mask_digest.hexdigest(), "original_mask_decision_count": self._mask_count}
+
+    @property
+    def next_position(self) -> int:
+        """Exclusive next cache position, exposed for ownership guards."""
+        return self._next_position
+
+    def activate_from_full_kv_history(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor) -> dict[str, Any]:
+        """Materialize Route-A state once from an authoritative Full-KV prefix.
+
+        This is a functional commit operation for deferred admission.  Before
+        it, the caller owns only native Full-KV plus a decision journal; this
+        state has no records.  The operation partitions the historical prefix
+        into hot / mature-kept / mature-dropped, then applies exactly this
+        reference state's bounded admission action once.  It is intentionally
+        not an allocator, DMA, timing, or physical-copy model.
+        """
+        if self._next_position != 0 or any(self.records(head)[name] for head in range(self.heads) for name in ("hot", "pending", "packed")):
+            raise AssertionError("deferred activation requires an empty Route-A state")
+        if keys.ndim != 3 or values.shape != keys.shape or keys.shape[0] != self.heads or keys.shape[2] != self.head_dim:
+            raise ValueError("activation keys and values must be [KV-head, token, head-dim]")
+        if keep_mask.shape != keys.shape[:2] or keep_mask.dtype != torch.bool:
+            raise ValueError("activation keep mask must be bool [KV-head, token]")
+        history_tokens = int(keys.shape[1])
+        mature_end = max(0, history_tokens - self.window)
+        matured_kept = [0 for _ in range(self.heads)]
+        matured_dropped = [0 for _ in range(self.heads)]
+        for position in range(history_tokens):
+            for head in range(self.heads):
+                record = _Record(position, keys[head, position].detach().clone(), values[head, position].detach().clone(), bool(keep_mask[head, position]))
+                self._record_mask_decision(head=head, position=position, keep=record.keep)
+                if position < mature_end:
+                    if record.keep:
+                        self._pending[head].append(record)
+                        self._decided_kept[head].append(position)
+                        matured_kept[head] += 1
+                    else:
+                        self._decided_dropped[head].append(position)
+                        matured_dropped[head] += 1
+                else:
+                    self._hot[head].append(record)
+        self._next_position = history_tokens
+        pending_after_maturity = [len(queue) for queue in self._pending]
+        admitted = self._service_oldest_first()
+        self.assert_conservation()
+        after_service = [self.state_summary(head) for head in range(self.heads)]
+        return {
+            "history_token_count": history_tokens,
+            "matured_position_count": mature_end,
+            "activation_admission_budget": self.admission_budget,
+            "heads": [
+                {
+                    "kv_head": head,
+                    "matured_kept_tokens": matured_kept[head],
+                    "matured_dropped_tokens": matured_dropped[head],
+                    "pending_tokens_after_maturity": pending_after_maturity[head],
+                    "admitted_tokens": admitted[head],
+                    "hot_tokens_after_commit": int(after_service[head]["hot_tokens"]),
+                    "pending_tokens_after_commit": int(after_service[head]["pending_tokens"]),
+                    "packed_tokens_after_commit": int(after_service[head]["packed_tokens"]),
+                    "logical_page_count_after_commit": int(after_service[head]["packed_page_count"]),
+                    "logical_full_page_count_after_commit": int(after_service[head]["packed_full_page_count"]),
+                    "logical_tail_tokens_after_commit": int(after_service[head]["packed_tail_tokens"]),
+                }
+                for head in range(self.heads)
+            ],
+            "recording_semantics": "one logical deferred-admission commit from native Full-KV history; no physical allocation, transfer, timing, or cache-free observation",
+        }
+
+    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int, logical_phase: str | None = None, component_measure=None) -> None:
+        """Append contiguous [KV-head, token, head-dim] K/V under the original mask."""
+        if keys.ndim != 3 or values.shape != keys.shape or keys.shape[:1] != (self.heads,) or keys.shape[2] != self.head_dim:
+            raise ValueError("keys and values must be [KV-head, token, head-dim]")
+        if keep_mask.shape != keys.shape[:2] or keep_mask.dtype != torch.bool:
+            raise ValueError("keep_mask must be bool [KV-head, token]")
+        if start_position != self._next_position:
+            raise AssertionError(f"non-contiguous position: expected {self._next_position}, got {start_position}")
+        before = [self.state_summary(head) for head in range(self.heads)]
+        matured_kept = [0 for _ in range(self.heads)]
+        matured_dropped = [0 for _ in range(self.heads)]
+
+        def mature_to_pending() -> None:
+            for offset in range(keys.shape[1]):
+                position = start_position + offset
+                for head in range(self.heads):
+                    record = _Record(position, keys[head, offset].detach().clone(), values[head, offset].detach().clone(), bool(keep_mask[head, offset]))
+                    self._record_mask_decision(head=head, position=position, keep=record.keep)
+                    self._hot[head].append(record)
+                    if len(self._hot[head]) > self.window:
+                        mature = self._hot[head].popleft()
+                        if mature.keep:
+                            self._pending[head].append(mature)
+                            self._decided_kept[head].append(mature.position)
+                            matured_kept[head] += 1
+                        else:
+                            self._decided_dropped[head].append(mature.position)
+                            matured_dropped[head] += 1
+            self._next_position += keys.shape[1]
+
+        def measure(name, operation):
+            return operation() if component_measure is None else component_measure(name, operation)
+
+        measure("route_a_maturity_pending_staging", mature_to_pending)
+        after_maturity = [self.state_summary(head) for head in range(self.heads)]
+        admitted = measure("route_a_admission_page_append_table", self._service_oldest_first)
+        self.assert_conservation()
+        if self.lifecycle_transition_recorder is not None:
+            after_service = [self.state_summary(head) for head in range(self.heads)]
+            rows = [{
+                "kv_head": head,
+                "hot_tokens_before": int(before[head]["hot_tokens"]),
+                "pending_tokens_before_maturity": int(before[head]["pending_tokens"]),
+                "matured_kept_tokens": matured_kept[head],
+                "matured_dropped_tokens": matured_dropped[head],
+                "pending_tokens_after_maturity": int(after_maturity[head]["pending_tokens"]),
+                "admitted_tokens": admitted[head],
+                "pending_tokens_after_service": int(after_service[head]["pending_tokens"]),
+                "packed_tokens_before": int(before[head]["packed_tokens"]),
+                "packed_tokens_after_service": int(after_service[head]["packed_tokens"]),
+                "packed_page_count_after_service": int(after_service[head]["packed_page_count"]),
+                "packed_full_page_count_after_service": int(after_service[head]["packed_full_page_count"]),
+                "packed_tail_tokens_after_service": int(after_service[head]["packed_tail_tokens"]),
+            } for head in range(self.heads)]
+            self.lifecycle_transition_recorder.record_append(layer=int(self.logical_layer), phase=logical_phase, start_position=start_position, input_token_count=int(keys.shape[1]), heads=rows)
+
+    def _service_oldest_first(self) -> list[int]:
+        queue: list[tuple[int, int]] = [(items[0].position, head) for head, items in enumerate(self._pending) if items]
+        heapq.heapify(queue)
+        admitted = [0 for _ in range(self.heads)]
+        for _ in range(self.admission_budget):
+            if not queue:
+                break
+            _position, head = heapq.heappop(queue)
+            self._pages[head].append(self._pending[head].popleft())
+            admitted[head] += 1
+            if self._pending[head]:
+                heapq.heappush(queue, (self._pending[head][0].position, head))
+        return admitted
+
+    def records(self, head: int) -> dict[str, list[_Record]]:
+        if not 0 <= head < self.heads:
+            raise ValueError("invalid KV head")
+        return {"hot": list(self._hot[head]), "pending": list(self._pending[head]), "packed": self._pages[head].records()}
+
+    def attention(self, query: torch.Tensor, *, head: int, component_measure=None, logical_query_head: int | None = None, logical_cache_position: int | None = None, logical_phase: str | None = None) -> torch.Tensor:
+        sources = self.records(head)
+        def measure(name, operation):
+            return operation() if component_measure is None else component_measure(name, operation)
+        partials, decisions = [], []
+        for name in ("hot", "pending", "packed"):
+            records = sources[name]
+            decisions.append({"source": name, "outcome": "skip" if self.elide_empty_sources and not records else "partial", "record_count": len(records), "first_position": None if not records else records[0].position, "last_position": None if not records else records[-1].position})
+            if self.elide_empty_sources and not sources[name]:
+                self._empty_source_skip_counts[name] += 1
+                measure(f"route_a_empty_source_skip_{name}", lambda: None)
+                continue
+            partials.append(measure(f"route_a_attention_{name}", lambda name=name: _attention(query, sources[name])))
+        if not partials:
+            raise AssertionError("Route-A attention has no source partials")
+        if self.logical_event_recorder is not None:
+            pages = self._pages[head]
+            self.logical_event_recorder.record_attention(layer=int(self.logical_layer), kv_head=head, query_head=logical_query_head, cache_position=logical_cache_position, phase=logical_phase, source_rows=decisions, packed_page_count=pages.page_count, packed_full_page_count=pages.full_page_count, packed_tail_tokens=pages.tail_tokens)
+        return measure("route_a_online_softmax_merge", lambda: online_softmax_merge(partials))
+
+    def empty_source_elision_summary(self) -> dict[str, int | bool]:
+        return {"enabled": self.elide_empty_sources, **{f"{name}_skip_count": count for name, count in self._empty_source_skip_counts.items()}}
+
+    def same_mask_records(self, head: int) -> list[_Record]:
+        sources = self.records(head)
+        return sources["hot"] + sources["pending"] + sources["packed"]
+
+    def state_summary(self, head: int) -> dict[str, int]:
+        sources = self.records(head)
+        pages = self._pages[head]
+        return {
+            "hot_tokens": len(sources["hot"]),
+            "pending_tokens": len(sources["pending"]),
+            "packed_tokens": len(sources["packed"]),
+            "packed_page_count": pages.page_count,
+            "packed_full_page_count": pages.full_page_count,
+            "packed_tail_tokens": pages.tail_tokens,
+        }
+
+    def assert_conservation(self) -> None:
+        for head in range(self.heads):
+            sources = self.records(head)
+            positions = [item.position for name in ("hot", "pending", "packed") for item in sources[name]]
+            if len(positions) != len(set(positions)):
+                raise AssertionError("a retained/hot token appears in more than one Route-A store")
+            if any(record.position >= self._next_position - self.window for record in sources["pending"] + sources["packed"]):
+                raise AssertionError("hot-window token entered pending or packed cold state")
+            decided = set(self._decided_kept[head]) | set(self._decided_dropped[head])
+            matured = set(range(max(0, self._next_position - self.window)))
+            if decided != matured:
+                raise AssertionError("matured positions are not exactly partitioned by the original mask")
+
+
+class DenseSameMaskAttentionState:
+    """Functional dense KVzap state with the same mask and hot-window contract.
+
+    Mature retained entries append directly to one dense cold list per KV head.
+    It deliberately has no Route-A pending FIFO, admission service, or packed
+    pages, so it is an independent same-mask dense control rather than a view
+    of a Route-A state.
+    """
+
+    def __init__(self, *, heads: int, head_dim: int, window: int) -> None:
+        if min(heads, head_dim) <= 0 or window < 0:
+            raise ValueError("invalid same-mask dense reference dimensions")
+        self.heads, self.head_dim, self.window = heads, head_dim, window
+        self._hot: list[deque[_Record]] = [deque() for _ in range(heads)]
+        self._cold: list[list[_Record]] = [[] for _ in range(heads)]
+        self._next_position = 0
+        self._decided_kept: list[list[int]] = [[] for _ in range(heads)]
+        self._decided_dropped: list[list[int]] = [[] for _ in range(heads)]
+        self._mask_digest = hashlib.sha256()
+        self._mask_count = 0
+
+    def _record_mask_decision(self, *, head: int, position: int, keep: bool) -> None:
+        self._mask_digest.update(struct.pack("<II?", head, position, keep))
+        self._mask_count += 1
+
+    def mask_summary(self) -> dict[str, int | str]:
+        return {"original_mask_sha256": self._mask_digest.hexdigest(), "original_mask_decision_count": self._mask_count}
+
+    @property
+    def next_position(self) -> int:
+        """Exclusive next cache position, used by multi-token control gates."""
+        return self._next_position
+
+    def append(self, keys: torch.Tensor, values: torch.Tensor, keep_mask: torch.Tensor, *, start_position: int, component_measure=None) -> None:
+        if keys.ndim != 3 or values.shape != keys.shape or keys.shape[:1] != (self.heads,) or keys.shape[2] != self.head_dim:
+            raise ValueError("keys and values must be [KV-head, token, head-dim]")
+        if keep_mask.shape != keys.shape[:2] or keep_mask.dtype != torch.bool:
+            raise ValueError("keep_mask must be bool [KV-head, token]")
+        if start_position != self._next_position:
+            raise AssertionError(f"non-contiguous position: expected {self._next_position}, got {start_position}")
+        def mature_to_dense_cold() -> None:
+            for offset in range(keys.shape[1]):
+                position = start_position + offset
+                for head in range(self.heads):
+                    record = _Record(position, keys[head, offset].detach().clone(), values[head, offset].detach().clone(), bool(keep_mask[head, offset]))
+                    self._record_mask_decision(head=head, position=position, keep=record.keep)
+                    self._hot[head].append(record)
+                    if len(self._hot[head]) > self.window:
+                        mature = self._hot[head].popleft()
+                        if mature.keep:
+                            self._cold[head].append(mature)
+                            self._decided_kept[head].append(mature.position)
+                        else:
+                            self._decided_dropped[head].append(mature.position)
+            self._next_position += keys.shape[1]
+
+        if component_measure is None:
+            mature_to_dense_cold()
+        else:
+            component_measure("dense_maturity_dense_cold_append", mature_to_dense_cold)
+        self.assert_conservation()
+
+    def records(self, head: int) -> dict[str, list[_Record]]:
+        if not 0 <= head < self.heads:
+            raise ValueError("invalid KV head")
+        return {"hot": list(self._hot[head]), "dense_cold": list(self._cold[head])}
+
+    def same_mask_records(self, head: int) -> list[_Record]:
+        sources = self.records(head)
+        return sources["hot"] + sources["dense_cold"]
+
+    def attention(self, query: torch.Tensor, *, head: int, component_measure=None) -> torch.Tensor:
+        operation = lambda: dense_same_mask_attention(query, self.same_mask_records(head))
+        return operation() if component_measure is None else component_measure("dense_same_mask_attention", operation)
+
+    def state_summary(self, head: int) -> dict[str, int]:
+        sources = self.records(head)
+        return {"hot_tokens": len(sources["hot"]), "dense_cold_tokens": len(sources["dense_cold"])}
+
+    def assert_conservation(self) -> None:
+        for head in range(self.heads):
+            sources = self.records(head)
+            positions = [item.position for name in ("hot", "dense_cold") for item in sources[name]]
+            if len(positions) != len(set(positions)):
+                raise AssertionError("a retained/hot token appears in more than one same-mask dense store")
+            if any(record.position >= self._next_position - self.window for record in sources["dense_cold"]):
+                raise AssertionError("hot-window token entered dense cold state")
+            decided = set(self._decided_kept[head]) | set(self._decided_dropped[head])
+            matured = set(range(max(0, self._next_position - self.window)))
+            if decided != matured:
+                raise AssertionError("matured positions are not exactly partitioned by the original mask")
+
+
+def run_reference(*, seed: int, window: int, page_tokens: int, admission_budget: int) -> dict[str, object]:
+    """Compare Route-A source merging against the same retained records."""
+    torch.manual_seed(seed)
+    state = RouteAPackedAttentionState(heads=1, head_dim=4, window=window, page_tokens=page_tokens, admission_budget=admission_budget)
+    keys, values = torch.randn(1, 6, 4), torch.randn(1, 6, 4)
+    keep = torch.tensor([[True, False, True, True, False, True]])
+    state.append(keys, values, keep, start_position=0)
+    query = torch.randn(4)
+    packed = state.attention(query, head=0)
+    dense = dense_same_mask_attention(query, state.same_mask_records(0))
+    torch.testing.assert_close(packed, dense, rtol=1e-5, atol=1e-6)
+    return {"schema_version": "kvzap-route-a40-packed-attention-reference-1.0", "policy": RouteAPolicy.ROUTE_A_FAST_PATH.value, "state": state.state_summary(0), "same_mask_attention_matches": True, "measurement": "none"}

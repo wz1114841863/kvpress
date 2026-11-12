@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-import torch
-
-from kvpress.route_a_attention import RouteAPackedAttentionState, RouteAPolicy, dense_same_mask_attention
+from kvpress.research.route_a import RouteAPackedAttentionState, RouteAPolicy, dense_same_mask_attention, run_reference
 
 
 def parse_args() -> argparse.Namespace:
@@ -18,18 +16,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def run_reference(*, seed: int, window: int, page_tokens: int, admission_budget: int) -> dict[str, object]:
-    """Compare Route-A source merging against the same retained records."""
-    torch.manual_seed(seed)
-    state = RouteAPackedAttentionState(heads=1, head_dim=4, window=window, page_tokens=page_tokens, admission_budget=admission_budget)
-    keys, values = torch.randn(1, 6, 4), torch.randn(1, 6, 4)
-    keep = torch.tensor([[True, False, True, True, False, True]])
-    state.append(keys, values, keep, start_position=0)
-    query = torch.randn(4)
-    packed = state.attention(query, head=0)
-    dense = dense_same_mask_attention(query, state.same_mask_records(0))
-    torch.testing.assert_close(packed, dense, rtol=1e-5, atol=1e-6)
-    return {"schema_version": "kvzap-route-a40-packed-attention-reference-1.0", "policy": RouteAPolicy.ROUTE_A_FAST_PATH.value, "state": state.state_summary(0), "same_mask_attention_matches": True, "measurement": "none"}
 
 
 def main() -> None:

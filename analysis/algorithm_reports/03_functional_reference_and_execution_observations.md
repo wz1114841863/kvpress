@@ -38,10 +38,12 @@ external-cold存储参考能够执行；但这份Python参考没有展示软件�
 | Same-mask Route-A | 相同mask，按hot/pending/packed取数并合并 | 检查packing后的功能与执行开销 |
 
 **代码关系。** 无模型入口 [run_kvzap_route_a4_reference.py](../../tools/run_kvzap_route_a4_reference.py)
-调用 [route_a_attention.py](../../kvpress/route_a_attention.py)：调用者提供K/V和keep mask，
+调用[共享功能参考](../../kvpress/research/route_a.py)：调用者提供K/V和keep mask，
 `RouteAPackedAttentionState` 管理hot/pending/packed，分源计算后用online-softmax
 合并。该入口的dense计算使用**同一Route-A状态导出的记录**，主要检查分源计算和
 合并，不能独立证明记录没有被遗漏；保留的测试另用原始输入和mask直接构造参考。
+
+原 `kvpress.route_a_attention` 路径继续提供兼容导入。
 
 真实模型入口 [run_kvzap_route_a40_policy_gate.py](../../tools/run_kvzap_route_a40_policy_gate.py)
 通过 [route_a_policy_backend.py](../../kvpress/route_a_policy_backend.py) 将参考状态接入
