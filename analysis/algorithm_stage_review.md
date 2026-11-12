@@ -13,7 +13,9 @@ R2 已整理为[Packing、调度与摊销](algorithm_reports/02_packing_scheduli
 R3 已整理为[功能参考与执行观察](algorithm_reports/03_functional_reference_and_execution_observations.md)，
 涵盖三源语义、cold ownership、数值边界、软件测量和逻辑事件。
 R4 已整理为[跨模型与前端边界](algorithm_reports/04_cross_model_and_frontend_boundaries.md)，
-涵盖Llama、SnapKV、官方DMS与C0—C5，保留各自数值/生命周期边界；尚待整理R5—R6两份。
+涵盖Llama、SnapKV、官方DMS与C0—C5，保留各自数值/生命周期边界。
+R5 已整理为[Pending与metadata资源探索](algorithm_reports/05_pending_and_metadata_resource_exploration.md)，
+提取Q敏感性、容量/管理对照、span与RMW负结果及候选模型；尚待整理R6。
 后续每个专题以一份正文为目标，直接引用已有数据，不默认配套数据包、资料清单或归档方案。
 没有重跑实验、改变旧结论或清理原文件。已阅读纵向计划、阶段归档、主要合同、
 冻结结果及选定原始 JSON；未逐一重新验收所有运行。下文区分可直接引用的结果与
@@ -174,8 +176,8 @@ SnapKV布局和DMS重放结果，以比较矩阵收口适用范围；不同模�
 
 ### R5：激活、pending 与 metadata 资源探索
 
-这部分细分最多，建议按下面六个研究问题合并，而非逐个 A4.x 写正文。
-“已有进展”是现有记录的综合，最终报告需从对应结果提取关键曲线和比较数值。
+这部分细分最多，R5已按六个研究问题合并为一份正文；下表保留研究内容导航，
+关键数据与结论边界见正文，不再逐个A4.x另写总结。
 
 | 研究问题 | 当时的计划/比较 | 已有进展及应保留的分析 | 如何推进下一步 |
 |---|---|---|---|
@@ -194,8 +196,9 @@ reference-model PASS 数量作为经济可行性的证据。
 **核心来源。** [纵向计划 A4.3—A4.10](route_a_research_plan.md)，以及来源索引列出的
 对应报告目录。已直接抽查 A4.7.2.1、A4.8.2b、A4.9.0/4.9.1 JSON；其中 A4.9.1
 声明的 53,696 bit aligned metadata 是该 candidate model 的 accounting，不能套用到
-后来 RTL compact 表。最终 R5 仍需提取 pooling 容量恢复、管理工作、backlog/drain
-及 granularity/credit 对照的核心表格；本轮不补造缺失数值或把历史计划当实验结果。
+后来 RTL compact 表。R5已提取pooling容量恢复、管理工作、backlog/drain、RMW
+拆分及whole-bank候选核心表格。A4.9.2/A4.10独立原始汇总本地缺失，执行原则
+及下游继承配置单独注明，不补造granularity/credit收益数字；原始资料尚不能清理。
 
 ### R6：前 RTL 成本账本与架构入口判断
 
@@ -252,7 +255,7 @@ workload 行，保留 common/fixed/activity/unestimated 成本表，而不是罗
 [来源索引 CSV](algorithm_stage_source_index.csv)，使细阶段不会在压缩叙事时消失。
 索引记录原文标题/行号和应归报告；它不是实验通过清单、去重结果或删除依据。
 
-尚待完成：将R5—R6两个专题的关键原始表/曲线提炼成自足报告，特别是
-R5 的组织/服务对照。旧论文范围和硬件实现问题另留在项目总览中，避免反复塞入
+尚待完成：将R6的关键原始表提炼成自足报告；R5另保留A4.9.2/A4.10独立原始
+汇总的资料缺口。旧论文范围和硬件实现问题另留在项目总览中，避免反复塞入
 算法阶段正文。建议整编顺序 R1→R2→R3→R4→R5→R6，完成一份就用它承接对应旧
 阅读入口，不再新增同主题的每日总结；各份完成后再评估相应中间材料的可清理性。
