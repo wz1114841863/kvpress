@@ -32,6 +32,21 @@ A4.14.1把三个固定workload的metadata、payload和部分服务成本对应�
 这里每一步的“完成”含义不同：接口定义完整，不等于电路已经正确；电路功能通过，
 也不等于面积、服务能力和时序已经合适。
 
+### Gate-A2 与最终复核实际检查了什么
+
+Gate-A2使用[纯软件事务参考](../../kvpress/route_a_architecture_reference.py)和
+[定向测试](../../tests/test_route_a_architecture_reference.py)检查：不完整metadata组不能
+发布，payload写完成不立即转移authority，四个GQA消费者提交前不能释放，stale或
+错代响应不能改变当前对象，ready-low只能延迟而不能改变状态。数学merge按
+`hot→pending→packed`处理；全空source和非正归一化分母均拒绝。这些是事件和数学
+参考，不包含实际时钟、HBM控制器或有限精度硬件实现。
+
+Reviewer-01确认语义及有限anchor后仍保留整体Gate-A未通过；Reviewer-02随后对
+唯一owner、publication、fault、reset/复用与全局drain完成交叉复核，才允许定义
+独立RTL入口。相关纯软件回归是功能合同证据：A2历史回归记录59项通过，R1命令
+经纠正为73项通过（早先76项是错误计数），Reviewer-02的另一组8套参考测试记录
+76项通过。它们是不同且有重叠的测试集合，不应相加或当作硬件正确性证明。
+
 ## 2. 方案起点：保存原mask，以一次整理服务后续多次读取
 
 Route-A没有把KVzap mask改成规则block，而是沿用原始选择结果：
@@ -205,7 +220,7 @@ Full-KV控制分母和Route-A实现成本影响，既不能直接当完整系统
 [架构规格](../architecture_spec.md)、
 [pending路径选择](../architecture_gate_a1_pending_delivery_realization_closure.md)、
 [有限anchor](../architecture_gate_a3_plan.md)、
-[Gate-A结论](../architecture_gate_a_reviewer_02.md)、
+Gate-A结论见本文第6节、
 [RTL层次与owner](../rtl_entry_hierarchy_owner_contract.md)、
 [Gate-RTL0结论](../rtl_entry_interface_manifest.json)。
 硬件各职责原定义为[R1](../architecture_gate_a_r1_core_memory_wrapper_contract.md)、

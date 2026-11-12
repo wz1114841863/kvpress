@@ -9,7 +9,7 @@ and Reviewer-02 closed the R1--R6 cross-contract review. Gate-RTL0 then
 authorized staged control-first RTL only under its separate hierarchy,
 interface, assertion, and oracle contracts. The live implementation status is
 [`analysis/route_a_current_handoff.md`](route_a_current_handoff.md) and the
-detailed activation ledger is [`analysis/rtl2_phase_contract.md`](rtl2_phase_contract.md).
+implementation and sustained-execution scope is [H2](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md).
 Neither this specification nor those functional closures authorize PDK/PPA,
 physical SRAM macros, a native HBM controller, numeric microarchitecture, or
 measured performance claims.
@@ -24,45 +24,20 @@ FIFO, ownership, credit, or atomic-commit semantics.
 use.  **Unestimated** denotes a module that carries no area, energy, cycle,
 bandwidth, latency, or PPA conclusion in this document.
 
-The Gate-A0 local provenance declaration for this document is
-`analysis/architecture_gate_a0_provenance_freeze.md`.  It records the accepted
-input identities, the functional reference source-order lock, and any pending
-byte-level report verification without promoting a missing artifact to a pass.
+The architecture research sequence and outcomes are consolidated in
+[H1](hardware_reports/01_architecture_and_software_hardware_boundaries.md).
+Gate-A1 selected `direct_pending_endpoint_v1`; Gate-A2 checked event semantics
+with `kvpress/route_a_architecture_reference.py`; Gate-A3 defined the bounded
+Qwen3-8B anchor and its separate small verification profile. Reviewer-02
+accepted the R1–R6 cross-contract review for architecture-spec closure only;
+RTL entry remained a separate gate. These records do not establish physical
+macro/controller, timing, PPA or measured performance.
 
-Gate-A1 closes `pending_delivery_realization` as
-`direct_pending_endpoint_v1`; its architecture-choice rationale and finite
-interface are recorded in
-`analysis/architecture_gate_a1_pending_delivery_realization_closure.md`.
-This closure is not retroactive evidence that A4 selected a physical endpoint.
-Its revision-specific byte bindings are frozen in
-`analysis/architecture_gate_a1_provenance_freeze.md`.
-
-Gate-A2 makes the selected ownership, request, S2, and publication assertions
-executable in the pure-software reference described by
-`analysis/architecture_gate_a2_executable_contract.md`.  It is a
-scoreboard/golden-reference seed, not RTL or timing evidence.
-Its revision-specific byte bindings are frozen in
-`analysis/architecture_gate_a2_provenance_freeze.md`.
-
-Gate-A3 completes finite RTL-boundary parameter closure in
-`analysis/architecture_gate_a3_plan.md`.  Its selected
-`rtl_entry_qwen3_8b_32k_s1_v1` profile is an engineering anchor
-instantiation, not an architecture definition; the profile validator and
-provenance freeze remain pure-software evidence.  A3 does not pass Gate A and
-cannot convert deployment-profile assumptions into performance, PPA, or
-portability claims.
-
-Reviewer 01 established semantic/finite-anchor readiness; Reviewer 02 then
-completed the R1–R6 cross-closure review in
-`analysis/architecture_gate_a_reviewer_02.md`. Gate A therefore passes only as
-an architecture-contract freeze: it permits definition of a separately scoped
-RTL interface/assertion gate, not RTL implementation evidence, PPA, controller
-selection, or a new A4 DSE. The reviewed state is byte-bound by
-`analysis/architecture_gate_a_reviewer_02_provenance_freeze.md`.
-
-For current navigation, read this document together with `analysis/README.md`.
-The individual A0--A3, R1--R6, and reviewer records remain retained historical
-closure/provenance evidence rather than parallel living specifications.
+The six detailed R1–R6 contracts, the Gate-A1 choice, Gate-A3 plan and profile
+JSON inputs remain available for technical reference. Superseded review and
+provenance notes can be read from Git revision `636c19b`; they are not required
+as live inputs. This navigation update does not change the interface rules
+specified below.
 
 ## 2. Provenance and evidence boundary
 
@@ -152,9 +127,7 @@ dependency contract are frozen.
 R6 freezes the generic frontend adapter and binds this dependency graph to the
 R1--R5 wrappers. Its finite Qwen-anchor port fields, common/incremental owner
 split, reset/init prerequisites, and runtime-retirement drain acknowledgements
-are in `analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md`; the
-revision-specific binding is
-`analysis/architecture_gate_a_r6_provenance_freeze.md`. The resulting graph is
+are in `analysis/architecture_gate_a_r6_top_level_lifecycle_contract.md`. The resulting graph is
 still pre-RTL: it does not select a controller, FSM encoding, service rate,
 physical port, or overlap schedule.
 
@@ -225,9 +198,7 @@ ones` means no successor.  A stale reference must not designate a reallocated
 live page: the selected R5 rule is the 8-bit PageRef generation plus A3's
 complete quiescence predicate before wrap.  The full placement, descriptor-line
 map, retirement, reset, and maintenance interface are in
-`analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md`; the
-revision-specific R5 binding is
-`analysis/architecture_gate_a_r5_provenance_freeze.md`.
+`analysis/architecture_gate_a_r5_page_manager_descriptor_contract.md`.
 
 ## 7. Admission, P3, and page manager
 
@@ -315,8 +286,6 @@ existing lifecycle pending-to-packed handoff, and releases the P3 stage as one
 event-level linearization boundary.  The exact interface/reset/fault contract
 is in `analysis/architecture_gate_a_r3_m2_p3_wrapper_contract.md`; it leaves
 P3 macro organization, physical ports, dynamic energy, and timing unestimated.
-The revision-specific R3 binding is
-`analysis/architecture_gate_a_r3_provenance_freeze.md`.
 
 ### Gate-A R5 page-manager and descriptor wrapper
 
@@ -454,8 +423,7 @@ an adapter epoch that is not a core-side data wire.  Reset invalidates
 local/session/descriptor ownership; it does not claim to erase HBM data.
 
 The complete R1 contract and executable reference binding are in
-`analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md`, with the
-revision-specific snapshot in `analysis/architecture_gate_a_r1_provenance_freeze.md`.
+`analysis/architecture_gate_a_r1_core_memory_wrapper_contract.md`.
 R1 does not select a controller implementation, HBM timing, a physical clock
 crossing, retry/timeout policy, or sustained issue rate.
 
@@ -480,9 +448,7 @@ claim. Descriptor maintenance is a separate FIFO-ordered one-fragment write
 channel through the same R1 boundary, not a descriptor-read class or a second
 HBM port. R2 cannot reorder a frozen FIFO predecessor, alter a mask/admission
 disposition, drop work, or substitute Full-KV.  Its complete contract and
-reference are in `analysis/architecture_gate_a_r2_arbitration_dependency_contract.md`,
-with the revision-specific snapshot in
-`analysis/architecture_gate_a_r2_provenance_freeze.md`.
+reference are in `analysis/architecture_gate_a_r2_arbitration_dependency_contract.md`.
 
 `destination_endpoint` is either an S2 slot or the Gate-A1 direct pending
 endpoint.  A packed-page read targets S2; a pending-HBM read targets only the
@@ -631,9 +597,7 @@ underflow to `+0` remains an ordinary term.  `m` must match A2 bitwise and
 `l`/`o` must meet the declared `abs(delta) <= 1e-5 + 1e-4 * abs(A2)` relation.
 The exp implementation and internal precision remain unselected.  The complete
 contract and executable reference are in
-`analysis/architecture_gate_a_r4_numeric_merge_contract.md`; the
-revision-specific binding is
-`analysis/architecture_gate_a_r4_provenance_freeze.md`.
+`analysis/architecture_gate_a_r4_numeric_merge_contract.md`.
 
 For RTL3 functional realization, each 4,096-bit normalized result is one
 query-head consumer result, never an implicit group-packed value.  `consumer_id`

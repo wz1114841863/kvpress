@@ -6,10 +6,8 @@
 anchor is `rtl_entry_qwen3_8b_32k_s1_v1`; it is not a Gate-A pass and does not
 authorize RTL implementation.
 
-The pre-selection plan snapshot remains byte-bound by
-`analysis/architecture_gate_a3_plan_provenance.md`.  This refinement is
-separately byte-bound by
-`analysis/architecture_gate_a3_refinement_provenance_freeze.md`.
+The earlier plan and refinement review records are available in historical
+Git revision `636c19b`; the current finite profile inputs are linked below.
 
 Gate-A3 follows the completed Gate-A2 pure-software semantic harness.  Its
 purpose is to replace the remaining unbounded identities, address spaces, and
