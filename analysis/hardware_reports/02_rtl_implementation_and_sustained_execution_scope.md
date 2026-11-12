@@ -102,7 +102,10 @@ R3成员/发布事实、R5 descriptor及S2 lease；sidecar通过typed read送达
 pending binding生成pack-read，随后走durable write、publication与逐成员R6转权。
 
 同时建立功能memory、Python partial和R4参考，分别处理“内存保存什么”“给定Q/K/V
-怎样得到partial”“partial怎样合并”。这些参考模型与Chisel中的协议检查分开。
+怎样得到partial”“partial怎样合并”。这些参考模型与Chisel中的协议检查分开。 功能memory
+作为测试环境保存和返回事务数据，并观察request、fragment和write-commit事件；
+早期packed-read组合仍显式依赖sidecar边界。RTL3.6阶段因没有同次live partial→R4→R6
+闭合、完整sidecar与reset组合而保留no-PASS，后续见证逐步缩小缺口。
 
 **结果。** 早期复核没有因为分段通过就宣告端到端完成，继续补上数据对象连续性、
 sidecar、生产owner连接、完成顺序和drain。RTL3.7的testbench witness检查association
