@@ -51,7 +51,9 @@ partial等入口仍有inactive部分。R4会校验包并接受匹配结果，不
 
 **目的与方案。** 将保留决定变成不可变的成员组，经过页分配、P3 claim、pending
 pack-read、packed-write、descriptor durable和publication，再读取到S2并完成消费。
-同时引入delivery context registry和typed router，让读片段与写终结返回各自真实owner。
+同时引入delivery context registry和typed router，让读片段与写终结返回各自真实owner。 Registry保存
+transaction、reset epoch、目标类型及generation等关联，router区分read fragment、packed-write
+terminal和descriptor-maintenance terminal；错误身份或类型不能靠猜测恢复。
 早期一次仅处理一个最多64成员的admission组；group字段由生产者提供并保持一致，
 不能将一次组关联或成员响应误当成最终publication。R3写完成与R5 descriptor durable
 是不同事实，source packet/R4 stub只负责协议关联，不生成attention数值。
@@ -103,21 +105,29 @@ R3成员/发布事实、R5 descriptor及S2 lease；sidecar通过typed read送达
 pending binding生成pack-read，随后走durable write、publication与逐成员R6转权。
 
 同时建立功能memory、Python partial和R4参考，分别处理“内存保存什么”“给定Q/K/V
-怎样得到partial”“partial怎样合并”。这些参考模型与Chisel中的协议检查分开。 功能memory
+怎样得到partial”“partial怎样合并”。这些参考模型与Chisel中的协议检查分开。
+
+功能memory
 作为测试环境保存和返回事务数据，并观察request、fragment和write-commit事件；
 早期packed-read组合仍显式依赖sidecar边界。后来的testbench shared-store witness
 要求C2读取的是R3成功写入的同一8-fragment payload对象，而不是独立注入的副本；
-这仍是功能环境的对象关联，并未选择真实物理地址或内存控制器。 C1从已接受分配关联
+这仍是功能环境的对象关联，并未选择真实物理地址或内存控制器。
+
+C1从已接受分配关联
 获取sidecar fixture，未知handle、数量或stale身份不允许通过；C2把这条fixture路径与
 packed读组成testbench，要求payload和sidecar都完成后S2才READY，并检查reset后旧响应
-抑制。两个R1端口属于测试组合边界，不代表生产系统选了两个物理内存接口。RTL3.6阶段因没有同次live partial→R4→R6
+抑制。两个R1端口属于测试组合边界，不代表生产系统选了两个物理内存接口。
+
+RTL3.6阶段因没有同次live partial→R4→R6
 闭合、完整sidecar与reset组合而保留no-PASS，后续见证逐步缩小缺口。
 
 **结果。** 早期复核没有因为分段通过就宣告端到端完成，继续补上数据对象连续性、
 sidecar、生产owner连接、完成顺序和drain。RTL3.7的testbench witness检查association
 release后才能retire，以及stale response、fault、有限背压和reset；之后的cross-owner
 复核仍因真实来源替换未完成而保留no-PASS。RTL3.8.5覆盖七种非空source组合及每来源
-四消费者的协议路径；它使用命名外部包和测试观察器，不是七种完整数值attention测试。 对应的事件schema和coverage记录继续用于语义检查；
+四消费者的协议路径；当时记录9项Chisel定向测试和31项Python检查通过（两类检查
+中包含结构或参考测试），它使用命名外部包和测试观察器，不是七种完整数值attention测试。
+对应的事件schema和coverage记录继续用于语义检查；
 历史源码哈希回放只反映当时快照，不构成当前功能或数值正确性的证明。
 
 RTL3.9 C0—C3b进一步让真实R3全部成员被R6接受后，才建立首次packed读；随后实际
@@ -127,10 +137,14 @@ payload/sidecar到达S2、四消费者完成、R6终结，最后完成retire/rec
 
 **分析。** 这里的“numeric fault”证明错误能够正确终结，“四消费者commit”证明协议
 消费与释放顺序正确；它们不等于实际QK/softmax/AV数学结果已经被验证。功能memory、
-partial provider和R4 reference仍是外部环境，完整LLM推理也没有接入该验收。 Python功能参考
+partial provider和R4 reference仍是外部环境，完整LLM推理也没有接入该验收。
+
+Python功能参考
 分别检查packed-read的transaction/page/generation和S2 lease关联，以及partial provider、
 R4 provider的source/consumer身份、有效输出和错误路径；这些软件模型测试不等于RTL
-中已实现对应数值运算。 参考profile
+中已实现对应数值运算。
+
+参考profile
 按hot→pending→packed规范顺序处理source，归一化结果为128个FP32 lane、4096 bit；
 Qwen anchor中query head按`4×kv_head+consumer_id`关联，query和key的RoPE由前端
 与KV创建侧负责。它们是该参考配置的接口边界，不等于实际数值硬件已经实现。
@@ -313,7 +327,7 @@ journal及pending descriptor要覆盖仍合法的查询、withdrawal和服务。
 ## 9. 原始定义与结果入口
 
 实现库存可核查[RTL入口接口清单](../rtl_entry_interface_manifest.json)、[RTL2/3推进](../rtl2_0_activation_manifest.json)、
-[七种source协议覆盖](../rtl3_8_5_full_path_closure_coverage_manifest.json)、
+[七种source协议测试源码](../../hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL385FullPathClosureSpec.scala)、
 [C4-D首次使用结论](../rtl3_9_c4_d_functional_completion_review_manifest.json)、
 [MR-1B单记录路径](../mr1b_direct_pending_cross_owner_contract_proposal.md)、
 [MR-2边界](../measurement_dut_cut_freeze_20261025.json)与[测量DUT范围](../measurement_dut_cut_freeze_20261025.md)。
