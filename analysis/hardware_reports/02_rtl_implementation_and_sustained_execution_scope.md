@@ -104,7 +104,9 @@ pending binding生成pack-read，随后走durable write、publication与逐成�
 同时建立功能memory、Python partial和R4参考，分别处理“内存保存什么”“给定Q/K/V
 怎样得到partial”“partial怎样合并”。这些参考模型与Chisel中的协议检查分开。 功能memory
 作为测试环境保存和返回事务数据，并观察request、fragment和write-commit事件；
-早期packed-read组合仍显式依赖sidecar边界。RTL3.6阶段因没有同次live partial→R4→R6
+早期packed-read组合仍显式依赖sidecar边界。后来的testbench shared-store witness
+要求C2读取的是R3成功写入的同一8-fragment payload对象，而不是独立注入的副本；
+这仍是功能环境的对象关联，并未选择真实物理地址或内存控制器。RTL3.6阶段因没有同次live partial→R4→R6
 闭合、完整sidecar与reset组合而保留no-PASS，后续见证逐步缩小缺口。
 
 **结果。** 早期复核没有因为分段通过就宣告端到端完成，继续补上数据对象连续性、
@@ -121,7 +123,10 @@ payload/sidecar到达S2、四消费者完成、R6终结，最后完成retire/rec
 
 **分析。** 这里的“numeric fault”证明错误能够正确终结，“四消费者commit”证明协议
 消费与释放顺序正确；它们不等于实际QK/softmax/AV数学结果已经被验证。功能memory、
-partial provider和R4 reference仍是外部环境，完整LLM推理也没有接入该验收。
+partial provider和R4 reference仍是外部环境，完整LLM推理也没有接入该验收。 参考profile
+按hot→pending→packed规范顺序处理source，归一化结果为128个FP32 lane、4096 bit；
+Qwen anchor中query head按`4×kv_head+consumer_id`关联，query和key的RoPE由前端
+与KV创建侧负责。它们是该参考配置的接口边界，不等于实际数值硬件已经实现。
 
 更细的推进顺序是：先让packed activation关联真实R6计划、R3成员与R5/S2事实，
 再替换sidecar验证注入，接着限定P3/direct ingress及partial provider边界，最后接入
