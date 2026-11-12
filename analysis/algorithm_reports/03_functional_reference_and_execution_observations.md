@@ -328,7 +328,6 @@ metadata的容量、归属与服务（R5），最后做同口径成本账本（R
 本报告仅保留一份正文。未来复核或绘图使用原目录中的功能manifest、mask replay
 NPZ、`a41_raw_repetitions.jsonl`、测量summary、独立profiler、ordered JSONL及
 fan-in/dispatch及背压敏感性结果；不要只保留本报告的P50或调用均值。
-复核A4.2可直接使用正文各JSON及[接口需求分析](../../tools/analyze_kvzap_route_a429_matched_interface_demand.py)、
-[分区敏感性分析](../../tools/analyze_kvzap_route_a4211_partitioned_backpressure_sensitivity.py)；
-程序的输入/轴定义与结果里的config配对，不能用新假设覆盖旧结果。
+复核A4.2可直接使用正文各JSON；历史接口需求和分区敏感性分析脚本可从Git恢复。
+输入/轴定义与结果里的config配对，不能用新假设覆盖旧结果。
 上述研究解释已在本文给出，不再需要旧测量计划或纵向交接补充；原始资料保留原位。

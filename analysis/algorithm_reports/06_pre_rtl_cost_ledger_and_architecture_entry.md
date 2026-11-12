@@ -75,8 +75,8 @@ credit、micro-op完成和physical commit仍由模型声明，未由软件测得
 pending水位不是bank FIFO/shared队列占用；ready group、micro-op done、单一
 commit/ownership publish、bank端口、RMW lane和跨bank协调都没有直接的软件
 对应事件。因此从软件到模型是带明确未映射项的转换，不能反推真实服务时序。
-复核入口：[scalar映射验证器](../../tools/validate_kvzap_route_a4112_control_event_mapping.py)、
-[external绑定验证器](../../tools/validate_kvzap_route_a4112b_external_storage_binding.py)。
+复核入口：[external绑定验证器](../../tools/validate_kvzap_route_a4112b_external_storage_binding.py)；
+历史scalar映射验证脚本可从Git恢复。
 
 **分析。** 这一步补上了“算的是哪条路径”的连接。它不等于硬件已经实现完整
 生命周期，也不能把转换出来的事务组称为真实总线请求或SRAM访问。
@@ -195,7 +195,7 @@ A4.13.4固定`FILL → READY → 四消费者及partial更新 → RELEASE`：四
 完成之前不能回收buffer。每个活动GQA组仍需四份独立partial，按FP32接口为
 `4×(128+2)×4 = 2,080 B`；它只是接口大小，没有选RF/SRAM或实现merge算术。
 这不是可免费实现的共享：source有效性、四消费者完成、partial状态与回收条件
-都需要真实存储/控制。来源：[source/partial模型实现](../../tools/analyze_kvzap_route_a4134_page_source_reuse_interface.py)。
+都需要真实存储/控制。历史source/partial模型脚本可从Git恢复。
 
 A4.13.5再比较S1单32-KiB buffer和S2双32-KiB ping-pong。每buffer用一个
 128×2,048-bit、1RW public-CACTI proxy；S2通过不同buffer分别fill/consume，

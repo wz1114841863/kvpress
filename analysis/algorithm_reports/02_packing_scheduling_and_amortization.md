@@ -331,7 +331,7 @@ layer/batch/summary与cost manifest、A2的lifecycle事件和page replay、admis
 指向的目录中。只保留本报告中的均值/几个模型点，不足以恢复全部曲线。
 
 复核时按正文直接进入A0容量表、A1调度表/参数、A2冻结所指的事件，以及A3逐步
-ledger和前缀曲线；A3.20的[分析实现](../../tools/analyze_kvzap_route_a320_speculative_defer_curve.py)
-保留了D扫描与前缀口径。静态mask、dense生命周期、shadow副本和分支重放是不同
+ledger和前缀曲线；A3.20的D扫描与前缀口径见正文及原结果，历史分析脚本可从Git恢复。
+静态mask、dense生命周期、shadow副本和分支重放是不同
 证据层次，不能把它们拼成已经运行的持续稀疏后端。研究顺序和条件性判断已在
 本文给出，理解本阶段无需再读旧计划或交接；原始数据仍保留原位。
