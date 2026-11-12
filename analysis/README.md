@@ -18,7 +18,9 @@
 
 硬件阶段已整理[H1 架构设计与软硬件职责边界](hardware_reports/01_architecture_and_software_hardware_boundaries.md)：
 解释A4之后为何按owner划分模块，区分算法正确性、Route-A合同与实现选择。
-H2—H4的待整理范围见总览；当前没有确定新的软硬件分工。
+[H2 RTL实现与持续执行范围](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
+串起骨架、首次使用与显式v2重复读取，区分真实owner、外部服务和持续decode缺口。
+H3—H4的待整理范围见总览；当前没有确定新的软硬件分工。
 
 ## Current Route-A entry
 
