@@ -127,7 +127,10 @@ payload/sidecar到达S2、四消费者完成、R6终结，最后完成retire/rec
 
 **分析。** 这里的“numeric fault”证明错误能够正确终结，“四消费者commit”证明协议
 消费与释放顺序正确；它们不等于实际QK/softmax/AV数学结果已经被验证。功能memory、
-partial provider和R4 reference仍是外部环境，完整LLM推理也没有接入该验收。 参考profile
+partial provider和R4 reference仍是外部环境，完整LLM推理也没有接入该验收。 Python功能参考
+分别检查packed-read的transaction/page/generation和S2 lease关联，以及partial provider、
+R4 provider的source/consumer身份、有效输出和错误路径；这些软件模型测试不等于RTL
+中已实现对应数值运算。 参考profile
 按hot→pending→packed规范顺序处理source，归一化结果为128个FP32 lane、4096 bit；
 Qwen anchor中query head按`4×kv_head+consumer_id`关联，query和key的RoPE由前端
 与KV创建侧负责。它们是该参考配置的接口边界，不等于实际数值硬件已经实现。
