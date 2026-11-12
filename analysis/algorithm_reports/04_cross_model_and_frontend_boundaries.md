@@ -198,6 +198,19 @@ M4的144次调用为36层×4次decode，全部满足该实验自己的`atol=rtol
 一个活跃驻留源的有界重放，没有实例化Route-A后端，也没有证明packed容量、
 多源merge、流量或速度收益。
 
+**前端代码与实验入口。** KVzap原始打分/裁剪由[KVzapPress](../../kvpress/presses/kvzap_press.py)
+和[DMSPress](../../kvpress/presses/dms_press.py)组合；Llama语义实验的
+[入口](../../tools/run_kvzap_llama31_m1_semantic_gate.py)使用Llama自己的官方predictor，
+并复用Route-A和dense same-mask软件backend。这里的DMSPress只是KVzap路径的
+阈值裁剪包装，与本节的官方训练DMS模型不是同一实现。
+
+SnapKV侧通过[前端合同及observer](../../kvpress/route_a_frontend_contract.py)
+提取prefill终态选择，[P1静态分析](../../tools/analyze_snapkv_route_a_p1_packed_opportunity.py)
+复用packed-page容量模型，[P3入口](../../tools/run_snapkv_route_a_p3_semantic_gate.py)
+在固定选择下做prefill-tail参考比较。官方DMS侧的[M1入口](../../tools/run_dms_route_a_m1_native_semantic_gate.py)
+加载官方DMS模型与原生cache并记录状态，M4使用原生attention语义的有界重放；
+它没有调用KVzap predictor，也没有把DMS转换成Route-A packed cold。
+
 ## 5. C0—C5：共同性研究最后到底保留了什么
 
 **目的与计划。** 不再增加模型或前端，先把以上已完成证据投影成共同字段：
@@ -205,6 +218,15 @@ C0索引已有证据，C1定义描述字段，C2作各前端映射，C3区分共
 C4复核各自attention比较依据，C5决定研究方向。它们没有新增六轮模型实验，
 跨主机复核也不增加独立模型样本。来源：
 [C0既有证据索引](../experiments/cross_frontend_c0_evidence_index_01/cross_frontend_c0_evidence_index_report.json)。
+
+**共同性分析入口。** C0—C5消费已有实验结果，不重新运行模型：
+[C1字段描述](../../tools/build_cross_frontend_c1_semantic_descriptor.py)
+→ [C2前端投影](../../tools/build_cross_frontend_c2_realization_adapters.py)
+→ [C3共同性分类](../../tools/analyze_cross_frontend_c3_commonality.py)
+→ [C4 attention依据](../../tools/build_cross_frontend_c4_attention_primitive_study.py)
+→ [C5方向判断](../../tools/build_cross_frontend_c5_direction_decision.py)。C3的
+`analyze_projections` 将字段矩阵、共同候选、各自机制和未知边界集中计算；
+只有各前端都被观察到的前置字段才形成共同候选，不填补未观察值。
 
 ### 5.1 C1—C2：统一描述问题，不强行统一数据格式
 

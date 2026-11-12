@@ -192,16 +192,22 @@ def validate_analysis(matrix: dict[str, dict[str, Any]], invariants: list[dict[s
         raise ValueError("C3 must retain SnapKV decode/lifecycle as unresolved")
 
 
-def main() -> None:
-    args = parse_args()
-    if args.output_dir.exists():
-        raise FileExistsError(f"C3 output directory already exists: {args.output_dir}")
-    c2 = load_c2(args.c2_report)
+def analyze_projections(c2: dict[str, Any]) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Classify observed common fields without changing frontend semantics."""
     matrix = field_matrix(c2)
     invariants = invariant_candidates(matrix)
     specific = frontend_specific(c2)
     unresolved_rows = unresolved(matrix)
     validate_analysis(matrix, invariants, unresolved_rows)
+    return matrix, invariants, specific, unresolved_rows
+
+
+def main() -> None:
+    args = parse_args()
+    if args.output_dir.exists():
+        raise FileExistsError(f"C3 output directory already exists: {args.output_dir}")
+    c2 = load_c2(args.c2_report)
+    matrix, invariants, specific, unresolved_rows = analyze_projections(c2)
     config = {"c2_report": str(args.c2_report)}
     report = {
         "schema_version": C3_SCHEMA,
