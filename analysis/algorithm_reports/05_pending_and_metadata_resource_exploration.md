@@ -291,6 +291,18 @@ commit exclusion，不能引入未计价的shadow/version selector。下表的�
 
 ## 9. A4.9—A4.10：有限metadata包络、执行粒度与队列合同
 
+**代码与依赖。** [A4.9.1候选模型](../../tools/simulate_kvzap_route_a491_candidate_metadata_engine.py)
+定义布局和服务候选；[A4.9.2记录级模型](../../tools/simulate_kvzap_route_a492_record_granular_engine.py)
+沿用这些候选，将事务拆成 `MicroOp` 并重放记录锁、端口和单一commit；
+[A4.10队列模型](../../tools/simulate_kvzap_route_a410_queue_contract.py)再复用候选和
+micro-op构造，模拟local/shared/staging队列、credit与排空。三者均是轨迹上的
+离散模型，模型坐标不等同于实际硬件时钟。
+
+这些文件虽带阶段号，当前仍互相导入：A4.10还被A4.12/A4.14工作负载计价
+使用，不能将它们当作互不相关的历史启动脚本直接删除。A4.6—A4.8中供这些
+模型使用的事务、bank和依赖计算也应保留；其他旧参数扫描是否退役，需先检查
+具体导入和是否要重算对应结论，不能只按文件名划分。
+
 ### 9.1 先建立可计数的状态，再声明执行模型
 
 A4.9.0检查joint-safe持久metadata、每原子组临时commit/exclusion状态和fanout

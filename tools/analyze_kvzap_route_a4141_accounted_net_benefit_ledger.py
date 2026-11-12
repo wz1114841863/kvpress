@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""A4.14.1 evidence-classified Route-A accounted ledger; pre-RTL only."""
+"""A4.14.1 evidence-classified Route-A accounted ledger; pre-RTL only.
+
+Capacity/payload service and metadata replay are separate model inputs. The
+workload rows join those inputs without treating their service coordinates as
+a common latency or presenting the dynamic-energy proxy as measured PPA.
+"""
 from __future__ import annotations
 
 import argparse
@@ -280,16 +285,22 @@ def materialize(output: Path, inputs: dict[str, Path]) -> dict[str, dict[str, st
     return copied
 
 
-def main() -> None:
-    args = parse_args()
-    reports = {label: read_exact(getattr(args, f"{label}_report"), label) for label in EXPECTED}
-    validate_bindings(reports)
+def build_workload_rows(reports: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    """Join the validated payload and metadata inputs per fixed workload."""
     a4131, a4133, a4135, a4140 = (rows_by_workload(reports[name]) for name in ("a4131", "a4133", "a4135", "a4140"))
     rows = []
     for workload in WORKLOADS:
         positions = observed_positions(a4133[workload])
         profiles = [payload_profile(item, a4140[workload], positions) for item in profile_rows(a4135[workload]).values()]
         rows.append({"workload": workload, "observed_attention_positions": positions, "benefit_retention_chain": capacity_chain(a4131[workload], reports["a4140"], workload), "profile_rows": profiles, "unestimated_differential_dynamic_costs": ["M2 pooled queue/staging SRAM dynamic accesses lack an explicit A4.14.0 access map.", "P3 staging dynamic energy and physical macro area.", "sidecar latch/page management, partial-state RF/SRAM/spill, merge arithmetic/interconnect.", "HBM controller/PHY/interconnect, clock/wire/leakage and HBM physical area."], "evidence_classes": {"trace_derived": ["lifecycle extent and matured cold counts"], "deterministic_accounting": ["resident bytes, P3 bytes and fair transferred-byte ratios"], "modeled": ["separate payload and metadata service coordinates"], "cacti_proxy": ["S2/M2 area and explicit access energy"], "unestimated": ["listed differential hardware terms"]}})
+    return rows
+
+
+def main() -> None:
+    args = parse_args()
+    reports = {label: read_exact(getattr(args, f"{label}_report"), label) for label in EXPECTED}
+    validate_bindings(reports)
+    rows = build_workload_rows(reports)
     hbm_pass = all(profile["engineering_hbm_gate"]["passed"] for row in rows for profile in row["profile_rows"])
     budget_pass = all(profile["dynamic_energy"]["differential_omitted_cost_budget_pj_per_request"] > 0 for row in rows for profile in row["profile_rows"])
     disposition = "conditional_go_to_architecture_spec_pending_omitted_cost_budget" if hbm_pass and budget_pass else "no_go_under_preregistered_accounted_ledger_gates"
