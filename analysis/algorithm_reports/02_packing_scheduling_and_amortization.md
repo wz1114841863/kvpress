@@ -105,15 +105,23 @@ static、whole-head LPT或dynamic-page调度，最后输出逐layer、逐batch�
 可用 `python -m tools.simulate_kvzap_route_a1_scheduler --a0-dir A0目录 --output-dir 新目录`
 运行；page、PE和batch的扫描范围及各项开销均由参数指定。
 
-**请求完成时间统计修复。** 2026-11-12检查发现旧结果中：whole-head LPT和dynamic-page
-的内部请求完成时间按任务被调度时首次出现的顺序保存，跨层汇总时却按batch顺序
-相加。当请求在不同层的首次调度顺序不同时，`request_local_finish_cycles_*` 及
-相应CV汇总可能将不同请求的时间相加。一个两请求两层的最小例子中，两请求
-各应为10 cycles，却分别汇成18和2。上述makespan、PE利用率、dispatch和merge
-不使用该跨层请求向量，未发现受这一问题影响；但本段不能证明其他指标完全无误。
-现已按请求ID修复并通过小规模验证；完整参数扫描尚待重算。旧结果保留，
-重算比较完成前，不能把受影响指标当作可靠的请求公平性证据。请求local finish
-仍是逐层PE完成偏移的和，不包括串行merge，不等于真实请求延迟。
+**请求完成时间统计修复与重算。** 旧代码按任务首次调度时的出现顺序保存请求
+完成时间，跨层汇总时却按batch顺序相加；不同层排序不同时会混淆请求身份。
+最小的两请求、两层例子中，两请求原本各为10 cycles，旧算法却汇成18和2。
+现已按trace ID对应，并使用原A0的45条请求、原page/PE/batch/策略和成本参数
+完整重算；原结果不覆盖，[修正后A1结果](../experiments/route_a1_request_finish_corrected_20261112_r1/scheduler_summary.csv)
+与[旧A1结果](../experiments/longbench_balanced_v2_route_a1_scheduler_01/scheduler_summary.csv)并存。
+
+逐层结果148,608行全部一致；4,128条batch结果中383条发生变化，均为
+length-aware whole-head策略的batch 2、4或8，变化只涉及跨层请求local-finish
+的CV、P50、P95和max。192条汇总中48条的local-finish CV均值变化；本批
+static-head、dynamic-page及batch1未见差异，但不能据此推断其他输入均不会受影响。
+
+例如page64、8 PE、batch4，whole-head的请求local-finish CV均值从约2.261%
+修正为2.295%；batch makespan P50/P95仍为199,231/302,157 cycles。上表的
+makespan、利用率及“dynamic page的分发和merge抵消部分收益”的结论不变。
+这里local finish仍是各层PE局部完成偏移的和，不包括串行merge，也不是
+端到端单请求延迟；重算不能用来声明真实请求公平性或硬件性能。
 
 ## 4. A2：从最终mask走向实际decode生命周期
 
