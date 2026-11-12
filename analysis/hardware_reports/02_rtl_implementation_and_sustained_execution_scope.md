@@ -52,6 +52,9 @@ partial等入口仍有inactive部分。R4会校验包并接受匹配结果，不
 **目的与方案。** 将保留决定变成不可变的成员组，经过页分配、P3 claim、pending
 pack-read、packed-write、descriptor durable和publication，再读取到S2并完成消费。
 同时引入delivery context registry和typed router，让读片段与写终结返回各自真实owner。
+早期一次仅处理一个最多64成员的admission组；group字段由生产者提供并保持一致，
+不能将一次组关联或成员响应误当成最终publication。R3写完成与R5 descriptor durable
+是不同事实，source packet/R4 stub只负责协议关联，不生成attention数值。
 
 **结果。** 初次完成复核发现，若干事件只有schema，分段测试也还不是同一实例上的完整
 事务。后续补齐实际握手事件捕获，并在一个测试平台实例中串起：
@@ -282,7 +285,7 @@ journal及pending descriptor要覆盖仍合法的查询、withdrawal和服务。
 
 ## 9. 原始定义与结果入口
 
-实现库存可核查[RTL1跨owner清单](../rtl1_i_interface_manifest.json)、[RTL2/3推进](../rtl2_0_activation_manifest.json)、
+实现库存可核查[RTL入口接口清单](../rtl_entry_interface_manifest.json)、[RTL2/3推进](../rtl2_0_activation_manifest.json)、
 [七种source协议覆盖](../rtl3_8_5_full_path_closure_coverage_manifest.json)、
 [C4-D首次使用结论](../rtl3_9_c4_d_functional_completion_review_manifest.json)、
 [MR-1B单记录路径](../mr1b_direct_pending_cross_owner_contract_proposal.md)、
