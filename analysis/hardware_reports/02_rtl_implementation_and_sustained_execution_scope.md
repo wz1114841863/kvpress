@@ -105,7 +105,9 @@ pending binding生成pack-read，随后走durable write、publication与逐成�
 怎样得到partial”“partial怎样合并”。这些参考模型与Chisel中的协议检查分开。
 
 **结果。** 早期复核没有因为分段通过就宣告端到端完成，继续补上数据对象连续性、
-sidecar、生产owner连接、完成顺序和drain。RTL3.8.5覆盖七种非空source组合及每来源
+sidecar、生产owner连接、完成顺序和drain。RTL3.7的testbench witness检查association
+release后才能retire，以及stale response、fault、有限背压和reset；之后的cross-owner
+复核仍因真实来源替换未完成而保留no-PASS。RTL3.8.5覆盖七种非空source组合及每来源
 四消费者的协议路径；它使用命名外部包和测试观察器，不是七种完整数值attention测试。 对应的事件schema和coverage记录继续用于语义检查；
 历史源码哈希回放只反映当时快照，不构成当前功能或数值正确性的证明。
 
@@ -117,6 +119,14 @@ payload/sidecar到达S2、四消费者完成、R6终结，最后完成retire/rec
 **分析。** 这里的“numeric fault”证明错误能够正确终结，“四消费者commit”证明协议
 消费与释放顺序正确；它们不等于实际QK/softmax/AV数学结果已经被验证。功能memory、
 partial provider和R4 reference仍是外部环境，完整LLM推理也没有接入该验收。
+
+更细的推进顺序是：先让packed activation关联真实R6计划、R3成员与R5/S2事实，
+再替换sidecar验证注入，接着限定P3/direct ingress及partial provider边界，最后接入
+外部R4参考。各阶段曾分别记录15、7、7、7项定向或结构检查通过；阶段间会重复运行
+测试，不能累加成独立样本。后续pending binding、packed-write和descriptor durable
+逐项接通；B2的匹配descriptor terminal和B3的publication→visibility ACK→R6转权
+各有1项同实例定向通过，均限功能测试。原子publication顺序和错误拒绝是已检查的协议
+事实，外部memory和数值provider仍须按实际方案计价与验证。
 
 ## 4. 从功能组合到测量DUT：哪些父级控制真正保留了下来
 
