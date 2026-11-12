@@ -8,8 +8,97 @@ from collections import Counter, defaultdict, deque
 from dataclasses import dataclass
 from typing import Any
 
-from tools.analyze_kvzap_route_a4721_metadata_physical_dse import bank_index, lower_transaction
-from tools.analyze_kvzap_route_a480_commit_aware_backlog import ScheduledTransaction
+LAYOUTS = {
+    "separated_direct_v1": {
+        "storage_object_classes": {
+            "frontier_control": ("frontier_control",), "span_descriptor": ("span_descriptor",),
+            "ownership_link": ("ownership_link",), "selection_control": ("selection_control",),
+        },
+    },
+    "span_owner_colocated_direct_v1": {
+        "storage_object_classes": {
+            "frontier_control": ("frontier_control",), "span_owner": ("span_descriptor", "ownership_link"),
+            "selection_control": ("selection_control",),
+        },
+    },
+    "control_colocated_direct_v1": {
+        "storage_object_classes": {
+            "head_control": ("frontier_control", "selection_control"), "span_descriptor": ("span_descriptor",),
+            "ownership_link": ("ownership_link",),
+        },
+    },
+    "both_colocated_direct_v1": {
+        "storage_object_classes": {
+            "head_control": ("frontier_control", "selection_control"), "span_owner": ("span_descriptor", "ownership_link"),
+        },
+    },
+}
+
+
+def normalized_object_key(layout: str, record_type: str, record_identity: list[Any], *, layer: int, head: int) -> tuple[str, tuple[Any, ...]]:
+    classes = LAYOUTS[layout]["storage_object_classes"]
+    object_class = next(name for name, members in classes.items() if record_type in members)
+    if object_class == "span_owner": return object_class, (int(record_identity[-1]),)
+    if object_class == "head_control": return object_class, (layer, head)
+    return object_class, tuple(record_identity)
+
+
+BANK_COUNTS = (1, 4, 8)
+
+
+def fnv1a_64(text: str) -> int:
+    value = 0xCBF29CE484222325
+    for byte in text.encode("utf-8"):
+        value ^= byte
+        value = (value * 0x100000001B3) & ((1 << 64) - 1)
+    return value
+
+
+def bank_index(mapping: str, bank_count: int, object_key: tuple[str, tuple[Any, ...]], *, layer: int, head: int) -> int:
+    if bank_count not in BANK_COUNTS:
+        raise ValueError("undeclared bank-count sensitivity")
+    if mapping == "head_affine_v1":
+        encoded = f"{layer}:{head}"
+    elif mapping == "object_identity_striped_v1":
+        encoded = repr(object_key)
+    else:
+        raise ValueError(f"unknown bank mapping {mapping}")
+    return fnv1a_64(encoded) % bank_count
+
+
+def lower_transaction(row: dict[str, Any], layout: str) -> dict[tuple[str, tuple[Any, ...]], str]:
+    """Explicit semantic-set lowering; never a hardware access count."""
+    flags: dict[tuple[str, tuple[Any, ...]], set[str]] = defaultdict(set)
+    for set_name, flag in (("read_set", "read"), ("write_set", "write"), ("rmw_set", "rmw"), ("release_set", "release")):
+        for item in row[set_name]:
+            object_key = normalized_object_key(layout, str(item["record_type"]), list(item["record_identity"]), layer=int(row["layer"]), head=int(row["kv_head"]))
+            flags[object_key].add(flag)
+    lowered: dict[tuple[str, tuple[Any, ...]], str] = {}
+    for object_key, object_flags in flags.items():
+        if "rmw" in object_flags or ("read" in object_flags and ("write" in object_flags or "release" in object_flags)):
+            lowered[object_key] = "rmw"
+        elif "write" in object_flags or "release" in object_flags:
+            lowered[object_key] = "write"
+        elif object_flags == {"read"}:
+            lowered[object_key] = "read"
+        else:
+            raise AssertionError(f"unlowerable semantic-set flags: {object_flags}")
+    if not lowered:
+        raise AssertionError("semantic transaction lowered to no modeled storage object")
+    return lowered
+
+
+@dataclass(frozen=True)
+class ScheduledTransaction:
+    index: int
+    phase: str
+    checkpoint: int
+    layer: int
+    head: int
+    arrival_ordinal: int
+    predecessors: frozenset[int]
+    demands: Counter[tuple[int, str]]
+    banks: frozenset[int]
 
 LAYOUT = "both_colocated_direct_v1"
 
