@@ -6,9 +6,10 @@
 与冻结记录用于技术复核；旧计划、启动记录和交接不再是理解算法阶段的必读材料。
 本轮整理没有重跑模型、模拟或DC。硬件阶段已形成
 [H1 架构设计与软硬件职责边界](hardware_reports/01_architecture_and_software_hardware_boundaries.md)、
-[H2 RTL实现与持续执行范围](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)和
-[H3 存储实现、测量边界与完整成本](hardware_reports/03_storage_measurement_boundary_and_complete_cost.md)。
-H4待整理；软件—硬件职责调整仍是待讨论候选，没有改变现有RTL或研究协议。
+[H2 RTL实现与持续执行范围](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)、
+[H3 存储实现、测量边界与完整成本](hardware_reports/03_storage_measurement_boundary_and_complete_cost.md)和
+[H4 面积／时序优化与设计复盘](hardware_reports/04_area_timing_optimization_and_design_review.md)。
+软件—硬件职责调整仍是待讨论候选，没有改变现有RTL或研究协议。
 
 ## 我们研究什么，目前做到了哪里
 
@@ -88,12 +89,13 @@ compact/P3/M2/R5等必要存储及端口，原2 ns下跨owner控制链和setup/h
 完整差分成本。注册窗口关闭等候选合同仍需生产者承诺、在途操作排空和实现验证，
 不能将参考模型通过当成生产RTL已实现。未来研究方向尚未决定。
 
-## 硬件阶段：研究过程与四份报告的归并范围
+## 硬件阶段：四份报告串起设计、实现与优化
 
 本轮只整理已有架构、RTL、存储边界和映射结果。H1串起A4→Gate-A→RTL入口，
 区分正确性要求、当前Route-A合同与具体实现选择；H2串起控制骨架、首次使用、
 测量DUT及重复读取验证，明确外部环境和持续执行缺口；H3对照各类存储、访问并发、
-DC包含项与历史proxy，区分必要信息、职责/接口和物理表示的代价。H4待整理。
+DC包含项与历史proxy，区分必要信息、职责/接口和物理表示的代价；H4串起各项优化，
+保留局部/完整结果、负收益和时序代价，复盘当前方案的实现问题。H1—H4已成文。
 不增加阶段评估、来源清单或配套附件，也不在本轮确定新的软硬件职责划分。
 
 硬件探索的推进过程可以串成五步：
@@ -125,7 +127,7 @@ DC包含项与历史proxy，区分必要信息、职责/接口和物理表示的
 | [H1 架构设计与软硬件职责边界](hardware_reports/01_architecture_and_software_hardware_boundaries.md)（已整理） | A4进入架构、Gate-A、RTL-entry、硬件R1—R6分工与有限anchor | 为何先按owner划分；正确性要求不等于当前模块/字段/握手；物理实现和持续生命周期未同步闭合 |
 | [H2 RTL实现与持续执行范围](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)（已整理） | RTL1—RTL3/C4-D、测量DUT、外部功能环境、阶段A探针、持久页v2及多组/journal讨论 | 首次使用与显式v2同页两读有界通过；多组、持续pending、数据—数值连接及目标规模覆盖仍缺 |
 | [H3 存储实现、测量边界与完整成本](hardware_reports/03_storage_measurement_boundary_and_complete_cost.md)（已整理） | SRP/MBR/MR-1/2、compact/P3/M2/R5/S2、存储映射与增量账本 | Compact已计，数组/服务未完整计价；旧M2 proxy不匹配当前RTL，端口/寿命/外围与职责选择共同决定代价 |
-| H4 面积／时序优化与设计复盘 | 原始DC、bridge、compact/entry_id、RD1、PM1、RD2、ST1、WCG1及顶层STA | 每项修改针对什么、局部与完整结果如何、保留哪些负结果，以及瓶颈为何仍在 |
+| [H4 面积／时序优化与设计复盘](hardware_reports/04_area_timing_optimization_and_design_review.md)（已整理） | 原始DC、bridge、compact/entry_id、RD1、PM1、RD2、ST1、WCG1及顶层STA | 四项完整面积改善累计55.47%；PM1/RD2和hold-pass负结果保留，跨owner时序、存储访问与功能/成本范围仍未闭合 |
 
 每份按目的、方案、结果、分析写成一篇，直接引用已有数据。原始数据和技术
 定义保留在原位置；启动重试、工具报错和哈希过程不进入探索主线。entry_id
@@ -180,7 +182,7 @@ HBM字节、动态能量proxy、DC cell area与物理PPA分别属于不同证据
 | [kvpress/](../kvpress/) | 软件推理与前端；[KVzap predictor](../kvpress/presses/kvzap_press.py)、[DMS包装](../kvpress/presses/dms_press.py)、[attention patch](../kvpress/attention_patch.py)是关键入口，实际数据流见R1 |
 | [evaluation/](../evaluation/)、[kvzap/](../kvzap/) | benchmark、算法相关工具和训练代码；代码存在不等于本研究运行过或训练过 |
 | [analysis/algorithm_reports/](algorithm_reports/) | 六份研究正文；从本页直接进入，不需先读中间评估/索引 |
-| [analysis/hardware_reports/](hardware_reports/) | 硬件阶段研究正文；目前完成H1—H3，H4待整理 |
+| [analysis/hardware_reports/](hardware_reports/) | H1—H4四份硬件阶段研究正文，覆盖架构、功能、存储成本与面积/时序优化 |
 | [analysis/experiments/](experiments/) | 原始结果、配置、输入副本、manifest、日志和失败运行；目录数不等于有效实验数 |
 | [traces/](../traces/)、[pilot_inputs/](../pilot_inputs/) | score/mask、生命周期和请求输入，很多被Git忽略 |
 | [tools/](../tools/)、[tests/](../tests/) | 采集、分析、模型与对应检查；从各报告的数据链接和实现入口查找 |
@@ -188,7 +190,7 @@ HBM字节、动态能量proxy、DC cell area与物理PPA分别属于不同证据
 | [hardware/route_a/dc/](../hardware/route_a/dc/)、[mem/](../hardware/route_a/mem/)、[payload/](../hardware/route_a/payload/) | 综合/STA、存储proxy与payload配置；工具存在不是结果通过 |
 | [TRACE_SCHEMA](../TRACE_SCHEMA.md)、[架构规格](architecture_spec.md) | 按需核查字段、版本及实现合同，不承担算法研究过程的补充叙述 |
 
-理解算法研究过程读总览与R1—R6，硬件架构、功能与存储成本过程接着读H1—H3；
+理解算法研究过程读总览与R1—R6，硬件设计、实现、成本与优化过程接着读H1—H4；
 核验数值、重绘分布或复现时，再进入各报告直链的
 JSON/CSV、trace、配置和源码。均值不能重建完整分布，提交文档也不等于备份
 Git忽略的数据。首批已清理13份旧文件，本轮继续清理22份已归并的说明、计划、

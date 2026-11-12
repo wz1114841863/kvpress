@@ -22,7 +22,9 @@
 串起骨架、首次使用与显式v2重复读取，区分真实owner、外部服务和持续decode缺口。
 [H3 存储实现、测量边界与完整成本](hardware_reports/03_storage_measurement_boundary_and_complete_cost.md)
 说明compact、P3/M2/R5/S2为何需要，哪些已计/未计，区分算法、职责与实现开销。
-H4的待整理范围见总览；当前没有确定新的软硬件分工。
+[H4 面积／时序优化与设计复盘](hardware_reports/04_area_timing_optimization_and_design_review.md)
+串起bridge、compact、RD1、PM1、RD2、ST1、WCG1，保留完整面积改善、负结果与顶层时序问题。
+H1—H4的研究过程正文已整理；当前没有确定新的软硬件分工。
 
 ## Current Route-A entry
 
