@@ -16,6 +16,10 @@
 原始实验数据保留，资料缺口与未计成本见各报告；不再增加整编评估、来源索引
 或例行哈希检查作为阅读和开发的前置条件。
 
+硬件阶段已整理[H1 架构设计与软硬件职责边界](hardware_reports/01_architecture_and_software_hardware_boundaries.md)：
+解释A4之后为何按owner划分模块，区分算法正确性、Route-A合同与实现选择。
+H2—H4的待整理范围见总览；当前没有确定新的软硬件分工。
+
 ## Current Route-A entry
 
 This is the full navigation page for the active KVzap Route-A research track.
