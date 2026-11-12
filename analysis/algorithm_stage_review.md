@@ -5,7 +5,8 @@
 包括跨模型/前端支线。这里的“算法阶段”也包含功能软件参考和系统模型；后来的
 RTL、DC、RD1/WCG1 及持续执行补齐不并入这条历史主线。
 
-本页是**已有探索的综合整理和报告编排评估**，不是六份最终报告已经完成的声明。
+本页保留**已有探索的综合整理和报告编排脉络**；R1—R6正文现已整理完成，
+不表示所有原始实验、传递依赖或硬件成本均已重新验收。
 R1 已收敛为[算法复现、稀疏结构与路线筛选](algorithm_reports/01_reproduction_and_route_selection.md)
 一份正文，关键数据表、原始来源和必要保留决定均在其中。
 R2 已整理为[Packing、调度与摊销](algorithm_reports/02_packing_scheduling_and_amortization.md)，
@@ -15,7 +16,9 @@ R3 已整理为[功能参考与执行观察](algorithm_reports/03_functional_ref
 R4 已整理为[跨模型与前端边界](algorithm_reports/04_cross_model_and_frontend_boundaries.md)，
 涵盖Llama、SnapKV、官方DMS与C0—C5，保留各自数值/生命周期边界。
 R5 已整理为[Pending与metadata资源探索](algorithm_reports/05_pending_and_metadata_resource_exploration.md)，
-提取Q敏感性、容量/管理对照、span与RMW负结果及候选模型；尚待整理R6。
+提取Q敏感性、容量/管理对照、span与RMW负结果及候选模型。
+R6 已整理为[前RTL成本账本与架构入口判断](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md)，
+提取公平GQA、末态容量、HBM/能量、M2绑定、已计/未计成本及条件性架构入口。
 后续每个专题以一份正文为目标，直接引用已有数据，不默认配套数据包、资料清单或归档方案。
 没有重跑实验、改变旧结论或清理原文件。已阅读纵向计划、阶段归档、主要合同、
 冻结结果及选定原始 JSON；未逐一重新验收所有运行。下文区分可直接引用的结果与
@@ -40,10 +43,10 @@ R5 已整理为[Pending与metadata资源探索](algorithm_reports/05_pending_and
 数值语义、生命周期、资源管理和成本几个问题。后一个阶段往往是在补前一个阶段
 暴露出的假设。整编时应保留这条因果关系，删去正文中的重复启动/检查过程。
 
-## 二、建议最终保留六份专题报告
+## 二、六份专题报告及覆盖范围
 
-六份是这次评估提出的编辑目标，名称为工作名；不需要为每个小实验再新建正文。
-页数是排版预算，图表和必要解释优先于严格限页。现有文档仍保留，先完成内容提炼。
+六份正文已按下列范围完成；不需要为每个小实验再新建正文。表中页数保留最初
+排版预算，不是实际页数或证据完整性指标。现有原始资料仍保留。
 
 | 报告 | 研究主题及阶段 | 正文目标 | 核心回答 |
 |---|---|---|---|
@@ -225,8 +228,9 @@ payload 的服务坐标没有统一成可相加的总延迟。结果只支持进
 **核心来源。** [A4.11 语义合同](route_a4110_semantic_contract.md)、
 [A4.14.1 最终合同](route_a4141_accounted_net_benefit_ledger_contract.md)、
 [最终结果目录](experiments/route_a4141_accounted_net_benefit_ledger_01/)、
-[纵向计划完成记录](route_a_research_plan.md)。正式报告应采用最终 fair-GQA ledger 的
-workload 行，保留 common/fixed/activity/unestimated 成本表，而不是罗列各次运行。
+[纵向计划完成记录](route_a_research_plan.md)。R6正文已提取最终fair-GQA ledger的
+workload行，明确common/fixed/activity/unestimated成本分类、M2动态访问缺口、
+fill无法完全隐藏的负结果，以及条件性架构入口和独立RTL门槛。
 
 ## 四、把资料减下来：保留内容的判断标准
 
@@ -255,7 +259,8 @@ workload 行，保留 common/fixed/activity/unestimated 成本表，而不是罗
 [来源索引 CSV](algorithm_stage_source_index.csv)，使细阶段不会在压缩叙事时消失。
 索引记录原文标题/行号和应归报告；它不是实验通过清单、去重结果或删除依据。
 
-尚待完成：将R6的关键原始表提炼成自足报告；R5另保留A4.9.2/A4.10独立原始
-汇总的资料缺口。旧论文范围和硬件实现问题另留在项目总览中，避免反复塞入
-算法阶段正文。建议整编顺序 R1→R2→R3→R4→R5→R6，完成一份就用它承接对应旧
-阅读入口，不再新增同主题的每日总结；各份完成后再评估相应中间材料的可清理性。
+六份自足正文现已完成，日常阅读可按R1→R2→R3→R4→R5→R6推进，不再新增
+同主题每日总结。资料仍有缺口：R5的A4.9.2/A4.10独立原始汇总，以及R6部分
+传递依赖/raw尚未在本地完整验收；报告完成不等于原始资料可以删除。
+旧论文范围和硬件实现问题另留在项目总览中，避免反复塞入算法阶段正文。
+相应中间材料的可清理性需要以后单独核对，本次不移动或删除原始资料。

@@ -10,6 +10,8 @@
 第三份专题：[R3 功能参考与执行观察](algorithm_reports/03_functional_reference_and_execution_observations.md)。
 第四份专题：[R4 跨模型与前端边界](algorithm_reports/04_cross_model_and_frontend_boundaries.md)。
 第五份专题：[R5 Pending与metadata资源探索](algorithm_reports/05_pending_and_metadata_resource_exploration.md)。
+第六份专题：[R6 前RTL成本账本与架构入口判断](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md)。
+六份正文现已齐备；原始资料仍保留，资料缺口与未计成本见各报告。
 
 ## Current Route-A entry
 
