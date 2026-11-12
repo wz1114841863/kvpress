@@ -11,15 +11,15 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
-from collections import deque
 from contextlib import AbstractContextManager
-from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
 from typing import Any
 
-import numpy as np
 import torch
+
+# Retain the existing state imports for callers and the observer.
+from kvpress.research.lifecycle import LifecycleSimulator, PackedColdPageState
 
 
 LIFECYCLE_COLUMNS = (
@@ -39,106 +39,7 @@ def language_model_layers(model):
     return language_model.layers
 
 
-@dataclass
-class PackedColdPageState:
-    page_tokens: int
-    logical_tokens: int = 0
-    page_count: int = 0
-    tail_valid_count: int = 0
-    allocation_count: int = 0
-    seal_count: int = 0
 
-    def append(self, count: int) -> tuple[int, int]:
-        """Append retained tokens, returning (new page allocations, new seals)."""
-        if count < 0:
-            raise ValueError("admission count must be non-negative")
-        allocations = seals = 0
-        remaining = count
-        while remaining:
-            if self.page_count == 0 or self.tail_valid_count == self.page_tokens:
-                self.page_count += 1
-                self.allocation_count += 1
-                allocations += 1
-                self.tail_valid_count = 0
-            added = min(self.page_tokens - self.tail_valid_count, remaining)
-            self.tail_valid_count += added
-            self.logical_tokens += added
-            remaining -= added
-            if self.tail_valid_count == self.page_tokens:
-                self.seal_count += 1
-                seals += 1
-        return allocations, seals
-
-    @property
-    def allocated_slots(self) -> int:
-        return self.page_count * self.page_tokens
-
-
-class LifecycleSimulator:
-    """Simulate Route-A maturity from predictor scores for one L/H score stream."""
-
-    def __init__(self, layers: int, heads: int, window: int, page_tokens: int, kv_bytes_per_token: int, metadata_bytes_per_page: int):
-        if min(layers, heads, page_tokens, kv_bytes_per_token) <= 0 or window < 0 or metadata_bytes_per_page < 0:
-            raise ValueError("invalid lifecycle dimensions or byte assumptions")
-        self.layers, self.heads, self.window = layers, heads, window
-        self.kv_bytes_per_token = kv_bytes_per_token
-        self.metadata_bytes_per_page = metadata_bytes_per_page
-        self._hot: dict[int, deque[tuple[int, np.ndarray]]] = {layer: deque() for layer in range(layers)}
-        self._next_position = [0] * layers
-        self.pages = [[PackedColdPageState(page_tokens) for _ in range(heads)] for _ in range(layers)]
-
-    def observe(self, layer: int, score_start: int, scores: np.ndarray, threshold: float, model_call: int, phase: str) -> list[dict[str, Any]]:
-        if not 0 <= layer < self.layers or scores.ndim != 2 or scores.shape[0] != self.heads:
-            raise ValueError("lifecycle scores must be [KV-head, token] for a valid layer")
-        if score_start != self._next_position[layer]:
-            raise AssertionError(f"Layer {layer} score positions are not contiguous: expected {self._next_position[layer]}, got {score_start}")
-        q_len = scores.shape[1]
-        hot_before = len(self._hot[layer])
-        dropped = np.zeros(self.heads, dtype=np.int64)
-        admitted = np.zeros(self.heads, dtype=np.int64)
-        allocations = np.zeros(self.heads, dtype=np.int64)
-        seals = np.zeros(self.heads, dtype=np.int64)
-        matured_tokens = 0
-        for offset in range(q_len):
-            self._hot[layer].append((score_start + offset, scores[:, offset]))
-            if len(self._hot[layer]) > self.window:
-                _, matured_scores = self._hot[layer].popleft()
-                matured_tokens += 1
-                keep = matured_scores >= threshold
-                for head in range(self.heads):
-                    if keep[head]:
-                        admitted[head] += 1
-                        new_pages, new_seals = self.pages[layer][head].append(1)
-                        allocations[head] += new_pages
-                        seals[head] += new_seals
-                    else:
-                        dropped[head] += 1
-        self._next_position[layer] += q_len
-        cache_tokens_after = self._next_position[layer]
-        rows = []
-        for head in range(self.heads):
-            state = self.pages[layer][head]
-            rows.append({
-                "model_call": model_call, "phase": phase, "layer": layer, "kv_head": head,
-                "score_start": score_start, "q_len": q_len, "cache_tokens_after": cache_tokens_after,
-                "hot_tokens_before": hot_before, "matured_tokens": matured_tokens,
-                "cold_admitted_tokens": int(admitted[head]), "cold_dropped_tokens": int(dropped[head]),
-                "cold_page_allocations": int(allocations[head]), "cold_page_seals": int(seals[head]),
-                "tail_valid_count": state.tail_valid_count,
-                "hot_to_cold_read_bytes": matured_tokens * self.kv_bytes_per_token,
-                "cold_write_bytes": int(admitted[head]) * self.kv_bytes_per_token,
-                "metadata_update_bytes": int(allocations[head]) * self.metadata_bytes_per_page,
-                "cold_logical_tokens": state.logical_tokens, "cold_allocated_slots": state.allocated_slots,
-                "cold_page_count": state.page_count,
-            })
-        return rows
-
-    def final_rows(self) -> list[dict[str, Any]]:
-        rows = []
-        for layer, states in enumerate(self.pages):
-            for head, state in enumerate(states):
-                rows.append({"layer": layer, "kv_head": head, "cold_logical_tokens": state.logical_tokens, "cold_allocated_slots": state.allocated_slots, "cold_page_count": state.page_count, "tail_valid_count": state.tail_valid_count, "cold_page_allocations": state.allocation_count, "cold_page_seals": state.seal_count})
-        return rows
 
 
 class ReadOnlyKVzapLifecycleObserver(AbstractContextManager):

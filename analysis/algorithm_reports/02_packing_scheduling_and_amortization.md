@@ -155,12 +155,13 @@ row180的255-call前缀在P64下得到约2.9502×容量压缩，cold-page碎片�
 要到后续R3才验证。
 
 **代码入口与边界。** 真实模型采集由[生命周期采集入口](../../tools/run_kvzap_decode_lifecycle_trace.py)
-调用[只读观察器及生命周期状态](../../kvpress/lifecycle.py)：正常dense生成时观察
-predictor分数，再由软件模拟maturity及admission。事件中的page、admission及bytes
+调用[只读观察器](../../kvpress/lifecycle.py)：正常dense生成时观察
+predictor分数，再用[共享生命周期状态](../../kvpress/research/lifecycle.py)在软件中
+模拟maturity及admission。事件中的page、admission及bytes
 是根据这些观察计算的模型账目，并非物理packing控制器或HBM计数器。
 [生命周期校验](../../tools/validate_kvzap_decode_lifecycle_trace.py)检查已有记录；
-[离线page重放](../../tools/replay_kvzap_decode_lifecycle_pages.py)的 `replay` 对单种
-page重建状态，`replay_page_sizes` 对多种page汇总，输出事件、最终状态和摘要。
+[离线page重放入口](../../tools/replay_kvzap_decode_lifecycle_pages.py)调用共享模块的
+`replay` 对单种page重建状态，`replay_page_sizes` 对多种page汇总，输出事件、最终状态和摘要。
 它不再加载模型或重新预测，也不改变原始admission决定。
 
 ## 5. A3：少读bytes，不一定减少执行周期
@@ -194,8 +195,9 @@ metadata、queue/dispatch和计算/带宽上限显式计入，并扫描page、�
 它与后面不同服务模型的40%节省直接相减，称为实现优化幅度。
 
 **离线计算入口。** [A3 traffic/cycle脚本](../../tools/simulate_kvzap_route_a3_traffic.py)
-读取A2事件和对应page重放，`build_rows` 按call/layer/head对应记录，`simulate`
-按decode step计入一次性及持续admission、读取、metadata和调度成本，再输出
+读取A2事件和对应page重放，`build_rows` 按call/layer/head对应记录；
+[离线摊销计算](../../kvpress/research/amortization.py)的 `simulate` 按decode step计入
+一次性及持续admission、读取、metadata和调度成本，再输出
 逐步结果、累计节省及byte回本点。A1在此提供调度策略和成本口径；A3自己重新计算
 单请求逐步cycles，不读取A1的batch请求完成时间或CV。A1公平性统计修复因此不
 自动改写既有A3结果。这里的bytes/cycles和回本仍是指定假设下的离线模型。
