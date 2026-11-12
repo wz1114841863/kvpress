@@ -160,24 +160,24 @@ def build_head_tasks(rows: list[dict[str, str]], trace_ids: list[str], layer: in
     return tasks
 
 
-def schedule_static(tasks: list[dict[str, Any]], pe_count: int) -> tuple[list[float], list[float], float, int]:
+def schedule_static(tasks: list[dict[str, Any]], pe_count: int) -> tuple[list[float], dict[str, float], float, int]:
     loads = [0.0] * pe_count
     request_finish: dict[str, float] = defaultdict(float)
     for task in tasks:
         owner = int(task["owner"]) % pe_count
         loads[owner] += float(task["useful"])
         request_finish[task["trace_id"]] = max(request_finish[task["trace_id"]], loads[owner])
-    return loads, list(request_finish.values()), 0.0, len(tasks)
+    return loads, dict(request_finish), 0.0, len(tasks)
 
 
-def schedule_lpt(tasks: list[dict[str, Any]], pe_count: int, dispatch_cycles: float) -> tuple[list[float], list[float], float, int]:
+def schedule_lpt(tasks: list[dict[str, Any]], pe_count: int, dispatch_cycles: float) -> tuple[list[float], dict[str, float], float, int]:
     loads = [0.0] * pe_count
     request_finish: dict[str, float] = defaultdict(float)
     for task in sorted(tasks, key=lambda row: (-float(row["useful"]), str(row["trace_id"]), int(row["kv_head"]))):
         pe = min(range(pe_count), key=lambda index: loads[index])
         loads[pe] += float(task["useful"]) + dispatch_cycles
         request_finish[task["trace_id"]] = max(request_finish[task["trace_id"]], loads[pe])
-    return loads, list(request_finish.values()), len(tasks) * dispatch_cycles, len(tasks)
+    return loads, dict(request_finish), len(tasks) * dispatch_cycles, len(tasks)
 
 
 def build_dynamic_tasks(head_tasks: list[dict[str, Any]], page_tokens: int, cost: PageCostModel) -> tuple[list[dict[str, Any]], float]:
@@ -209,6 +209,7 @@ def layer_result(batch_id: str, batch: list[str], page_tokens: int, pe_count: in
         dynamic_count, merge = len(dynamic_tasks), extra_segments * args.merge_cycles_per_extra_segment
     else:
         raise ValueError(f"Unknown policy: {policy}")
+    finishes = [finishes.get(trace_id, 0.0) for trace_id in batch]
     pe_makespan = max(loads, default=0.0)
     idle = pe_count * pe_makespan - useful - dispatch
     return {
@@ -297,7 +298,7 @@ def main() -> None:
     write_csv(args.output_dir / "scheduler_layer_results.csv", [public_layer_row(row) for row in layer_rows], LAYER_COLUMNS)
     write_csv(args.output_dir / "scheduler_batch_results.csv", batch_rows, BATCH_COLUMNS)
     write_csv(args.output_dir / "scheduler_summary.csv", summary_rows, SUMMARY_COLUMNS)
-    manifest = {"schema_version": "kvzap-route-a1-scheduler-dse-1.0", "git_commit": get_git_commit(), "a0_dir": str(args.a0_dir), "a0_replay_manifest_sha256": sha256(args.a0_dir / "replay_manifest.json"), "a0_layer_head_sha256": sha256(args.a0_dir / "layer_head_packed_page_replay.csv"), "source_trace_count": len(a0_manifest["source_traces"]), "source_traces": a0_manifest["source_traces"], "batch_construction": {"kind": "sequential-source-order", "source_trace_ids": source_order, "drop_incomplete_batch": args.drop_incomplete_batch, "label": "simulated serving batches; independent predictor-only requests, not native model batches"}, "page_tokens": args.page_tokens, "pe_counts": args.pe_counts, "batch_sizes": args.batch_sizes, "policies": args.policies, "cost_model": {"kv_bytes_per_token": kv_bytes, "bandwidth_bytes_per_cycle": args.bandwidth_bytes_per_cycle, "throughput_ops_per_cycle": args.throughput_ops_per_cycle, "attention_ops_per_kv_token": args.attention_ops_per_kv_token, "metadata_lookup_cycles_per_page": args.metadata_lookup_cycles_per_page, "head_dispatch_cycles": args.head_dispatch_cycles, "dynamic_dispatch_cycles": args.dynamic_dispatch_cycles, "merge_cycles_per_extra_segment": args.merge_cycles_per_extra_segment, "page_cost": "max(KV_bytes / bandwidth, attention_ops / throughput) + page metadata lookup"}, "policy_definitions": {"static_head": "fixed owner = (batch request slot * kv_heads + kv_head) mod PE count", "length_aware_head": "whole-head LPT scheduling; no cross-PE partial-softmax merge", "dynamic_page": "LPT scheduling of a hot segment plus one task per allocated cold page; per-task dispatch and serial merge cost for each extra head segment"}, "notes": ["All cycles and utilization are modeled from declared constants and static A0 replay work; they are not hardware measurements.", "Layers are sequential barriers; only requests already in a simulated batch are jointly schedulable within a layer.", "No conclusion about decode admission, actual HBM traffic, latency, throughput, or accuracy is supported."]}
+    manifest = {"schema_version": "kvzap-route-a1-scheduler-dse-1.0", "git_commit": get_git_commit(), "a0_dir": str(args.a0_dir), "a0_replay_manifest_sha256": sha256(args.a0_dir / "replay_manifest.json"), "a0_layer_head_sha256": sha256(args.a0_dir / "layer_head_packed_page_replay.csv"), "source_trace_count": len(a0_manifest["source_traces"]), "source_traces": a0_manifest["source_traces"], "batch_construction": {"kind": "sequential-source-order", "source_trace_ids": source_order, "drop_incomplete_batch": args.drop_incomplete_batch, "label": "simulated serving batches; independent predictor-only requests, not native model batches"}, "page_tokens": args.page_tokens, "pe_counts": args.pe_counts, "batch_sizes": args.batch_sizes, "policies": args.policies, "cost_model": {"kv_bytes_per_token": kv_bytes, "bandwidth_bytes_per_cycle": args.bandwidth_bytes_per_cycle, "throughput_ops_per_cycle": args.throughput_ops_per_cycle, "attention_ops_per_kv_token": args.attention_ops_per_kv_token, "metadata_lookup_cycles_per_page": args.metadata_lookup_cycles_per_page, "head_dispatch_cycles": args.head_dispatch_cycles, "dynamic_dispatch_cycles": args.dynamic_dispatch_cycles, "merge_cycles_per_extra_segment": args.merge_cycles_per_extra_segment, "page_cost": "max(KV_bytes / bandwidth, attention_ops / throughput) + page metadata lookup"}, "policy_definitions": {"static_head": "fixed owner = (batch request slot * kv_heads + kv_head) mod PE count", "length_aware_head": "whole-head LPT scheduling; no cross-PE partial-softmax merge", "dynamic_page": "LPT scheduling of a hot segment plus one task per allocated cold page; per-task dispatch and serial merge cost for each extra head segment"}, "notes": ["Request-local finish sums per-layer PE completion offsets by trace ID; it excludes serial merge and is not end-to-end request latency.", "All cycles and utilization are modeled from declared constants and static A0 replay work; they are not hardware measurements.", "Layers are sequential barriers; only requests already in a simulated batch are jointly schedulable within a layer.", "No conclusion about decode admission, actual HBM traffic, latency, throughput, or accuracy is supported."]}
     (args.output_dir / "scheduler_manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"Simulated {len(batch_rows)} Route-A1 batch/policy/PE/page workloads: {args.output_dir}")
 

@@ -1,8 +1,11 @@
 import argparse
 
+import pytest
+
 from tools.simulate_kvzap_route_a1_scheduler import (
     PageCostModel,
     build_dynamic_tasks,
+    batch_result,
     layer_result,
     make_batches,
     schedule_lpt,
@@ -74,3 +77,39 @@ def test_workloads_keep_short_batch_and_aggregate_dispatch_and_merge():
     assert len(layers) == 2
     assert summaries[0]["batch_count"] == 2
     assert summaries[0]["request_count"] == 3
+
+
+@pytest.mark.parametrize("policy", ["static_head", "length_aware_head", "dynamic_page"])
+def test_cross_layer_finishes_follow_request_identity_not_schedule_order(policy):
+    args = argparse.Namespace(batch_size_requested=2, head_dispatch_cycles=0,
+                              dynamic_dispatch_cycles=0, merge_cycles_per_extra_segment=0)
+    cost = PageCostModel(1, bandwidth=1, throughput=1, ops_per_token=1, metadata_cycles=0)
+
+    def layer(index, a, b):
+        heads = [
+            {"trace_id": name, "kv_head": 0, "owner": owner, "useful": size,
+             "hot_slots": size, "pages": 0}
+            for owner, (name, size) in enumerate((("a", a), ("b", b)))
+        ]
+        return layer_result("batch", ["a", "b"], 4, 2, index, policy, heads, cost, args)
+
+    layers = [layer(0, 1, 9), layer(1, 9, 1)]
+    assert layers[0]["_request_finish"] == [1, 9]
+    assert layers[1]["_request_finish"] == [9, 1]
+    result = batch_result(layers)
+    assert result["request_local_finish_cycles_p50"] == 10
+    assert result["request_local_finish_cycles_p95"] == 10
+    assert result["request_local_finish_cycles_cv"] == 0
+
+
+def test_dynamic_page_includes_zero_work_request_in_batch_order():
+    args = argparse.Namespace(batch_size_requested=2, head_dispatch_cycles=0,
+                              dynamic_dispatch_cycles=0, merge_cycles_per_extra_segment=0)
+    cost = PageCostModel(1, bandwidth=1, throughput=1, ops_per_token=1, metadata_cycles=0)
+    heads = [
+        {"trace_id": "a", "kv_head": 0, "owner": 0, "useful": 0, "hot_slots": 0, "pages": 0},
+        {"trace_id": "b", "kv_head": 0, "owner": 1, "useful": 3, "hot_slots": 3, "pages": 0},
+    ]
+    row = layer_result("batch", ["a", "b"], 4, 2, 0, "dynamic_page", heads, cost, args)
+    assert row["_request_finish"] == [0, 3]
+    assert batch_result([row])["request_local_finish_cycles_p95"] == 3
