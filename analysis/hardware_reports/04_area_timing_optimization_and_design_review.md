@@ -222,6 +222,23 @@ Entry_id特定driver问题已闭合；typed未用字段、feedthrough、shorted/
 
 ## 9. 设计复盘：为什么优化有效，瓶颈却一直存在
 
+### 已提出但没有实施结果的结构候选
+
+以下来自早期结构审查，保留探索线索，不升级为后续计划或已验证收益：
+
+| 候选 | 当时想改什么 | 证据与边界 |
+|---|---|---|
+| SEL1 | 改进36个64-bit materializer候选mask、prefix和最低layer/ordinal选择 | 有stageValidRecords到ready的热点依据；没有新映射收益，不能与RD2重复记账 |
+| RC1 | 按完整ordinal先读一条journal，再保留全部精确比较 | 需保持转权、同拍admission、已存记录、Unseen的优先级与高位范围检查；新增宽mux可能抵消收益 |
+| MC1 | 优化M2的614-slot first-free与handoff匹配/更新 | 需先做mapped锥归因；36层不证明只需36个live slot，历史owner面积占比不是可节省比例 |
+| PM2 | 从stream索引恢复layer/head，payload-durable事件做indexed查找 | 历史归因给出2,592个坐标寄存器、约8,128.5面积的状态上界，约旧顶层0.22%；比较网络收益未测 |
+| EQ1 | 在M/C或S/B确实同地址时复用读取 | Production连接相等不能代替通用wrapper保证；要保留独立输入、非法/stale及fallback，可能反而增面积 |
+
+这些候选与WR1及存储实现方向一起，说明尚有结构可以研究；没有证据表明它们能单独
+解决当前整体差距。PM2也不同于已测PM1，不应把PM1负面时序结论移给未实施的PM2。
+
+### 从实际优化结果得到的设计问题
+
 **重复状态确实来自表示与职责实现。** Bridge去重与compact成功，证明早期宽记录复制
 付出了可避免成本；这些面积不能视为KVzap算法的必然下界。但去重后剩余信息、访问口和
 寿命成为主导，后续收益不应继续按第一轮41%外推。

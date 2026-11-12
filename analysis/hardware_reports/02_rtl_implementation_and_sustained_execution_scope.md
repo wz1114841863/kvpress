@@ -103,6 +103,25 @@ Direct-pending限定`valid_count=1`；其正常context回收、重新注册和�
 数组划成`Mem`/寄存器子模块也没有选定真实宏、端口与访问延迟。功能测试实例和后来的
 DC控制投影必须区分：数组proxy用于成本测量边界，不能拿来证明真实存储读写功能。
 
+### M2的两条实现分支不能合并理解
+
+早期曾尝试把A4的private/shared、birth-ordered span模型直接落实为存储单元。
+`RouteAM2EntryStorage`使用双128-bit head和614个128-bit span，接受显式声明，支持
+append、选择、dequeue与release；其4/4定向通过只属于fixture驱动的单元测试，未接入
+production DUT。现有非连续成员组和opaque mapping也不能自行生成birth/sequence/count。
+
+随后选择较小的生产职责：保留A4详细FIFO生命周期为replay/accounting证据，先实现
+admission所需的metadata append。最初生产owner只检查provenance和两成员响应，仍不足
+以证明entry内容；后来才接入真实`MetadataAppendOperand`、私有prepare、head lookup、
+slot/generation/credit与abort。Member响应不提前改可见entry；匹配publication才原子写
+双head及span，真实post-R6 all-member handoff再清对应entry并归还资源。
+
+MR-2最终验证和隔离的是这条较小生产分支的entry数组。两个分支名义上都有128-bit
+head/span，不代表字段含义或生命周期相同。当前生产功能不因此获得A4完整source-FIFO
+select/dequeue/release引擎，也不能用早期“仍blocked”的提案描述后来的实际实现。
+历史分支见Git整理前版本；当前访问与控制以[最终M2数组合同](../mr2_m2_array_boundary_contract.md)
+及实际接口/源码为准。
+
 ## 5. 外部环境到底承担了哪些工作
 
 外部服务有些可以是论文系统的正式组成部分，不必全部塞入RTL。但必须说明其工作、

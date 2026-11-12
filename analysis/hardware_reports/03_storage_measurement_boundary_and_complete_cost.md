@@ -174,6 +174,13 @@ word、225个head对象、614个span、八bank及1RW宏；含padding和保守que
 历史1RW服务坐标也没有证明当前两写＋lookup接口在2 ns可实现。因此旧proxy保留为研究
 结果，不能作为当前M2的匹配价格，更不能直接与DC面积相加。
 
+这里还有一条历史分叉：曾通过4/4单元测试的`RouteAM2EntryStorage`保存private/shared
+FIFO头尾、birth/sequence/remaining和链接；它没有成为production实例。后来采用的是
+admission-derived append、private prepare、publication commit及post-R6 handoff的较小
+生产分支，当前42/59非reserved字段属于后者。两者128-bit外形相同，不表示数据格式、
+服务事件或成本相等。也不能把旧FIFO单元的allocator/RMW与当前生产owner再重复相加。
+生产entry集成已完成其有界功能范围；物理宏、端口和完整成本仍未完成。
+
 ## 6. R5、S2和外部存储：共有设施与Route-A增量要分开
 
 **R5。** 页分配与安全复用需要availability、generation、目录及在途排除信息。规格早期
@@ -186,6 +193,17 @@ word、225个head对象、614个span、八bank及1RW宏；含padding和保守que
 Route-A另外需要packed位置sidecar及相关管理。A4曾给共同S2 **0.580656 mm²**的public
 CACTI proxy及分路径访问能量，但这不构成当前两侧wrapper实现相同的证明。共有容量不能
 全记Route-A增量，具体父控制差异、侧信息与动态活动也不能凭“共有”名称直接抵消。
+
+S2后续已有同一9-bit/512-fragment几何下的配对回归：Full-KV 5/5、Route-A 6/6，
+合计11项通过，消除了早期focused Full-KV测试只用3-bit索引的比较缺口。该结果确认
+相同payload访问角色与指定reset/stale/fault/response-hold/释放行为，未证明两个shell
+是同一实现。Route-A还有sidecar、packed lease/page与R6来源身份；Full-KV使用自己的
+producer和terminal/retire链，因此payload/adapter仍不能直接抵消。
+
+当前配对成本的具体处置是：R1/R2/registry/router在配置和shell相同时才有共有资格；
+两侧delivery bridge分别计价；lifecycle/status按各自实现保留；实际source list中的hot
+owner只在Route-A一侧，暂作该配对的差分控制。不能为抵消而虚构Full-KV hot模块。
+这些是当前测量边界的处置，不是所有Full-KV系统都无需hot管理的结论。
 
 **外部HBM。** Anchor的5 GiB是pending/packed共用的cold池，包含位置与迁移reserve，
 不是两份5 GiB；R5约2.35 MB descriptor区另计。算法实际保留率、页取整、pending与

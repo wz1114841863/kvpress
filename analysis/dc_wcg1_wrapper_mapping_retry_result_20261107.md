@@ -12,7 +12,7 @@ simulation or replacement experiment and changes no RTL or frozen input.
 RD1+PM1 is neither inspected nor modified. Its full-run result is not inferred
 here. RD2 remains excluded, and production WCG1 defaults remain off.
 
-Launch authority: [r2 launch](dc_wcg1_wrapper_mapping_retry_launch_20261106.md)
+Launch authority: [研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 and JSON; methodology:
 [matched wrapper plan](dc_wcg1_wrapper_mapping_plan_20261106.md).
 Independent evidence and report hashes:

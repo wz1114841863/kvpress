@@ -113,7 +113,7 @@ still awaits multi-group lifecycle/history and broader evidence.
 
 Historical snapshot; completed acceptance is recorded above.
 
-Read [`route_a_persistent_page_read_r2_launch_20261109.md`](route_a_persistent_page_read_r2_launch_20261109.md)
+Read [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and JSON. Frozen source `40a74b6`, 155 files, archive SHA
 `e7a65e92cf22c9c4ab620d3094c94c05b21b6874a8e5d8d053da3196e7a293ee`,
 run `persistent_page_read_v2_20261109_r2` is in independent tmux
@@ -125,7 +125,7 @@ error/retire whole-DUT acceptance. User notified to wait; no DC/STA or retry.
 
 ## Persistent page read r2 repair prepared (2026-11-09)
 
-Read [`route_a_persistent_page_read_r2_repair_20261109.md`](route_a_persistent_page_read_r2_repair_20261109.md)
+Read [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and JSON. R5 now sets scanner outstanding only for its own scanAllowed fire;
 v2 response asserts no phantom scanner work. R3/Admission/M2/R2/R6 and all
 other 29 production main files match `67459cc`. Whole-DUT timeout reporting
@@ -140,7 +140,7 @@ has a separate pre-existing OPEN issue, outside the internal-backing coverage.
 
 ## Persistent page read v2 r1 failure inspected (2026-11-09)
 
-Read [`route_a_persistent_page_read_result_20261109.md`](route_a_persistent_page_read_result_20261109.md)
+Read [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and JSON. Compile/test/runner/tmux exits are 0/1/1/1, 152 input hashes match,
 and 14 native builds/reports are preserved. Five v2 owner units and six v1
 tests pass; all three v2 whole-DUT cases time out at the first packed READY,
@@ -160,7 +160,7 @@ new simulation/DC/STA, functional acceptance, area/timing or net-benefit claim.
 
 Historical launch state, superseded by the completed failure inspection above.
 
-Read [`route_a_persistent_page_read_launch_20261109.md`](route_a_persistent_page_read_launch_20261109.md)
+Read [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and JSON. Source `1d49fc8` is frozen in a new 152-file archive, SHA
 `40973dc895eb4a72798aeb9da760efdac8d71a1f79614857f392ddacef7ab119`.
 Independent tmux is **`kvzap-persistent-read-v2-r1:validation`**, run
@@ -173,7 +173,7 @@ archived checker with `--final` after completion, including tmux wrapper exit.
 
 ## Persistent page read v2 implementation prepared (2026-11-09)
 
-Read [`route_a_persistent_page_read_preparation_20261109.md`](route_a_persistent_page_read_preparation_20261109.md)
+Read [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and JSON before accepting the next functional successor. Explicit default-off
 `persistentReadEnabled` adds R5 persistent qualification/query, R6-owned
 preflight/reject/unplanned state, S2 typed reservation and an independent R3
@@ -241,7 +241,7 @@ implemented by this inspection. Earlier launch/preparation text is historical.
 
 ## Stage A current-RTL probes launch snapshot (2026-11-09)
 
-Read [`route_a_stage_a_probe_launch_20261109.md`](route_a_stage_a_probe_launch_20261109.md)
+Read [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and JSON. Frozen source `0aa5472` was launched in independent
 **`kvzap-stage-a-probes-r1:probes`**, run ID
 `stage_a_continuation_probe_20261109_r1`, under the existing remote base.
@@ -259,7 +259,7 @@ the user's completion notice; diagnostic PASS is not capability PASS.
 
 ## Stage A current-RTL probes prepared (2026-11-09)
 
-Read [`route_a_stage_a_probe_preparation_20261109.md`](route_a_stage_a_probe_preparation_20261109.md).
+Read [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md).
 The user authorizes two independent current-RTL functional probes, with no
 production RTL or full DC change. Both first establish a real packed
 write/read and successful first terminal, then inspect repeated-read or
@@ -342,7 +342,7 @@ cost, acceleration and hardware net benefit are not established.
 
 ## RD1+WCG1 full paired r2 launch snapshot (2026-11-08)
 
-Read [`dc_rd1_wcg1_full_paired_retry_launch_20261108.md`](dc_rd1_wcg1_full_paired_retry_launch_20261108.md)
+Read [研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 and JSON. Repair `d680550` passes 48 preparation tests. The successful old
 contextual export is reused without RTL regeneration; all real source,
 16-port-family/12-owner, R5, 5-proxy and 2-ns static coverage gates pass.
@@ -374,7 +374,7 @@ policies remain paired. This repair alone is not a new mapped result.
 
 ## Latest RD1+WCG1 inspection (2026-11-07)
 
-Read [`dc_rd1_wcg1_full_paired_inspection_20261107.md`](dc_rd1_wcg1_full_paired_inspection_20261107.md)
+Read [研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 and its JSON. Contextual export r2 passed with exit 0 (48 reference / 49 gated
 SV units), but input freeze failed before native binding and either compile.
 The pipeline and full-run outer statuses are both 1; the result root contains
@@ -1277,7 +1277,7 @@ authorized by this freeze.
 
 ### DC environment preflight (2026-10-29)
 
-[`dc_environment_preflight_20261029.md`](dc_environment_preflight_20261029.md)
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 records that `dc-server` has an executable Synopsys `dc_shell O-2018.06-SP1`
 and the inherited TSMC28 standard-cell `.db` candidates under the existing
 `dc_project/pdk` root.  The explicit sourceable environment and read-only
@@ -1342,7 +1342,7 @@ The later R5 descriptor externalization produces a distinct, immutable
 successor package: its Route-A HDL is the valid 48-file split lowering rather
 than the earlier 182-filelist source.  The static proxy and constraint checks
 for that package pass; the authoritative record is
-[`dc_successor_input_preflight_r5_descriptor_externalized_20261029.md`](dc_successor_input_preflight_r5_descriptor_externalized_20261029.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 The selection removes functional descriptor backing from the projected control
 closure through a typed external service port, while retaining page-manager
 control and treating every array/external service as nonzero/unestimated.
@@ -1647,7 +1647,7 @@ authorizes preparation of a characterized bottom-up PM1 child-replacement
 screen, not a mapped-benefit claim or full-top acceptance.
 
 The selected controlled screen is specified in
-[`dc_pm1_characterized_replacement_plan_20261105.md`](dc_pm1_characterized_replacement_plan_20261105.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 It emits a port-identical full-profile `route_a_page_manager_pm1`, relinks only
 the unique saved-DDC child, characterizes the real top environment and maps
 only the candidate child.  Preparation compile and PM1 reclaim tests pass
@@ -1657,7 +1657,7 @@ generation and later full-top confirmation.
 Candidate-child generation was launched with byte-identical inputs in
 `kvzap-control-refine:p18-pm1-child-freeze` and has ended at the intended
 port-identity gate; see
-[`dc_pm1_page_manager_successor_generation_result_20261105.md`](dc_pm1_page_manager_successor_generation_result_20261105.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 CHIRRTL and split RTL generation succeeded, but the standalone emitter exposed
 74 fields that the real parent context removes: 218 candidate ports versus 144
 frozen child ports, with no frozen port missing.  The outer exit is 1, hash and
@@ -1668,7 +1668,7 @@ invent a pin map.  The separate RD1 paired DC remains active in
 `kvzap-control-refine:p16-rd1-dc` and must not be disturbed.
 
 The contextual-generation repair is implemented and locally closed; see
-[`dc_pm1_contextual_generation_fix_20261105.md`](dc_pm1_contextual_generation_fix_20261105.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 The Page Manager selector flag remains default-off in the real measurement
 parent, while the PM1-only emitter now elaborates the complete parent with the
 flag explicitly enabled.  Compile, contextual elaboration 1/1, PM1 reclaim
@@ -1676,7 +1676,7 @@ flag explicitly enabled.  Compile, contextual elaboration 1/1, PM1 reclaim
 prove exact post-firtool child-port identity before replacement DC is allowed.
 
 The remote contextual generation has completed successfully; see
-[`dc_pm1_contextual_generation_result_20261105.md`](dc_pm1_contextual_generation_result_20261105.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 Inputs are frozen at `6dc1671`; p19 exits zero with both identity/success
 markers, 48 split files, exact 144-to-144 child-port identity and fully
 rechecked hashes.  The PM1 child is now an accepted input for the planned
@@ -1686,7 +1686,7 @@ timing conclusion follows.  RD1 DC remained independently active in
 
 The characterized replacement runner and Tcl are now implemented and
 statically checked; see
-[`dc_pm1_characterized_replacement_implementation_20261105.md`](dc_pm1_characterized_replacement_implementation_20261105.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 They pin the accepted DDC and p19 child hashes, use fail-closed compatible
 relinking, characterize timing/constraints/connections, compile only the PM1
 child, and require 62,000 registers plus the R5 proxy before and after mapping.
@@ -1694,7 +1694,7 @@ The accepted top is not recompiled.
 
 The first characterized replacement screen has failed before candidate
 elaboration completed; see
-[`dc_pm1_characterized_replacement_result_20261105.md`](dc_pm1_characterized_replacement_result_20261105.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 Its immutable input gate and baseline DDC/report stages pass, then DC reports
 `VER-30` stack overflow at the 146,880-bit release reduction and exits 139.
 The runner inherited an 8,192 KiB stack, unlike the accepted full DC runner's
@@ -1709,7 +1709,7 @@ characterization, 62,000-register and proxy gates remain unchanged.  r1 is
 preserved and must not be overwritten.
 
 The unchanged-input r2 screen has completed with a new fail-closed gate; see
-[`dc_pm1_characterized_replacement_r2_result_20261105.md`](dc_pm1_characterized_replacement_r2_result_20261105.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 Unlimited stack resolves r1: candidate Presto analysis, elaboration and link
 all complete.  The unmapped candidate then reports 62,002 registers against
 the 62,000 mapped-baseline expectation, so r2 exits 1 before relinking,
@@ -1723,13 +1723,13 @@ Source-level state extraction now proves the frozen legacy and PM1 children
 have identical register declarations, widths and nonblocking targets: 628,917
 objects and 1,678,810 raw bits on both sides, with no additions, removals or
 width changes.  The bounded same-layer DC diagnosis is specified in
-[`dc_pm1_legacy_precompile_count_probe_20261105.md`](dc_pm1_legacy_precompile_count_probe_20261105.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 It uniquely renames the frozen legacy module, performs only unlimited-stack
 analyze/elaborate/link, and requires 62,002 precompile registers plus one R5
 proxy.  Do not change the replacement gate until this probe passes.
 
 The same-layer legacy count probe has completed successfully; see
-[`dc_pm1_legacy_precompile_count_result_20261105.md`](dc_pm1_legacy_precompile_count_result_20261105.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 Run `pm1_legacy_precompile_count_20261105_r1` reports exactly 62,002 legacy
 precompile registers, one R5 proxy, native PASS and both outer exits zero.
 All frozen input hashes recompute exactly.  Together with the PM1 r2 candidate
@@ -1741,7 +1741,7 @@ The joined PM1 pane closed cleanly; the surviving RD1 pane remained live and
 was relabeled back to `p16-rd1-dc` without interrupting DC.
 
 The replacement screen's mixed-stage gate is repaired for r3; see
-[`dc_pm1_characterized_replacement_r3_repair_20261105.md`](dc_pm1_characterized_replacement_r3_repair_20261105.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 It now requires 62,002 registers before candidate compile and 62,000 cells for
 both accepted and candidate postcompile checks.  No RTL, candidate input,
 port/relink policy, characterization, clock, constraint, proxy or compile
@@ -1749,7 +1749,7 @@ effort changes.  This repair alone is not a synthesis result.
 
 The repaired characterized replacement r3 run has completed with qualified
 diagnostic evidence; see
-[`dc_pm1_characterized_replacement_r3_result_20261106.md`](dc_pm1_characterized_replacement_r3_result_20261106.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 Inputs, stack, 62,002/62,000 stage counts, DDC, mapped HDL and all native
 reports close.  PM1 reduces child cell area 4.201% and relinked-top area 0.473%,
 with unchanged setup WNS -0.31 ns and modest TNS/path-count improvement.
@@ -1762,7 +1762,7 @@ before deciding on a short saved-DDC validation or clean replay.  RD1 remained
 live and advancing in `p16-rd1-dc` at the 2026-11-06 inspection snapshot.
 
 The stale-collection and false-PASS mechanism is now repaired in source; see
-[`dc_pm1_stale_collection_gate_repair_20261106.md`](dc_pm1_stale_collection_gate_repair_20261106.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 The Tcl snapshots scalar counts before relink, and the runner now requires all
 artifacts, an error-free native log and an exact non-empty summary before exit
 zero.  No RTL or synthesis method changes.  This repair has static closure
@@ -1789,7 +1789,7 @@ gate.  RD1 remained live and untouched in `p16-rd1-dc`.
 
 The two failed standalone PM1 screens were removed from the formal remote
 `runs/` namespace and retained under the recoverable failure archive described
-in [`dc_output_cleanup_20261105.md`](dc_output_cleanup_20261105.md).  No active,
+in [研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).  No active,
 accepted or older successful output was moved.  This was namespace cleanup
 only and did not reclaim disk capacity.
 
@@ -1808,7 +1808,7 @@ The warning total is 44,585.  Preserve the run and all constraints; no PPA or
 system-benefit claim follows.
 
 The active-run prompt in
-[`dc_control_refinement_active_run_handoff_20261102.md`](dc_control_refinement_active_run_handoff_20261102.md)
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 is retained as a historical snapshot.  Use the accepted result above for any
 successor discussion; no additional refinement or DC run is automatically
 authorized.
@@ -1842,7 +1842,7 @@ Repair simulator grouping/build settings, preserve geometry and stimulus,
 then require a new full functional/emitter closure before small synthesis.
 The next successor moves those checks to an isolated EDA-server source
 snapshot; see
-[`dc_rd2_remote_validation_migration_20261106.md`](dc_rd2_remote_validation_migration_20261106.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 C++ build jobs are limited to one with two Verilation jobs; the helper,
 stimulus and full geometry are unchanged.  Source hashing, two-case XML test
 acceptance and exact paired-port/output-hash checks precede any RD2 DC.
@@ -1868,7 +1868,7 @@ RD1 and measure only the RD2 increment.  RD1+PM1 full paired DC remains
 required for eventual integrated acceptance; defer the cumulative-input
 choice until RD2's small-screen disposition.  No full-top DC is started here.
 The RD2 isolated small-synthesis launch snapshot is recorded in
-[`dc_rd2_read_screen_launch_20261106.md`](dc_rd2_read_screen_launch_20261106.md).
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md).
 Run `rd2_read_network_screen_20261106_r1` has now completed in independent
 tmux `kvzap-control-refine:p27-rd2-read-dc`; see
 [`dc_rd2_read_screen_result_20261106.md`](dc_rd2_read_screen_result_20261106.md)
@@ -1975,9 +1975,9 @@ produces no mapped-area or mapped timing evidence. Production RTL and RD2
 remain untouched. The frozen run `wcg1_bank_mapping_sta_20261106_r1` is now
 completed both native sides in independent `kvzap-wcg1-map:paired-sta`, but
 its Python summary failed and outer exit is 1; see
-[`dc_wcg1_bank_mapping_launch_20261106.md`](dc_wcg1_bank_mapping_launch_20261106.md)
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 and its JSON for exact input hashes and launch paths. Current diagnosis is
-[`dc_wcg1_bank_mapping_error_diagnosis_20261106.md`](dc_wcg1_bank_mapping_error_diagnosis_20261106.md)
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 and JSON: DC 2018's missing design `area` attribute produces empty scalar
 metrics; native Total cell area is present. Both sides have native exit 0,
 raw/repaired DDC and reports. Native repaired area reduction is 16.5262% in
@@ -1987,7 +1987,7 @@ not a completed postcheck acceptance or a top-level result. No restart or
 tooling/RTL change was performed. Next is a versioned short postcheck repair
 using existing native reports, preserving r1's failed marker and frozen inputs.
 The short validator preparation is recorded in
-[`dc_wcg1_saved_validation_preparation_20261106.md`](dc_wcg1_saved_validation_preparation_20261106.md):
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md):
 native area/precision reports are authoritative, explicit pinned recovery
 leaves source metrics unchanged, and 26 regressions plus ordinary-Tcl reader
 checks cover the failure. The completed remote result is
@@ -2023,11 +2023,11 @@ preparation are separate in
 Bounded Scala compile and two 240-check native-gate comparisons pass, but
 the planned eight real-wrapper functional tests are not yet accepted. They
 are now launched independently; see
-[`dc_wcg1_wrapper_functional_launch_20261106.md`](dc_wcg1_wrapper_functional_launch_20261106.md)
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 and JSON. `kvzap-wcg1-wrapper:functional` uses frozen commit `82bd953`,
 122 sources excluding RD2, native Java 11 and serial C++ build. Remote Test
 compile passes. The WCG1 job has now ended with outer exit 1; see
-[`dc_wcg1_wrapper_functional_result_20261106.md`](dc_wcg1_wrapper_functional_result_20261106.md)
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 and JSON. Baseline passes 4/4; candidate fails 4/4 during Verilator simulator
 construction because the simulation gate's nonblocking latch assignment
 triggers fatal COMBDLY. Candidate stimulus/equivalence assertions did not run;
@@ -2080,7 +2080,7 @@ separate frozen launch record is authoritative for later execution. Neither
 production RTL nor the independent RD1+PM1 run is changed.
 
 The guarded chain is now launched in a new immutable root; see
-[`dc_wcg1_wrapper_mapping_launch_20261106.md`](dc_wcg1_wrapper_mapping_launch_20261106.md)
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 and JSON. Run `wcg1_wrapper_mapping_sta_d860732_20261106_r1` uses independent
 `kvzap-wcg1-wrapper-map:paired-sta`, archive `5531bc6a...` and exact versioned
 runner. Initial hashes/resource/DB/profile gates, private Scala compile,
@@ -2091,7 +2091,7 @@ The user is notified to await completion. RD1+PM1 is not accessed or changed.
 
 The initial mapping chain stopped fail-closed at native preflight, outer exit
 7, before either formal side mapped. See
-[`dc_wcg1_wrapper_mapping_preflight_repair_20261106.md`](dc_wcg1_wrapper_mapping_preflight_repair_20261106.md):
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md):
 DC 2018 requires `set_size_only -all_instances` on the shared inline module's
 native leaf. Its false command status produced UID-192/UID-457 even though
 native gates linked; the independent Error scan rejected the misleading
@@ -2100,7 +2100,7 @@ command-reference review and 36 local checks pass; a new immutable r2 launch
 is required, leaving r1 and RD1+PM1 untouched. This is not an RTL/timing fault.
 
 The corrected immutable r2 chain is now launched; see
-[`dc_wcg1_wrapper_mapping_retry_launch_20261106.md`](dc_wcg1_wrapper_mapping_retry_launch_20261106.md)
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 and JSON. Run `wcg1_wrapper_mapping_sta_211f1e2_20261106_r2` uses
 `kvzap-wcg1-wrapper-map-r2:paired-sta`, archive `aebd5a07...`; the package
 differs from r1 only in the native-sizing Tcl command/status check. All old

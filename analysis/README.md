@@ -83,7 +83,7 @@ timing and complete-cost work. No new run or RTL change is made by acceptance.
 
 ## Persistent page read r2 launch snapshot after parent PASS (2026-11-09)
 
-The [r2 launch](route_a_persistent_page_read_r2_launch_20261109.md) and
+The [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md) and
 [frozen input/parent evidence](route_a_persistent_page_read_r2_launch_20261109.json)
 record 155 checked files, compile exit0 and a qualified real R5-parent test.
 Independent tmux is `kvzap-persistent-read-v2-r2:validation`; original14 tests
@@ -92,7 +92,7 @@ no full-DUT/numeric/timing or net-benefit conclusion follows yet.
 
 ## Persistent page read R5 repair candidate (2026-11-09)
 
-The [r2 repair plan](route_a_persistent_page_read_r2_repair_20261109.md) and
+The [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md) and
 [source/check ledger](route_a_persistent_page_read_r2_repair_20261109.json)
 record the scanner ownership fix and real-parent mark/query/query regression.
 New runner gates the original fourteen tests on the parent's native PASS,
@@ -101,7 +101,7 @@ native repair success. r1 remains preserved; no DC/STA or multi-group change.
 
 ## Persistent page read v2 r1 failure diagnosed (2026-11-09)
 
-The [result inspection](route_a_persistent_page_read_result_20261109.md) and
+The [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md) and
 [source/native/protocol evidence](route_a_persistent_page_read_result_20261109.json)
 confirm a completed 11/14 run with three whole-DUT first-read failures.
 R5 parent shared-lookup ownership leaves a phantom scanner outstanding bit;
@@ -111,7 +111,7 @@ v1 regressions pass, and this batch performs no RTL repair or new run.
 
 ## Persistent page read v2 native launch snapshot (2026-11-09)
 
-The [launch record](route_a_persistent_page_read_launch_20261109.md) and
+The [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md) and
 [frozen input/startup snapshot](route_a_persistent_page_read_launch_20261109.json)
 record source `1d49fc8`, 152 hash-checked inputs and independent tmux
 `kvzap-persistent-read-v2-r1:validation`. Remote compile exit0 and first
@@ -120,7 +120,7 @@ closure remain pending; no repeated-read PASS, DC/STA or full-decode claim.
 
 ## Persistent page read implementation candidate (2026-11-09)
 
-The [preparation record](route_a_persistent_page_read_preparation_20261109.md)
+The [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and [source/check ledger](route_a_persistent_page_read_preparation_20261109.json)
 document explicit default-off v2 R5 read qualification, R6 preflight/failure,
 S2 reservation and retire drain. Protected R3/Admission/M2/R2 source regions
@@ -152,7 +152,7 @@ continuous execution, numerics, cost and timing remain open.
 
 ## Stage A current-RTL probes launched (2026-11-09)
 
-The [remote launch](route_a_stage_a_probe_launch_20261109.md) and
+The [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md) and
 [input evidence](route_a_stage_a_probe_launch_20261109.json) freeze source
 `0aa5472` with unchanged production RTL. Independent tmux is
 `kvzap-stage-a-probes-r1:probes`; actual input gate passes and main compilation
@@ -161,7 +161,7 @@ has been notified to wait; no DC/STA or automatic retry is scheduled.
 
 ## Stage A current-RTL probes prepared (2026-11-09)
 
-The [probe preparation](route_a_stage_a_probe_preparation_20261109.md)
+The [研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 adds separate same-page and second-admission diagnostics around the complete
 functional DUT. No production RTL changes. Static preparation checks pass;
 remote compile/test and blocker evidence remain pending. A diagnostic PASS
@@ -203,7 +203,7 @@ This read-only inspection starts no experiment and changes no RTL.
 
 ## RD1+WCG1 retry launch snapshot (2026-11-08)
 
-The [r2 launch](dc_rd1_wcg1_full_paired_retry_launch_20261108.md) and
+The [研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md) and
 [JSON](dc_rd1_wcg1_full_paired_retry_launch_20261108.json) record the repaired
 hash gate, 48 passing preparation regressions and successful real input
 closure. Reuse the old contextual export; PM1 stays off and RD2 excluded.
@@ -214,7 +214,7 @@ No area/timing result is inferred. Wait for the user's completion notice.
 
 ## Latest RD1+WCG1 result inspection (2026-11-07)
 
-The [full-paired inspection](dc_rd1_wcg1_full_paired_inspection_20261107.md)
+The [研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 and [evidence JSON](dc_rd1_wcg1_full_paired_inspection_20261107.json) confirm
 contextual export r2 completed, but the pipeline failed at input freeze
 before native binding or either DC side. The script compared canonical helper

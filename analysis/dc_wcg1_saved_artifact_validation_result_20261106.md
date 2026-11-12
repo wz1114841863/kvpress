@@ -8,7 +8,7 @@ Evidence and exact checksums:
 [`dc_wcg1_saved_artifact_validation_result_20261106.json`](dc_wcg1_saved_artifact_validation_result_20261106.json).
 
 This closes the summary failure diagnosed in
-`dc_wcg1_bank_mapping_error_diagnosis_20261106.md`. It accepts the existing
+`H4对应研究过程`. It accepts the existing
 one-bank mapped-area and cell-clock STA screen, after its planned hold
 repair. It does not integrate clock gating into the generic production
 wrapper. No DC/EDA executable was invoked; no analyze, elaborate, compile,

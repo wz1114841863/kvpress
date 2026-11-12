@@ -55,7 +55,7 @@ external-v2, 2ns or complete-cost work. No new RTL/test/DC/STA in this inspectio
 
 ## Persistent page read r2 launch snapshot, parent gate qualified (2026-11-09)
 
-[`route_a_persistent_page_read_r2_launch_20261109.md`](route_a_persistent_page_read_r2_launch_20261109.md)
+[研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and JSON record source `40a74b6`, 155 frozen files and independent tmux
 `kvzap-persistent-read-v2-r2:validation`. Compile and real-parent native
 regression pass; the original fourteen-test phase is running. Full15/outer,
@@ -64,7 +64,7 @@ r1; no DC/STA, multi-group implementation or automatic retry.
 
 ## Persistent page read r2 repair and parent gate (2026-11-09)
 
-[`route_a_persistent_page_read_r2_repair_20261109.md`](route_a_persistent_page_read_r2_repair_20261109.md)
+[研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and JSON record the scanner-owned request guard, real R5-parent regression
 and r2 parent-first 15-test flow. Local compile/lowering/checker tests pass;
 native repair acceptance is pending. r1 inputs/results and protected owners
@@ -72,7 +72,7 @@ are preserved. No multi-group, DC/STA or external-backing closure is added.
 
 ## Persistent page read v2 r1 failed result (2026-11-09)
 
-[`route_a_persistent_page_read_result_20261109.md`](route_a_persistent_page_read_result_20261109.md)
+[研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and JSON record 11/14 success, three whole-DUT first-read timeouts, matching
 152 source/archive hashes and complete native failure artifacts. R5 parent
 shared-request bookkeeping misattributes v2 mark to scanner outstanding;
@@ -83,7 +83,7 @@ is inferred from the five passing owner units or default-v1 regressions.
 
 ## Persistent page read v2 validation launched (2026-11-09)
 
-[`route_a_persistent_page_read_launch_20261109.md`](route_a_persistent_page_read_launch_20261109.md)
+[研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and JSON freeze `1d49fc8`/152 source files and record independent tmux
 `kvzap-persistent-read-v2-r1:validation`. Actual input hashes and remote
 compile pass; native construction has started, while 14-test repeat/error/
@@ -92,7 +92,7 @@ no DC/STA or second-group implementation, and no old run is disturbed.
 
 ## Persistent page read successor preparation (2026-11-09)
 
-[`route_a_persistent_page_read_preparation_20261109.md`](route_a_persistent_page_read_preparation_20261109.md)
+[研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and JSON describe the default-off v2 implementation and 14-test functional
 qualification plan. Source/protected-region checks, local compile/lowering
 and short acceptance-script tests support preparation only. Persistent R5
@@ -125,7 +125,7 @@ retained historical snapshots.
 
 ## Stage A current-RTL probes launched (2026-11-09)
 
-[`route_a_stage_a_probe_launch_20261109.md`](route_a_stage_a_probe_launch_20261109.md)
+[研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 and JSON record pinned source/archive, unchanged production RTL and the
 independent tmux `kvzap-stage-a-probes-r1:probes`. Input gate passes; startup
 snapshot is Scala compilation. Wait for user completion notice before
@@ -133,7 +133,7 @@ accepting native tests or blocker evidence. No DC/STA or functional repair.
 
 ## Stage A current-RTL probe preparation (2026-11-09)
 
-[`route_a_stage_a_probe_preparation_20261109.md`](route_a_stage_a_probe_preparation_20261109.md)
+[研究过程与结果（H2）](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)
 describes two whole-DUT test-only diagnostic probes, data provenance,
 explicit external sidecar/numeric boundaries and source/marker/XML gates.
 Preparation does not claim remote build/simulation completion or repair.
@@ -173,7 +173,7 @@ separate area/timing/cleanliness verdicts. No new job is started.
 
 ## Full paired launch snapshot r2 (2026-11-08)
 
-[`dc_rd1_wcg1_full_paired_retry_launch_20261108.md`](dc_rd1_wcg1_full_paired_retry_launch_20261108.md)
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 and JSON record successful reuse/freeze, 49-unit source closure, five array
 proxies, fair-v1 coverage and the new independent guarded pipeline. Resource
 admission automatically defers native commands while other DC work is live;
@@ -190,7 +190,7 @@ this repair record does not claim launch or mapping completion.
 
 ## Latest full-paired inspection (2026-11-07)
 
-[`dc_rd1_wcg1_full_paired_inspection_20261107.md`](dc_rd1_wcg1_full_paired_inspection_20261107.md)
+[研究过程与结果（H4）](hardware_reports/04_area_timing_optimization_and_design_review.md)
 and JSON supersede the launch-only execution snapshot: contextual export r2
 passed, but the pipeline stopped at a raw-versus-canonical inline hash check
 before input composition/native binding/DC. There is no new mapped result.
@@ -266,11 +266,11 @@ Read only when the question needs the corresponding history or object:
 | SRP | Minimum paper-relevant realization boundary, eligibility planning, and future cost-evidence routing | Start with `synthesis_realization_partition.md`, then `srp3_realization_requirements_decision_plan.md`, `srp4_differential_cost_evidence_plan.md`, `srp5_completion_review.md`, and `synthesis_eligibility_manifest.json`; consult `analysis/algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md` only for the resolved local-ledger availability item. SRP.0--SRP.5 conditionally passes only to a separately authorized realization-choice planning review. |
 | MBR.0--MBR.1-A / measurement RTL | Approved candidate measurement cut, source/partition BOM, paired Full-KV fairness plan, and bounded Chisel realization | Read `measurement_boundary_selection.md`, then `measurement_baseline_fairness_plan.md`; use `measurement_boundary_bom.json` or `measurement_baseline_matrix.json` for exact source/comparison entries. Read `measurement_realization_candidate_proposal.md` for the approved control/array/R4/top-shell scope, then `full_kv_baseline_path_audit_20261016.md` for W0 and MR-1A implementation evidence. MBR is closed; W0 and MR-1A are complete at their bounded functional scopes. Use `mr1b_direct_pending_cross_owner_contract_proposal.md` only for the approved single-record direct-pending contour. The completed P3/S2/M2/R5 boundary evidence is consolidated by `mr2_completion_review.md`. The historical dual-DUT source/port/cost snapshot is `measurement_dut_cut_freeze_20261025.md`; the current successor source/port/filelist freeze is `successor_synthesis_source_port_filelist_freeze_20261028.md`. Neither is a wrapper, synthesis, or PPA decision. |
 | Realization preparation | Logical storage-wrapper interfaces, common-equivalence allocation, integration-shell responsibilities, external/numeric nonzero rows, successor source freeze, and pre-DC dual-top input inventory | Read `realization_preparation_wrapper_common_disposition.md` and its manifest, then `successor_synthesis_source_port_filelist_freeze_20261028.md`, `dual_synthesis_top_input_package_20261028.md`, `control_projection_p1_externalization.md`, `paired_control_projection_profile_20261028.md`, and the completed `paired_control_projection_hdl_freeze_20261028.md`. Paired 9-bit S2 functional conformance is complete but common cost remains non-cancellable. P1 implemented projection constructors and typed functional-boundary externalization; the profile supplies their common bounded A3 parameter object. The current Route-A source input is the descriptor-externalized 48-file split successor recorded in `r5_descriptor_externalized_successor_input_freeze_20261029.md`; do not regress to the legacy monolithic lowering or 182-file list. None of these records defines a macro, physical port count, latency, clock, controller, numeric implementation, DC, or PPA result. |
-| DC environment preflight | Remote DC executable/library availability and deterministic no-DC input checking | Read `dc_environment_preflight_20261029.md` and run `hardware/route_a/dc/check_kvzap_control_projection_dc_env.sh` only after sourcing its companion environment file on the EDA server. It confirms an inherited feasibility-library candidate and the frozen independent HDL filelists, but intentionally leaves constraints, array/black-box treatment and external-service stubs unselected. It is not a DC invocation or a library/corner/PPA decision. |
+| DC environment preflight | Remote DC executable/library availability and deterministic no-DC input checking | Read `H4对应研究过程` and run `hardware/route_a/dc/check_kvzap_control_projection_dc_env.sh` only after sourcing its companion environment file on the EDA server. It confirms an inherited feasibility-library candidate and the frozen independent HDL filelists, but intentionally leaves constraints, array/black-box treatment and external-service stubs unselected. It is not a DC invocation or a library/corner/PPA decision. |
 | DC constraint contract | Parameterized one-clock, synchronous-reset and top-level I/O constraint procedure | Read `dc_constraint_contract_20261029.md`, then statically run `hardware/route_a/dc/check_kvzap_control_projection_constraints.sh`. The procedure requires an approved run manifest to supply all numerical timing/I/O values; no H3 period is inherited and no DC run is launched. Array/black-box and external-service decisions remain separate. |
 | DC feasibility fair-v1 baseline | Approved identical numerical constraints and static actual-HDL coverage | Read `dc_feasibility_fair_v1_constraint_freeze_20261029.md` and use `hardware/route_a/dc/dc_feasibility_fair_r5_descriptor_successor_v1.json` plus `check_kvzap_control_projection_dc_feasibility_fair_v1.sh`. This freezes the unchanged 2.0 ns fairness baseline and its descriptor-externalized successor input; neither the numeric profile nor a static report is a DC result. |
-| DC feasibility input readiness and completed run | Strict paired constraint/input acceptance plus first native DC disposition | Read `dc_successor_input_preflight_r5_descriptor_externalized_20261029.md`, then `dc_feasibility_run_r5_descriptor_externalized_20261029.md`, `dc_feasibility_result_r5_descriptor_externalized_20261030.md`, and `dc_array_proxy_materialization_20261029.md`. Fair-v1 static coverage and five same-header M2/P3/R5/S2 array-interior proxies pass against the 1-file Full-KV/48-file Route-A successor, while all parent controls and external nonzero/unestimated services remain explicit. Both tops link/map and emit netlists, but Route-A fails the frozen setup target and has unresolved hierarchical-lint closure. Do not use raw area/timing for PPA, common-cost cancellation, or zero-cost external-service claims. |
-| DC control-realization refinement | Saved-DDC hotspot diagnosis, bounded successor RTL, generated state/proxy closure, and completed same-fair-v1 comparison | Read `dc_control_realization_diagnosis_20261101.md`, then `dc_control_refinement_successor_20261102.md`, and finish with `dc_control_refinement_result_20261103.md`. Retain `dc_control_refinement_active_run_handoff_20261102.md` only as the historical active-run snapshot. The completed paired run closes tool/input provenance and observes a 41.146% Route-A mapped-cell-area reduction, an exact 645,012 sequential-cell/clock-alias-load reduction, and a 21.462% lint-warning reduction. Setup still fails with WNS -0.33 ns and TNS -7,891.18 ns, while the remaining 44,513 warnings keep structural cleanliness blocked. This is logic-only feasibility evidence, not PPA, external-service-zero-cost, speedup, or hardware net benefit. |
+| DC feasibility input readiness and completed run | Strict paired constraint/input acceptance plus first native DC disposition | Read `H4对应研究过程`, then `dc_feasibility_run_r5_descriptor_externalized_20261029.md`, `dc_feasibility_result_r5_descriptor_externalized_20261030.md`, and `dc_array_proxy_materialization_20261029.md`. Fair-v1 static coverage and five same-header M2/P3/R5/S2 array-interior proxies pass against the 1-file Full-KV/48-file Route-A successor, while all parent controls and external nonzero/unestimated services remain explicit. Both tops link/map and emit netlists, but Route-A fails the frozen setup target and has unresolved hierarchical-lint closure. Do not use raw area/timing for PPA, common-cost cancellation, or zero-cost external-service claims. |
+| DC control-realization refinement | Saved-DDC hotspot diagnosis, bounded successor RTL, generated state/proxy closure, and completed same-fair-v1 comparison | Read `dc_control_realization_diagnosis_20261101.md`, then `dc_control_refinement_successor_20261102.md`, and finish with `dc_control_refinement_result_20261103.md`. Retain `H4对应研究过程` only as the historical active-run snapshot. The completed paired run closes tool/input provenance and observes a 41.146% Route-A mapped-cell-area reduction, an exact 645,012 sequential-cell/clock-alias-load reduction, and a 21.462% lint-warning reduction. Setup still fails with WNS -0.33 ns and TNS -7,891.18 ns, while the remaining 44,513 warnings keep structural cleanliness blocked. This is logic-only feasibility evidence, not PPA, external-service-zero-cost, speedup, or hardware net benefit. |
 | M2/P3 wrapper control-realization P0 | Read-only field-liveness, state-concentration, timing-path and successor-candidate diagnosis after the accepted refinement | Read `dc_m2_p3_wrapper_p0_diagnosis_20261103.md` after the completed DC result. The two wrapper membership tables are 92.907% of its mapped sequential cells. The first bounded candidate stores only a 79-bit member record and 80-bit pending suffix, with a 76,032 mapped-sequential-cell pre-DC ceiling; later independent candidates address the 36-by-64 materializer selector and ordinal-indexable reconciliation lookup. P0 changes no RTL and launches no synthesis. |
 | M2/P3 compact-membership P1 | First bounded wrapper representation change, functional non-regression, generated successor closure, and authorized paired-DC routing | Read `dc_m2_p3_wrapper_compact_membership_implementation_20261103.md` after P0, then `dc_m2_p3_wrapper_compact_membership_successor_20261103.md`; use `dc_m2_p3_wrapper_compact_membership_dc_run_20261103.md` only for the separately authorized fair-v1 run state. The 79-bit member record and 80-bit pending suffix pass the final 14-suite/57-test remote regression; the 48-file successor passes 16/16 typed ports, 12/12 owners and 5/5 paired proxies, with wrapper raw state 990,322 -> 400,498 bits. The full reconciliation journal and all frozen authority/publication/arbitration semantics remain intact. The active DC launch is not a result; raw state is not mapped area or PPA. |
 
@@ -334,11 +334,11 @@ Its first completion inspection is
 but full-size simulator C++ compilation is OOM-killed after split outputs are
 regrouped into large translation units.  No full test/emission or RD2 area
 result exists; simulator-build repair precedes any small synthesis.
-Use `dc_rd2_remote_validation_migration_20261106.md` for the next remote-only
+Use `H4对应研究过程` for the next remote-only
 functional/emission successor.  It uses an immutable isolated source archive
 and one C++ compiler job while retaining the complete tests and geometry.
 The corrected Java-11 remote launch is tracked in
-`dc_rd2_remote_validation_launch_20261106.md`; preflight and sbt startup are
+`H4对应研究过程`; preflight and sbt startup are
 only liveness evidence until the full test/emitter/postcheck gates pass.
 Finish with `dc_rd2_remote_validation_result_20261106.md`: both tests, paired
 emission and postcheck pass, with independently verified source/output hashes
@@ -349,7 +349,7 @@ The subsequent authorized small-synthesis freeze is
 matched RD1 context and unchanged fair-v1 constraints.  It also records the
 later cumulative integration decision gate for RD1/PM1/RD2.
 The corresponding launch snapshot is
-`dc_rd2_read_screen_launch_20261106.md`; input and baseline-analysis markers
+`H4对应研究过程`; input and baseline-analysis markers
 are launch evidence only. Finish with `dc_rd2_read_screen_result_20261106.md`
 and JSON: both native sides, postcheck and outer exit 0 pass, and frozen
 inputs/outputs independently recheck. The decoded candidate has no incremental
@@ -379,7 +379,7 @@ retained entry_id policy.  The freeze authorizes one same-fair-v1 paired run;
 it is not a mapped-area or timing result.
 
 The separately authorized complete paired-DC launch is recorded in
-`dc_rd1_full_paired_dc_launch_20261105.md`.  Its active-run markers and final
+`H4对应研究过程`.  Its active-run markers and final
 native reports must be checked after user-reported completion; launch
 liveness is not a result.
 The completed authority is `dc_rd1_full_paired_dc_result_20261106.md`: full
@@ -428,30 +428,30 @@ future characterized bottom-up replacement screen but is not mapped candidate
 evidence or a substitute for a complete top compile.
 
 The concrete successor procedure is
-`dc_pm1_characterized_replacement_plan_20261105.md`: emit a distinct but
+`H4对应研究过程`: emit a distinct but
 port-identical PM1 Page Manager child, use fail-closed `change_link`, project
 the real saved-top environment with `characterize`, and map only that child.
 Any positive screen remains provisional until complete same-fair-v1 top DC.
 The stage-count diagnosis is closed by
-`dc_pm1_legacy_precompile_count_result_20261105.md`: both the frozen legacy and
+`H4对应研究过程`: both the frozen legacy and
 PM1 raw children have 62,002 registers before compile, while the accepted
 mapped Page Manager has 62,000 sequential cells.  The earlier r2 failure was
 a mixed-stage gate, not PM1-added state.  This is count closure only, not an
 area or timing result.
 The bounded correction is recorded in
-`dc_pm1_characterized_replacement_r3_repair_20261105.md`; it separates the
+`H4对应研究过程`; it separates the
 62,002 precompile and 62,000 postcompile fail-closed expectations without
 changing the candidate or replacement method.
 Its separately authorized remote run is tracked in
-`dc_pm1_characterized_replacement_r3_launch_20261105.md`; launch markers are
+`H4对应研究过程`; launch markers are
 not a mapped result.
-Finish with `dc_pm1_characterized_replacement_r3_result_20261106.md`.  R3 maps
+Finish with `H4对应研究过程`.  R3 maps
 and shows a provisional 4.201% Page Manager area reduction, but two stale
 collection `SEL-001` errors corrupt summary completeness, setup still fails,
 one hold path regresses and lint increases slightly.  Treat it as a positive
 area-direction diagnostic, not clean screen closure or integrated DC proof.
 The stale-collection and false-PASS mechanism is repaired in
-`dc_pm1_stale_collection_gate_repair_20261106.md`: collection sizes are
+`H4对应研究过程`: collection sizes are
 snapshotted before relink and a native-error/artifact/summary postcheck is now
 mandatory.  The repair changes no RTL or synthesis method.
 The bounded no-remap closure is implemented in
@@ -460,7 +460,7 @@ accepted and r3 mapped DDCs, relinks without `-force`, regenerates reports and
 requires clean scalar summary/area/timing/lint evidence.  It performs no
 analyze, characterize or compile.
 Its authorized remote execution is tracked in
-`dc_pm1_saved_ddc_validation_launch_20261106.md`; input/stack markers are only
+`H4对应研究过程`; input/stack markers are only
 launch evidence until native and postcheck PASS plus both exits are verified.
 The completed disposition is
 `dc_pm1_saved_ddc_validation_result_20261106.md`: all clean-summary and
@@ -505,14 +505,14 @@ For WCG1's authorized matched isolation mapping and gated-clock STA, use
 It fixes the one-bank boundary, identical 2-ns profile, propagated cell clocks,
 native storage/gate inventories, and raw versus hold-repaired area policy.
 Preparation/preflight closure is not mapped-area or timing closure. The
-separate `dc_wcg1_bank_mapping_launch_20261106.md` and JSON freeze the
+separate `H4对应研究过程` and JSON freeze the
 authorized run's exact inputs and independent tmux location. Follow
-`dc_wcg1_bank_mapping_error_diagnosis_20261106.md` and JSON for the completed
+`H4对应研究过程` and JSON for the completed
 native sides but failed summary: the design-level area attribute is absent
 in DC 2018. Audited native areas/timing remain pending a versioned short
 postcheck repair; no full remapping or production integration has occurred.
 The repair/preparation contract is
-`dc_wcg1_saved_validation_preparation_20261106.md`: pinned recovery in a new
+`H4对应研究过程`: pinned recovery in a new
 sidecar, native area and precision timing authority, unchanged original r1
 and no EDA invocation. Final acceptance is
 `dc_wcg1_saved_artifact_validation_result_20261106.md` and JSON: separate
@@ -531,9 +531,9 @@ paired DC is launched and not accepted. WCG1 implementation and pending
 real-wrapper differential test gates are in `dc_wcg1_wrapper_isolation_20261106.md`.
 Do not alter the frozen RD1+PM1 input to include ongoing WCG1 source changes.
 The WCG1 independent source/test launch is
-`dc_wcg1_wrapper_functional_launch_20261106.md` and JSON: source compile
+`H4对应研究过程` and JSON: source compile
 passes. Its completed failed disposition is
-`dc_wcg1_wrapper_functional_result_20261106.md` and JSON: baseline 4/4 pass,
+`H4对应研究过程` and JSON: baseline 4/4 pass,
 candidate 4/4 simulator-build failures (fatal COMBDLY in the simulation gate
 model), outer exit 1. No candidate functional stimulus ran. Inputs recheck;
 repair the model and minimally preflight Verilator/native-gate edges before
@@ -584,21 +584,21 @@ native result; consult the later separate launch record for actual execution.
 RD1+PM1 and production defaults remain untouched.
 
 Actual guarded execution is recorded in
-`dc_wcg1_wrapper_mapping_launch_20261106.md` and JSON. Its new independent
+`H4对应研究过程` and JSON. Its new independent
 session runs source generation, fail-closed inline/native-binding gates and
 then paired wrapper mapping/STA, not full paired DC. Compile/export and static
 input closure pass; actual native binding and mapped results remain pending. Await
 the user's completion notice; RD1+PM1 is not queried or changed.
 
 The initial wrapper mapping preflight failure and exact correction are in
-`dc_wcg1_wrapper_mapping_preflight_repair_20261106.md`: multiply instantiated
+`H4对应研究过程`: multiply instantiated
 native leaf sizing requires DC's documented `-all_instances`, with explicit
 return-status checking. r1 exit 7 is preserved and neither formal mapping ran.
 Use the separate successor launch record; do not infer mapping/timing failure
 from this flow error or change an ongoing RD1+PM1 input.
 
 The immutable r2 launch is
-`dc_wcg1_wrapper_mapping_retry_launch_20261106.md` and JSON. It changes only
+`H4对应研究过程` and JSON. It changes only
 the native-sizing Tcl/status check in the archived input, uses a separate r2
 session/root, retains all original 2-ns controls and source geometry, and
 still fails closed before formal mapping on any native preflight Error.

@@ -38,7 +38,7 @@ the DC run manifest supplies positive values for:
 No number is inherited from H3 or other decoder experiments.  Consequently,
 this package does not select frequency, output load, drive cell, timing corner
 or PPA target.  The library remains the separately recorded feasibility
-candidate from `dc_environment_preflight_20261029.md`.
+candidate from `H4对应研究过程`.
 
 ## Validation and next condition
 
