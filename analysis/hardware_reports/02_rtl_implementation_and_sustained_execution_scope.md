@@ -67,6 +67,29 @@ RETAIN → pending → pack-read → P3 → packed-write
 结果stub和测试平台连接。RTL2的最终通过明确限定为testbench-only functional dataflow，
 没有证明对应的全部生产连接已经实现。单次attention terminal也从未被定义成自动退休。
 
+### 分阶段定向验证：已覆盖什么
+
+RTL2并不是一次性完成：read descriptor、read ingress、R2双入口与共享allocation
+先在隔离单元或harness中检查握手、背压、次序及错误拒绝；当时有些生产入口仍inactive。
+R3 pack-read、direct-pending和packed-S2随后分别在功能harness中验证成功与stale、
+identity/generation不匹配、错误fragment和terminal fault；这不是持续decode。
+
+Source plan/packet和四消费者完成的定向测试覆盖七种非空来源组合、每个存在来源的
+四个consumer、背压及错误身份拒绝。RTL2.3最终一次合并控制协议回归报告29项通过；
+其中单独C9相关的4项pack-read、11项direct/packed及3项结构测试与回归有重叠，不能相加
+当作独立覆盖。R4结果stub局部及R4→R6终结组合分别记录8项和14项通过，覆盖匹配成功、
+stale、numeric fault及reset后的抑制；结果来自stub，不能证明实际attention数值实现。
+
+退休路径的定向观察包括reset后的旧响应抑制和重新初始化、错误终结保持、缺失drain
+时阻止retire、descriptor失效得到匹配成功后才能free，以及generation和重复事件拒绝。
+这些是有限参数、有限停顿下的功能观察，不是任意环境进展、时序或PPA证明。
+
+RTL3.4-A还记录了19项Python参考测试和25项Chisel定向测试通过，覆盖每consumer
+结果关联、四个成功结果聚合、匹配的numeric fault、背压及reset/stale拒绝；这些结果
+仍不等于真实Q/K/V到硬件attention结果的端到端数值验证。测试源码保留在
+[Chisel测试目录](../../hardware/route_a/chisel/src/test/scala/kvpress/routea/)；被归并的
+阶段摘要可在整理前Git版本`636c19b`查阅，原始实验目录没有清理。
+
 ### RTL3：替换验证入口，保持外部数值服务的明确边界
 
 **目的与方案。** 给尚缺的工作指定真实生产者：packed activation精确连接R6计划、
