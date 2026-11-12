@@ -10,7 +10,7 @@
 [H3 存储实现、测量边界与完整成本](hardware_reports/03_storage_measurement_boundary_and_complete_cost.md)和
 [H4 面积／时序优化与设计复盘](hardware_reports/04_area_timing_optimization_and_design_review.md)。
 软件—硬件职责调整仍是待讨论候选，没有改变现有RTL或研究协议。
-RTL阶段74份细分历史说明已合并到H2；实际工具读取的接口矩阵、事件schema和
+RTL阶段74份细分历史说明和4份重复中间接口清单已合并到H2；实际工具读取的接口矩阵、事件schema和
 manifest仍保留，旧合同原文可在整理前Git版本`636c19b`查看。旧源码快照的哈希
 与后续实现存在不一致，历史门槛尚未全部解除；不能将其视为当前功能验证。
 

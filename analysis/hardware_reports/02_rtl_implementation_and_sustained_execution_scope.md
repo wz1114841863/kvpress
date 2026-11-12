@@ -37,7 +37,9 @@ S2/direct四消费者完成，R6 authority/terminal/全局drain，以及R4包与
 
 **结果。** 实现不只停留在空模块：后续跨owner步骤接通初始化/状态收集、逐成员转权、
 source完成与R6终结关联，以及descriptor durable invalidation后再free的回收链。
-RTL1-V补上局部断言、有限合法停顿场景和事件到Python参考的适配。
+RTL1-V补上局部断言、有限合法停顿场景和事件到Python参考的适配。跨owner连接依次
+处理外部初始化与状态排空、admission/publication逐成员关联、source完成关联，以及
+R5 descriptor失效后的reclaim；这些是控制组合结果，payload和数值计算仍由后续阶段补齐。
 
 **分析。** 这些验证解决“控制是否守规则”，但当时P3 payload、S2填充、source plan和
 partial等入口仍有inactive部分。R4会校验包并接受匹配结果，不代表它能计算softmax。
