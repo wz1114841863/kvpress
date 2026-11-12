@@ -454,7 +454,7 @@ Use these only when the question needs the extra detail:
   and [`rtl_entry_assertion_verification_contract.md`](rtl_entry_assertion_verification_contract.md)
   for sole-owner/interface/assertion rules;
 - [`architecture_gate_a_reviewer_02.md`](architecture_gate_a_reviewer_02.md)
-  and [`route_a4141_accounted_net_benefit_ledger_contract.md`](route_a4141_accounted_net_benefit_ledger_contract.md)
+  and [R6 前RTL成本账本](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md)
   for the architecture/DSE evidence boundary.
 
 ## What is frozen
@@ -465,7 +465,7 @@ Use these only when the question needs the extra detail:
   proxy/accounting evidence rather than measured HBM, speedup, or PPA.
 - The ignored A4.14.1 report/input closure is now locally recoverable and
   passing its original read-only preflight; see
-  [`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md).
+  [R6 前RTL成本账本](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md).
   This removes an availability blocker only, not omitted-cost, physical, or
   net-benefit boundaries.
 - The architecture contract fixes the common S2 versus Route-A incremental

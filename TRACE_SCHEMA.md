@@ -2,26 +2,20 @@
 
 ## Living schema record and chronology
 
-This is the continuous, authoritative trace/schema record for the KVzap
-research track. Historical sections are retained verbatim for trace and
-provenance interpretation; new compatible schema/lifecycle additions are
-appended as dated, numbered sections rather than split into duplicate current
-documents. If a future continuation makes this volume impractical to navigate,
-the next volume will be named `TRACE_SCHEMA_02.md` and this section will link
-to it.
+This file describes trace fields and trace-to-model mapping for the KVzap
+research track. Add necessary field definitions here; research progress and
+results belong in the existing overview and R1—R6 rather than another schema
+volume. Older sections help interpret historical trace formats.
 
-The current reading order is:
-
-1. this file for trace/event schema and trace-to-model mapping;
-2. `analysis/route_a_research_plan.md` for the longitudinal Route-A progress
-   record, including A4.11--A4.14 completion;
-3. `analysis/architecture_spec.md` for the live pre-RTL interface contract;
-4. `analysis/README.md` for authority order and frozen-evidence navigation.
+For the research story, start with the project overview and R1—R6. Use this
+file only for trace/event fields and trace-to-model mapping. The current
+hardware interface is in `analysis/architecture_spec.md`; `analysis/README.md`
+provides navigation. Historical chronology here is not a current execution plan.
 
 The file contains A4.8.x semantic/service-replay records and A4.11.2
 prefill-armed lifecycle-to-model mapping. A4.12--A4.14 are accounting and
-realization-contract stages rather than new raw trace schemas; their immutable
-contracts are indexed from `analysis/README.md`. Gate-A is likewise an
+realization-contract stages rather than new raw trace schemas; their research
+meaning and original result links are consolidated in R6. Gate-A is likewise an
 architecture-contract/verification stage, not a new trace schema.
 
 ## A4.1.5 external-storage profiler attribution
@@ -388,8 +382,9 @@ allocator measurements, physical HBM traces, bandwidth, latency, or speed.
 
 ## 15. Route-A packed-page and lifecycle evidence
 
-The active Route-A contract is `analysis/route_a_research_plan.md`. It keeps
-the original KVzap final mask and distinguishes two evidence tiers.
+The Route-A research rationale is consolidated in the overview and R2—R6;
+the hardware interface is in `analysis/architecture_spec.md`. This trace track
+keeps the original KVzap final mask and distinguishes two evidence tiers.
 
 ### Static packed-page replay
 
@@ -2603,10 +2598,11 @@ fresh 180-event topology replay also again matches native length/ring metadata,
 with active resident lengths 513--629 and 269 nonmonotonic layer/KV-head slot
 orders. It validates only the fixed-request native-resident source reference.
 
-### Cross-frontend residency descriptor study (planned)
+### Cross-frontend residency descriptor study
 
-The post-M4 commonality phase is specified in
-`analysis/cross_frontend_commonality_study_plan.md` and archived in
+The completed C0—C5 commonality study is summarized in
+`analysis/algorithm_reports/04_cross_model_and_frontend_boundaries.md`.
+The historical C0 input remains in
 `analysis/cross_frontend_residency_evidence_archive_20260915.md`. Its v1
 descriptor separates semantic identity/visibility/epoch/order fields from the
 `persistent_packed`, `one_shot_packed`, and `dynamic_resident_slot` realization

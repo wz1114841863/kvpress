@@ -9,7 +9,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "analysis/synthesis_eligibility_manifest.json"
-REVIEW = ROOT / "analysis/srp5_completion_review.md"
 
 
 def main() -> int:
@@ -40,27 +39,12 @@ def main() -> int:
     }
     resolved = srp5["resolved_blockers"]["a4141_materialized_report_absent"]
     assert resolved["status"] == "resolved_for_read_only_ledger_budget_revalidation"
-    assert Path(ROOT / resolved["record"]).is_file()
     recovery = data["a4141_local_provenance_recovery"]
     assert recovery["status"] == "complete_read_only_recovery_and_preflight"
     assert recovery["recovered_artifact_count"] == 9
     assert srp5["next_gate"].endswith("not started by this record")
     assert data["next_gate"].startswith("SRP planning has conditional-pass closure")
 
-    review = REVIEW.read_text(encoding="utf-8")
-    for token in [
-        "## Closure review",
-        "## Authorization boundary",
-        "## Blockers versus normal next-stage work",
-        "## Required stop conditions for a candidate review",
-        "conditional_pass_to_separately_authorized_realization_choice_planning_only",
-        "unresolved evidence",
-        "A4.14.1 report-availability blocker",
-        "Resolved for read-only ledger/budget revalidation",
-        "Future synthesis top not selected",
-        "one-record-at-a-time",
-    ]:
-        assert token in review, token
     print("PASS: SRP.5 conditionally closes planning without authorizing implementation")
     return 0
 

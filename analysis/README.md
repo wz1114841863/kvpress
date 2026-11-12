@@ -12,9 +12,9 @@
 - [R5 Pending与metadata资源探索](algorithm_reports/05_pending_and_metadata_resource_exploration.md)。
 - [R6 前RTL成本账本与架构入口判断](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md)。
 
-2026-11-12 已删除13份内容已归并、无冻结或工具输入依赖的旧说明/合同及整编
-中间文件；有保留引用或输入依赖的原文继续原位保存。实验数据没有清理，资料
-缺口与未计成本见各报告，不再需要额外整编评估或来源索引作为阅读中间层。
+2026-11-12 已完成算法说明归并和两轮清理，研究过程只需总览与六份报告。
+原始实验数据保留，资料缺口与未计成本见各报告；不再增加整编评估、来源索引
+或例行哈希检查作为阅读和开发的前置条件。
 
 ## Current Route-A entry
 
@@ -266,7 +266,7 @@ array interior, recorded in
 [`mr2_s2_array_boundary_contract.md`](mr2_s2_array_boundary_contract.md).
 Both remain short of any wrapper selection. None
 of this is a selected future synthesis top or physical implementation. The separate
-[`a4141_local_provenance_recovery_20261016.md`](a4141_local_provenance_recovery_20261016.md)
+[R6 前RTL成本账本](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md)
 has restored the ignored A4.14.1 report/input closure locally and passed its
 original preflight; this permits only read-only revalidation of the accepted
 proxy-ledger constraints, not a physical or net-benefit conclusion.
@@ -477,35 +477,29 @@ to the specification. They are not parallel living architecture
 specifications: use them for module-level interface/assertion work or exact
 historical provenance.
 
-## A4 evidence chain
+## A4 research and saved results
 
-The final research disposition is the A4.14.1 ledger report at
-`analysis/experiments/route_a4141_accounted_net_benefit_ledger_01/`, SHA-256
-`0f43ec6dc30912210e4c565ebdd57554b02b7ca3f22326a498924e4cf1f2fdcb`.
+Read [R5](algorithm_reports/05_pending_and_metadata_resource_exploration.md)
+for pending/metadata execution and queues, and
+[R6](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md)
+for external-storage semantics, payload, cost and the architecture-entry decision.
+The [saved A4.14.1 result](experiments/route_a4141_accounted_net_benefit_ledger_01/a4141_accounted_net_benefit_ledger_report.json)
+and its `input_artifacts/` contain the underlying results. These remain
+conditional model/proxy evidence rather than physical HBM, PPA or speedup.
 
-| Evidence topic | Canonical contract/index |
-|---|---|
-| External-storage correctness and lifecycle binding | [`route_a4112b_external_storage_lifecycle_contract.md`](route_a4112b_external_storage_lifecycle_contract.md) |
-| M2 metadata/control contract | [`route_a4120_metadata_interface_inventory_contract.md`](route_a4120_metadata_interface_inventory_contract.md) through [`route_a4122_metadata_cycle_energy_contract.md`](route_a4122_metadata_cycle_energy_contract.md) |
-| Packed payload, sidecar, source reuse, and service envelope | [`A4.13.1`](route_a4131_payload_organization_contract.md), [`A4.13.3`](route_a4133_packed_kv_hbm_realization_contract.md), [`A4.13.4`](route_a4134_page_source_reuse_interface_contract.md), [`A4.13.5`](route_a4135_target_payload_service_cost_contract.md); research explanation and earlier accounting are in [R6](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md). |
-| Workload-aligned metadata and final ledger | [`route_a4140_workload_aligned_metadata_cost_contract.md`](route_a4140_workload_aligned_metadata_cost_contract.md), [`route_a4141_accounted_net_benefit_ledger_contract.md`](route_a4141_accounted_net_benefit_ledger_contract.md) |
+## Historical material
 
-These are immutable research/provenance attachments. They must not be edited,
-merged destructively, or interpreted as physical HBM timing, PPA, or measured
-speedup evidence.
+Research explanations now live in the project overview and R1—R6. Covered
+old plans, handoffs, cost-contract descriptions and recovery prose have been
+removed. Original data and historical freeze records have not been rewritten.
+If an old record names a removed document, read that document at the record's
+Git revision; the pre-cleanup snapshot `42048b2` also contains the retired
+algorithm documents and old AGENTS. No separate archive folder is needed.
 
-## Historical records and provenance
-
-Older records still required by frozen source/input bindings, retained
-historical references, or tools remain at their existing paths. Covered,
-unbound algorithm explanations have been removed; this is not permission to
-delete experiment data or the remaining Gate-A/provenance attachments. Many
-freezes name exact source paths and SHA-256 values.
-
-For routine work, do not begin with those files. Start with the living
-documents above—especially `route_a_current_handoff.md` and the phase ledger—
-then open a historical record only through a link from the current
-plan/specification or when auditing a frozen claim.
+The retained cross-frontend Markdown archive is an input to the historical C0
+collector. It is not required reading: C1 onward uses the saved JSON reports.
+Current AGENTS contains development constraints; historical hashes do not
+prevent editing current documentation or implementing work authorized by the user.
 
 ## Maintenance rule
 
@@ -516,8 +510,7 @@ classification changes, append detailed RTL phase progress to
 `rtl2_phase_contract.md`, append compatible trace schema records to
 `TRACE_SCHEMA.md`, and update the relevant report in `algorithm_reports/`
 and `project_overview_20261111.md` for research interpretation and current
-status. The old `route_a_research_plan.md` remains a historical source, not
-the default place to append another research summary. Update `architecture_spec.md` only for accepted
+status. Update `architecture_spec.md` for accepted
 interface-contract changes or a clearly labelled status alignment. Create a
 new numbered volume only when a continuous living record becomes impractical
 to navigate. The specifically named current handoff is a living document;
