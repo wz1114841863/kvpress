@@ -62,7 +62,7 @@ press = ExpectedAttentionPress(compression_ratio=0.5)
 answer = pipe(context, question=question, press=press)["answer"]
 ```
 
-In the snippet above, the compression is only applied on the context tokens so that you can evaluate the compression for different questions. Check the [Wikipedia notebook demo](notebooks/wikipedia_demo.ipynb) for a more detailed example (also available on Colab [here](https://colab.research.google.com/drive/1JNvaTKuuAHrl49dYB9-mdEH_y52Ib-NP)).
+In the snippet above, the compression is only applied on the context tokens so that you can evaluate the compression for different questions. A more detailed [Wikipedia demo](https://colab.research.google.com/drive/1JNvaTKuuAHrl49dYB9-mdEH_y52Ib-NP) is available on Colab.
 
 <details><summary>
 Decoding Compression
@@ -115,7 +115,7 @@ Several presses inherit from `ScorerPress` ([source](kvpress/presses/scorer_pres
 - `RandomPress` ([source](kvpress/presses/random_press.py)): random score
 - `KnormPress` ([source](kvpress/presses/knorm_press.py), [paper](https://arxiv.org/abs/2406.11430)): inverse norm of the key
 - `SnapKVPress` ([source](kvpress/presses/snapkv_press.py), [paper](https://arxiv.org/abs/2404.14469)): average attention weight of the last queries
-- `ExpectedAttentionPress` ([source](kvpress/presses/expected_attention_press.py), [notebook](notebooks/expected_attention.ipynb)): expected attention weight during the generation phase 
+- `ExpectedAttentionPress` ([source](kvpress/presses/expected_attention_press.py)): expected attention weight during the generation phase
 - `StreamingLLMPress` ([source](kvpress/presses/streaming_llm_press.py), [paper](https://arxiv.org/abs/2309.17453)): keep only the initial and recent tokens 
 - `TOVAPress` ([source](kvpress/presses/tova_press.py), [paper](https://arxiv.org/abs/2401.06104)): attention weight of the last query averaged across heads 
 - `ObservedAttentionPress` ([source](kvpress/presses/observed_attention_press.py), [paper](https://arxiv.org/abs/2306.14048)): average attention weight observed during in prefilling phase
@@ -166,7 +166,7 @@ For a detailed list of existing KV cache compression methods, check [Awesome-KV-
 We provide a simple CLI to evaluate the performance of different presses on several long-context datasets. 
 
 - Accuracy: Test your method on popular benchmarks directly using our CLI. 
-- Speed and Memory: The [speed_and_memory](notebooks/speed_and_memory.ipynb) notebook can help you measure peak memory usage and total time gain.
+- Speed and memory: Measure peak memory usage and runtime for the workload and hardware being evaluated.
 
 Please refer to the [evaluation](evaluation/README.md) directory in this repo for more details and results. 
 
@@ -191,7 +191,7 @@ By default, the `DynamicCache` is used (no quantization).
 
 ## Contributing
 
-We welcome contributions! To add a new press, simply open an issue or submit a pull request. Check the [new_press.ipynb](notebooks/new_press.ipynb) notebook for a step-by-step guide.
+We welcome contributions! To add a new press, simply open an issue or submit a pull request. A [guide to creating a new press](https://colab.research.google.com/drive/1ld6u2OnVUpGryBGDdanjjDrf6j7TD0oA?usp=drive_link) is available on Colab.
 
 ## Citation
 
@@ -236,7 +236,7 @@ pipe = pipeline("kv-press-text-generation", model=model, device_map="auto")
 ### What are the memory and throughput gains ?
 </summary>
 
-Memory usage should be reduced by around `compression_ratio * kv_cache_size`. As the KV cache is smaller, decoding should also be faster. You can measure peak memory usage gain and total time gain using [this notebook](notebooks/speed_and_memory.ipynb).
+Memory usage should be reduced by around `compression_ratio * kv_cache_size`. As the KV cache is smaller, decoding should also be faster. Measure peak memory and runtime on the target workload and hardware.
 </details>
 
 
