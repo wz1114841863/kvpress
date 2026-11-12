@@ -152,6 +152,15 @@ row180的255-call前缀在P64下得到约2.9502×容量压缩，cold-page碎片�
 但dense生成始终权威，A2不是实际执行稀疏attention或验证裁剪精度，功能软件后端
 要到后续R3才验证。
 
+**代码入口与边界。** 真实模型采集由[生命周期采集入口](../../tools/run_kvzap_decode_lifecycle_trace.py)
+调用[只读观察器及生命周期状态](../../kvpress/lifecycle.py)：正常dense生成时观察
+predictor分数，再由软件模拟maturity及admission。事件中的page、admission及bytes
+是根据这些观察计算的模型账目，并非物理packing控制器或HBM计数器。
+[生命周期校验](../../tools/validate_kvzap_decode_lifecycle_trace.py)检查已有记录；
+[离线page重放](../../tools/replay_kvzap_decode_lifecycle_pages.py)的 `replay` 对单种
+page重建状态，`replay_page_sizes` 对多种page汇总，输出事件、最终状态和摘要。
+它不再加载模型或重新预测，也不改变原始admission决定。
+
 ## 5. A3：少读bytes，不一定减少执行周期
 
 **目的与计划。** 在相同生命周期上建立四层对照：Full-KV；零管理成本的ideal packed；
@@ -181,6 +190,13 @@ metadata、queue/dispatch和计算/带宽上限显式计入，并扫描page、�
 因此A3-edge进一步把共享packing引擎数量、每引擎bytes/cycle、burst取整、page setup
 和服务窗口分开扫描。这里的早期负结果是模型发现，不是工具运行失败；也不能将
 它与后面不同服务模型的40%节省直接相减，称为实现优化幅度。
+
+**离线计算入口。** [A3 traffic/cycle脚本](../../tools/simulate_kvzap_route_a3_traffic.py)
+读取A2事件和对应page重放，`build_rows` 按call/layer/head对应记录，`simulate`
+按decode step计入一次性及持续admission、读取、metadata和调度成本，再输出
+逐步结果、累计节省及byte回本点。A1在此提供调度策略和成本口径；A3自己重新计算
+单请求逐步cycles，不读取A1的batch请求完成时间或CV。A1公平性统计修复因此不
+自动改写既有A3结果。这里的bytes/cycles和回本仍是指定假设下的离线模型。
 
 ## 6. A3.5—A3.11：把持续admission和pending读清楚
 

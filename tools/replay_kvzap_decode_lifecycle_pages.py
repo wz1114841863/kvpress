@@ -2,6 +2,8 @@
 
 This is a pure offline accounting transform: it consumes recorded admission
 events and never loads a model, re-scores tokens, or claims allocator/HBM data.
+The events contain modeled admission decisions derived during read-only
+observation; they are not measurements from a physical packing controller.
 """
 
 from __future__ import annotations
@@ -137,6 +139,26 @@ def replay(events: list[dict[str, str]], *, page_tokens: int, metadata_bytes_per
     return event_rows, final_rows, summary
 
 
+
+def replay_page_sizes(
+    events: list[dict[str, str]], *, page_sizes: list[int],
+    metadata_bytes_per_page: int, kv_bytes_per_token: int, window: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """Replay the same observed lifecycle for each requested page geometry."""
+    all_events: list[dict[str, Any]] = []
+    all_final: list[dict[str, Any]] = []
+    summaries: list[dict[str, Any]] = []
+    for page in page_sizes:
+        event_rows, final_rows, summary = replay(
+            events, page_tokens=page, metadata_bytes_per_page=metadata_bytes_per_page,
+            kv_bytes_per_token=kv_bytes_per_token, window=window,
+        )
+        all_events.extend(event_rows)
+        all_final.extend(final_rows)
+        summaries.append({key: value for key, value in summary.items() if not key.startswith("_")})
+    return all_events, all_final, summaries
+
+
 def main() -> None:
     args = parse_args()
     if args.output_dir.exists():
@@ -149,15 +171,11 @@ def main() -> None:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     events = read_csv(events_path)
     metadata, kv_bytes, window = int(manifest["metadata_bytes_per_cold_page"]), int(manifest["kv_bytes_per_layer_head_token"]), int(manifest["sliding_window"])
+    all_events, all_final, summaries = replay_page_sizes(
+        events, page_sizes=args.page_tokens, metadata_bytes_per_page=metadata,
+        kv_bytes_per_token=kv_bytes, window=window,
+    )
     args.output_dir.mkdir(parents=True, exist_ok=False)
-    all_events: list[dict[str, Any]] = []
-    all_final: list[dict[str, Any]] = []
-    summaries: list[dict[str, Any]] = []
-    for page in args.page_tokens:
-        event_rows, final_rows, summary = replay(events, page_tokens=page, metadata_bytes_per_page=metadata, kv_bytes_per_token=kv_bytes, window=window)
-        all_events.extend(event_rows)
-        all_final.extend(final_rows)
-        summaries.append({key: value for key, value in summary.items() if not key.startswith("_")})
     paths = {"events": args.output_dir / "lifecycle_page_replay_events.csv", "final": args.output_dir / "lifecycle_page_replay_final.csv", "summary": args.output_dir / "lifecycle_page_replay_summary.csv"}
     write_csv(paths["events"], EVENT_COLUMNS, all_events)
     write_csv(paths["final"], FINAL_COLUMNS, all_final)

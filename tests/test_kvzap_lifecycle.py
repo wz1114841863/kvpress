@@ -6,7 +6,7 @@ import torch
 
 from kvpress.lifecycle import FINAL_COLUMNS, LIFECYCLE_COLUMNS, LifecycleSimulator, PackedColdPageState
 from kvpress.presses.kvzap_press import KVzapPress
-from tools.replay_kvzap_decode_lifecycle_pages import replay
+from tools.replay_kvzap_decode_lifecycle_pages import replay, replay_page_sizes
 from tools.screen_kvzap_a2_output_horizon import result_row
 from tools.validate_kvzap_decode_lifecycle_trace import validate
 
@@ -109,3 +109,17 @@ def test_horizon_screen_row_has_no_answer_text_and_uses_explicit_threshold():
     assert row["meets_min_decoded_answer_tokens"] is True
     assert row["decoded_answer_token_count"] == 64
     assert "answer" not in set(row)
+
+
+def test_replay_page_sizes_keeps_admissions_but_changes_page_allocation():
+    events = [{"request_id": "r", "model_call": "0", "phase": "context_prefill",
+               "layer": "0", "kv_head": "0", "score_start": "0", "q_len": "5",
+               "cache_tokens_after": "5", "matured_tokens": "3",
+               "cold_admitted_tokens": "3", "cold_dropped_tokens": "0"}]
+    rows, final, summaries = replay_page_sizes(
+        events, page_sizes=[1, 2], metadata_bytes_per_page=4, kv_bytes_per_token=8, window=2
+    )
+    assert [row["cold_logical_tokens"] for row in final] == [3, 3]
+    assert [row["cold_allocated_slots"] for row in final] == [3, 4]
+    assert [row["declared_cold_write_bytes"] for row in summaries] == [24, 24]
+    assert [row["page_tokens"] for row in rows] == [1, 2]

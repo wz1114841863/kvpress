@@ -4,6 +4,10 @@ This is a model-free accounting simulation.  It never loads a model and does
 not measure HBM, allocator memory, latency, or throughput.  It reports the
 four fixed Route-A baselines and optional explicitly labelled horizon-gated
 policy variants.
+
+The A1 scheduler manifest supplies policy/cost provenance. This script computes
+its own single-request, per-decode-step cycle model from A2 events and replay;
+it does not consume A1 batch or request-fairness result rows.
 """
 
 from __future__ import annotations
