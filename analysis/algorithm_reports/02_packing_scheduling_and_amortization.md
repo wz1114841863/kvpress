@@ -57,10 +57,11 @@ metadata数量。原始数据：[A0汇总](../experiments/longbench_balanced_v2_
 
 **现有代码入口。** [packed-page 重放脚本](../../tools/simulate_kvzap_packed_pages.py)
 先通过 [trace 分析工具](../../tools/analyze_kvzap_trace.py)读取并检查已有predictor-only
-trace，再由 `PackedKVSimulator.replay` 按layer/head计算hot、cold pages及尾页；
-`replay_trace` 汇总单请求与逐head结果，`replay_traces` 汇总多个请求和page大小，
-最后写出请求、逐head和分组三个CSV及运行说明。SnapKV静态布局分析也复用
-`PackedKVSimulator`，因此保留原类和字段接口。输入trace与历史结果无需移动。
+trace，再由[共享packing实现](../../kvpress/research/packing.py)的
+`PackedKVSimulator.replay` 按layer/head计算hot、cold pages及尾页；`replay_trace`
+汇总单请求与逐head结果，`replay_traces` 汇总多个请求和page大小。入口写出请求、
+逐head和分组三个CSV及运行说明。SnapKV静态布局分析也直接使用共享实现；
+原tools模块仍导出原有接口，输入trace与历史结果不需要移动。
 
 运行入口为 `python -m tools.simulate_kvzap_packed_pages TRACE目录 --output-dir 新目录`；
 可选 `--pilot-manifest` 提供分类信息，`--page-tokens` 指定page大小。输出中的

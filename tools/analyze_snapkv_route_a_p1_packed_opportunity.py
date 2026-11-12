@@ -23,7 +23,7 @@ from kvpress.route_a_frontend_contract import (
     validate_snapkv_p0_contract,
 )
 from tools.analyze_kvzap_trace import get_git_commit, stable_hash
-from tools.simulate_kvzap_packed_pages import PackedKVSimulator, percentile, safe_divide
+from kvpress.research.packing import PackedKVSimulator, percentile, safe_divide
 
 
 P1_SCHEMA = "route-a-snapkv-p1-static-packed-opportunity-1.0"
@@ -321,7 +321,7 @@ def main() -> None:
         "source_sha256": {
             "frontend_contract": sha256_file(Path("kvpress/route_a_frontend_contract.py")),
             "p1_tool": sha256_file(Path(__file__)),
-            "packed_page_simulator": sha256_file(Path("tools/simulate_kvzap_packed_pages.py")),
+            "packed_page_simulator": sha256_file(Path("kvpress/research/packing.py")),
         },
         "boundaries": [
             "P1 is a static final-decision replay of one completed SnapKV P0 request; it performs no model execution and does not modify the P0 stream.",

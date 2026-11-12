@@ -1,6 +1,7 @@
 import numpy as np
 
-from tools.simulate_kvzap_packed_pages import PackedKVSimulator, replay_trace, replay_traces
+from kvpress.research.packing import PackedKVSimulator, replay_trace, replay_traces
+from tools.simulate_kvzap_packed_pages import PackedKVSimulator as LegacyPackedKVSimulator
 
 
 def simulator(page_tokens=4):
@@ -66,3 +67,7 @@ def test_multiple_requests_and_page_sizes_keep_head_and_group_totals_consistent(
     all_groups = [row for row in summaries if row["group_type"] == "all"]
     assert [(row["page_tokens"], row["request_count"], row["physical_allocated_slots"])
             for row in all_groups] == [(2, 2, 16), (4, 2, 20)]
+
+
+def test_historical_entrypoint_reexports_shared_simulator():
+    assert LegacyPackedKVSimulator is PackedKVSimulator
