@@ -234,5 +234,5 @@ Gate-A结论见本文第6节、
 [持续执行探针](../route_a_stage_a_probe_result_20261109.md)、
 [持久页v2结果](../route_a_persistent_page_read_r2_result_20261109.md)、
 [多组journal审查](../route_a_multigroup_journal_lifecycle_closure_20261109.md)和
-[RD1＋WCG1结果](../dc_rd1_wcg1_full_paired_result_20261109.md)。后续H2—H4分别展开
+[RD1＋WCG1结果](../dc_rd1_wcg1_full_paired_result_20261109.json)。后续H2—H4分别展开
 RTL功能范围、存储/完整成本、面积与时序实验；本文不复述其启动、重试、报错和哈希记录。

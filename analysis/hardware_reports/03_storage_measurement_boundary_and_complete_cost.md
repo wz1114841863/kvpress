@@ -96,6 +96,9 @@ checked-work端口仍可能需要它；journal又继续服务迟到查询。按�
 单元，合计恰好366,336 bit；其enabled-DFF存储面积约1,292,433 cell-area units。
 这个历史数字不是最新WCG1表面积，但说明大状态与声明一致，未证明是综合误把KV
 payload展开进来。另有大量索引选择、关联比较、写译码和输出生成成本。
+历史快照中，journal自身约63,447.552面积单位；四类输出选择锥去重并集至少
+774,658.584，占wrapper直接组合面积64.435%。这些锥有重叠且只是下界，不能相加
+或当作最新WCG1映射的归因。
 
 RD1后，member reference按字段需要仍可有每bank最多四路逻辑读，position最多两路，
 suffix有M/C两路独立读；这些是保守访问需求，不是已选宏端口。寄存器提供组合读和旧值
@@ -255,10 +258,10 @@ DC cell-area units、32-nm CACTI mm²、HBM容量B和每请求mJ属于不同技�
 测量过程参见[SRP结论](../synthesis_eligibility_manifest.json)、[MBR边界](../measurement_boundary_selection.md)、
 [MR-2](../measurement_dut_cut_freeze_20261025.json)及[测量DUT](../measurement_dut_cut_freeze_20261025.md)。
 具体成本来自[增量账本](../route_a_incremental_storage_cost_ledger_p0_20261106.md)、
-[STORE P0](../dc_compact_store_p0_audit_20261106.md)、
-[历史compact映射归因](../dc_compact_wrapper_hotspot_attribution_20261104.md)、
-[存储选项](../dc_compact_storage_realization_options_20261106.md)、
-[ST1范围结果](../dc_st1_scope_key_validation_result_20261106.md)、
+[STORE P0字段数据](../dc_compact_store_p0_fields_20261106.csv)、
+[STORE P0证据](../dc_compact_store_p0_evidence_20261106.json)、
+[存储选项](../dc_compact_storage_realization_options_20261106.json)、
+[ST1范围结果](../dc_st1_scope_key_validation_result_20261106.json)、
 [P3映射评估](../p3_staging_storage_mapping_feasibility_20261106.md)及
-[最新RD1＋WCG1结果](../dc_rd1_wcg1_full_paired_result_20261109.md)。
+[最新RD1＋WCG1结果](../dc_rd1_wcg1_full_paired_result_20261109.json)。
 前RTL各项proxy与遗漏预算的完整解释见算法R6；当前持续功能及其环境边界见H2。

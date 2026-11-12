@@ -102,6 +102,7 @@ driver，LINT-3/LINT-5归零。修复后面积3,622,375.558791，相对bridge后
 及校验C/F/B的读口和并发。在同一bank，M/S分属materializer未激活/已激活阶段，O又
 属于观察阶段，因此M/S/O可以共用一次member读取；不同bank仍可同时服务。
 C/F/B与两路suffix读保持独立，不新增仲裁、寄存器、延迟或ready/fire依赖。
+读端口、字段和并发关系的原始清单保留在文末CSV中。
 
 **结果。** 局部miter覆盖全部6,912消费者/地址选择及随机跨bank并发、held请求、写入
 边沿等。隔离纯组合读取网络面积342,379.460369→126,874.772938，省62.943%，
@@ -134,7 +135,9 @@ setup/hold违例，但最坏路径位于共有M/S/O网络，不能断言每个�
 ## 6. PM1：准确的优先选择，取得小面积收益却增加时序风险
 
 **目的与方案。** Page Manager只读P0定位到36,720个`allocatedLine`状态及其大reclaim
-选择锥。PM1保留全部bit和精确最低索引，用574个64-entry bank先求局部结果，再选
+选择锥。该快照中Page Manager面积约407,441，其中状态面积约179,118、组合
+面积约228,323；reclaim选择锥至少约85,193，约为直接组合面积的37.3%。
+这是重叠逻辑的下界，并非可直接全部删除的面积。PM1保留全部bit和精确最低索引，用574个64-entry bank先求局部结果，再选
 最低非空bank及其offset；末bank补零。无新增生产流水级、扫描周期或回收顺序变化。
 
 **结果。** 先用8,192个小域全向量和全尺寸one-hot/边界/随机检查验证选择函数，连空
@@ -165,12 +168,19 @@ PM1因小面积收益伴随确认的selector退化，未纳入WCG1最终基线�
 **目的与方案。** 热点归因确认compact表与其读网络占wrapper大部。STORE审计继续
 检查两个opaque64能否缩短、能否复用journal。旧合同缺少对齐/范围/可推导保证；简单
 ST1用全局journal代替按bank suffix，又需要通用caller未承诺的ordinal不复用范围。
+源条件重放包含14个场景：允许的范围内检查保持一致；跨bank重复ordinal的尝试触发
+原有断言，其后的别名差异只是假设诊断，不能算作合法输入下的功能失败。
+该检查不是HDL仿真或完整等价证明。
 因此没有直接删除大表。反向复用journal最多涉及5,120 bit且新增读取有成本，异步RF
 也未有匹配实现。它们是范围/实现尚未闭合的候选，不是已测出的新面积收益。
 
 WCG1则保留全容量、字段、组合读和握手，把每bit enabled-DFF改为普通DFF，每条
 79/80-bit word共享一个真实门控单元；member与suffix仍用独立写使能，不能用裸
 `clock & enable`或混合使能代替。Enable边沿、reset、旧数据保持和实际时钟arc需分别验证。
+
+前期门控边沿模型进行了978次比较及552次边沿监测，并用裸与门、合并使能和
+人为时钟偏移作为反例；这些是未标注延迟的仿真，不替代STA。64行隔离bank
+另有768次输出检查。
 
 **分层结果。** 各层测量包含的shell/控制及映射策略不同，不能乘36或叠加百分比：
 
@@ -273,14 +283,14 @@ pending周转和真实数据—数值连接未完成。H3所列数组、外围�
 [Compact诊断结果](../dc_m2_p3_wrapper_compact_membership_result_20261104.md)、
 [Entry_id修复](../dc_m2p3_entry_id_repair_result_20261105.md)、
 [RD1完整结果](../dc_rd1_full_paired_dc_result_20261106.md)、
-[RD1＋WCG1完整结果](../dc_rd1_wcg1_full_paired_result_20261109.md)。
+[RD1＋WCG1完整结果](../dc_rd1_wcg1_full_paired_result_20261109.json)。
 
-局部与分支：[RD1访问/并发分析](../dc_compact_membership_read_sharing_plan_20261104.md)、
+局部与分支：[RD1访问/并发分析](../dc_compact_membership_read_port_audit_20261104.csv)、
 [RD2负结果](../dc_rd2_read_screen_result_20261106.json)、
-[RD1＋PM1完整结果](../dc_rd1_pm1_full_paired_result_20261107.md)、
+[RD1＋PM1完整结果](../dc_rd1_pm1_full_paired_result_20261107.json)、
 [PM1/全局STA诊断](../dc_rd1_pm1_setup_diagnosis_result_20261107.json)、
-[ST1范围结果](../dc_st1_scope_key_validation_result_20261106.md)、
+[ST1范围结果](../dc_st1_scope_key_validation_result_20261106.json)、
 [WCG1单bank结果](../dc_wcg1_saved_artifact_validation_result_20261106.json)、
-[WCG1 wrapper功能](../dc_wcg1_wrapper_retry_result_20261106.md)和
+[WCG1 wrapper功能](../dc_wcg1_wrapper_retry_result_20261106.json)和
 [WCG1 wrapper映射/STA](../dc_wcg1_wrapper_mapping_retry_result_20261107.json)。
 需要核查字段、存储和功能范围时读H1—H3；这些链接只用于追溯原始结果，不是另一套必读过程记录。

@@ -51,7 +51,9 @@ The RD1 complete successor uses
 immutable `rd1_shared_e5d3107_p15` archive/proxy tree and retains the same
 `r3_entry_id_driver_v1` policy.  Its archive hash and unchanged fair-v1
 contract are frozen in `dc_feasibility_fair_rd1_shared_v1.json`; see
-[`dc_rd1_full_input_freeze_20261105.md`](../../../analysis/dc_rd1_full_input_freeze_20261105.md).
+[RD1 results and constraints](../../../analysis/hardware_reports/04_area_timing_optimization_and_design_review.md).
+The profile retains its historical source-freeze path as provenance; the profile and
+constraint Tcl remain the executable inputs.
 
 `constraints_control_projection.tcl` is a parameterized, single-clock
 constraint procedure for either selected top.  The approved

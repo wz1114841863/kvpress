@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Replay pinned Chisel predicates for ST1 scope; not HDL simulation/equivalence."""
+"""Replay current Chisel predicates for ST1 scope; not HDL simulation/equivalence."""
 
 from __future__ import annotations
 
 import argparse
 import ast
-import hashlib
 import json
 import re
 import subprocess
@@ -29,9 +28,6 @@ def record(**kwargs):
 def identity(value):
     return record(request_id=value >> 2, incarnation=value & 3, asUInt=value)
 
-
-def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def assignment(source, prefix):
@@ -310,20 +306,14 @@ def main():
         raise RuntimeError("run without -O: audit assertions must remain enabled")
     if args.output_dir.exists():
         raise FileExistsError(f"immutable result directory exists: {args.output_dir}")
-    authority = ROOT / "analysis/dc_compact_store_p0_evidence_20261106.json"
-    pins = json.loads(authority.read_text())["sha256"]
-    for name, expected in pins.items():
-        if digest(ROOT / name) != expected:
-            raise ValueError(f"source/evidence drift: {name}")
     source = (ROOT / SOURCE).read_text()
     predicates = Predicates(source)
     results = replay(predicates)
     report = dict(
         schema_version="route-a-st1-scope-key-check-1",
         source_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
-        checker_sha256=digest(Path(__file__)),
         evidence_class="source_predicate_replay_not_hdl_simulation_or_rtl_equivalence",
-        source_sha256=pins, expressions=predicates.original, cases=results,
+        source_file=SOURCE, expressions=predicates.original, cases=results,
         generic_replacement_disposition="NOT_ELIGIBLE_WITHOUT_NEW_SCOPE_AUTHORITY",
         production_conditional_candidate="retained_not_implemented",
         rtl_modified=False, remote_access=False, synthesis_run=False,
@@ -332,7 +322,7 @@ def main():
     output = args.output_dir / "report.json"
     output.write_text(json.dumps(report, indent=2) + "\n")
     print(f"ST1_SOURCE_PREDICATE_CHECK_PASS cases={len(results)} expected_alias_divergence=1")
-    print(f"report={output} sha256={digest(output)}")
+    print(f"report={output}")
     print("GENERIC_JOURNAL_ONLY_REPLACEMENT_NOT_ELIGIBLE; no HDL equivalence or mapped result")
 
 

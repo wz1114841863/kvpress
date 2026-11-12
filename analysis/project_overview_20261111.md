@@ -103,7 +103,7 @@ stage、完整控制、partial/merge数值处理、外围、leakage及统一时�
 
 上述DC快照不含后加的持久页v2功能；129.52×是控制投影比，不能推断最终系统
 面积比一定更大或更小。具体实现证据按需查
-[RD1＋WCG1结果](dc_rd1_wcg1_full_paired_result_20261109.md)、
+[RD1＋WCG1结果](dc_rd1_wcg1_full_paired_result_20261109.json)、
 [持久页结果](route_a_persistent_page_read_r2_result_20261109.md)。
 
 目前集中存在四类未闭合问题：同session多组admission与journal/pending释放，
@@ -159,7 +159,7 @@ H3承接算法R6之后的真实实现成本，避免重复抄写前RTL的proxy�
 主要依据：[架构规格](architecture_spec.md)、
 [RTL2/3推进](rtl2_0_activation_manifest.json)、[首次使用闭合](rtl3_9_c4_d_functional_completion_review_manifest.json)、
 [MR-2](measurement_dut_cut_freeze_20261025.json)、[完整增量账本](route_a_incremental_storage_cost_ledger_p0_20261106.md)、
-[最新完整DC结果](dc_rd1_wcg1_full_paired_result_20261109.md)、
+[最新完整DC结果](dc_rd1_wcg1_full_paired_result_20261109.json)、
 [持续页读取结果](route_a_persistent_page_read_r2_result_20261109.md)。
 
 ## 软件—硬件协同：值得评估的职责调整
