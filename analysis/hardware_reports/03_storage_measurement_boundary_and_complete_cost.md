@@ -255,7 +255,7 @@ DC cell-area units、32-nm CACTI mm²、HBM容量B和每请求mJ属于不同技�
 
 ## 9. 原始定义与结果入口
 
-测量过程参见[SRP结论](../archive/synthesis_eligibility_manifest.json)、[MBR边界](../archive/measurement_boundary_selection.md)、
+SRP/MBR测量边界与选择见本文第1、2节；具体测量范围参见
 [MR-2](../archive/measurement_dut_cut_freeze_20261025.json)及[测量DUT](../archive/measurement_dut_cut_freeze_20261025.md)。
 具体成本来自[增量账本](../archive/route_a_incremental_storage_cost_ledger_p0_20261106.md)、
 [STORE P0字段数据](../archive/dc_compact_store_p0_fields_20261106.csv)、

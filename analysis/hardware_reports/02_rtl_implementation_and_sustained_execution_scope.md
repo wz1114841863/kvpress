@@ -329,7 +329,7 @@ journal及pending descriptor要覆盖仍合法的查询、withdrawal和服务。
 
 ## 9. 原始定义与结果入口
 
-实现库存可核查[RTL入口接口清单](../archive/rtl_entry_interface_manifest.json)、[RTL2/3推进](../archive/rtl2_0_activation_manifest.json)、
+实现库存可核查[RTL入口接口清单](../archive/rtl_entry_interface_manifest.json)、
 [七种source协议测试源码](../../hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL385FullPathClosureSpec.scala)、
 [C4-D首次使用结论](../archive/rtl3_9_c4_d_functional_completion_review_manifest.json)、
 [MR-1B单记录路径](../archive/mr1b_direct_pending_cross_owner_contract_proposal.md)、

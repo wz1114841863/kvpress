@@ -157,7 +157,7 @@ DC包含项与历史proxy，区分必要信息、职责/接口和物理表示的
 H3承接算法R6之后的真实实现成本，避免重复抄写前RTL的proxy账本。
 
 主要依据：[架构规格](archive/architecture_spec.md)、
-[RTL2/3推进](archive/rtl2_0_activation_manifest.json)、[首次使用闭合](archive/rtl3_9_c4_d_functional_completion_review_manifest.json)、
+[首次使用闭合](archive/rtl3_9_c4_d_functional_completion_review_manifest.json)、
 [MR-2](archive/measurement_dut_cut_freeze_20261025.json)、[完整增量账本](archive/route_a_incremental_storage_cost_ledger_p0_20261106.md)、
 [最新完整DC结果](archive/dc_rd1_wcg1_full_paired_result_20261109.json)、
 [持续页读取结果](archive/route_a_persistent_page_read_r2_result_20261109.md)。
