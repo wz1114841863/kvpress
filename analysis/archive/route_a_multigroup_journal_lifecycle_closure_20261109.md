@@ -13,7 +13,7 @@
 4. 此前 32 B 直接寻址候选需 provision **288 MiB/namespace**；cold keep-all 有效行载荷为 **286.875 MiB**。它是可核算候选，不是必要下界、实际 workload 用量或片上面积。**不能把这份历史视为已经实现或经济可行。**
 5. 若要把历史也限制为64条，必须另行建立版本化的“**注册窗口关闭＋在途工作排空/事实移交**”合同。当前源码没有该保证，不能把它作为等价优化直接实施。本轮明确这一备选的释放条件与验证门槛，不据此修改默认接口。
 
-本记录细化 [原最小方案 §3—4](route_a_continuation_minimal_proposal_20261109.md)，不废弃其精确历史方案或既有有限模型，也不把新的关闭窗口备选说成已获批。持久页重复读取的 [r2验收](route_a_persistent_page_read_r2_result_20261109.md)保持原范围；阶段 A 总体仍 OPEN。
+本记录细化 [H2中的最小方案及生命周期讨论](../hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)，不废弃其精确历史方案或既有有限模型，也不把新的关闭窗口备选说成已获批。持久页重复读取的 [r2验收](route_a_persistent_page_read_r2_result_20261109.md)保持原范围；阶段 A 总体仍 OPEN。
 
 ## 2. 谁在使用 journal，最后一次使用发生在哪里
 

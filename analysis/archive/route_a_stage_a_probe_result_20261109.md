@@ -1,6 +1,6 @@
 # 阶段 A 当前 RTL 两项连续执行探针：结果验收 — 2026-11-09
 
-Run ID：`stage_a_continuation_probe_20261109_r1`。输入／启动依据：launch（旧文件 `route_a_stage_a_probe_launch_20261109.md` 可在 Git 历史查阅）；规范场景：[阶段A执行范围](route_a_stage_a_execution_envelope_20261109.md)。独立核验证据见 [JSON](route_a_stage_a_probe_result_20261109.json)。
+Run ID：`stage_a_continuation_probe_20261109_r1`。输入／启动依据：launch（旧文件 `route_a_stage_a_probe_launch_20261109.md` 可在 Git 历史查阅）；规范场景：[H2中的阶段A执行范围](../hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)。独立核验证据见 [JSON](route_a_stage_a_probe_result_20261109.json)。
 
 **两个诊断正常完成，2/2测试通过；两项持续能力均在现有RTL中复现了具体阻断。** 通过的是“首轮正向前提成立后，准确复现128拍有界阻断”的诊断资格，不是同页两次读／两组admission功能通过。本轮只读验收，没有修改RTL、重启测试或运行DC／STA。
 

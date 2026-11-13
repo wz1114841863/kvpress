@@ -51,7 +51,7 @@ Full-KV、只在 prefill 裁剪、prefill+decode 裁剪。三个内置请求分�
 | Article summary | 通过 | 70.66% / 3.408× | 72.65% / 3.657× |
 | Long hardware answer | 通过 | 74.34% / 3.897× | 74.91% / 3.986× |
 
-裁剪侧六项检查也全部通过。来源：[逐请求 baseline](../baseline_results.csv)、
+裁剪侧六项检查也全部通过。来源：[逐请求 baseline](../archive/baseline_results.csv)、
 [冻结范围](../archive/baseline_freeze.json)。原 CSV 的 elapsed 字段仅为诊断，不用于性能分析。
 
 **分析。** 结果确认指定配置可执行，并且内置样本有较高逻辑删除率；它既不代表
@@ -73,7 +73,7 @@ attention之前删除KV。实现见[KVzap predictor](../../kvpress/presses/kvzap
 这正是后来需要packing后端的原因。来源：[attention实现](../../kvpress/attention_patch.py)。
 
 冻结baseline环境为A100-SXM-64GB、PyTorch2.10.0+cu128、Transformers5.0.0；
-模型/predictor revision及解码配置见[原配置](../baseline_config.yaml)。旧的
+模型/predictor revision及解码配置见[原配置](../archive/baseline_config.yaml)。旧的
 Transformers4.57.3 smoke建议不是该baseline的精确复现环境。新运行入口为：
 
 ```bash
@@ -315,7 +315,7 @@ R1只保留本报告作为阅读入口。正文中的表格直接提炼自以下
 
 | 用途 | 原位置与必要数据 |
 |---|---|
-| 官方路径复现 | [baseline结果](../baseline_results.csv)、[配置](../baseline_config.yaml)、[冻结记录](../archive/baseline_freeze.json) |
+| 官方路径复现 | [baseline结果](../archive/baseline_results.csv)、[配置](../archive/baseline_config.yaml)、[冻结记录](../archive/baseline_freeze.json) |
 | 单请求及三类请求观测 | [Gate A](../archive/predictor_trace_gate_a.json)、[Gate B](../archive/predictor_trace_gate_b_freeze.json)，以及[Gate原trace](../../traces/hardware_predictor_gate_a_01/)和三个Gate B trace目录 |
 | 选样与18条→45条的推进 | [v1冻结](../archive/longbench_core_v1_freeze.json)、[v2冻结](../archive/longbench_balanced_v2_freeze.json)、[选样资料](../../pilot_inputs/)、对应pilot run manifest |
 | 删除率分布、head热图、相关性、run-length与阈值曲线 | [v2主分析](../experiments/longbench_balanced_v2_analysis/)中的request_summary、request_group_summary、layer_head_retention、request_pair_similarity、head_similarity、run_length_distribution、block_occupancy和score_threshold_sensitivity各CSV；[v1分析](../experiments/longbench_core_v1_analysis/)保留选样演进证据 |

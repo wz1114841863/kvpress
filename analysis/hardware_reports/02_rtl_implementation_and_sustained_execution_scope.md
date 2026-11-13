@@ -335,8 +335,7 @@ journal及pending descriptor要覆盖仍合法的查询、withdrawal和服务。
 [MR-1B单记录路径](../archive/mr1b_direct_pending_cross_owner_contract_proposal.md)、
 [MR-2边界](../archive/measurement_dut_cut_freeze_20261025.json)与[测量DUT范围](../archive/measurement_dut_cut_freeze_20261025.md)。
 
-持续执行参见[阶段A范围与环境](../archive/route_a_stage_a_execution_envelope_20261109.md)、
-[两项现状探针](../archive/route_a_stage_a_probe_result_20261109.md)、
+持续执行参见[两项现状探针](../archive/route_a_stage_a_probe_result_20261109.md)、
 [持久页r2结果](../archive/route_a_persistent_page_read_r2_result_20261109.md)、
 [多组journal寿命](../archive/route_a_multigroup_journal_lifecycle_closure_20261109.md)、
 [关窗条件验证](../archive/route_a_registration_window_contract_validation_20261109.md)和
