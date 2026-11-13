@@ -1,354 +1,82 @@
-[![PyPI version](https://badge.fury.io/py/kvpress.svg)](https://badge.fury.io/py/kvpress)
-[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Colab example notebook](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1JNvaTKuuAHrl49dYB9-mdEH_y52Ib-NP?usp=drive_link)
-[![Hugging Face Space](https://img.shields.io/badge/🤗%20Hugging%20Face-Space-blue)](https://huggingface.co/spaces/nvidia/kvpress)
-[![Blog post](https://img.shields.io/badge/🤗%20Hugging%20Face-Blog-blue)](https://huggingface.co/blog/nvidia/kvpress)
-[![Hugging Face Leaderboard](https://img.shields.io/badge/🤗%20HuggingFace-Leaderboard-orange)](https://huggingface.co/spaces/nvidia/kvpress-leaderboard)
-[![arXiv](https://img.shields.io/badge/arXiv-2510.00636-b31b1b.svg)](https://arxiv.org/abs/2510.00636v1)
+# KVzap：稀疏 KV Cache 存储与执行研究
 
+本项目基于 NVIDIA 的 KVPress 框架，研究论文 **KVzap: Fast, Adaptive, and Faithful KV Cache Pruning** 的稀疏行为，以及如何将保留的 KV 组织成适合后续读取的存储与执行方式。当前重点是弄清算法、软件管理和硬件各自需要承担什么，并评估 packing、调度与资源管理的成本。
 
-![kvpress](kvpress.jpg)
+研究主线 Route-A 保留 KVzap 的原始 mask：在 KV 创建时预测，在最近的 hot window 内保护 KV，成熟后丢弃不保留的项，将保留项整理为按 layer/KV head 管理的 packed pages，供后续 decode 读取。项目还研究了其他模型、SnapKV 和官方训练 DMS 的适用边界；这些前端的选择时机、生命周期和对照标准并不相同。
 
+已有结果表明指定样本存在逻辑压缩与条件性的存储机会；离线 byte/cycle 模型不是实测加速。现有 RTL 是研究原型，持续 decode、完整系统成本及统一时序仍未闭合。具体结果、适用范围和重要负结果见[项目总览](analysis/project_overview_20261111.md)和 [R1—R6](analysis/algorithm_reports/)。
 
-Deploying long-context LLMs is costly due to the linear growth of the key-value (KV) cache in transformer models. For example, handling 1M tokens with Llama 3.1-70B in float16 requires up to 330GB of memory. kvpress implements multiple KV cache compression methods and benchmarks using 🤗 transformers, aiming to simplify the development of new methods for researchers and developers in this field.
+## 目录结构
 
-## KVzap Route-A research documentation
+| 路径 | 用途 |
+| --- | --- |
+| [kvpress/presses/](kvpress/presses/) | 基于 KVPress 的算法和模型接口；包括 KVzap、SnapKV 以及 KVzap 路径使用的 DMSPress |
+| [kvpress/research/](kvpress/research/) | 离线研究的共享计算：packing、调度、生命周期、Route-A 软件参考、资源模型和跨前端分析 |
+| [tools/](tools/) | 模型采集、已有 trace 重放、模拟和结果输出的命令行入口；还包含部分历史实验和硬件检查入口 |
+| [tests/](tests/) | 现有算法、trace、模拟和软件参考测试 |
+| [pilot_inputs/](pilot_inputs/) | 本地 pilot 请求和准备信息；部分输入可能不在其他 checkout 中 |
+| [traces/](traces/) | predictor score/mask 等 trace；`traces/pilots/` 存放本地 pilot 请求的 trace |
+| [analysis/experiments/](analysis/experiments/) | 历史实验结果与中间数据，按实验目录保存 |
+| [analysis/algorithm_reports/](analysis/algorithm_reports/) | 算法阶段六份研究报告 R1—R6 |
+| [analysis/hardware_reports/](analysis/hardware_reports/) | 架构、RTL、成本及面积/时序复盘 H1—H4 |
+| [hardware/route_a/](hardware/route_a/) | 现有 Route-A Chisel/RTL 原型及相关实验；不是完整系统实现 |
+| [papers/](papers/) | 论文资料，本地 `KVzap.pdf` 是原论文 |
 
-For a short Chinese overview of the project, current evidence and repository
-layout, start with [项目总览与管理入口](analysis/project_overview_20261111.md).
+`pilot_inputs/`、`traces/` 和 `analysis/experiments/` 中的大部分生成数据受 `.gitignore` 规则影响，**不能假定克隆仓库就包含它们**。开始实验前先确认需要的模型权重、请求和输入数据已经在运行机器上。原始实验输出不要覆盖；入口通常要求输出目录不存在。
 
-The repository also contains an evidence-bound KVzap Route-A research track.
-Its current documentation entry, authority order, frozen-evidence index, and
-next gate are maintained in [analysis/README.md](analysis/README.md).  This
-navigation note does not alter the upstream KVPress usage or benchmark claims.
+## 研究主线与入口
 
-## Installation
+下表中的脚本从仓库根目录以 `python -m tools.<脚本名>` 运行；具体参数使用 `--help` 查看。
+
+| 研究问题 | 主要计算或功能 | 常用入口 |
+| --- | --- | --- |
+| KVzap 复现与 trace | [KVzapPress](kvpress/presses/kvzap_press.py)、[trace.py](kvpress/trace.py) | [run_kvzap_baseline.py](tools/run_kvzap_baseline.py)、[export_kvzap_predictor_trace.py](tools/export_kvzap_predictor_trace.py)、[analyze_kvzap_trace.py](tools/analyze_kvzap_trace.py) |
+| packed-page 容量 | [packing.py](kvpress/research/packing.py) | [simulate_kvzap_packed_pages.py](tools/simulate_kvzap_packed_pages.py) |
+| 调度模拟 | [scheduling.py](kvpress/research/scheduling.py) | [simulate_kvzap_route_a1_scheduler.py](tools/simulate_kvzap_route_a1_scheduler.py) |
+| decode 生命周期与摊销 | [lifecycle.py](kvpress/research/lifecycle.py)、[amortization.py](kvpress/research/amortization.py) | [run_kvzap_decode_lifecycle_trace.py](tools/run_kvzap_decode_lifecycle_trace.py)、[replay_kvzap_decode_lifecycle_pages.py](tools/replay_kvzap_decode_lifecycle_pages.py)、[simulate_kvzap_route_a3_traffic.py](tools/simulate_kvzap_route_a3_traffic.py) |
+| Route-A 软件功能参考 | [route_a.py](kvpress/research/route_a.py)、[route_a_policy_backend.py](kvpress/route_a_policy_backend.py) | [run_kvzap_route_a4_reference.py](tools/run_kvzap_route_a4_reference.py)、[run_kvzap_route_a40_policy_gate.py](tools/run_kvzap_route_a40_policy_gate.py) |
+| pending、metadata 与成本 | [pending.py](kvpress/research/pending.py)、[metadata.py](kvpress/research/metadata.py)、[cost.py](kvpress/research/cost.py) | [simulate_kvzap_route_a410_queue_contract.py](tools/simulate_kvzap_route_a410_queue_contract.py)、[simulate_kvzap_route_a4122_metadata_cycle_energy.py](tools/simulate_kvzap_route_a4122_metadata_cycle_energy.py)、[analyze_kvzap_route_a4141_accounted_net_benefit_ledger.py](tools/analyze_kvzap_route_a4141_accounted_net_benefit_ledger.py) |
+| 跨模型与前端 | [cross_frontend.py](kvpress/research/cross_frontend.py)、[snapkv.py](kvpress/research/snapkv.py)、[dms.py](kvpress/research/dms.py) | [analyze_cross_frontend_c3_commonality.py](tools/analyze_cross_frontend_c3_commonality.py)、[analyze_snapkv_route_a_p1_packed_opportunity.py](tools/analyze_snapkv_route_a_p1_packed_opportunity.py)、[run_dms_route_a_m4_active_resident_attention_gate.py](tools/run_dms_route_a_m4_active_resident_attention_gate.py) |
+
+生命周期采集在真实模型的 dense 生成过程中只读观察 predictor；后续 page、admission 和流量由软件重放或模型计算。Route-A 软件参考比较相同 mask 下的 attention 组织；无模型参考不是性能实现。SnapKV 的已有证据主要覆盖 terminal prefill，官方 DMS 检查使用原生活跃槽位顺序，不能直接当成 KVzap 的 append-only packed cold。
+
+## 小规模验证
+
+以下命令使用当前仓库的 `.venv`，不下载模型或修改环境；在其他机器上需要先有与项目依赖兼容的 Python 环境。所有命令均从仓库根目录运行。
+
+先检查 packing、调度和 Route-A 软件参考：
 
 ```bash
-pip install kvpress
+.venv/bin/python -m pytest -q \
+  tests/test_simulate_kvzap_packed_pages.py \
+  tests/test_simulate_kvzap_route_a1_scheduler.py \
+  tests/test_kvzap_route_a4_reference.py
+
+.venv/bin/python -m tools.run_kvzap_route_a4_reference
 ```
 
-For a local installation, use [uv](https://docs.astral.sh/uv/):
+第二条命令用确定性小样例比较分源 attention 合并与同一保留记录的 dense 计算；它不加载真实模型，也不测量速度。
+
+如本地有下列 LongBench core v1 的单条 predictor trace，可以运行一次 A0 容量重放和 A1 调度模拟。输出写入新建的临时目录，不覆盖已有结果：
 
 ```bash
-git clone https://github.com/NVIDIA/kvpress.git
-cd kvpress
-uv sync
+trace_dir=traces/pilots/longbench_core_v1_shard0/requests/00010_longbench__multi_news__row000144_04bbfd3c93
+output_root=$(mktemp -d /tmp/kvzap-study-XXXXXX)
+
+.venv/bin/python -m tools.simulate_kvzap_packed_pages "$trace_dir" \
+  --page-tokens 64 --output-dir "$output_root/a0" &&
+.venv/bin/python -m tools.simulate_kvzap_route_a1_scheduler \
+  --a0-dir "$output_root/a0" --page-tokens 64 --pe-counts 8 \
+  --batch-sizes 1 --output-dir "$output_root/a1"
+
+printf '结果目录：%s\n' "$output_root"
 ```
 
-To install with all optional dependencies, run:
+A0 输出逐请求、逐 layer/head 的页容量及汇总；A1 输出逐 layer、batch 和策略汇总。A1 是按声明参数执行的离线模拟，单条 trace 的结果不代表真实服务延迟或吞吐。A0 接受的 predictor-only trace schema 以脚本校验为准；早期 Gate-A 的 `kvzap-predictor-trace-1.0` 不能直接用于此入口。
 
-```bash
-git clone https://github.com/NVIDIA/kvpress.git
-cd kvpress
-uv sync --extra eval --extra flash-attn
-```
+## 后续实验
 
-## Usage
-
-KVPress provides a set of "presses" that compress the KV cache during the prefilling-phase. Each press is associated with a `compression_ratio` attribute that measures the compression of the cache. The easiest way to use a press is through our custom `KVPressTextGenerationPipeline`. It is automatically registered as a transformers pipeline with the name "kv-press-text-generation" when kvpress is imported and handles chat templates and tokenization for you:
-
-```python
-from transformers import pipeline
-from kvpress import ExpectedAttentionPress
-
-model = "Qwen/Qwen3-8B"
-pipe = pipeline("kv-press-text-generation", model=model, device_map="auto", dtype="auto")
-
-context = "A very long text you want to compress once and for all"
-question = "\nA question about the compressed context"  # optional
-
-press = ExpectedAttentionPress(compression_ratio=0.5)
-answer = pipe(context, question=question, press=press)["answer"]
-```
-
-In the snippet above, the compression is only applied on the context tokens so that you can evaluate the compression for different questions. A more detailed [Wikipedia demo](https://colab.research.google.com/drive/1JNvaTKuuAHrl49dYB9-mdEH_y52Ib-NP) is available on Colab.
-
-<details><summary>
-Decoding Compression
-</summary>
-By default, KVPress applies compression during the prefilling phase. As a new (experimental) feature, we now support decoding compression via the `DecodingPress` wrapper. `DecodingPress` compresses the KV cache periodically during token generation, optionally maintaining a buffer of recent hidden states. `DecodingPress` supports the following parameters:
-
-- `base_press`: Any ScorerPress (e.g., `KNormPress`, `CriticalKVPress`)
-- `compression_interval`: Steps between compressions (default: 512)
-- `target_size`: Target cache size after compression (default: 2048)
-- `hidden_states_buffer_size`: Number of hidden states to buffer before compression (default: 256). Some presses don't need buffered hidden states and can set this to 0.
-
-Unlike a compression ratio, decoding press uses a `target_size` to compress the cache. This means that the cache is compressed every `compression_interval` steps, and the compression ratio is automatically computed such that the size of the cache after compression equals `target_size`.
-
-An example for decoding compression:
-
-```python
-from transformers import pipeline
-from kvpress import KnormPress
-from kvpress import DecodingPress
-
-# Initialize the pipeline
-device = "cuda:0"
-model = "meta-llama/Llama-3.1-8B-Instruct"
-model_kwargs = {"attn_implementation": "flash_attention_2"}
-pipe = pipeline("kv-press-text-generation", model=model, device=device, model_kwargs=model_kwargs)
-
-# Create a decoding press that compresses every 10 steps to a target cache size of 512 tokens
-decoding_press = DecodingPress(
-    base_press=KnormPress(),
-    compression_interval=10,
-    target_size=512
-)
-
-# Use with pipeline
-context = "A very long text you want to compress during generation"
-question = "Tell me a long story about this context"
-response = pipe(context, question=question, press=decoding_press)["answer"]
-```
-
-> Not all existing presses are fully compatible with DecodingPress due to fundamental differences in how compression works during decoding versus prefilling. in particular, we only support ScorerPresses as base presses.
-
-</details>
-
-## Available presses
-
-All current presses are training free and inherit from `BasePress` ([source](kvpress/presses/base_press.py)). 
-
-Several presses inherit from `ScorerPress` ([source](kvpress/presses/scorer_press.py)) and rely on a score to prune the KV pairs with lowest importance:
-
-- `RandomPress` ([source](kvpress/presses/random_press.py)): random score
-- `KnormPress` ([source](kvpress/presses/knorm_press.py), [paper](https://arxiv.org/abs/2406.11430)): inverse norm of the key
-- `SnapKVPress` ([source](kvpress/presses/snapkv_press.py), [paper](https://arxiv.org/abs/2404.14469)): average attention weight of the last queries
-- `ExpectedAttentionPress` ([source](kvpress/presses/expected_attention_press.py)): expected attention weight during the generation phase
-- `StreamingLLMPress` ([source](kvpress/presses/streaming_llm_press.py), [paper](https://arxiv.org/abs/2309.17453)): keep only the initial and recent tokens 
-- `TOVAPress` ([source](kvpress/presses/tova_press.py), [paper](https://arxiv.org/abs/2401.06104)): attention weight of the last query averaged across heads 
-- `ObservedAttentionPress` ([source](kvpress/presses/observed_attention_press.py), [paper](https://arxiv.org/abs/2306.14048)): average attention weight observed during in prefilling phase
-- `QFilterPress` ([source](kvpress/presses/qfilter_press.py), [paper](https://arxiv.org/abs/2503.02812)): project the Key representations on the main SVD component of the Query vectors to approximate the attention scores.
-- `PyramidKVPress` ([source](kvpress/presses/pyramidkv_press.py), [paper](https://arxiv.org/abs/2406.02069)): maintain pyramid-like cache sizes, allocating more cache budget to lower layers and less to higher layers
-- `LagKVPress` ([source](kvpress/presses/lagkv_press.py), [paper](https://arxiv.org/abs/2504.04704)): leverage on the KV lag-relative information to compress. It's query free, attention-weight free, and flash-attention compatible.
-- `KeyDiffPress` ([source](kvpress/presses/keydiff_press.py), [paper](https://arxiv.org/abs/2504.15364)): evict tokens based solely on key similarity.
-- `NonCausalAttnPress` ([source](kvpress/presses/non_causal_attention_press.py), [paper](https://arxiv.org/abs/2507.08143)): evict tokens based on non-causal chunked attention scores.
-- `LeverageScorePress` ([source](kvpress/presses/leverage_press.py), [paper](https://arxiv.org/abs/2507.08143)): evict tokens based on approximate statistical leverage (i.e we preserve outliers in the key space).
-- `CompactorPress` ([source](kvpress/presses/compactor_press.py), [paper](https://arxiv.org/abs/2507.08143)): blend `NonCausalAttnPress` and `LeverageScorePress` based on the compression_ratio.
-- `CURPress` ([source](kvpress/presses/cur_press.py), [paper](https://arxiv.org/abs/2509.15038)): prune keys and values based on the CUR decomposition using approximate leverage scores.
-- `KVzapPress` ([source](kvpress/presses/kvzap_press.py), [paper](https://arxiv.org/abs/2601.07891), [training](kvzap)): approximate KVzip+ using a fast surrogate model. To be used in conjunction with the `DMSPress`.
-- `FastKVzipPress` ([source](kvpress/presses/fastkvzip_press.py), [paper](https://arxiv.org/abs/2601.17668)): approximate KVzip through a lightweight gating mechanism.
-- `CapPress` ([source](kvpress/presses/cap_press.py), [paper](https://arxiv.org/abs/2604.25975)): evict tokens based on query-aware capacity scores from a log-determinant leverage proxy.
-
-Some presses rely on a different logic:
-- `ThinKPress` ([source](kvpress/presses/think_press.py), [paper](https://arxiv.org/abs/2407.21018)): compress the dimensions of the keys based on the channel attention score on the last queries 
-- `SimLayerKVPress` ([source](kvpress/presses/simlayerkv_press.py), [paper](https://arxiv.org/abs/2410.13846)): identify "lazy" layers, and apply the StreamingLLM approach to them 
-- `DuoAttentionPress` ([source](kvpress/presses/duo_attention_press.py), [paper](https://arxiv.org/abs/2410.10819)): split heads into retrieval heads (no compression) and streaming heads (StreamingLLM approach)
-- `FinchPress` ([source](kvpress/presses/finch_press.py), [paper](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00716/125280)): similar to SnapKV with a dynamic window size and key value re-rotation
-- `KVzipPress` ([source](kvpress/presses/kvzip_press.py), [paper](https://arxiv.org/abs/2505.23416)): identify redundant KV pairs through context reconstruction. Achieve near-lossless compression at the cost of multiple forward passes.
-- `KVComposePress` ([source](kvpress/presses/kvcompose_press.py), [paper](https://arxiv.org/abs/2509.05165)): attention-guided eviction, aligning per-head selections into composite tokens to preserve cache structure.
-
-> [!NOTE]  
-> `KVComposePress` performs an extra pass over the full context, temporarily creating a KV cache of ~2x the context length and creating memory overhead during prefill.
-
-Finally we provide wrapper presses that can be combined with other presses:
-- `AdaKVPress` ([source](kvpress/presses/adakv_press.py), [paper](https://arxiv.org/abs/2407.11550)): prune bottom scores of any `ScorerPress` but across all heads, achieving head-wise compressions 
-- `LUKVPress` ([source](kvpress/presses/lukv_press.py), [paper](https://arxiv.org/abs/2602.08585)): applies layer/head budget curves to a `ScorerPress`
-- `PerLayerCompressionPress` ([source](kvpress/presses/per_layer_compression_press.py)): compress each layer with a different compression ratio (experimental)
-- `ComposedPress` ([source](kvpress/presses/composed_press.py)): compose multiple presses together by chaining their forward hooks
-- `KeyRerotationPress` ([source](kvpress/presses/key_rerotation_press.py)): rerotate pruned keys to have continuous RoPE embeddings
-- `ChunkKVPress` ([source](kvpress/presses/chunkkv_press.py), [paper](https://arxiv.org/abs/2502.00299)): compress by selecting important chunks, preserving semantic coherence
-- `ChunkPress` ([source](kvpress/presses/chunk_press.py), [paper](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00716/125280)): compress the KV cache on each sequence chunk separately. This can yield to more uniform compression across long sequences
-- `CriticalKVPress` and `CriticalAdaKVPress` ([source](kvpress/presses/criticalkv_press.py), [paper](https://arxiv.org/abs/2502.03805)): refine the scores using the L1 norm of Wo @ values, coupled with a two-stage selection.
-- `BlockPress` ([source](kvpress/presses/block_press.py), [paper](https://arxiv.org/abs/2504.15364)): segment input sequence into non-overlapping blocks and compress iteratively (⚠️ not a true chunked-prefill implementation)
-- `DecodingPress` ([source](kvpress/presses/decoding_press.py)): allow for compression during decoding, see decoding section in this README.
-- `CompressionRatioDecodingPress` ([source](kvpress/presses/compression_ratio_decoding_press.py)): compress during decoding to keep a fixed fraction of all tokens seen so far.
-- `PrefillDecodingPress` ([source](kvpress/presses/prefill_decoding_press.py)): allow to compress both during prefilling and during decoding.
-- `DMSPress` ([source](kvpress/presses/dms_press.py), [paper](https://arxiv.org/abs/2506.05345)): evict keys and values with scores below a given threshold of any `ScorerPress` instead of relying on top-k scores. Support both prefilling and decoding (if decoding=True), but only supports dense-prefill and not sparse-prefill. ⚠️ Does not include the trained evictors from the DMS paper.
-- `CAMPress` ([source](kvpress/presses/cam_press.py), [paper](https://openreview.net/forum?id=LCTmppB165)): A decoding press that merges the kv cache of evicted tokens into keep tokens to preserve information.
-- `MergingPress` ([source](kvpress/presses/merging_press.py)): A prefill press that wraps any `ScorerPress` and folds each evicted token's value into its most cosine-similar surviving neighbor (keys preserved by default). 🤖 automated agent contribution
-
-For a detailed list of existing KV cache compression methods, check [Awesome-KV-Cache-Compression](https://github.com/October2001/Awesome-KV-Cache-Compression) or [Awesome-LLM-Compression](https://github.com/HuangOwen/Awesome-LLM-Compression?tab=readme-ov-file#kv-cache-compression)
-
-
-## Evaluation
-The research-specific evaluation and analysis scripts are in [tools/](tools/). Measure accuracy, peak memory and runtime for the workload and hardware being evaluated. The upstream general-purpose evaluation directory has been removed from this checkout and can be restored from Git if needed.
-
-Below we report the average performance on the RULER dataset with 4k context length for different presses, from our [![Hugging Face Leaderboard](https://img.shields.io/badge/🤗%20HuggingFace-Leaderboard-orange)](https://huggingface.co/spaces/nvidia/kvpress-leaderboard)
-
-## Quantization
-
-We support KV cache quantization through the transformers `QuantizedCache` class (see [HF blog post](https://huggingface.co/blog/kv-cache-quantization#how-to-use-quantized-kv-cache-in-%F0%9F%A4%97-transformers)). To use it, simply pass a cache object to your pipeline:
-
-```python
-from transformers import QuantizedCache
-
-cache = QuantizedCache(backend="quanto", nbits=4)
-
-pipe(..., cache=cache)
-```
-
-By default, the `DynamicCache` is used (no quantization). 
-
-> [!IMPORTANT]  
-> To use the `QuantizedCache`, you need to install additional dependencies (_e.g._ `pip install optimum-quanto`).
-
-## Contributing
-
-We welcome contributions! To add a new press, simply open an issue or submit a pull request. A [guide to creating a new press](https://colab.research.google.com/drive/1ld6u2OnVUpGryBGDdanjjDrf6j7TD0oA?usp=drive_link) is available on Colab.
-
-## Citation
-
-If you use KVPress in your research, please cite our paper:
-
-```bibtex
-@article{devoto2025expectedattention,
-  title={Expected Attention: KV Cache Compression by Estimating Attention from Future Queries Distribution},
-  author={Devoto, Alessio and Jeblick, Maximilian and J{\'e}gou, Simon},
-  journal={arXiv preprint arXiv:2510.00636},
-  year={2025},
-  url={https://arxiv.org/abs/2510.00636}
-}
-```
-
-## FAQ
-
-<details><summary> 
-
-### Which models are supported ? 
-</summary>
-
-Some presses depend on the model architecture (_e.g._ `ExpectedAttentionPress` or `SnapKVPress`) hence they might not work with all models. We tested support for `LlamaForCausalLM`, `MistralForCausalLM`, `Phi3ForCausalLM`, `Qwen2ForCausalLM`, `Qwen3ForCausalLM`, and `Gemma3ForCausalLM` but many other models might be supported out of the box because their implementation is often similar in transformers.
-</details>
-
-<details><summary> 
-
-### How to run inference on multiple GPUs ? 
-</summary>
-
-kvpress supports multi-GPU inference through [accelerate](https://huggingface.co/docs/accelerate/en/index):
-
-```python
-pipe = pipeline("kv-press-text-generation", model=model, device_map="auto")
-```
-
-</details>
-
-
-<details> <summary> 
-
-### What are the memory and throughput gains ?
-</summary>
-
-Memory usage should be reduced by around `compression_ratio * kv_cache_size`. As the KV cache is smaller, decoding should also be faster. Measure peak memory and runtime on the target workload and hardware.
-</details>
-
-
-<details> <summary> 
-
-### How does a press work ? </summary>
-
-A press registers a forward hook (`press.forward_hook` method) to each attention layer during the prefilling phase. Registration can be applied using the press as a context manager (`press.__call__` method):
-
-```python
-import torch
-from transformers import AutoModelForCausalLM
-from kvpress import KnormPress
-
-device = "cuda:0"
-ckpt = "meta-llama/Meta-Llama-3.1-8B-Instruct"
-model = AutoModelForCausalLM.from_pretrained(ckpt).to(device)
-press = KnormPress(compression_ratio=0.4)
-
-inputs = model.dummy_inputs["input_ids"].to(device)
-
-with torch.no_grad():
-    print(model(inputs).past_key_values[0][0].shape)
-    # torch.Size([3, 8, 5, 128])
-    
-with torch.no_grad(), press(model):
-    print(model(inputs).past_key_values[0][0].shape)
-    # torch.Size([3, 8, 3, 128])
-```
-</details>
-
-<details><summary> 
-
-### Why not using model.generate ? 
-</summary>
-
-In fact you can use `model.generate` with a press by using the press as a context manager:
-
-```python
-with press(model):
-    outputs = model.generate(inputs)
-```
-
-However, the `generate` method does not allow to exclude the question from the compression, which would artificially favors methods such as SnapKV. Ideally, we want a compression method that works whatever comes after the context (_e.g._ for use cases such as chat or document question answering). Finally the `generate` method does not allow to provide generation for multiple questions at once.
-
-</details>
-
-
-
-<details><summary> 
-
-### Can I combine compression during prefilling and decoding ? 
-</summary>
-
-
-Combines separate presses for prefilling and decoding phases.
-
-**Parameters:**
-- `prefilling_press`: Press used during prefill phase
-- `decoding_press`: Press used during decoding phase
-
-## Usage Examples
-
-### Basic Decoding Compression
-
-```python
-from transformers import pipeline
-from kvpress import KnormPress
-from kvpress import DecodingPress
-
-# Initialize the pipeline
-device = "cuda:0"
-model = "meta-llama/Llama-3.1-8B-Instruct"
-model_kwargs = {"attn_implementation": "flash_attention_2"}
-pipe = pipeline("kv-press-text-generation", model=model, device=device, model_kwargs=model_kwargs)
-
-# Create a decoding press that compresses every 10 steps to a target cache size of 512 tokens
-decoding_press = DecodingPress(
-    base_press=KnormPress(),
-    compression_interval=10,
-    target_size=512
-)
-
-# Use with pipeline
-context = "A very long text you want to compress during generation"
-question = "Tell me a long story about this context"
-response = pipe(context, question=question, press=decoding_press)["answer"]
-```
-
-### Combined Prefill + Decoding Compression
-
-```python
-from transformers import pipeline
-from kvpress import CriticalKVPress, KnormPress
-from kvpress import DecodingPress, PrefillDecodingPress
-
-# Initialize the pipeline
-device = "cuda:0"
-model = "meta-llama/Llama-3.1-8B-Instruct"
-model_kwargs = {"attn_implementation": "flash_attention_2"}
-pipe = pipeline("kv-press-text-generation", model=model, device=device, model_kwargs=model_kwargs)
-
-# Different strategies for prefill vs decoding
-prefill_press = CriticalKVPress(KnormPress())
-decoding_press = DecodingPress(
-    base_press=KnormPress(compression_ratio=0.2),
-    compression_interval=5,
-    target_size=256
-)
-
-# Combine them
-combined_press = PrefillDecodingPress(
-    prefilling_press=prefill_press,
-    decoding_press=decoding_press
-)
-
-context = "A very long context that will be compressed during prefill"
-question = "Generate a detailed analysis that will be compressed during decoding"
-response = pipe(context, question=question, press=combined_press)["answer"]
-```
+- 对新模型或请求采集 trace 时，先通过对应入口的 `--help` 确认参数，并用小样本检查模型、predictor、mask 和输出位置；真实模型运行需要相应权重与计算资源。
+- 原始输入、旧实验数据和报告分开保存；新实验使用新输出目录，避免覆盖已有结果。
+- 模型观察、软件功能、声明参数下的模拟、综合和真实系统测量分别报告。逻辑压缩或模型中的 bytes/cycles 节省不能直接称为物理显存、HBM 流量或端到端加速。
+- 已退役的历史脚本可从 Git 历史查看或恢复；旧硬件 scoreboard 的部分 Python 参考已退役，不能直接假定旧验证链仍可运行。
