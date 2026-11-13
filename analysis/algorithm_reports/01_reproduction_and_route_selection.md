@@ -52,7 +52,7 @@ Full-KV、只在 prefill 裁剪、prefill+decode 裁剪。三个内置请求分�
 | Long hardware answer | 通过 | 74.34% / 3.897× | 74.91% / 3.986× |
 
 裁剪侧六项检查也全部通过。来源：[逐请求 baseline](../baseline_results.csv)、
-[冻结范围](../baseline_freeze.json)。原 CSV 的 elapsed 字段仅为诊断，不用于性能分析。
+[冻结范围](../archive/baseline_freeze.json)。原 CSV 的 elapsed 字段仅为诊断，不用于性能分析。
 
 **分析。** 结果确认指定配置可执行，并且内置样本有较高逻辑删除率；它既不代表
 所有回答保持精度，也不能说明 KVPress fake-key 路径已经少存了对应物理 KV。
@@ -104,7 +104,7 @@ Gate B 扩展到三种内置请求，得到：
 | Summarization | 891 | 72.66% | 84.85% |
 | Reasoning | 2,031 | 78.96% | 84.27% |
 
-来源：[Gate A](../predictor_trace_gate_a.json)、[Gate B](../predictor_trace_gate_b_freeze.json)。
+来源：[Gate A](../archive/predictor_trace_gate_a.json)、[Gate B](../archive/predictor_trace_gate_b_freeze.json)。
 这些请求与 baseline 的输入范围不完全相同，删除率不能逐项当作相同请求的重测差。
 
 有效的predictor-only trace只做一次正常prefill，逐层观察输入并独立调用官方
@@ -145,8 +145,8 @@ v1 retrieval 的6条有5条是 qasper，且无 qmsum，故不足以支撑 task-b
 v2 实际 score 序列长2,143—16,042；删除率 request P50为66.25%、P90为67.47%。
 Token加权与request均值不同：前者对有效layer/head/token条目求总删除/总数，
 后者对每请求比例等权平均。逻辑压缩是 `1/(1−删除率)`；平均压缩不能用平均
-删除率直接替代计算。来源：[v1冻结](../longbench_core_v1_freeze.json)、
-[v2冻结](../longbench_balanced_v2_freeze.json)、v2 `request_summary/request_group_summary.csv`。
+删除率直接替代计算。来源：[v1冻结](../archive/longbench_core_v1_freeze.json)、
+[v2冻结](../archive/longbench_balanced_v2_freeze.json)、v2 `request_summary/request_group_summary.csv`。
 
 ## 4. 稀疏结构：比例稳定，位置不规则
 
@@ -315,13 +315,13 @@ R1只保留本报告作为阅读入口。正文中的表格直接提炼自以下
 
 | 用途 | 原位置与必要数据 |
 |---|---|
-| 官方路径复现 | [baseline结果](../baseline_results.csv)、[配置](../baseline_config.yaml)、[冻结记录](../baseline_freeze.json) |
-| 单请求及三类请求观测 | [Gate A](../predictor_trace_gate_a.json)、[Gate B](../predictor_trace_gate_b_freeze.json)，以及[Gate原trace](../../traces/hardware_predictor_gate_a_01/)和三个Gate B trace目录 |
-| 选样与18条→45条的推进 | [v1冻结](../longbench_core_v1_freeze.json)、[v2冻结](../longbench_balanced_v2_freeze.json)、[选样资料](../../pilot_inputs/)、对应pilot run manifest |
+| 官方路径复现 | [baseline结果](../baseline_results.csv)、[配置](../baseline_config.yaml)、[冻结记录](../archive/baseline_freeze.json) |
+| 单请求及三类请求观测 | [Gate A](../archive/predictor_trace_gate_a.json)、[Gate B](../archive/predictor_trace_gate_b_freeze.json)，以及[Gate原trace](../../traces/hardware_predictor_gate_a_01/)和三个Gate B trace目录 |
+| 选样与18条→45条的推进 | [v1冻结](../archive/longbench_core_v1_freeze.json)、[v2冻结](../archive/longbench_balanced_v2_freeze.json)、[选样资料](../../pilot_inputs/)、对应pilot run manifest |
 | 删除率分布、head热图、相关性、run-length与阈值曲线 | [v2主分析](../experiments/longbench_balanced_v2_analysis/)中的request_summary、request_group_summary、layer_head_retention、request_pair_similarity、head_similarity、run_length_distribution、block_occupancy和score_threshold_sensitivity各CSV；[v1分析](../experiments/longbench_core_v1_analysis/)保留选样演进证据 |
 | B4/B8、margin与head容量取整 | [v3结构化分析](../experiments/longbench_balanced_v2_structured_policy_v3/)中的structured_policy_request、structured_policy_summary和head_length_bucketing各CSV及evaluation manifest |
 | Timeline/packed布局比较 | [布局分析](../experiments/longbench_balanced_v2_phase3_layout_01/)中的request_layout_cost、layout_cost_summary、layer_head_page_cost各CSV及evaluation manifest |
-| 生成质量筛查 | [9请求结果](../experiments/accuracy_b4_stratified9_01/request_results.csv)、对应run manifest、答案/参考及metric定义；[Route-B冻结](../b4_route_b_screening_freeze.json)限定其结论范围 |
+| 生成质量筛查 | [9请求结果](../experiments/accuracy_b4_stratified9_01/request_results.csv)、对应run manifest、答案/参考及metric定义；[Route-B冻结](../archive/b4_route_b_screening_freeze.json)限定其结论范围 |
 | 新位置统计、重新生成候选mask | [原pilot trace](../../traces/pilots/)中的逐请求score_mask.npz和manifest；[字段定义](../../TRACE_SCHEMA.md)、[分析实现](../../tools/analyze_kvzap_trace.py)、[规则化实现](../../tools/evaluate_kvzap_structured_masks.py)、[布局实现](../../tools/evaluate_kvzap_physical_layout.py) |
 
 原始`pilot_inputs/longbench_balanced_v2.jsonl`当前本地缺失，preparation manifest仍在；

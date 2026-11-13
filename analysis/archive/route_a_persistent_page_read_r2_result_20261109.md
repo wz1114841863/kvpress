@@ -2,7 +2,7 @@
 
 **结论：本轮范围内的v2持久页重复读取、错误拒绝/恢复及指定retire排空通过。** 真实父级短测1项＋完整阶段14项，共7 suites／15项native测试全部成功；compile/parent/test/runner/tmux五层退出均0。该结论不包含多组admission、数值对应、全32K/并发、external-v2、2ns或增量成本闭合。
 
-本轮按用户完成通知只读核验[冻结r2](route_a_persistent_page_read_r2_launch_20261109.md)，不修改RTL/输入，不重放native或运行DC/STA。[JSON证据](route_a_persistent_page_read_r2_result_20261109.json)保存fresh最终严格核验、独立复核、原生报告/ELF/log的hash和逐场景结果。r1失败记录继续保留。
+本轮按用户完成通知只读核验冻结r2（旧文件 `route_a_persistent_page_read_r2_launch_20261109.md` 可在 Git 历史查阅），不修改RTL/输入，不重放native或运行DC/STA。[JSON证据](route_a_persistent_page_read_r2_result_20261109.json)保存fresh最终严格核验、独立复核、原生报告/ELF/log的hash和逐场景结果。r1失败记录继续保留。
 
 ## 1. 执行与输入/产物闭合
 
@@ -30,7 +30,7 @@
 
 ## 2. 同页两读：一次打包，两个真实服务
 
-[测试源](../hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAPersistentPageReadSpec.scala#L319)没有中途reset、内部force、第二次publication或重新preload packed payload。仅原pending对象预载；packed对象来自真实R1写入。第二次沿用R5 canonical handle，每个返回fragment都核对原数据。
+[测试源](../../hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAPersistentPageReadSpec.scala#L319)没有中途reset、内部force、第二次publication或重新preload packed payload。仅原pending对象预载；packed对象来自真实R1写入。第二次沿用R5 canonical handle，每个返回fragment都核对原数据。
 
 SAME_PAGE_TWICE的实际观察：
 
@@ -51,11 +51,11 @@ SAME_PAGE_TWICE的实际观察：
 
 错误suite先完成真实首次正向服务，再依次发送：错误PageRef generation、错误attention owner、非法S2 slot、错误S2 next-generation。**每项恰一个真实fault terminal**；没有新增read、consumer commit或source release，S2没有残留live slot，下一合法generation仍为2。
 
-foreign declaration没有对应live attention，仅有一次local rejection，**没有制造attention terminal**。随后合法generation2服务再次完成并成功退休，验证错误后能够恢复，而不是只观察到拒绝后停止测试。详细检查见[错误场景](../hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAPersistentPageReadSpec.scala#L423)。
+foreign declaration没有对应live attention，仅有一次local rejection，**没有制造attention terminal**。随后合法generation2服务再次完成并成功退休，验证错误后能够恢复，而不是只观察到拒绝后停止测试。详细检查见[错误场景](../../hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAPersistentPageReadSpec.scala#L423)。
 
 ## 4. retire期间完成已接受工作
 
-[retire场景](../hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAPersistentPageReadSpec.scala#L480)在首次服务后，先接受第二个attention及declaration，但暂不提供selector，确认S2尚空。此时实际接受runtime retire，进入Retiring；16周期内页保持live，不能提前retire ACK。
+[retire场景](../../hardware/route_a/chisel/src/test/scala/kvpress/routea/RouteAPersistentPageReadSpec.scala#L480)在首次服务后，先接受第二个attention及declaration，但暂不提供selector，确认S2尚空。此时实际接受runtime retire，进入Retiring；16周期内页保持live，不能提前retire ACK。
 
 之后补入原attention的selector，完成第二次实际fill、四消费者和terminal；最后才完成descriptor失效、allocator释放和一次retire ACK。RETIRE_DURING_PREFLIGHT记录同样有一次write/publication、两次服务、8 commits、2 releases、2成功terminals且无memory fault。v2的前端停止/在途工作完成/transport drain分期在该切点具备动态证据。
 

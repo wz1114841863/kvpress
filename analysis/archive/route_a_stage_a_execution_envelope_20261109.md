@@ -2,7 +2,7 @@
 
 **本阶段结论：执行范围和职责已定义；持续执行验证尚未完成。** 本轮按用户要求执行阶段 A，限定为当前源码到论文执行目标的定点映射及最小场景定义；不重做 MR-1/MR-2，不改 RTL／接口／容量，不运行仿真、DC、STA、模型或远程任务。
 
-源码截面：`research/kvzap-latest`，`2a613f5`。上位执行计划为 [11月9日论文范围](route_a_paper_execution_scope_and_closure_20261109.md)，规范仍是 [architecture specification](architecture_spec.md)与各既有合同。生命周期、环境职责与未闭合问题见本文和[H2](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)。该文件不是新的架构冻结或持续 decode PASS。
+源码截面：`research/kvzap-latest`，`2a613f5`。上位执行计划为 [11月9日论文范围](route_a_paper_execution_scope_and_closure_20261109.md)，规范仍是 [architecture specification](architecture_spec.md)与各既有合同。生命周期、环境职责与未闭合问题见本文和[H2](../hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)。该文件不是新的架构冻结或持续 decode PASS。
 
 ## 1. 本阶段明确的执行范围
 

@@ -255,12 +255,12 @@ DC cell-area units、32-nm CACTI mm²、HBM容量B和每请求mJ属于不同技�
 
 ## 9. 原始定义与结果入口
 
-测量过程参见[SRP结论](../synthesis_eligibility_manifest.json)、[MBR边界](../measurement_boundary_selection.md)、
-[MR-2](../measurement_dut_cut_freeze_20261025.json)及[测量DUT](../measurement_dut_cut_freeze_20261025.md)。
-具体成本来自[增量账本](../route_a_incremental_storage_cost_ledger_p0_20261106.md)、
-[STORE P0字段数据](../dc_compact_store_p0_fields_20261106.csv)、
-[存储选项](../dc_compact_storage_realization_options_20261106.json)、
-[ST1范围结果](../dc_st1_scope_key_validation_result_20261106.json)、
-[P3映射评估](../p3_staging_storage_mapping_feasibility_20261106.md)及
-[最新RD1＋WCG1结果](../dc_rd1_wcg1_full_paired_result_20261109.json)。
+测量过程参见[SRP结论](../archive/synthesis_eligibility_manifest.json)、[MBR边界](../archive/measurement_boundary_selection.md)、
+[MR-2](../archive/measurement_dut_cut_freeze_20261025.json)及[测量DUT](../archive/measurement_dut_cut_freeze_20261025.md)。
+具体成本来自[增量账本](../archive/route_a_incremental_storage_cost_ledger_p0_20261106.md)、
+[STORE P0字段数据](../archive/dc_compact_store_p0_fields_20261106.csv)、
+[存储选项](../archive/dc_compact_storage_realization_options_20261106.json)、
+[ST1范围结果](../archive/dc_st1_scope_key_validation_result_20261106.json)、
+[P3映射评估](../archive/p3_staging_storage_mapping_feasibility_20261106.md)及
+[最新RD1＋WCG1结果](../archive/dc_rd1_wcg1_full_paired_result_20261109.json)。
 前RTL各项proxy与遗漏预算的完整解释见算法R6；当前持续功能及其环境边界见H2。

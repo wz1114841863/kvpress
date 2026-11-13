@@ -141,7 +141,7 @@ reset 不清 HBM。必须有独立 `HistoryInitAck`：选择 fresh logical regio
 
 ## 7. 已做的有限方案检查
 
-本地[纯Python模型](../tools/check_route_a_continuation_plan_model.py)不加载ML/RTL/EDA。两组、每组两条，覆盖ordered R6/collector、组后archive write/ACK/commit、R5 ready、permit、独立R3/ingress close ACK、rearm和attention交错：**224 states、499 transitions，0 mismatch、0有限模型deadlock、9 goal states**。六项覆盖包括第二组在没有任何attention时接收、两组完成归档/清理、G1 ready后仍可读G0、两页各读两次及两种close ACK先后顺序。
+本地纯Python模型（旧文件 `check_route_a_continuation_plan_model.py` 可在 Git 历史查阅）不加载ML/RTL/EDA。两组、每组两条，覆盖ordered R6/collector、组后archive write/ACK/commit、R5 ready、permit、独立R3/ingress close ACK、rearm和attention交错：**224 states、499 transitions，0 mismatch、0有限模型deadlock、9 goal states**。六项覆盖包括第二组在没有任何attention时接收、两组完成归档/清理、G1 ready后仍可读G0、两页各读两次及两种close ACK先后顺序。
 
 四个坏组织都给出反例：handoff后直接清working使旧lookup变Unseen；visibility即ready早于all-R6；只留最新页使G0丢失；仅ingress close ACK就rearm使G1早于R3 close。候选32-B格式另通过8,192精确正例、106,496单字段篡改负例、各8,192个namespace/state/reserved拒绝、2,496次边界pack/unpack及32个越界拒绝。它们支持协议方案的初步一致性；不证明RTL等价、真实R5/S2/preflight错误/cancel、ready/valid实现、全32K、reset/retire/wrap、外部公平性、2ns、面积或净收益。
 

@@ -2,7 +2,7 @@
 
 日期：2026-11-09。源码基线：`research/kvzap-latest` / `1f752ee`。
 状态：**源码寿命审计与方案完成；跨组功能、物理服务和成本可行性尚未验收。**
-生命周期和容量分析保留在本文；后续功能证据与适用范围见[H2](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)。
+生命周期和容量分析保留在本文；后续功能证据与适用范围见[H2](../hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)。
 本轮只新增本记录并更新 live 入口，不修改 RTL、规范合同或旧记录，不启动仿真、远程任务、DC/STA。
 
 ## 1. 本轮结论与方案地位

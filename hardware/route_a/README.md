@@ -15,8 +15,8 @@ open. The accepted RD1+WCG1 control mapping reduces area, while top-level
 setup/hold and complete incremental costs remain unresolved. This workspace
 is not a completed numeric/memory realization or a PPA/speedup result.
 
-Use the [current handoff](../../analysis/route_a_current_handoff.md) for the
-short continuation state and [architecture specification](../../analysis/architecture_spec.md)
+Use the [project overview](../../analysis/project_overview_20261111.md) for the
+short continuation state and [architecture specification](../../analysis/archive/architecture_spec.md)
 for technical definitions. Historical contracts referenced by frozen records
 can be read at their recorded Git revisions; the pre-cleanup hardware-document
 snapshot is `636c19b`. The Chisel README also contains historical phase notes;

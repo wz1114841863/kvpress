@@ -278,19 +278,19 @@ pending周转和真实数据—数值连接未完成。H3所列数组、外围�
 
 ## 10. 原始结果入口
 
-主线数据：[原始DC](../dc_feasibility_result_r5_descriptor_externalized_20261030.md)、
-[Bridge结果](../dc_control_refinement_result_20261103.md)、
-[Compact诊断结果](../dc_m2_p3_wrapper_compact_membership_result_20261104.md)、
-[Entry_id修复](../dc_m2p3_entry_id_repair_result_20261105.md)、
-[RD1完整结果](../dc_rd1_full_paired_dc_result_20261106.md)、
-[RD1＋WCG1完整结果](../dc_rd1_wcg1_full_paired_result_20261109.json)。
+主线数据：[原始DC](../archive/dc_feasibility_result_r5_descriptor_externalized_20261030.md)、
+[Bridge结果](../archive/dc_control_refinement_result_20261103.md)、
+[Compact诊断结果](../archive/dc_m2_p3_wrapper_compact_membership_result_20261104.md)、
+[Entry_id修复](../archive/dc_m2p3_entry_id_repair_result_20261105.md)、
+[RD1完整结果](../archive/dc_rd1_full_paired_dc_result_20261106.md)、
+[RD1＋WCG1完整结果](../archive/dc_rd1_wcg1_full_paired_result_20261109.json)。
 
-局部与分支：[RD1访问/并发分析](../dc_compact_membership_read_port_audit_20261104.csv)、
-[RD2负结果](../dc_rd2_read_screen_result_20261106.json)、
-[RD1＋PM1完整结果](../dc_rd1_pm1_full_paired_result_20261107.json)、
-[PM1/全局STA诊断](../dc_rd1_pm1_setup_diagnosis_result_20261107.json)、
-[ST1范围结果](../dc_st1_scope_key_validation_result_20261106.json)、
-[WCG1单bank结果](../dc_wcg1_saved_artifact_validation_result_20261106.json)、
-[WCG1 wrapper功能](../dc_wcg1_wrapper_retry_result_20261106.json)和
-[WCG1 wrapper映射/STA](../dc_wcg1_wrapper_mapping_retry_result_20261107.json)。
+局部与分支：[RD1访问/并发分析](../archive/dc_compact_membership_read_port_audit_20261104.csv)、
+[RD2负结果](../archive/dc_rd2_read_screen_result_20261106.json)、
+[RD1＋PM1完整结果](../archive/dc_rd1_pm1_full_paired_result_20261107.json)、
+[PM1/全局STA诊断](../archive/dc_rd1_pm1_setup_diagnosis_result_20261107.json)、
+[ST1范围结果](../archive/dc_st1_scope_key_validation_result_20261106.json)、
+[WCG1单bank结果](../archive/dc_wcg1_saved_artifact_validation_result_20261106.json)、
+[WCG1 wrapper功能](../archive/dc_wcg1_wrapper_retry_result_20261106.json)和
+[WCG1 wrapper映射/STA](../archive/dc_wcg1_wrapper_mapping_retry_result_20261107.json)。
 需要核查字段、存储和功能范围时读H1—H3；这些链接只用于追溯原始结果，不是另一套必读过程记录。

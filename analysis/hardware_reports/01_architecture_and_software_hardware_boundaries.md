@@ -217,22 +217,22 @@ Full-KV控制分母和Route-A实现成本影响，既不能直接当完整系统
 ## 8. 原始定义与结果入口
 
 本文已在正文串起研究过程。需要核查接口或实验范围时，可直接查：
-[架构规格](../architecture_spec.md)、
-[pending路径详细合同](../mr1b_direct_pending_cross_owner_contract_proposal.md)、
-[有限anchor参数](../architecture_gate_a3_rtl_entry_qwen3_8b_32k_s1_v1.json)、
+[架构规格](../archive/architecture_spec.md)、
+[pending路径详细合同](../archive/mr1b_direct_pending_cross_owner_contract_proposal.md)、
+[有限anchor参数](../archive/architecture_gate_a3_rtl_entry_qwen3_8b_32k_s1_v1.json)、
 Gate-A结论见本文第6节、
-[RTL层次与owner](../rtl_entry_hierarchy_owner_contract.md)、
-[Gate-RTL0结论](../rtl_entry_interface_manifest.json)。
-硬件各职责原定义为[R1](../architecture_gate_a_r1_core_memory_wrapper_contract.md)、
-[R2](../architecture_gate_a_r2_arbitration_dependency_contract.md)、
-[R3](../architecture_gate_a_r3_m2_p3_wrapper_contract.md)、
-[R4](../architecture_gate_a_r4_numeric_merge_contract.md)、
-[R5](../architecture_gate_a_r5_page_manager_descriptor_contract.md)、
-[R6](../architecture_gate_a_r6_top_level_lifecycle_contract.md)。
+[RTL层次与owner](../archive/rtl_entry_hierarchy_owner_contract.md)、
+[Gate-RTL0结论](../archive/rtl_entry_interface_manifest.json)。
+硬件各职责原定义为[R1](../archive/architecture_gate_a_r1_core_memory_wrapper_contract.md)、
+[R2](../archive/architecture_gate_a_r2_arbitration_dependency_contract.md)、
+[R3](../archive/architecture_gate_a_r3_m2_p3_wrapper_contract.md)、
+[R4](../archive/architecture_gate_a_r4_numeric_merge_contract.md)、
+[R5](../archive/architecture_gate_a_r5_page_manager_descriptor_contract.md)、
+[R6](../archive/architecture_gate_a_r6_top_level_lifecycle_contract.md)。
 
-后续反馈来自[首次使用闭合](../rtl3_9_c4_d_functional_completion_review_manifest.json)、
-[持续执行探针](../route_a_stage_a_probe_result_20261109.md)、
-[持久页v2结果](../route_a_persistent_page_read_r2_result_20261109.md)、
-[多组journal审查](../route_a_multigroup_journal_lifecycle_closure_20261109.md)和
-[RD1＋WCG1结果](../dc_rd1_wcg1_full_paired_result_20261109.json)。后续H2—H4分别展开
+后续反馈来自[首次使用闭合](../archive/rtl3_9_c4_d_functional_completion_review_manifest.json)、
+[持续执行探针](../archive/route_a_stage_a_probe_result_20261109.md)、
+[持久页v2结果](../archive/route_a_persistent_page_read_r2_result_20261109.md)、
+[多组journal审查](../archive/route_a_multigroup_journal_lifecycle_closure_20261109.md)和
+[RD1＋WCG1结果](../archive/dc_rd1_wcg1_full_paired_result_20261109.json)。后续H2—H4分别展开
 RTL功能范围、存储/完整成本、面积与时序实验；本文不复述其启动、重试、报错和哈希记录。

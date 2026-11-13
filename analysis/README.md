@@ -13,6 +13,9 @@
 | [R6 前RTL成本与架构入口](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md) | |
 
 需要复核时，从报告进入原始JSON/CSV和源码。[experiments/](experiments/)保存运行结果，
-[架构规格](architecture_spec.md)与[端口矩阵](rtl_entry_port_parameter_contract.md)用于核查技术定义。
-研究过程不再依赖启动、重试和重复交接。冻结记录保留原样，其中旧硬件路径按Git版本
+[archive/](archive/)集中保存旧技术合同、历史结果和冻结记录；其中的
+[架构规格](archive/architecture_spec.md)与[端口矩阵](archive/rtl_entry_port_parameter_contract.md)可用于核查旧设计定义。
+根目录的少量输入文件保留原路径供现有脚本使用。归档中冻结JSON内容没有改写，记录的旧路径
+是当时的历史路径，不一定指向当前位置。研究过程不再依赖启动、重试和重复交接。
+旧硬件路径可按Git版本
 `636c19b`解释。大型trace、日志或数据可能被Git忽略，文档提交不等于数据备份。

@@ -28,7 +28,7 @@ The following remain deliberately unselected:
 
 M2/P3/R5/S2 array interiors are now materialized separately as same-header
 `syn_black_box` proxies by `materialize_dc_array_proxies.py`; see
-[`analysis/dc_array_proxy_materialization_20261029.json`](../../../analysis/dc_array_proxy_materialization_20261029.json).
+[`analysis/dc_array_proxy_materialization_20261029.json`](../../../analysis/archive/dc_array_proxy_materialization_20261029.json).
 This preserves parent control and does not select a macro, latency, or physical
 cost. Each future DC top must use its own frozen `.f`; do not combine the two filelists because the
 independent generated units define common module names.  See the [measurement boundary and cost report](../../../analysis/hardware_reports/03_storage_measurement_boundary_and_complete_cost.md)

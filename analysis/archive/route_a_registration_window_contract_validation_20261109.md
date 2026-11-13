@@ -3,7 +3,7 @@
 日期：2026-11-09。源码基线：`research/kvzap-latest` / `f9f8adf`。
 判定：**候选版本合同的有限模型通过；当前生产者/RTL尚不能保证该合同，不能据此集成64条滚动历史。**
 输入hash、源码锚点、完整模型结果和反例见 [JSON](route_a_registration_window_contract_validation_20261109.json)。
-本轮新增 [独立Python合同检查器](../tools/check_route_a_registration_window_contract.py)和文档，更新live入口；不修改RTL、通用wrapper/v1或规范合同，不启动native仿真、远程任务或DC/STA。
+本轮新增 独立Python合同检查器（旧文件 `check_route_a_registration_window_contract.py` 可在 Git 历史查阅）和文档，更新live入口；不修改RTL、通用wrapper/v1或规范合同，不启动native仿真、远程任务或DC/STA。
 
 ## 1. 这次实际验证了什么
 

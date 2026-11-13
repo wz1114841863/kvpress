@@ -1,6 +1,6 @@
 # Route-A 论文执行范围与实现收口 — 2026-11-09
 
-相关研究过程见[项目总览](project_overview_20261111.md)及[硬件报告](hardware_reports/01_architecture_and_software_hardware_boundaries.md)；[RD1＋WCG1 完整结果](dc_rd1_wcg1_full_paired_result_20261109.json)。本轮源码／结果截面为 `cbf2296`，分支 `research/kvzap-latest`。
+相关研究过程见[项目总览](../project_overview_20261111.md)及[硬件报告](../hardware_reports/01_architecture_and_software_hardware_boundaries.md)；[RD1＋WCG1 完整结果](dc_rd1_wcg1_full_paired_result_20261109.json)。本轮源码／结果截面为 `cbf2296`，分支 `research/kvzap-latest`。
 
 本文件落实用户要求的论文范围和后续收口顺序，是研究执行与证据计划，不替代 [architecture specification](architecture_spec.md)、通用 wrapper 合同或既有冻结。这里列出的未完成项不是新验收结果。本轮只更新分析与导航文档，不修改 RTL、容量、接口、冻结输入或 EDA 策略，不启动远程任务。
 
@@ -31,7 +31,7 @@
 - R6 retire 后进入 `StateRetired`；没有正常 session reopen 证据。连续 generation／ID reuse 还需要 quiescence 对应。
 - 当前 measurement cut 不提供真实 KV bytes 自主驱动 attention 算术链的证据。
 
-源码锚点见 [ingress／journal／R6](../hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala)和 [activation binder](../hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala)，精确历史定位见复审 §6 及 JSON。上述事实限制持续服务主张，不推翻已验收的首次使用。
+源码锚点见 [ingress／journal／R6](../../hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAIncrementalSkeletons.scala)和 [activation binder](../../hardware/route_a/chisel/src/main/scala/kvpress/routea/incremental/RouteAPackedReadActivationBinder.scala)，精确历史定位见复审 §6 及 JSON。上述事实限制持续服务主张，不推翻已验收的首次使用。
 
 ### 必须补上的最小执行证据
 

@@ -31,7 +31,7 @@ open. The main findings are:
 Machine-readable rows are in
 [`route_a_incremental_storage_cost_ledger_p0_20261106.csv`](route_a_incremental_storage_cost_ledger_p0_20261106.csv).
 The capacity and cost interpretation is summarized in the
-[storage and complete-cost report](hardware_reports/03_storage_measurement_boundary_and_complete_cost.md).
+[storage and complete-cost report](../hardware_reports/03_storage_measurement_boundary_and_complete_cost.md).
 
 ## Evidence boundaries
 
@@ -152,7 +152,7 @@ traces or this audit. The frozen one-page-per-layer envelope is unchanged.
 Source: `RouteAIncrementalSkeletons.scala:1761–1910, 1931–2014,
 2053–2109, 2196–2285`; profile: `RouteASynthesisControlProjectionProfile.scala`;
 contracts: [`mr2_m2_array_boundary_contract.md`](mr2_m2_array_boundary_contract.md)
-and [algorithm cost review](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md).
+and [algorithm cost review](../algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md).
 
 Current production arrays have 288 `(layer, head)` keys, two identical head
 replicas, and 614 span slots. Their 128-bit formats are **not** the old

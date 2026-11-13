@@ -2,7 +2,7 @@
 
 日期：2026-11-09；源码基线`research/kvzap-latest` / `a7a92df`。
 状态：**身份、正向归属验证和关闭条件在候选合同层明确，并通过本地参考检查；生产者/RTL实现及完整成本未验收。**
-输入hash、源码锚点、原生模型收据见 [JSON](route_a_pending_origin_and_window_contract_20261109.json)。检查器为 [check_route_a_pending_origin_contract.py](../tools/check_route_a_pending_origin_contract.py)。本轮不改RTL、通用wrapper/v1、原算法或architecture规范，不运行native仿真、远程任务或DC/STA。
+输入hash、源码锚点、原生模型收据见 [JSON](route_a_pending_origin_and_window_contract_20261109.json)。检查器为 check_route_a_pending_origin_contract.py（旧文件 `check_route_a_pending_origin_contract.py` 可在 Git 历史查阅）。本轮不改RTL、通用wrapper/v1、原算法或architecture规范，不运行native仿真、远程任务或DC/STA。
 
 ## 1. 本轮推进了什么
 

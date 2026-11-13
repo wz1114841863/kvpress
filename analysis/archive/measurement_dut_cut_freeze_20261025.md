@@ -120,7 +120,7 @@ behavior. The freeze relies on the current functional evidence:
   as `13/13` plus `27/27` in the two R5-final logs listed in
   `mr2_r5_availability_array_boundary_contract.md`.
 - MR-2 P3/S2/M2/R5 boundary records and
-  [`mr2_completion_review.md`](mr2_completion_review.md).
+  `mr2_completion_review.md`（旧文件 `mr2_completion_review.md` 可在 Git 历史查阅）.
 
 These are functional Chisel/Verilator checks. They do not validate an external
 memory implementation, numeric calculation, physical array behavior, or

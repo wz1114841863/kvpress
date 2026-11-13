@@ -103,8 +103,8 @@ stage、完整控制、partial/merge数值处理、外围、leakage及统一时�
 
 上述DC快照不含后加的持久页v2功能；129.52×是控制投影比，不能推断最终系统
 面积比一定更大或更小。具体实现证据按需查
-[RD1＋WCG1结果](dc_rd1_wcg1_full_paired_result_20261109.json)、
-[持久页结果](route_a_persistent_page_read_r2_result_20261109.md)。
+[RD1＋WCG1结果](archive/dc_rd1_wcg1_full_paired_result_20261109.json)、
+[持久页结果](archive/route_a_persistent_page_read_r2_result_20261109.md)。
 
 目前集中存在四类未闭合问题：同session多组admission与journal/pending释放，
 compact/P3/M2/R5等必要存储及端口，原2 ns下跨owner控制链和setup/hold，以及
@@ -156,11 +156,11 @@ DC包含项与历史proxy，区分必要信息、职责/接口和物理表示的
 修复只作为正确验收的必要背景，不计作独立面积优化；ST1/RD2等研究负结果保留。
 H3承接算法R6之后的真实实现成本，避免重复抄写前RTL的proxy账本。
 
-主要依据：[架构规格](architecture_spec.md)、
-[RTL2/3推进](rtl2_0_activation_manifest.json)、[首次使用闭合](rtl3_9_c4_d_functional_completion_review_manifest.json)、
-[MR-2](measurement_dut_cut_freeze_20261025.json)、[完整增量账本](route_a_incremental_storage_cost_ledger_p0_20261106.md)、
-[最新完整DC结果](dc_rd1_wcg1_full_paired_result_20261109.json)、
-[持续页读取结果](route_a_persistent_page_read_r2_result_20261109.md)。
+主要依据：[架构规格](archive/architecture_spec.md)、
+[RTL2/3推进](archive/rtl2_0_activation_manifest.json)、[首次使用闭合](archive/rtl3_9_c4_d_functional_completion_review_manifest.json)、
+[MR-2](archive/measurement_dut_cut_freeze_20261025.json)、[完整增量账本](archive/route_a_incremental_storage_cost_ledger_p0_20261106.md)、
+[最新完整DC结果](archive/dc_rd1_wcg1_full_paired_result_20261109.json)、
+[持续页读取结果](archive/route_a_persistent_page_read_r2_result_20261109.md)。
 
 ## 软件—硬件协同：值得评估的职责调整
 
@@ -210,7 +210,7 @@ HBM字节、动态能量proxy、DC cell area与物理PPA分别属于不同证据
 | [tools/](../tools/)、[tests/](../tests/) | 采集、分析、模型与对应检查；从各报告的数据链接和实现入口查找 |
 | [hardware/route_a/chisel/](../hardware/route_a/chisel/) | Chisel源码与功能测试；可从[顶层](../hardware/route_a/chisel/src/main/scala/kvpress/routea/top/RouteAKVSubsystemTop.scala)进入 |
 | [hardware/route_a/dc/](../hardware/route_a/dc/)、[mem/](../hardware/route_a/mem/)、[payload/](../hardware/route_a/payload/) | 综合/STA、存储proxy与payload配置；工具存在不是结果通过 |
-| [TRACE_SCHEMA](../TRACE_SCHEMA.md)、[架构规格](architecture_spec.md) | 按需核查字段、版本及实现合同，不承担算法研究过程的补充叙述 |
+| [TRACE_SCHEMA](../TRACE_SCHEMA.md)、[架构规格](archive/architecture_spec.md) | 按需核查字段、版本及实现合同，不承担算法研究过程的补充叙述 |
 
 理解算法研究过程读总览与R1—R6，硬件设计、实现、成本与优化过程接着读H1—H4；
 核验数值、重绘分布或复现时，再进入各报告直链的

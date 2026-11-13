@@ -35,7 +35,7 @@ Source: `RouteAIncrementalSkeletons.scala:2319–2420, 2866–2966,
 2992–3013, 3016–3117`; normative boundaries:
 [`mr2_p3_array_boundary_contract.md`](mr2_p3_array_boundary_contract.md),
 [`architecture_spec.md`](architecture_spec.md) §7 and
-[`dc_feasibility_fair_v1_constraint_freeze_20261029.md`](dc_feasibility_fair_v1_constraint_freeze_20261029.md).
+`dc_feasibility_fair_v1_constraint_freeze_20261029.md`（旧文件 `dc_feasibility_fair_v1_constraint_freeze_20261029.md` 可在 Git 历史查阅）.
 
 | Lane | Address/data | Accepted operation and response | Independence |
 |---|---|---|---|
@@ -147,7 +147,7 @@ setup/hold and the output mux path need native timing checks at **2 ns**.
 
 ## Finite-model evidence and limits
 
-[`../tools/check_p3_staging_storage_mapping_model.py`](../tools/check_p3_staging_storage_mapping_model.py)
+`../tools/check_p3_staging_storage_mapping_model.py`（旧文件 `check_p3_staging_storage_mapping_model.py` 可在 Git 历史查阅）
 compares independent reference and candidate states for two addresses and
 binary word values. All four initial memories, arbitrary request/response
 stall combinations, synchronous reset and both possible macro Q values on

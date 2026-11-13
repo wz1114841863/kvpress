@@ -193,7 +193,7 @@ slot/generation/credit与abort。Member响应不提前改可见entry；匹配pub
 MR-2最终验证和隔离的是这条较小生产分支的entry数组。两个分支名义上都有128-bit
 head/span，不代表字段含义或生命周期相同。当前生产功能不因此获得A4完整source-FIFO
 select/dequeue/release引擎，也不能用早期“仍blocked”的提案描述后来的实际实现。
-历史分支见Git整理前版本；当前访问与控制以[最终M2数组合同](../mr2_m2_array_boundary_contract.md)
+历史分支见Git整理前版本；当前访问与控制以[最终M2数组合同](../archive/mr2_m2_array_boundary_contract.md)
 及实际接口/源码为准。
 
 ## 5. 外部环境到底承担了哪些工作
@@ -329,16 +329,16 @@ journal及pending descriptor要覆盖仍合法的查询、withdrawal和服务。
 
 ## 9. 原始定义与结果入口
 
-实现库存可核查[RTL入口接口清单](../rtl_entry_interface_manifest.json)、[RTL2/3推进](../rtl2_0_activation_manifest.json)、
+实现库存可核查[RTL入口接口清单](../archive/rtl_entry_interface_manifest.json)、[RTL2/3推进](../archive/rtl2_0_activation_manifest.json)、
 [七种source协议测试源码](../../hardware/route_a/chisel/src/test/scala/kvpress/routea/rtl3/RouteARTL385FullPathClosureSpec.scala)、
-[C4-D首次使用结论](../rtl3_9_c4_d_functional_completion_review_manifest.json)、
-[MR-1B单记录路径](../mr1b_direct_pending_cross_owner_contract_proposal.md)、
-[MR-2边界](../measurement_dut_cut_freeze_20261025.json)与[测量DUT范围](../measurement_dut_cut_freeze_20261025.md)。
+[C4-D首次使用结论](../archive/rtl3_9_c4_d_functional_completion_review_manifest.json)、
+[MR-1B单记录路径](../archive/mr1b_direct_pending_cross_owner_contract_proposal.md)、
+[MR-2边界](../archive/measurement_dut_cut_freeze_20261025.json)与[测量DUT范围](../archive/measurement_dut_cut_freeze_20261025.md)。
 
-持续执行参见[阶段A范围与环境](../route_a_stage_a_execution_envelope_20261109.md)、
-[两项现状探针](../route_a_stage_a_probe_result_20261109.md)、
-[持久页r2结果](../route_a_persistent_page_read_r2_result_20261109.md)、
-[多组journal寿命](../route_a_multigroup_journal_lifecycle_closure_20261109.md)、
-[关窗条件验证](../route_a_registration_window_contract_validation_20261109.md)和
-[pending归属合同](../route_a_pending_origin_and_window_contract_20261109.md)。这些链接用于
+持续执行参见[阶段A范围与环境](../archive/route_a_stage_a_execution_envelope_20261109.md)、
+[两项现状探针](../archive/route_a_stage_a_probe_result_20261109.md)、
+[持久页r2结果](../archive/route_a_persistent_page_read_r2_result_20261109.md)、
+[多组journal寿命](../archive/route_a_multigroup_journal_lifecycle_closure_20261109.md)、
+[关窗条件验证](../archive/route_a_registration_window_contract_validation_20261109.md)和
+[pending归属合同](../archive/route_a_pending_origin_and_window_contract_20261109.md)。这些链接用于
 技术复核；研究过程与边界已在本文串联，不需要逐份阅读启动、重试或哈希记录。

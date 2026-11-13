@@ -8,8 +8,8 @@ Gate-RTL0 subsequently passed and staged RTL is active through RTL3.9-B3 as of
 and Reviewer-02 closed the R1--R6 cross-contract review. Gate-RTL0 then
 authorized staged control-first RTL only under its separate hierarchy,
 interface, assertion, and oracle contracts. The live implementation status is
-[`analysis/route_a_current_handoff.md`](route_a_current_handoff.md) and the
-implementation and sustained-execution scope is [H2](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md).
+[`analysis/route_a_current_handoff.md`](../project_overview_20261111.md) and the
+implementation and sustained-execution scope is [H2](../hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md).
 Neither this specification nor those functional closures authorize PDK/PPA,
 physical SRAM macros, a native HBM controller, numeric microarchitecture, or
 measured performance claims.
@@ -25,7 +25,7 @@ use.  **Unestimated** denotes a module that carries no area, energy, cycle,
 bandwidth, latency, or PPA conclusion in this document.
 
 The architecture research sequence and outcomes are consolidated in
-[H1](hardware_reports/01_architecture_and_software_hardware_boundaries.md).
+[H1](../hardware_reports/01_architecture_and_software_hardware_boundaries.md).
 Gate-A1 selected `direct_pending_endpoint_v1`; Gate-A2 checked event semantics
 with `kvpress/route_a_architecture_reference.py`; Gate-A3 defined the bounded
 Qwen3-8B anchor and its separate small verification profile. Reviewer-02
@@ -42,20 +42,20 @@ specified below.
 ## 2. Provenance and evidence boundary
 
 Research rationale and cost definitions are consolidated in
-[R6](algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md).
+[R6](../algorithm_reports/06_pre_rtl_cost_ledger_and_architecture_entry.md).
 The table points directly to the saved results; reading or updating this
 specification does not require rechecking document hashes. Historical input
 identities remain in the original experiment records and Git history.
 
 | Interface evidence | Result or explanation | Required interpretation |
 |---|---|---|
-| Exact-token lifecycle and maturity | [External-storage binding](experiments/route_a4140_workload_aligned_metadata_cost_01/input_artifacts/a4112b_source.json) | Software lifecycle observation, not physical completion timing. |
-| HA8-wide queue/credit | [R5 execution and queues](algorithm_reports/05_pending_and_metadata_resource_exploration.md) | local32/shared256/staging512; abstract service remains distinct from physical ports. |
-| Metadata inventory and macro/service cost | [M2 saved result](experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4140_source.json) | M2 replicas and queue/staging provision are counted; controller and omitted dynamic accesses remain separate. |
-| P3 payload organization | [Payload result](experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4131_source.json) | Pending HBM backing plus per-layer page staging; movement is charged. |
-| Fair GQA reuse | [GQA accounting](experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4133_source.json) | Both Full-KV and Route-A receive legal four-query-head reuse. |
-| Payload service | [Saved service result](experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4135_source.json), [profiles](../hardware/route_a/payload/a4135_target_profiles.json) | Declared service coordinates and public SRAM proxies, not native HBM timing. |
-| Final cost and entry decision | [A4.14.1 ledger](experiments/route_a4141_accounted_net_benefit_ledger_01/a4141_accounted_net_benefit_ledger_report.json) | Conditional architecture opportunity with explicit omitted costs, not PPA or system net benefit. |
+| Exact-token lifecycle and maturity | [External-storage binding](../experiments/route_a4140_workload_aligned_metadata_cost_01/input_artifacts/a4112b_source.json) | Software lifecycle observation, not physical completion timing. |
+| HA8-wide queue/credit | [R5 execution and queues](../algorithm_reports/05_pending_and_metadata_resource_exploration.md) | local32/shared256/staging512; abstract service remains distinct from physical ports. |
+| Metadata inventory and macro/service cost | [M2 saved result](../experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4140_source.json) | M2 replicas and queue/staging provision are counted; controller and omitted dynamic accesses remain separate. |
+| P3 payload organization | [Payload result](../experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4131_source.json) | Pending HBM backing plus per-layer page staging; movement is charged. |
+| Fair GQA reuse | [GQA accounting](../experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4133_source.json) | Both Full-KV and Route-A receive legal four-query-head reuse. |
+| Payload service | [Saved service result](../experiments/route_a4141_accounted_net_benefit_ledger_01/input_artifacts/a4135_source.json), [profiles](../../hardware/route_a/payload/a4135_target_profiles.json) | Declared service coordinates and public SRAM proxies, not native HBM timing. |
+| Final cost and entry decision | [A4.14.1 ledger](../experiments/route_a4141_accounted_net_benefit_ledger_01/a4141_accounted_net_benefit_ledger_report.json) | Conditional architecture opportunity with explicit omitted costs, not PPA or system net benefit. |
 
 Software lifecycle quantities are direct observations; token/span lowering is
 deterministic conversion; service coordinates are declared models; CACTI is a
