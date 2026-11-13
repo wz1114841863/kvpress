@@ -12,7 +12,7 @@
 | --- | --- |
 | [kvpress/presses/](kvpress/presses/) | 基于 KVPress 的算法和模型接口；包括 KVzap、SnapKV 以及 KVzap 路径使用的 DMSPress |
 | [kvpress/research/](kvpress/research/) | 离线研究的共享计算：packing、调度、生命周期、Route-A 软件参考、资源模型和跨前端分析 |
-| [tools/](tools/) | 模型采集、已有 trace 重放、模拟和结果输出的命令行入口；还包含部分历史实验和硬件检查入口 |
+| [tools/](tools/) | 模型采集、已有 trace 重放、模拟和结果输出的命令行入口；[download_model_cache.py](tools/download_model_cache.py) 用于下载模型缓存 |
 | [tests/](tests/) | 现有算法、trace、模拟和软件参考测试 |
 | [pilot_inputs/](pilot_inputs/) | 本地 pilot 请求和准备信息；部分输入可能不在其他 checkout 中 |
 | [traces/](traces/) | predictor score/mask 等 trace；`traces/pilots/` 存放本地 pilot 请求的 trace |
@@ -21,6 +21,7 @@
 | [analysis/hardware_reports/](analysis/hardware_reports/) | 架构、RTL、成本及面积/时序复盘 H1—H4 |
 | [hardware/route_a/](hardware/route_a/) | 现有 Route-A Chisel/RTL 原型及相关实验；不是完整系统实现 |
 | [papers/](papers/) | 论文资料，本地 `KVzap.pdf` 是原论文 |
+| `.local/server/` | 本机服务器访问说明，不纳入 Git |
 
 `pilot_inputs/`、`traces/` 和 `analysis/experiments/` 中的大部分生成数据受 `.gitignore` 规则影响，**不能假定克隆仓库就包含它们**。开始实验前先确认需要的模型权重、请求和输入数据已经在运行机器上。原始实验输出不要覆盖；入口通常要求输出目录不存在。
 

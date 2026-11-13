@@ -322,7 +322,7 @@ R1只保留本报告作为阅读入口。正文中的表格直接提炼自以下
 | B4/B8、margin与head容量取整 | [v3结构化分析](../experiments/longbench_balanced_v2_structured_policy_v3/)中的structured_policy_request、structured_policy_summary和head_length_bucketing各CSV及evaluation manifest |
 | Timeline/packed布局比较 | [布局分析](../experiments/longbench_balanced_v2_phase3_layout_01/)中的request_layout_cost、layout_cost_summary、layer_head_page_cost各CSV及evaluation manifest |
 | 生成质量筛查 | [9请求结果](../experiments/accuracy_b4_stratified9_01/request_results.csv)、对应run manifest、答案/参考及metric定义；[Route-B冻结](../archive/b4_route_b_screening_freeze.json)限定其结论范围 |
-| 新位置统计、重新生成候选mask | [原pilot trace](../../traces/pilots/)中的逐请求score_mask.npz和manifest；[字段定义](../../TRACE_SCHEMA.md)、[分析实现](../../tools/analyze_kvzap_trace.py)、[规则化实现](../../tools/evaluate_kvzap_structured_masks.py)、[布局实现](../../tools/evaluate_kvzap_physical_layout.py) |
+| 新位置统计、重新生成候选mask | [原pilot trace](../../traces/pilots/)中的逐请求score_mask.npz和manifest；[历史字段记录](../archive/TRACE_SCHEMA.md)、[分析实现](../../tools/analyze_kvzap_trace.py)、[规则化实现](../../tools/evaluate_kvzap_structured_masks.py)、[布局实现](../../tools/evaluate_kvzap_physical_layout.py) |
 
 原始`pilot_inputs/longbench_balanced_v2.jsonl`当前本地缺失，preparation manifest仍在；
 accuracy输入不能直接替代它。现有结果可用于许多图表，但不能据此保证所有实验

@@ -1,5 +1,8 @@
 # TRACE_SCHEMA.md
 
+本文汇集了不同阶段的 trace 格式、实验记录与历史约定，并非所有章节都对应当前保留的脚本。
+使用数据时，以当前采集/校验代码及具体 trace 的 `manifest.json` 为准。
+
 ## Living schema record and chronology
 
 This file describes trace fields and trace-to-model mapping for the KVzap
