@@ -2,7 +2,13 @@
 
 本项目基于 NVIDIA 的 KVPress 框架，研究论文 **KVzap: Fast, Adaptive, and Faithful KV Cache Pruning** 的稀疏行为，以及如何将保留的 KV 组织成适合后续读取的存储与执行方式。当前重点是弄清算法、软件管理和硬件各自需要承担什么，并评估 packing、调度与资源管理的成本。
 
-研究主线 Route-A 保留 KVzap 的原始 mask：在 KV 创建时预测，在最近的 hot window 内保护 KV，成熟后丢弃不保留的项，将保留项整理为按 layer/KV head 管理的 packed pages，供后续 decode 读取。项目还研究了其他模型、SnapKV 和官方训练 DMS 的适用边界；这些前端的选择时机、生命周期和对照标准并不相同。
+Phase I 的研究主线 Route-A 保留 KVzap 的原始 mask：在 KV 创建时预测，在最近的 hot window 内保护 KV，成熟后丢弃不保留的项，将保留项整理为按 layer/KV head 管理的 packed pages，供后续 decode 读取。项目还研究了其他模型、SnapKV 和官方训练 DMS 的适用边界；这些前端的选择时机、生命周期和对照标准并不相同。
+
+当前开始 **Phase II：软件—硬件协同探索**，先定义 KVzap / FastKVzip 的集合语义、Attention 输入与软件管理需求，
+将专用稀疏 KV 搬运引擎作为待验证候选。入口为[算法抽象与系统需求定义](analysis/co_design/01_algorithm_abstraction_and_system_requirements.md)，
+逐项区分 Verified、Proposed、Unknown；新调度器和硬件尚未实现，旧 Route-A 报告与结果继续保留。
+协同研究的 Phase 1（算法抽象与需求）已提交接口、Consumer和执行合同设计及真实输出示例，待审阅、未冻结；
+Phase 2（Software Reference & GPU Baseline）在交接后才实现与测量，当前未启动。
 
 已有结果表明指定样本存在逻辑压缩与条件性的存储机会；离线 byte/cycle 模型不是实测加速。现有 RTL 是研究原型，持续 decode、完整系统成本及统一时序仍未闭合。具体结果、适用范围和重要负结果见[项目总览](analysis/project_overview_20261111.md)和 [R1—R6](analysis/algorithm_reports/)。
 

@@ -1,6 +1,6 @@
 # KVzap 项目总览与管理入口
 
-更新：2026-11-12；分支：`research/kvzap-latest`。
+更新：2026-11-13；分支：`research/kvzap-latest`。
 本页与R1—R6、H1—H4构成研究阅读入口：先看本页，再按问题进入对应报告，即可理解从
 算法复现、系统探索到硬件检验的推进过程。原始JSON/CSV、trace、源码、schema
 与冻结记录用于技术复核；旧计划、启动记录和交接不再是理解算法阶段的必读材料。
@@ -9,7 +9,12 @@
 [H2 RTL实现与持续执行范围](hardware_reports/02_rtl_implementation_and_sustained_execution_scope.md)、
 [H3 存储实现、测量边界与完整成本](hardware_reports/03_storage_measurement_boundary_and_complete_cost.md)和
 [H4 面积／时序优化与设计复盘](hardware_reports/04_area_timing_optimization_and_design_review.md)。
-软件—硬件职责调整仍是待讨论候选，没有改变现有RTL或研究协议。
+研究方向已进入Phase II软件—硬件协同探索；其中Phase 1已完成本轮调查/设计交付，待审阅、未冻结，结果见
+[算法抽象与系统需求定义](co_design/01_algorithm_abstraction_and_system_requirements.md)，
+包含Research Scope、Algorithm Characteristics、Unified Sparse KV Abstraction、Attention Consumer Interface、
+System Requirements和Initial Hardware Hypothesis，并新增Phase 1/Phase 2的任务、交接及验收清单，逐项标记Verified / Proposed / Unknown。
+§8包含真实KVzap/FastKVzip输出示例、证据账本和Phase 1设计验收；逻辑接口未冻结，Phase 2（Software Reference & GPU Baseline）未启动。
+软件管理全局状态、硬件执行有界搬运是拟验证分工，新调度器与引擎尚未实现；现有RTL、算法协议和Phase I结果保持原样。
 架构阶段的研究过程已集中在H1；架构规格、R1—R6技术合同及实际使用的
 参数profile继续保留，重复评审与来源说明按历史版本查阅。
 RTL阶段74份细分历史说明和4份重复中间接口清单已合并到H2；实际工具读取的接口矩阵、事件schema和
@@ -109,16 +114,16 @@ stage、完整控制、partial/merge数值处理、外围、leakage及统一时�
 目前集中存在四类未闭合问题：同session多组admission与journal/pending释放，
 compact/P3/M2/R5等必要存储及端口，原2 ns下跨owner控制链和setup/hold，以及
 完整差分成本。注册窗口关闭等候选合同仍需生产者承诺、在途操作排空和实现验证，
-不能将参考模型通过当成生产RTL已实现。未来研究方向尚未决定。
+不能将参考模型通过当成生产RTL已实现。后续转入下述Phase II协同探索，具体软件实现和硬件微架构仍未决定。
 
 ## 硬件阶段：四份报告串起设计、实现与优化
 
-本轮只整理已有架构、RTL、存储边界和映射结果。H1串起A4→Gate-A→RTL入口，
+Phase I报告整理只覆盖已有架构、RTL、存储边界和映射结果。H1串起A4→Gate-A→RTL入口，
 区分正确性要求、当前Route-A合同与具体实现选择；H2串起控制骨架、首次使用、
 测量DUT及重复读取验证，明确外部环境和持续执行缺口；H3对照各类存储、访问并发、
 DC包含项与历史proxy，区分必要信息、职责/接口和物理表示的代价；H4串起各项优化，
 保留局部/完整结果、负收益和时序代价，复盘当前方案的实现问题。H1—H4已成文。
-不增加阶段评估、来源清单或配套附件，也不在本轮确定新的软硬件职责划分。
+该批报告不增加阶段评估、来源清单或配套附件，也未确定新的软硬件职责划分；后续探索见Phase II。
 
 硬件探索的推进过程可以串成五步：
 
@@ -162,7 +167,16 @@ H3承接算法R6之后的真实实现成本，避免重复抄写前RTL的proxy�
 [最新完整DC结果](archive/dc_rd1_wcg1_full_paired_result_20261109.json)、
 [持续页读取结果](archive/route_a_persistent_page_read_r2_result_20261109.md)。
 
-## 软件—硬件协同：值得评估的职责调整
+## Phase II：软件—硬件协同探索
+
+当前入口为[算法抽象与系统需求定义](co_design/01_algorithm_abstraction_and_system_requirements.md)。
+规划修订查阅了KVzap / FastKVzip原论文、现有源码与实验，以及FlashAttention / FlashInfer官方接口，
+提出完整选择快照、独立backing/layout、批任务和安全read-plan交接；没有运行新模型、软件原型、RTL或综合。
+FastKVzip官方decode包含旧mature KEEP撤销，不能直接纳入append-only合同；Attention的逐head变长、
+causal/位置与页格式需独立验证。Phase 1三项调查/设计结果已提交审阅，§8区分直接读取的FastKVzip集合、
+KVzap保存决策上的确定性投影及缺少K/V/Q等限制；审阅交接后，Phase 2才实施Adapter、软件参考、
+Consumer适配与GPU基线。硬件能力由Phase 2瓶颈证据决定。
+以下表格保留职责调整的研究动机；具体字段、首版范围和未知项以新文档为准。
 
 已有实现的困难提示：不应默认所有全局状态、长期历史与系统管理都必须由这块
 硬件自主完成。算法可以规定保留集合、位置/顺序和生命周期；runtime或设备端
